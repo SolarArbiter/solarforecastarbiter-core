@@ -1,0 +1,2 @@
+include versioneer.py
+include solarforecastarbiter/_version.py

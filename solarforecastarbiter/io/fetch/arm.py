@@ -103,7 +103,7 @@ def request_arm_file(user_id, api_key, filename):
     return requests.get(ARM_FILES_LIST_URL, params=params, stream=True)
 
 
-def retrieve_arm_dataframe(user_id, api_key, filename):
+def retrieve_arm_dataset(user_id, api_key, filename):
     """Request a file from the ARM Live API and return a netCDF4 Dataset.
 
     Parameters
@@ -121,7 +121,7 @@ def retrieve_arm_dataframe(user_id, api_key, filename):
         Dataset of the API response.
     """
     nc_data = request_arm_file(user_id, api_key, filename)
-    nc_file = netCDF4.Dataset(f'/tmp/{filename}',  mode='r',
+    nc_file = netCDF4.Dataset(f'/tmp/{filename}', mode='r',
                               memory=nc_data.content)
     nc_data.close()
     return nc_file
@@ -178,7 +178,7 @@ def fetch_arm(user_id, api_key, datastreams, start, end):
         fns = list_arm_filenames(user_id, api_key, ds, start, end)
         var_dfs = []
         for fn in fns:
-            file = retrieve_arm_dataframe(user_id, api_key, fn)
+            file = retrieve_arm_dataset(user_id, api_key, fn)
             # TODO: allow users to define ds_type and applicable variables
             if ds_type == 'irrad':
                 var = extract_arm_variable(file, 'down_short_diffuse_hemisp')

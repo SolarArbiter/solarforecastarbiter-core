@@ -2,10 +2,8 @@
 Laboratories.
 """
 
-import logging
 import pandas as pd
 import requests
-import urllib
 
 SANDIA_API_URL = "https://pv-dashboard.sandia.gov/api/v1.0/location/{location}/data/{data_type}/start/{start}/end/{end}/key/{api_key}" # NOQA
 
@@ -37,7 +35,7 @@ def request_sandia_data(location, data_type, start, end, api_key):
         end=end.strftime('%Y-%m-%d'),
         data_type=data_type,
         api_key=api_key)
-        r = requests.get(request_url)
+    r = requests.get(request_url)
     return pd.DataFrame(r.json())
 
 
