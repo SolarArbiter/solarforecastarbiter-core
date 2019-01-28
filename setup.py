@@ -16,7 +16,7 @@ setup(
     long_description_content_type='text/markdown',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    url='https://github.com/solararbiter/solarforecastarbiter-api',
+    url='https://github.com/solararbiter/solarforecastarbiter-core',
     author='Solar Forecast Arbiter Team',
     author_email='info@solarforecastarbiter.org',
     classifiers=[
