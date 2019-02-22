@@ -56,7 +56,7 @@ class Site(GetItem):
         Describes a geometric area for a Site which may be physically extended,
         e.g. a polygon over a city for a Site that describes many distributed
         generation PV systems.
-    extra_parameters : dict, optional
+    extra_parameters : str, optional
         The extra parameters may be used by forecasters when
         implementing other PV models. The framework does not provide
         a standard set of extra parameters or require a particular
@@ -69,7 +69,7 @@ class Site(GetItem):
     timezone: str
     network: str = ''
     well_known_text: str = ''
-    extra_parameters: dict = field(default_factory=dict)
+    extra_parameters: str = ''
 
 
 @dataclass(frozen=True)
@@ -79,9 +79,9 @@ class PVModelingParameters(GetItem):
 
     Parameters
     ----------
-    ac_power : float
+    ac_capacity : float
         Nameplate AC power rating in megawatts
-    dc_power : float
+    dc_capacity : float
         Nameplate DC power rating in megawatts
     temperature_coefficient : float
         The temperature coefficient of DC power in units of 1/C.
@@ -92,8 +92,8 @@ class PVModelingParameters(GetItem):
     FixedTiltModelingParameters
     SingleAxisModelingParameters
     """
-    ac_power: float
-    dc_power: float
+    ac_capacity: float
+    dc_capacity: float
     temperature_coefficient: float
 
 
@@ -227,7 +227,7 @@ class Observation(UnitsSetter):
         will be determined later.
     description : str, optional
         A text description of the observation.
-    extra_parameters : dict, optional
+    extra_parameters : str, optional
         Any extra parameters for the observation
 
     See Also
@@ -241,7 +241,7 @@ class Observation(UnitsSetter):
     site: Site
     uncertainty: float
     description: str = ''
-    extra_parameters: dict = field(default_factory=dict)
+    extra_parameters: str = ''
     units: str = field(init=False)
 
 
@@ -282,7 +282,7 @@ class Forecast(UnitsSetter):
     site : Site
         The predefined site that the forecast is for, e.g. Power Plant X
         or Aggregate Y.
-    extra_parameters : dict
+    extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
     See Also
@@ -298,5 +298,5 @@ class Forecast(UnitsSetter):
     value_type: str
     variable: str
     site: Site
-    extra_parameters: dict = field(default_factory=dict)
+    extra_parameters: str = ''
     units: str = field(init=False)
