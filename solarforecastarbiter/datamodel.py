@@ -185,16 +185,14 @@ class FixedTiltPowerPlant(Site):
         default_factory=FixedTiltModelingParameters)
 
 
-@dataclass(frozen=True)
-class UnitsSetter:
-    def __post_init__(self):
-        if self.variable not in ALLOWED_VARIABLES:
-            raise ValueError('variable is not allowed')
-        object.__setattr__(self, 'units', ALLOWED_VARIABLES[self.variable])
+def __set_units__(cls):
+    if cls.variable not in ALLOWED_VARIABLES:
+        raise ValueError('variable is not allowed')
+    object.__setattr__(cls, 'units', ALLOWED_VARIABLES[cls.variable])
 
 
 @dataclass(frozen=True)
-class Observation(UnitsSetter):
+class Observation:
     """
     A class for keeping track of metadata associated with an observation.
     Units are set according to the variable type.
@@ -236,10 +234,11 @@ class Observation(UnitsSetter):
     description: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
+    __post_init__ = __set_units__
 
 
 @dataclass(frozen=True)
-class Forecast(UnitsSetter):
+class Forecast:
     """
     A class to hold metadata for Forecast objects.
 
@@ -293,3 +292,4 @@ class Forecast(UnitsSetter):
     site: Site
     extra_parameters: str = ''
     units: str = field(init=False)
+    __post_init__ = __set_units__

@@ -50,7 +50,7 @@ def site_metadata():
     Simple example metadata for a fixed-tilt PV site
     """
     modeling_params = datamodel.FixedTiltModelingParameters(
-        ac_power=.003, dc_power=.0035, temperature_coefficient=-0.003,
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.FixedTiltPowerPlant(
         name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
