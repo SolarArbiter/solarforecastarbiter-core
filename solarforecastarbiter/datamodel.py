@@ -146,43 +146,24 @@ class SingleAxisModelingParameters(PVModelingParameters):
 
 
 @dataclass(frozen=True)
-class SingleAxisPowerPlant(Site):
+class SolarPowerPlant(Site):
     """
-    Class for keeping track of metadata associated with single axis tracking
-    solar power plant Sites. Adds additional parameters to the Site dataclass.
+    Class for keeping track of metadata associated with solar power plant Sites.
+    Adds additional parameters to the Site dataclass.
 
     Parameters
     ----------
-    modeling_parameters : SingleAxisModelingParameters
+    modeling_parameters : PVModelingParameters
         Modeling parameters for a single axis system
 
     See Also
     --------
     Site
     SingleAxisModelingParameters
-    """
-    modeling_parameters: SingleAxisModelingParameters = field(
-        default_factory=SingleAxisModelingParameters)
-
-
-@dataclass(frozen=True)
-class FixedTiltPowerPlant(Site):
-    """
-    Class for keeping track of metadata associated with fixed tilt tracking
-    solar power plant Sites. Adds additional parameters to the Site dataclass.
-
-    Parameters
-    ----------
-    modeling_parameters : FixedTiltModelingParameters
-        Modeling parameters for a fixed tilt system
-
-    See Also
-    --------
-    Site
     FixedTiltModelingParameters
     """
-    modeling_parameters: FixedTiltModelingParameters = field(
-        default_factory=FixedTiltModelingParameters)
+    modeling_parameters: PVModelingParameters = field(
+        default_factory=PVModelingParameters)
 
 
 def __set_units__(cls):
