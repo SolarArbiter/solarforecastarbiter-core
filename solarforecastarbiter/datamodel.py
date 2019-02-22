@@ -25,14 +25,7 @@ ALLOWED_VARIABLES = {
 
 
 @dataclass(frozen=True)
-class GetItem(object):
-    """Add a __getitem__ method for dict like access"""
-    def __getitem__(self, key):
-        return self.__dict__[key]
-
-
-@dataclass(frozen=True)
-class Site(GetItem):
+class Site:
     """
     Class for keeping track of Site metadata.
 
@@ -73,7 +66,7 @@ class Site(GetItem):
 
 
 @dataclass(frozen=True)
-class PVModelingParameters(GetItem):
+class PVModelingParameters:
     """
     Class for keeping track of generic PV modeling parameters
 
@@ -193,7 +186,7 @@ class FixedTiltPowerPlant(Site):
 
 
 @dataclass(frozen=True)
-class UnitsSetter(GetItem):
+class UnitsSetter:
     def __post_init__(self):
         if self.variable not in ALLOWED_VARIABLES:
             raise ValueError('variable is not allowed')
