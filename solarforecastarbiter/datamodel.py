@@ -21,6 +21,8 @@ ALLOWED_VARIABLES = {
     'relative_humidity': '%',
     'ac_power': 'MW',
     'dc_power': 'MW',
+    'availability': '%',
+    'curtailment': 'MW',
 }
 
 
