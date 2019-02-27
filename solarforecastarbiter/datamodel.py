@@ -150,8 +150,8 @@ class SingleAxisModelingParameters(PVModelingParameters):
 @dataclass(frozen=True)
 class SolarPowerPlant(Site):
     """
-    Class for keeping track of metadata associated with solar power plant Sites.
-    Adds additional parameters to the Site dataclass.
+    Class for keeping track of metadata associated with solar power plant
+    Sites. Adds additional parameters to the Site dataclass.
 
     Parameters
     ----------
