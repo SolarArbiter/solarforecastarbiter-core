@@ -1,4 +1,5 @@
 [![Build Status](https://dev.azure.com/solararbiter/solarforecastarbiter/_apis/build/status/SolarArbiter.solarforecastarbiter-core?branchName=master)](https://dev.azure.com/solararbiter/solarforecastarbiter/_build/latest?definitionId=1&branchName=master)
+[![Coverage](https://img.shields.io/azure-devops/coverage/solararbiter/solarforecastarbiter/1/master.svg)](https://dev.azure.com/solararbiter/solarforecastarbiter/_build/latest?definitionId=1&branchName=master)
 
 # solarforecastarbiter-core
 Core Solar Forecast Arbiter data gathering, validation, processing, and
