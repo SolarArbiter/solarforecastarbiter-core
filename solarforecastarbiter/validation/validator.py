@@ -18,9 +18,9 @@ QCRAD_CONSISTENCY = {
         {'high_zenith':
             {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
              'ratio_bounds': [0.85, 1.15]},
-             'low_zenith':
-        {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
-         'ratio_bounds': [0.92, 1.08]}},
+         'low_zenith':
+            {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
+             'ratio_bounds': [0.92, 1.08]}},
     'dhi_ratio':
         {'high_zenith':
             {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
@@ -85,7 +85,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
 
     try:
         irrad['ghi_physical_limit_flag'] = _apply_limit(irrad['ghi'],
-            coeff['ghi_lb'], ghi_ub)
+             coeff['ghi_lb'], ghi_ub)
     except KeyError:
         raise KeyError('ghi not found')
 
@@ -93,7 +93,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
         dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                            coeff['dhi_ub'])
         irrad['dhi_physical_limit_flag'] = _apply_limit(irrad['dhi'],
-            coeff['dhi_lb'], dhi_ub)
+             coeff['dhi_lb'], dhi_ub)
     except KeyError:
         pass
 
@@ -101,7 +101,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
         dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                            coeff['dni_ub'])
         irrad['dni_physical_limit_flag'] = _apply_limit(irrad['dni'],
-            coeff['dni_lb'], dni_ub)
+             coeff['dni_lb'], dni_ub)
     except KeyError:
         pass
 
