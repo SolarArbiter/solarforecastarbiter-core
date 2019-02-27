@@ -13,22 +13,21 @@ QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
                 'dni_ub': {'mult': 1.0, 'exp': 0.0, 'min': 0},
                 'ghi_lb': -4, 'dhi_lb': -4, 'dni_lb': -4}
 
-QCRAD_CONSISTENCY = {'ghi_ratio': {'high_zenith':
-                                      {'zenith_bounds': [0.0, 75],
-                                       'ghi_bounds': [50, np.Inf],
-                                       'ratio_bounds': [0.85, 1.15]},
-                                   'low_zenith':
-                                       {'zenith_bounds': [75, 93],
-                                        'ghi_bounds': [50, np.Inf],
-                                        'ratio_bounds': [0.92, 1.08]}},
-                    'dhi_ratio': {'high_zenith':
-                                      {'zenith_bounds': [0.0, 75],
-                                       'ghi_bounds': [50, np.Inf],
-                                       'ratio_bounds': [0.0, 1.10]},
-                                   'low_zenith':
-                                       {'zenith_bounds': [75, 93],
-                                        'ghi_bounds': [50, np.Inf],
-                                        'ratio_bounds': [0.0, 1.05]}}}
+QCRAD_CONSISTENCY = {
+    'ghi_ratio':
+        {'high_zenith':
+            {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
+             'ratio_bounds': [0.85, 1.15]},
+             'low_zenith':
+        {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
+         'ratio_bounds': [0.92, 1.08]}},
+    'dhi_ratio':
+        {'high_zenith':
+            {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
+             'ratio_bounds': [0.0, 1.10]},
+         'low_zenith':
+            {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
+             'ratio_bounds': [0.0, 1.05]}}}
 
 
 def _apply_limit(val, lb=None, ub=None):
@@ -86,7 +85,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
 
     try:
         irrad['ghi_physical_limit_flag'] = _apply_limit(irrad['ghi'],
-             coeff['ghi_lb'], ghi_ub)
+            coeff['ghi_lb'], ghi_ub)
     except KeyError:
         raise KeyError('ghi not found')
 
@@ -94,7 +93,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
         dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                            coeff['dhi_ub'])
         irrad['dhi_physical_limit_flag'] = _apply_limit(irrad['dhi'],
-             coeff['dhi_lb'], dhi_ub)
+            coeff['dhi_lb'], dhi_ub)
     except KeyError:
         pass
 
@@ -102,7 +101,7 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
         dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                            coeff['dni_ub'])
         irrad['dni_physical_limit_flag'] = _apply_limit(irrad['dni'],
-             coeff['dni_lb'], dni_ub)
+            coeff['dni_lb'], dni_ub)
     except KeyError:
         pass
 
@@ -144,7 +143,7 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
     param : dict
         keys are 'ghi_ratio' and 'dhi_ratio'. For each key, value is a dict
         with keys 'high_zenith' and 'low_zenith'; for each of these keys,
-        value is a dict with keys 'zenith_bounds', 'ghi_bounds', and 
+        value is a dict with keys 'zenith_bounds', 'ghi_bounds', and
         'ratio_bounds' and value is an ordered pair [lower, upper]
         of float.
 
@@ -160,7 +159,8 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
 
     # sum of components
     try:
-        component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + irrad['dhi']
+        component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + \
+            irrad['dhi']
         ghi_ratio = irrad['ghi'] / component_sum
         dhi_ratio = irrad['dhi'] / irrad['ghi']
     except KeyError:
@@ -184,4 +184,3 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
                            sza=irrad['solar_zenith'],
                            bounds=bounds['low_zenith']))
     return irrad
-
