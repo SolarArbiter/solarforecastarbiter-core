@@ -1,2 +1,5 @@
 pytest==4.3.0
+pytest-cov==2.6.1
+coverage==4.5.2
 pytest-mock==1.10.1
+flake8==3.7.7
