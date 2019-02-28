@@ -69,9 +69,9 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
 
     Test passes if a value > lower bound and value < upper bound. Lower bounds
     are constant for all tests. Upper bounds are calculated as
-    .. math::
 
-      ub = min + mult * dni_extra * \cos \left( solar_zenith \right)^{exp}
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
 
     Parameters:
     -----------
