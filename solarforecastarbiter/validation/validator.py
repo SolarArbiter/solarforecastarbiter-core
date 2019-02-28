@@ -16,28 +16,41 @@ QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
 
 QCRAD_CONSISTENCY = {
     'ghi_ratio':
-        {'high_zenith':
+        {'low_zenith':
             {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
-             'ratio_bounds': [0.85, 1.15]},
-         'low_zenith':
+             'ratio_bounds': [0.92, 1.08]},
+         'high_zenith':
             {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
-             'ratio_bounds': [0.92, 1.08]}},
+             'ratio_bounds': [0.85, 1.15]}},
     'dhi_ratio':
-        {'high_zenith':
+        {'low_zenith':
             {'zenith_bounds': [0.0, 75], 'ghi_bounds': [50, np.Inf],
-             'ratio_bounds': [0.0, 1.10]},
-         'low_zenith':
+             'ratio_bounds': [0.0, 1.05]},
+         'high_zenith':
             {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
-             'ratio_bounds': [0.0, 1.05]}}}
+             'ratio_bounds': [0.0, 1.10]}}}
 
 
-def _apply_limit(val, lb=None, ub=None):
+def _apply_limit(val, lb=None, ub=None, lb_ge=False, ub_le=False):
     if (lb is not None) & (ub is not None):
-        return (val > lb) & (val < ub)
+        if lb_ge and ub_le:
+            return (val >= lb) & (val <= ub)
+        elif lb_ge and not ub_le:
+            return (val >= lb) & (val < ub)
+        elif not lb_ge and ub_le:
+            return (val > lb) & (val <= ub)
+        else:
+            return (val > lb) & (val < ub)
     elif lb is not None:
-        return (val > lb)
+        if lb_ge:
+            return (val >= lb)
+        else:
+            return (val > lb)
     elif ub is not None:
-        return (val < ub)
+        if ub_le:
+            return (val <= ub)
+        else:
+            return (val < ub)
     else:
         pass
 
@@ -53,6 +66,12 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
 
     Also tests for physical limits on DHI and DNI if test_dhi and test_dni,
     respectively, are set and these data are present.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+    .. math::
+
+      ub = min + mult * dni_extra * \cos \left( solar_zenith \right)^{exp}
 
     Parameters:
     -----------
@@ -84,7 +103,7 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
     """
 
     flags = pd.DataFrame(index=irrad.index, data=None,
-                         columns={'ghi_physical_limit_flag'})
+                         columns=['ghi_physical_limit_flag'])
 
     try:
         ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
@@ -131,7 +150,8 @@ def _get_bounds(bounds):
 def _check_irrad_ratio(ratio, ghi, sza, bounds):
     # unpack bounds dict
     ghi_lb, ghi_ub, sza_lb, sza_ub, ratio_lb, ratio_ub = _get_bounds(bounds)
-    return ((_apply_limit(sza, lb=sza_lb, ub=sza_ub)) &
+    # for zenith set lb_ge to handle edge cases, e.g., zenith=0
+    return ((_apply_limit(sza, lb=sza_lb, ub=sza_ub, lb_ge=True)) &
             (_apply_limit(ghi, lb=ghi_lb, ub=ghi_ub)) &
             (_apply_limit(ratio, lb=ratio_lb, ub=ratio_ub)))
 
@@ -180,14 +200,14 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
         raise KeyError('Requires ghi, dhi, dni and solar_zenith')
 
     flags = pd.DataFrame(index=irrad.index, data=None,
-                         columns={'consistent_components',
-                                  'diffuse_ratio_limit'})
+                         columns=['consistent_components',
+                                  'diffuse_ratio_limit'])
 
     bounds = param['ghi_ratio']
     flags['consistent_components'] = (
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
                            sza=irrad['solar_zenith'],
-                           bounds=bounds['high_zenith']) &
+                           bounds=bounds['high_zenith']) |
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
                            sza=irrad['solar_zenith'],
                            bounds=bounds['low_zenith']))
@@ -196,7 +216,7 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
     flags['diffuse_ratio_limit'] = (
         _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
                            sza=irrad['solar_zenith'],
-                           bounds=bounds['high_zenith']) &
+                           bounds=bounds['high_zenith']) |
         _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
                            sza=irrad['solar_zenith'],
                            bounds=bounds['low_zenith']))
