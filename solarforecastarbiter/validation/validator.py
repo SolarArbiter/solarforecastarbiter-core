@@ -7,6 +7,7 @@ Created on Fri Feb 15 14:08:20 2019
 
 from pvlib.tools import cosd
 import numpy as np
+import pandas as pd
 
 QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
                 'dhi_ub': {'mult': 0.95, 'exp': 1.2, 'min': 50},
@@ -45,9 +46,13 @@ def _QCRad_ub(dni_extra, sza, coeff):
     return coeff['mult'] * dni_extra * cosd(sza)**coeff['exp'] + coeff['min']
 
 
-def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
+def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
+                                  coeff=QCRAD_LIMITS):
     """
-    Applies limits using the QCRad criteria.
+    Tests for physical limits on GHI using the QCRad criteria.
+
+    Also tests for physical limits on DHI and DNI if test_dhi and test_dni,
+    respectively, are set and these data are present.
 
     Parameters:
     -----------
@@ -58,10 +63,12 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
             Solar zenith angle in degrees
         dni_extra : float
             Extraterrestrial normal irradiance in W/m^2
-        dhi : float
+        dhi : float, optional
             Diffuse horizontal irradiance in W/m^2
-        dni : float
+        dni : float, optional
             Direct normal irradiance in W/m^2
+    test_dhi : boolean, default False
+    test_dni : boolean, default False
     coeff : dict, default QCRAD_LIMITS
         for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
@@ -69,13 +76,15 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
 
     Returns:
     --------
-    irrad : DataFrame
-        With two columns added for each irradiance value:
+    flags : DataFrame
         physical_limit_flag : boolean
             True if value passes physically-possible test
         climate_limit_flag : boolean
             True if value passes climatological test
     """
+
+    flags = pd.DataFrame(index=irrad.index, data=None,
+                         columns={'ghi_physical_limit_flag'})
 
     try:
         ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
@@ -84,31 +93,33 @@ def check_irradiance_limits_QCRad(irrad, coeff=QCRAD_LIMITS):
         raise KeyError('Requires solar_zenith and dni_extra')
 
     try:
-        irrad['ghi_physical_limit_flag'] = _apply_limit(irrad['ghi'],
+        flags['ghi_physical_limit_flag'] = _apply_limit(irrad['ghi'],
                                                         coeff['ghi_lb'],
                                                         ghi_ub)
     except KeyError:
         raise KeyError('ghi not found')
 
-    try:
-        dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                           coeff['dhi_ub'])
-        irrad['dhi_physical_limit_flag'] = _apply_limit(irrad['dhi'],
-                                                        coeff['dhi_lb'],
-                                                        dhi_ub)
-    except KeyError:
-        pass
+    if test_dhi:
+        try:
+            dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
+                               coeff['dhi_ub'])
+            flags['dhi_physical_limit_flag'] = _apply_limit(irrad['dhi'],
+                                                            coeff['dhi_lb'],
+                                                            dhi_ub)
+        except KeyError:
+            raise KeyError('dhi not found')
 
-    try:
-        dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                           coeff['dni_ub'])
-        irrad['dni_physical_limit_flag'] = _apply_limit(irrad['dni'],
-                                                        coeff['dni_lb'],
-                                                        dni_ub)
-    except KeyError:
-        pass
+    if test_dni:
+        try:
+            dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
+                               coeff['dni_ub'])
+            flags['dni_physical_limit_flag'] = _apply_limit(irrad['dni'],
+                                                            coeff['dni_lb'],
+                                                            dni_ub)
+        except KeyError:
+            raise KeyError('dni not found')
 
-    return irrad
+    return flags
 
 
 def _get_bounds(bounds):
@@ -152,8 +163,7 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
 
     Returns:
     --------
-        irrad : DataFrame
-        With two columns added for each irradiance value:
+    flags : DataFrame
         consistent_components : boolean
             True if ghi, dhi and dni components are consistent.
         diffuse_ratio_limit : boolean
@@ -169,8 +179,12 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
     except KeyError:
         raise KeyError('Requires ghi, dhi, dni and solar_zenith')
 
+    flags = pd.DataFrame(index=irrad.index, data=None,
+                         columns={'consistent_components',
+                                  'diffuse_ratio_limit'})
+
     bounds = param['ghi_ratio']
-    irrad['consistent_components'] = (
+    flags['consistent_components'] = (
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
                            sza=irrad['solar_zenith'],
                            bounds=bounds['high_zenith']) &
@@ -179,11 +193,11 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
                            bounds=bounds['low_zenith']))
 
     bounds = param['dhi_ratio']
-    irrad['diffuse_ratio_limit'] = (
+    flags['diffuse_ratio_limit'] = (
         _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
                            sza=irrad['solar_zenith'],
                            bounds=bounds['high_zenith']) &
         _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
                            sza=irrad['solar_zenith'],
                            bounds=bounds['low_zenith']))
-    return irrad
+    return flags
