@@ -221,3 +221,59 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
                            sza=irrad['solar_zenith'],
                            bounds=bounds['low_zenith']))
     return flags
+
+
+def check_temperature_limits(weather, temp_limits=[-10., 50.]):
+    """ Checks for extreme temperatures.
+
+    Parameters:
+    -----------
+    weather : DataFrame
+        temp_air : float
+            Air temperature in Celsius
+    temp_limits : list, default [-10, 50]
+        (lower bound, upper bound) for temperature.
+
+    Returns:
+    --------
+    flags : DataFrame
+        True if temp_air > lower bound and temp_air < upper bound.
+    """
+    try:
+        temp_air = weather['temp_air']
+    except KeyError:
+        raise KeyError('temp_air not found')
+
+    flags = pd.DataFrame(index=weather.index, data=None,
+                         columns=['extreme_temp_flag'])
+    flags['extreme_temp_flag'] = _apply_limit(temp_air, lb=temp_limits[0],
+         ub=temp_limits[1])
+    return flags
+
+
+def check_wind_limits(weather, wind_limits=[0., 60.]):
+    """ Checks for extreme wind speeds.
+
+    Parameters:
+    -----------
+    weather : DataFrame
+        wind_speed : float
+            Wind speed m/s
+    wind_limits : list, default [0, 60]
+        (lower bound, upper bound) for wind speed.
+
+    Returns:
+    --------
+    flags : DataFrame
+        True if wind_speed > lower bound and wind_speed < upper bound.
+    """
+    try:
+        wind_speed = weather['wind_speed']
+    except KeyError:
+        raise KeyError('wind_speed not found')
+
+    flags = pd.DataFrame(index=weather.index, data=None,
+                         columns=['extreme_wind_flag'])
+    flags['extreme_wind_flag'] = _apply_limit(wind_speed, lb=wind_limits[0],
+         ub=wind_limits[1])
+    return flags
