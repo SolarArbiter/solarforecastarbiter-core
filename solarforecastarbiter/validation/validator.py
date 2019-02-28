@@ -247,7 +247,7 @@ def check_temperature_limits(weather, temp_limits=[-10., 50.]):
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_temp_flag'])
     flags['extreme_temp_flag'] = _apply_limit(temp_air, lb=temp_limits[0],
-         ub=temp_limits[1])
+        ub=temp_limits[1])
     return flags
 
 
@@ -275,5 +275,5 @@ def check_wind_limits(weather, wind_limits=[0., 60.]):
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_wind_flag'])
     flags['extreme_wind_flag'] = _apply_limit(wind_speed, lb=wind_limits[0],
-         ub=wind_limits[1])
+        ub=wind_limits[1])
     return flags

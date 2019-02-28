@@ -82,6 +82,7 @@ def test_check_irradiance_consistency_QCRad(irradiance_QCRad):
     result = validator.check_irradiance_consistency_QCRad(components)
     assert_frame_equal(result, result_expected)
 
+
 def test_check_irradiance_consistency_QCRad_fail(irradiance_QCRad):
     expected = irradiance_QCRad
     with pytest.raises(KeyError):
