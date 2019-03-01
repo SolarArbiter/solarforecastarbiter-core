@@ -50,7 +50,7 @@ jobs:
       bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor
     displayName: 'codecov'
 
-  - script:
+  - script: |
       make -c docs html
     displayName: 'makedocs'
 
