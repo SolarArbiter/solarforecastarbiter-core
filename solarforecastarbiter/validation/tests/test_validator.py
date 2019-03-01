@@ -142,11 +142,11 @@ def test_check_limits():
     data = pd.Series(data=[3, 4])
     result = validator._check_limits(val=data, ub=3.5)
     assert_series_equal(expected, result)
-    result = validator._check_limits(val=data, lb=3, ub_ge=True)
+    result = validator._check_limits(val=data, lb=3, ub_le=True)
     assert_series_equal(expected, result)
 
     result = validator._check_limits(val=data, lb=3, ub=4, lb_ge=True,
-                                     ub_ge=True)
+                                     ub_le=True)
     pytest.assertTrue(all(result))
     result = validator._check_limits(val=data, lb=3, ub=4)
     pytest.assertFalse(any(result))
