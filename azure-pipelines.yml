@@ -54,7 +54,7 @@ jobs:
     displayName: 'install doc dependencies'
 
   - script: |
-      make -c docs html
+      make -C docs html
     displayName: 'makedocs'
 
 - job: 'Publish'
