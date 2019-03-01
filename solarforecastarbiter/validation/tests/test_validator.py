@@ -130,7 +130,7 @@ def test_check_wind_limits_fail(weather):
         validator.check_wind_limits(expected[['temp_air']])
 
 
-def test_check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
+def test_check_limits():
     # testing with input type Series
     expected = pd.Series(data=[True, False])
     data = pd.Series(data=[3, 2])
