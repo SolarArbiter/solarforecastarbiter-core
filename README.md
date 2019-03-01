@@ -1,5 +1,6 @@
 [![Build Status](https://dev.azure.com/solararbiter/solarforecastarbiter/_apis/build/status/SolarArbiter.solarforecastarbiter-core?branchName=master)](https://dev.azure.com/solararbiter/solarforecastarbiter/_build/latest?definitionId=1&branchName=master)
 [![Coverage](https://img.shields.io/azure-devops/coverage/solararbiter/solarforecastarbiter/1/master.svg)](https://dev.azure.com/solararbiter/solarforecastarbiter/_build/latest?definitionId=1&branchName=master)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/SolarArbiter/solarforecastarbiter-core.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SolarArbiter/solarforecastarbiter-core/alerts/)
 [![codecov](https://codecov.io/gh/solararbiter/solarforecastarbiter-core/branch/master/graph/badge.svg)](https://codecov.io/gh/solararbiter/solarforecastarbiter-core)
 
 # solarforecastarbiter-core
