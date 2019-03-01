@@ -46,6 +46,10 @@ jobs:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 
+  - script: |
+      bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor
+    displayName: 'codecov'
+
 - job: 'Publish'
   dependsOn: 'Test'
   pool:
