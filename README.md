@@ -18,7 +18,12 @@ pip install -r requirements.txt -r requirements-test.txt
 pip install -e .
 ```
 
-If everything worked, you should be able to run `pytest solarforecastarbiter`
+If everything worked, you should be able to run
+
+```
+pytest solarforecastarbiter
+flake8 solarforecastarbiter
+```
 
 
 # Architecture
