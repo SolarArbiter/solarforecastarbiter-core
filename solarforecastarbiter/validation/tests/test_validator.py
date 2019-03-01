@@ -153,4 +153,3 @@ def test_check_limits():
 
     with pytest.raises(ValueError):
         validator._check_limits(val=data)
-
