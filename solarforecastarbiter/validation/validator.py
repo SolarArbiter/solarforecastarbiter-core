@@ -6,6 +6,8 @@ Created on Fri Feb 15 14:08:20 2019
 """
 
 from pvlib.tools import cosd
+from pvlib.location import Location
+from pvlib.irradiance import clearsky_index
 import numpy as np
 import pandas as pd
 
@@ -92,10 +94,11 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
     Returns:
     --------
     flags : DataFrame
-        physical_limit_flag : boolean
+        ghi_physical_limit_flag : boolean
             True if value passes physically-possible test
-        climate_limit_flag : boolean
-            True if value passes climatological test
+        Optional columsn for
+            dhi_physical_limit_flag : boolean
+            dhi_physical_limit_flag : boolean
     """
 
     if not coeff:
@@ -278,4 +281,84 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
                          columns=['extreme_wind_flag'])
     flags['extreme_wind_flag'] = _check_limits(wind_speed, lb=wind_limits[0],
                                                ub=wind_limits[1])
+    return flags
+
+
+def get_solarposition(location, times, **kwargs):
+    """ Calculates solar position.
+
+    Wraps pvlib.solarposition.get_solarposition.
+
+    Parameters:
+    -----------
+    location : pvlib.Location
+    times : DatetimeIndex
+    optional kwargs include
+        pressure : float, Pa
+        temperature : float, degrees C
+        method : str, default 'nrel_numpy'
+            Other values are 'nrel_c', 'nrel_numba', 'pyephem', and 'ephemeris'
+    Other kwargs are passed to the underlying solar position function
+    specified by kwarg method.
+
+    Returns
+    -------
+    solar_position : DataFrame
+        Columns depend on the ``method`` kwarg, but always include
+        ``zenith`` and ``azimuth``.
+    """
+    try:
+        solar_position = location.get_solarposition(times, **kwargs)
+        return solar_position
+    except AttributeError:
+        raise AttributeError('location must be instance of'
+                             'pvlib.location.Location')
+    else:
+        pass # errors raised in underlying functions
+
+
+def check_ghi_clearsky(irrad, clearsky=None, location=None, 
+                              kt_max= 1.1, **kwargs):
+    """
+    Flags GHI values greater than clearsky values.
+
+    If clearsky is not provided, a Location is required and clear-sky
+    irradiance is calculated by pvlib.location.Location.get_clearsky.
+
+    Parameters:
+    -----------
+    irrad : DataFrame
+        ghi : float
+            Global horizontal irradiance in W/m^2
+    clearsky : DataFrame, default None
+        ghi : float
+            Global horizontal irradiance in W/m^2
+    location : Location, default None
+        instance of pvlib.location.Location
+    Other kwargs are passed to the underlying clearsky function.
+
+    Returns:
+    --------
+    flags : DataFrame
+        ghi_clearsky : boolean
+            True if ghi is less than or equal to clear sky value.
+    """
+    times = irrad.index
+
+    if not clearsky:
+        try:
+            clearsky = location.get_clearsky(times)
+        except AttributeError:
+            raise AttributeError('location must be instance of'
+                                 'pvlib.location.Location')
+        else:
+            pass # errors raised by get_clearsky functions
+
+    flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
+    try:
+        kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
+                        max_clearsky_index=np.Inf)
+    except KeyError:
+        raise('ghi not found')
+    flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
