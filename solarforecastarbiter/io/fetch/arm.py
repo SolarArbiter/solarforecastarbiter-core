@@ -1,4 +1,6 @@
 """Collection of code for requesting and parsing ARM data.
+Documentation for the ARM Live Data Web Service can be found
+here: https://adc.arm.gov/armlive/
 """
 import json
 import netCDF4
@@ -8,6 +10,24 @@ import requests
 
 
 ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/query'
+
+
+# DATASTREAMS is a dictionary of ARM datastream names and
+# the variables available in their netcdf files.
+# name, lat, lon, alt
+# Lamont OK,36.60499954223633, -97.48500061035156, 318.0
+
+IRRAD_VARIABLES = ['down_short_hemisp', 'down_short_diffuse_hemisp', 'short_direct_normal']
+MET_VARIABLES = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
+LAMONT_OK_DATASTREAMS = {
+    'gpmetE13.b1': ['temp_mean', 'rh_mean', 'wspd_arith_mean', 'wspd_vec_mean']
+    'sgpqcrad1longC1.c1': ['down_short_hemisp', 'down_short_diffuse_hemisp','short_direct_normal'],
+    'sgpbrsC1.b1': ['down_short_diffuse_hemisp', 'short_direct_normal', 'down_short_hemisp', '']
+}
+BARROW_AK_DATASTREAMS ={
+    'nsaskyrad60sC1.b1': ['short_direct_normal']
+    'nsametC1.b1': []
+}
 
 
 def format_date(date_object):
@@ -150,7 +170,7 @@ def extract_arm_variable(nc_file, var_name):
     return var_df
 
 
-def fetch_arm(user_id, api_key, datastreams, start, end):
+def fetch_arm(user_id, api_key, datastreams, variables, start, end):
     """Gets data from ARM API and concatenates requested datastreams into
     a single Pandas Dataframe.
 
@@ -160,8 +180,10 @@ def fetch_arm(user_id, api_key, datastreams, start, end):
         ARM user id.
     api_key: string
         ARM live API access token.
-    datastreans: dictionary
-        Dictionary of 'datastream': 'datastream type'
+    datastream: string
+        The datastream to request.
+    variables
+        List of variables to parse.
     start: datetime
         The start of the interval to request data for.
     end: datetime
@@ -174,18 +196,15 @@ def fetch_arm(user_id, api_key, datastreams, start, end):
         requested period.
     """
     site_dfs = []
-    for ds, ds_type in datastreams.items():
+    for ds, ds_vars in datastreams.items():
         fns = list_arm_filenames(user_id, api_key, ds, start, end)
         var_dfs = []
         for fn in fns:
-            file = retrieve_arm_dataset(user_id, api_key, fn)
-            # TODO: allow users to define ds_type and applicable variables
-            if ds_type == 'irrad':
-                var = extract_arm_variable(file, 'down_short_diffuse_hemisp')
-            elif ds_type == 'weather':
-                var = extract_arm_variable(file, 'temp_mean')
-            var_dfs.append(var)
-            file.close()
+            nc_file = retrieve_arm_dataset(user_id, api_key, fn)
+            for var in ds_vars:
+                var_data = extract_arm_variable(file, var)
+                var_dfs.append(var_data)
+            nc_file.close()
         site_dfs.append(pd.concat(var_dfs, sort=False))
     new_data = pd.concat(site_dfs, axis=1)
     return new_data
