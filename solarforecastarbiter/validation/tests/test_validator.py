@@ -150,3 +150,7 @@ def test_check_limits():
     assert all(result)
     result = validator._check_limits(val=data, lb=3, ub=4)
     assert not any(result)
+
+    with pytest.raises(ValueError):
+        validator._check_limits(val=data)
+
