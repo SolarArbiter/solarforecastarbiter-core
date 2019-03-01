@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import pytest
 from solarforecastarbiter.validation import validator
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 
 @pytest.fixture
@@ -128,3 +128,25 @@ def test_check_wind_limits_fail(weather):
     expected = weather
     with pytest.raises(KeyError):
         validator.check_wind_limits(expected[['temp_air']])
+
+
+def test_check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
+    # testing with input type Series
+    expected = pd.Series(data=[True, False])
+    data = pd.Series(data=[3, 2])
+    result = validator._check_limits(val=data, lb=2.5)
+    assert_series_equal(expected, result)
+    result = validator._check_limits(val=data, lb=3, lb_ge=True)
+    assert_series_equal(expected, result)
+
+    data = pd.Series(data=[3, 4])
+    result = validator._check_limits(val=data, ub=3.5)
+    assert_series_equal(expected, result)
+    result = validator._check_limits(val=data, lb=3, ub_ge=True)
+    assert_series_equal(expected, result)
+
+    result = validator._check_limits(val=data, lb=3, ub=4, lb_ge=True,
+                                     ub_ge=True)
+    pytest.assertTrue(all(result))
+    result = validator._check_limits(val=data, lb=3, ub=4)
+    pytest.assertFalse(any(result))

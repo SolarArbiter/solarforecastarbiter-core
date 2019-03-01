@@ -31,28 +31,24 @@ QCRAD_CONSISTENCY = {
              'ratio_bounds': [0.0, 1.10]}}}
 
 
-def _apply_limit(val, lb=None, ub=None, lb_ge=False, ub_le=False):
-    if (lb is not None) & (ub is not None):
-        if lb_ge and ub_le:
-            return (val >= lb) & (val <= ub)
-        elif lb_ge and not ub_le:
-            return (val >= lb) & (val < ub)
-        elif not lb_ge and ub_le:
-            return (val > lb) & (val <= ub)
-        else:
-            return (val > lb) & (val < ub)
-    elif lb is not None:
-        if lb_ge:
-            return (val >= lb)
-        else:
-            return (val > lb)
-    elif ub is not None:
-        if ub_le:
-            return (val <= ub)
-        else:
-            return (val < ub)
+def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
+    if lb_ge:
+        lb_op = np.greater_equal
     else:
-        pass
+        lb_op = np.greater
+    if ub_le:
+        ub_op = np.less_equal
+    else:
+        ub_op = np.less
+
+    if (lb is not None) & (ub is not None):
+        return lb_op(val, lb) & ub_op(val, ub)
+    elif lb is not None:
+        return lb_op(val, lb)
+    elif ub is not None:
+        return ub_op(val, ub)
+    else:
+        raise ValueError('must provide either upper or lower bound')
 
 
 def _QCRad_ub(dni_extra, sza, coeff):
@@ -60,7 +56,7 @@ def _QCRad_ub(dni_extra, sza, coeff):
 
 
 def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
-                                  coeff=QCRAD_LIMITS):
+                                  coeff=None):
     """
     Tests for physical limits on GHI using the QCRad criteria.
 
@@ -102,6 +98,9 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
             True if value passes climatological test
     """
 
+    if not coeff:
+        coeff = QCRAD_LIMITS
+
     flags = pd.DataFrame(index=irrad.index, data=None,
                          columns=['ghi_physical_limit_flag'])
 
@@ -112,9 +111,9 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
         raise KeyError('Requires solar_zenith and dni_extra')
 
     try:
-        flags['ghi_physical_limit_flag'] = _apply_limit(irrad['ghi'],
-                                                        coeff['ghi_lb'],
-                                                        ghi_ub)
+        flags['ghi_physical_limit_flag'] = _check_limits(irrad['ghi'],
+                                                         coeff['ghi_lb'],
+                                                         ghi_ub)
     except KeyError:
         raise KeyError('ghi not found')
 
@@ -122,9 +121,9 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
         try:
             dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                                coeff['dhi_ub'])
-            flags['dhi_physical_limit_flag'] = _apply_limit(irrad['dhi'],
-                                                            coeff['dhi_lb'],
-                                                            dhi_ub)
+            flags['dhi_physical_limit_flag'] = _check_limits(irrad['dhi'],
+                                                             coeff['dhi_lb'],
+                                                             dhi_ub)
         except KeyError:
             raise KeyError('dhi not found')
 
@@ -132,9 +131,9 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
         try:
             dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                                coeff['dni_ub'])
-            flags['dni_physical_limit_flag'] = _apply_limit(irrad['dni'],
-                                                            coeff['dni_lb'],
-                                                            dni_ub)
+            flags['dni_physical_limit_flag'] = _check_limits(irrad['dni'],
+                                                             coeff['dni_lb'],
+                                                             dni_ub)
         except KeyError:
             raise KeyError('dni not found')
 
@@ -151,12 +150,12 @@ def _check_irrad_ratio(ratio, ghi, sza, bounds):
     # unpack bounds dict
     ghi_lb, ghi_ub, sza_lb, sza_ub, ratio_lb, ratio_ub = _get_bounds(bounds)
     # for zenith set lb_ge to handle edge cases, e.g., zenith=0
-    return ((_apply_limit(sza, lb=sza_lb, ub=sza_ub, lb_ge=True)) &
-            (_apply_limit(ghi, lb=ghi_lb, ub=ghi_ub)) &
-            (_apply_limit(ratio, lb=ratio_lb, ub=ratio_ub)))
+    return ((_check_limits(sza, lb=sza_lb, ub=sza_ub, lb_ge=True)) &
+            (_check_limits(ghi, lb=ghi_lb, ub=ghi_ub)) &
+            (_check_limits(ratio, lb=ratio_lb, ub=ratio_ub)))
 
 
-def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
+def check_irradiance_consistency_QCRad(irrad, param=None):
     """
     Checks consistency of GHI, DHI and DNI.
 
@@ -189,6 +188,9 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
         diffuse_ratio_limit : boolean
             True if diffuse to ghi ratio passes limit test.
     """
+
+    if not param:
+        param = QCRAD_CONSISTENCY
 
     # sum of components
     try:
@@ -223,7 +225,7 @@ def check_irradiance_consistency_QCRad(irrad, param=QCRAD_CONSISTENCY):
     return flags
 
 
-def check_temperature_limits(weather, temp_limits=[-10., 50.]):
+def check_temperature_limits(weather, temp_limits=(-10., 50.)):
     """ Checks for extreme temperatures.
 
     Parameters:
@@ -231,7 +233,7 @@ def check_temperature_limits(weather, temp_limits=[-10., 50.]):
     weather : DataFrame
         temp_air : float
             Air temperature in Celsius
-    temp_limits : list, default [-10, 50]
+    temp_limits : tuple, default (-10, 50)
         (lower bound, upper bound) for temperature.
 
     Returns:
@@ -246,12 +248,12 @@ def check_temperature_limits(weather, temp_limits=[-10., 50.]):
 
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_temp_flag'])
-    flags['extreme_temp_flag'] = _apply_limit(temp_air, lb=temp_limits[0],
-                                              ub=temp_limits[1])
+    flags['extreme_temp_flag'] = _check_limits(temp_air, lb=temp_limits[0],
+                                               ub=temp_limits[1])
     return flags
 
 
-def check_wind_limits(weather, wind_limits=[0., 60.]):
+def check_wind_limits(weather, wind_limits=(0., 60.)):
     """ Checks for extreme wind speeds.
 
     Parameters:
@@ -259,7 +261,7 @@ def check_wind_limits(weather, wind_limits=[0., 60.]):
     weather : DataFrame
         wind_speed : float
             Wind speed m/s
-    wind_limits : list, default [0, 60]
+    wind_limits : tuple, default (0, 60)
         (lower bound, upper bound) for wind speed.
 
     Returns:
@@ -274,6 +276,6 @@ def check_wind_limits(weather, wind_limits=[0., 60.]):
 
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_wind_flag'])
-    flags['extreme_wind_flag'] = _apply_limit(wind_speed, lb=wind_limits[0],
-                                              ub=wind_limits[1])
+    flags['extreme_wind_flag'] = _check_limits(wind_speed, lb=wind_limits[0],
+                                               ub=wind_limits[1])
     return flags
