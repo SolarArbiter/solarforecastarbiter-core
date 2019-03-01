@@ -7,8 +7,8 @@ python:
    install:
       - requirements: requirements.txt
       - requirements: docs/requirements.txt
-      - method: pip
+      - method: setuptools
         path: .
-   system_packages: true
+   system_packages: false
 sphinx:
   fail_on_warning: false
