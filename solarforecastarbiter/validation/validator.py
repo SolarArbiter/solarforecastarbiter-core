@@ -104,7 +104,6 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
     flags = pd.DataFrame(index=irrad.index, data=None,
                          columns=['ghi_physical_limit_flag'])
 
-
     ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
                        limits['ghi_ub'])
 
