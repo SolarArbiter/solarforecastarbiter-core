@@ -18,10 +18,7 @@ IRRAD_FILE = os.path.join(TEST_DATA_DIR, 'data',
                           'sgpqcrad1longC1.c1.20190122.000000.cdf')
 
 
-test_datastreams = {
-    'ds_1': 'irrad',
-    'ds_2': 'weather',
-}
+test_datastreams = ['ds_1', 'ds_2']
 start_date = pd.Timestamp('2019-01-22')
 end_date = pd.Timestamp('2019-01-23')
 
@@ -45,14 +42,16 @@ def test_format_date():
     assert arm.format_date(date) == '2019-01-23'
 
 
-@pytest.mark.parametrize('user_id,api_key,datastreams,start,end', [
-    ('user', 'bogus_key', test_datastreams, start_date, end_date),
+@pytest.mark.parametrize('user_id,api_key,datastream,variables,start,end', [
+    ('user', 'bogus_key', test_datastreams[0], ['down_short_hemisp',
+     'not_real'], start_date, end_date),
+    ('user', 'bogus_key', test_datastreams[1], ['temp_mean'], start_date,
+     end_date),
 ])
-def test_fetch_arm(user_id, api_key, datastreams, start, end, mocker):
+def test_fetch_arm(user_id, api_key, stream, variables, start, end, mocker):
     mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
                  side_effect=filenames)
     mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
                  side_effect=request_file)
-    data = arm.fetch_arm(user_id, api_key, datastreams, start, end)
-    assert 'down_short_diffuse_hemisp' in data.columns
-    assert 'temp_mean' in data.columns
+    data = arm.fetch_arm(user_id, api_key, stream, variables, start, end)
+    assert variables[0] in data.columns

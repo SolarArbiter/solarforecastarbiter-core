@@ -12,22 +12,12 @@ import requests
 ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/query'
 
 
-# DATASTREAMS is a dictionary of ARM datastream names and
-# the variables available in their netcdf files.
-# name, lat, lon, alt
-# Lamont OK,36.60499954223633, -97.48500061035156, 318.0
-
-IRRAD_VARIABLES = ['down_short_hemisp', 'down_short_diffuse_hemisp', 'short_direct_normal']
+# These lists are the commonly available irradiance and meteorological
+# variables found in ARM data. Users can import and pass these to fetch_arm
+# to parse out these variables.
+IRRAD_VARIABLES = ['down_short_hemisp', 'down_short_diffuse_hemisp',
+                   'short_direct_normal']
 MET_VARIABLES = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
-LAMONT_OK_DATASTREAMS = {
-    'gpmetE13.b1': ['temp_mean', 'rh_mean', 'wspd_arith_mean', 'wspd_vec_mean']
-    'sgpqcrad1longC1.c1': ['down_short_hemisp', 'down_short_diffuse_hemisp','short_direct_normal'],
-    'sgpbrsC1.b1': ['down_short_diffuse_hemisp', 'short_direct_normal', 'down_short_hemisp', '']
-}
-BARROW_AK_DATASTREAMS ={
-    'nsaskyrad60sC1.b1': ['short_direct_normal']
-    'nsametC1.b1': []
-}
 
 
 def format_date(date_object):
@@ -161,6 +151,11 @@ def extract_arm_variable(nc_file, var_name):
     -------
     DataFrame
         A DataFrame with a DatetimeIndex and the requested variable data.
+
+    Raises
+    ------
+    IndexError
+        If a variable does not exist in the netcdf file.
     """
     base_time = np.asscalar(nc_file['base_time'][0].data)
     delta_time = nc_file['time'][:]
@@ -170,7 +165,7 @@ def extract_arm_variable(nc_file, var_name):
     return var_df
 
 
-def fetch_arm(user_id, api_key, datastreams, variables, start, end):
+def fetch_arm(user_id, api_key, datastream, variables, start, end):
     """Gets data from ARM API and concatenates requested datastreams into
     a single Pandas Dataframe.
 
@@ -183,7 +178,7 @@ def fetch_arm(user_id, api_key, datastreams, variables, start, end):
     datastream: string
         The datastream to request.
     variables
-        List of variables to parse.
+        List of variables to parse from the datastream.
     start: datetime
         The start of the interval to request data for.
     end: datetime
@@ -196,15 +191,20 @@ def fetch_arm(user_id, api_key, datastreams, variables, start, end):
         requested period.
     """
     site_dfs = []
-    for ds, ds_vars in datastreams.items():
-        fns = list_arm_filenames(user_id, api_key, ds, start, end)
-        var_dfs = []
-        for fn in fns:
-            nc_file = retrieve_arm_dataset(user_id, api_key, fn)
-            for var in ds_vars:
-                var_data = extract_arm_variable(file, var)
-                var_dfs.append(var_data)
-            nc_file.close()
-        site_dfs.append(pd.concat(var_dfs, sort=False))
-    new_data = pd.concat(site_dfs, axis=1)
-    return new_data
+    fns = list_arm_filenames(user_id, api_key, datastream, start, end)
+    for fn in fns:
+        nc_file = retrieve_arm_dataset(user_id, api_key, fn)
+        var_dfs = pd.DataFrame()
+        for var in variables:
+            try:
+                var_data = extract_arm_variable(nc_file, var)
+            except IndexError:
+                continue
+            var_dfs = var_dfs.join(var_data, how='outer')
+        nc_file.close()
+        site_dfs.append(var_dfs)
+    if site_dfs:
+        new_data = pd.concat(site_dfs)
+        return new_data
+    else:
+        return None
