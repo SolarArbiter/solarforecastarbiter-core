@@ -42,7 +42,7 @@ def test_format_date():
     assert arm.format_date(date) == '2019-01-23'
 
 
-@pytest.mark.parametrize('user_id,api_key,datastream,variables,start,end', [
+@pytest.mark.parametrize('user_id,api_key,stream,variables,start,end', [
     ('user', 'bogus_key', test_datastreams[0], ['down_short_hemisp',
      'not_real'], start_date, end_date),
     ('user', 'bogus_key', test_datastreams[1], ['temp_mean'], start_date,
