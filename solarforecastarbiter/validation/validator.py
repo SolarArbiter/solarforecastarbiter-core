@@ -289,18 +289,11 @@ def get_solarposition(location, times, **kwargs):
         Columns depend on the ``method`` kwarg, but always include
         ``zenith`` and ``azimuth``.
     """
-    try:
-        solar_position = location.get_solarposition(times, **kwargs)
-        return solar_position
-    except AttributeError:
-        raise AttributeError('location must be instance of'
-                             'pvlib.location.Location')
-    else:
-        pass # errors raised in underlying functions
+    return location.get_solarposition(times, **kwargs)
 
 
-def check_ghi_clearsky(irrad, clearsky=None, location=None, 
-                              kt_max= 1.1, **kwargs):
+def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
+                       **kwargs):
     """
     Flags GHI values greater than clearsky values.
 
@@ -327,20 +320,13 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None,
     """
     times = irrad.index
 
-    if not clearsky:
-        try:
-            clearsky = location.get_clearsky(times)
-        except AttributeError:
-            raise AttributeError('location must be instance of'
-                                 'pvlib.location.Location')
-        else:
-            pass # errors raised by get_clearsky functions
+    if not clearsky and location is not None:
+        clearsky = location.get_clearsky(times)
+    elif not clearsky and location is None:
+        raise ValueError("Either clearsky or location is required")
 
     flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
-    try:
-        kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
-                        max_clearsky_index=np.Inf)
-    except KeyError:
-        raise('ghi not found')
+    kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
+                    max_clearsky_index=np.Inf)
     flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
