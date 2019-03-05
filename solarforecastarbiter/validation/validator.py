@@ -86,11 +86,7 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
             Direct normal irradiance in W/m^2
     test_dhi : boolean, default False
     test_dni : boolean, default False
-<<<<<<< HEAD
-    coeff : dict, default QCRAD_LIMITS
-=======
     limits : dict, default QCRAD_LIMITS
->>>>>>> 4b45b0a3e26ee9898e46c1741a75bee39c18a876
         for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
