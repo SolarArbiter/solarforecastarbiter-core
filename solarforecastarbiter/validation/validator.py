@@ -6,7 +6,6 @@ Created on Fri Feb 15 14:08:20 2019
 """
 
 from pvlib.tools import cosd
-from pvlib.location import Location
 from pvlib.irradiance import clearsky_index
 import numpy as np
 import pandas as pd
