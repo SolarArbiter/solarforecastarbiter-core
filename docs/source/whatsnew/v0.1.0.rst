@@ -1,0 +1,30 @@
+.. _whatsnew_010:
+
+v0.1.0 (exp. 31 March 2019)
+---------------------------
+
+This is the first release. It is not feature-complete.
+
+
+API Changes
+~~~~~~~~~~~
+
+
+Enhancements
+~~~~~~~~~~~~
+
+
+Bug fixes
+~~~~~~~~~
+
+
+Testing
+~~~~~~~
+
+
+Contributors
+~~~~~~~~~~~~
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`atlorenzo`)

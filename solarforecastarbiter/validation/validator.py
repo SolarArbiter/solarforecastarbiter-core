@@ -53,12 +53,12 @@ def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
         raise ValueError('must provide either upper or lower bound')
 
 
-def _QCRad_ub(dni_extra, sza, coeff):
-    return coeff['mult'] * dni_extra * cosd(sza)**coeff['exp'] + coeff['min']
+def _QCRad_ub(dni_extra, sza, lim):
+    return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
 
 
 def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
-                                  coeff=None):
+                                  limits=None):
     """
     Tests for physical limits on GHI using the QCRad criteria.
 
@@ -86,7 +86,11 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
             Direct normal irradiance in W/m^2
     test_dhi : boolean, default False
     test_dni : boolean, default False
+<<<<<<< HEAD
     coeff : dict, default QCRAD_LIMITS
+=======
+    limits : dict, default QCRAD_LIMITS
+>>>>>>> 4b45b0a3e26ee9898e46c1741a75bee39c18a876
         for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
@@ -94,51 +98,38 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
     Returns:
     --------
     flags : DataFrame
-        ghi_physical_limit_flag : boolean
+        physical_limit_flag : boolean
             True if value passes physically-possible test
-        Optional columsn for
-            dhi_physical_limit_flag : boolean
-            dhi_physical_limit_flag : boolean
+        climate_limit_flag : boolean
+            True if value passes climatological test
     """
 
-    if not coeff:
-        coeff = QCRAD_LIMITS
+    if not limits:
+        limits = QCRAD_LIMITS
 
     flags = pd.DataFrame(index=irrad.index, data=None,
                          columns=['ghi_physical_limit_flag'])
 
-    try:
-        ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                           coeff['ghi_ub'])
-    except KeyError:
-        raise KeyError('Requires solar_zenith and dni_extra')
+    ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
+                       limits['ghi_ub'])
 
-    try:
-        flags['ghi_physical_limit_flag'] = _check_limits(irrad['ghi'],
-                                                         coeff['ghi_lb'],
-                                                         ghi_ub)
-    except KeyError:
-        raise KeyError('ghi not found')
+    flags['ghi_physical_limit_flag'] = _check_limits(irrad['ghi'],
+                                                     limits['ghi_lb'],
+                                                     ghi_ub)
 
     if test_dhi:
-        try:
-            dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                               coeff['dhi_ub'])
-            flags['dhi_physical_limit_flag'] = _check_limits(irrad['dhi'],
-                                                             coeff['dhi_lb'],
-                                                             dhi_ub)
-        except KeyError:
-            raise KeyError('dhi not found')
+        dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
+                           limits['dhi_ub'])
+        flags['dhi_physical_limit_flag'] = _check_limits(irrad['dhi'],
+                                                         limits['dhi_lb'],
+                                                         dhi_ub)
 
     if test_dni:
-        try:
-            dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                               coeff['dni_ub'])
-            flags['dni_physical_limit_flag'] = _check_limits(irrad['dni'],
-                                                             coeff['dni_lb'],
-                                                             dni_ub)
-        except KeyError:
-            raise KeyError('dni not found')
+        dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
+                           limits['dni_ub'])
+        flags['dni_physical_limit_flag'] = _check_limits(irrad['dni'],
+                                                         limits['dni_lb'],
+                                                         dni_ub)
 
     return flags
 
@@ -196,13 +187,10 @@ def check_irradiance_consistency_QCRad(irrad, param=None):
         param = QCRAD_CONSISTENCY
 
     # sum of components
-    try:
-        component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + \
-            irrad['dhi']
-        ghi_ratio = irrad['ghi'] / component_sum
-        dhi_ratio = irrad['dhi'] / irrad['ghi']
-    except KeyError:
-        raise KeyError('Requires ghi, dhi, dni and solar_zenith')
+    component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + \
+        irrad['dhi']
+    ghi_ratio = irrad['ghi'] / component_sum
+    dhi_ratio = irrad['dhi'] / irrad['ghi']
 
     flags = pd.DataFrame(index=irrad.index, data=None,
                          columns=['consistent_components',
@@ -244,10 +232,7 @@ def check_temperature_limits(weather, temp_limits=(-10., 50.)):
     flags : DataFrame
         True if temp_air > lower bound and temp_air < upper bound.
     """
-    try:
-        temp_air = weather['temp_air']
-    except KeyError:
-        raise KeyError('temp_air not found')
+    temp_air = weather['temp_air']
 
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_temp_flag'])
@@ -272,10 +257,7 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
     flags : DataFrame
         True if wind_speed > lower bound and wind_speed < upper bound.
     """
-    try:
-        wind_speed = weather['wind_speed']
-    except KeyError:
-        raise KeyError('wind_speed not found')
+    wind_speed = weather['wind_speed']
 
     flags = pd.DataFrame(index=weather.index, data=None,
                          columns=['extreme_wind_flag'])

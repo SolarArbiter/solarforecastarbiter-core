@@ -1,0 +1,14 @@
+# https://docs.readthedocs.io/en/latest/config-file/v2.html
+
+version: 2
+
+python:
+   version: 3.7
+   install:
+      - requirements: requirements.txt
+      - requirements: docs/requirements.txt
+      - method: setuptools
+        path: .
+   system_packages: false
+sphinx:
+  fail_on_warning: false
