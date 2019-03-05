@@ -10,6 +10,7 @@ import requests
 
 
 ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/query'
+ARM_FILES_DOWNLOAD_URL = 'https://adc.arm.gov/armlive/data/saveData'
 
 
 # These lists are the commonly available irradiance and meteorological
@@ -105,10 +106,9 @@ def request_arm_file(user_id, api_key, filename):
     -----
     The stream handle must be closed by the user.
     """
-    ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/saveData'
     params = {'user': f'{user_id}:{api_key}',
               'file': filename}
-    return requests.get(ARM_FILES_LIST_URL, params=params, stream=True)
+    return requests.get(ARM_FILES_DOWNLOAD_URL, params=params, stream=True)
 
 
 def retrieve_arm_dataset(user_id, api_key, filename):
