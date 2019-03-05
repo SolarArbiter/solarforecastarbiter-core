@@ -185,6 +185,17 @@ def test_get_solarposition(mocker):
     loc.get_solarposition.assert_called_once_with(method='ephemeris')
 
 
+def test_get_clearsky(mocker):
+    loc = location()
+    times = test_times()
+    mocker.spy(pvlib.clearsky, 'ineichen')
+    validator.get_clearsky(loc, times)
+    loc.get_solarposition.assert_called_once()
+    mocker.spy(pvlib.clearsky, 'haurwitz')
+    validator.get_solarposition(model='haurwitz')
+    loc.get_solarposition.assert_called_once()
+
+
 def test_check_ghi_clearsky(mocker):
     loc = location()
     times = test_times()

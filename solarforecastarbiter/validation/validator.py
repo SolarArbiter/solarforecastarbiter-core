@@ -269,7 +269,7 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
 def get_solarposition(location, times, **kwargs):
     """ Calculates solar position.
 
-    Wraps pvlib.solarposition.get_solarposition.
+    Wraps pvlib.location.Location.get_solarposition.
 
     Parameters:
     -----------
@@ -281,13 +281,38 @@ def get_solarposition(location, times, **kwargs):
         method : str, default 'nrel_numpy'
             Other values are 'nrel_c', 'nrel_numba', 'pyephem', and 'ephemeris'
     Other kwargs are passed to the underlying solar position function
-    specified by kwarg method.
+    specified by method kwarg.
 
     Returns
     -------
     solar_position : DataFrame
         Columns depend on the ``method`` kwarg, but always include
         ``zenith`` and ``azimuth``.
+    """
+    return location.get_solarposition(times, **kwargs)
+
+
+def get_clearsky(location, times, **kwargs):
+    """ Calculates clear-sky GHI, DNI, DHI.
+
+    Wraps pvlib.location.Location.get_clearsky.
+
+    Parameters:
+    -----------
+    location : pvlib.Location
+    times : DatetimeIndex
+    optional kwargs include
+        solar_position : None or DataFrame, default None
+        dni_extra: None or numeric, default None
+        model: str, default 'ineichen'
+            Other values are 'haurwitz', 'simplified_solis'.
+    Other kwargs are passed to the underlying solar position function
+    specified by model kwarg.
+
+    Returns
+    -------
+    clearsky : DataFrame
+        Column names are: ``ghi, dni, dhi``.
     """
     return location.get_solarposition(times, **kwargs)
 
@@ -321,7 +346,7 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
     times = irrad.index
 
     if not clearsky and location is not None:
-        clearsky = location.get_clearsky(times)
+        clearsky = get_clearsky(location, times)
     elif not clearsky and location is None:
         raise ValueError("Either clearsky or location is required")
 
