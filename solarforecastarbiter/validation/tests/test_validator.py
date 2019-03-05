@@ -166,40 +166,34 @@ def location():
 
 
 @pytest.fixture
-def test_times():
+def times():
     MST = pytz.timezone('MST')
     return pd.date_range(start=datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
                          end=datetime(2018, 6, 15, 13, 0, 0, tzinfo=MST),
                          freq='10T')
 
 
-def test_get_solarposition(mocker):
-    loc = location()
-    times = test_times()
+def test_get_solarposition(mocker, location, times):
     mocker.spy(pvlib.solarposition, 'get_solarposition')
-    validator.get_solarposition(loc, times)
-    loc.get_solarposition.assert_called_once()
+    validator.get_solarposition(location, times)
+    location.get_solarposition.assert_called_once()
     validator.get_solarposition(pressure=100000)
-    loc.get_solarposition.assert_called_once_with(pressure=100000)
+    location.get_solarposition.assert_called_once_with(pressure=100000)
     validator.get_solarposition(method='ephemeris')
-    loc.get_solarposition.assert_called_once_with(method='ephemeris')
+    location.get_solarposition.assert_called_once_with(method='ephemeris')
 
 
-def test_get_clearsky(mocker):
-    loc = location()
-    times = test_times()
+def test_get_clearsky(mocker, location, times):
     mocker.spy(pvlib.clearsky, 'ineichen')
-    validator.get_clearsky(loc, times)
-    loc.get_solarposition.assert_called_once()
+    validator.get_clearsky(location, times)
+    location.get_solarposition.assert_called_once()
     mocker.spy(pvlib.clearsky, 'haurwitz')
     validator.get_solarposition(model='haurwitz')
-    loc.get_solarposition.assert_called_once()
+    location.get_solarposition.assert_called_once()
 
 
-def test_check_ghi_clearsky(mocker):
-    loc = location()
-    times = test_times()
-    clearsky = loc.get_clearsky(times)
+def test_check_ghi_clearsky(mocker, location, times):
+    clearsky = location.get_clearsky(times)
     # modify to create test conditions
     irrad = clearsky.copy()
     irrad.iloc[0] *= 0.5
