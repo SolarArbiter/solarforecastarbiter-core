@@ -205,17 +205,9 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     -------
     A user requesting data for the variables 'down_short_hemisp' and
     'short_direct_normal' from the datastream 'sgpqcrad1longC1.c1' for
-    the days between 2019-02-27 and 2019-03-01.
-    Note: You must supply your own user_id and api_key in the example
-    below.
+    the days between 2019-02-27 and 2019-03-01 could expect the
+    following DataFrame.
 
-    >>> from solarforecastarbiter.io.fetch import arm
-    >>> import pandas as pd
-    >>> start = pd.Timestamp('2019-02-27')
-    >>> end = pd.Timestamp('2019-03-01')
-    >>> data = arm.fetch_arm('user_id', 'api_key', 'sgpqcrad1longC1.c1',
-    ['down_short_hemisp', 'short_direct_normal'], start, end)
-    >>> data
                          down_short_hemisp  short_direct_normal
     2019-02-27 00:00:00           7.182889            -1.399250
     2019-02-27 00:01:00           6.943601            -1.317890
