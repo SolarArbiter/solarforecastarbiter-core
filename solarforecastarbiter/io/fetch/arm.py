@@ -79,9 +79,7 @@ def list_arm_filenames(user_id, api_key, datastream, start, end):
     """
     response = request_arm_file_list(user_id, api_key,
                                      datastream, start, end)
-    if 'files' in response and len(response['files']) > 0:
-        return response['files']
-    return []
+    return response['files']
 
 
 def request_arm_file(user_id, api_key, filename):
@@ -137,32 +135,37 @@ def retrieve_arm_dataset(user_id, api_key, filename):
     return nc_file
 
 
-def extract_arm_variable(nc_file, var_name):
-    """Returns a time series of the variable.
+def extract_arm_variables(nc_file, variables):
+    """Extracts variables and datetime index from an ARM netcdf.
 
     Parameters
     ----------
     nc_file: netCDF4 Dataset
         The ARM file read into a Dataset.
-    var_name: string
-        The var label to extract
+    variables: list
+        List of string variable names to parse from the files.
 
     Returns
     -------
     DataFrame
-        A DataFrame with a DatetimeIndex and the requested variable data.
-
-    Raises
-    ------
-    IndexError
-        If a variable does not exist in the netcdf file.
+        A pandas DataFrame with a column for each requested variable
+        found in the ARM netcdf file, indexed by timestamp in UTC. If
+        none of the requested variables are found, an empty DataFrame
+        is returned.
     """
-    base_time = np.asscalar(nc_file['base_time'][0].data)
-    delta_time = nc_file['time'][:]
-    times = pd.to_datetime(base_time + delta_time, unit='s')
-    var_data = nc_file[var_name][:]
-    var_df = pd.DataFrame(index=times, data={var_name: var_data})
-    return var_df
+    var_data = {}
+    for var in variables:
+        try:
+            var_data[var] = nc_file[var][:]
+        except IndexError:
+            continue
+    if var_data:
+        base_time = np.asscalar(nc_file['base_time'][0].data)
+        delta_time = nc_file['time'][:]
+        times = pd.to_datetime(base_time + delta_time, unit='s')
+        return pd.DataFrame(index=times, data=var_data)
+    else:
+        return pd.DataFrame()
 
 
 def fetch_arm(user_id, api_key, datastream, variables, start, end):
@@ -189,22 +192,47 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     DataFrame
         A DataFrame containing all of the available variables over the
         requested period.
+
+    Notes
+    -----
+    Elements of the variable list that are not found in the datastream
+    are ignored, this is to allow iteration over many datastreams without
+    knowing their exact contents. If none of the requested variables are
+    found, an empty DataFrame will be returned. Users should verify the
+    contents of the return value before use.
+
+    Example
+    -------
+    A user requesting data for the variables 'down_short_hemisp' and
+    'short_direct_normal' from the datastream 'sgpqcrad1longC1.c1' for
+    the days between 2019-02-27 and 2019-03-01.
+    Note: You must supply your own user_id and api_key in the example
+    below.
+
+    >>> from solarforecastarbiter.io.fetch import arm
+    >>> import pandas as pd
+    >>> start = pd.Timestamp('2019-02-27')
+    >>> end = pd.Timestamp('2019-03-01')
+    >>> data = arm.fetch_arm('user_id', 'api_key', 'sgpqcrad1longC1.c1',
+    ['down_short_hemisp', 'short_direct_normal'], start, end)
+    >>> data
+                         down_short_hemisp  short_direct_normal
+    2019-02-27 00:00:00           7.182889            -1.399250
+    2019-02-27 00:01:00           6.943601            -1.317890
+    2019-02-27 00:02:00           6.686488            -1.235140
+    ...
+    2019-03-01 23:57:00           6.943601            -1.317890
+    2019-03-01 23:58:00           6.686488            -1.235140
+    2019-03-01 23:59:00           6.395981            -1.226730
     """
-    site_dfs = []
-    fns = list_arm_filenames(user_id, api_key, datastream, start, end)
-    for fn in fns:
-        nc_file = retrieve_arm_dataset(user_id, api_key, fn)
-        var_dfs = pd.DataFrame()
-        for var in variables:
-            try:
-                var_data = extract_arm_variable(nc_file, var)
-            except IndexError:
-                continue
-            var_dfs = var_dfs.join(var_data, how='outer')
-        nc_file.close()
-        site_dfs.append(var_dfs)
-    if site_dfs:
-        new_data = pd.concat(site_dfs)
+    datastream_dfs = []
+    filenames = list_arm_filenames(user_id, api_key, datastream, start, end)
+    for filename in filenames:
+        nc_file = retrieve_arm_dataset(user_id, api_key, filename)
+        datastream_df = extract_arm_variables(nc_file, variables)
+        datastream_dfs.append(datastream_df)
+    if len(datastream_dfs) > 0:
+        new_data = pd.concat(datastream_dfs)
         return new_data
     else:
-        return None
+        return pd.DataFrame()
