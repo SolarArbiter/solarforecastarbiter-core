@@ -177,9 +177,11 @@ def test_get_solarposition(mocker, location, times):
     mocker.spy(pvlib.solarposition, 'get_solarposition')
     validator.get_solarposition(location, times)
     pvlib.solarposition.get_solarposition.assert_called_once()
+    mocker.spy(pvlib.solarposition, 'get_solarposition')
     validator.get_solarposition(location, times, pressure=100000)
     pvlib.solarposition.get_solarposition.assert_called_once_with(
         pressure=100000)
+    mocker.spy(pvlib.solarposition, 'get_solarposition')
     validator.get_solarposition(location, times, method='ephemeris')
     pvlib.solarposition.get_solarposition.assert_called_once_with(
         method='ephemeris')
