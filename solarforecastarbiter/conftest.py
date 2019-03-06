@@ -12,14 +12,6 @@ import pytest
 
 from solarforecastarbiter import datamodel
 
-try:
-    import tables
-    has_tables = True
-except ImportError:
-    has_tables = False
-
-requires_tables = pytest.mark.skipif(not has_tables, reason='requires tables')
-
 
 @pytest.fixture(scope='module', params=[
     pd.DataFrame.from_records(
