@@ -181,14 +181,16 @@ def test_get_solarposition(mocker, location, times):
     assert m.call_count == 3
 
 
+@requires_tables
 def test_get_clearsky(mocker, location, times):
     m = mocker.spy(pvlib.clearsky, 'ineichen')
     validator.get_clearsky(location, times)
     mocker.spy(pvlib.clearsky, 'haurwitz')
-    validator.get_solarposition(model='haurwitz')
+    validator.get_solarposition(location, times, model='haurwitz')
     assert m.call_count == 2
 
 
+@requires_tables
 def test_check_ghi_clearsky(mocker, location, times):
     clearsky = location.get_clearsky(times)
     # modify to create test conditions
