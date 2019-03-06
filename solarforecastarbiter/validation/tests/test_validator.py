@@ -17,7 +17,7 @@ from pvlib.location import Location
 
 
 try:
-    import tables
+    import tables  # NOQA
     has_tables = True
 except ImportError:
     has_tables = False
