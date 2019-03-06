@@ -194,8 +194,7 @@ def test_get_solarposition(mocker, location, times):
 def test_get_clearsky(mocker, location, times):
     m = mocker.spy(pvlib.clearsky, 'ineichen')
     validator.get_clearsky(location, times)
-    mocker.spy(pvlib.clearsky, 'haurwitz')
-    validator.get_solarposition(location, times, model='haurwitz')
+    validator.get_clearsky(location, times, model='haurwitz')
     assert m.call_count == 2
 
 

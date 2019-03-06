@@ -309,7 +309,7 @@ def get_clearsky(location, times, **kwargs):
     clearsky : DataFrame
         Column names are: ``ghi, dni, dhi``.
     """
-    return location.get_solarposition(times, **kwargs)
+    return location.get_clearsky(times, **kwargs)
 
 
 def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
