@@ -347,6 +347,6 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
 
     flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
     kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
-                    max_clearsky_index=np.Inf)
+        max_clearsky_index=np.Inf)
     flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
