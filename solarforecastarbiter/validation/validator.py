@@ -312,8 +312,7 @@ def get_clearsky(location, times, **kwargs):
     return location.get_clearsky(times, **kwargs)
 
 
-def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
-                       **kwargs):
+def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
     """
     Flags GHI values greater than clearsky values.
 
@@ -330,7 +329,8 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
             Global horizontal irradiance in W/m^2
     location : Location, default None
         instance of pvlib.location.Location
-    Other kwargs are passed to the underlying clearsky function.
+    kt_max : float
+        maximum clearness index that defines when ghi exceeds clear-sky value.
 
     Returns:
     --------
@@ -347,6 +347,6 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1,
 
     flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
     kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
-        max_clearsky_index=np.Inf)
+                        max_clearsky_index=np.Inf)
     flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
