@@ -176,22 +176,22 @@ def times():
 def test_get_solarposition(mocker, location, times):
     mocker.spy(pvlib.solarposition, 'get_solarposition')
     validator.get_solarposition(location, times)
-    pvlib.location.Location.get_solarposition.assert_called_once()
+    pvlib.solarposition.get_solarposition.assert_called_once()
     validator.get_solarposition(pressure=100000)
-    pvlib.location.Location.get_solarposition.assert_called_once_with(
+    pvlib.solarposition.get_solarposition.assert_called_once_with(
         pressure=100000)
     validator.get_solarposition(method='ephemeris')
-    pvlib.location.Location.get_solarposition.assert_called_once_with(
+    pvlib.solarposition.get_solarposition.assert_called_once_with(
         method='ephemeris')
 
 
 def test_get_clearsky(mocker, location, times):
     mocker.spy(pvlib.clearsky, 'ineichen')
     validator.get_clearsky(location, times)
-    pvlib.location.Location.get_solarposition.assert_called_once()
+    pvlib.clearsky.ineichen.assert_called_once()
     mocker.spy(pvlib.clearsky, 'haurwitz')
     validator.get_solarposition(model='haurwitz')
-    pvlib.location.Location.get_solarposition.assert_called_once()
+    pvlib.clearsky.ineichen.assert_called_once()
 
 
 def test_check_ghi_clearsky(mocker, location, times):
