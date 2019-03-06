@@ -178,10 +178,10 @@ def test_get_solarposition(mocker, location, times):
     validator.get_solarposition(location, times)
     pvlib.solarposition.get_solarposition.assert_called_once()
     validator.get_solarposition(location, times, pressure=100000)
-    pvlib.solarposition.get_solarposition.assert_called_with(
+    pvlib.solarposition.get_solarposition.assert_called_with(location, times,
         pressure=100000)
     validator.get_solarposition(location, times, method='ephemeris')
-    pvlib.solarposition.get_solarposition.assert_called_with(
+    pvlib.solarposition.get_solarposition.assert_called_with(location, times,
         method='ephemeris')
 
 
