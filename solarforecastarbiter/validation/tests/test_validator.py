@@ -210,7 +210,9 @@ def test_check_ghi_clearsky(mocker, location, times):
     clear_times[-1] = False
     expected = pd.DataFrame(index=times, data=clear_times,
                             columns=['ghi_clearsky'])
+    result = validator.check_ghi_clearsky(irrad, clearsky=clearsky)
+    assert_frame_equal(result, expected)
     with pytest.raises(ValueError):
         validator.check_ghi_clearsky(irrad)
-    result = validator.check_ghi_clearsky(irrad, clearsky=clearsky)
+    result = validator.check_ghi_clearsky(irrad, location=location)
     assert_frame_equal(result, expected)

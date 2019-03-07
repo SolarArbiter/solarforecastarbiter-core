@@ -340,10 +340,10 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
     """
     times = irrad.index
 
-    if not clearsky and location is not None:
-        clearsky = get_clearsky(location, times)
-    elif not clearsky and location is None:
+    if clearsky is None and location is None:
         raise ValueError("Either clearsky or location is required")
+    elif clearsky is None and location is not None:
+        clearsky = get_clearsky(location, times)
 
     flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
     kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
