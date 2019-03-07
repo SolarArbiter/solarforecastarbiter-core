@@ -70,26 +70,26 @@ jobs:
   - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
     displayName: Add conda to PATH
 
-  - bash: sudo chown -R $USER /usr/share/miniconda
-    displayName: Take ownership of conda installation
-
   - script: conda env create --quiet --file environment.yml
     displayName: Create Anaconda environment
 
-  - script: source activate sfacore_test
-    displayName: Activate Anaconda environment
-
-  - script: pip install -r requirements.txt -r requirements-test.txt
+  - script: |
+      source activate sfacore_test
+      pip install -r requirements.txt -r requirements-test.txt
     displayName: 'Install dependencies'
 
-  - script: conda list
+  - script: |
+      source activate sfacore_test
+      conda list
     displayName: 'List installed dependencies'
 
   - script: |
+      source activate sfacore_test
       pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
+      source activate sfacore_test
       flake8 solarforecastarbiter
     displayName: 'flake8'
 
