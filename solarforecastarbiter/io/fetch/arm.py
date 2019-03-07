@@ -162,7 +162,7 @@ def extract_arm_variables(nc_file, variables):
     if var_data:
         base_time = np.asscalar(nc_file['base_time'][0].data)
         delta_time = nc_file['time'][:]
-        times = pd.to_datetime(base_time + delta_time, unit='s')
+        times = pd.to_datetime(base_time + delta_time, unit='s', utc=True)
         return pd.DataFrame(index=times, data=var_data)
     else:
         return pd.DataFrame()
@@ -208,14 +208,14 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     the days between 2019-02-27 and 2019-03-01 could expect the
     following DataFrame.
 
-                         down_short_hemisp  short_direct_normal
-    2019-02-27 00:00:00           7.182889            -1.399250
-    2019-02-27 00:01:00           6.943601            -1.317890
-    2019-02-27 00:02:00           6.686488            -1.235140
+                               down_short_hemisp  short_direct_normal
+    2019-02-27 00:00:00+00:00           7.182889            -1.399250
+    2019-02-27 00:01:00+00:00           6.943601            -1.317890
+    2019-02-27 00:02:00+00:00           6.686488            -1.235140
     ...
-    2019-03-01 23:57:00           6.943601            -1.317890
-    2019-03-01 23:58:00           6.686488            -1.235140
-    2019-03-01 23:59:00           6.395981            -1.226730
+    2019-03-01 23:57:00+00:00           6.943601            -1.317890
+    2019-03-01 23:58:00+00:00           6.686488            -1.235140
+    2019-03-01 23:59:00+00:00           6.395981            -1.226730
     """
     datastream_dfs = []
     filenames = list_arm_filenames(user_id, api_key, datastream, start, end)
