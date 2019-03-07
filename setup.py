@@ -33,6 +33,7 @@ setup(
         'numpy',
         'pandas',
         'requests',
+        'tables'
     ],
     extra_requires={
         'test': ['pytest', 'pytest-cov', 'pytest-mock']

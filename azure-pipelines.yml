@@ -8,7 +8,7 @@ trigger:
 
 jobs:
 
-- job: 'Test'
+- job: 'Test (wheels only)'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
