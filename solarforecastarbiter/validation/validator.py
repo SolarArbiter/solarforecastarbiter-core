@@ -6,6 +6,7 @@ Created on Fri Feb 15 14:08:20 2019
 """
 
 from pvlib.tools import cosd
+from pvlib.irradiance import clearsky_index
 import numpy as np
 import pandas as pd
 
@@ -181,7 +182,6 @@ def check_irradiance_consistency_QCRad(irrad, param=None):
         param = QCRAD_CONSISTENCY
 
     # sum of components
-
     component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + \
         irrad['dhi']
     ghi_ratio = irrad['ghi'] / component_sum
@@ -258,4 +258,95 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
                          columns=['extreme_wind_flag'])
     flags['extreme_wind_flag'] = _check_limits(wind_speed, lb=wind_limits[0],
                                                ub=wind_limits[1])
+    return flags
+
+
+def get_solarposition(location, times, **kwargs):
+    """ Calculates solar position.
+
+    Wraps pvlib.location.Location.get_solarposition.
+
+    Parameters:
+    -----------
+    location : pvlib.Location
+    times : DatetimeIndex
+    optional kwargs include
+        pressure : float, Pa
+        temperature : float, degrees C
+        method : str, default 'nrel_numpy'
+            Other values are 'nrel_c', 'nrel_numba', 'pyephem', and 'ephemeris'
+    Other kwargs are passed to the underlying solar position function
+    specified by method kwarg.
+
+    Returns
+    -------
+    solar_position : DataFrame
+        Columns depend on the ``method`` kwarg, but always include
+        ``zenith`` and ``azimuth``.
+    """
+    return location.get_solarposition(times, **kwargs)
+
+
+def get_clearsky(location, times, **kwargs):
+    """ Calculates clear-sky GHI, DNI, DHI.
+
+    Wraps pvlib.location.Location.get_clearsky.
+
+    Parameters:
+    -----------
+    location : pvlib.Location
+    times : DatetimeIndex
+    optional kwargs include
+        solar_position : None or DataFrame, default None
+        dni_extra: None or numeric, default None
+        model: str, default 'ineichen'
+            Other values are 'haurwitz', 'simplified_solis'.
+    Other kwargs are passed to the underlying solar position function
+    specified by model kwarg.
+
+    Returns
+    -------
+    clearsky : DataFrame
+        Column names are: ``ghi, dni, dhi``.
+    """
+    return location.get_clearsky(times, **kwargs)
+
+
+def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
+    """
+    Flags GHI values greater than clearsky values.
+
+    If clearsky is not provided, a Location is required and clear-sky
+    irradiance is calculated by pvlib.location.Location.get_clearsky.
+
+    Parameters:
+    -----------
+    irrad : DataFrame
+        ghi : float
+            Global horizontal irradiance in W/m^2
+    clearsky : DataFrame, default None
+        ghi : float
+            Global horizontal irradiance in W/m^2
+    location : Location, default None
+        instance of pvlib.location.Location
+    kt_max : float
+        maximum clearness index that defines when ghi exceeds clear-sky value.
+
+    Returns:
+    --------
+    flags : DataFrame
+        ghi_clearsky : boolean
+            True if ghi is less than or equal to clear sky value.
+    """
+    times = irrad.index
+
+    if clearsky is None and location is None:
+        raise ValueError("Either clearsky or location is required")
+    elif clearsky is None and location is not None:
+        clearsky = get_clearsky(location, times)
+
+    flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
+    kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
+                        max_clearsky_index=np.Inf)
+    flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
