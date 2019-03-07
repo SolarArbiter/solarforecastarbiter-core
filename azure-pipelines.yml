@@ -70,7 +70,7 @@ jobs:
   - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
     displayName: Add conda to PATH
 
-  - script: conda env create --yes --file environment.yml
+  - script: conda env create --file environment.yml
     displayName: Create Anaconda environment
 
   - script: conda activate sfacore_test
