@@ -8,7 +8,7 @@ trigger:
 
 jobs:
 
-- job: 'Test'
+- job: 'Test_pypi'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -57,8 +57,60 @@ jobs:
       make -C docs html
     displayName: 'makedocs'
 
+- job: 'Test_conda'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+    maxParallel: 4
+
+  steps:
+  - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+    displayName: Add conda to PATH
+
+  - script: conda env create --quiet --file environment.yml
+    displayName: Create Anaconda environment
+
+  - script: |
+      source activate sfacore_test
+      pip install -r requirements.txt -r requirements-test.txt
+    displayName: 'Install dependencies'
+
+  - script: |
+      source activate sfacore_test
+      conda list
+    displayName: 'List installed dependencies'
+
+  - script: |
+      source activate sfacore_test
+      pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+    displayName: 'pytest'
+
+  - script: |
+      source activate sfacore_test
+      flake8 solarforecastarbiter
+    displayName: 'flake8'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testRunTitle: 'Python $(python.version)'
+    condition: succeededOrFailed()
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+
+  - script: |
+      bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor
+    displayName: 'codecov'
+
 - job: 'Publish'
-  dependsOn: 'Test'
+  dependsOn: 'Test_pypi'
   pool:
     vmImage: 'Ubuntu-16.04'
 
