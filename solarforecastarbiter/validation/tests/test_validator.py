@@ -170,7 +170,7 @@ def test_check_limits():
 
 @pytest.fixture
 def location():
-    return Location(latitude=35.05, longitude=106.5, altitude=1619,
+    return Location(latitude=35.05, longitude=-106.5, altitude=1619,
                     name="Albuquerque", tz="MST")
 
 
@@ -194,8 +194,10 @@ def test_get_solarposition(mocker, location, times):
 def test_get_clearsky(mocker, location, times):
     m = mocker.spy(pvlib.clearsky, 'ineichen')
     validator.get_clearsky(location, times)
+    assert m.call_count == 1
+    m = mocker.spy(pvlib.clearsky, 'haurwitz')
     validator.get_clearsky(location, times, model='haurwitz')
-    assert m.call_count == 2
+    assert m.call_count == 1
 
 
 @requires_tables
@@ -206,7 +208,6 @@ def test_check_ghi_clearsky(mocker, location, times):
     irrad.iloc[0] *= 0.5
     irrad.iloc[-1] *= 2.0
     clear_times = np.tile(True, len(times))
-    clear_times[0] = False
     clear_times[-1] = False
     expected = pd.DataFrame(index=times, data=clear_times,
                             columns=['ghi_clearsky'])
