@@ -82,6 +82,9 @@ jobs:
   - script: pip install -r requirements.txt -r requirements-test.txt
     displayName: 'Install dependencies'
 
+  - script: conda list
+    displayName: 'List installed dependencies'
+
   - script: |
       pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
