@@ -8,7 +8,7 @@ trigger:
 
 jobs:
 
-- job: 'Test (wheels only)'
+- job: 'Test pypi'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -57,7 +57,7 @@ jobs:
       make -C docs html
     displayName: 'makedocs'
 
-- job: 'Test (conda)'
+- job: 'Test conda'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
@@ -104,7 +104,7 @@ jobs:
     displayName: 'codecov'
 
 - job: 'Publish'
-  dependsOn: 'Test'
+  dependsOn: 'Test pypi'
   pool:
     vmImage: 'Ubuntu-16.04'
 
