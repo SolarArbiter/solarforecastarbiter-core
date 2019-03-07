@@ -73,7 +73,7 @@ jobs:
   - script: conda env create --file environment.yml
     displayName: Create Anaconda environment
 
-  - script: conda activate sfacore_test
+  - script: source activate sfacore_test
     displayName: Activate Anaconda environment
 
   - script: pip install -r requirements.txt -r requirements-test.txt
