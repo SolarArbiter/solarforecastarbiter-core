@@ -21,7 +21,6 @@ end_date = pd.Timestamp('2019-01-23')
 
 def mocked_get(url):
     class MockedResponse:
-
         def __init__(self, json_data):
             self.json_data = json_data
 

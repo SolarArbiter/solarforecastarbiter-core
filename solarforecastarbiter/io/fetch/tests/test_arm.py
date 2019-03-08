@@ -18,10 +18,7 @@ IRRAD_FILE = os.path.join(TEST_DATA_DIR, 'data',
                           'sgpqcrad1longC1.c1.20190122.000000.cdf')
 
 
-test_datastreams = {
-    'ds_1': 'irrad',
-    'ds_2': 'weather',
-}
+test_datastreams = ['ds_1', 'ds_2']
 start_date = pd.Timestamp('2019-01-22')
 end_date = pd.Timestamp('2019-01-23')
 
@@ -31,6 +28,7 @@ def filenames(*args):
         return ['irrad']
     if args[2] == 'ds_2':
         return ['weather']
+    return []
 
 
 def request_file(*args):
@@ -45,14 +43,90 @@ def test_format_date():
     assert arm.format_date(date) == '2019-01-23'
 
 
-@pytest.mark.parametrize('user_id,api_key,datastreams,start,end', [
-    ('user', 'bogus_key', test_datastreams, start_date, end_date),
+def mocked_request_get_files(*args, **kwargs):
+    class Object(object):
+        pass
+    response = Object()
+    response.text = '{"files": ["filename1", "filename2"]}'
+    return response
+
+
+@pytest.fixture
+def api_key():
+    return 'bogus_key'
+
+
+@pytest.fixture
+def user_id():
+    return 'user_id'
+
+
+@pytest.mark.parametrize('stream,variables,start,end', [
+    (test_datastreams[0], ['down_short_hemisp',
+     'not_real'], start_date, end_date),
+    (test_datastreams[1], ['temp_mean'], start_date,
+     end_date),
 ])
-def test_fetch_arm(user_id, api_key, datastreams, start, end, mocker):
+def test_fetch_arm(user_id, api_key, stream, variables, start, end, mocker):
     mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
                  side_effect=filenames)
     mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
                  side_effect=request_file)
-    data = arm.fetch_arm(user_id, api_key, datastreams, start, end)
-    assert 'down_short_diffuse_hemisp' in data.columns
-    assert 'temp_mean' in data.columns
+    data = arm.fetch_arm(user_id, api_key, stream, variables, start, end)
+    assert variables[0] in data.columns
+
+
+@pytest.mark.parametrize('stream,start,end', [
+    ('datastream', start_date, end_date)
+])
+def test_request_file_lists(user_id, api_key, stream, start, end, mocker):
+    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get',
+                              side_effect=mocked_request_get_files)
+    arm.list_arm_filenames(user_id, api_key, stream, start, end)
+    mocked_get.assert_called_with(
+        'https://adc.arm.gov/armlive/data/query',
+        params={
+            'user': f'{user_id}:{api_key}',
+            'ds': 'datastream',
+            'start': '2019-01-22',
+            'end': '2019-01-23',
+            'wt': 'json'
+        })
+
+
+def test_request_arm_file(user_id, api_key, mocker):
+    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    arm.request_arm_file(user_id, api_key, 'sgpqcrad1longC1.c1.cdf')
+    mocked_get.assert_called_with(
+        arm.ARM_FILES_DOWNLOAD_URL,
+        params={
+            'user': f'{user_id}:{api_key}',
+            'file': 'sgpqcrad1longC1.c1.cdf',
+        },
+        stream=True)
+
+
+def test_extract_arm_variables_exist(mocker):
+    nc_file = request_file(None, None, 'irrad')
+    extracted = arm.extract_arm_variables(nc_file,
+                                          ['down_short_hemisp', 'nonexistent'])
+    assert 'down_short_hemisp' in extracted.columns
+    assert 'non-existent' not in extracted.columns
+
+
+def test_extracted_arm_variables_empty(mocker):
+    nc_file = request_file(None, None, 'irrad')
+    extracted = arm.extract_arm_variables(nc_file,
+                                          ['no', 'nein', 'ie', 'non'])
+    assert extracted.empty
+
+
+def test_no_files(user_id, api_key, mocker):
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 side_effect=filenames)
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=request_file)
+    start = end = pd.Timestamp.now()+pd.Timedelta('1 days')
+    arm_df = arm.fetch_arm(user_id, api_key, 'ds_no_files',
+                           ['down_short_hemisp'], start, end)
+    assert arm_df.empty
