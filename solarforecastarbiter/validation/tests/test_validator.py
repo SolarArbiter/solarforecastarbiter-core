@@ -217,3 +217,20 @@ def test_check_ghi_clearsky(mocker, location, times):
         validator.check_ghi_clearsky(irrad)
     result = validator.check_ghi_clearsky(irrad, location=location)
     assert_frame_equal(result, expected)
+
+
+def test_check_irradiance_day_night(location):
+    MST = pytz.timezone('MST')
+    times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
+             datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
+    expected = pd.DataFrame(index=times, columns=['daytime'],
+                            data=[True, False])
+    solar_position = pd.DataFrame(index=times, columns=['zenith'],
+                                  data=[11.8, 114.3])
+    result = validator.check_irradiance_day_night(
+        times, solar_position=solar_position)
+    assert_frame_equal(result, expected)
+    result = validator.check_irradiance_day_night(times, location=location)
+    assert_frame_equal(result, expected)
+    with pytest.raises(ValueError):
+        validator.check_irradiance_day_night(times)
