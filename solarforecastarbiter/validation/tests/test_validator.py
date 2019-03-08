@@ -5,11 +5,24 @@ Created on Wed Feb 27 15:12:14 2019
 @author: cwhanse
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+from pandas.util.testing import assert_frame_equal, assert_series_equal
+from datetime import datetime
+import pytz
 import pytest
 from solarforecastarbiter.validation import validator
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+import pvlib
+from pvlib.location import Location
+
+
+try:
+    import tables  # NOQA
+    has_tables = True
+except ImportError:
+    has_tables = False
+
+requires_tables = pytest.mark.skipif(not has_tables, reason='requires tables')
 
 
 @pytest.fixture
@@ -153,3 +166,54 @@ def test_check_limits():
 
     with pytest.raises(ValueError):
         validator._check_limits(val=data)
+
+
+@pytest.fixture
+def location():
+    return Location(latitude=35.05, longitude=-106.5, altitude=1619,
+                    name="Albuquerque", tz="MST")
+
+
+@pytest.fixture
+def times():
+    MST = pytz.timezone('MST')
+    return pd.date_range(start=datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
+                         end=datetime(2018, 6, 15, 13, 0, 0, tzinfo=MST),
+                         freq='10T')
+
+
+def test_get_solarposition(mocker, location, times):
+    m = mocker.spy(pvlib.solarposition, 'get_solarposition')
+    validator.get_solarposition(location, times)
+    validator.get_solarposition(location, times, pressure=100000)
+    validator.get_solarposition(location, times, method='ephemeris')
+    assert m.call_count == 3
+
+
+@requires_tables
+def test_get_clearsky(mocker, location, times):
+    m = mocker.spy(pvlib.clearsky, 'ineichen')
+    validator.get_clearsky(location, times)
+    assert m.call_count == 1
+    m = mocker.spy(pvlib.clearsky, 'haurwitz')
+    validator.get_clearsky(location, times, model='haurwitz')
+    assert m.call_count == 1
+
+
+@requires_tables
+def test_check_ghi_clearsky(mocker, location, times):
+    clearsky = location.get_clearsky(times)
+    # modify to create test conditions
+    irrad = clearsky.copy()
+    irrad.iloc[0] *= 0.5
+    irrad.iloc[-1] *= 2.0
+    clear_times = np.tile(True, len(times))
+    clear_times[-1] = False
+    expected = pd.DataFrame(index=times, data=clear_times,
+                            columns=['ghi_clearsky'])
+    result = validator.check_ghi_clearsky(irrad, clearsky=clearsky)
+    assert_frame_equal(result, expected)
+    with pytest.raises(ValueError):
+        validator.check_ghi_clearsky(irrad)
+    result = validator.check_ghi_clearsky(irrad, location=location)
+    assert_frame_equal(result, expected)
