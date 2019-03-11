@@ -63,8 +63,8 @@ def site_metadata():
 def ac_power_observation_metadata(site_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='instantaneous', interval_label='instant',
-        site=site_metadata, uncertainty=1)
+        value_type='instantaneous', interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=site_metadata, uncertainty=1)
     return ac_power_meta
 
 
