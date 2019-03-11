@@ -81,6 +81,13 @@ class PVModelingParameters:
     temperature_coefficient : float
         The temperature coefficient of DC power in units of 1/C.
         Typically -0.002 to -0.005 per degree C.
+    irradiance_loss_factor : float, default 0
+        Applied to POA irradiance after reflection losses but before
+        spectral mismatch losses.
+    dc_loss_factor : float, default 0
+        Applied to DC current.
+    ac_loss_factor : float, default 0
+        Appled to inverter power output
 
     See Also
     --------
@@ -90,6 +97,9 @@ class PVModelingParameters:
     ac_capacity: float
     dc_capacity: float
     temperature_coefficient: float
+    irradiance_loss_factor: float = 0.
+    dc_loss_factor: float = 0.
+    ac_loss_factor: float = 0.
 
 
 @dataclass(frozen=True)
