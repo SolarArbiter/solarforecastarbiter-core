@@ -190,7 +190,7 @@ class Observation:
     value_type : str
         The type of the data in the observation. Typically interval mean or
         instantaneous, but additional types may be defined for events.
-    interval_length : str
+    interval_length : pandas.Timedelta
         The length of time between consecutive data points, e.g. 5 minutes,
         1 hour.
     interval_label : str
@@ -214,7 +214,7 @@ class Observation:
     name: str
     variable: str
     value_type: str
-    interval_length: str
+    interval_length: pd.Timedelta
     interval_label: str
     site: Site
     uncertainty: float
