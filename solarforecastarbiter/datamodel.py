@@ -83,11 +83,11 @@ class PVModelingParameters:
         Typically -0.002 to -0.005 per degree C.
     irradiance_loss_factor : float
         Applied to POA irradiance after reflection losses but before
-        spectral mismatch losses.
+        spectral mismatch losses in units of %. 0 = no loss.
     dc_loss_factor : float
-        Applied to DC current.
+        Applied to DC current in units of %. 0 = no loss.
     ac_loss_factor : float
-        Appled to inverter power output
+        Appled to inverter power output in units of %. 0 = no loss.
 
     See Also
     --------
