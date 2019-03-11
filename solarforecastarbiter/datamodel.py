@@ -190,6 +190,9 @@ class Observation:
     value_type : str
         The type of the data in the observation. Typically interval mean or
         instantaneous, but additional types may be defined for events.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
     interval_label : str
         Indicates if a time labels the beginning or the ending of an interval
         average, or indicates an instantaneous value, e.g. beginning, ending,
@@ -211,6 +214,7 @@ class Observation:
     name: str
     variable: str
     value_type: str
+    interval_length: pd.Timedelta
     interval_label: str
     site: Site
     uncertainty: float
@@ -239,7 +243,7 @@ class Forecast:
         The difference between the issue time and the start of the first
         forecast interval, e.g. 1 hour.
     interval_length : pandas.Timedelta
-        The length of time that each data point represents, e.g. 5 minutes,
+        The length of time between consecutive data points, e.g. 5 minutes,
         1 hour.
     run_length : pandas.Timedelta
         The total length of a single issued forecast run, e.g. 1 hour.
