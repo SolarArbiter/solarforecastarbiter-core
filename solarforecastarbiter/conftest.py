@@ -51,7 +51,7 @@ def site_metadata():
     """
     modeling_params = datamodel.FixedTiltModelingParameters(
         ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
-        irradiance_loss_factor=1, dc_loss_factor=3, ac_loss_factor=0,
+        dc_loss_factor=3, ac_loss_factor=0,
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.SolarPowerPlant(
         name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
