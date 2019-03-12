@@ -81,6 +81,10 @@ class PVModelingParameters:
     temperature_coefficient : float
         The temperature coefficient of DC power in units of 1/C.
         Typically -0.002 to -0.005 per degree C.
+    dc_loss_factor : float
+        Applied to DC current in units of %. 0 = no loss.
+    ac_loss_factor : float
+        Appled to inverter power output in units of %. 0 = no loss.
 
     See Also
     --------
@@ -90,6 +94,8 @@ class PVModelingParameters:
     ac_capacity: float
     dc_capacity: float
     temperature_coefficient: float
+    dc_loss_factor: float
+    ac_loss_factor: float
 
 
 @dataclass(frozen=True)
