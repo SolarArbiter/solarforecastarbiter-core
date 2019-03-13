@@ -78,6 +78,10 @@ def system_tilt_azimuth_aoi(system, solar_position):
     Returns
     -------
     surface_tilt, surface_azimuth, aoi
+
+    Raises
+    ------
+    TypeError if system.modeling_parameters is invalid.
     """
     solar_zenith = solar_position['apparent_zenith']
     solar_azimuth = solar_position['azimuth']
