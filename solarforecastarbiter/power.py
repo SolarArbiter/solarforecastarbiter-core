@@ -1,6 +1,14 @@
 """
 Calculate AC power and modeling intermediates from system metadata,
 times, and weather data.
+
+Steps are:
+
+1. Calculate solar position using solar_position
+2. If not already known, calculate 3 irradiance components from measured
+   GHI using irradiance_components or modeled clear sky using clearsky.
+3. calculate_poa_effective
+4. calculate_power
 """
 
 import pvlib
