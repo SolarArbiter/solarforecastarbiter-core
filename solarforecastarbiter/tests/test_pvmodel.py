@@ -1,4 +1,4 @@
-from solarforecastarbiter import power
+from solarforecastarbiter import pvmodel
 
 
 def test_solarposition():

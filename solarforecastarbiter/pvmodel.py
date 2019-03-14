@@ -17,9 +17,26 @@ from solarforecastarbiter import datamodel
 
 
 def solar_position(site, times):
-    """Wraps :func:`pvlib.solarposition.spa_python`"""
-    solpos = pvlib.solarposition.spa_python(times, site.latitude,
-                                            site.longitude)
+    """
+    Calculates solar position using pvlib's implementation of NREL SPA.
+
+    Parameters
+    ----------
+    site : datamodel.Site
+    times : pd.DatetimeIndex
+
+    Returns
+    -------
+    solar_position : pd.DataFrame
+        The DataFrame will have the following columns: apparent_zenith
+        (degrees), zenith (degrees), apparent_elevation (degrees),
+        elevation (degrees), azimuth (degrees),
+        equation_of_time (minutes).
+    """
+    solpos = pvlib.solarposition.get_solarposition(times, site.latitude,
+                                                   site.longitude,
+                                                   altitude=site.elevation,
+                                                   method='nrel_numpy')
     return solpos
 
 
@@ -156,9 +173,24 @@ def calculate_poa_effective(system, solar_position, irradiance):
 
 
 def calculate_power(system, poa_effective, temp_air=20, wind_speed=1):
-    temps = pvlib.pvsystem.sapm_celltemp(poa_effective,
-                                         wind_speed, temp_air)
-    dc = pvlib.pvsystem.pvwatts_dc(poa_effective, temps['temp_cell'],
+    """
+    Calcuate AC power from system metadata, plane of array irradiance,
+    and weather data using the PVWatts model.
+
+    Parameters
+    ----------
+    system : datamodel.SolarPowerPlant
+    poa_effective : pd.Series
+    temp_air : pd.Series
+    wind_speed : pd.Series
+
+    Returns
+    -------
+    ac_power : pd.Series
+    """
+    pvtemps = pvlib.pvsystem.sapm_celltemp(poa_effective,
+                                           wind_speed, temp_air)
+    dc = pvlib.pvsystem.pvwatts_dc(poa_effective, pvtemps['temp_cell'],
                                    system.modeling_parameters.dc_capacity)
     dc *= (1 - system.modeling_parameters.dc_loss_factor / 100)
     ac = pvlib.pvsystem.pvwatts_ac(dc, system.modeling_parameters.dc_capacity)
