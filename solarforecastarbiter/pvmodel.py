@@ -9,6 +9,8 @@ Steps are:
    GHI using irradiance_components or modeled clear sky using clearsky.
 3. calculate_poa_effective
 4. calculate_power
+
+See :py:func:`ghi_to_power` and :py:func:`ghi_dni_dhi_to_power`
 """
 
 import pvlib
@@ -199,6 +201,20 @@ def calculate_power(system, poa_effective, temp_air=20, wind_speed=1):
 
 
 def ghi_to_power(system, ghi, temp_air=20, wind_speed=1):
+    """
+    Calcuate AC power from system metadata and ghi.
+
+    Parameters
+    ----------
+    system : datamodel.SolarPowerPlant
+    ghi : pd.Series
+    temp_air : pd.Series
+    wind_speed : pd.Series
+
+    Returns
+    -------
+    ac_power : pd.Series
+    """
     solar_position = calculate_solar_position(system, ghi.index)
     dni, dhi = complete_irradiance_components(ghi, solar_position['zenith'])
     poa_effective = calculate_poa_effective(
@@ -210,6 +226,22 @@ def ghi_to_power(system, ghi, temp_air=20, wind_speed=1):
 
 
 def ghi_dni_dhi_to_power(system, ghi, dni, dhi, temp_air=20, wind_speed=1):
+    """
+    Calcuate AC power from system metadata and ghi, dni, dhi.
+
+    Parameters
+    ----------
+    system : datamodel.SolarPowerPlant
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+    temp_air : pd.Series
+    wind_speed : pd.Series
+
+    Returns
+    -------
+    ac_power : pd.Series
+    """
     solar_position = calculate_solar_position(system, ghi.index)
     poa_effective = calculate_poa_effective(
         system, solar_position['apparent_zenith'], solar_position['azimuth'],
@@ -221,6 +253,27 @@ def ghi_dni_dhi_to_power(system, ghi, dni, dhi, temp_air=20, wind_speed=1):
 
 def _ghi_dni_dhi_to_power(system, apparent_zenith, azimuth, ghi, dni, dhi,
                           temp_air=20, wind_speed=1):
+    """
+    Calcuate AC power from system metadata, solar position, and
+    ghi, dni, dhi.
+
+    Parameters
+    ----------
+    system : datamodel.SolarPowerPlant
+    apparent_zenith : pd.Series
+        Solar apparent zenith
+    azimuth : pd.Series
+        Solar azimuth
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+    temp_air : pd.Series
+    wind_speed : pd.Series
+
+    Returns
+    -------
+    ac_power : pd.Series
+    """
     poa_effective = calculate_poa_effective(system, apparent_zenith, azimuth,
                                             ghi, dni, dhi)
     ac = calculate_power(system, poa_effective, temp_air=temp_air,
