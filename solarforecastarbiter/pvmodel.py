@@ -16,7 +16,7 @@ import pvlib
 from solarforecastarbiter import datamodel
 
 
-def solar_position(site, times):
+def calculate_solar_position(site, times):
     """
     Calculates solar position using pvlib's implementation of NREL SPA.
 
@@ -40,7 +40,7 @@ def solar_position(site, times):
     return solpos
 
 
-def irradiance_components(ghi, solar_position):
+def complete_irradiance_components(ghi, solar_position):
     """
     Uses the Erbs model to calculate DNI and DHI from GHI.
 
@@ -61,7 +61,7 @@ def irradiance_components(ghi, solar_position):
     return irrads
 
 
-def clearsky(site, solar_position):
+def calculate_clearsky(site, solar_position):
     """
     Calculates clear sky irradiance using the Ineichen model and the SoDa
     climatological turbidity data set.
@@ -90,7 +90,7 @@ def clearsky(site, solar_position):
     return cs
 
 
-def system_tilt_azimuth_aoi(system, solar_position):
+def _system_tilt_azimuth_aoi(system, solar_position):
     """
     Lookup or calculate system surface tilt, surface azimuth, and AOI
     for fixed tilt or single axis tracking systems.
@@ -151,7 +151,7 @@ def calculate_poa_effective(system, solar_position, irradiance):
     -------
     poa_effective : pd.Series
     """
-    surface_tilt, surface_azimuth, aoi = system_tilt_azimuth_aoi(
+    surface_tilt, surface_azimuth, aoi = _system_tilt_azimuth_aoi(
         system, solar_position)
 
     dni_extra = pvlib.irradiance.get_extra_radiation(solar_position.index)
