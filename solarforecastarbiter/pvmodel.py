@@ -40,28 +40,25 @@ def calculate_solar_position(site, times):
     return solpos
 
 
-def complete_irradiance_components(ghi, solar_position):
+def complete_irradiance_components(ghi, zenith):
     """
     Uses the Erbs model to calculate DNI and DHI from GHI.
 
     Parameters
     ----------
     ghi : pd.Series
-    solar_position : pd.DataFrame
+    zenith : pd.Series
+        Solar zenith (not-refraction corrected)
 
     Returns
     -------
-    irrads : pd.DataFrame
-        Columns are ghi, dni, dhi.
+    dni : pd.Series, dhi : pd.Series
     """
-    dni_dhi = pvlib.irradiance.erbs(ghi, solar_position['zenith'], ghi.index)
-    dni_dhi['ghi'] = ghi
-    # erbs also returns kt, so get subset of what we care about
-    irrads = dni_dhi[['ghi', 'dni', 'dhi']]
-    return irrads
+    dni_dhi = pvlib.irradiance.erbs(ghi, zenith, ghi.index)
+    return dni_dhi['dni'], dni_dhi['dhi']
 
 
-def calculate_clearsky(site, solar_position):
+def calculate_clearsky(site, apparent_zenith):
     """
     Calculates clear sky irradiance using the Ineichen model and the SoDa
     climatological turbidity data set.
@@ -69,28 +66,28 @@ def calculate_clearsky(site, solar_position):
     Parameters
     ----------
     site : datamodel.Site
-    solar_position : pd.DataFrame
+    apparent_zenith : pd.Series
+        Solar apparent zenith
 
     Returns
     -------
     cs : pd.DataFrame
         Columns are ghi, dni, dhi.
     """
-    airmass = pvlib.atmosphere.get_relative_airmass(
-        solar_position['apparent_zenith'])
+    airmass = pvlib.atmosphere.get_relative_airmass(apparent_zenith)
     pressure = pvlib.atmosphere.alt2pres(site.elevation)
     am_abs = pvlib.atmosphere.get_absolute_airmass(airmass, pressure)
-    tl = pvlib.clearsky.lookup_linke_turbidity(solar_position.index,
+    tl = pvlib.clearsky.lookup_linke_turbidity(apparent_zenith.index,
                                                site.latitude,
                                                site.longitude)
-    dni_extra = pvlib.irradiance.get_extra_radiation(solar_position.index)
-    cs = pvlib.clearsky.ineichen(solar_position['apparent_zenith'], am_abs, tl,
+    dni_extra = pvlib.irradiance.get_extra_radiation(apparent_zenith.index)
+    cs = pvlib.clearsky.ineichen(apparent_zenith, am_abs, tl,
                                  dni_extra=dni_extra,
                                  altitude=site.elevation)
     return cs
 
 
-def _system_tilt_azimuth_aoi(system, solar_position):
+def _system_tilt_azimuth_aoi(system, apparent_zenith, azimuth):
     """
     Lookup or calculate system surface tilt, surface azimuth, and AOI
     for fixed tilt or single axis tracking systems.
@@ -98,18 +95,21 @@ def _system_tilt_azimuth_aoi(system, solar_position):
     Parameters
     ----------
     system : datamodel.SolarPowerPlant
-    solar_position : pd.DataFrame
+    apparent_zenith : pd.Series
+        Solar apparent zenith
+    azimuth : pd.Series
+        Solar azimuth
 
     Returns
     -------
-    surface_tilt, surface_azimuth, aoi
+    surface_tilt : pd.Series, surface_azimuth : pd.Series, aoi : pd.Series
 
     Raises
     ------
     TypeError if system.modeling_parameters is invalid.
     """
-    solar_zenith = solar_position['apparent_zenith']
-    solar_azimuth = solar_position['azimuth']
+    solar_zenith = apparent_zenith
+    solar_azimuth = azimuth
     if isinstance(system.modeling_parameters,
                   datamodel.FixedTiltModelingParameters):
         surface_tilt = system.modeling_parameters.surface_tilt
@@ -136,7 +136,7 @@ def _system_tilt_azimuth_aoi(system, solar_position):
     return surface_tilt, surface_azimuth, aoi
 
 
-def calculate_poa_effective(system, solar_position, irradiance):
+def calculate_poa_effective(system, apparent_zenith, azimuth, ghi, dni, dhi):
     """
     Calculate effective plane of array irradiance from system metadata,
     solar position, and irradiance components. Accounts for AOI losses.
@@ -152,21 +152,20 @@ def calculate_poa_effective(system, solar_position, irradiance):
     poa_effective : pd.Series
     """
     surface_tilt, surface_azimuth, aoi = _system_tilt_azimuth_aoi(
-        system, solar_position)
+        system, apparent_zenith, azimuth)
 
-    dni_extra = pvlib.irradiance.get_extra_radiation(solar_position.index)
+    dni_extra = pvlib.irradiance.get_extra_radiation(apparent_zenith.index)
 
     poa_sky_diffuse = pvlib.irradiance.haydavies(
         surface_tilt, surface_azimuth,
-        irradiance['dhi'], irradiance['dni'], dni_extra,
-        solar_zenith=solar_position['apparent_zenith'],
-        solar_azimuth=solar_position['azimuth'],
+        dhi, dni, dni_extra,
+        solar_zenith=apparent_zenith,
+        solar_azimuth=azimuth,
         dni_extra=dni_extra, model='haydavies')
     # assumes albedo = 0.25
-    poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(surface_tilt,
-                                                             irradiance['ghi'])
+    poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(surface_tilt, ghi)
     aoi_modifier = pvlib.pvsystem.physicaliam(aoi)
-    beam_component = irradiance['dni'] * pvlib.tools.cosd(aoi)
+    beam_component = dni * pvlib.tools.cosd(aoi)
     beam_component = beam_component.clip(lower=0) * aoi_modifier
     poa_effective = beam_component + poa_sky_diffuse + poa_ground_diffuse
     return poa_effective
@@ -196,4 +195,34 @@ def calculate_power(system, poa_effective, temp_air=20, wind_speed=1):
     ac = pvlib.pvsystem.pvwatts_ac(dc, system.modeling_parameters.dc_capacity)
     ac = ac.clip(upper=system.modeling_parameters.ac_capacity)
     ac *= (1 - system.modeling_parameters.ac_loss_factor / 100)
+    return ac
+
+
+def ghi_to_power(system, ghi, temp_air=20, wind_speed=1):
+    solar_position = calculate_solar_position(system, ghi.index)
+    dni, dhi = complete_irradiance_components(ghi, solar_position['zenith'])
+    poa_effective = calculate_poa_effective(
+        system, solar_position['apparent_zenith'], solar_position['azimuth'],
+        ghi, dni, dhi)
+    ac = calculate_power(system, poa_effective, temp_air=temp_air,
+                         wind_speed=wind_speed)
+    return ac
+
+
+def ghi_dni_dhi_to_power(system, ghi, dni, dhi, temp_air=20, wind_speed=1):
+    solar_position = calculate_solar_position(system, ghi.index)
+    poa_effective = calculate_poa_effective(
+        system, solar_position['apparent_zenith'], solar_position['azimuth'],
+        ghi, dni, dhi)
+    ac = calculate_power(system, poa_effective, temp_air=temp_air,
+                         wind_speed=wind_speed)
+    return ac
+
+
+def _ghi_dni_dhi_to_power(system, apparent_zenith, azimuth, ghi, dni, dhi,
+                          temp_air=20, wind_speed=1):
+    poa_effective = calculate_poa_effective(system, apparent_zenith, azimuth,
+                                            ghi, dni, dhi)
+    ac = calculate_power(system, poa_effective, temp_air=temp_air,
+                         wind_speed=wind_speed)
     return ac
