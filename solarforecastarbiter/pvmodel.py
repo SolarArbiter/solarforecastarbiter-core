@@ -13,6 +13,8 @@ Steps are:
 Steps 3 and 4 are bundled in :py:func:`irradiance_to_power`
 """
 
+from functools import partial
+
 import pvlib
 
 from solarforecastarbiter import datamodel
@@ -93,13 +95,14 @@ def calculate_clearsky(latitude, longitude, elevation, apparent_zenith):
     return cs
 
 
-def _system_tilt_azimuth_aoi(system, apparent_zenith, azimuth):
+def _system_tilt_azimuth_aoi(modeling_parameters, apparent_zenith, azimuth):
     """
-    Unpack system attributes into function calls.
+    Unpack modeling parameters attributes into function calls.
 
     Parameters
     ----------
-    system : datamodel.SolarPowerPlant
+    modeling_parameters : datamodel.FixedTiltModelingParameters or
+                          datamodel.SingleAxisModelingParameters
     apparent_zenith : pd.Series
         Solar apparent zenith
     azimuth : pd.Series
@@ -111,29 +114,71 @@ def _system_tilt_azimuth_aoi(system, apparent_zenith, azimuth):
 
     Raises
     ------
-    TypeError if system.modeling_parameters is invalid.
+    TypeError if modeling_parameters is invalid.
     """
-    if isinstance(system.modeling_parameters,
+    if isinstance(modeling_parameters,
                   datamodel.FixedTiltModelingParameters):
         return _aoi_fixed(
-            system.modeling_parameters.surface_tilt,
-            system.modeling_parameters.surface_azimuth,
+            modeling_parameters.surface_tilt,
+            modeling_parameters.surface_azimuth,
             apparent_zenith, azimuth
         )
-    elif isinstance(system.modeling_parameters,
+    elif isinstance(modeling_parameters,
                     datamodel.SingleAxisModelingParameters):
         return _aoi_tracking(
-            system.modeling_parameters.axis_tilt,
-            system.modeling_parameters.axis_azimuth,
-            system.modeling_parameters.maximum_rotation_angle,
-            system.modeling_parameters.backtrack,
-            system.modeling_parameters.ground_coverage_ratio,
+            modeling_parameters.axis_tilt,
+            modeling_parameters.axis_azimuth,
+            modeling_parameters.maximum_rotation_angle,
+            modeling_parameters.backtrack,
+            modeling_parameters.ground_coverage_ratio,
             apparent_zenith,
             azimuth
         )
     else:
-        raise TypeError('Invalid system.modeling_parameters type %s' %
-                        type(system.modeling_parameters))
+        raise TypeError('Invalid modeling_parameters type %s' %
+                        type(modeling_parameters))
+
+
+def aoi_func_factory(modeling_parameters):
+    """
+    Create a function to calculate AOI, surface tilt, and surface
+    azimuth from system modeling_parameters.
+
+    Parameters
+    ----------
+    modeling_parameters : datamodel.FixedTiltModelingParameters or
+                          datamodel.SingleAxisModelingParameters
+
+    Returns
+    -------
+    function
+        Function that accepts two arguments (apparent_zenith, azimuth)
+        and returns three series (surface_tilt, surface_azimuth, aoi)
+
+    Raises
+    ------
+    TypeError if modeling_parameters is invalid.
+    """
+    if isinstance(modeling_parameters,
+                  datamodel.FixedTiltModelingParameters):
+        return partial(
+            _aoi_fixed,
+            modeling_parameters.surface_tilt,
+            modeling_parameters.surface_azimuth
+        )
+    elif isinstance(modeling_parameters,
+                    datamodel.SingleAxisModelingParameters):
+        return partial(
+            _aoi_tracking,
+            modeling_parameters.axis_tilt,
+            modeling_parameters.axis_azimuth,
+            modeling_parameters.maximum_rotation_angle,
+            modeling_parameters.backtrack,
+            modeling_parameters.ground_coverage_ratio
+        )
+    else:
+        raise TypeError('Invalid modeling_parameters type %s' %
+                        type(modeling_parameters))
 
 
 def _aoi_fixed(surface_tilt, surface_azimuth, apparent_zenith, azimuth):
@@ -234,6 +279,46 @@ def calculate_poa_effective(surface_tilt, surface_azimuth, aoi,
     return poa_effective
 
 
+def calculate_poa_effective_func(aoi_func, apparent_zenith, azimuth,
+                                 ghi, dni, dhi):
+    """
+    Calculate effective plane of array irradiance from system metadata,
+    solar position, and irradiance components. Accounts for AOI losses.
+
+    Parameters
+    ----------
+    aoi_func : function
+        Function with arguments (apparent_zenith, azimuth) and returns
+        surface_tilt, surface_azimuth, aoi
+    apparent_zenith : pd.Series
+        Solar apparent zenith
+    azimuth : pd.Series
+        Solar azimuth
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+
+    Returns
+    -------
+    poa_effective : pd.Series
+    """
+    surface_tilt, surface_azimuth, aoi = aoi_func(apparent_zenith, azimuth)
+    dni_extra = pvlib.irradiance.get_extra_radiation(apparent_zenith.index)
+    poa_sky_diffuse = pvlib.irradiance.haydavies(
+        surface_tilt, surface_azimuth,
+        dhi, dni, dni_extra,
+        solar_zenith=apparent_zenith,
+        solar_azimuth=azimuth,
+        dni_extra=dni_extra, model='haydavies')
+    # assumes albedo = 0.25
+    poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(surface_tilt, ghi)
+    aoi_modifier = pvlib.pvsystem.physicaliam(aoi)
+    beam_component = dni * pvlib.tools.cosd(aoi)
+    beam_component = beam_component.clip(lower=0) * aoi_modifier
+    poa_effective = beam_component + poa_sky_diffuse + poa_ground_diffuse
+    return poa_effective
+
+
 def calculate_power(dc_capacity, dc_loss_factor, ac_capacity, ac_loss_factor,
                     poa_effective, temp_air=20, wind_speed=1):
     """
@@ -247,8 +332,8 @@ def calculate_power(dc_capacity, dc_loss_factor, ac_capacity, ac_loss_factor,
     ac_capacity : float
     ac_loss_factor : float
     poa_effective : pd.Series
-    temp_air : pd.Series
-    wind_speed : pd.Series
+    temp_air : pd.Series, default 20
+    wind_speed : pd.Series, default 1
 
     Returns
     -------
@@ -265,15 +350,16 @@ def calculate_power(dc_capacity, dc_loss_factor, ac_capacity, ac_loss_factor,
     return ac
 
 
-def irradiance_to_power(system, apparent_zenith, azimuth, ghi, dni, dhi,
-                        temp_air=20, wind_speed=1):
+def irradiance_to_power(modeling_parameters, apparent_zenith, azimuth, ghi,
+                        dni, dhi, temp_air=20, wind_speed=1):
     """
     Calcuate AC power from system metadata, solar position, and
     ghi, dni, dhi.
 
     Parameters
     ----------
-    system : datamodel.SolarPowerPlant
+    modeling_parameters : datamodel.FixedTiltModelingParameters or
+                          datamodel.SingleAxisModelingParameters
     apparent_zenith : pd.Series
         Solar apparent zenith
     azimuth : pd.Series
@@ -281,23 +367,61 @@ def irradiance_to_power(system, apparent_zenith, azimuth, ghi, dni, dhi,
     ghi : pd.Series
     dni : pd.Series
     dhi : pd.Series
-    temp_air : pd.Series
-    wind_speed : pd.Series
+    temp_air : pd.Series, default 20
+    wind_speed : pd.Series, default 1
 
     Returns
     -------
     ac_power : pd.Series
     """
     surface_tilt, surface_azimuth, aoi = _system_tilt_azimuth_aoi(
-        system, apparent_zenith, azimuth)
+        modeling_parameters, apparent_zenith, azimuth)
     poa_effective = calculate_poa_effective(
         surface_tilt, surface_azimuth, aoi, apparent_zenith, azimuth,
         ghi, dni, dhi)
     ac = calculate_power(
-        system.modeling_parameters.dc_capacity,
-        system.modeling_parameters.dc_loss_factor,
-        system.modeling_parameters.ac_capacity,
-        system.modeling_parameters.ac_loss_factor,
+        modeling_parameters.dc_capacity,
+        modeling_parameters.dc_loss_factor,
+        modeling_parameters.ac_capacity,
+        modeling_parameters.ac_loss_factor,
+        poa_effective,
+        temp_air=temp_air,
+        wind_speed=wind_speed)
+    return ac
+
+
+def irradiance_to_power2(modeling_parameters, apparent_zenith, azimuth, ghi,
+                         dni, dhi, temp_air=20, wind_speed=1):
+    """
+    Calcuate AC power from system metadata, solar position, and
+    ghi, dni, dhi.
+
+    Parameters
+    ----------
+    modeling_parameters : datamodel.FixedTiltModelingParameters or
+                          datamodel.SingleAxisModelingParameters
+    apparent_zenith : pd.Series
+        Solar apparent zenith
+    azimuth : pd.Series
+        Solar azimuth
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+    temp_air : pd.Series, default 20
+    wind_speed : pd.Series, default 1
+
+    Returns
+    -------
+    ac_power : pd.Series
+    """
+    aoi_func = aoi_func_factory(modeling_parameters)
+    poa_effective = calculate_poa_effective_func(
+        aoi_func, apparent_zenith, azimuth, ghi, dni, dhi)
+    ac = calculate_power(
+        modeling_parameters.dc_capacity,
+        modeling_parameters.dc_loss_factor,
+        modeling_parameters.ac_capacity,
+        modeling_parameters.ac_loss_factor,
         poa_effective,
         temp_air=temp_air,
         wind_speed=wind_speed)
