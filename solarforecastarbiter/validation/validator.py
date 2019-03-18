@@ -398,8 +398,7 @@ def check_timestamp_spacing(times):
     if times.size > 1:
         dt = pd.Series(times.round('S').values)
         delta = dt.diff()
-        gaps = set(delta[1:])  # first value is NaT, rest of values are timedeltas
+        gaps = set(delta[1:])  # first value is NaT, rest are timedeltas
         return len(gaps) == 1
     else:
-        return True # singleton DatetimeIndex passes
-
+        return True  # singleton DatetimeIndex passes

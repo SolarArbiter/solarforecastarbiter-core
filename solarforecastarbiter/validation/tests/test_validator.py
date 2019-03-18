@@ -241,4 +241,3 @@ def test_check_timestamp_spacing(times):
     assert validator.check_timestamp_spacing(pd.DatetimeIndex([times[0]]))
     assert validator.check_timestamp_spacing(times[[0, 2]])
     assert not validator.check_timestamp_spacing(times[[0, 2, 3]])
-
