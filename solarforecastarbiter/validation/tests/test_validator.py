@@ -12,17 +12,9 @@ from datetime import datetime
 import pytz
 import pytest
 from solarforecastarbiter.validation import validator
+from solarforecastarbiter.conftest import requires_tables
 import pvlib
 from pvlib.location import Location
-
-
-try:
-    import tables  # NOQA
-    has_tables = True
-except ImportError:
-    has_tables = False
-
-requires_tables = pytest.mark.skipif(not has_tables, reason='requires tables')
 
 
 @pytest.fixture
