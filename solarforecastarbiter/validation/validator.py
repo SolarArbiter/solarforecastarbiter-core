@@ -380,3 +380,29 @@ def check_irradiance_day_night(times, solar_position=None, location=None,
     flags = pd.DataFrame(index=times, data=None, columns=['daytime'])
     flags['daytime'] = _check_limits(solar_position['zenith'], ub=max_zenith)
     return flags
+
+
+def check_timestamp_spacing(times, freq=None):
+    """ Checks for even spacing of times.
+
+    Parameters
+    ----------
+    times : DatetimeIndex
+    freq : string or None, default None
+        resolution of rounding, e.g., '1T' to round to nearest minute
+
+    Returns
+    -------
+    boolean : True if the rounded timestamps are equally spaced
+    """
+
+    if times.size > 1:
+        if freq is not None:
+            dt = pd.Series(times.round(freq).values)
+        else:
+            dt = pd.Series(times.values)
+        delta = dt.diff()
+        gaps = delta[1:].unique()  # first value is NaT, rest are timedeltas
+        return len(gaps) == 1
+    else:
+        return True  # singleton DatetimeIndex passes

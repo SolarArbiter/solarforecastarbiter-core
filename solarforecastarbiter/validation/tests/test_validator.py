@@ -234,3 +234,17 @@ def test_check_irradiance_day_night(location):
     assert_frame_equal(result, expected)
     with pytest.raises(ValueError):
         validator.check_irradiance_day_night(times)
+
+
+def test_check_timestamp_spacing(times):
+    assert validator.check_timestamp_spacing(times)
+    assert validator.check_timestamp_spacing(pd.DatetimeIndex([times[0]]))
+    assert validator.check_timestamp_spacing(times[[0, 2]])
+    assert not validator.check_timestamp_spacing(times[[0, 2, 3]])
+    MST = pytz.timezone('MST')
+    times2 = pd.DatetimeIndex([datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
+                               datetime(2018, 6, 15, 12, 0, 57, tzinfo=MST),
+                               datetime(2018, 6, 15, 12, 2, 13, tzinfo=MST),
+                               datetime(2018, 6, 15, 12, 2, 46, tzinfo=MST)])
+    assert validator.check_timestamp_spacing(times2, freq='1T')
+    assert not validator.check_timestamp_spacing(times2, freq='5S')
