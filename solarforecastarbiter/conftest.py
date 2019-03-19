@@ -104,5 +104,7 @@ def tracking_modeling_parameters():
 
 @pytest.fixture(scope='module',
                 params=['fixed', 'tracking'])
-def modeling_parameters(request):
-    return globals()[request.param + '_modeling_parameters']()
+def modeling_parameters_system_type(request):
+    system_type = request.param
+    modparams = globals()[request.param + '_modeling_parameters']()
+    return modparams, system_type

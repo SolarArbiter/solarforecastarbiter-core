@@ -231,6 +231,9 @@ def calculate_poa_effective_explicit(surface_tilt, surface_azimuth, aoi,
     aoi_modifier = pvlib.pvsystem.physicaliam(aoi)
     beam_effective = dni * aoi_modifier
     poa_effective = beam_effective + poa_sky_diffuse + poa_ground_diffuse
+    # aoi, tilt, azi is not defined for tracking systems
+    # when sun is below horizon. replace nan with 0
+    poa_effective = poa_effective.where(aoi.notna(), other=0.)
     return poa_effective
 
 
@@ -292,6 +295,7 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     dc *= (1 - dc_loss_factor / 100)
     ac = pvlib.pvsystem.pvwatts_ac(dc, dc_capacity, eta_inv_nom=1,
                                    eta_inv_ref=1)
+    ac.loc[dc == 0] = 0  # https://github.com/pvlib/pvlib-python/issues/675
     ac = ac.clip(upper=ac_capacity)
     ac *= (1 - ac_loss_factor / 100)
     return ac
