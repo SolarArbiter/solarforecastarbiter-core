@@ -293,6 +293,7 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     dc = pvlib.pvsystem.pvwatts_dc(poa_effective, pvtemps, dc_capacity,
                                    temperature_coefficient)
     dc *= (1 - dc_loss_factor / 100)
+    # set eta values to turn off clipping in pvwatts_ac
     ac = pvlib.pvsystem.pvwatts_ac(dc, dc_capacity, eta_inv_nom=1,
                                    eta_inv_ref=1)
     ac.loc[dc == 0] = 0  # https://github.com/pvlib/pvlib-python/issues/675
