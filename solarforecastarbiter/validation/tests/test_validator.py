@@ -273,14 +273,15 @@ def test_detect_stale_values():
                                          True, False, False]))
     assert all (res7)
 
+
 def test_detect_interpolation():
     data = [1.0, 1.001, 1.002001, 1.003, 1.004, 1.001001, 1.001001, 1.001001,
             1.2, 1.3, 1.5, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0]
     x = pd.Series(data=data)
     res1 = validator.detect_interpolation(x)
-    assert_series_equal(res1, pd.Series([False, True, True, True, True, True,
-                                         True, True, True, False, False, False,
-                                         True, True, True, True, True, False]))
+    assert_series_equal(res1, pd.Series([True, True, True, True, True, True,
+                                         True, True, False, False, False, True,
+                                         True, True, True, True, False]))
     res2 = validator.detect_interpolation(x, rtol=1e-8, window=3)
     assert_series_equal(res2, pd.Series([False, False, False, False, False,
                                          True, True, True, False, False, False,

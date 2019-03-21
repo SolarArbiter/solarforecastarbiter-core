@@ -433,7 +433,7 @@ def _zero_runs(a):
     return ranges
 
 
-def detect_stale_values(x, rtol=1e-5, window=3):
+def detect_stale_values(x, window=3, rtol=1e-5, atol=0):
     """ Detects stale data.
 
     Data are stale if the relative change in values is less than rtol within
@@ -443,11 +443,13 @@ def detect_stale_values(x, rtol=1e-5, window=3):
     ----------
     x : Series
         data to be processed
-    rtol : float, default 1e-5
-        relative tolerance for detecting a change in data values
     window : int, default 3
         number of consecutive values which, if unchanged, are determined to be
         stale data.
+    rtol : float, default 1e-5
+        relative tolerance for detecting a change in data values
+    atol : float, default 0
+        absolute tolerance for detecting a change in data values
 
     Returns
     -------
@@ -455,8 +457,9 @@ def detect_stale_values(x, rtol=1e-5, window=3):
         True if the value is part of a stale sequence of data
     """
 
-    # find elements close to zero
-    close_to_next = np.isclose(x.values[1:], x.values[:-1], rtol=rtol)
+    # identify pairs of elements that are nearly equal
+    close_to_next = np.isclose(x.values[1:], x.values[:-1], rtol=rtol,
+                               atol=atol)
     runs = _zero_runs(np.logical_not(close_to_next))
     flags = pd.Series(index=x.index, data=False)
     for r in runs:
@@ -465,7 +468,7 @@ def detect_stale_values(x, rtol=1e-5, window=3):
     return flags
 
 
-def detect_interpolation(x, rtol=1e-5, window=3):
+def detect_interpolation(x, window=3, rtol=1e-5):
     """ Detects sequences of data which appear linear.
 
     Sequences are linear if the first difference appears to be constant.
@@ -474,11 +477,11 @@ def detect_interpolation(x, rtol=1e-5, window=3):
     ----------
     x : series
         data to be processed
-    rtol : float, default 1e-5
-        relative tolerance for detecting a change in the first difference
     window : int, default 3
         number of consecutive values that, if the first difference is constant,
         are classified as a linear sequence
+    rtol : float, default 1e-5
+        tolerance relative to max(abs(x)) for a change in first difference
 
     Returns
     -------
@@ -491,11 +494,14 @@ def detect_interpolation(x, rtol=1e-5, window=3):
     """
     if window<3:
         raise ValueError('window set to {}, must be at least 3'.format(window))
+
+    # calculate absolute tolerance
+    atol = rtol * max(abs(x))
     # reduce window by 1 because we're passing the first difference
     # fwd labels left points where difference x(i) - x(i+1) is constant
     # back labels right point where difference x(i+1) - x(i) is constant
     # fwd | back labels both endpoints of an interval with constant differences
-    fwd = detect_stale_values(x.diff(periods=-1), rtol=rtol, window=window-1)
-    back = detect_stale_values(x.diff(periods=1), rtol=rtol, window=window-1)
+    fwd = detect_stale_values(x.diff(periods=-1), window=window-1, atol=atol)
+    back = detect_stale_values(x.diff(periods=1), window=window-1, atol=atol)
     flags = fwd | back
     return flags
