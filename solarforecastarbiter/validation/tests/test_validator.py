@@ -261,8 +261,9 @@ def test_detect_stale_values():
     assert not all(res4)
     assert_series_equal(res5, pd.Series([False, True, True, True, True, False,
                                          False, False, False, False]))
-    assert_series_equal(res6, pd.Series([True, True, True, True, True, True,
-                                         True, False, False]))
+    assert_series_equal(res6, pd.Series(index=x[1:].index,
+                                        data=[True, True, True, True, True,
+                                              True, True, False, False]))
     assert all (res7)
 
 
