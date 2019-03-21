@@ -5,10 +5,12 @@ Created on Fri Feb 15 14:08:20 2019
 @author: cwhanse
 """
 
-from pvlib.tools import cosd
-from pvlib.irradiance import clearsky_index
 import numpy as np
 import pandas as pd
+from math import isclose
+from pvlib.tools import cosd
+from pvlib.irradiance import clearsky_index
+
 
 QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
                 'dhi_ub': {'mult': 0.95, 'exp': 1.2, 'min': 50},
@@ -406,3 +408,59 @@ def check_timestamp_spacing(times, freq=None):
         return len(gaps) == 1
     else:
         return True  # singleton DatetimeIndex passes
+
+
+def _zero_runs(a):
+    """ Finds runs of zeros in a.
+
+    Parameters
+    ----------
+    a : array
+
+
+    Returns
+    -------
+    ranges : array
+        Size Nx2, where ranges[k, 0] is the starting position of the kth run,
+        and ranges[k, 1] is the ending position, i.e., a[start:end] is zero.
+
+    Credit to https://stackoverflow.com/a/24892274/8484669
+    """
+    iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
+    absdiff = np.abs(np.diff(iszero))
+    # Runs start and end where absdiff is 1.
+    ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
+    return ranges
+
+
+def detect_stale_values(x, rtol=1e-5, window=3):
+    """ Detects stale data.
+
+    Data are stale if the relative change in values is less than rtol within
+    window.
+
+    Parameters
+    ----------
+    x : Series
+        data to be scanned
+    rtol : float, default 1e-5
+        relative tolerance for detecting a change in data value
+    window : int, default 3
+        number of consecutive values which, if unchanged, are determined to be
+        stale data.
+
+    Returns
+    -------
+    flags : Series
+        True if value is part of a stale sequence of data
+    """
+
+    # find elements close to zero
+    close_to_next = np.isclose(x.values[:-1], x.values[1:], rtol=rtol)
+    runs = _zero_runs(np.logical_not(close_to_next))
+    flags = pd.Series(index=x.index, data=False)
+    for r in runs:
+        if r[1] - r[0] + 1 >= window:
+            flags[r[0]:r[1]+1] = True
+    return flags
+
