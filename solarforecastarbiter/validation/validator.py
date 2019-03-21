@@ -462,8 +462,8 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=0):
     runs = _zero_runs(np.logical_not(close_to_next))
     flags = pd.Series(index=x.index, data=False)
     for r in runs:
-        if r[1] - r[0] >= window - 1: # -1 because window counts the endpoints
-            flags[r[0]:r[1]+1] = True # label right endpoint
+        if r[1] - r[0] >= window - 1:  # -1 because window counts the endpoints
+            flags[r[0]:r[1]+1] = True  # label right endpoint
     return flags
 
 
@@ -491,7 +491,7 @@ def detect_interpolation(x, window=3, rtol=1e-5):
     ------
         ValueError if window < 3
     """
-    if window<3:
+    if window < 3:
         raise ValueError('window set to {}, must be at least 3'.format(window))
 
     # calculate absolute tolerance

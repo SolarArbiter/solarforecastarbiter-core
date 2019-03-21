@@ -264,7 +264,7 @@ def test_detect_stale_values():
     assert_series_equal(res6, pd.Series(index=x[1:].index,
                                         data=[True, True, True, True, True,
                                               True, True, False, False]))
-    assert all (res7)
+    assert all(res7)
 
 
 def test_detect_interpolation():
