@@ -442,9 +442,9 @@ def detect_stale_values(x, rtol=1e-5, window=3):
     Parameters
     ----------
     x : Series
-        data to be scanned
+        data to be processed
     rtol : float, default 1e-5
-        relative tolerance for detecting a change in data value
+        relative tolerance for detecting a change in data values
     window : int, default 3
         number of consecutive values which, if unchanged, are determined to be
         stale data.
@@ -452,15 +452,50 @@ def detect_stale_values(x, rtol=1e-5, window=3):
     Returns
     -------
     flags : Series
-        True if value is part of a stale sequence of data
+        True if the value is part of a stale sequence of data
     """
 
     # find elements close to zero
-    close_to_next = np.isclose(x.values[:-1], x.values[1:], rtol=rtol)
+    close_to_next = np.isclose(x.values[1:], x.values[:-1], rtol=rtol)
     runs = _zero_runs(np.logical_not(close_to_next))
     flags = pd.Series(index=x.index, data=False)
     for r in runs:
-        if r[1] - r[0] + 1 >= window:
-            flags[r[0]:r[1]+1] = True
+        if r[1] - r[0] >= window - 1: # -1 because window counts the endpoints
+            flags[r[0]:r[1]+1] = True # label right endpoint
     return flags
 
+
+def detect_interpolation(x, rtol=1e-5, window=3):
+    """ Detects sequences of data which appear linear.
+
+    Sequences are linear if the first difference appears to be constant.
+
+    Parameters
+    ----------
+    x : series
+        data to be processed
+    rtol : float, default 1e-5
+        relative tolerance for detecting a change in the first difference
+    window : int, default 3
+        number of consecutive values that, if the first difference is constant,
+        are classified as a linear sequence
+
+    Returns
+    -------
+    flags : Series
+        True if the value is part of a linear sequence
+
+    Raises
+    ------
+        ValueError if window < 3
+    """
+    if window<3:
+        raise ValueError('window set to {}, must be at least 3'.format(window))
+    # reduce window by 1 because we're passing the first difference
+    # fwd labels left points where difference x(i) - x(i+1) is constant
+    # back labels right point where difference x(i+1) - x(i) is constant
+    # fwd | back labels both endpoints of an interval with constant differences
+    fwd = detect_stale_values(x.diff(periods=-1), rtol=rtol, window=window-1)
+    back = detect_stale_values(x.diff(periods=1), rtol=rtol, window=window-1)
+    flags = fwd | back
+    return flags
