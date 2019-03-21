@@ -248,3 +248,22 @@ def test_check_timestamp_spacing(times):
                                datetime(2018, 6, 15, 12, 2, 46, tzinfo=MST)])
     assert validator.check_timestamp_spacing(times2, freq='1T')
     assert not validator.check_timestamp_spacing(times2, freq='5S')
+
+
+def test_detect_stale_values():
+    data = [1.0, 1.001, 1.001, 1.001, 1.001, 1.001001, 1.001, 1.001, 1.2, 1.3]
+    x = pd.Series(data=data)
+    res1 = validator.detect_stale_values(x)
+    res2 = validator.detect_stale_values(x, rtol=1e-8, window=2)
+    res3 = validator.detect_stale_values(x, window=7)
+    res4 = validator.detect_stale_values(x, window=8)
+    res5 = validator.detect_stale_values(x, rtol=1e-8, window=4)
+    assert_series_equal(res1, pd.Series([False, True, True, True, True, True,
+                                         True, True, False, False]))
+    assert_series_equal(res2, pd.Series([False, True, True, True, True, False,
+                                         True, True, False, False]))
+    assert_series_equal(res3, pd.Series([False, True, True, True, True, True,
+                                         True, True, False, False]))
+    assert not all(res4)
+    assert_series_equal(res5, pd.Series([False, True, True, True, True, False,
+                                         False, False, False, False]))
