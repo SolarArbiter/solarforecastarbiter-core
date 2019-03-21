@@ -13,6 +13,15 @@ import pytest
 from solarforecastarbiter import datamodel
 
 
+try:
+    import tables  # NOQA
+    has_tables = True
+except ImportError:
+    has_tables = False
+
+requires_tables = pytest.mark.skipif(not has_tables, reason='requires tables')
+
+
 @pytest.fixture(scope='module', params=[
     pd.DataFrame.from_records(
         [(0, 0),
@@ -83,3 +92,28 @@ def ac_power_forecast_metadata(site_metadata):
         site=site_metadata
     )
     return ac_power_fx_meta
+
+
+def fixed_modeling_parameters():
+    modeling_params = datamodel.FixedTiltModelingParameters(
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
+        dc_loss_factor=3, ac_loss_factor=0,
+        surface_tilt=30, surface_azimuth=180)
+    return modeling_params
+
+
+def tracking_modeling_parameters():
+    modeling_params = datamodel.SingleAxisModelingParameters(
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
+        dc_loss_factor=3, ac_loss_factor=0,
+        axis_tilt=0, axis_azimuth=0, ground_coverage_ratio=2/7,
+        backtrack=True, maximum_rotation_angle=45)
+    return modeling_params
+
+
+@pytest.fixture(scope='module',
+                params=['fixed', 'tracking'])
+def modeling_parameters_system_type(request):
+    system_type = request.param
+    modparams = globals()[request.param + '_modeling_parameters']()
+    return modparams, system_type
