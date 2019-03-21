@@ -7,7 +7,6 @@ Created on Fri Feb 15 14:08:20 2019
 
 import numpy as np
 import pandas as pd
-from math import isclose
 from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
 
