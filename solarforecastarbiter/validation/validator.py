@@ -462,8 +462,7 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     x : Series
         data to be processed
     window : int, default 3
-        number of consecutive values which, if unchanged, are determined to be
-        stale data.
+        number of consecutive values which, if unchanged, indicates stale data
     rtol : float, default 1e-5
         relative tolerance for detecting a change in data values
     atol : float, default 1e-8
@@ -499,10 +498,10 @@ def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     x : series
         data to be processed
     window : int, default 3
-        number of consecutive values that, if the first difference is constant,
+        number of sequential values that, if the first difference is constant,
         are classified as a linear sequence
     rtol : float, default 1e-5
-        tolerance relative to max(abs(x)) for a change in first difference
+        tolerance relative to max(abs(x.diff()) for detecting a change
     atol : float, default 1e-8
         absolute tolerance for detecting a change in first difference
 

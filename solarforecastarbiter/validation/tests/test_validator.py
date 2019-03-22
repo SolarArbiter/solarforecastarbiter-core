@@ -312,7 +312,7 @@ def test_detect_interpolation():
     data = [0.0, 0.0, 0.0, -0.0, 0.00001, 0.000010001, -0.00000001]
     y = pd.Series(data=data)
     res = validator.detect_interpolation(y, atol=1e-5)
-    assert_series_equal(res, pd.Series([False, False, True, True, True, False,
+    assert_series_equal(res, pd.Series([False, False, True, True, True, True,
                                         False]))
     res = validator.detect_stale_values(y, atol=1e-4)
     assert_series_equal(res, pd.Series([False, False, True, True, True, True,
