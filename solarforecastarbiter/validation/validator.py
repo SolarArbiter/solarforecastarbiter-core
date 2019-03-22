@@ -7,7 +7,6 @@ Created on Fri Feb 15 14:08:20 2019
 
 import numpy as np
 import pandas as pd
-from functools import partial
 from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
 
@@ -410,29 +409,6 @@ def check_timestamp_spacing(times, freq=None):
         return True  # singleton DatetimeIndex passes
 
 
-#def _zero_runs(a):
-#    """ Finds runs of zeros in a.
-#
-#    Parameters
-#    ----------
-#    a : array
-#
-#
-#    Returns
-#    -------
-#    ranges : array
-#        Size Nx2, where ranges[k, 0] is the starting position of the kth run,
-#        and ranges[k, 1] is the ending position, i.e., a[start:end] is zero.
-#
-#    Credit to https://stackoverflow.com/a/24892274/8484669
-#    """
-#    iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
-#    absdiff = np.abs(np.diff(iszero))
-#    # Runs start and end where absdiff is 1.
-#    ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
-#    return ranges
-
-
 def _all_close_to_first(x, rtol=1e-5, atol=1e-8):
     """ Returns True if all values in x are close to x[0].
 
@@ -481,8 +457,9 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     if window < 2:
         raise ValueError('window set to {}, must be at least 2'.format(window))
 
-    flags = x.rolling(window=window).apply(_all_close_to_first, raw=True,
-        kwargs={'rtol': rtol, 'atol': atol}).fillna(False).astype(bool)
+    flags = x.rolling(window=window).apply(
+        _all_close_to_first, raw=True, kwargs={'rtol': rtol, 'atol': atol}
+        ).fillna(False).astype(bool)
     return flags
 
 
