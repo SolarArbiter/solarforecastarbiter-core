@@ -494,8 +494,6 @@ def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     if window < 3:
         raise ValueError('window set to {}, must be at least 3'.format(window))
 
-    # calculate absolute tolerance
-#    atol = rtol * max(abs(x))
     # reduce window by 1 because we're passing the first difference
     flags = detect_stale_values(x.diff(periods=1), window=window-1, rtol=rtol,
                                 atol=atol)
