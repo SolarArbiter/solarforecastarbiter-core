@@ -7,7 +7,6 @@ Created on Fri Feb 15 14:08:20 2019
 
 import numpy as np
 import pandas as pd
-from math import isclose
 from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
 
@@ -410,57 +409,92 @@ def check_timestamp_spacing(times, freq=None):
         return True  # singleton DatetimeIndex passes
 
 
-def _zero_runs(a):
-    """ Finds runs of zeros in a.
+def _all_close_to_first(x, rtol=1e-5, atol=1e-8):
+    """ Returns True if all values in x are close to x[0].
 
     Parameters
     ----------
-    a : array
-
+    x : array
+    rtol : float, default 1e-5
+        relative tolerance for detecting a change in data values
+    atol : float, default 1e-8
+        absolute tolerance for detecting a change in data values
 
     Returns
     -------
-    ranges : array
-        Size Nx2, where ranges[k, 0] is the starting position of the kth run,
-        and ranges[k, 1] is the ending position, i.e., a[start:end] is zero.
-
-    Credit to https://stackoverflow.com/a/24892274/8484669
+    Boolean
     """
-    iszero = np.concatenate(([0], np.equal(a, 0).view(np.int8), [0]))
-    absdiff = np.abs(np.diff(iszero))
-    # Runs start and end where absdiff is 1.
-    ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
-    return ranges
+    return np.allclose(a=x, b=x[0], rtol=rtol, atol=atol)
 
 
-def detect_stale_values(x, rtol=1e-5, window=3):
+def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     """ Detects stale data.
 
-    Data are stale if the relative change in values is less than rtol within
-    window.
+    For a window of length N, the last value (index N-1) is considered stale
+    if all values in the window are close to the first value (index 0).
 
     Parameters
     ----------
     x : Series
-        data to be scanned
-    rtol : float, default 1e-5
-        relative tolerance for detecting a change in data value
+        data to be processed
     window : int, default 3
-        number of consecutive values which, if unchanged, are determined to be
-        stale data.
+        number of consecutive values which, if unchanged, indicates stale data
+    rtol : float, default 1e-5
+        relative tolerance for detecting a change in data values
+    atol : float, default 1e-8
+        absolute tolerance for detecting a change in data values
+
+    Parameters rtol and atol have the same meaning as in numpy.allclose
 
     Returns
     -------
     flags : Series
-        True if value is part of a stale sequence of data
+        True if the value is part of a stale sequence of data
+    Raises
+    ------
+        ValueError if window < 2
     """
+    if window < 2:
+        raise ValueError('window set to {}, must be at least 2'.format(window))
 
-    # find elements close to zero
-    close_to_next = np.isclose(x.values[:-1], x.values[1:], rtol=rtol)
-    runs = _zero_runs(np.logical_not(close_to_next))
-    flags = pd.Series(index=x.index, data=False)
-    for r in runs:
-        if r[1] - r[0] + 1 >= window:
-            flags[r[0]:r[1]+1] = True
+    flags = x.rolling(window=window).apply(
+        _all_close_to_first, raw=True, kwargs={'rtol': rtol, 'atol': atol}
+        ).fillna(False).astype(bool)
     return flags
 
+
+def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
+    """ Detects sequences of data which appear linear.
+
+    Sequences are linear if the first difference appears to be constant.
+    For a window of length N, the last value (index N-1) is flagged
+    if all values in the window appear to be a line segment.
+
+    Parameters
+    ----------
+    x : series
+        data to be processed
+    window : int, default 3
+        number of sequential values that, if the first difference is constant,
+        are classified as a linear sequence
+    rtol : float, default 1e-5
+        tolerance relative to max(abs(x.diff()) for detecting a change
+    atol : float, default 1e-8
+        absolute tolerance for detecting a change in first difference
+
+    Returns
+    -------
+    flags : Series
+        True if the value is part of a linear sequence
+
+    Raises
+    ------
+        ValueError if window < 3
+    """
+    if window < 3:
+        raise ValueError('window set to {}, must be at least 3'.format(window))
+
+    # reduce window by 1 because we're passing the first difference
+    flags = detect_stale_values(x.diff(periods=1), window=window-1, rtol=rtol,
+                                atol=atol)
+    return flags
