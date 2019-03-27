@@ -2,8 +2,6 @@
 Functions for forecasting.
 """
 
-import pandas as pd
-
 from solarforecastarbiter import pvmodel
 
 # some functions originally implemented in pvlib-python.
@@ -43,10 +41,6 @@ def cloud_cover_to_ghi_linear(cloud_cover, ghi_clear, offset=35):
     return ghi
 
 
-def interpolate_to(weather, freq='15min'):
-    return weather.resample(freq).interpolate()
-
-
 def cloud_cover_to_irradiance_clearsky_scaling(cloud_cover, ghi_clear,
                                                solar_zenith):
     """
@@ -68,6 +62,46 @@ def cloud_cover_to_irradiance_clearsky_scaling(cloud_cover, ghi_clear,
     """
     ghi = cloud_cover_to_ghi_linear(cloud_cover, ghi_clear)
     dni, dhi = pvmodel.complete_irradiance_components(ghi, solar_zenith)
+    return ghi, dni, dhi
+
+
+def cloud_cover_to_irradiance_clearsky_scaling_solpos_func(
+        latitude, longitude, elevation, cloud_cover, solar_position_func):
+    """
+    Estimates irradiance from cloud cover in the following steps:
+
+    1. Calculate solar position for the site.
+    2. Determine clear sky GHI using Ineichen model and climatological
+       turbidity.
+    3. Estimate cloudy sky GHI using a function of cloud_cover and
+       ghi_clear: :py:func:`cloud_cover_to_ghi_linear`
+    4. Estimate cloudy sky DNI and DHI using the Erbs model.
+
+    Don't use this function if you already have solar position.
+
+    Parameters
+    ----------
+    latitude : float
+    longitude : float
+    elevation : float
+    cloud_cover : Series
+        Cloud cover in %.
+    solar_position_func : function
+
+    Returns
+    -------
+    ghi : pd.Series, dni : pd.Series, dhi : pd.Series
+
+    See also
+    --------
+    cloud_cover_to_irradiance_clearsky_scaling
+    """
+    solar_position = solar_position_func(
+        latitude, longitude, elevation, cloud_cover.index)
+    cs = pvmodel.calculate_clearsky(latitude, longitude, elevation,
+                                    solar_position['apparent_zenith'])
+    ghi, dni, dhi = cloud_cover_to_irradiance_clearsky_scaling(
+        cloud_cover, cs['ghi'], solar_position['zenith'])
     return ghi, dni, dhi
 
 
@@ -108,44 +142,29 @@ def cloud_cover_to_irradiance_clearsky_scaling_site(site, cloud_cover):
     return ghi, dni, dhi
 
 
-def subhourly_all_to_subhourly(weather):
-    if weather.freq <= pd.Timedelta('15min'):
-        # nothing to do here
-        return weather
-    else:
-        return interpolate_to(weather)
+def resample_args(*args, freq='1h'):
+    resampled_args = [
+        arg.resample(freq).mean()
+        for arg in args if arg is not None]
+    return resampled_args
 
 
-def subhourly_ghi_to_subhourly(weather, zenith):
-    weather = subhourly_all_to_subhourly(weather)
-    dni, dhi = pvmodel.complete_irradiance_components(weather['ghi'], zenith)
-    weather['dni'] = dni
-    weather['dhi'] = dhi
-    return weather
+def interpolate_args(*args, freq='15min'):
+    # could add how kwarg to resample_args and lookup method with
+    # getattr but this seems much more clear
+    resampled_args = [
+        arg.resample(freq).interpolate()
+        for arg in args if arg is not None]
+    return resampled_args
 
 
-def hourly_ghi_to_hourly():
-    raise NotImplementedError
+def slice_args(*args, start, end):
+    resampled_args = [arg.iloc[start:end] for arg in args if arg is not None]
+    return resampled_args
 
 
-def hourly_ghi_to_subhourly():
-    raise NotImplementedError
-
-
-def hourly_cloud_cover_to_hourly():
-    raise NotImplementedError
-
-
-def hourly_cloud_cover_to_subhourly():
-    raise NotImplementedError
-
-
-def mixed_intervals_cloud_cover_to_hourly():
-    raise NotImplementedError
-
-
-def mixed_intervals_cloud_cover_to_subhourly():
-    raise NotImplementedError
+def interpolate_to(weather, freq='15min'):
+    return weather.resample(freq).interpolate()
 
 
 def unmix_intervals():
