@@ -143,19 +143,39 @@ def cloud_cover_to_irradiance_clearsky_scaling_site(site, cloud_cover):
 
 
 def resample_args(*args, freq='1h'):
-    resampled_args = [
-        arg.resample(freq).mean()
-        for arg in args if arg is not None]
-    return resampled_args
+    # this one uses map for fun
+    def f(arg):
+        if arg is None:
+            return None
+        else:
+            return arg.resample(freq).mean()
+    return list(map(f, args))
+
+
+def resample(arg, freq='1h'):
+    if arg is None:
+        return None
+    else:
+        return arg.resample(freq).mean()
 
 
 def interpolate_args(*args, freq='15min'):
     # could add how kwarg to resample_args and lookup method with
     # getattr but this seems much more clear
+    # this one uses a list comprehension for different fun
     resampled_args = [
         arg.resample(freq).interpolate()
         for arg in args if arg is not None]
     return resampled_args
+
+
+def interpolate(arg, freq='15min'):
+    # could add how kwarg to resample and lookup method with
+    # getattr but this seems much more clear
+    if arg is None:
+        return None
+    else:
+        return arg.resample(freq).interpolate()
 
 
 def slice_args(*args, start, end):
