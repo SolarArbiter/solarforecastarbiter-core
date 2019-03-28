@@ -1,21 +1,33 @@
 """
 Make benchmark irradiance and power forecasts.
 """
-from inspect import signature
 
 from solarforecastarbiter import datamodel, pvmodel
 
 
-def run(site, model):
+def run(site, model, init_time, start, end):
     """
     Calculate benchmark irradiance and power forecasts for a site.
 
     The meaning of the timestamps (instantaneous or interval average)
     is determined by the model processing function.
 
+    It's currently the user's job to determine time parameters that
+    correspond to a particular Forecast Evaluation Time Series.
+
     Parameters
     ----------
     site : datamodel.Site
+    model : function
+        Model loading and processing function.
+        See :py:mod:`solarforecastarbiter.reference_forecasts.models`
+        for options.
+    init_time : pd.Timestamp
+        Model initialization time.
+    start : pd.Timestamp
+        Start of the forecast.
+    end : pd.Timestamp
+        End of the forecast.
 
     Returns
     -------
@@ -33,6 +45,9 @@ def run(site, model):
 
     >>> from solarforecastarbiter import datamodel
     >>> from solarforecastarbiter.reference_forecasts import models
+    >>> init_time = pd.Timestamp('20190328T1200Z')
+    >>> start = pd.Timestamp('20190328T1300Z')  # typical available time
+    >>> end = pd.Timestamp('20190329T1300Z')  # 24 hour forecast
     >>> modeling_parameters = datamodel.FixedTiltModelingParameters(
     ...     ac_capacity=10, dc_capacity=15,
     ...     temperature_coefficient=-0.004, dc_loss_factor=0,
@@ -42,79 +57,21 @@ def run(site, model):
     ...     elevation=715, timezone='America/Phoenix',
     ...     modeling_parameters = modeling_parameters)
     >>> ghi, dni, dhi, temp_air, wind_speed, ac_power = run(
-    ...     power_plant, hrrr_subhourly_to_hourly_mean)
+    ...     power_plant, hrrr_subhourly_to_hourly_mean, init_time,
+    ...     start, end)
     """
 
-    *solpos_forecast, resampler = model(
+    *solpos_forecast, resampler, solar_position_calculator = model(
         site.latitude, site.longitude, site.elevation)
 
     if isinstance(site, datamodel.SolarPowerPlant):
-        solpos_forecast = maybe_calc_solar_position(site, *solpos_forecast)
-        ac_power = pvmodel.irradiance_to_power(site.modeling_parameters,
-                                               *solpos_forecast)
+        solar_position = solar_position_calculator()
+        ac_power = pvmodel.irradiance_to_power(
+            site.modeling_parameters, solar_position['apparent_zenith'],
+            solar_position['azimuth'], *solpos_forecast)
     else:
         ac_power = None
 
     # resample data after power calculation
-    ret = list(map(resampler, (*solpos_forecast[2:], ac_power)))
-    return ret
-
-
-def maybe_calc_solar_position(site, apparent_zenith, azimuth, *args):
-    if apparent_zenith is None or azimuth is None:
-        solar_position = pvmodel.calculate_solar_position(
-            site.latitude, site.longitude, site.elevation, args[0].index)
-        (apparent_zenith, azimuth) = \
-            solar_position['apparent_zenith'], solar_position['azimuth']
-    return (apparent_zenith, azimuth) + (*args)
-
-
-def run_irradiance(site, model, solar_position_func):
-    """
-    Calculate benchmark irradiance forecast for a Site. Also returns
-    solar position and weather data that can be used for power modeling.
-
-    Assumes all returned values are instantaneous. So if you want to
-    make a hourly average power forecast then you probably want to ask
-    for a subhourly irradiance forecast.
-
-    Parameters
-    ----------
-    site : datamodel.Site
-    model : function
-        See solarforecastarbiter.reference_forecasts.models for examples
-    solar_position_func : function
-        Function that takes one DatetimeIndex argument and returns a
-        DataFrame of solar position variables.
-
-    Returns
-    -------
-    ghi : pd.Series
-    dni : pd.Series
-    dhi : pd.Series
-    temp_air : None or pd.Series
-    wind_speed : None or pd.Series
-    """
-    args = site.latitude, site.longitude
-    # figure out what metadata and functions the model needs
-    # alternatively always pass the full site and solar_position_func
-    # to model functions even if they don't need all metadata or the function
-    sig = signature(model)
-    kwargs = {}
-    if 'elevation' in sig.parameters:
-        kwargs['elevation'] = site.elevation
-    if 'solar_position_func' in sig.parameters:
-        kwargs['solar_position_func'] = solar_position_func
-    ghi, dni, dhi, temp_air, wind_speed, resample_func = model(*args, **kwargs)
-    return ghi, dni, dhi, temp_air, wind_speed, resample_func
-
-
-def run_power(modeling_parameters, ghi, dni, dhi, temp_air, wind_speed,
-              solar_position_func):
-    solar_position = solar_position_func(ghi.index)
-    apparent_zenith = solar_position['apparent_zenith']
-    azimuth = solar_position['azimuth']
-    ac_power = pvmodel.irradiance_to_power(
-        modeling_parameters, apparent_zenith, azimuth, ghi, dni, dhi,
-        temp_air=temp_air, wind_speed=wind_speed)
-    return ac_power
+    resampled = list(map(resampler, (*solpos_forecast, ac_power)))
+    return resampled
