@@ -45,28 +45,27 @@ def run(site, model):
     ...     power_plant, hrrr_subhourly_to_hourly_mean)
     """
 
-    # TODO: make this a cached function.
-    # Cannot use functools.lru_cache because times is not hashable
-    def _calculate_solar_position(times):
-        solar_position = pvmodel.calculate_solar_position(
-            site.latitude, site.longitude, site.elevation, times)
-        return solar_position
-
-    ghi, dni, dhi, temp_air, wind_speed, resample_func = run_irradiance(
-        site, model, _calculate_solar_position)
+    *solpos_forecast, resampler = model(
+        site.latitude, site.longitude, site.elevation)
 
     if isinstance(site, datamodel.SolarPowerPlant):
-        ac_power = run_power(site.modeling_parameters, ghi, dni, dhi, temp_air,
-                             wind_speed, _calculate_solar_position)
+        solpos_forecast = maybe_calc_solar_position(site, *solpos_forecast)
+        ac_power = run_power(site.modeling_parameters, *solpos_forecast)
     else:
         ac_power = None
 
     # resample data after power calculation
-    ghi, dni, dhi, temp_air, wind_speed, ac_power = resample_func(
-        ghi, dni, dhi, temp_air, wind_speed, ac_power
-    )
+    ret = list(map(resampler, (*solpos_forecast[2:], ac_power)))
+    return ret
 
-    return ghi, dni, dhi, temp_air, wind_speed, ac_power
+
+def maybe_calc_solar_position(site, apparent_zenith, azimuth, *args):
+    if apparent_zenith is None or azimuth is None:
+        solar_position = pvmodel.calculate_solar_position(
+            site.latitude, site.longitude, site.elevation, args[0].index)
+        (apparent_zenith, azimuth) = \
+            solar_position['apparent_zenith'], solar_position['azimuth']
+    return (apparent_zenith, azimuth) + (*args)
 
 
 def run_irradiance(site, model, solar_position_func):

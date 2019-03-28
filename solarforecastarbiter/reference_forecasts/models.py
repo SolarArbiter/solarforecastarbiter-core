@@ -1,7 +1,8 @@
 """
 Default processing steps for some weather models.
 
-All functions assume that weather is a DataFrame.
+All functions have the same signature, but some args are not used
+and some return values may be None.
 """
 
 from functools import partial
@@ -13,37 +14,37 @@ from solarforecastarbiter.io import load_forecast
 from solarforecastarbiter.reference_forecasts import forecast
 
 
-def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude):
+def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation):
     """
     Subhourly (15 min) instantantaneous HRRR forecast.
     """
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(
         latitude, longitude, 'hrrr_subhourly')
     resampler = partial(forecast.resample, freq='15min')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    return None, None, ghi, dni, dhi, temp_air, wind_speed, resampler
 
 
-def hrrr_subhourly_to_hourly_mean(latitude, longitude):
+def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation):
     """
     Hourly mean HRRR forecast.
     """
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(
         latitude, longitude, 'hrrr_subhourly')
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    return None, None, ghi, dni, dhi, temp_air, wind_speed, resampler
 
 
-def rap_to_instantaneous(latitude, longitude):
+def rap_to_instantaneous(latitude, longitude, elevation):
     """
     Hourly instantantaneous RAP forecast.
     """
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(latitude, longitude,
                                                         'rap')
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    return None, None, ghi, dni, dhi, temp_air, wind_speed, resampler
 
 
-def rap_irrad_to_hourly_mean(latitude, longitude):
+def rap_irrad_to_hourly_mean(latitude, longitude, elevation):
     """
     Take hourly RAP instantantaneous irradiance and convert it to hourly
     average data.
@@ -51,11 +52,27 @@ def rap_irrad_to_hourly_mean(latitude, longitude):
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(
         latitude, longitude, 'rap')
     resample = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resample
+    return None, None, ghi, dni, dhi, temp_air, wind_speed, resample
 
 
-def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
-                                   solar_position_func):
+def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation):
+    """
+    Take hourly RAP instantantaneous cloud cover and convert it to
+    hourly average data.
+    """
+    variables = load_forecast(
+        latitude, longitude, 'rap',
+        variables=('cloud_cover', 'temp_air', 'wind_speed'))
+    interpolator = partial(forecast.interpolate, freq='15min')
+    cloud_cover, temp_air, wind_speed = list(map(interpolator, variables))
+    solpos_irrad = forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos(
+            latitude, longitude, elevation, cloud_cover)
+    resampler = partial(forecast.resample, freq='1h')
+    return solpos_irrad + (temp_air, wind_speed, resampler)
+
+
+def rap_cloud_cover_to_hourly_mean_alternative(latitude, longitude, elevation,
+                                               solar_position_func):
     """
     Take hourly RAP instantantaneous cloud cover and convert it to
     hourly average data.
@@ -72,11 +89,12 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
         cloud_cover, cs['ghi'], solar_position['zenith']
     )
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    solpos = solar_position['apparent_zenith'], solar_position['azimuth']
+    return solpos + (ghi, dni, dhi, temp_air, wind_speed, resampler)
 
 
-def rap_cloud_cover_to_hourly_mean_alternative(latitude, longitude, elevation,
-                                               solar_position_func):
+def rap_cloud_cover_to_hourly_mean_alternative2(latitude, longitude, elevation,
+                                                solar_position_func):
     """
     Take hourly RAP instantantaneous cloud cover and convert it to
     hourly average data.
@@ -84,7 +102,7 @@ def rap_cloud_cover_to_hourly_mean_alternative(latitude, longitude, elevation,
     variables = load_forecast(
         latitude, longitude, 'rap',
         variables=('cloud_cover', 'temp_air', 'wind_speed'))
-    interpolator = partial(forecast.interpolate_args, freq='15min')
+    interpolator = partial(forecast.interpolate, freq='15min')
     cloud_cover, temp_air, wind_speed = list(map(interpolator, variables))
     ghi, dni, dhi = \
         forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos_func(
@@ -93,26 +111,23 @@ def rap_cloud_cover_to_hourly_mean_alternative(latitude, longitude, elevation,
     return ghi, dni, dhi, temp_air, wind_speed, resampler
 
 
-def gfs_3hour_to_hourly_mean(latitude, longitude, elevation,
-                             solar_position_func):
+def gfs_3hour_to_hourly_mean(latitude, longitude, elevation):
     """
     Take 3 hr GFS and convert it to hourly average data.
     """
     cloud_cover, temp_air, wind_speed = load_forecast(latitude, longitude,
                                                       'gfs_3h')
     cloud_cover = forecast.unmix_intervals(cloud_cover)
-    interpolator = partial(forecast.interpolate_args, freq='15min')
+    interpolator = partial(forecast.interpolate, freq='15min')
     cloud_cover, temp_air, wind_speed = list(
         map(interpolator, (cloud_cover, temp_air, wind_speed)))
-    ghi, dni, dhi = \
-        forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos_func(
-            latitude, longitude, elevation, cloud_cover, solar_position_func)
+    solpos_irrad = forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos(
+            latitude, longitude, elevation, cloud_cover)
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    return solpos_irrad + (temp_air, wind_speed, resampler)
 
 
-def gfs_hourly_to_hourly_mean(latitude, longitude, elevation,
-                              solar_position_func):
+def gfs_hourly_to_hourly_mean(latitude, longitude, elevation):
     """
     Take 1 hr GFS and convert it to hourly average data.
     """
@@ -123,16 +138,15 @@ def gfs_hourly_to_hourly_mean(latitude, longitude, elevation,
     end = start + pd.Timedelta('96h')  # not sure about this time limit
     ghi, temp_air, wind_speed = forecast.slice_args(
         cloud_cover, temp_air, wind_speed, start, end)
-    cloud_cover, temp_air, wind_speed = forecast.interpolate_args(
+    cloud_cover, temp_air, wind_speed = forecast.interpolate(
         cloud_cover, temp_air, wind_speed, freq='15min')
-    ghi, dni, dhi = \
-        forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos_func(
-            latitude, longitude, elevation, cloud_cover, solar_position_func)
+    solpos_irrad = forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos(
+            latitude, longitude, elevation, cloud_cover)
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
+    return solpos_irrad + (temp_air, wind_speed, resampler)
 
 
-def nam_to_instantaneous(latitude, longitude, solar_position_func):
+def nam_to_instantaneous(latitude, longitude, elevation):
     """
     Hourly instantantaneous forecast. Max forecast horizon 48 hours.
     """
@@ -142,16 +156,10 @@ def nam_to_instantaneous(latitude, longitude, solar_position_func):
     end = start + pd.Timedelta('48h')  # not sure about this time limit
     ghi, temp_air, wind_speed = forecast.slice_args(ghi, temp_air, wind_speed,
                                                     start, end)
-    solar_position = solar_position_func(ghi.index)
+    solar_position = pvmodel.calculate_solar_position(
+        latitude, longitude, elevation)
     dni, dhi = pvmodel.complete_irradiance_components(
         ghi, solar_position['zenith'])
     resampler = partial(forecast.resample, freq='15min')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler
-
-
-def nam_1_3_hour_to_hourly_mean(weather):
-    """
-
-    """
-    weather = forecast.hourly_cloud_cover_to_subhourly(weather)
-    return weather
+    return (solar_position['apparent_zenith'], solar_position['azimuth'],
+            ghi, dni, dhi, temp_air, wind_speed, resampler)

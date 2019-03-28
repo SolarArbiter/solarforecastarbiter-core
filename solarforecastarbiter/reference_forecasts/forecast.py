@@ -65,6 +65,50 @@ def cloud_cover_to_irradiance_clearsky_scaling(cloud_cover, ghi_clear,
     return ghi, dni, dhi
 
 
+def cloud_cover_to_irradiance_clearsky_scaling_solpos(
+        latitude, longitude, elevation, cloud_cover):
+    """
+    Estimates irradiance from cloud cover in the following steps:
+
+    1. Calculate solar position for the site.
+    2. Determine clear sky GHI using Ineichen model and climatological
+       turbidity.
+    3. Estimate cloudy sky GHI using a function of cloud_cover and
+       ghi_clear: :py:func:`cloud_cover_to_ghi_linear`
+    4. Estimate cloudy sky DNI and DHI using the Erbs model.
+
+    Don't use this function if you already have solar position.
+
+    Parameters
+    ----------
+    latitude : float
+    longitude : float
+    elevation : float
+    cloud_cover : Series
+        Cloud cover in %.
+
+    Returns
+    -------
+    apparent_zenith : pd.Series
+    azimuth : pd.Series
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+
+    See also
+    --------
+    cloud_cover_to_irradiance_clearsky_scaling
+    """
+    solar_position = pvmodel.calculate_solar_position(
+        latitude, longitude, elevation, cloud_cover.index)
+    cs = pvmodel.calculate_clearsky(latitude, longitude, elevation,
+                                    solar_position['apparent_zenith'])
+    ghi, dni, dhi = cloud_cover_to_irradiance_clearsky_scaling(
+        cloud_cover, cs['ghi'], solar_position['zenith'])
+    return (solar_position['apparent_zenith'], solar_position['zenith'],
+            ghi, dni, dhi)
+
+
 def cloud_cover_to_irradiance_clearsky_scaling_solpos_func(
         latitude, longitude, elevation, cloud_cover, solar_position_func):
     """
