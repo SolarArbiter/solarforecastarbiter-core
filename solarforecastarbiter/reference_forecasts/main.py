@@ -50,7 +50,8 @@ def run(site, model):
 
     if isinstance(site, datamodel.SolarPowerPlant):
         solpos_forecast = maybe_calc_solar_position(site, *solpos_forecast)
-        ac_power = run_power(site.modeling_parameters, *solpos_forecast)
+        ac_power = pvmodel.irradiance_to_power(site.modeling_parameters,
+                                               *solpos_forecast)
     else:
         ac_power = None
 
