@@ -27,7 +27,7 @@ jobs:
     displayName: 'Install dependencies'
 
   - script: |
-      pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+      pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
@@ -96,7 +96,6 @@ jobs:
     inputs:
       testResultsFiles: '**/test-results.xml'
       testRunTitle: 'Python $(python.version)'
-    condition: succeededOrFailed()
 
   - task: PublishCodeCoverageResults@1
     inputs:
