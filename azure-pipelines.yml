@@ -85,7 +85,7 @@ jobs:
 
   - script: |
       source activate sfacore_test
-      pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+      pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
