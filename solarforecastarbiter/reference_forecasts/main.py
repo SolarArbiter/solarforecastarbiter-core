@@ -62,7 +62,8 @@ def run(site, model, init_time, start, end):
     """
 
     *solpos_forecast, resampler, solar_position_calculator = model(
-        site.latitude, site.longitude, site.elevation)
+        site.latitude, site.longitude, site.elevation,
+        init_time, start, end)
 
     if isinstance(site, datamodel.SolarPowerPlant):
         solar_position = solar_position_calculator()

@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from solarforecastarbiter.reference_forecasts import models
+from solarforecastarbiter.conftest import requires_tables
 
 
 # we'll need to do something better once the load_forecast function works
@@ -49,14 +50,18 @@ def test_hrrr_subhourly_to_subhourly_instantaneous(mocker):
 
 
 @pytest.mark.parametrize('model,load_forecast_return_value', [
-    (models.gfs_3hour_to_hourly_mean, load_forecast_return_value_3),
-    (models.gfs_hourly_to_hourly_mean, load_forecast_return_value_3),
+    pytest.param(models.gfs_3hour_to_hourly_mean, load_forecast_return_value_3,
+                 marks=requires_tables),
+    pytest.param(models.gfs_hourly_to_hourly_mean,
+                 load_forecast_return_value_3, marks=requires_tables),
     (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
     (models.hrrr_subhourly_to_subhourly_instantaneous,
         load_forecast_return_value_5),
-    (models.nam_cloud_cover_to_hourly_mean, load_forecast_return_value_3),
+    pytest.param(models.nam_cloud_cover_to_hourly_mean,
+                 load_forecast_return_value_3, marks=requires_tables),
     (models.nam_to_hourly_instantaneous, load_forecast_return_value_3),
-    (models.rap_cloud_cover_to_hourly_mean, load_forecast_return_value_3),
+    pytest.param(models.rap_cloud_cover_to_hourly_mean,
+                 load_forecast_return_value_3, marks=requires_tables),
     (models.rap_irrad_to_hourly_mean, load_forecast_return_value_5),
     (models.rap_to_instantaneous, load_forecast_return_value_5),
 ])
