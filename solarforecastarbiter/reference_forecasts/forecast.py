@@ -151,5 +151,5 @@ def slice_args(*args, start, end):
     return resampled_args
 
 
-def unmix_intervals():
+def unmix_intervals(cloud_cover):
     raise NotImplementedError

@@ -65,7 +65,7 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
         latitude, longitude, init_time, start, end, 'hrrr_subhourly')
     interpolator = partial(forecast.interpolate, freq='5min')
     ghi, dni, dhi, temp_air, wind_speed = list(
-        map(interpolator, ghi, dni, dhi, temp_air, wind_speed))
+        map(interpolator, (ghi, dni, dhi, temp_air, wind_speed)))
     resampler = partial(forecast.resample, freq='1h')
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,
@@ -97,7 +97,7 @@ def rap_irrad_to_hourly_mean(latitude, longitude, elevation,
         latitude, longitude, init_time, start, end, 'rap')
     interpolator = partial(forecast.interpolate, freq='5min')
     ghi, dni, dhi, temp_air, wind_speed = list(
-        map(interpolator, ghi, dni, dhi, temp_air, wind_speed))
+        map(interpolator, (ghi, dni, dhi, temp_air, wind_speed)))
     resampler = partial(forecast.resample, freq='1h')
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,

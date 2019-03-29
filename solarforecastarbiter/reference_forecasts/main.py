@@ -57,8 +57,8 @@ def run(site, model, init_time, start, end):
     ...     elevation=715, timezone='America/Phoenix',
     ...     modeling_parameters = modeling_parameters)
     >>> ghi, dni, dhi, temp_air, wind_speed, ac_power = run(
-    ...     power_plant, hrrr_subhourly_to_hourly_mean, init_time,
-    ...     start, end)
+    ...     power_plant, models.hrrr_subhourly_to_hourly_mean,
+    ...     init_time, start, end)
     """
 
     *solpos_forecast, resampler, solar_position_calculator = model(
