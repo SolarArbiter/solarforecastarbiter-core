@@ -76,11 +76,16 @@ subpackages
 
 The subpackages:
 
+.. toctree::
+   :maxdepth: 2
+
+   reference_forecasts
+
+
 .. autosummary::
    :toctree: generated/
 
    io
    metrics
-   reference_forecasts
    reports
    validation

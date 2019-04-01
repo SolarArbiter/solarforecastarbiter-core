@@ -110,6 +110,16 @@ def cloud_cover_to_irradiance_clearsky_scaling_solpos(
 
 
 def resample_args(*args, freq='1h'):
+    """Resample all positional arguments, allowing for None.
+
+    Parameters
+    ----------
+    *args : list of pd.Series or None
+
+    Returns
+    -------
+    list of pd.Series or None
+    """
     # this one uses map for fun
     def f(arg):
         if arg is None:
@@ -120,6 +130,16 @@ def resample_args(*args, freq='1h'):
 
 
 def resample(arg, freq='1h'):
+    """Resamples an argument, allowing for None. Use with map.
+
+    Parameters
+    ----------
+    arg : pd.Series or None
+
+    Returns
+    -------
+    pd.Series or None
+    """
     if arg is None:
         return None
     else:
@@ -127,6 +147,16 @@ def resample(arg, freq='1h'):
 
 
 def interpolate_args(*args, freq='15min'):
+    """Interpolate all positional arguments, allowing for None.
+
+    Parameters
+    ----------
+    *args : list of pd.Series or None
+
+    Returns
+    -------
+    list of pd.Series or None
+    """
     # could add how kwarg to resample_args and lookup method with
     # getattr but this seems much more clear
     # this one uses a list comprehension for different fun
@@ -137,6 +167,16 @@ def interpolate_args(*args, freq='15min'):
 
 
 def interpolate(arg, freq='15min'):
+    """Interpolates an argument, allowing for None. Use with map.
+
+    Parameters
+    ----------
+    arg : pd.Series or None
+
+    Returns
+    -------
+    pd.Series or None
+    """
     # could add how kwarg to resample and lookup method with
     # getattr but this seems much more clear
     if arg is None:
@@ -152,4 +192,14 @@ def slice_args(*args, start, end):
 
 
 def unmix_intervals(cloud_cover):
+    """Convert mixed interval averages into pure interval averages.
+
+    Parameters
+    ----------
+    cloud_cover : pd.Series
+
+    Returns
+    -------
+    pd.Series
+    """
     raise NotImplementedError
