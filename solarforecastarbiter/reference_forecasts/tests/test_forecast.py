@@ -4,6 +4,7 @@ from pandas.util.testing import assert_series_equal
 import pytest
 
 from solarforecastarbiter.reference_forecasts import forecast
+from solarforecastarbiter.conftest import requires_tables
 
 
 def assert_none_or_series(out, expected):
@@ -79,6 +80,7 @@ def test_cloud_cover_to_irradiance_ghi_clear():
     assert_series_equal(out[2], dhi_exp)
 
 
+@requires_tables
 @pytest.mark.xfail(raises=AssertionError, strict=True)
 def test_cloud_cover_to_irradiance():
     index = pd.DatetimeIndex(start='20190101', periods=3, freq='1h')
