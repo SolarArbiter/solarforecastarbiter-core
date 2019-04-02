@@ -1,7 +1,7 @@
 """
-Default processing steps for NOAA weather models.
+Default processing functions for data from NOAA weather models.
 
-All functions in this module have the same signature.
+All public functions in this module have the same signature.
 
 The functions accept:
 
@@ -22,17 +22,26 @@ The functions return a tuple of:
   * wind_speed : pd.Series
   * resampler : function
       A function that resamples data to the appropriate frequency.
-      This function is applied to all variables after power is
-      calculated.
+      This function is to be applied to all forecast variables after
+      power is calculated.
   * solar_position_calculator : function
       A function that returns solar position at the ghi forecast times
-      (after interpolation, before resampling). The function will return
-      results immediately if solar position is already known or will
-      call a solar position calculation algorithm and then return.
+      (after internal interpolation, before external resampling). The
+      function will return results immediately if solar position is
+      already known or will call a solar position calculation algorithm
+      and then return.
 
 Most of the functions return forecast data interpolated to 5 minute
 frequency. Interpolation to 5 minutes reduces the errors associated with
-solar position.
+solar position and irradiance to power models. It is expected that
+after calculating power, users will apply the `resampler` function to
+both the weather and power forecasts.
+
+The functions in this module accept primitives (floats, strings, etc.)
+rather than objects defined in :py:mod:`solarforecastarbiter.datamodel`
+because we anticipate that these functions may be of more general use
+and that functions that accept primitives may be easier to maintain in
+the long run.
 """
 
 from functools import partial
@@ -113,9 +122,9 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
         map(interpolator, (cloud_cover, temp_air, wind_speed)))
     solar_position = pvmodel.calculate_solar_position(
         latitude, longitude, elevation, cloud_cover.index)
-    ghi, dni, dhi = forecast.cloud_cover_to_irradiance_clearsky_scaling_solpos(
+    ghi, dni, dhi = forecast.cloud_cover_to_irradiance(
         latitude, longitude, elevation, cloud_cover,
-        solar_position['apparent_zenith'], solar_position['azimuth'])
+        solar_position['apparent_zenith'], solar_position['zenith'])
     resampler = partial(forecast.resample, freq='1h')
 
     def solar_pos_calculator(): return solar_position
