@@ -40,10 +40,19 @@ def check_out(out, expected):
     assert isinstance(out[6], (types.FunctionType, partial))
 
 
-def test_hrrr_subhourly_to_subhourly_instantaneous(mocker):
-    mocker.patch(
-        'solarforecastarbiter.reference_forecasts.models.load_forecast',
-        return_value=out_forecast_exp)
+@pytest.mark.xfail(raises=NotImplementedError, strict=True)
+@pytest.mark.parametrize('model', [
+    models.gfs_3hour_to_hourly_mean,
+    models.gfs_hourly_to_hourly_mean,
+    models.hrrr_subhourly_to_hourly_mean,
+    models.hrrr_subhourly_to_subhourly_instantaneous,
+    models.nam_cloud_cover_to_hourly_mean,
+    models.nam_to_hourly_instantaneous,
+    models.rap_cloud_cover_to_hourly_mean,
+    models.rap_irrad_to_hourly_mean,
+    models.rap_to_instantaneous,
+])
+def test_default_load_forecast(model):
     out = models.hrrr_subhourly_to_subhourly_instantaneous(
         latitude, longitude, elevation, init_time, start, end)
     check_out(out, out_forecast_exp)
@@ -66,12 +75,12 @@ def test_hrrr_subhourly_to_subhourly_instantaneous(mocker):
     (models.rap_to_instantaneous, load_forecast_return_value_5),
 ])
 def test_all_models(model, load_forecast_return_value, mocker):
-    mocker.patch(
-        'solarforecastarbiter.reference_forecasts.models.load_forecast',
-        return_value=load_forecast_return_value)
+    def load_forecast(*args, **kwargs):
+        return load_forecast_return_value
     mocker.patch(
         'solarforecastarbiter.reference_forecasts.forecast.unmix_intervals',
         return_value=cloud_cover_exp)
     out = model(
-        latitude, longitude, elevation, init_time, start, end)
+        latitude, longitude, elevation, init_time, start, end,
+        load_forecast=load_forecast)
     check_out(out, out_forecast_exp)

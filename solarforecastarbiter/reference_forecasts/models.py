@@ -12,6 +12,10 @@ The functions accept:
       Full datetime of a model initialization
   * start : pd.Timestamp
   * end : pd.Timestamp
+  * load_forecast : function
+      A function that accepts the arguments above and returns the
+      correct data. Enables users to supply their own data independently
+      of the `solarforecastarbiter.io` module.
 
 The functions return a tuple of:
 
@@ -52,7 +56,8 @@ from solarforecastarbiter.reference_forecasts import forecast
 
 
 def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
-                                              init_time, start, end):
+                                              init_time, start, end,
+                                              load_forecast=load_forecast):
     """
     Subhourly (15 min) instantantaneous HRRR forecast.
     """
@@ -66,7 +71,8 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
 
 
 def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
-                                  init_time, start, end):
+                                  init_time, start, end,
+                                  load_forecast=load_forecast):
     """
     Hourly mean HRRR forecast.
     """
@@ -83,7 +89,7 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
 
 
 def rap_to_instantaneous(latitude, longitude, elevation,
-                         init_time, start, end):
+                         init_time, start, end, load_forecast=load_forecast):
     """
     Hourly instantantaneous RAP forecast.
     """
@@ -97,7 +103,8 @@ def rap_to_instantaneous(latitude, longitude, elevation,
 
 
 def rap_irrad_to_hourly_mean(latitude, longitude, elevation,
-                             init_time, start, end):
+                             init_time, start, end,
+                             load_forecast=load_forecast):
     """
     Take hourly RAP instantantaneous irradiance and convert it to hourly
     average forecasts.
@@ -115,7 +122,8 @@ def rap_irrad_to_hourly_mean(latitude, longitude, elevation,
 
 
 def _resample_using_cloud_cover(latitude, longitude, elevation,
-                                cloud_cover, temp_air, wind_speed):
+                                cloud_cover, temp_air, wind_speed,
+                                load_forecast=load_forecast):
     # 5 minutes is probably better than 15
     interpolator = partial(forecast.interpolate, freq='5min')
     cloud_cover, temp_air, wind_speed = list(
@@ -133,7 +141,8 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
 
 
 def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
-                                   init_time, start, end):
+                                   init_time, start, end,
+                                   load_forecast=load_forecast):
     """
     Take hourly RAP instantantaneous cloud cover and convert it to
     hourly average forecasts.
@@ -146,7 +155,8 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
 
 
 def gfs_3hour_to_hourly_mean(latitude, longitude, elevation,
-                             init_time, start, end):
+                             init_time, start, end,
+                             load_forecast=load_forecast):
     """
     Take 3 hr GFS and convert it to hourly average data.
     """
@@ -158,7 +168,8 @@ def gfs_3hour_to_hourly_mean(latitude, longitude, elevation,
 
 
 def gfs_hourly_to_hourly_mean(latitude, longitude, elevation,
-                              init_time, start, end):
+                              init_time, start, end,
+                              load_forecast=load_forecast):
     """
     Take 1 hr GFS and convert it to hourly average data.
     Max forecast horizon 96? hours.
@@ -170,7 +181,8 @@ def gfs_hourly_to_hourly_mean(latitude, longitude, elevation,
 
 
 def nam_to_hourly_instantaneous(latitude, longitude, elevation,
-                                init_time, start, end):
+                                init_time, start, end,
+                                load_forecast=load_forecast):
     """
     Hourly instantantaneous forecast. Max forecast horizon 48? hours.
     """
@@ -187,7 +199,8 @@ def nam_to_hourly_instantaneous(latitude, longitude, elevation,
 
 
 def nam_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
-                                   init_time, start, end):
+                                   init_time, start, end,
+                                   load_forecast=load_forecast):
     """
     Hourly average forecast. Max forecast horizon 72 hours.
     """
