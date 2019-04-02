@@ -55,7 +55,7 @@ forecast data may be supplied to a PV model and then resampled using the
 *resampler* function. This workflow allows for seperation of weather
 data processing and PV modeling while preserving the ability to use more
 accurate, shorter time interval inputs to the PV model. Finally, these
-functions return a solar position calcuation function (rather than the
+functions return a solar position calculation function (rather than the
 actual solar position) to simplify the API while maintaining reasonable
 performance. (Solar position is only sometimes needed within the model
 processing functions and is only needed externally if power is to be
