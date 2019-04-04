@@ -137,7 +137,8 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     """
     # dni and dhi not in RAP output available from g2sub service
     ghi, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap')
+        latitude, longitude, init_time, start, end, 'rap',
+        variables=('ghi', 'temp_air', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     resampler = partial(forecast.resample, freq='1h')
@@ -155,7 +156,8 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
     """
     # dni and dhi not in RAP output available from g2sub service
     ghi, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap')
+        latitude, longitude, init_time, start, end, 'rap',
+        variables=('ghi', 'temp_air', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     interpolator = partial(forecast.interpolate, freq='5min')
@@ -175,7 +177,8 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
     cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap')
+        latitude, longitude, init_time, start, end, 'rap',
+        variables=('cloud_cover', 'temp_air', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, temp_air, wind_speed)
 

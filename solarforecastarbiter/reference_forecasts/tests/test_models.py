@@ -42,15 +42,16 @@ def check_out(out, expected):
 
 @pytest.mark.xfail(raises=NotImplementedError, strict=True)
 @pytest.mark.parametrize('model', [
-    models.gfs_3hour_to_hourly_mean,
-    models.gfs_hourly_to_hourly_mean,
+    models.gfs_quarter_deg_3hour_to_hourly_mean,
+    models.gfs_quarter_deg_hourly_to_hourly_mean,
+    models.gfs_quarter_deg_to_hourly_mean,
     models.hrrr_subhourly_to_hourly_mean,
     models.hrrr_subhourly_to_subhourly_instantaneous,
-    models.nam_cloud_cover_to_hourly_mean,
-    models.nam_to_hourly_instantaneous,
+    models.nam_12km_cloud_cover_to_hourly_mean,
+    models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
-    models.rap_irrad_to_hourly_mean,
-    models.rap_to_instantaneous,
+    models.rap_ghi_to_hourly_mean,
+    models.rap_ghi_to_instantaneous,
 ])
 def test_default_load_forecast(model):
     out = models.hrrr_subhourly_to_subhourly_instantaneous(
@@ -59,20 +60,30 @@ def test_default_load_forecast(model):
 
 
 @pytest.mark.parametrize('model,load_forecast_return_value', [
-    pytest.param(models.gfs_3hour_to_hourly_mean, load_forecast_return_value_3,
-                 marks=requires_tables),
-    pytest.param(models.gfs_hourly_to_hourly_mean,
-                 load_forecast_return_value_3, marks=requires_tables),
+    pytest.param(
+        models.gfs_quarter_deg_3hour_to_hourly_mean,
+        load_forecast_return_value_3,
+        marks=requires_tables),
+    pytest.param(
+        models.gfs_quarter_deg_hourly_to_hourly_mean,
+        load_forecast_return_value_3,
+        marks=requires_tables),
+    pytest.param(
+        models.gfs_quarter_deg_to_hourly_mean,
+        load_forecast_return_value_3,
+        marks=[requires_tables,
+               pytest.mark.xfail(strict=True, raises=NotImplementedError)]),
     (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
     (models.hrrr_subhourly_to_subhourly_instantaneous,
         load_forecast_return_value_5),
-    pytest.param(models.nam_cloud_cover_to_hourly_mean,
+    pytest.param(models.nam_12km_cloud_cover_to_hourly_mean,
                  load_forecast_return_value_3, marks=requires_tables),
-    (models.nam_to_hourly_instantaneous, load_forecast_return_value_3),
+    (models.nam_12km_hourly_to_hourly_instantaneous,
+     load_forecast_return_value_3),
     pytest.param(models.rap_cloud_cover_to_hourly_mean,
                  load_forecast_return_value_3, marks=requires_tables),
-    (models.rap_irrad_to_hourly_mean, load_forecast_return_value_5),
-    (models.rap_to_instantaneous, load_forecast_return_value_5),
+    (models.rap_ghi_to_hourly_mean, load_forecast_return_value_3),
+    (models.rap_ghi_to_instantaneous, load_forecast_return_value_3),
 ])
 def test_all_models(model, load_forecast_return_value, mocker):
     def load_forecast(*args, **kwargs):
