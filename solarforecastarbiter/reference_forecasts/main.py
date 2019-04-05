@@ -1,10 +1,18 @@
 """
 Make benchmark irradiance and power forecasts.
+
+The functions in this module use the
+:py:mod:`solarforecastarbiter.datamodel` objects.
 """
+import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
 
 
+# maybe rename run_nwp
+# maybe rework in terms of forecast run *issue time* as described in
+# https://solarforecastarbiter.org/usecases/#forecastrun
+# and datamodel.Forecast (as demonstrated in run_persistence below)
 def run(site, model, init_time, start, end):
     """
     Calculate benchmark irradiance and power forecasts for a site.
@@ -61,7 +69,7 @@ def run(site, model, init_time, start, end):
     ...     init_time, start, end)
     """
 
-    *solpos_forecast, resampler, solar_position_calculator = model(
+    *forecast, resampler, solar_position_calculator = model(
         site.latitude, site.longitude, site.elevation,
         init_time, start, end)
 
@@ -69,10 +77,110 @@ def run(site, model, init_time, start, end):
         solar_position = solar_position_calculator()
         ac_power = pvmodel.irradiance_to_power(
             site.modeling_parameters, solar_position['apparent_zenith'],
-            solar_position['azimuth'], *solpos_forecast)
+            solar_position['azimuth'], *forecast)
     else:
         ac_power = None
 
     # resample data after power calculation
-    resampled = list(map(resampler, (*solpos_forecast, ac_power)))
+    resampled = list(map(resampler, (*forecast, ac_power)))
     return resampled
+
+
+def run_persistence(observation, forecast, issue_time, model):
+    """
+    Run a persistence forecast for an *observation* using a *model*.
+
+    Model can one of:
+
+      1. irradiance or power persistence
+      2. irradiance persistence using clear sky index
+      3. power persistence using AC power index
+
+    Persistence window is fixed according to:
+
+      * Intraday forecasts: Maximum of observation interval length,
+        forecast interval length, forecast lead time to start. No
+        longer than 1 hour.
+      * Day ahead forecasts: Equal to forecast interval length.
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    forecast : datamodel.Forecast
+    issue_time : pd.Timestamp
+        Issue time of the forecast run.
+    model : function
+        Model loading and processing function. See
+        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`
+        for options.
+
+
+    Alternative and incomplete Parameters
+    ----------
+    observation : datamodel.Observation
+    model : function
+        Model loading and processing function. See
+        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`
+        for options.
+    issue_time : pd.Timestamp
+        Time at which the forecast begins
+    start : pd.Timestamp
+        Forecast start
+    end : pd.Timestamp
+        Forecast end
+
+    Returns
+    -------
+    forecast : pd.Series
+    """
+    check_issue_time(forecast, issue_time)
+
+    # intra day persistence and "day ahead" persistence require
+    # fairly different parameters.
+    # is this a sufficiently robust way to distinguish?
+    intraday = forecast.run_length < pd.Timedelta('1d')
+    if intraday:
+        # time window over which observation data will be used to create
+        # persistence forecast.
+        # assumes observation.interval_length <= 1h
+        window = min(
+            pd.Timedelta('1h'),
+            max(observation.interval_length, forecast.interval_length,
+                forecast.lead_time_to_start)
+        )
+        data_end = issue_time
+        data_start = data_end - window
+    else:
+        # day ahead persistence: tomorrow's forecast is equal to yesterday's
+        # observations. So, forecast always uses obs > 24 hr old at each valid
+        # time. Smarter TBD approach might be to use today's observations up
+        # until issue_time, and use yesterday's observations for issue_time
+        # until end of day. So, forecast *never* uses obs > 24 hr old at each
+        # valid time.
+        data_end = issue_time.floor('1d')
+        data_start = data_end - pd.Timedelta('1d')
+        window = forecast.interval_length
+
+    forecast_start = issue_time + forecast.lead_time_to_start
+    forecast_end = forecast_start + forecast.run_length
+    forecast = model(observation, window, data_start, data_end, forecast_start,
+                     forecast_end, forecast.interval_length)
+    return forecast
+
+
+# put in validator?
+def check_issue_time(forecast, issue_time):
+    """
+    Check that the issue time is compatible with the forecast.
+
+    Raises
+    ------
+    ValueError if forecast and issue_time are incompatible
+    """
+    start = issue_time.floor() + forecast.issue_time_of_day
+    index = pd.DatetimeIndex(start=start, end=start+pd.Timedelta('1d'),
+                             freq=forecast.run_length)
+    if issue_time not in index:
+        ValueError(('Incompatible forecast.issue_time_of_day %s,'
+                    'forecast.run_length %s, and issue_time %s') %
+                   forecast.issue_time_of_day, forecast.run_length, issue_time)
