@@ -9,6 +9,11 @@ datamodel
 
 The datamodel.
 
+.. autosummary::
+   :toctree: generated/
+
+   datamodel
+
 There are two kinds of sites:
 
 .. autosummary::
@@ -38,8 +43,15 @@ The Observation and Forecast:
 pvmodel
 =======
 
-The :py:mod:`pvmodel` module contains functions closely associated with
-PV modeling. Several utility functions wrap pvlib functions:
+The :py:mod:`~solarforecastarbiter.pvmodel` module contains functions
+closely associated with PV modeling.
+
+.. autosummary::
+   :toctree: generated/
+
+   pvmodel
+
+Several utility functions wrap pvlib functions:
 
 .. autosummary::
    :toctree: generated/
@@ -76,11 +88,16 @@ subpackages
 
 The subpackages:
 
+.. toctree::
+   :maxdepth: 2
+
+   reference_forecasts
+
+
 .. autosummary::
    :toctree: generated/
 
    io
    metrics
-   reference_forecasts
    reports
    validation
