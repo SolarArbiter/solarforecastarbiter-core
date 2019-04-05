@@ -19,6 +19,7 @@ Arbiter. It uses data types defined in
 .. autosummary::
    :toctree: generated/
 
+   main
    main.run
 
 
@@ -39,6 +40,7 @@ function is specific to:
 .. autosummary::
    :toctree: generated/
 
+   models
    models.hrrr_subhourly_to_subhourly_instantaneous
    models.hrrr_subhourly_to_hourly_mean
    models.rap_ghi_to_instantaneous
@@ -72,6 +74,7 @@ found in :py:mod:`~solarforecastarbiter.reference_forecasts.forecast`.
 .. autosummary::
    :toctree: generated/
 
+   forecast
    forecast.cloud_cover_to_ghi_linear
    forecast.cloud_cover_to_irradiance_ghi_clear
    forecast.cloud_cover_to_irradiance
