@@ -41,13 +41,14 @@ function is specific to:
 
    models.hrrr_subhourly_to_subhourly_instantaneous
    models.hrrr_subhourly_to_hourly_mean
-   models.rap_to_instantaneous
-   models.rap_irrad_to_hourly_mean
+   models.rap_ghi_to_instantaneous
+   models.rap_ghi_to_hourly_mean
    models.rap_cloud_cover_to_hourly_mean
-   models.gfs_3hour_to_hourly_mean
-   models.gfs_hourly_to_hourly_mean
-   models.nam_to_hourly_instantaneous
-   models.nam_cloud_cover_to_hourly_mean
+   models.gfs_quarter_deg_3hour_to_hourly_mean
+   models.gfs_quarter_deg_hourly_to_hourly_mean
+   models.gfs_quarter_deg_to_hourly_mean
+   models.nam_12km_hourly_to_hourly_instantaneous
+   models.nam_12km_cloud_cover_to_hourly_mean
 
 All of the above functions return weather forecast data, a *resampler*
 function, and a solar position calculation function. The weather

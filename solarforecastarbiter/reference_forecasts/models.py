@@ -35,11 +35,22 @@ The functions return a tuple of:
       already known or will call a solar position calculation algorithm
       and then return.
 
-Most of the functions return forecast data interpolated to 5 minute
-frequency. Interpolation to 5 minutes reduces the errors associated with
-solar position and irradiance to power models. It is expected that
-after calculating power, users will apply the `resampler` function to
-both the weather and power forecasts.
+Most of the model functions return forecast data interpolated to 5
+minute frequency. Interpolation to 5 minutes reduces the errors
+associated with solar position and irradiance to power models (these
+models assume instantaneous inputs). Why 5 minutes? It's a round number
+that produces about 10 data points per hour, so it's reasonable for hour
+average calculations. It is expected that after calculating power, users
+will apply the `resampler` function to both the weather and power
+forecasts. These functions may be most useful if the user would like to
+understand the performance of a NWP model with modest post-processing.
+
+Several model functions return instantaneous data that is coincident
+with the NWP model forecast time (15 minutes or hourly, depending on the
+NWP model). The resamplers returned by these functions do not modify the
+data (though they do define the frequency attribute of the data's
+DatetimeIndex). These functions may most useful if the user would like
+to understand the raw performance of a NWP model.
 
 The functions in this module accept primitives (floats, strings, etc.)
 rather than objects defined in :py:mod:`solarforecastarbiter.datamodel`
@@ -60,7 +71,10 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     """
     Calculate all irradiance components from cloud cover.
     """
-    # 5 minutes is probably better than 15
+    # Interpolate cloud cover, temp, and wind to higher temporal resolution
+    # because solar position and PV power calculations assume instantaneous
+    # inputs. Why 5 minutes? It's a round number that produces order 10 data
+    # points per hour, so it's reasonable for hour average calculations.
     interpolator = partial(forecast.interpolate, freq='5min')
     cloud_cover, temp_air, wind_speed = list(
         map(interpolator, (cloud_cover, temp_air, wind_speed)))
@@ -99,6 +113,9 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
     """
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'hrrr_subhourly')
+    # resampler takes 15 min instantaneous in, retuns 15 min instantaneous out
+    # still want to call resample, rather than pass through lambda x: x
+    # so that DatetimeIndex has well-defined freq attribute
     resampler = partial(forecast.resample, freq='15min')
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,
@@ -116,10 +133,13 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     """
     ghi, dni, dhi, temp_air, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'hrrr_subhourly')
-    # interpolate to 5 min to minimize irrad to power errors.
+    # interpolate irrad, temp, wind data to 5 min to
+    # minimize weather to power errors.
     interpolator = partial(forecast.interpolate, freq='5min')
     ghi, dni, dhi, temp_air, wind_speed = list(
         map(interpolator, (ghi, dni, dhi, temp_air, wind_speed)))
+    # user may weather (and optionally power) will eventually be resampled
+    # to hourly average using resampler defined below
     resampler = partial(forecast.resample, freq='1h')
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,
@@ -141,6 +161,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
         variables=('ghi', 'temp_air', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
+    # hourly instant in, hourly instant out
     resampler = partial(forecast.resample, freq='1h')
     return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
 
@@ -221,12 +242,13 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 240 hours.
     """
+    # this function is supposed to be able to handle the switch from
+    # hourly to 3 hourly output.
+    # unclear if this should call gfs_quarter_deg_hourly_to_hourly_mean
+    # and then gfs_quarter_deg_3hour_to_hourly_mean or if it should
+    # do everything here. defer until after storage implementation is
+    # more clear.
     raise NotImplementedError
-    cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_3h')
-    cloud_cover = forecast.unmix_intervals(cloud_cover)
-    return _resample_using_cloud_cover(latitude, longitude, elevation,
-                                       cloud_cover, temp_air, wind_speed)
 
 
 def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
@@ -241,6 +263,7 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
         latitude, longitude, init_time, start, end, 'nam')
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
+    # hourly instant in, hourly instant out
     resampler = partial(forecast.resample, freq='1h')
     return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
 

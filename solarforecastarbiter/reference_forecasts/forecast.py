@@ -197,6 +197,20 @@ def slice_args(*args, start, end):
 def unmix_intervals(cloud_cover):
     """Convert mixed interval averages into pure interval averages.
 
+    For example, the GFS 3 hour output contains the following data:
+
+    * forecast hour 3: average cloud cover from 0 - 3 hours
+    * forecast hour 6: average cloud cover from 0 - 6 hours
+    * forecast hour 9: average cloud cover from 6 - 9 hours
+    * forecast hour 12: average cloud cover from 6 - 12 hours
+
+    and so on. This function returns:
+
+    * forecast hour 3: average cloud cover from 0 - 3 hours
+    * forecast hour 6: average cloud cover from 3 - 6 hours
+    * forecast hour 9: average cloud cover from 6 - 9 hours
+    * forecast hour 12: average cloud cover from 9 - 12 hours
+
     Parameters
     ----------
     cloud_cover : pd.Series
