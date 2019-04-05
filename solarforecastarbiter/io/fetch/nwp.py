@@ -16,6 +16,10 @@ from solarforecastarbiter.io.fetch import (
     handle_exception, basic_logging_config, make_session)
 
 
+logger = logging.getLogger(__name__)
+
+
+CHECK_URL = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/{}/prod'
 BASE_URL = 'https://nomads.ncep.noaa.gov/cgi-bin/'
 DOMAIN = {'subregion': None,
           'leftlon': -126,
@@ -99,7 +103,7 @@ RAP = {'endpoint': 'filter_rap.pl',
 
 
 HRRR = {'endpoint': 'filter_hrrr_2d.pl',
-        'file': 'hrrr.t{init_hr:02d}z.wrfsfc{valid_hr:02d}.grib2',
+        'file': 'hrrr.t{init_hr:02d}z.wrfsfcf{valid_hr:02d}.grib2',
         'dir': '/hrrr.{init_date}/conus',
         'lev_2_m_above_ground': 'on',
         'lev_10_m_above_ground': 'on',
@@ -173,10 +177,47 @@ def _process_params(model, init_time):
         init_date=init_time.strftime('%Y%m%d'),
         init_dt=init_time.strftime('%Y%m%d%H'))
     for i in valid_hr_gen:
-        params['file'] = params['file'].format(
+        newp = params.copy()
+        newp['file'] = newp['file'].format(
             init_hr=init_time.hour,
             valid_hr=i)
-        yield params.copy()
+        yield newp
+
+
+# look for all of a particular hour, and for next inittime
+# if not all, but next hour present, stop, can use HEAD to check if exists
+async def files_to_retrieve(session, model, init_time):
+    possible_params = _process_params(model, init_time)
+    next_inittime = init_time + pd.Timedelta(model['update_freq'])
+    simple_model = model['file'].split('.')[0]
+    next_init_url = (CHECK_URL.format(simple_model)
+                     + model['dir'].format(
+                         init_date=next_inittime.strftime('%Y%m%d'),
+                         init_dt=next_inittime.strftime('%Y%m%d%H'))
+                     + '/' + model['file'].format(init_hr=next_inittime.hour,
+                                                  valid_hr=0))
+    for next_params in possible_params:
+        next_model_url = (CHECK_URL.format(simple_model)
+                          + next_params['dir'] + '/' + next_params['file'])
+        while True:
+            # is the next file ready?
+            async with session.head(next_model_url) as r:
+                if r.status == 200:
+                    logger.debug('%s is ready for download',
+                                 next_params['file'])
+                    yield next_params
+                    break
+                else:
+                    logger.debug('Next file not ready yet for %s at %s',
+                                 simple_model, init_time)
+            # did the next run complete before finishing older run?
+            async with session.head(next_init_url) as r:
+                if r.status == 200:
+                    logger.warning(
+                        'Skipping to next init time at %s for %s',
+                        next_inittime, simple_model)
+                    return
+            await asyncio.sleep(60)
 
 
 async def fetch_grib_files(session, params, basepath, chunksize):
@@ -205,12 +246,11 @@ def optimize_netcdf():
     pass
 
 
-async def run_once(models):
+async def run_once(model):
     session = make_session()
-    futs = []
-    for model in models:
-        futs.append(get_available_runs(session, model_map[model]))
-    await asyncio.gather(*futs)
+    inittime = pd.Timestamp('2019-04-05T23')
+    async for params in files_to_retrieve(session, model_map[model], inittime):
+        params
     await session.close()
 
 
@@ -223,8 +263,8 @@ def main():
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
-        'models', nargs='+', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr'],
-        help='The models to get data for')
+        'model', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr'],
+        help='The model to get data for')
     args = argparser.parse_args()
 
     if args.verbose == 1:
@@ -232,7 +272,7 @@ def main():
     elif args.verbose and args.verbose > 1:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    fut = asyncio.ensure_future(run_once(args.models))
+    fut = asyncio.ensure_future(run_once(args.model))
 
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
