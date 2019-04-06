@@ -4,6 +4,7 @@ Fetch NWP files from NCEP Nomads
 import asyncio
 import argparse
 import logging
+from pathlib import Path
 import re
 import signal
 import sys
@@ -75,7 +76,7 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'dir': '/nam.{init_date}',
              'lev_2_m_above_ground': 'on',
              'lev_10_m_above_ground': 'on',
-             'lev_entire_atmosphere\\(considered_as_a_single_layer\\)': 'on',
+             'lev_entire_atmosphere_\\(considered_as_a_single_layer\\)': 'on',
              'lev_surface': 'on',
              'var_DSWRF': 'on',
              'var_TCDC': 'on',
@@ -184,8 +185,6 @@ def _process_params(model, init_time):
         yield newp
 
 
-# look for all of a particular hour, and for next inittime
-# if not all, but next hour present, stop, can use HEAD to check if exists
 async def files_to_retrieve(session, model, init_time):
     possible_params = _process_params(model, init_time)
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
@@ -203,8 +202,8 @@ async def files_to_retrieve(session, model, init_time):
             # is the next file ready?
             async with session.head(next_model_url) as r:
                 if r.status == 200:
-                    logger.debug('%s is ready for download',
-                                 next_params['file'])
+                    logger.info('%s/%s is ready for download',
+                                next_params['dir'], next_params['file'])
                     yield next_params
                     break
                 else:
@@ -220,20 +219,31 @@ async def files_to_retrieve(session, model, init_time):
             await asyncio.sleep(60)
 
 
-async def fetch_grib_files(session, params, basepath, chunksize):
+async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     endpoint = params.pop('endpoint')
     url = BASE_URL + endpoint
-    # should be tmpfile
-    filename = basepath / params['file']
-    # if exists, return
+    filename = basepath / init_time.strftime('%Y/%m/%d/%H') / params['file']
+    if filename.exists():
+        return filename
+    if not filename.parent.is_dir():
+        filename.parent.mkdir(parents=True)
+    logger.info('Getting file %s', filename)
+    tmpfile = filename.with_name('.tmp_' + filename.name)
     async with session.get(url, params=params) as r:
-        with open(filename, 'wb') as f:
+        if r.status != 200:
+            logger.error(
+                'Failed to retrieve file %s/%s with message\n%s',
+                params['dir'], params['file'], await r.text())
+            return
+            # should somehow signal and fail?
+        with open(tmpfile, 'wb') as f:
             while True:
-                chunk = await r.content.read(chunksize)
+                chunk = await r.content.read(chunksize * 1024)
                 if not chunk:
                     break
                 f.write(chunk)
-    # rename tmpfile
+    tmpfile.rename(filename)
+    logging.debug('Successfully saved %s', filename)
     return filename
 
 
@@ -246,11 +256,16 @@ def optimize_netcdf():
     pass
 
 
-async def run_once(model):
+async def run_once(basepath, model, chunksize):
     session = make_session()
-    inittime = pd.Timestamp('2019-04-05T23')
+    inittime = pd.Timestamp('2019-04-05T18')
+    tasks = set()
     async for params in files_to_retrieve(session, model_map[model], inittime):
-        params
+        tasks.add(asyncio.create_task(
+            fetch_grib_files(session, params, basepath, inittime,
+                             chunksize)))
+
+    await asyncio.gather(*tasks)
     await session.close()
 
 
@@ -260,6 +275,8 @@ def main():
     argparser = argparse.ArgumentParser(
         description='Retrieve forecasts from the fxapi and post them to PI')
     argparser.add_argument('-v', '--verbose', action='count')
+    argparser.add_argument('--chunksize', default=128,
+                           help='Size of a chunk (in KB) to save at one time')
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
@@ -272,7 +289,8 @@ def main():
     elif args.verbose and args.verbose > 1:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    fut = asyncio.ensure_future(run_once(args.model))
+    basepath = Path(args.save_directory).resolve()
+    fut = asyncio.ensure_future(run_once(basepath, args.model, args.chunksize))
 
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
