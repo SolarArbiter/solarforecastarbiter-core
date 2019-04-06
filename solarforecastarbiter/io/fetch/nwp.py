@@ -10,6 +10,7 @@ import signal
 import sys
 
 
+import aiohttp
 import pandas as pd
 
 
@@ -125,6 +126,43 @@ model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr': HRRR}
 
 
+async def get_with_retries(get_func, *args, retries=5, **kwargs):
+    """
+    Call get_func and retry if the request fails
+
+    Params
+    ------
+    get_func : function
+        Function that performs an aiohttp call to be retried
+    retries : int
+        Number of retries before raising the error
+    *args, **kwargs
+        Passed to get_func
+
+    Returns
+    -------
+    Result of get_func
+
+    Raises
+    ------
+    aiohttp.ClientResponseError
+        When get_func fails after retrying retries times
+    """
+    retried = 0
+    while True:
+        try:
+            res = await get_func(*args, **kwargs)
+        except aiohttp.ClientResponseError as e:
+            logger.warning('Request to %s failed with code %s, retrying',
+                           e.request_info.url, e.status)
+            if retried >= retries:
+                raise
+            retried += 1
+            await asyncio.sleep(60)
+        else:
+            return res
+
+
 def _make_regex_from_filename(filename):
     out = filename
     format_fields = re.findall('\\{\\w*:\\w*\\}', filename)
@@ -139,10 +177,12 @@ async def get_available_dirs(session, model):
     simple_model = model['file'].split('.')[0]
     is_init_date = 'init_date' in model['dir']
     model_url = BASE_URL + model['endpoint']
-    async with session.get(model_url) as r:
-        if r.status != 200:
-            pass
-        page = await r.text()
+
+    async def _get(model_url):
+        async with session.get(model_url) as r:
+            return await r.text()
+
+    page = await get_with_retries(_get, model_url)
     if is_init_date:
         list_avail_days = set(
             re.findall(simple_model + '\\.([0-9]{8})', page))
@@ -170,6 +210,8 @@ async def get_available_runs_in_dir(session, model, dir_):
 
 
 def _process_params(model, init_time):
+    """Generator to get the parameters for fetching forecasts for a given
+    model at a given init_time"""
     params = model.copy()
     del params['update_freq']
     valid_hr_gen = params['valid_hr_gen'](init_time.hour)
@@ -186,6 +228,8 @@ def _process_params(model, init_time):
 
 
 async def files_to_retrieve(session, model, init_time):
+    """Generator to return the parameters of the available files for download
+    """
     possible_params = _process_params(model, init_time)
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
     simple_model = model['file'].split('.')[0]
@@ -209,39 +253,68 @@ async def files_to_retrieve(session, model, init_time):
                 else:
                     logger.debug('Next file not ready yet for %s at %s',
                                  simple_model, init_time)
-            # did the next run complete before finishing older run?
+            # was the older run cancelled?
             async with session.head(next_init_url) as r:
                 if r.status == 200:
                     logger.warning(
                         'Skipping to next init time at %s for %s',
                         next_inittime, simple_model)
                     return
-            await asyncio.sleep(60)
+            await asyncio.sleep(300)
 
 
-async def fetch_grib_files(session, params, basepath, init_time, chunksize):
-    endpoint = params.pop('endpoint')
-    url = BASE_URL + endpoint
-    filename = basepath / init_time.strftime('%Y/%m/%d/%H') / params['file']
-    if filename.exists():
-        return filename
-    if not filename.parent.is_dir():
-        filename.parent.mkdir(parents=True)
-    logger.info('Getting file %s', filename)
-    tmpfile = filename.with_name('.tmp_' + filename.name)
-    async with session.get(url, params=params) as r:
-        if r.status != 200:
-            logger.error(
-                'Failed to retrieve file %s/%s with message\n%s',
-                params['dir'], params['file'], await r.text())
-            return
-            # should somehow signal and fail?
+async def _get_file(session, url, params, tmpfile, chunksize):
+    async with session.get(url, params=params, raise_for_status=True) as r:
         with open(tmpfile, 'wb') as f:
             while True:
                 chunk = await r.content.read(chunksize * 1024)
                 if not chunk:
                     break
                 f.write(chunk)
+
+
+async def fetch_grib_files(session, params, basepath, init_time, chunksize):
+    """
+    Fetch the grib file referenced by params and save to the appropriate
+    folder under basepath. Retrieves the files in chunks.
+
+    Parameters
+    ----------
+    session : aiohttp.ClientSession
+        The HTTP session to use to request the file
+    params : dict
+        Parameters to include in the GET query to params['endpoint']
+    basepath : Path
+        Path to the base directory where files will be saved. New directories
+        under basepath of the form basepath / year / month / day / hour
+        will be created as necessary.
+    init_time : datetime
+        Initialization time of the model we're trying to fetch
+    chunksize : int
+        Chunksize in KB to fetch and save at once
+
+    Returns
+    -------
+    filename : Path
+        Path of the successfully saved file
+
+    Raises
+    ------
+    aiohttp.ClientResponseError
+        When the HTTP request fails/returns a status code >= 400
+    """
+    endpoint = params.pop('endpoint')
+    url = BASE_URL + endpoint
+    filename = (
+        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file']
+        ).with_suffix('.grib2')
+    if filename.exists():
+        return filename
+    if not filename.parent.is_dir():
+        filename.parent.mkdir(parents=True)
+    logger.info('Getting file %s', filename)
+    tmpfile = filename.with_name('.tmp_' + filename.name)
+    await get_with_retries(_get_file, session, url, params, tmpfile, chunksize)
     tmpfile.rename(filename)
     logging.debug('Successfully saved %s', filename)
     return filename
@@ -256,13 +329,34 @@ def optimize_netcdf():
     pass
 
 
-async def run_once(basepath, model, chunksize):
+async def find_next_runtime(model_path, session, model):
+    dirs = await get_available_dirs(session, model)
+    no_file = []
+    for dir_ in dirs:
+        # path w/ year/month/day
+        path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
+        for hr in range(0, 24, int(model['update_freq'].strip('h'))):
+            hrpath = path / f'{hr:02d}'
+            glob = list(hrpath.glob('*.nc'))
+            if len(glob) == 0:
+                no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00'))
+    if len(no_file) == 0:
+        # all files for current dirs present, get next day
+        return max([pd.Timestamp(f'{dir_[:8]}T0000')]) + pd.Timedelta('1d')
+    else:
+        return min(no_file)
+
+
+async def run_once(basepath, model_name, chunksize):
     session = make_session()
-    inittime = pd.Timestamp('2019-04-05T18')
+    modelpath = basepath / model_name
+    model = model_map[model_name]
+    inittime = await find_next_runtime(modelpath, session, model)
+    breakpoint()
     tasks = set()
-    async for params in files_to_retrieve(session, model_map[model], inittime):
+    async for params in files_to_retrieve(session, model, inittime):
         tasks.add(asyncio.create_task(
-            fetch_grib_files(session, params, basepath, inittime,
+            fetch_grib_files(session, params, modelpath, inittime,
                              chunksize)))
 
     await asyncio.gather(*tasks)
