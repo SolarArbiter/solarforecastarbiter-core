@@ -52,3 +52,7 @@ def observation_df_to_json_payload(
     else:
         payload_df['questionable'] = observation_df[questionable_label]
     return json.dumps({'values': payload_df.to_dict(orient='records')})
+
+
+def load_data(observation, start, end):
+    raise NotImplementedError

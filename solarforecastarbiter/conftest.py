@@ -97,12 +97,21 @@ def site_powerplant_site_type(request):
 
 
 @pytest.fixture(scope='module')
-def ac_power_observation_metadata(site_metadata):
+def ac_power_observation_metadata(powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
         value_type='instantaneous', interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=site_metadata, uncertainty=1)
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
     return ac_power_meta
+
+
+@pytest.fixture(scope='module')
+def ghi_observation_metadata(site_metadata):
+    ghi_meta = datamodel.Observation(
+        name='Albuquerque Baseline GHI', variable='ghi',
+        value_type='instantaneous', interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=site_metadata, uncertainty=1)
+    return ghi_meta
 
 
 @pytest.fixture(scope='module')

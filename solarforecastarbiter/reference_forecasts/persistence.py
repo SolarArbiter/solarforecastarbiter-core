@@ -64,6 +64,10 @@ def index_persistence(observation, window, data_start, data_end,
     irradiance or power that are then resampled to the observation
     window.
 
+    Be careful with start times, end times, window, and interval length.
+    For example, if persistence of a scalar quantity is desired,
+    data_end - data_start must be strictly less than window.
+
     Parameters
     ----------
     observation : datamodel.Observation
@@ -131,7 +135,7 @@ def index_persistence(observation, window, data_start, data_end,
         )
     else:
         clear_ref = clearsky_obs[observation.variable]
-        clearsky_fx = clearsky_fx[observation.variable]
+        clear_fx = clearsky_fx[observation.variable]
 
     # np.array strips datetime information in a
     # scalar and Series compatible way
@@ -144,5 +148,10 @@ def index_persistence(observation, window, data_start, data_end,
                                 freq=interval_length)
     # will raise error if you've supplied incompatible data_start,
     # data_end, window, forecast_start, forecast_end, interval_length
+    try:
+        fx = fx.item()
+    except ValueError:
+        # not 1d, hope it's the right length when we make the series!
+        pass
     fx = pd.Series(fx, index=fx_index)
     return fx
