@@ -163,15 +163,6 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             return res
 
 
-def _make_regex_from_filename(filename):
-    out = filename
-    format_fields = re.findall('\\{\\w*:\\w*\\}', filename)
-    for field in format_fields:
-        num_digits = str(int(re.findall('\\d+', field)[0]))
-        out = out.replace(field, '(\\d{' + num_digits + '})')
-    return out
-
-
 async def get_available_dirs(session, model):
     """Get the available date/date+init_hr directories"""
     simple_model = model['file'].split('.')[0]
@@ -190,23 +181,6 @@ async def get_available_dirs(session, model):
         list_avail_days = set(
             re.findall(simple_model + '\\.([0-9]{10})', page))
     return list_avail_days
-
-
-async def get_available_runs_in_dir(session, model, dir_):
-    """Get the available runs in a given directory"""
-    model_url = BASE_URL + model['endpoint']
-    fname_regex = _make_regex_from_filename(model['file'])
-    async with session.get(model_url, params={'dir': dir_}) as r:
-        if r.status != 200:
-            pass
-        files_text = await r.text()
-    init_valid = set(re.findall(fname_regex, files_text))
-    dateday = pd.Timestamp(dir_.split('.')[-1][:8])
-    day_init_valid = [(dateday, int(iv[0]), int(iv[1]))
-                      for iv in init_valid]
-    df = pd.DataFrame.from_records(
-        sorted(day_init_valid), columns=['date', 'init_hr', 'valid_hr'])
-    return df
 
 
 def _process_params(model, init_time):
