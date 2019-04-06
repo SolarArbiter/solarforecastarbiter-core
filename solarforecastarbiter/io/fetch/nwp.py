@@ -3,11 +3,13 @@ Fetch NWP files from NCEP Nomads
 """
 import asyncio
 import argparse
+from functools import wraps
 import logging
 from pathlib import Path
 import re
 import signal
 import sys
+import threading
 
 
 import aiohttp
@@ -124,6 +126,19 @@ HRRR = {'endpoint': 'filter_hrrr_2d.pl',
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr': HRRR}
+
+
+def abort_all_on_exception(f):
+    @wraps(f)
+    async def wrapper(*args, **kwargs):
+        try:
+            ret = await f(*args, **kwargs)
+        except Exception:
+            logger.exception('Aborting on error')
+            signal.pthread_kill(threading.get_ident(), signal.SIGUSR1)
+        else:
+            return ret
+    return wrapper
 
 
 async def get_with_retries(get_func, *args, retries=5, **kwargs):
@@ -247,6 +262,7 @@ async def _get_file(session, url, params, tmpfile, chunksize):
                 f.write(chunk)
 
 
+@abort_all_on_exception
 async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     """
     Fetch the grib file referenced by params and save to the appropriate
@@ -280,8 +296,9 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     endpoint = params.pop('endpoint')
     url = BASE_URL + endpoint
     filename = (
-        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file']
-        ).with_suffix('.grib2')
+        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file'])
+    if not filename.suffix == '.grib2':
+        filename = filename.with_suffix(filename.suffix + '.grib2')
     if filename.exists():
         return filename
     if not filename.parent.is_dir():
@@ -307,13 +324,18 @@ async def find_next_runtime(model_path, session, model):
     dirs = await get_available_dirs(session, model)
     no_file = []
     for dir_ in dirs:
-        # path w/ year/month/day
-        path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
-        for hr in range(0, 24, int(model['update_freq'].strip('h'))):
-            hrpath = path / f'{hr:02d}'
+        if len(dir_) == 8:
+            path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
+            for hr in range(0, 24, int(model['update_freq'].strip('h'))):
+                hrpath = path / f'{hr:02d}'
+                glob = list(hrpath.glob('*.nc'))
+                if len(glob) == 0:
+                    no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00'))
+        else:
+            hrpath = model_path / dir_[:4] / dir_[4:6] / dir_[6:8] / dir_[8:10]
             glob = list(hrpath.glob('*.nc'))
             if len(glob) == 0:
-                no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00'))
+                no_file.append(pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00'))
     if len(no_file) == 0:
         # all files for current dirs present, get next day
         return max([pd.Timestamp(f'{dir_[:8]}T0000')]) + pd.Timedelta('1d')
@@ -326,7 +348,6 @@ async def run_once(basepath, model_name, chunksize):
     modelpath = basepath / model_name
     model = model_map[model_name]
     inittime = await find_next_runtime(modelpath, session, model)
-    breakpoint()
     tasks = set()
     async for params in files_to_retrieve(session, model, inittime):
         tasks.add(asyncio.create_task(
@@ -363,6 +384,12 @@ def main():
     loop = asyncio.get_event_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, fut.cancel)
+
+    def bail():
+        fut.cancel()
+        sys.exit(1)
+
+    loop.add_signal_handler(signal.SIGUSR1, bail)
 
     loop.run_until_complete(fut)
 
