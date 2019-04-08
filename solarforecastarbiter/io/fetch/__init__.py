@@ -3,6 +3,7 @@ import atexit
 from functools import partial
 import logging
 import multiprocessing as mp
+import signal
 import sys
 
 
@@ -12,10 +13,15 @@ import aiohttp
 cluster = None
 
 
+def ignore_interrupt():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
 def start_cluster(max_workers=4, maxtasksperchild=5):
     global cluster
     mp.set_start_method("forkserver")
-    cluster = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild)
+    cluster = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild,
+                      initializer=ignore_interrupt)
     atexit.register(cluster.terminate)
     return
 
