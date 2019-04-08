@@ -25,6 +25,13 @@ ALLOWED_VARIABLES = {
     'curtailment': 'MW',
 }
 
+CLOSED_MAPPING = {
+    'instant': None,
+    'instantaneous': None,
+    'beginning': 'left',
+    'ending': 'right'
+}
+
 
 @dataclass(frozen=True)
 class Site:

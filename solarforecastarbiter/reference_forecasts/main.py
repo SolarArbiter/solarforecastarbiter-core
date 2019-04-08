@@ -153,21 +153,21 @@ def run_persistence(observation, forecast, issue_time, model):
     else:
         # day ahead persistence: tomorrow's forecast is equal to yesterday's
         # observations. So, forecast always uses obs > 24 hr old at each valid
-        # time. Smarter TBD approach might be to use today's observations up
+        # time. Smarter approach might be to use today's observations up
         # until issue_time, and use yesterday's observations for issue_time
         # until end of day. So, forecast *never* uses obs > 24 hr old at each
-        # valid time.
+        # valid time. Arguably too much for a reference forecast.
         data_end = issue_time.floor('1d')
         data_start = data_end - pd.Timedelta('1d')
         window = forecast.interval_length
 
-    # account for observation interval label.
-    # you could argue this should be elsewhere or at least a utility
-    # function in io, but putting it here for now
-    if observation.interval_label == 'beginning':
-        data_end -= pd.Timedelta('1s')
-    elif observation.interval_label == 'ending':
-        data_start += pd.Timedelta('1s')
+    # to ensure that each observation contributes to the correct forecast,
+    # data_end, data_start need to be nudged if observations are instantaneous
+    if datamodel.CLOSED_MAPPING[observation.interval_label] is None:
+        if forecast.interval_label == 'ending':
+            data_start += pd.Timedelta('1s')
+        else:
+            data_end -= pd.Timedelta('1s')
 
     # specify forecast start and end times. question: should we also
     # specify forecast interval label here? see notes in persistence.py
@@ -182,8 +182,8 @@ def run_persistence(observation, forecast, issue_time, model):
     # make interval label consistent with input forecast
     # not confident that this code does what it's supposed to do all the time
     # deal with that once design is better understood
-    if forecast.interval_label == 'ending':
-        fx = fx.resample(fx.index.freq, label='right').mean()
+    closed_fx = datamodel.CLOSED_MAPPING[forecast.interval_label]
+    fx = fx.resample(fx.index.freq, closed=closed_fx).mean()
 
     return fx
 
