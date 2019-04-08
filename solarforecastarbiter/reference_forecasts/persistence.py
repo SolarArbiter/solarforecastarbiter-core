@@ -89,6 +89,7 @@ def index_persistence(observation, window, data_start, data_end,
     Returns
     -------
     forecast : pd.Series
+        Returned forecast has interval label beginning.
     """
     # get observation data for specified range
     obs = load_data(observation, data_start, data_end)
@@ -146,12 +147,16 @@ def index_persistence(observation, window, data_start, data_end,
 
     fx_index = pd.DatetimeIndex(start=forecast_start, end=forecast_end,
                                 freq=interval_length)
-    # will raise error if you've supplied incompatible data_start,
-    # data_end, window, forecast_start, forecast_end, interval_length
+    # If we're persisting a single value, the code below pulls out that value
+    # from a 1-length array. If not, it passes the data onto the Series
+    # constructor in hopes that you've specified consistent windows
     try:
         fx = fx.item()
     except ValueError:
         # not 1d, hope it's the right length when we make the series!
         pass
-    fx = pd.Series(fx, index=fx_index)
+    finally:
+        # will raise error if you've supplied incompatible data_start,
+        # data_end, window, forecast_start, forecast_end, interval_length
+        fx = pd.Series(fx, index=fx_index)
     return fx

@@ -161,11 +161,31 @@ def run_persistence(observation, forecast, issue_time, model):
         data_start = data_end - pd.Timedelta('1d')
         window = forecast.interval_length
 
+    # account for observation interval label.
+    # you could argue this should be elsewhere or at least a utility
+    # function in io, but putting it here for now
+    if observation.interval_label == 'beginning':
+        data_end -= pd.Timedelta('1s')
+    elif observation.interval_label == 'ending':
+        data_start += pd.Timedelta('1s')
+
+    # specify forecast start and end times. question: should we also
+    # specify forecast interval label here? see notes in persistence.py
+    # and in resampling below
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
-    forecast = model(observation, window, data_start, data_end, forecast_start,
-                     forecast_end, forecast.interval_length)
-    return forecast
+
+    # finally, we call the desired persistence model function
+    fx = model(observation, window, data_start, data_end, forecast_start,
+               forecast_end, forecast.interval_length)
+
+    # make interval label consistent with input forecast
+    # not confident that this code does what it's supposed to do all the time
+    # deal with that once design is better understood
+    if forecast.interval_label == 'ending':
+        fx = fx.resample(fx.index.freq, label='right').mean()
+
+    return fx
 
 
 # put in validator?
