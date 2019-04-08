@@ -31,8 +31,8 @@ def persistence(observation, window, data_start, data_end,
         Forecast start
     forecast_end : pd.Timestamp
         Forecast end
-    interval_length : str
-        Forecast interval length e.g. '5min' or '1h'
+    interval_length : pd.Timedelta
+        Forecast interval length
     load_data : function
         A function that loads the observation data.
 
@@ -40,14 +40,20 @@ def persistence(observation, window, data_start, data_end,
     -------
     forecast : pd.Series
     """
+    # consistency checks for labels, data duration, and forecast duration
+    closed = _check_interval_closure(
+        observation.interval_label, window, data_start, data_end,
+        forecast_start, forecast_end, interval_length)
     # assumes data (possibly nan) exists from start to end
     obs = load_data(observation, data_start, data_end)
     # only support mean for now
-    # np.array strips datetime information in a
-    # scalar and Series compatible way
-    persistence_quantity = np.array(obs.resample(window).mean())
+    persistence_quantity = obs.resample(window, closed=closed).mean()
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
-                             freq=interval_length)
+                             freq=interval_length, closed=closed)
+    # housekeeping for scalar vs. array forecasts. raise exception if
+    # calculated forecast is incompatible with desired forecast.
+    persistence_quantity = _scalar_or_array_index(persistence_quantity,
+                                                  fx_index)
     # will raise error if you've supplied incompatible data_start,
     # data_end, window, forecast_start, forecast_end, interval_length
     fx = pd.Series(persistence_quantity, index=fx_index)
@@ -85,8 +91,8 @@ def index_persistence(observation, window, data_start, data_end,
         Forecast start
     forecast_end : pd.Timestamp
         Forecast end
-    interval_length : str
-        Forecast interval length e.g. '5min' or '1h'
+    interval_length : pd.Timedelta
+        Forecast interval length
     load_data : function
         A function that loads the observation data.
 
@@ -107,28 +113,9 @@ def index_persistence(observation, window, data_start, data_end,
         forecast length.
     """
     # consistency checks for labels, data duration, and forecast duration
-    closed = datamodel.CLOSED_MAPPING[observation.interval_label]
-    gte_or_gt_mapping = {
-        'instant': np.greater_equal,
-        'instantaneous': np.greater_equal,
-        'beginning': np.greater,
-        'ending': np.greater
-    }
-    gte_or_gt = gte_or_gt_mapping[observation.interval_label]
-    data_duration = data_end - data_start
-    fx_duration = forecast_end - forecast_start
-    if gte_or_gt(data_duration, window) and data_duration != fx_duration:
-        # data_duration > window (beginning or ending label), or
-        # data_duration >= window (instantaneous label), so we will eventually
-        # persist multiple values. This requires that we assume that
-        # data_duration == fx_duration, but the input data did not follow this
-        # rule.
-        raise ValueError(
-            f'For observations with interval_label '
-            f'{observation.interval_label}, if data duration '
-            f'{gte_or_gt.__name__} window, data duration must be '
-            f'equal to forecast duration. window = {window}, data duration = '
-            f'{data_duration}, forecast duration = {fx_duration}')
+    closed = _check_interval_closure(
+        observation.interval_label, window, data_start, data_end,
+        forecast_start, forecast_end, interval_length)
 
     # get observation data for specified range
     obs = load_data(observation, data_start, data_end)
@@ -196,6 +183,58 @@ def index_persistence(observation, window, data_start, data_end,
 
     # housekeeping for scalar vs. array forecasts. raise exception if
     # calculated forecast is incompatible with desired forecast.
+    pers_index = _scalar_or_array_index(pers_index, clear_fx_resampled)
+
+    # finally, make forecast
+    # fx(dt + t_i) = index(t_i) * clear(dt + t_i)
+    fx = pers_index * clear_fx_resampled
+
+    return fx
+
+
+def _check_interval_closure(interval_label, window, data_start, data_end,
+                            forecast_start, forecast_end, interval_length):
+    """Ensures valid input.
+
+    Returns
+    -------
+    closed : None, 'left', or 'right'
+        Parameter to be used with pandas DatetimeIndex operations
+
+    Raises
+    ------
+    ValueError
+    """
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+    gte_or_gt_mapping = {
+        'instant': np.greater_equal,
+        'instantaneous': np.greater_equal,
+        'beginning': np.greater,
+        'ending': np.greater
+    }
+    gte_or_gt = gte_or_gt_mapping[interval_label]
+    data_duration = data_end - data_start
+    fx_duration = forecast_end - forecast_start
+    if (gte_or_gt(data_duration, window) and (
+            data_duration != fx_duration or window != interval_length)):
+        # data_duration > window (beginning or ending label), or
+        # data_duration >= window (instantaneous label), so we will eventually
+        # persist multiple values. This requires that we assume that
+        # data_duration == fx_duration, but the input data did not follow this
+        # rule.
+        raise ValueError(
+            f'For observations with interval_label '
+            f'{interval_label}, if data duration '
+            f'{gte_or_gt.__name__} window, data duration must be '
+            f'equal to forecast duration and window must be equal to '
+            f'interval length. window = {window}, data duration = '
+            f'{data_duration}, forecast duration = {fx_duration} '
+            f'interval length = {interval_length}')
+
+    return closed
+
+
+def _scalar_or_array_index(pers_index, clear_fx_resampled):
     if len(pers_index) == 1:
         # scalar forecast (data_end - data_start <= window)
         pers_index = pers_index.values[0]
@@ -211,9 +250,40 @@ def index_persistence(observation, window, data_start, data_end,
             f'Data inputs produced forecast of length {len(pers_index)}. '
             f'Forecast inputs require forecast of length '
             f'{len(clear_fx_resampled)}.')
+    return pers_index
 
-    # finally, make forecast
-    # fx(dt + t_i) = index(t_i) * clear(dt + t_i)
-    fx = pers_index * clear_fx_resampled
 
-    return fx
+
+def test():
+    from solarforecastarbiter import conftest
+    site = conftest._site_metadata()
+    data_index = pd.DatetimeIndex(start='20190405', end='20190406', freq='5min', tz='America/Phoenix')
+    solar_position = pvmodel.calculate_solar_position(site.latitude, site.longitude, site.elevation, data_index)
+    data_cs = pvmodel.calculate_clearsky(site.latitude, site.longitude, site.elevation, solar_position['apparent_zenith'])
+    data = data_cs['ghi'] * 0.8
+    def load_data(observation, data_start, data_end):
+        return data[data_start:data_end]
+    def ghi_observation_metadata(site_metadata):
+        ghi_meta = datamodel.Observation(
+            name='Albuquerque Baseline GHI', variable='ghi',
+            value_type='instantaneous', interval_length=pd.Timedelta('5min'),
+            interval_label='instant', site=site_metadata, uncertainty=1)
+        return ghi_meta
+    observation = ghi_observation_metadata(site)
+    window = pd.Timedelta('5min')
+    tz = 'America/Phoenix'
+    data_start = pd.Timestamp('20190405 1200', tz=tz)
+    data_end = pd.Timestamp('20190405 1300', tz=tz)
+    forecast_start = pd.Timestamp('20190405 1300', tz=tz)
+    forecast_end = pd.Timestamp('20190405 1400', tz=tz)
+    interval_length = pd.Timedelta('5min')
+    persistence(
+        observation, window, data_start, data_end, forecast_start,
+        forecast_end, interval_length, load_data=load_data)
+    index_persistence(
+        observation, window, data_start, data_end, forecast_start,
+        forecast_end, interval_length, load_data=load_data)
+
+
+if __name__ == '__main__':
+    test()
