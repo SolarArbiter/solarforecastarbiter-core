@@ -12,10 +12,10 @@ import aiohttp
 cluster = None
 
 
-def start_cluster(max_workers=4):
+def start_cluster(max_workers=4, maxtasksperchild=5):
     global cluster
     mp.set_start_method("forkserver")
-    cluster = mp.Pool(max_workers, maxtasksperchild=100)
+    cluster = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild)
     atexit.register(cluster.terminate)
     return
 

@@ -3,21 +3,25 @@ Fetch NWP files from NCEP Nomads
 """
 import asyncio
 import argparse
-from functools import wraps
+from functools import partial, wraps
 import logging
 from pathlib import Path
 import re
 import signal
+import subprocess
 import sys
+import tempfile
 import threading
 
 
 import aiohttp
 import pandas as pd
+import xarray as xr
 
 
 from solarforecastarbiter.io.fetch import (
-    handle_exception, basic_logging_config, make_session)
+    handle_exception, basic_logging_config, make_session,
+    run_in_executor, start_cluster)
 
 
 logger = logging.getLogger(__name__)
@@ -126,6 +130,65 @@ HRRR = {'endpoint': 'filter_hrrr_2d.pl',
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr': HRRR}
+
+
+GRIB_TO_NC4 = """
+#/usr/bin/bash
+FOLDER=$1
+NCFILENAME=$2
+
+pushd $FOLDER
+pwd
+
+# make the nc_table
+cat <<EOF > nc.tbl
+TMP:surface:ignore
+TMP:2 m above ground:t2m
+UGRD:10 m above ground:ignore
+VGRD:10 m above ground:ignore
+TCDC:entire atmosphere:tcdc
+TCDC:entire atmosphere (considered as a single layer):tcdc
+DSWRF:surface:dswrf
+VBDSF:surface:vbdsf
+VDDSF:surface:vddsf
+WIND:10 m above ground:si10
+EOF
+
+
+# add wind speed to grib files
+for file in $(ls -1 *.grib2); do
+    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
+        wgrib2 - -append -grib_out $file;
+    done;
+
+# make netcdf
+cat *.grib2 | wgrib2 - -nc_table nc.tbl -append -netcdf $NCFILENAME
+rm nc.tbl
+popd
+"""
+
+COMPRESSION = {'zlib': True, 'complevel': 4, 'fletcher32': True,
+               'shuffle': True}
+DEFAULT_ENCODING = {
+    # stores the time steps, not an actual time
+    'time': {'dtype': 'int16'},
+    'x': {'dtype': 'float32'},
+    'y': {'dtype': 'float32'},
+    'latitude': {'dtype': 'float32'},
+    'longitude': {'dtype': 'float32'},
+}
+
+# scale factors to fit the variable in a 16 bit integer
+# 0.01 basically keeps 2 digits after decimal
+# and 0.1 keeps one
+SCALE_FACTORS = {
+    't2m': 0.01,
+    'tcdc': 0.01,
+    'si10': 0.01,
+    'dswrf': 0.1,
+    'vbdsf': 0.1,
+    'vddsf': 0.1
+}
 
 
 def abort_all_on_exception(f):
@@ -311,13 +374,65 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-def process_grib_to_netcdf():
-    # make x, y coords in proper projection for hrrr
-    pass
+@abort_all_on_exception
+async def process_grib_to_netcdf(folder):
+    loop = asyncio.get_event_loop()
+    nctmp = Path(tempfile.mkstemp(dir=folder)[1])
+
+    def process_grib():
+        with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
+            tmpfile.write(GRIB_TO_NC4)
+            tmpfile.flush()
+            try:
+                subprocess.run(
+                    ['sh', tmpfile.name, str(folder), str(nctmp)],
+                    check=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
+                logger.error('Error converting grib to NetCDF\n%s',
+                             e.stderr)
+                nctmp.unlink()
+                raise
+    logger.info('Converting GRIB files to NetCDF with wgrib2')
+    await loop.run_in_executor(None, process_grib)
+    return nctmp
 
 
-def optimize_netcdf():
-    pass
+def _optimize_netcdf(nctmpfile, out_path):
+    """Optmizes the netcdf file for accessing by time slice."""
+    ds = xr.open_dataset(nctmpfile, engine='netcdf4',
+                         backend_kwargs={'mode': 'r'})
+    # time is likely unlimited
+    if 'unlimited_dims' in ds.encoding:
+        ds.encoding = {}
+
+    chunksizes = []
+    for dim, size in ds.dims.items():
+        if dim == 'time':
+            chunksizes.append(size)
+        else:
+            chunksizes.append(20)
+
+    encoding = DEFAULT_ENCODING.copy()
+    encoding.update(
+        {key: {'dtype': 'int16', 'scale_factor': SCALE_FACTORS[key],
+               '_FillValue': -9999, 'chunksizes': chunksizes,
+               **COMPRESSION} for key in ds.keys()})
+    ds.to_netcdf(out_path, format='NETCDF4',
+                 mode='w', unlimited_dims=None,
+                 encoding=encoding)
+
+
+async def optimize_netcdf(nctmpfile, final_path):
+    tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
+    try:
+        await run_in_executor(_optimize_netcdf, nctmpfile, tmp_path)
+    except Exception:
+        tmp_path.unlink()
+        raise
+    else:
+        tmp_path.rename(final_path)
+    finally:
+        nctmpfile.unlink()
 
 
 async def find_next_runtime(model_path, session, model):
@@ -348,13 +463,15 @@ async def run_once(basepath, model_name, chunksize):
     modelpath = basepath / model_name
     model = model_map[model_name]
     inittime = await find_next_runtime(modelpath, session, model)
-    tasks = set()
+    fetch_tasks = set()
     async for params in files_to_retrieve(session, model, inittime):
-        tasks.add(asyncio.create_task(
+        fetch_tasks.add(asyncio.create_task(
             fetch_grib_files(session, params, modelpath, inittime,
                              chunksize)))
-
-    await asyncio.gather(*tasks)
+    files = await asyncio.gather(*fetch_tasks)
+    path_to_files = files[0].parent
+    nctmpfile = await process_grib_to_netcdf(path_to_files)
+    await optimize_netcdf(nctmpfile, path_to_files / f'{model_name}.nc')
     await session.close()
 
 
@@ -378,6 +495,7 @@ def main():
     elif args.verbose and args.verbose > 1:
         logging.getLogger().setLevel(logging.DEBUG)
 
+    start_cluster()
     basepath = Path(args.save_directory).resolve()
     fut = asyncio.ensure_future(run_once(basepath, args.model, args.chunksize))
 
