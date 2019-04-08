@@ -89,7 +89,7 @@ def index_persistence(observation, window, data_start, data_end,
     Returns
     -------
     forecast : pd.Series
-        Returned forecast has interval label beginning.
+        TODO: Returned forecast has interval label ?.
     """
     # get observation data for specified range
     obs = load_data(observation, data_start, data_end)
@@ -99,18 +99,21 @@ def index_persistence(observation, window, data_start, data_end,
     resampler = partial(forecast.resample, freq=window)
     obs_resampled = resampler(obs)
 
-    # partial-up the metadata for clarity below
+    # partial-up the metadata for solar position and
+    # clearsky calculation clarity and consistency
     site = observation.site
     calc_solpos = partial(pvmodel.calculate_solar_position,
                           site.latitude, site.longitude, site.elevation)
     calc_cs = partial(pvmodel.calculate_clearsky,
                       site.latitude, site.longitude, site.elevation)
 
-    # calculate solar position and clearsky for obs time range
-    # minimum time resolution 5 minutes so to reduce errors from
+    # calculate solar position and clearsky for obs time range.
+    # minimum time resolution 5 minutes to reduce errors from
     # changing solar position during persistence window.
-    # clear sky or ac power will be resampled below
+    # later, clear sky or ac power will be resampled
     freq = min(window, pd.Timedelta('5min'))
+    # TODO: account for observation interval label. maybe ok as is if main.py
+    # is providing correct input, function clearly states required input
     obs_range = pd.DatetimeIndex(start=data_start, end=data_end, freq=freq)
     solar_position_obs = calc_solpos(obs_range)
     clearsky_obs = calc_cs(solar_position_obs['apparent_zenith'])
@@ -121,6 +124,9 @@ def index_persistence(observation, window, data_start, data_end,
     solar_position_fx = calc_solpos(fx_range)
     clearsky_fx = calc_cs(solar_position_fx['apparent_zenith'])
 
+    # consider putting the code within each block into its own function
+    # with standard outputs clear_ref and clear_fx. but with only two cases
+    # for now, it might be more clear in line
     if isinstance(site, datamodel.SolarPowerPlant):
         # no temperature input is ok so long as temperature effects
         # do not push the system above or below AC clip point
@@ -138,25 +144,35 @@ def index_persistence(observation, window, data_start, data_end,
         clear_ref = clearsky_obs[observation.variable]
         clear_fx = clearsky_fx[observation.variable]
 
-    # np.array strips datetime information in a
-    # scalar and Series compatible way
+    # resample reference quantity (average over window)
     clear_ref_resampled = resampler(clear_ref)
+    # calculate persistence index (clear sky index or ac power index)
+    # np.array strips datetime information in a
+    # scalar (data_end - data_start < window)
+    # and Series (data_end - data_start >= window) compatible way
+    # index(t_i) = obs(t_i) / clear(t_i)
     pers_index = np.array(obs_resampled) / np.array(clear_ref_resampled)
+    # resample forecast clear sky reference (average over window)
     clear_fx_resampled = resampler(clear_fx)
+    # finally, make numpy array with forecast quantity
+    # fx(dt + t_i) = index(t_i) * clear(dt + t_i)
     fx = pers_index * np.array(clear_fx_resampled)
 
+    # construct forecast time index dt+t_i
     fx_index = pd.DatetimeIndex(start=forecast_start, end=forecast_end,
                                 freq=interval_length)
-    # If we're persisting a single value, the code below pulls out that value
-    # from a 1-length array. If not, it passes the data onto the Series
-    # constructor in hopes that you've specified consistent windows
+    # account for scalar or array persistence index
     try:
+        # If we're persisting a single value, convert 1-length array to scalar
         fx = fx.item()
     except ValueError:
         # not 1d, hope it's the right length when we make the series!
         pass
     finally:
         # will raise error if you've supplied incompatible data_start,
-        # data_end, window, forecast_start, forecast_end, interval_length
+        # data_end, window, forecast_start, forecast_end, interval_length.
+        # Probably put in another try/except and raise better message.
+        # Or... check earlier that len(fx)==1 or len(fx)==len(fx_index)
+        # and raise if that's not true
         fx = pd.Series(fx, index=fx_index)
     return fx
