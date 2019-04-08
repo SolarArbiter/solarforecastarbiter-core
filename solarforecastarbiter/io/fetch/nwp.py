@@ -167,27 +167,23 @@ rm nc.tbl
 popd
 """
 
-COMPRESSION = {'zlib': True, 'complevel': 4, 'fletcher32': True,
-               'shuffle': True}
+COMPRESSION = {'zlib': True, 'complevel': 1, 'shuffle': True,
+               'fletcher32': True}
 DEFAULT_ENCODING = {
     # stores the time steps, not an actual time
     'time': {'dtype': 'int16'},
     'x': {'dtype': 'float32'},
     'y': {'dtype': 'float32'},
-    'latitude': {'dtype': 'float32'},
-    'longitude': {'dtype': 'float32'},
+    'latitude': {'dtype': 'float32', 'least_significant_digit': 3},
+    'longitude': {'dtype': 'float32', 'least_significant_digit': 3}
 }
-
-# scale factors to fit the variable in a 16 bit integer
-# 0.01 basically keeps 2 digits after decimal
-# and 0.1 keeps one
-SCALE_FACTORS = {
-    't2m': 0.01,
-    'tcdc': 0.01,
-    'si10': 0.01,
-    'dswrf': 0.1,
-    'vbdsf': 0.1,
-    'vddsf': 0.1
+LEAST_SIGNIFICANT_DIGITS = {
+    't2m': 2,
+    'tcdc': 1,
+    'si10': 2,
+    'dswrf': 1,
+    'vbdsf': 1,
+    'vddsf': 1
 }
 
 
@@ -410,19 +406,22 @@ def _optimize_netcdf(nctmpfile, out_path):
         if dim == 'time':
             chunksizes.append(size)
         else:
-            chunksizes.append(20)
+            chunksizes.append(50)
 
     encoding = DEFAULT_ENCODING.copy()
     encoding.update(
-        {key: {'dtype': 'int16', 'scale_factor': SCALE_FACTORS[key],
-               '_FillValue': -9999, 'chunksizes': chunksizes,
-               **COMPRESSION} for key in ds.keys()})
+        {key: {'dtype': 'float32',
+               'least_significant_digit': LEAST_SIGNIFICANT_DIGITS[key],
+               'chunksizes': chunksizes,
+               **COMPRESSION}
+         for key in ds.keys()})
     ds.to_netcdf(out_path, format='NETCDF4',
                  mode='w', unlimited_dims=None,
                  encoding=encoding)
 
 
 async def optimize_netcdf(nctmpfile, final_path):
+    logger.info('Optimizing NetCDF file')
     tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
     try:
         await run_in_executor(_optimize_netcdf, nctmpfile, tmp_path)
