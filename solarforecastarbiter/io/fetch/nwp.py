@@ -369,26 +369,27 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
+def _process_grib(nctmp, folder):
+    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
+        tmpfile.write(GRIB_TO_NC4)
+        tmpfile.flush()
+        try:
+            subprocess.run(
+                ['sh', tmpfile.name, str(folder), str(nctmp)],
+                check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            logger.error('Error converting grib to NetCDF\n%s',
+                         e.stderr)
+            nctmp.unlink()
+            raise
+
+
 @abort_all_on_exception
 async def process_grib_to_netcdf(folder):
-    loop = asyncio.get_event_loop()
     nctmp = Path(tempfile.mkstemp(dir=folder)[1])
 
-    def process_grib():
-        with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-            tmpfile.write(GRIB_TO_NC4)
-            tmpfile.flush()
-            try:
-                subprocess.run(
-                    ['sh', tmpfile.name, str(folder), str(nctmp)],
-                    check=True, capture_output=True)
-            except subprocess.CalledProcessError as e:
-                logger.error('Error converting grib to NetCDF\n%s',
-                             e.stderr)
-                nctmp.unlink()
-                raise
     logger.info('Converting GRIB files to NetCDF with wgrib2')
-    await loop.run_in_executor(None, process_grib)
+    await run_in_executor(_process_grib, nctmp, folder)
     return nctmp
 
 
@@ -422,6 +423,8 @@ def _optimize_netcdf(nctmpfile, out_path):
 async def optimize_netcdf(nctmpfile, final_path):
     logger.info('Optimizing NetCDF file')
     tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
+    # possible that this leaks memory, so run in separate process
+    # that is restarted after a number of jobs
     try:
         await run_in_executor(_optimize_netcdf, nctmpfile, tmp_path)
     except Exception:
@@ -467,9 +470,10 @@ async def run_once(basepath, model_name, chunksize):
             fetch_grib_files(session, params, modelpath, inittime,
                              chunksize)))
     files = await asyncio.gather(*fetch_tasks)
-    path_to_files = files[0].parent
-    nctmpfile = await process_grib_to_netcdf(path_to_files)
-    await optimize_netcdf(nctmpfile, path_to_files / f'{model_name}.nc')
+    if len(files) != 0: # skip to next inittime
+        path_to_files = files[0].parent
+        nctmpfile = await process_grib_to_netcdf(path_to_files)
+        await optimize_netcdf(nctmpfile, path_to_files / f'{model_name}.nc')
     await session.close()
 
 
