@@ -109,9 +109,11 @@ RAP = {'endpoint': 'filter_rap.pl',
        'valid_hr_gen': (
            lambda x: range(40) if x in (3, 9, 15, 21) else range(22))}
 
-
-HRRR = {'endpoint': 'filter_hrrr_2d.pl',
-        'file': 'hrrr.t{init_hr:02d}z.wrfsfcf{valid_hr:02d}.grib2',
+# for hourly herr, endpoint = filter_hrrr_2d.pl
+# file: wrfsubhf -> wrfsfcf
+# add var_TCDC: 'on'
+HRRR = {'endpoint': 'filter_hrrr_sub.pl',
+        'file': 'hrrr.t{init_hr:02d}z.wrfsubhf{valid_hr:02d}.grib2',
         'dir': '/hrrr.{init_date}/conus',
         'lev_2_m_above_ground': 'on',
         'lev_10_m_above_ground': 'on',
@@ -120,7 +122,6 @@ HRRR = {'endpoint': 'filter_hrrr_2d.pl',
         'var_DSWRF': 'on',
         'var_VBDSF': 'on',
         'var_VDDSF': 'on',
-        'var_TCDC': 'on',
         'var_TMP': 'on',
         'var_UGRD': 'on',
         'var_VGRD': 'on',
@@ -157,12 +158,12 @@ EOF
 
 # add wind speed to grib files
 for file in $(ls -1 *.grib2); do
-    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
+    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" -not 'ave' | \
         wgrib2 - -append -grib_out $file;
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc_table nc.tbl -append -netcdf $NCFILENAME
+cat *.grib2 | wgrib2 - -nc_table nc.tbl -not 'ave' -append -netcdf $NCFILENAME
 rm nc.tbl
 popd
 """
@@ -470,7 +471,7 @@ async def run_once(basepath, model_name, chunksize):
             fetch_grib_files(session, params, modelpath, inittime,
                              chunksize)))
     files = await asyncio.gather(*fetch_tasks)
-    if len(files) != 0: # skip to next inittime
+    if len(files) != 0:  # skip to next inittime
         path_to_files = files[0].parent
         nctmpfile = await process_grib_to_netcdf(path_to_files)
         await optimize_netcdf(nctmpfile, path_to_files / f'{model_name}.nc')
