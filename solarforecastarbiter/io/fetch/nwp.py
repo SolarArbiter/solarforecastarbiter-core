@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 CHECK_URL = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/{}/prod'
 BASE_URL = 'https://nomads.ncep.noaa.gov/cgi-bin/'
-DOMAIN = {'subregion': None,
+DOMAIN = {'subregion': '',
           'leftlon': -126,
           'rightlon': -66,
           'toplat': 50,
@@ -172,8 +172,6 @@ COMPRESSION = {'zlib': True, 'complevel': 1, 'shuffle': True,
 DEFAULT_ENCODING = {
     # stores the time steps, not an actual time
     'time': {'dtype': 'int16'},
-    'x': {'dtype': 'float32'},
-    'y': {'dtype': 'float32'},
     'latitude': {'dtype': 'float32', 'least_significant_digit': 3},
     'longitude': {'dtype': 'float32', 'least_significant_digit': 3}
 }
@@ -261,6 +259,7 @@ def _process_params(model, init_time):
     """Generator to get the parameters for fetching forecasts for a given
     model at a given init_time"""
     params = model.copy()
+    params.update(DOMAIN)
     del params['update_freq']
     valid_hr_gen = params['valid_hr_gen'](init_time.hour)
     del params['valid_hr_gen']
@@ -499,14 +498,14 @@ def main():
     fut = asyncio.ensure_future(run_once(basepath, args.model, args.chunksize))
 
     loop = asyncio.get_event_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, fut.cancel)
 
-    def bail():
+    def bail(ecode):
         fut.cancel()
-        sys.exit(1)
+        sys.exit(ecode)
 
-    loop.add_signal_handler(signal.SIGUSR1, bail)
+    loop.add_signal_handler(signal.SIGUSR1, partial(bail, 1))
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, partial(bail, 0))
 
     loop.run_until_complete(fut)
 
