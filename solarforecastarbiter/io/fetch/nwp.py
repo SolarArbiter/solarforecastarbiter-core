@@ -37,7 +37,7 @@ DOMAIN = {'subregion': '',
 
 
 def _gfs_valid_hr_gen(init_hr):
-    i = 0
+    i = 0  # should we start at 1 and avoid the analysis?
     while True:
         yield i
         if i < 120:
@@ -294,25 +294,28 @@ async def files_to_retrieve(session, model, init_time):
             # is the next file ready?
             async with session.head(next_model_url) as r:
                 if r.status == 200:
-                    logger.info('%s/%s is ready for download',
-                                next_params['dir'], next_params['file'])
+                    logger.debug('%s/%s is ready for download',
+                                 next_params['dir'], next_params['file'])
                     yield next_params
                     break
                 else:
                     logger.debug('Next file not ready yet for %s at %s',
                                  simple_model, init_time)
-            # was the older run cancelled?
+            # was the older run cancelled or late? What kind of problem will
+            #  this cause for reference forecasts?
             async with session.head(next_init_url) as r:
                 if r.status == 200:
                     logger.warning(
                         'Skipping to next init time at %s for %s',
                         next_inittime, simple_model)
                     return
-            await asyncio.sleep(300)
+            await asyncio.sleep(120)
 
 
 async def _get_file(session, url, params, tmpfile, chunksize):
-    async with session.get(url, params=params, raise_for_status=True) as r:
+    timeout = aiohttp.ClientTimeout(total=660, connect=60, sock_read=600)
+    async with session.get(url, params=params, raise_for_status=True,
+                           timeout=timeout) as r:
         with open(tmpfile, 'wb') as f:
             while True:
                 chunk = await r.content.read(chunksize * 1024)
@@ -437,7 +440,7 @@ async def optimize_netcdf(nctmpfile, final_path):
         nctmpfile.unlink()
 
 
-async def find_next_runtime(model_path, session, model):
+async def startup_find_next_runtime(model_path, session, model):
     dirs = await get_available_dirs(session, model)
     no_file = []
     for dir_ in dirs:
@@ -460,22 +463,58 @@ async def find_next_runtime(model_path, session, model):
         return min(no_file)
 
 
-async def run_once(basepath, model_name, chunksize):
+def next_run_time(inittime, modelpath, model):
+    inittime += pd.Timedelta(model['update_freq'])
+    # check if nc file exists for this inittime
+    if len(list(
+            (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
+        inittime += pd.Timedelta(model['update_freq'])
+        return next_run_time(inittime, modelpath, model)
+    return inittime
+
+
+async def run(basepath, model_name, chunksize, once=False):
     session = make_session()
     modelpath = basepath / model_name
     model = model_map[model_name]
-    inittime = await find_next_runtime(modelpath, session, model)
-    fetch_tasks = set()
-    async for params in files_to_retrieve(session, model, inittime):
-        fetch_tasks.add(asyncio.create_task(
-            fetch_grib_files(session, params, modelpath, inittime,
-                             chunksize)))
-    files = await asyncio.gather(*fetch_tasks)
-    if len(files) != 0:  # skip to next inittime
-        path_to_files = files[0].parent
-        nctmpfile = await process_grib_to_netcdf(path_to_files)
-        await optimize_netcdf(nctmpfile, path_to_files / f'{model_name}.nc')
+    inittime = await startup_find_next_runtime(modelpath, session, model)
+    while True:
+        fetch_tasks = set()
+        async for params in files_to_retrieve(session, model, inittime):
+            fetch_tasks.add(asyncio.create_task(
+                fetch_grib_files(session, params, modelpath, inittime,
+                                 chunksize)))
+        files = await asyncio.gather(*fetch_tasks)
+        if len(files) != 0:  # skip to next inittime
+            path_to_files = files[0].parent
+            nctmpfile = await process_grib_to_netcdf(path_to_files)
+            try:
+                await optimize_netcdf(
+                    nctmpfile, path_to_files / f'{model_name}.nc')
+            except Exception:
+                raise
+            else:
+                # remove grib files
+                for f in files:
+                    f.unlink()
+        if once:
+            break
+        else:
+            inittime = next_run_time(inittime, modelpath, model)
     await session.close()
+
+
+async def optimize_only(path_to_files, model_name):
+    nctmpfile = await process_grib_to_netcdf(path_to_files)
+    try:
+        await optimize_netcdf(
+            nctmpfile, path_to_files / f'{model_name}.nc')
+    except Exception:
+        raise
+    else:
+        # remove grib files
+        for f in path_to_files.glob('*.grib2'):
+            f.unlink()
 
 
 def main():
@@ -486,6 +525,11 @@ def main():
     argparser.add_argument('-v', '--verbose', action='count')
     argparser.add_argument('--chunksize', default=128,
                            help='Size of a chunk (in KB) to save at one time')
+    argparser.add_argument('--once', action='store_true',
+                           help='Only get one forecast initialization time')
+    argparser.add_argument(
+        '--netcdf-only', action='store_true',
+        help='Only convert files at save_directory to netcdf')
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
@@ -500,7 +544,19 @@ def main():
 
     start_cluster()
     basepath = Path(args.save_directory).resolve()
-    fut = asyncio.ensure_future(run_once(basepath, args.model, args.chunksize))
+    if args.netcdf_only:
+        path_to_files = basepath
+        if (
+                not path_to_files.is_dir() or
+                len(list(path_to_files.glob('*.grib2'))) == 0
+        ):
+            logger.error('%s is not a valid directory with grib files',
+                         path_to_files)
+            sys.exit(1)
+        fut = asyncio.ensure_future(optimize_only(path_to_files, args.model))
+    else:
+        fut = asyncio.ensure_future(run(basepath, args.model, args.chunksize,
+                                        args.once))
 
     loop = asyncio.get_event_loop()
 
