@@ -65,7 +65,8 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'update_freq': '6h',
                 'valid_hr_gen': _gfs_valid_hr_gen,
                 'time_between_fcst_hrs': 60,
-                'delay_to_first_forecast': '200min'}
+                'delay_to_first_forecast': '200min',
+                'avg_max_run_length': '90min'}
 
 
 def _nam_valid_hr_gen(init_hr):
@@ -95,7 +96,8 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'update_freq': '6h',
              'valid_hr_gen': _nam_valid_hr_gen,
              'time_between_fcst_hrs': 60,
-             'delay_to_first_forecast': '90min'}
+             'delay_to_first_forecast': '90min',
+             'avg_max_run_length': '70min'}
 
 
 # should be able to use RANGE requests and get data directly from grib files
@@ -116,13 +118,12 @@ RAP = {'endpoint': 'filter_rap.pl',
        'valid_hr_gen': (
            lambda x: range(40) if x in (3, 9, 15, 21) else range(22)),
        'time_between_fcst_hrs': 60,
-       'delay_to_first_forecast': '30min'}
+       'delay_to_first_forecast': '50min',
+       'avg_max_run_length': '20min'}
 
-# for hourly hrrr, endpoint = filter_hrrr_2d.pl
-# file: wrfsubhf -> wrfsfcf
-# add var_TCDC: 'on'
-HRRR = {'endpoint': 'filter_hrrr_sub.pl',
-        'file': 'hrrr.t{init_hr:02d}z.wrfsubhf{valid_hr:02d}.grib2',
+
+HRRR = {'endpoint': 'filter_hrrr_2d.pl',
+        'file': 'hrrr.t{init_hr:02d}z.wrfsfcf{valid_hr:02d}.grib2',
         'dir': '/hrrr.{init_date}/conus',
         'lev_2_m_above_ground': 'on',
         'lev_10_m_above_ground': 'on',
@@ -131,17 +132,19 @@ HRRR = {'endpoint': 'filter_hrrr_sub.pl',
         'var_DSWRF': 'on',
         'var_VBDSF': 'on',
         'var_VDDSF': 'on',
+        'var_TCDC': 'on',
         'var_TMP': 'on',
         'var_UGRD': 'on',
         'var_VGRD': 'on',
         'update_freq': '1h',
         'valid_hr_gen': (
             lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
-        'time_between_fcst_hrs': 120,
-        'delay_to_first_forecast': '25min'}
+        'time_between_fcst_hrs': 90,
+        'delay_to_first_forecast': '45min',
+        'avg_max_run_length': '60min'}
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
-              'delay_to_first_forecast']
+              'delay_to_first_forecast', 'avg_max_run_length']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr': HRRR}
@@ -289,10 +292,7 @@ def _process_params(model, init_time):
         yield newp
 
 
-async def files_to_retrieve(session, model, init_time):
-    """Generator to return the parameters of the available files for download
-    """
-    possible_params = _process_params(model, init_time)
+async def check_next_inittime(session, init_time, model):
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
     simple_model = model['file'].split('.')[0]
     next_init_url = (CHECK_URL.format(simple_model)
@@ -301,6 +301,23 @@ async def files_to_retrieve(session, model, init_time):
                          init_dt=next_inittime.strftime('%Y%m%d%H'))
                      + '/' + model['file'].format(init_hr=next_inittime.hour,
                                                   valid_hr=0))
+    async with session.head(next_init_url) as r:
+        return r.status == 200
+        if r.status == 200:
+            logger.warning(
+                'Skipping to next init time at %s for %s',
+                next_inittime, simple_model)
+            return True
+        else:
+            return False
+
+
+async def files_to_retrieve(session, model, init_time):
+    """Generator to return the parameters of the available files for download
+    """
+    possible_params = _process_params(model, init_time)
+    simple_model = model['file'].split('.')[0]
+    first_file_modified_at = None
     for next_params in possible_params:
         next_model_url = (CHECK_URL.format(simple_model)
                           + next_params['dir'] + '/' + next_params['file'])
@@ -310,20 +327,26 @@ async def files_to_retrieve(session, model, init_time):
                 if r.status == 200:
                     logger.debug('%s/%s is ready for download',
                                  next_params['dir'], next_params['file'])
+                    if first_file_modified_at is None:
+                        first_file_modified_at = pd.Timestamp(
+                            r.headers['Last-Modified'])
+                        logger.debug('First file was available at %s',
+                                     first_file_modified_at)
                     yield next_params
                     break
                 else:
                     logger.debug('Next file not ready yet for %s at %s',
                                  simple_model, init_time)
-            # was the older run cancelled or late? What kind of problem will
-            #  this cause for reference forecasts?
-            # probably better to first wait a set amount of time after init,
-            # then check for next run
-            async with session.head(next_init_url) as r:
-                if r.status == 200:
-                    logger.warning(
-                        'Skipping to next init time at %s for %s',
-                        next_inittime, simple_model)
+
+            # if the current time is after 'avg_max_run_length' after the
+            # first forecast was available, check if forecasts from the
+            # next model run are available and if so, move on to that run
+            if (
+                    first_file_modified_at is not None and
+                    pd.Timestamp.utcnow() > first_file_modified_at +
+                    pd.Timedelta(model['avg_max_run_length'])
+            ):
+                if await check_next_inittime(session, init_time, model):
                     return
             await asyncio.sleep(model['time_between_fcst_hrs'])
 
