@@ -66,7 +66,7 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'valid_hr_gen': _gfs_valid_hr_gen,
                 'time_between_fcst_hrs': 60,
                 'delay_to_first_forecast': '200min',
-                'avg_max_run_length': '90min'}
+                'avg_max_run_length': '100min'}
 
 
 def _nam_valid_hr_gen(init_hr):
@@ -97,7 +97,7 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'valid_hr_gen': _nam_valid_hr_gen,
              'time_between_fcst_hrs': 60,
              'delay_to_first_forecast': '90min',
-             'avg_max_run_length': '70min'}
+             'avg_max_run_length': '80min'}
 
 
 # should be able to use RANGE requests and get data directly from grib files
@@ -119,7 +119,7 @@ RAP = {'endpoint': 'filter_rap.pl',
            lambda x: range(40) if x in (3, 9, 15, 21) else range(22)),
        'time_between_fcst_hrs': 60,
        'delay_to_first_forecast': '50min',
-       'avg_max_run_length': '20min'}
+       'avg_max_run_length': '30min'}
 
 
 HRRR_HOURLY = {
@@ -142,7 +142,7 @@ HRRR_HOURLY = {
         lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '60min'}
+    'avg_max_run_length': '70min'}
 
 
 HRRR_SUBHOURLY = {
@@ -163,7 +163,7 @@ HRRR_SUBHOURLY = {
     'valid_hr_gen': (lambda x: range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '40min'}
+    'avg_max_run_length': '50min'}
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
               'delay_to_first_forecast', 'avg_max_run_length']
@@ -325,7 +325,6 @@ async def check_next_inittime(session, init_time, model):
                      + '/' + model['file'].format(init_hr=next_inittime.hour,
                                                   valid_hr=0))
     async with session.head(next_init_url) as r:
-        return r.status == 200
         if r.status == 200:
             logger.warning(
                 'Skipping to next init time at %s for %s',
@@ -369,7 +368,9 @@ async def files_to_retrieve(session, model, init_time):
                     pd.Timestamp.utcnow() > first_file_modified_at +
                     pd.Timedelta(model['avg_max_run_length'])
             ):
-                if await check_next_inittime(session, init_time, model):
+                nextrun_available = await check_next_inittime(
+                    session, init_time, model)
+                if nextrun_available:
                     return
             await asyncio.sleep(model['time_between_fcst_hrs'])
 
