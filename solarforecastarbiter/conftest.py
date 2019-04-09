@@ -47,8 +47,27 @@ def short_test_forecast():
 @pytest.fixture(scope='module')
 def site_metadata():
     """
+    Simple example metadata for a site
+    """
+    return _site_metadata()
+
+
+def _site_metadata():
+    metadata = datamodel.Site(
+        name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
+        elevation=1657.0, timezone='America/Denver', network='Sandia')
+    return metadata
+
+
+@pytest.fixture(scope='module')
+def powerplant_metadata():
+    """
     Simple example metadata for a fixed-tilt PV site
     """
+    return _powerplant_metadata()
+
+
+def _powerplant_metadata():
     modeling_params = datamodel.FixedTiltModelingParameters(
         ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
         dc_loss_factor=3, ac_loss_factor=0,
@@ -58,6 +77,14 @@ def site_metadata():
         elevation=1657.0, timezone='America/Denver', network='Sandia',
         modeling_parameters=modeling_params)
     return metadata
+
+
+@pytest.fixture(scope='module',
+                params=['site', 'powerplant'])
+def site_powerplant_site_type(request):
+    site_type = request.param
+    modparams = globals()['_' + request.param + '_metadata']()
+    return modparams, site_type
 
 
 @pytest.fixture(scope='module')

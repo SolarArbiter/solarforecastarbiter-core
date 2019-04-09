@@ -30,7 +30,7 @@ jobs:
     displayName: 'Install solarforecastarbiter with extras'
     
   - script: |
-      pytest solarforecastarbiter --doctest-modules --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+      pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
@@ -41,7 +41,6 @@ jobs:
     inputs:
       testResultsFiles: '**/test-results.xml'
       testRunTitle: 'Python $(python.version)'
-    condition: succeededOrFailed()
 
   - task: PublishCodeCoverageResults@1
     inputs:
@@ -50,7 +49,7 @@ jobs:
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 
   - script: |
-      bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor
+      bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor -F pypi
     displayName: 'codecov'
 
   - script: python -m pip install -r docs/requirements.txt
