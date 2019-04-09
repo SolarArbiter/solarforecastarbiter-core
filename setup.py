@@ -40,7 +40,8 @@ setup(
         'numpy',
         'pandas',
         'requests',
-        'xarray'
+        'xarray',
+        'tables'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
