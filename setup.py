@@ -14,7 +14,7 @@ EXTRAS_REQUIRE = {
     'fetch': ['aiohttp'],
 }
 EXTRAS_REQUIRE['all'] = [
-    vv for k, v in EXTRAS_REQUIRE.items() if k != 'test' for vv in v]
+    vv for k, v in EXTRAS_REQUIRE.items() for vv in v]
 
 
 setup(
