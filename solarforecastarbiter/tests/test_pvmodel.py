@@ -8,7 +8,6 @@ import pytest
 from pvlib.location import Location
 
 from solarforecastarbiter import pvmodel
-from solarforecastarbiter.conftest import requires_tables
 
 
 # from pvlib
@@ -106,7 +105,6 @@ def wind_speed(times):
     return pd.Series([0., 10.], index=times)
 
 
-@requires_tables
 def test_clearsky(golden_mst, apparent_zenith):
     latitude, longitude = golden_mst.latitude, golden_mst.longitude
     elevation = golden_mst.altitude
