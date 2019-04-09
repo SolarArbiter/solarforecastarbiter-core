@@ -7,6 +7,7 @@ from functools import partial, wraps
 import logging
 from pathlib import Path
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -600,9 +601,17 @@ async def optimize_only(path_to_files, model_name):
             f.unlink()
 
 
+def check_wgrib2():
+    if shutil.which('wgrib2') is None:
+        logger.error('wgrib2 was not found in PATH and is required')
+        sys.exit(1)
+
+
 def main():
     sys.excepthook = handle_exception
     basic_logging_config()
+    check_wgrib2()
+
     argparser = argparse.ArgumentParser(
         description='Retrieve forecasts from the fxapi and post them to PI')
     argparser.add_argument('-v', '--verbose', action='count')
