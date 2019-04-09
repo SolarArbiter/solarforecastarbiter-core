@@ -18,6 +18,13 @@ def persistence(observation, window, data_start, data_end,
     """
     Make a persistence forecast for the observation.
 
+    Be careful with start times, end times, window, and interval length.
+    If persistence of a scalar quantity is desired, data_end -
+    data_start must be less than (interval label = instant) or less than
+    or equal (interval label = beginning or ending) to window. If
+    persistence of multiple values is desired, data_end - data_start
+    must equal to forecast_end - forecast_start.
+
     Parameters
     ----------
     observation : datamodel.Observation
@@ -39,6 +46,18 @@ def persistence(observation, window, data_start, data_end,
     Returns
     -------
     forecast : pd.Series
+        The persistence forecast. The forecast interval label equal to
+        the observation interval label.
+
+    Raises
+    ------
+    ValueError
+        If window > data_end - data_start and data_end - data_start !=
+        forecast_end - forecast_start.
+
+    ValueError
+        If calculated forecast length is inconsistent with desired
+        forecast length.
     """
     # consistency checks for labels, data duration, and forecast duration
     closed = _check_interval_closure(
