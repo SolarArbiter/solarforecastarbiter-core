@@ -122,32 +122,55 @@ RAP = {'endpoint': 'filter_rap.pl',
        'avg_max_run_length': '20min'}
 
 
-HRRR = {'endpoint': 'filter_hrrr_2d.pl',
-        'file': 'hrrr.t{init_hr:02d}z.wrfsfcf{valid_hr:02d}.grib2',
-        'dir': '/hrrr.{init_date}/conus',
-        'lev_2_m_above_ground': 'on',
-        'lev_10_m_above_ground': 'on',
-        'lev_entire_atmosphere': 'on',
-        'lev_surface': 'on',
-        'var_DSWRF': 'on',
-        'var_VBDSF': 'on',
-        'var_VDDSF': 'on',
-        'var_TCDC': 'on',
-        'var_TMP': 'on',
-        'var_UGRD': 'on',
-        'var_VGRD': 'on',
-        'update_freq': '1h',
-        'valid_hr_gen': (
-            lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
-        'time_between_fcst_hrs': 90,
-        'delay_to_first_forecast': '45min',
-        'avg_max_run_length': '60min'}
+HRRR_HOURLY = {
+    'endpoint': 'filter_hrrr_2d.pl',
+    'file': 'hrrr.t{init_hr:02d}z.wrfsfcf{valid_hr:02d}.grib2',
+    'dir': '/hrrr.{init_date}/conus',
+    'lev_2_m_above_ground': 'on',
+    'lev_10_m_above_ground': 'on',
+    'lev_entire_atmosphere': 'on',
+    'lev_surface': 'on',
+    'var_DSWRF': 'on',
+    'var_VBDSF': 'on',
+    'var_VDDSF': 'on',
+    'var_TCDC': 'on',
+    'var_TMP': 'on',
+    'var_UGRD': 'on',
+    'var_VGRD': 'on',
+    'update_freq': '1h',
+    'valid_hr_gen': (
+        lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
+    'time_between_fcst_hrs': 120,
+    'delay_to_first_forecast': '45min',
+    'avg_max_run_length': '60min'}
+
+
+HRRR_SUBHOURLY = {
+    'endpoint': 'filter_hrrr_sub.pl',
+    'file': 'hrrr.t{init_hr:02d}z.wrfsubhf{valid_hr:02d}.grib2',
+    'dir': '/hrrr.{init_date}/conus',
+    'lev_2_m_above_ground': 'on',
+    'lev_10_m_above_ground': 'on',
+    'lev_entire_atmosphere': 'on',
+    'lev_surface': 'on',
+    'var_DSWRF': 'on',
+    'var_VBDSF': 'on',
+    'var_VDDSF': 'on',
+    'var_TMP': 'on',
+    'var_UGRD': 'on',
+    'var_VGRD': 'on',
+    'update_freq': '1h',
+    'valid_hr_gen': (lambda x: range(19)),
+    'time_between_fcst_hrs': 120,
+    'delay_to_first_forecast': '45min',
+    'avg_max_run_length': '40min'}
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
               'delay_to_first_forecast', 'avg_max_run_length']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
-             'rap': RAP, 'hrrr': HRRR}
+             'rap': RAP, 'hrrr_hourly': HRRR_HOURLY,
+             'hrrr_subhourly': HRRR_SUBHOURLY}
 
 
 GRIB_TO_NC4 = """
@@ -175,12 +198,12 @@ EOF
 
 # add wind speed to grib files
 for file in $(ls -1 *.grib2); do
-    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" -not 'ave' | \
+    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
         wgrib2 - -append -grib_out $file;
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc_table nc.tbl -not 'ave' -append -netcdf $NCFILENAME
+cat *.grib2 | wgrib2 - -nc_table nc.tbl {} -append -netcdf $NCFILENAME
 rm nc.tbl
 popd
 """
@@ -412,9 +435,14 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-def _process_grib(nctmp, folder):
+def _process_grib(nctmp, folder, with_avg=False):
+    if with_avg:
+        # for hrrr subhourly, assume TMP and VDDSF have no average but others
+        fmt = "-match 'ave|TMP|VDDSF'"
+    else:
+        fmt = ''
     with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        tmpfile.write(GRIB_TO_NC4)
+        tmpfile.write(GRIB_TO_NC4.format(fmt))
         tmpfile.flush()
         try:
             subprocess.run(
@@ -430,9 +458,9 @@ def _process_grib(nctmp, folder):
 @abort_all_on_exception
 async def process_grib_to_netcdf(folder):
     nctmp = Path(tempfile.mkstemp(dir=folder)[1])
-
     logger.info('Converting GRIB files to NetCDF with wgrib2')
-    await run_in_executor(_process_grib, nctmp, folder)
+    await run_in_executor(_process_grib, nctmp, folder,
+                          'subhourly' in str(folder))
     return nctmp
 
 
@@ -486,7 +514,7 @@ async def sleep_until_inittime(inittime, model):
         model['delay_to_first_forecast'])
     if likely_ready_time > now:
         seconds = (likely_ready_time - now).total_seconds()
-        logger.debug('Sleeping for %s s until next model run', seconds)
+        logger.debug('Sleeping %0.1fs for next model run', seconds)
         await asyncio.sleep(seconds)
 
 
@@ -587,7 +615,8 @@ def main():
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
-        'model', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr'],
+        'model', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr_hourly',
+                          'hrrr_subhourly'],
         help='The model to get data for')
     args = argparser.parse_args()
 
