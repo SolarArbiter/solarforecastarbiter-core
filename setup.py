@@ -41,7 +41,8 @@ setup(
         'pandas',
         'requests',
         'xarray',
-        'tables'
+        'tables',
+        'pvlib'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
