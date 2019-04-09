@@ -1,10 +1,11 @@
 import asyncio
 import atexit
-from functools import partial
+from functools import partial, wraps
 import logging
 import multiprocessing as mp
 import signal
 import sys
+import threading
 
 
 import aiohttp
@@ -53,3 +54,16 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 def basic_logging_config():
     logging.basicConfig(level=logging.WARNING,
                         format='%(asctime)s %(levelname)s %(message)s')
+
+
+def abort_all_on_exception(f):
+    @wraps(f)
+    async def wrapper(*args, **kwargs):
+        try:
+            ret = await f(*args, **kwargs)
+        except Exception:
+            logging.exception('Aborting on error')
+            signal.pthread_kill(threading.get_ident(), signal.SIGUSR1)
+        else:
+            return ret
+    return wrapper

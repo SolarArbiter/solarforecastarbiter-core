@@ -4,7 +4,7 @@ as a CLI program.
 """
 import asyncio
 import argparse
-from functools import partial, wraps
+from functools import partial
 import logging
 from pathlib import Path
 import re
@@ -13,7 +13,6 @@ import signal
 import subprocess
 import sys
 import tempfile
-import threading
 
 
 import aiohttp
@@ -23,7 +22,7 @@ import xarray as xr
 
 from solarforecastarbiter.io.fetch import (
     handle_exception, basic_logging_config, make_session,
-    run_in_executor, start_cluster)
+    run_in_executor, start_cluster, abort_all_on_exception)
 
 
 logger = logging.getLogger(__name__)
@@ -228,19 +227,6 @@ LEAST_SIGNIFICANT_DIGITS = {
 }
 
 
-def abort_all_on_exception(f):
-    @wraps(f)
-    async def wrapper(*args, **kwargs):
-        try:
-            ret = await f(*args, **kwargs)
-        except Exception:
-            logger.exception('Aborting on error')
-            signal.pthread_kill(threading.get_ident(), signal.SIGUSR1)
-        else:
-            return ret
-    return wrapper
-
-
 async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
     Call get_func and retry if the request fails
@@ -285,7 +271,7 @@ async def get_available_dirs(session, model):
     model_url = BASE_URL + model['endpoint']
 
     async def _get(model_url):
-        async with session.get(model_url) as r:
+        async with session.get(model_url, raise_for_status=True) as r:
             return await r.text()
 
     page = await get_with_retries(_get, model_url)
@@ -327,14 +313,18 @@ async def check_next_inittime(session, init_time, model):
                          init_dt=next_inittime.strftime('%Y%m%d%H'))
                      + '/' + model['file'].format(init_hr=next_inittime.hour,
                                                   valid_hr=0))
-    async with session.head(next_init_url) as r:
-        if r.status == 200:
-            logger.warning(
-                'Skipping to next init time at %s for %s',
-                next_inittime, simple_model)
-            return True
-        else:
-            return False
+
+    try:
+        async with session.head(next_init_url) as r:
+            if r.status == 200:
+                logger.warning(
+                    'Skipping to next init time at %s for %s',
+                    next_inittime, simple_model)
+                return True
+            else:
+                return False
+    except aiohttp.ClientOSError:
+        return False
 
 
 async def files_to_retrieve(session, model, init_time):
@@ -348,20 +338,22 @@ async def files_to_retrieve(session, model, init_time):
                           + next_params['dir'] + '/' + next_params['file'])
         while True:
             # is the next file ready?
-            async with session.head(next_model_url) as r:
-                if r.status == 200:
-                    logger.debug('%s/%s is ready for download',
-                                 next_params['dir'], next_params['file'])
+            try:
+                async with session.head(
+                        next_model_url, raise_for_status=True) as r:
                     if first_file_modified_at is None:
                         first_file_modified_at = pd.Timestamp(
                             r.headers['Last-Modified'])
                         logger.debug('First file was available at %s',
                                      first_file_modified_at)
-                    yield next_params
-                    break
-                else:
-                    logger.debug('Next file not ready yet for %s at %s',
-                                 simple_model, init_time)
+            except (aiohttp.ClientOSError, aiohttp.ClientResponseError):
+                logger.debug('Next file not ready yet for %s at %s',
+                             simple_model, init_time)
+            else:
+                logger.debug('%s/%s is ready for download',
+                             next_params['dir'], next_params['file'])
+                yield next_params
+                break
 
             # if the current time is after 'avg_max_run_length' after the
             # first forecast was available, check if forecasts from the
