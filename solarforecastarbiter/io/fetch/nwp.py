@@ -440,6 +440,15 @@ async def optimize_netcdf(nctmpfile, final_path):
         nctmpfile.unlink()
 
 
+async def sleep_until_inittime(inittime):
+    # don't bother requesting a file until 30 minuts after the init time
+    now = pd.Timestamp.utcnow() + pd.Timedelta('30min')
+    if inittime > now:
+        seconds = (inittime - now).total_seconds()
+        logger.debug('Sleeping for %s s until next model run', seconds)
+        await asyncio.sleep(seconds)
+
+
 async def startup_find_next_runtime(model_path, session, model):
     dirs = await get_available_dirs(session, model)
     no_file = []
@@ -450,26 +459,30 @@ async def startup_find_next_runtime(model_path, session, model):
                 hrpath = path / f'{hr:02d}'
                 glob = list(hrpath.glob('*.nc'))
                 if len(glob) == 0:
-                    no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00'))
+                    no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00Z'))
         else:
             hrpath = model_path / dir_[:4] / dir_[4:6] / dir_[6:8] / dir_[8:10]
             glob = list(hrpath.glob('*.nc'))
             if len(glob) == 0:
-                no_file.append(pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00'))
+                no_file.append(pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00Z'))
     if len(no_file) == 0:
         # all files for current dirs present, get next day
-        return max([pd.Timestamp(f'{dir_[:8]}T0000')]) + pd.Timedelta('1d')
+        inittime = max(
+            [pd.Timestamp(f'{dir_[:8]}T0000Z')]) + pd.Timedelta('1d')
     else:
-        return min(no_file)
+        inittime = min(no_file)
+    await sleep_until_inittime(inittime)
+    return inittime
 
 
-def next_run_time(inittime, modelpath, model):
+async def next_run_time(inittime, modelpath, model):
     inittime += pd.Timedelta(model['update_freq'])
     # check if nc file exists for this inittime
     if len(list(
             (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
         inittime += pd.Timedelta(model['update_freq'])
         return next_run_time(inittime, modelpath, model)
+    await sleep_until_inittime(inittime)
     return inittime
 
 
@@ -500,7 +513,7 @@ async def run(basepath, model_name, chunksize, once=False):
         if once:
             break
         else:
-            inittime = next_run_time(inittime, modelpath, model)
+            inittime = await next_run_time(inittime, modelpath, model)
     await session.close()
 
 
