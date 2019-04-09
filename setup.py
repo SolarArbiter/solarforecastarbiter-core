@@ -32,10 +32,12 @@ setup(
         'numpy',
         'pandas',
         'requests',
+        'xarray'
     ],
-    extra_requires={
+    extras_require={
         'test': ['pytest', 'pytest-cov', 'pytest-mock'],
-        'optional': ['tables']
+        'optional': ['tables'],
+        'fetch': ['aiohttp']
     },
     project_urls={
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,

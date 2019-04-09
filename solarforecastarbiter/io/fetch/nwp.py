@@ -514,7 +514,7 @@ async def sleep_until_inittime(inittime, model):
         model['delay_to_first_forecast'])
     if likely_ready_time > now:
         seconds = (likely_ready_time - now).total_seconds()
-        logger.debug('Sleeping %0.1fs for next model run', seconds)
+        logger.info('Sleeping %0.1fs for next model run', seconds)
         await asyncio.sleep(seconds)
 
 
