@@ -1,5 +1,6 @@
 """
-Fetch NWP files from NCEP Nomads
+Fetch NWP files from NCEP Nomads for select variables. Should primarily be used
+as a CLI program.
 """
 import asyncio
 import argparse
@@ -317,6 +318,7 @@ def _process_params(model, init_time):
 
 
 async def check_next_inittime(session, init_time, model):
+    """Check if data from the next model initializtion time is available"""
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
     simple_model = model['file'].split('.')[0]
     next_init_url = (CHECK_URL.format(simple_model)
@@ -494,6 +496,8 @@ def _optimize_netcdf(nctmpfile, out_path):
 
 
 async def optimize_netcdf(nctmpfile, final_path):
+    """Compress the netcdf file and adjust the chunking for fast time-series
+    access"""
     logger.info('Optimizing NetCDF file')
     tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
     # possible that this leaks memory, so run in separate process
@@ -521,6 +525,8 @@ async def sleep_until_inittime(inittime, model):
 
 
 async def startup_find_next_runtime(model_path, session, model):
+    """Find the next model run to get based on what is available
+    on NOMADS and what .nc files are present locally"""
     dirs = await get_available_dirs(session, model)
     no_file = []
     for dir_ in dirs:
@@ -613,7 +619,10 @@ def main():
     check_wgrib2()
 
     argparser = argparse.ArgumentParser(
-        description='Retrieve forecasts from the fxapi and post them to PI')
+        description=('Retrieve weather forecasts with variables relevant to '
+                     'solar power from the NCEP NOMADS server. The utility '
+                     'function  wgrib2 is required to convert these forecasts '
+                     'into netCDF format.'))
     argparser.add_argument('-v', '--verbose', action='count')
     argparser.add_argument('--chunksize', default=128,
                            help='Size of a chunk (in KB) to save at one time')
