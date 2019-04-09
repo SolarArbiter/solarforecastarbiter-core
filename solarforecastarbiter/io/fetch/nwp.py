@@ -63,7 +63,9 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'var_UGRD': 'on',
                 'var_VGRD': 'on',
                 'update_freq': '6h',
-                'valid_hr_gen': _gfs_valid_hr_gen}
+                'valid_hr_gen': _gfs_valid_hr_gen,
+                'time_between_fcst_hrs': 60,
+                'delay_to_first_forecast': '200min'}
 
 
 def _nam_valid_hr_gen(init_hr):
@@ -91,9 +93,14 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'var_UGRD': 'on',
              'var_VGRD': 'on',
              'update_freq': '6h',
-             'valid_hr_gen': _nam_valid_hr_gen}
+             'valid_hr_gen': _nam_valid_hr_gen,
+             'time_between_fcst_hrs': 60,
+             'delay_to_first_forecast': '90min'}
 
 
+# should be able to use RANGE requests and get data directly from grib files
+# like https://www.cpc.ncep.noaa.gov/products/wesley/fast_downloading_grib.html
+# so we can get DSWRF for RAP
 RAP = {'endpoint': 'filter_rap.pl',
        'file': 'rap.t{init_hr:02d}z.awp130pgrbf{valid_hr:02d}.grib2',
        'dir': '/rap.{init_date}',
@@ -107,9 +114,11 @@ RAP = {'endpoint': 'filter_rap.pl',
        'var_VGRD': 'on',
        'update_freq': '1h',
        'valid_hr_gen': (
-           lambda x: range(40) if x in (3, 9, 15, 21) else range(22))}
+           lambda x: range(40) if x in (3, 9, 15, 21) else range(22)),
+       'time_between_fcst_hrs': 60,
+       'delay_to_first_forecast': '30min'}
 
-# for hourly herr, endpoint = filter_hrrr_2d.pl
+# for hourly hrrr, endpoint = filter_hrrr_2d.pl
 # file: wrfsubhf -> wrfsfcf
 # add var_TCDC: 'on'
 HRRR = {'endpoint': 'filter_hrrr_sub.pl',
@@ -127,7 +136,12 @@ HRRR = {'endpoint': 'filter_hrrr_sub.pl',
         'var_VGRD': 'on',
         'update_freq': '1h',
         'valid_hr_gen': (
-            lambda x: range(37) if x in (0, 6, 12, 18) else range(19))}
+            lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
+        'time_between_fcst_hrs': 120,
+        'delay_to_first_forecast': '25min'}
+
+EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
+              'delay_to_first_forecast']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr': HRRR}
@@ -261,9 +275,9 @@ def _process_params(model, init_time):
     model at a given init_time"""
     params = model.copy()
     params.update(DOMAIN)
-    del params['update_freq']
     valid_hr_gen = params['valid_hr_gen'](init_time.hour)
-    del params['valid_hr_gen']
+    for p in EXTRA_KEYS:
+        del params[p]
     params['dir'] = params['dir'].format(
         init_date=init_time.strftime('%Y%m%d'),
         init_dt=init_time.strftime('%Y%m%d%H'))
@@ -303,13 +317,15 @@ async def files_to_retrieve(session, model, init_time):
                                  simple_model, init_time)
             # was the older run cancelled or late? What kind of problem will
             #  this cause for reference forecasts?
+            # probably better to first wait a set amount of time after init,
+            # then check for next run
             async with session.head(next_init_url) as r:
                 if r.status == 200:
                     logger.warning(
                         'Skipping to next init time at %s for %s',
                         next_inittime, simple_model)
                     return
-            await asyncio.sleep(120)
+            await asyncio.sleep(model['time_between_fcst_hrs'])
 
 
 async def _get_file(session, url, params, tmpfile, chunksize):
@@ -440,11 +456,13 @@ async def optimize_netcdf(nctmpfile, final_path):
         nctmpfile.unlink()
 
 
-async def sleep_until_inittime(inittime):
-    # don't bother requesting a file until 30 minuts after the init time
-    now = pd.Timestamp.utcnow() + pd.Timedelta('30min')
-    if inittime > now:
-        seconds = (inittime - now).total_seconds()
+async def sleep_until_inittime(inittime, model):
+    # don't bother requesting a file until it might be ready
+    now = pd.Timestamp.utcnow()
+    likely_ready_time = inittime + pd.Timedelta(
+        model['delay_to_first_forecast'])
+    if likely_ready_time > now:
+        seconds = (likely_ready_time - now).total_seconds()
         logger.debug('Sleeping for %s s until next model run', seconds)
         await asyncio.sleep(seconds)
 
@@ -471,7 +489,7 @@ async def startup_find_next_runtime(model_path, session, model):
             [pd.Timestamp(f'{dir_[:8]}T0000Z')]) + pd.Timedelta('1d')
     else:
         inittime = min(no_file)
-    await sleep_until_inittime(inittime)
+    await sleep_until_inittime(inittime, model)
     return inittime
 
 
@@ -480,9 +498,8 @@ async def next_run_time(inittime, modelpath, model):
     # check if nc file exists for this inittime
     if len(list(
             (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
-        inittime += pd.Timedelta(model['update_freq'])
         return next_run_time(inittime, modelpath, model)
-    await sleep_until_inittime(inittime)
+    await sleep_until_inittime(inittime, model)
     return inittime
 
 
@@ -513,6 +530,7 @@ async def run(basepath, model_name, chunksize, once=False):
         if once:
             break
         else:
+            logger.info('Moving on to next model run')
             inittime = await next_run_time(inittime, modelpath, model)
     await session.close()
 
