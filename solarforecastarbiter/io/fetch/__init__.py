@@ -11,7 +11,7 @@ import threading
 import aiohttp
 
 
-cluster = None
+CLUSTER = None
 
 
 def ignore_interrupt():
@@ -19,16 +19,16 @@ def ignore_interrupt():
 
 
 def start_cluster(max_workers=4, maxtasksperchild=5):
-    global cluster
+    global CLUSTER
     mp.set_start_method("forkserver")
-    cluster = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild,
+    CLUSTER = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild,
                       initializer=ignore_interrupt)
-    atexit.register(cluster.terminate)
+    atexit.register(CLUSTER.terminate)
     return
 
 
 async def run_in_executor(func, *args, **kwargs):
-    exc = partial(cluster.apply, func, args, kwargs)
+    exc = partial(CLUSTER.apply, func, args, kwargs)
     # uses the asyncio default thread pool executor to then
     # apply the function on the pool of processes
     # inefficient, but ProcessPoolExecutor will not restart

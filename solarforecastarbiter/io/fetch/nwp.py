@@ -1,6 +1,25 @@
 """
 Fetch NWP files from NCEP NOMADS for select variables. Should primarily be used
 as a CLI program.
+
+
+The script fetches grib2 files from NOMADS as they are available using g2sub,
+uses wgrib2 to convert the grib files to netCDF (and adds wind speed),
+and optimizes the netCDF file for our expected usage accessing a time-series
+for a single location.
+
+Each possible model has an associated dictonary with parameters that are
+passed in the HTTP request. Other keys in the dictionaries are used
+to set the timing of the HTTP requests:
+- update_freq: the time between full model runs
+- valid_hr_gen: A generator to produce the valid forecast hours that the model
+  produces
+- time_between_fcst_hrs: The time in seconds that it typically takes to produce
+  the grib2 file for the next forecasted hour
+- delay_to_first_forecast: The time after the nominal initialization time
+  that the first forecast from the model is typically available
+- avg_max_run_length: The average time it takes the model to produce the last
+  possible forecast file from the first forecast file.
 """
 import asyncio
 import argparse
