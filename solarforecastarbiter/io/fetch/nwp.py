@@ -256,9 +256,9 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
         except aiohttp.ClientResponseError as e:
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
+            retried += 1
             if retried >= retries:
                 raise
-            retried += 1
             await asyncio.sleep(60)
         else:
             return res
@@ -549,7 +549,7 @@ async def next_run_time(inittime, modelpath, model):
     # check if nc file exists for this inittime
     if len(list(
             (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
-        return next_run_time(inittime, modelpath, model)
+        return await next_run_time(inittime, modelpath, model)
     await sleep_until_inittime(inittime, model)
     return inittime
 
