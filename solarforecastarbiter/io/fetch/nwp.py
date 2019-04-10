@@ -20,6 +20,9 @@ to set the timing of the HTTP requests:
   that the first forecast from the model is typically available
 - avg_max_run_length: The average time it takes the model to produce the last
   possible forecast file from the first forecast file.
+
+Many of these parameters are inferred from
+https://www.nco.ncep.noaa.gov/pmb/nwprod/prodstat/
 """
 import asyncio
 import argparse
