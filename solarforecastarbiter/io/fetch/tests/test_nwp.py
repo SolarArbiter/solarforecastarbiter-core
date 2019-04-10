@@ -10,12 +10,12 @@ from solarforecastarbiter.io.fetch import nwp
 def test_gfs_valid_hr_gen():
     expected = (list(range(120)) + list(range(120, 240, 3)) +
                 list(range(240, 385, 12)))
-    assert list(nwp._gfs_valid_hr_gen(0)) == expected
+    assert list(nwp.GFS_0P25_1HR['valid_hr_gen'](0)) == expected
 
 
 def test_nam_valid_hr_gen():
     expected = list(range(36)) + list(range(36, 85, 3))
-    assert list(nwp._nam_valid_hr_gen(0)) == expected
+    assert list(nwp.NAM_CONUS['valid_hr_gen'](0)) == expected
 
 
 @pytest.mark.asyncio

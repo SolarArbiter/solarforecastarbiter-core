@@ -1,10 +1,11 @@
 """
-Fetch NWP files from NCEP Nomads for select variables. Should primarily be used
+Fetch NWP files from NCEP NOMADS for select variables. Should primarily be used
 as a CLI program.
 """
 import asyncio
 import argparse
 from functools import partial
+from itertools import chain
 import logging
 from pathlib import Path
 import re
@@ -37,20 +38,6 @@ DOMAIN = {'subregion': '',
           'bottomlat': 24}
 
 
-def _gfs_valid_hr_gen(init_hr):
-    i = 0  # should we start at 1 and avoid the analysis?
-    while True:
-        yield i
-        if i < 120:
-            i += 1
-        elif i >= 120 and i < 240:
-            i += 3
-        elif i >= 240 and i < 384:
-            i += 12
-        else:
-            break
-
-
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'file': 'gfs.t{init_hr:02d}z.pgrb2.0p25.f{valid_hr:03d}',
                 'dir': '/gfs.{init_dt}',
@@ -64,22 +51,11 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'var_UGRD': 'on',
                 'var_VGRD': 'on',
                 'update_freq': '6h',
-                'valid_hr_gen': _gfs_valid_hr_gen,
+                'valid_hr_gen': lambda x: chain(range(120), range(120, 240, 3),
+                                                range(240, 385, 12)),
                 'time_between_fcst_hrs': 60,
                 'delay_to_first_forecast': '200min',
                 'avg_max_run_length': '100min'}
-
-
-def _nam_valid_hr_gen(init_hr):
-    i = 0
-    while True:
-        yield i
-        if i < 36:
-            i += 1
-        elif i >= 36 and i < 84:
-            i += 3
-        else:
-            break
 
 
 NAM_CONUS = {'endpoint': 'filter_nam.pl',
@@ -95,7 +71,7 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'var_UGRD': 'on',
              'var_VGRD': 'on',
              'update_freq': '6h',
-             'valid_hr_gen': _nam_valid_hr_gen,
+             'valid_hr_gen': lambda x: chain(range(36), range(36, 85, 3)),
              'time_between_fcst_hrs': 60,
              'delay_to_first_forecast': '90min',
              'avg_max_run_length': '80min'}
