@@ -12,7 +12,6 @@ from datetime import datetime
 import pytz
 import pytest
 from solarforecastarbiter.validation import validator
-from solarforecastarbiter.conftest import requires_tables
 import pvlib
 from pvlib.location import Location
 
@@ -182,7 +181,6 @@ def test_get_solarposition(mocker, location, times):
     assert m.call_count == 3
 
 
-@requires_tables
 def test_get_clearsky(mocker, location, times):
     m = mocker.spy(pvlib.clearsky, 'ineichen')
     validator.get_clearsky(location, times)
@@ -192,7 +190,6 @@ def test_get_clearsky(mocker, location, times):
     assert m.call_count == 1
 
 
-@requires_tables
 def test_check_ghi_clearsky(mocker, location, times):
     clearsky = location.get_clearsky(times)
     # modify to create test conditions
