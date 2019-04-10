@@ -521,23 +521,32 @@ async def startup_find_next_runtime(model_path, session, model):
     on NOMADS and what .nc files are present locally"""
     dirs = await get_available_dirs(session, model)
     no_file = []
+    first = pd.Timestamp('20000101T0000Z')
+    max_time = first
     for dir_ in dirs:
         if len(dir_) == 8:
             path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
             for hr in range(0, 24, int(model['update_freq'].strip('h'))):
                 hrpath = path / f'{hr:02d}'
                 glob = list(hrpath.glob('*.nc'))
+                hrtime = pd.Timestamp(f'{dir_[:8]}T{hr:02d}00Z')
                 if len(glob) == 0:
-                    no_file.append(pd.Timestamp(f'{dir_[:8]}T{hr:02d}00Z'))
+                    no_file.append(hrtime)
+                else:
+                    max_time = max(max_time, hrtime)
         else:
             hrpath = model_path / dir_[:4] / dir_[4:6] / dir_[6:8] / dir_[8:10]
             glob = list(hrpath.glob('*.nc'))
+            hrtime = pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00Z')
             if len(glob) == 0:
-                no_file.append(pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00Z'))
+                no_file.append(hrtime)
+            else:
+                max_time = max(max_time, hrtime)
     if len(no_file) == 0:
-        # all files for current dirs present, get next day
-        inittime = max(
-            [pd.Timestamp(f'{dir_[:8]}T0000Z')]) + pd.Timedelta('1d')
+        if max_time > first:
+            inittime = max_time + pd.Timedelta(model['update_freq'])
+        else:  # No available dirs?
+            raise ValueError('Failed to find next available model from NOMADS')
     else:
         inittime = min(no_file)
     await sleep_until_inittime(inittime, model)

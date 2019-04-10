@@ -184,30 +184,36 @@ async def test_sleep_until_inittime(mocker):
 @pytest.mark.asyncio
 async def test_startup_find_next_runtime(mocker, tmp_path):
     mocker.patch('solarforecastarbiter.io.fetch.nwp.get_available_dirs',
-                 new=CoroutineMock(return_value=['20190409', '2019041000',
+                 new=CoroutineMock(return_value=['20190409',
+                                                 '2019041000',
+                                                 '2019041006',
                                                  '2019041012']))
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
-    model = {'update_freq': '12h'}
-    withnc = ['2019/04/09/00', '2019/04/09/12', '2019/04/10/12']
+    model = {'update_freq': '6h'}
+    withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
+              '2019/04/09/18', '2019/04/10/00', '2019/04/10/12']
     for p in withnc:
         pp = tmp_path / p
         pp.mkdir(parents=True)
         (pp / 'file.nc').touch()
 
     res = await nwp.startup_find_next_runtime(tmp_path, None, model)
-    assert res == pd.Timestamp('20190410T0000Z')
+    assert res == pd.Timestamp('20190410T0600Z')
 
 
 @pytest.mark.asyncio
 async def test_startup_find_next_runtime_all_there(mocker, tmp_path):
     mocker.patch('solarforecastarbiter.io.fetch.nwp.get_available_dirs',
-                 new=CoroutineMock(return_value=['20190409', '2019041000',
+                 new=CoroutineMock(return_value=['20190409',
+                                                 '2019041000',
+                                                 '2019041006',
                                                  '2019041012']))
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
-    model = {'update_freq': '12h'}
-    withnc = ['2019/04/09/00', '2019/04/09/12', '2019/04/10/00',
+    model = {'update_freq': '6h'}
+    withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
+              '2019/04/09/18', '2019/04/10/00', '2019/04/10/06',
               '2019/04/10/12']
     for p in withnc:
         pp = tmp_path / p
@@ -215,7 +221,30 @@ async def test_startup_find_next_runtime_all_there(mocker, tmp_path):
         (pp / 'file.nc').touch()
 
     res = await nwp.startup_find_next_runtime(tmp_path, None, model)
-    assert res == pd.Timestamp('20190411T0000Z')
+    assert res == pd.Timestamp('20190410T1800Z')
+
+
+@pytest.mark.asyncio
+async def test_startup_find_next_runtime_all_there_out_of_order(
+        mocker, tmp_path):
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.get_available_dirs',
+                 new=CoroutineMock(return_value=['20190409',
+                                                 '2019041006',
+                                                 '2019041012',
+                                                 '2019041000']))
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
+                 new=CoroutineMock())
+    model = {'update_freq': '6h'}
+    withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
+              '2019/04/10/00', '2019/04/10/06', '2019/04/09/18',
+              '2019/04/10/12']
+    for p in withnc:
+        pp = tmp_path / p
+        pp.mkdir(parents=True)
+        (pp / 'file.nc').touch()
+
+    res = await nwp.startup_find_next_runtime(tmp_path, None, model)
+    assert res == pd.Timestamp('20190410T1800Z')
 
 
 @pytest.mark.asyncio
