@@ -251,7 +251,7 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
     while True:
         try:
             res = await get_func(*args, **kwargs)
-        except aiohttp.ClientResponseError as e:
+        except (aiohttp.ClientResponseError, aiohttp.ClientPayloadError) as e:
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
             retried += 1
