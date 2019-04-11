@@ -202,7 +202,7 @@ for file in $(ls -1 *.grib2); do
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc_table nc.tbl {} -append -netcdf $NCFILENAME
+cat *.grib2 | wgrib2 - -nc4 -nc_table nc.tbl {} -append -netcdf $NCFILENAME
 rm nc.tbl
 popd
 """
