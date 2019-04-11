@@ -7,7 +7,7 @@ The functions in this module use the
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
-from solarforecastarbiter import persistence
+from solarforecastarbiter.reference_forecasts import persistence
 
 
 # maybe rename run_nwp

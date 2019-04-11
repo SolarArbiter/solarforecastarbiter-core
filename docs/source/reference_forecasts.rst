@@ -21,6 +21,7 @@ Arbiter. It uses data types defined in
 
    main
    main.run
+   main.run_persistence
 
 
 NWP
@@ -86,4 +87,12 @@ found in :py:mod:`~solarforecastarbiter.reference_forecasts.forecast`.
 Persistence
 ===========
 
-TBD.
+The solarforecastarbiter supports several varieties of persistence
+forecasts.
+
+.. autosummary::
+   :toctree: generated/
+
+   persistence
+   persistence.persistence
+   persistence.index_persistence

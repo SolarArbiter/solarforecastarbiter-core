@@ -15,8 +15,18 @@ from solarforecastarbiter.reference_forecasts import forecast
 def persistence(observation, window, data_start, data_end,
                 forecast_start, forecast_end, interval_length,
                 load_data=load_data):
-    """
+    r"""
     Make a persistence forecast for the observation.
+
+    In brief,
+
+    .. math::
+
+       obs(t_0 + \Delta_t) = obs(t_0)
+
+    however, complications exist when accounting for combinations of
+    data interval length, data interval label, forecast interval length,
+    and forecast interval label.
 
     Be careful with start times, end times, window, and interval length.
     If persistence of a scalar quantity is desired, data_end -
@@ -85,8 +95,20 @@ def persistence(observation, window, data_start, data_end,
 def index_persistence(observation, window, data_start, data_end,
                       forecast_start, forecast_end, interval_length,
                       load_data=load_data):
-    """
+    r"""
     Calculate persistence of clearsky index or AC power index forecast.
+
+    In brief,
+
+    .. math::
+
+       GHI(t_0 + \Delta_t) = \frac{GHI(t_0)}{GHI_{clear}(t_0)} GHI_{clear}(t_0 + \Delta_t)
+
+       AC(t_0 + \Delta_t) = \frac{AC(t_0)}{AC_{clear}(t_0)} AC_{clear}(t_0 + \Delta_t)
+
+    however, complications exist when accounting for combinations of
+    data interval length, data interval label, forecast interval length,
+    and forecast interval label.
 
     Indicies are calculated using subhourly calculations of clearsky
     irradiance or power that are then resampled to the observation
