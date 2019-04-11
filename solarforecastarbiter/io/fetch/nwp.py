@@ -630,6 +630,8 @@ def main():
     argparser.add_argument(
         '--netcdf-only', action='store_true',
         help='Only convert files at save_directory to netcdf')
+    argparser.add_argument('--workers', type=int, default=1,
+                           help='Number of worker processes')
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
@@ -643,7 +645,7 @@ def main():
     elif args.verbose and args.verbose > 1:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    start_cluster()
+    start_cluster(args.workers, 4)
     basepath = Path(args.save_directory).resolve()
     if args.netcdf_only:
         path_to_files = basepath
