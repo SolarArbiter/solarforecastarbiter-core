@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
-from solarforecastarbiter.io.utils import load_data  # does not exist
+from solarforecastarbiter.io.utils import load_data  # does not exist yet
 from solarforecastarbiter.reference_forecasts import forecast
 
 
@@ -23,13 +23,15 @@ def persistence(observation, window, data_start, data_end,
     data_start must be less than (interval label = instant) or less than
     or equal (interval label = beginning or ending) to window. If
     persistence of multiple values is desired, data_end - data_start
-    must equal to forecast_end - forecast_start.
+    must be equal to forecast_end - forecast_start, and window must be
+    equal to interval length.
 
     Parameters
     ----------
     observation : datamodel.Observation
     window : pd.Timedelta
         Time period over which to calculate the persistence quantity
+        from the data.
     data_start : pd.Timestamp
         Data start
     data_end : pd.Timestamp
@@ -40,14 +42,15 @@ def persistence(observation, window, data_start, data_end,
         Forecast end
     interval_length : pd.Timedelta
         Forecast interval length
-    load_data : function
-        A function that loads the observation data.
+    load_data : function, default solarforecastarbiter.io.utils.load_data
+        A function that loads the observation data. Must have the same
+        signature has the default function.
 
     Returns
     -------
     forecast : pd.Series
-        The persistence forecast. The forecast interval label equal to
-        the observation interval label.
+        The persistence forecast. The forecast interval label is the
+        same as the observation interval label.
 
     Raises
     ------
@@ -102,6 +105,7 @@ def index_persistence(observation, window, data_start, data_end,
         Must be AC Power, GHI, DNI, or DHI.
     window : pd.Timedelta
         Time period over which to calculate the persistence quantity
+        from the data.
     data_start : pd.Timestamp
         Data start
     data_end : pd.Timestamp
@@ -112,14 +116,15 @@ def index_persistence(observation, window, data_start, data_end,
         Forecast end
     interval_length : pd.Timedelta
         Forecast interval length
-    load_data : function
-        A function that loads the observation data.
+    load_data : function, default solarforecastarbiter.io.utils.load_data
+        A function that loads the observation data. Must have the same
+        signature has the default function.
 
     Returns
     -------
     forecast : pd.Series
-        The persistence forecast. The forecast interval label equal to
-        the observation interval label.
+        The persistence forecast. The forecast interval label is the
+        same as the observation interval label.
 
     Raises
     ------

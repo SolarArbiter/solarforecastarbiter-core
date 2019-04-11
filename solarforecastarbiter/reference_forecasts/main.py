@@ -7,6 +7,7 @@ The functions in this module use the
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
+from solarforecastarbiter import persistence
 
 
 # maybe rename run_nwp
@@ -27,11 +28,11 @@ def run(site, model, init_time, start, end):
     ----------
     site : datamodel.Site
     model : function
-        Model loading and processing function.
+        NWP model loading and processing function.
         See :py:mod:`solarforecastarbiter.reference_forecasts.models`
         for options.
     init_time : pd.Timestamp
-        Model initialization time.
+        NWP model initialization time.
     start : pd.Timestamp
         Start of the forecast.
     end : pd.Timestamp
@@ -88,50 +89,48 @@ def run(site, model, init_time, start, end):
 
 def run_persistence(observation, forecast, issue_time, model):
     """
-    Run a persistence forecast for an *observation* using a *model*.
+    Run a persistence *forecast* for an *observation* using a *model*.
 
     Model can one of:
 
-      1. irradiance or power persistence
-      2. irradiance persistence using clear sky index
-      3. power persistence using AC power index
+      1. persistence: irradiance or power persistence
+      2. index persistence: irradiance persistence using clear sky index
+         or power persistence using AC power index
 
-    Persistence window is fixed according to:
+    The persistence *window* is the time over which the persistence
+    quantity (irradiance, power, clear sky index, or power index) is
+    averaged over. The persistence window is automatically determined
+    based on the type of persistence forecast desired:
 
-      * Intraday forecasts: Maximum of observation interval length,
-        forecast interval length, forecast lead time to start. No
-        longer than 1 hour.
+      * Intraday persistence forecasts: Maximum of observation interval
+        length, forecast interval length, and forecast lead time to
+        start. No longer than 1 hour.
       * Day ahead forecasts: Equal to forecast interval length.
+
+    Users that would like more flexibility may use the lower-level
+    functions in
+    :py:mod:`solarforecastarbiter.reference_forecasts.persistence`.
 
     Parameters
     ----------
     observation : datamodel.Observation
+        The metadata of the observation to be used to create the
+        forecast.
     forecast : datamodel.Forecast
+        The metadata of the desired forecast.
     issue_time : pd.Timestamp
         Issue time of the forecast run.
-    model : function
-        Model loading and processing function. See
-        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`
-        for options.
-
-
-    Alternative and incomplete Parameters
-    ----------
-    observation : datamodel.Observation
-    model : function
-        Model loading and processing function. See
-        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`
-        for options.
-    issue_time : pd.Timestamp
-        Time at which the forecast begins
-    start : pd.Timestamp
-        Forecast start
-    end : pd.Timestamp
-        Forecast end
+    model : str or function
+        Forecast model. If string, must be *persistence* or
+        *index_persistence*. If function, must have the same signature
+        as the functions in
+        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`.
 
     Returns
     -------
     forecast : pd.Series
+        Forecast conforms to the metadata specified by the *forecast*
+        argument.
     """
     check_issue_time(forecast, issue_time)
 
@@ -169,11 +168,26 @@ def run_persistence(observation, forecast, issue_time, model):
         else:
             data_end -= pd.Timedelta('1s')
 
-    # specify forecast start and end times. question: should we also
-    # specify forecast interval label here? see notes in persistence.py
-    # and in resampling below
+    # specify forecast start and end times
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
+
+    if isinstance(model, str):
+        # Extract the function with this name in the persistence module.
+        #
+        # Instead of using vars, we could be more explicit and define our own
+        # dict here or in persistence.py:
+        # models = {'persistence': persistence.persistence,
+        #           'index_persistence': persistence.index_persistence}
+        # model = models[model]
+        # Using vars gives us one fewer thing to update if we want to change
+        # anything and is less of a hassle if we want to use the same pattern
+        # for the NWP processing models.
+        try:
+            model = vars(persistence)[model.replace(' ', '_')]
+        except KeyError:
+            raise ValueError(
+                'Invalid model option. See doc string for options.')
 
     # finally, we call the desired persistence model function
     fx = model(observation, window, data_start, data_end, forecast_start,
