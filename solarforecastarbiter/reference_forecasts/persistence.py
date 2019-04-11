@@ -1,6 +1,20 @@
 # models_persistence.py?
 """
 Functions for persistence forecasts.
+
+Two kinds of persistence are supported:
+
+  1. Persistence of observed value in :py:func:`persistence`
+  2. Persistence of irradiance or power accounting for solar position in
+     :py:func:`index_persistence`.
+
+The functions take the same parameters and return a forecast. See their
+doc strings for details.
+
+The functions accept a *load_data* keyword argument that allows users to
+change where the functions load the observation data from. This is most
+useful for users that would like to provide their own observation data
+rather than using the solarforecastarbiter database.
 """
 from functools import partial
 
