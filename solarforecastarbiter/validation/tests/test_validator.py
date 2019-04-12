@@ -345,7 +345,7 @@ def test_detect_clipping(ghi_clipped):
     expected.iloc[3:7] = True
     expected.iloc[14:17] = True
     expected.iloc[18:20] = True
-    expected.ilog[25] = True
+    expected.iloc[25] = True
     expected.iloc[30:36] = True
     expected.iloc[38:46] = True
     expected.iloc[56:60] = True
