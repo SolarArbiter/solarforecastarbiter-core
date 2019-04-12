@@ -29,6 +29,7 @@ import argparse
 from functools import partial
 from itertools import chain
 import logging
+import os
 from pathlib import Path
 import re
 import shutil
@@ -451,7 +452,9 @@ def _process_grib(nctmp, folder, with_avg=False):
 
 @abort_all_on_exception
 async def process_grib_to_netcdf(folder):
-    nctmp = Path(tempfile.mkstemp(dir=folder)[1])
+    _handle, nctmp = tempfile.mkstemp(dir=folder)
+    os.close(_handle)
+    nctmp = Path(nctmp)
     logger.info('Converting GRIB files to NetCDF with wgrib2')
     await run_in_executor(_process_grib, nctmp, folder,
                           'subhourly' in str(folder))
@@ -490,7 +493,9 @@ async def optimize_netcdf(nctmpfile, final_path):
     """Compress the netcdf file and adjust the chunking for fast time-series
     access"""
     logger.info('Optimizing NetCDF file')
-    tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
+    _handle, tmp_path = tempfile.mkstemp(dir=final_path.parent)
+    os.close(_handle)
+    tmp_path = Path(tmp_path)
     # possible that this leaks memory, so run in separate process
     # that is restarted after a number of jobs
     try:
