@@ -34,6 +34,7 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -505,6 +506,8 @@ async def optimize_netcdf(nctmpfile, final_path):
         raise
     else:
         tmp_path.rename(final_path)
+        final_path.chmod(stat.S_IRGRP | stat.S_IRUSR | stat.S_IROTH |
+                         stat.S_IWUSR)
     finally:
         nctmpfile.unlink()
 
