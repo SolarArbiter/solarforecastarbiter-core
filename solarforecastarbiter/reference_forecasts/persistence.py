@@ -32,23 +32,70 @@ def persistence(observation, window, data_start, data_end,
     r"""
     Make a persistence forecast for the observation.
 
-    In brief,
+    In the examples below, we use GHI to be concrete but the concept
+    applies to any kind of observation data. In brief, the
+    persistence forecast is:
 
     .. math::
 
-       obs(t_0 + \Delta_t) = obs(t_0)
+       GHI(t_f) = GHI(t_0)
 
-    however, complications exist when accounting for combinations of
-    data interval length, data interval label, forecast interval length,
-    and forecast interval label.
+    where :math:`t_f` is a forecast time and :math:`t_0` is a reference
+    time. However, complications occur when accounting for combinations
+    of window, data start, data end, data interval length, and forecast
+    interval length.
 
-    Be careful with start times, end times, window, and interval length.
-    If persistence of a scalar quantity is desired, data_end -
-    data_start must be less than (interval label = instant) or less than
-    or equal (interval label = beginning or ending) to window. If
-    persistence of multiple values is desired, data_end - data_start
-    must be equal to forecast_end - forecast_start, and window must be
-    equal to interval length.
+    Let *data start* and *data end* represent the start and end
+    times of the data points that will be used to create the persistence
+    forecast. Let *window* represent the time period over which data
+    is averaged to create the persistence forecast.
+
+    For persistence of a scalar quantity at all forecast times
+    :math:`t_f`, the data averaging *window* should be greater than or
+    equal to the data time period:
+    *window* >= *data start* - *data end*. If
+    *window* >= *data start* - *data end*,
+
+    .. math::
+
+       GHI_{t_f} = \overline{GHI_{t_{start}} \ldots GHI_{t_{end}}}
+
+    where the overline represents the average of all observations that
+    occur between :math:`t_{start}` = *data start* and
+    :math:`t_{end}` = *data end*.
+
+    For situations such as day ahead persistence forecasts of hourly
+    average quantities, *window* < *data start* - *data end*. If
+    *window* < *data start* - *data end*:
+
+    .. math::
+
+       GHI_{t_{f_m}} = \overline{GHI_{t_{{start}_m}} \ldots GHI_{t_{{end}_m}}}
+
+    where:
+
+    .. math::
+
+       m &\in \{0, 1, \ldots \frac{\textrm{data start} - \textrm{data end}}{\textrm{window}} - 1\} \\
+       t_{start_m} &=  \textrm{data start} + m \times \textrm{window}  \\
+       t_{end_m} &= \textrm{data start} + (1 + m) \times \textrm{window} \\
+       t_{f_m} &= \textrm{forecast start} + m \times \textrm{window}  \\
+
+    Further, persistence of multiple values requires that:
+
+      * *data end* - *data start* = *forecast end* - *forecast start*.
+        The data time period is equal to the forecast time period.
+      * (*data start* - *data end*) / *window* :math:`\in \mathbb{Z}`.
+        The data time period is an integer multiple of the averaging
+        window.
+      * *window* = *interval length*. The data averaging window is
+        equal to the forecast interval length.
+
+    Further complications arise because of data interval labels
+    (*beginning*, *ending*, *instantaneous*). If persistence of a scalar
+    quantity is desired, *data end* - *data start* must be strictly less
+    than (*interval label* = *instant*) or less than
+    or equal (*interval label* = *beginning* or *ending*) to window.
 
     Parameters
     ----------
