@@ -192,11 +192,15 @@ GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
                  'time_between_fcst_hrs': 60,
                  'delay_to_first_forecast': '280min',
                  'avg_max_run_length': '60min',
-                 'filename': 'gefs_{stat_or_member}.nc'}
+                 'filename': 'gefs_{stat_or_member}.nc',
+                 'members': (['avg', 'c00', 'spr'] +
+                             [f'p{r:02d}' for r in range(1, 21)]),
+                 'check_url_name': 'gens'}
 
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
-              'delay_to_first_forecast', 'avg_max_run_length', 'filename']
+              'delay_to_first_forecast', 'avg_max_run_length', 'filename',
+              'check_url_name', 'member']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr_hourly': HRRR_HOURLY,
@@ -305,9 +309,13 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             return res
 
 
+def _simple_model(model):
+    return model['dir'].split('.')[0][1:]
+
+
 async def get_available_dirs(session, model):
     """Get the available date/date+init_hr directories"""
-    simple_model = model['file'].split('.')[0]
+    simple_model = _simple_model(model)
     is_init_date = 'init_date' in model['dir']
     model_url = BASE_URL + model['endpoint']
 
@@ -332,10 +340,12 @@ def _process_params(model, init_time):
     params.update(DOMAIN)
     valid_hr_gen = params['valid_hr_gen'](init_time.hour)
     for p in EXTRA_KEYS:
-        del params[p]
+        if p in params:
+            del params[p]
     params['dir'] = params['dir'].format(
         init_date=init_time.strftime('%Y%m%d'),
-        init_dt=init_time.strftime('%Y%m%d%H'))
+        init_dt=init_time.strftime('%Y%m%d%H'),
+        init_hr=init_time.strftime('%H'))
     for i in valid_hr_gen:
         newp = params.copy()
         newp['file'] = newp['file'].format(
@@ -347,11 +357,13 @@ def _process_params(model, init_time):
 async def check_next_inittime(session, init_time, model):
     """Check if data from the next model initializtion time is available"""
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
-    simple_model = model['file'].split('.')[0]
-    next_init_url = (CHECK_URL.format(simple_model)
+    simple_model = _simple_model(model)
+    next_init_url = (CHECK_URL.format(model.get('check_url_name',
+                                                simple_model))
                      + model['dir'].format(
                          init_date=next_inittime.strftime('%Y%m%d'),
-                         init_dt=next_inittime.strftime('%Y%m%d%H'))
+                         init_dt=next_inittime.strftime('%Y%m%d%H'),
+                         init_hr=next_inittime.strftime('%H'))
                      + '/' + model['file'].format(init_hr=next_inittime.hour,
                                                   valid_hr=0))
 
@@ -359,8 +371,8 @@ async def check_next_inittime(session, init_time, model):
         async with session.head(next_init_url) as r:
             if r.status == 200:
                 logger.warning(
-                    'Skipping to next init time at %s for %s',
-                    next_inittime, simple_model)
+                    'Skipping to next init time at %s for %s %s',
+                    next_inittime, simple_model, model.get('member', ''))
                 return True
             else:
                 return False
@@ -372,10 +384,11 @@ async def files_to_retrieve(session, model, init_time):
     """Generator to return the parameters of the available files for download
     """
     possible_params = _process_params(model, init_time)
-    simple_model = model['file'].split('.')[0]
+    simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
-        next_model_url = (CHECK_URL.format(simple_model)
+        next_model_url = (CHECK_URL.format(model.get('check_url_name',
+                                                     simple_model))
                           + next_params['dir'] + '/' + next_params['file'])
         while True:
             # is the next file ready?
@@ -385,11 +398,12 @@ async def files_to_retrieve(session, model, init_time):
                     if first_file_modified_at is None:
                         first_file_modified_at = pd.Timestamp(
                             r.headers['Last-Modified'])
-                        logger.debug('First file was available at %s',
-                                     first_file_modified_at)
+                        logger.debug('First file was available at %s %s',
+                                     first_file_modified_at,
+                                     model.get('member', ''))
             except (aiohttp.ClientOSError, aiohttp.ClientResponseError):
-                logger.debug('Next file not ready yet for %s at %s',
-                             simple_model, init_time)
+                logger.debug('Next file not ready yet for %s at %s %s',
+                             simple_model, init_time, model.get('member', ''))
             else:
                 logger.debug('%s/%s is ready for download',
                              next_params['dir'], next_params['file'])
@@ -502,9 +516,9 @@ async def process_grib_to_netcdf(folder, model):
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
     grib_prefix = model['file'].split('.')[0]
-    res = await run_in_executor(_process_grib, grib_prefix, nctmp, folder,
-                                'subhourly' in str(folder))
-    res
+    await run_in_executor(_process_grib, grib_prefix, nctmp, folder,
+                          'subhourly' in str(folder))
+
     return nctmp
 
 
@@ -539,7 +553,7 @@ def _optimize_netcdf(nctmpfile, out_path):
 async def optimize_netcdf(nctmpfile, final_path):
     """Compress the netcdf file and adjust the chunking for fast time-series
     access"""
-    logger.info('Optimizing NetCDF file')
+    logger.info('Optimizing NetCDF file to save at %s', final_path)
     _handle, tmp_path = tempfile.mkstemp(dir=final_path.parent)
     os.close(_handle)
     tmp_path = Path(tmp_path)
@@ -554,6 +568,7 @@ async def optimize_netcdf(nctmpfile, final_path):
         tmp_path.rename(final_path)
         final_path.chmod(stat.S_IRGRP | stat.S_IRUSR | stat.S_IROTH |
                          stat.S_IWUSR)
+        logger.info('Done optimizing NetCDF at %s', final_path)
     finally:
         nctmpfile.unlink()
 
@@ -565,7 +580,8 @@ async def sleep_until_inittime(inittime, model):
         model['delay_to_first_forecast'])
     if likely_ready_time > now:
         seconds = (likely_ready_time - now).total_seconds()
-        logger.info('Sleeping %0.1fs for next model run', seconds)
+        logger.info('Sleeping %0.1fs for next model run %s', seconds,
+                    model.get('member', ''))
         await asyncio.sleep(seconds)
 
 
@@ -597,7 +613,9 @@ async def startup_find_next_runtime(model_path, session, model):
         if max_time > first:
             inittime = max_time + pd.Timedelta(model['update_freq'])
         else:  # No available dirs?
-            raise ValueError('Failed to find next available model from NOMADS')
+            raise ValueError(
+                'Failed to find next available model from NOMADS %s' %
+                model.get('member', ''))
     else:
         inittime = min(no_file)
     await sleep_until_inittime(inittime, model)
@@ -607,8 +625,9 @@ async def startup_find_next_runtime(model_path, session, model):
 async def next_run_time(inittime, modelpath, model):
     inittime += pd.Timedelta(model['update_freq'])
     # check if nc file exists for this inittime
-    if len(list(
-            (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
+    if (
+            modelpath / inittime.strftime('%Y/%m/%d/%H') /
+            model['filename']).exists():
         return await next_run_time(inittime, modelpath, model)
     await sleep_until_inittime(inittime, model)
     return inittime
@@ -648,13 +667,27 @@ async def _run_loop(session, model, modelpath, chunksize, once):
 async def run(basepath, model_name, chunksize, once=False):
     session = make_session()
     modelpath = basepath / model_name
-    model = model_map[model_name]
-    await _run_loop(session, model, modelpath, chunksize, once)
+    if model_name != 'gefs':
+        model = model_map[model_name]
+        await _run_loop(session, model, modelpath, chunksize, once)
+    else:
+        base_model = model_map[model_name].copy()
+        members = base_model.pop('members')
+        member_loops = set()
+        for member in members:
+            model = base_model.copy()
+            model['member'] = member
+            model['file'] = model['file'].replace('{stat_or_member}', member)
+            model['filename'] = model['filename'].format(stat_or_member=member)
+            member_loops.add(asyncio.create_task(
+                _run_loop(session, model, modelpath, chunksize, once)))
+        await asyncio.wait(member_loops)
     await session.close()
 
 
 async def optimize_only(path_to_files, model_name):
-    nctmpfile = await process_grib_to_netcdf(path_to_files)
+    model = model_map[model_name]
+    nctmpfile = await process_grib_to_netcdf(path_to_files, model)
     try:
         await optimize_netcdf(
             nctmpfile, path_to_files / f'{model_name}.nc')
@@ -662,7 +695,7 @@ async def optimize_only(path_to_files, model_name):
         raise
     else:
         # remove grib files
-        for f in path_to_files.glob('*.grib2'):
+        for f in path_to_files.glob(f'{model["file"].split(".")[0]}*.grib2'):
             f.unlink()
 
 
