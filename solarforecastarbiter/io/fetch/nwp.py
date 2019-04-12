@@ -510,7 +510,7 @@ async def process_grib_to_netcdf(folder, model):
 
         proc = await asyncio.create_subprocess_shell(
             f'sh {tmpfile.name} {str(folder)} {str(nctmp)} {grib_prefix} {fmt}',  # NOQA
-            stdout=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE)
 
         stdout, stderr = await proc.communicate()
