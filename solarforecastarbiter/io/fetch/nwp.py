@@ -202,7 +202,7 @@ for file in $(ls -1 *.grib2); do
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc_table nc.tbl {} -append -netcdf $NCFILENAME
+cat *.grib2 | wgrib2 - -nc4 -nc_table nc.tbl {} -append -netcdf $NCFILENAME
 rm nc.tbl
 popd
 """
@@ -251,7 +251,7 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
     while True:
         try:
             res = await get_func(*args, **kwargs)
-        except aiohttp.ClientResponseError as e:
+        except (aiohttp.ClientResponseError, aiohttp.ClientPayloadError) as e:
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
             retried += 1
@@ -483,6 +483,7 @@ def _optimize_netcdf(nctmpfile, out_path):
     ds.to_netcdf(out_path, format='NETCDF4',
                  mode='w', unlimited_dims=None,
                  encoding=encoding)
+    ds.close()
 
 
 async def optimize_netcdf(nctmpfile, final_path):
@@ -630,6 +631,8 @@ def main():
     argparser.add_argument(
         '--netcdf-only', action='store_true',
         help='Only convert files at save_directory to netcdf')
+    argparser.add_argument('--workers', type=int, default=1,
+                           help='Number of worker processes')
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
@@ -643,7 +646,7 @@ def main():
     elif args.verbose and args.verbose > 1:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    start_cluster()
+    start_cluster(args.workers, 4)
     basepath = Path(args.save_directory).resolve()
     if args.netcdf_only:
         path_to_files = basepath
