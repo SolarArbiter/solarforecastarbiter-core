@@ -79,7 +79,8 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                                                 range(240, 385, 12)),
                 'time_between_fcst_hrs': 60,
                 'delay_to_first_forecast': '200min',
-                'avg_max_run_length': '100min'}
+                'avg_max_run_length': '100min',
+                'filename': 'gfs_0p25.nc'}
 
 
 NAM_CONUS = {'endpoint': 'filter_nam.pl',
@@ -98,7 +99,8 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'valid_hr_gen': lambda x: chain(range(36), range(36, 85, 3)),
              'time_between_fcst_hrs': 60,
              'delay_to_first_forecast': '90min',
-             'avg_max_run_length': '80min'}
+             'avg_max_run_length': '80min',
+             'filename': 'nam_12km.nc'}
 
 
 # should be able to use RANGE requests and get data directly from grib files
@@ -120,7 +122,8 @@ RAP = {'endpoint': 'filter_rap.pl',
            lambda x: range(40) if x in (3, 9, 15, 21) else range(22)),
        'time_between_fcst_hrs': 60,
        'delay_to_first_forecast': '50min',
-       'avg_max_run_length': '30min'}
+       'avg_max_run_length': '30min',
+       'filename': 'rap.nc'}
 
 
 HRRR_HOURLY = {
@@ -143,7 +146,8 @@ HRRR_HOURLY = {
         lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '70min'}
+    'avg_max_run_length': '70min',
+    'filename': 'hrrr_hourly.nc'}
 
 
 HRRR_SUBHOURLY = {
@@ -164,14 +168,40 @@ HRRR_SUBHOURLY = {
     'valid_hr_gen': (lambda x: range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '50min'}
+    'avg_max_run_length': '50min',
+    'filename': 'hrrr_subhourly.nc'}
+
+
+# each GEFS stat_or_member is treated separately
+# really  makes use of async capabillities
+GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
+                 'file': 'ge{stat_or_member}.t{init_hr:02d}z.pgrb2a.0p50.f{valid_hr:03d}',  # NOQA
+                 'dir': '/gefs.{init_date}/{init_hr}/pgrb2ap5',
+                 'lev_2_m_above_ground': 'on',
+                 'lev_10_m_above_ground': 'on',
+                 'lev_entire_atmosphere': 'on',
+                 'lev_surface': 'on',
+                 'var_DSWRF': 'on',
+                 'var_TCDC': 'on',
+                 'var_TMP': 'on',
+                 'var_UGRD': 'on',
+                 'var_VGRD': 'on',
+                 'update_freq': '6h',
+                 'valid_hr_gen': lambda x: chain(range(0, 192, 3),
+                                                 range(192, 385, 6)),
+                 'time_between_fcst_hrs': 60,
+                 'delay_to_first_forecast': '280min',
+                 'avg_max_run_length': '60min',
+                 'filename': 'gefs_{stat_or_member}.nc'}
+
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
-              'delay_to_first_forecast', 'avg_max_run_length']
+              'delay_to_first_forecast', 'avg_max_run_length', 'filename']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr_hourly': HRRR_HOURLY,
-             'hrrr_subhourly': HRRR_SUBHOURLY}
+             'hrrr_subhourly': HRRR_SUBHOURLY,
+             'gefs': GEFS_0P50_RAW}
 
 
 GRIB_TO_NC4 = """
@@ -535,17 +565,15 @@ async def startup_find_next_runtime(model_path, session, model):
             path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
             for hr in range(0, 24, int(model['update_freq'].strip('h'))):
                 hrpath = path / f'{hr:02d}'
-                glob = list(hrpath.glob('*.nc'))
                 hrtime = pd.Timestamp(f'{dir_[:8]}T{hr:02d}00Z')
-                if len(glob) == 0:
+                if not (hrpath / model['filename']).exists():
                     no_file.append(hrtime)
                 else:
                     max_time = max(max_time, hrtime)
         else:
             hrpath = model_path / dir_[:4] / dir_[4:6] / dir_[6:8] / dir_[8:10]
-            glob = list(hrpath.glob('*.nc'))
             hrtime = pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00Z')
-            if len(glob) == 0:
+            if not (hrpath / model['filename']).exists():
                 no_file.append(hrtime)
             else:
                 max_time = max(max_time, hrtime)
@@ -570,10 +598,7 @@ async def next_run_time(inittime, modelpath, model):
     return inittime
 
 
-async def run(basepath, model_name, chunksize, once=False):
-    session = make_session()
-    modelpath = basepath / model_name
-    model = model_map[model_name]
+async def _run_loop(session, model, modelpath, chunksize, once):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
@@ -587,7 +612,7 @@ async def run(basepath, model_name, chunksize, once=False):
             nctmpfile = await process_grib_to_netcdf(path_to_files)
             try:
                 await optimize_netcdf(
-                    nctmpfile, path_to_files / f'{model_name}.nc')
+                    nctmpfile, path_to_files / model['filename'])
             except Exception:
                 raise
             else:
@@ -599,6 +624,13 @@ async def run(basepath, model_name, chunksize, once=False):
         else:
             logger.info('Moving on to next model run')
             inittime = await next_run_time(inittime, modelpath, model)
+
+
+async def run(basepath, model_name, chunksize, once=False):
+    session = make_session()
+    modelpath = basepath / model_name
+    model = model_map[model_name]
+    await _run_loop(session, model, modelpath, chunksize, once)
     await session.close()
 
 
@@ -644,8 +676,7 @@ def main():
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
-        'model', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr_hourly',
-                          'hrrr_subhourly'],
+        'model', choices=list(model_map.keys()),
         help='The model to get data for')
     args = argparser.parse_args()
 
