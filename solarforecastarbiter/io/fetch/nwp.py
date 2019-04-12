@@ -23,6 +23,9 @@ to set the timing of the HTTP requests:
 
 Many of these parameters are inferred from
 https://www.nco.ncep.noaa.gov/pmb/nwprod/prodstat/
+
+
+This script uses features of asyncio that are likely not available in Windows.
 """
 import asyncio
 import argparse
@@ -486,28 +489,6 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-def _process_grib(grib_prefix, nctmp, folder, with_avg=False):
-    if with_avg:
-        # for hrrr subhourly, assume TMP and VDDSF have no average but others
-        fmt = "-match 'ave|TMP|VDDSF'"
-    else:
-        fmt = ''
-
-    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        tmpfile.write(GRIB_TO_NC4)
-        tmpfile.flush()
-        try:
-            subprocess.run(
-                ['sh', tmpfile.name, str(folder), str(nctmp), grib_prefix,
-                 fmt],
-                check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            logger.error('Error converting gribs at %s*.grib2 to NetCDF\n%s',
-                         grib_prefix, e.stderr)
-            nctmp.unlink()
-            raise
-
-
 @abort_all_on_exception
 async def process_grib_to_netcdf(folder, model):
     _handle, nctmp = tempfile.mkstemp(dir=folder)
@@ -516,9 +497,28 @@ async def process_grib_to_netcdf(folder, model):
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
     grib_prefix = model['file'].split('.')[0]
-    await run_in_executor(_process_grib, grib_prefix, nctmp, folder,
-                          'subhourly' in str(folder))
 
+    if 'subhourly' in str(folder):
+        # for hrrr subhourly, assume TMP and VDDSF have no average but others
+        fmt = "-match 'ave|TMP|VDDSF'"
+    else:
+        fmt = ''
+
+    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
+        tmpfile.write(GRIB_TO_NC4)
+        tmpfile.flush()
+
+        proc = await asyncio.create_subprocess_shell(
+            f'sh {tmpfile.name} {str(folder)} {str(nctmp)} {grib_prefix} {fmt}',  # NOQA
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger.error('Error converting grib files %s*.grib2 to netCDF\n%s',
+                         grib_prefix, stderr.decode())
+            nctmp.unlink()
+            raise OSError
     return nctmp
 
 
@@ -644,11 +644,9 @@ async def _run_loop(session, model, modelpath, chunksize, once):
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
             path_to_files = files[0].parent
-            nctmpfile = await process_grib_to_netcdf(path_to_files,
-                                                     model)
-            if not nctmpfile.exists() or nctmpfile.stat().st_size < 1:
-                raise ValueError('Empty temporary file!')
             try:
+                nctmpfile = await process_grib_to_netcdf(path_to_files,
+                                                         model)
                 await optimize_netcdf(
                     nctmpfile, path_to_files / model['filename'])
             except Exception:
