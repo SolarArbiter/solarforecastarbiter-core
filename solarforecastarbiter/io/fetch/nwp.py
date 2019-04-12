@@ -206,14 +206,27 @@ model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
 
 GRIB_TO_NC4 = """
 #/usr/bin/bash
+set -e
+
 FOLDER=$1
 NCFILENAME=$2
+GRIBPREFIX=$3
+AVGFMT="${4:-}"
 
 pushd $FOLDER
 pwd
 
+nctbl=$(mktemp -p . nc.tbl.XXXX)
+
+function finish {
+   rm $nctbl
+   popd
+}
+
+trap finish EXIT
+
 # make the nc_table
-cat <<EOF > nc.tbl
+cat <<EOF > $nctbl
 TMP:surface:ignore
 TMP:2 m above ground:t2m
 UGRD:10 m above ground:ignore
@@ -226,17 +239,15 @@ VDDSF:surface:vddsf
 WIND:10 m above ground:si10
 EOF
 
-
 # add wind speed to grib files
-for file in $(ls -1 *.grib2); do
+for file in $(ls -1 $GRIBPREFIX*.grib2); do
     wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
         wgrib2 - -append -grib_out $file;
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc4 -nc_table nc.tbl {} -append -netcdf $NCFILENAME
-rm nc.tbl
-popd
+cat $GRIBPREFIX*.grib2 | \
+    wgrib2 - -nc4 -nc_table $nctbl $AVGFMT -append -netcdf $NCFILENAME
 """
 
 COMPRESSION = {'zlib': True, 'complevel': 1, 'shuffle': True,
@@ -461,34 +472,39 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-def _process_grib(nctmp, folder, with_avg=False):
+def _process_grib(grib_prefix, nctmp, folder, with_avg=False):
     if with_avg:
         # for hrrr subhourly, assume TMP and VDDSF have no average but others
         fmt = "-match 'ave|TMP|VDDSF'"
     else:
         fmt = ''
+
     with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        tmpfile.write(GRIB_TO_NC4.format(fmt))
+        tmpfile.write(GRIB_TO_NC4)
         tmpfile.flush()
         try:
             subprocess.run(
-                ['sh', tmpfile.name, str(folder), str(nctmp)],
+                ['sh', tmpfile.name, str(folder), str(nctmp), grib_prefix,
+                 fmt],
                 check=True, capture_output=True)
         except subprocess.CalledProcessError as e:
-            logger.error('Error converting grib to NetCDF\n%s',
-                         e.stderr)
+            logger.error('Error converting gribs at %s*.grib2 to NetCDF\n%s',
+                         grib_prefix, e.stderr)
             nctmp.unlink()
             raise
 
 
 @abort_all_on_exception
-async def process_grib_to_netcdf(folder):
+async def process_grib_to_netcdf(folder, model):
     _handle, nctmp = tempfile.mkstemp(dir=folder)
     os.close(_handle)
     nctmp = Path(nctmp)
-    logger.info('Converting GRIB files to NetCDF with wgrib2')
-    await run_in_executor(_process_grib, nctmp, folder,
-                          'subhourly' in str(folder))
+    logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
+                model.get('member', ''))
+    grib_prefix = model['file'].split('.')[0]
+    res = await run_in_executor(_process_grib, grib_prefix, nctmp, folder,
+                                'subhourly' in str(folder))
+    res
     return nctmp
 
 
@@ -609,7 +625,10 @@ async def _run_loop(session, model, modelpath, chunksize, once):
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
             path_to_files = files[0].parent
-            nctmpfile = await process_grib_to_netcdf(path_to_files)
+            nctmpfile = await process_grib_to_netcdf(path_to_files,
+                                                     model)
+            if not nctmpfile.exists() or nctmpfile.stat().st_size < 1:
+                raise ValueError('Empty temporary file!')
             try:
                 await optimize_netcdf(
                     nctmpfile, path_to_files / model['filename'])
