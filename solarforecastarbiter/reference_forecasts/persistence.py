@@ -53,8 +53,8 @@ def persistence(observation, window, data_start, data_end,
     For persistence of a scalar quantity at all forecast times
     :math:`t_f`, the data averaging *window* should be greater than or
     equal to the data time period:
-    *window* >= *data start* - *data end*. If
-    *window* >= *data start* - *data end*,
+    *window* >= *data end* - *data start*. If
+    *window* >= *data end* - *data start*,
 
     .. math::
 
@@ -65,8 +65,8 @@ def persistence(observation, window, data_start, data_end,
     :math:`t_{end}` = *data end*.
 
     For situations such as day ahead persistence forecasts of hourly
-    average quantities, *window* < *data start* - *data end*. If
-    *window* < *data start* - *data end*:
+    average quantities, *window* < *data end* - *data start*. If
+    *window* < *data end* - *data start*:
 
     .. math::
 
@@ -76,7 +76,7 @@ def persistence(observation, window, data_start, data_end,
 
     .. math::
 
-       m &\in \{0, 1, \ldots \frac{\textrm{data start} - \textrm{data end}}{\textrm{window}} - 1\} \\
+       m &\in \{0, 1, \ldots \frac{\textrm{data end} - \textrm{data start}}{\textrm{window}} - 1\} \\
        t_{start_m} &=  \textrm{data start} + m \times \textrm{window}  \\
        t_{end_m} &= \textrm{data start} + (1 + m) \times \textrm{window} \\
        t_{f_m} &= \textrm{forecast start} + m \times \textrm{window}  \\
@@ -85,7 +85,7 @@ def persistence(observation, window, data_start, data_end,
 
       * *data end* - *data start* = *forecast end* - *forecast start*.
         The data time period is equal to the forecast time period.
-      * (*data start* - *data end*) / *window* :math:`\in \mathbb{Z}`.
+      * (*data end* - *data start*) / *window* :math:`\in \mathbb{Z}`.
         The data time period is an integer multiple of the averaging
         window.
       * *window* = *interval length*. The data averaging window is
