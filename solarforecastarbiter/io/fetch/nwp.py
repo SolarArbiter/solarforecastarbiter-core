@@ -483,6 +483,7 @@ def _optimize_netcdf(nctmpfile, out_path):
     ds.to_netcdf(out_path, format='NETCDF4',
                  mode='w', unlimited_dims=None,
                  encoding=encoding)
+    ds.close()
 
 
 async def optimize_netcdf(nctmpfile, final_path):
