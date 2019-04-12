@@ -498,3 +498,80 @@ def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     flags = detect_stale_values(x.diff(periods=1), window=window-1, rtol=rtol,
                                 atol=atol)
     return flags
+
+
+def detect_levels(x, count=3, num_bins=100):
+    """ Detects plateau levels in data.
+
+    Parameters
+    ----------
+    x : Series
+        data to be processed
+    count : int
+        number of plateaus to return
+    num_bins : int
+        number of bins to use in histogram that finds plateau levels
+
+    Returns
+    -------
+    levels : list of tuples
+        (left, right) values of the interval in x with a detected plateau, in
+        decreasing order of count of x values in the interval. List length is
+        given by the kwarg count
+    """
+    hist, bin_edges = np.histogram(x, bins=num_bins, density=True)
+    level_index = np.argsort(hist * -1) # decreasing order
+    levels = [(bin_edges[i], bin_edges[i + 1]) for i in level_index[:count]]
+    return levels, bin_edges
+
+
+def _label_clipping(x, window, frac):
+    """ Returns Series with True where 
+    """
+    tmp = x.rolling(window).sum()
+    y = (tmp >= window * frac) & x.astype(bool)
+    return y
+
+
+def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
+                    levels=2):
+    """ Detects clipping in a series of AC power.
+
+    Possible clipped power levels are found by detect_levels. Within each
+    sliding window, clipping is indicated when at least fraction_in_window
+    of points are close to a clipped power level.
+
+    Parameters
+    ----------
+    ac_power : Series
+        data to be processed
+
+    window : int
+        number of data points defining the length of a rolling window
+
+    fraction_in_window : float
+        fraction of points which indicate clipping if AC power at each point
+        is close to the plateau level
+
+    rtol : float
+        a point is close to a clipped level M if
+        abs(ac_power - M) < rtol * max(ac_power)
+
+    levels : int
+        number of clipped power levels to consider.
+
+    Returns
+    -------
+    flags : Series
+        True when clipping is indicated.
+    """
+    num_bins = np.ceil(1.0 / rtol).astype(int)
+    flags = pd.Series(index=ac_power.index, data=False)
+    power_plateaus, bins = detect_levels(ac_power, count=levels,
+                                         num_bins=num_bins)
+    for M in power_plateaus:
+        temp = pd.Series(index=ac_power.index, data=0.0)
+        temp.loc[(ac_power >= M[0]) & (ac_power <= M[1])] = 1.0
+        flags = flags | _label_clipping(temp, window=window,
+                                        frac=fraction_in_window)
+    return flags
