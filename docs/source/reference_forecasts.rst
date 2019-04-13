@@ -94,5 +94,6 @@ forecasts.
    :toctree: generated/
 
    persistence
-   persistence.persistence
-   persistence.index_persistence
+   persistence.persistence_scalar
+   persistence.persistence_interval
+   persistence.persistence_scalar_index
