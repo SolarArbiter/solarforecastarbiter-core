@@ -135,10 +135,14 @@ def run_persistence(observation, forecast, issue_time, index=False):
     Raises
     ------
     ValueError
-        If forecast and issue_time are incompatible
-
+        If forecast and issue_time are incompatible.
     ValueError
         If forecast.run_length >= 1 day and index=True.
+    ValueError
+        If instantaneous forecast and instantaneous observation interval
+        lengths do not match.
+    ValueError
+        If average observations are used to make instantaneous forecast.
     """
     forecast_start, forecast_end = get_forecast_start_end(forecast, issue_time)
 
@@ -167,35 +171,42 @@ def run_persistence(observation, forecast, issue_time, index=False):
         data_end = issue_time.floor('1d')
         data_start = data_end - pd.Timedelta('1d')
 
-    # to ensure that each observation contributes to the correct forecast,
-    # data_end, data_start need to be nudged if observations are instantaneous
-    if datamodel.CLOSED_MAPPING[observation.interval_label] is None:
-        if forecast.interval_label == 'ending':
+    # to ensure that each observation data point contributes to the correct
+    # forecast, the data_end and data_start values may need to be nudged
+    if 'instant' in observation.interval_label:
+        # instantaneous observations require care.
+        # persistence models return forecasts with same closure as obs
+        if 'instant' in forecast.interval_label:
+            if forecast.interval_length != observation.interval_length:
+                raise ValueError('Instantaneous forecast requires '
+                                 'instantaneous observation '
+                                 'with identical interval length.')
+            else:
+                data_end -= pd.Timedelta('1s')
+        elif forecast.interval_label == 'beginning':
             data_start += pd.Timedelta('1s')
         else:
             data_end -= pd.Timedelta('1s')
+    else:
+        if 'instant' in forecast.interval_label:
+            raise ValueError('Instantaneous forecast cannot be made from '
+                             'interval average observations')
 
     if intraday and index:
         fx = persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
-            forecast.interval_length)
+            forecast.interval_length, forecast.interval_label)
     elif intraday and not index:
         fx = persistence.persistence_scalar(
             observation, data_start, data_end, forecast_start, forecast_end,
-            forecast.interval_length)
+            forecast.interval_length, forecast.interval_label)
     elif not intraday and not index:
         fx = persistence.persistence_interval(
             observation, data_start, data_end, forecast_start,
-            forecast.interval_length)
+            forecast.interval_length, forecast.interval_label)
     else:
         raise ValueError(
             'index=True not supported for forecasts with run_length >= 1day')
-
-    # make interval label consistent with input forecast
-    # not confident that this code does what it's supposed to do all the time
-    # deal with that once design is better understood
-    closed_fx = datamodel.CLOSED_MAPPING[forecast.interval_label]
-    fx = fx.resample(fx.index.freq, closed=closed_fx, label=closed_fx).mean()
 
     return fx
 

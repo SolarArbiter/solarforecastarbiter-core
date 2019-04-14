@@ -31,7 +31,8 @@ from solarforecastarbiter.io.utils import load_data as _load_data
 
 
 def persistence_scalar(observation, data_start, data_end, forecast_start,
-                       forecast_end, interval_length, load_data=None):
+                       forecast_end, interval_length, interval_label,
+                       load_data=None):
     r"""
     Make a persistence forecast using the mean value of the
     *observation* from *data_start* to *data_end*.
@@ -59,12 +60,14 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
         observation.interval_label is *ending* or *instantaneous*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instantaneous*.
     forecast_end : pd.Timestamp
         Forecast end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instantaneous*.
+        interval_label is *ending* or *instantaneous*.
     interval_length : pd.Timedelta
         Forecast interval length
+    interval_label : str
+        instantaneous, beginning, or ending
     load_data : function, default solarforecastarbiter.io.utils.load_data
         A function that loads the observation data. Must have the same
         signature has the default function.
@@ -72,13 +75,12 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
     Returns
     -------
     forecast : pd.Series
-        The persistence forecast. The forecast interval label is the
-        same as the observation interval label.
+        The persistence forecast.
     """
     load_data = _load_data if load_data is None else load_data
     obs = load_data(observation, data_start, data_end)
     persistence_quantity = obs.mean()
-    closed = datamodel.CLOSED_MAPPING[observation.interval_label]
+    closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
     fx = pd.Series(persistence_quantity, index=fx_index)
@@ -89,7 +91,7 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
 # determined by the forecast start and data length. Could make them the
 # same for function call consistency, but readability counts.
 def persistence_interval(observation, data_start, data_end, forecast_start,
-                         interval_length, load_data=None):
+                         interval_length, interval_label, load_data=None):
     r"""
     Make a persistence forecast for an *observation* using the mean
     values of each *interval_length* bin from *data_start* to
@@ -131,9 +133,11 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
         observation.interval_label is *ending* or *instantaneous*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instantaneous*.
     interval_length : pd.Timedelta
         Forecast interval length
+    interval_label : str
+        instantaneous, beginning, or ending
     load_data : function, default solarforecastarbiter.io.utils.load_data
         A function that loads the observation data. Must have the same
         signature has the default function.
@@ -141,8 +145,7 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     Returns
     -------
     forecast : pd.Series
-        The persistence forecast. The forecast interval label is the
-        same as the observation interval label.
+        The persistence forecast.
     """
     # determine forecast end from forecast start and obs length
     # assumes that load_data will return NaNs if data is missing.
@@ -160,7 +163,7 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     persistence_quantity = obs.resample(interval_length).mean()
 
     # Make the forecast time index.
-    closed = datamodel.CLOSED_MAPPING[observation.interval_label]
+    closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
 
@@ -173,7 +176,7 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
 
 
 def persistence_scalar_index(observation, data_start, data_end, forecast_start,
-                             forecast_end, interval_length,
+                             forecast_end, interval_length, interval_label,
                              load_data=None):
     r"""
     Calculate a persistence forecast using the mean value of the
@@ -203,12 +206,14 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
         observation.interval_label is *ending* or *instantaneous*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instantaneous*.
     forecast_end : pd.Timestamp
         Forecast end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instantaneous*.
+        interval_label is *ending* or *instantaneous*.
     interval_length : pd.Timedelta
         Forecast interval length
+    interval_label : str
+        instantaneous, beginning, or ending
     load_data : function, default solarforecastarbiter.io.utils.load_data
         A function that loads the observation data. Must have the same
         signature has the default function.
@@ -249,8 +254,9 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     # Calculate solar position and clearsky for the forecast times.
     # Use 5 minute or better frequency to minimize solar position errors.
     # Later, modeled clear sky or ac power will be resampled to interval_length
+    closed_fx = datamodel.CLOSED_MAPPING[interval_label]
     fx_range = pd.date_range(start=forecast_start, end=forecast_end, freq=freq,
-                             closed=closed)
+                             closed=closed_fx)
     solar_position_fx = calc_solpos(fx_range)
     clearsky_fx = calc_cs(solar_position_fx['apparent_zenith'])
 
@@ -286,8 +292,8 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     # average instantaneous clear forecasts over interval_length windows
     # resample operation should be safe due to
     # _check_interval_length calls above
-    clear_fx_resampled = \
-        clear_fx.resample(interval_length, closed=closed, label=closed).mean()
+    clear_fx_resampled = clear_fx.resample(
+        interval_length, closed=closed_fx, label=closed_fx).mean()
 
     # finally, make forecast
     # fx_t_f = avg{index_{t_start}...index_{t_end}} * clear_t_f
@@ -318,16 +324,13 @@ def _check_intervals_times(interval_label, data_start, data_end,
         # 1. start times % int length == 0 and NOT end times % int. length == 0
         # 2. NOT start times % int length == 0 and end times % int. length == 0
         # everything else fails
-        if (data_start_mod and forecast_start_mod and
-                not data_end_mod and not forecast_end_mod):
+        if data_start_mod and not data_end_mod:
             pass
-        elif (not data_start_mod and not forecast_start_mod and
-                data_end_mod and forecast_end_mod):
+        elif not data_start_mod and data_end_mod:
             pass
         else:
             raise ValueError('For observations with interval_label '
-                             'instantaneous, data_start and forecast_start '
-                             'OR data_end and forecast_end '
+                             'instantaneous, data_start OR data_end '
                              'must be must be divisible by interval_length.' +
                              strvals)
     elif interval_label in ['ending', 'beginning']:
