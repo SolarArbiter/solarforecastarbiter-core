@@ -4,10 +4,9 @@ import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.reference_forecasts import persistence
-from solarforecastarbiter.conftest import requires_tables
 
+import pytest
 
-@requires_tables
 def test():
     from solarforecastarbiter import conftest
     site = conftest._site_metadata()

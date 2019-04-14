@@ -87,15 +87,17 @@ def run(site, model, init_time, start, end):
     return resampled
 
 
-def run_persistence(observation, forecast, issue_time, model):
+def run_persistence(observation, forecast, issue_time, index=False):
     """
-    Run a persistence *forecast* for an *observation* using a *model*.
+    Run a persistence *forecast* for an *observation*.
 
-    Model can one of:
+    For intraday forecasts, the *index* argument controls if the
+    forecast is constructed using persistence of the measured values
+    (*index = False*) or persistence using clear sky index or AC power
+    index.
 
-      1. persistence: irradiance or power persistence
-      2. index persistence: irradiance persistence using clear sky index
-         or power persistence using AC power index
+    For day ahead forecasts, only persistence of measured values
+    (*index = False*) is supported.
 
     The persistence *window* is the time over which the persistence
     quantity (irradiance, power, clear sky index, or power index) is
@@ -120,19 +122,25 @@ def run_persistence(observation, forecast, issue_time, model):
         The metadata of the desired forecast.
     issue_time : pd.Timestamp
         Issue time of the forecast run.
-    model : str or function
-        Forecast model. If string, must be *persistence* or
-        *index_persistence*. If function, must have the same signature
-        as the functions in
-        :py:mod:`solarforecastarbiter.reference_forecasts.persistence`.
+    index : bool, default False
+        If False, use persistence of observed value. If True, use
+        persistence of clear sky or AC power index.
 
     Returns
     -------
     forecast : pd.Series
         Forecast conforms to the metadata specified by the *forecast*
         argument.
+
+    Raises
+    ------
+    ValueError
+        If forecast and issue_time are incompatible
+
+    ValueError
+        If forecast.run_length >= 1 day and index=True.
     """
-    check_issue_time(forecast, issue_time)
+    forecast_start, forecast_end = get_forecast_start_end(forecast, issue_time)
 
     # intra day persistence and "day ahead" persistence require
     # fairly different parameters.
@@ -145,7 +153,7 @@ def run_persistence(observation, forecast, issue_time, model):
         window = min(
             pd.Timedelta('1h'),
             max(observation.interval_length, forecast.interval_length,
-                forecast.lead_time_to_start)
+                forecast.lead_time_to_start, forecast.run_length)
         )
         data_end = issue_time
         data_start = data_end - window
@@ -158,7 +166,6 @@ def run_persistence(observation, forecast, issue_time, model):
         # valid time. Arguably too much for a reference forecast.
         data_end = issue_time.floor('1d')
         data_start = data_end - pd.Timedelta('1d')
-        window = forecast.interval_length
 
     # to ensure that each observation contributes to the correct forecast,
     # data_end, data_start need to be nudged if observations are instantaneous
@@ -168,53 +175,63 @@ def run_persistence(observation, forecast, issue_time, model):
         else:
             data_end -= pd.Timedelta('1s')
 
-    # specify forecast start and end times
-    forecast_start = issue_time + forecast.lead_time_to_start
-    forecast_end = forecast_start + forecast.run_length
-
-    if isinstance(model, str):
-        # Extract the function with this name in the persistence module.
-        #
-        # Instead of using vars, we could be more explicit and define our own
-        # dict here or in persistence.py:
-        # models = {'persistence': persistence.persistence,
-        #           'index_persistence': persistence.index_persistence}
-        # model = models[model]
-        # Using vars gives us one fewer thing to update if we want to change
-        # anything and is less of a hassle if we want to use the same pattern
-        # for the NWP processing models.
-        try:
-            model = vars(persistence)[model.replace(' ', '_')]
-        except KeyError:
-            raise ValueError(
-                'Invalid model option. See doc string for options.')
-
-    # finally, we call the desired persistence model function
-    fx = model(observation, window, data_start, data_end, forecast_start,
-               forecast_end, forecast.interval_length)
+    if intraday and index:
+        fx = persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            forecast.interval_length)
+    elif intraday and not index:
+        fx = persistence.persistence_scalar(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            forecast.interval_length)
+    elif not intraday and not index:
+        fx = persistence.persistence_interval(
+            observation, data_start, data_end, forecast_start,
+            forecast.interval_length)
+    else:
+        raise ValueError(
+            'index=True not supported for forecasts with run_length >= 1day')
 
     # make interval label consistent with input forecast
     # not confident that this code does what it's supposed to do all the time
     # deal with that once design is better understood
     closed_fx = datamodel.CLOSED_MAPPING[forecast.interval_label]
-    fx = fx.resample(fx.index.freq, closed=closed_fx).mean()
+    fx = fx.resample(fx.index.freq, closed=closed_fx, label=closed_fx).mean()
 
     return fx
 
 
-# put in validator?
-def check_issue_time(forecast, issue_time):
+def get_forecast_start_end(forecast, issue_time):
     """
-    Check that the issue time is compatible with the forecast.
+    Get absolute forecast start from *forecast* object parameters and
+    absolute *issue_time*.
+
+    Parameters
+    ----------
+    forecast : datamodel.Forecast
+    issue_time : pd.Timestamp
+
+    Returns
+    -------
+    forecast_start : pd.Timestamp
+        Start time of forecast issued at issue_time
+    forecast_end : pd.Timestamp
+        End time of forecast issued at issue_time
 
     Raises
     ------
     ValueError if forecast and issue_time are incompatible
     """
-    start = issue_time.floor() + forecast.issue_time_of_day
-    index = pd.DatetimeIndex(start=start, end=start+pd.Timedelta('1d'),
-                             freq=forecast.run_length)
-    if issue_time not in index:
+    first_issue_time = pd.Timestamp.combine(issue_time.floor('1D'),
+                                            forecast.issue_time_of_day)
+    issue_times = pd.date_range(start=first_issue_time,
+                                end=first_issue_time+pd.Timedelta('1d'),
+                                freq=forecast.run_length)
+    if issue_time not in issue_times:
         ValueError(('Incompatible forecast.issue_time_of_day %s,'
                     'forecast.run_length %s, and issue_time %s') %
                    forecast.issue_time_of_day, forecast.run_length, issue_time)
+    forecast_start = issue_time + forecast.lead_time_to_start
+    forecast_end = forecast_start + forecast.run_length
+    if 'instant' in forecast.interval_label:
+        forecast_end -= pd.Timedelta('1s')
+    return forecast_start, forecast_end
