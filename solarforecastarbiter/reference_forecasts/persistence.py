@@ -296,11 +296,6 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     return fx
 
 
-def _check_interval_length_single(atime, interval_length):
-    if atime.timestamp() % interval_length.total_seconds():
-        raise ValueError('time must be integer multiple of interval_length')
-
-
 def _check_intervals_times(interval_label, data_start, data_end,
                            forecast_start, forecast_end, interval_length):
     """Ensures valid input.
