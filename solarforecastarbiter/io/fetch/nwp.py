@@ -272,7 +272,7 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             if retried >= retries:
                 raise
             await asyncio.sleep(60)
-        except (aiohttp.ClientPayloadError, aiohttp.ClientOSError):
+        except aiohttp.ClientError:
             logger.warning('Request failed in connection, retrying')
             retried += 1
             if retried >= retries:
