@@ -404,10 +404,7 @@ async def _get_file(session, url, params, tmpfile, chunksize):
     async with session.get(url, params=params, raise_for_status=True,
                            timeout=timeout) as r:
         with open(tmpfile, 'wb') as f:
-            while True:
-                chunk = await r.content.read(chunksize * 1024)
-                if not chunk:
-                    break
+            async for chunk in r.content.iter_chunked(chunksize * 1024):
                 f.write(chunk)
 
 
