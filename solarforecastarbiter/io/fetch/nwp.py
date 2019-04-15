@@ -175,7 +175,7 @@ HRRR_SUBHOURLY = {
 
 
 # each GEFS stat_or_member is treated separately
-# really  makes use of async capabillities
+# really makes use of async capabilities
 GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
                  'file': 'ge{stat_or_member}.t{init_hr:02d}z.pgrb2a.0p50.f{valid_hr:03d}',  # NOQA
                  'dir': '/gefs.{init_date}/{init_hr}/pgrb2ap5',
