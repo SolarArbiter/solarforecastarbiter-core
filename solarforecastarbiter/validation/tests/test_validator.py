@@ -342,7 +342,7 @@ def test_detect_clipping(ghi_clipped):
     placeholder = pd.Series(index=ghi_clipped.index, data=False)
     expected = placeholder.copy()
     # for window=4 and fraction_in_window=0.75
-    expected.iloc[3:7] = True
+    expected.iloc[3:6] = True
     expected.iloc[14:17] = True
     expected.iloc[18:20] = True
     expected.iloc[25] = True
