@@ -520,13 +520,14 @@ def detect_levels(x, count=3, num_bins=100):
         given by the kwarg count
     """
     hist, bin_edges = np.histogram(x, bins=num_bins, density=True)
-    level_index = np.argsort(hist * -1) # decreasing order
+    level_index = np.argsort(hist * -1)  # decreasing order
     levels = [(bin_edges[i], bin_edges[i + 1]) for i in level_index[:count]]
     return levels, bin_edges
 
 
 def _label_clipping(x, window, frac):
-    """ Returns Series with True where 
+    """ Returns Series with True at the end of each window with
+    sum(x(window)) >= window * frac.
     """
     tmp = x.rolling(window).sum()
     y = (tmp >= window * frac) & x.astype(bool)

@@ -353,5 +353,3 @@ def test_detect_clipping(ghi_clipped):
                                       fraction_in_window=0.75, rtol=5e-3,
                                       levels=4)
     assert_series_equal(flags, expected)
-
-    
