@@ -23,17 +23,21 @@ to set the timing of the HTTP requests:
 
 Many of these parameters are inferred from
 https://www.nco.ncep.noaa.gov/pmb/nwprod/prodstat/
+
+
+This script uses features of asyncio that are likely not available in Windows.
 """
 import asyncio
 import argparse
 from functools import partial
 from itertools import chain
 import logging
+import os
 from pathlib import Path
 import re
 import shutil
 import signal
-import subprocess
+import stat
 import sys
 import tempfile
 
@@ -77,7 +81,8 @@ GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                                                 range(240, 385, 12)),
                 'time_between_fcst_hrs': 60,
                 'delay_to_first_forecast': '200min',
-                'avg_max_run_length': '100min'}
+                'avg_max_run_length': '100min',
+                'filename': 'gfs_0p25.nc'}
 
 
 NAM_CONUS = {'endpoint': 'filter_nam.pl',
@@ -96,7 +101,8 @@ NAM_CONUS = {'endpoint': 'filter_nam.pl',
              'valid_hr_gen': lambda x: chain(range(36), range(36, 85, 3)),
              'time_between_fcst_hrs': 60,
              'delay_to_first_forecast': '90min',
-             'avg_max_run_length': '80min'}
+             'avg_max_run_length': '80min',
+             'filename': 'nam_12km.nc'}
 
 
 # should be able to use RANGE requests and get data directly from grib files
@@ -118,7 +124,8 @@ RAP = {'endpoint': 'filter_rap.pl',
            lambda x: range(40) if x in (3, 9, 15, 21) else range(22)),
        'time_between_fcst_hrs': 60,
        'delay_to_first_forecast': '50min',
-       'avg_max_run_length': '30min'}
+       'avg_max_run_length': '30min',
+       'filename': 'rap.nc'}
 
 
 HRRR_HOURLY = {
@@ -141,7 +148,8 @@ HRRR_HOURLY = {
         lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '70min'}
+    'avg_max_run_length': '70min',
+    'filename': 'hrrr_hourly.nc'}
 
 
 HRRR_SUBHOURLY = {
@@ -162,26 +170,69 @@ HRRR_SUBHOURLY = {
     'valid_hr_gen': (lambda x: range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
-    'avg_max_run_length': '50min'}
+    'avg_max_run_length': '50min',
+    'filename': 'hrrr_subhourly.nc'}
+
+
+# each GEFS stat_or_member is treated separately
+# really makes use of async capabilities
+GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
+                 'file': 'ge{stat_or_member}.t{init_hr:02d}z.pgrb2a.0p50.f{valid_hr:03d}',  # NOQA
+                 'dir': '/gefs.{init_date}/{init_hr}/pgrb2ap5',
+                 'lev_2_m_above_ground': 'on',
+                 'lev_10_m_above_ground': 'on',
+                 'lev_entire_atmosphere': 'on',
+                 'lev_surface': 'on',
+                 'var_DSWRF': 'on',
+                 'var_TCDC': 'on',
+                 'var_TMP': 'on',
+                 'var_UGRD': 'on',
+                 'var_VGRD': 'on',
+                 'update_freq': '6h',
+                 'valid_hr_gen': lambda x: chain(range(0, 192, 3),
+                                                 range(192, 385, 6)),
+                 'time_between_fcst_hrs': 60,
+                 'delay_to_first_forecast': '280min',
+                 'avg_max_run_length': '60min',
+                 'filename': 'gefs_{stat_or_member}.nc',
+                 'members': (['avg', 'c00', 'spr'] +
+                             [f'p{r:02d}' for r in range(1, 21)]),
+                 'check_url_name': 'gens'}
+
 
 EXTRA_KEYS = ['update_freq', 'valid_hr_gen', 'time_between_fcst_hrs',
-              'delay_to_first_forecast', 'avg_max_run_length']
+              'delay_to_first_forecast', 'avg_max_run_length', 'filename',
+              'check_url_name', 'member']
 
 model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'rap': RAP, 'hrrr_hourly': HRRR_HOURLY,
-             'hrrr_subhourly': HRRR_SUBHOURLY}
+             'hrrr_subhourly': HRRR_SUBHOURLY,
+             'gefs': GEFS_0P50_RAW}
 
 
 GRIB_TO_NC4 = """
 #/usr/bin/bash
+set -e
+
 FOLDER=$1
 NCFILENAME=$2
+GRIBPREFIX=$3
+AVGFMT="${4:-}"
 
 pushd $FOLDER
 pwd
 
+nctbl=$(mktemp -p . nc.tbl.XXXX)
+
+function finish {
+   rm $nctbl
+   popd
+}
+
+trap finish EXIT
+
 # make the nc_table
-cat <<EOF > nc.tbl
+cat <<EOF > $nctbl
 TMP:surface:ignore
 TMP:2 m above ground:t2m
 UGRD:10 m above ground:ignore
@@ -194,17 +245,15 @@ VDDSF:surface:vddsf
 WIND:10 m above ground:si10
 EOF
 
-
 # add wind speed to grib files
-for file in $(ls -1 *.grib2); do
+for file in $(ls -1 $GRIBPREFIX*.grib2); do
     wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
         wgrib2 - -append -grib_out $file;
     done;
 
 # make netcdf
-cat *.grib2 | wgrib2 - -nc4 -nc_table nc.tbl {} -append -netcdf $NCFILENAME
-rm nc.tbl
-popd
+cat $GRIBPREFIX*.grib2 | \
+    wgrib2 - -nc4 -nc_table $nctbl $AVGFMT -append -netcdf $NCFILENAME
 """
 
 COMPRESSION = {'zlib': True, 'complevel': 1, 'shuffle': True,
@@ -251,20 +300,31 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
     while True:
         try:
             res = await get_func(*args, **kwargs)
-        except (aiohttp.ClientResponseError, aiohttp.ClientPayloadError) as e:
+        except aiohttp.ClientResponseError as e:
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
             retried += 1
             if retried >= retries:
                 raise
             await asyncio.sleep(60)
+        except (aiohttp.ClientPayloadError, aiohttp.ClientOSError):
+            logger.warning('Request failed in connection, retrying')
+            retried += 1
+            if retried >= retries:
+                raise
+            await asyncio.sleep(60)
+
         else:
             return res
 
 
+def _simple_model(model):
+    return model['dir'].split('.')[0][1:]
+
+
 async def get_available_dirs(session, model):
     """Get the available date/date+init_hr directories"""
-    simple_model = model['file'].split('.')[0]
+    simple_model = _simple_model(model)
     is_init_date = 'init_date' in model['dir']
     model_url = BASE_URL + model['endpoint']
 
@@ -289,10 +349,12 @@ def _process_params(model, init_time):
     params.update(DOMAIN)
     valid_hr_gen = params['valid_hr_gen'](init_time.hour)
     for p in EXTRA_KEYS:
-        del params[p]
+        if p in params:
+            del params[p]
     params['dir'] = params['dir'].format(
         init_date=init_time.strftime('%Y%m%d'),
-        init_dt=init_time.strftime('%Y%m%d%H'))
+        init_dt=init_time.strftime('%Y%m%d%H'),
+        init_hr=init_time.strftime('%H'))
     for i in valid_hr_gen:
         newp = params.copy()
         newp['file'] = newp['file'].format(
@@ -304,11 +366,13 @@ def _process_params(model, init_time):
 async def check_next_inittime(session, init_time, model):
     """Check if data from the next model initializtion time is available"""
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
-    simple_model = model['file'].split('.')[0]
-    next_init_url = (CHECK_URL.format(simple_model)
+    simple_model = _simple_model(model)
+    next_init_url = (CHECK_URL.format(model.get('check_url_name',
+                                                simple_model))
                      + model['dir'].format(
                          init_date=next_inittime.strftime('%Y%m%d'),
-                         init_dt=next_inittime.strftime('%Y%m%d%H'))
+                         init_dt=next_inittime.strftime('%Y%m%d%H'),
+                         init_hr=next_inittime.strftime('%H'))
                      + '/' + model['file'].format(init_hr=next_inittime.hour,
                                                   valid_hr=0))
 
@@ -316,8 +380,8 @@ async def check_next_inittime(session, init_time, model):
         async with session.head(next_init_url) as r:
             if r.status == 200:
                 logger.warning(
-                    'Skipping to next init time at %s for %s',
-                    next_inittime, simple_model)
+                    'Skipping to next init time at %s for %s %s',
+                    next_inittime, simple_model, model.get('member', ''))
                 return True
             else:
                 return False
@@ -329,10 +393,11 @@ async def files_to_retrieve(session, model, init_time):
     """Generator to return the parameters of the available files for download
     """
     possible_params = _process_params(model, init_time)
-    simple_model = model['file'].split('.')[0]
+    simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
-        next_model_url = (CHECK_URL.format(simple_model)
+        next_model_url = (CHECK_URL.format(model.get('check_url_name',
+                                                     simple_model))
                           + next_params['dir'] + '/' + next_params['file'])
         while True:
             # is the next file ready?
@@ -342,11 +407,12 @@ async def files_to_retrieve(session, model, init_time):
                     if first_file_modified_at is None:
                         first_file_modified_at = pd.Timestamp(
                             r.headers['Last-Modified'])
-                        logger.debug('First file was available at %s',
-                                     first_file_modified_at)
+                        logger.debug('First file was available at %s %s',
+                                     first_file_modified_at,
+                                     model.get('member', ''))
             except (aiohttp.ClientOSError, aiohttp.ClientResponseError):
-                logger.debug('Next file not ready yet for %s at %s',
-                             simple_model, init_time)
+                logger.debug('Next file not ready yet for %s at %s %s',
+                             simple_model, init_time, model.get('member', ''))
             else:
                 logger.debug('%s/%s is ready for download',
                              next_params['dir'], next_params['file'])
@@ -429,32 +495,36 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-def _process_grib(nctmp, folder, with_avg=False):
-    if with_avg:
+@abort_all_on_exception
+async def process_grib_to_netcdf(folder, model):
+    _handle, nctmp = tempfile.mkstemp(dir=folder)
+    os.close(_handle)
+    nctmp = Path(nctmp)
+    logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
+                model.get('member', ''))
+    grib_prefix = model['file'].split('.')[0]
+
+    if 'subhourly' in str(folder):
         # for hrrr subhourly, assume TMP and VDDSF have no average but others
         fmt = "-match 'ave|TMP|VDDSF'"
     else:
         fmt = ''
+
     with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        tmpfile.write(GRIB_TO_NC4.format(fmt))
+        tmpfile.write(GRIB_TO_NC4)
         tmpfile.flush()
-        try:
-            subprocess.run(
-                ['sh', tmpfile.name, str(folder), str(nctmp)],
-                check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            logger.error('Error converting grib to NetCDF\n%s',
-                         e.stderr)
+
+        proc = await asyncio.create_subprocess_shell(
+            f'sh {tmpfile.name} {str(folder)} {str(nctmp)} {grib_prefix} {fmt}',  # NOQA
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger.error('Error converting grib files %s*.grib2 to netCDF\n%s',
+                         grib_prefix, stderr.decode())
             nctmp.unlink()
-            raise
-
-
-@abort_all_on_exception
-async def process_grib_to_netcdf(folder):
-    nctmp = Path(tempfile.mkstemp(dir=folder)[1])
-    logger.info('Converting GRIB files to NetCDF with wgrib2')
-    await run_in_executor(_process_grib, nctmp, folder,
-                          'subhourly' in str(folder))
+            raise OSError
     return nctmp
 
 
@@ -489,8 +559,10 @@ def _optimize_netcdf(nctmpfile, out_path):
 async def optimize_netcdf(nctmpfile, final_path):
     """Compress the netcdf file and adjust the chunking for fast time-series
     access"""
-    logger.info('Optimizing NetCDF file')
-    tmp_path = Path(tempfile.mkstemp(dir=final_path.parent)[1])
+    logger.info('Optimizing NetCDF file to save at %s', final_path)
+    _handle, tmp_path = tempfile.mkstemp(dir=final_path.parent)
+    os.close(_handle)
+    tmp_path = Path(tmp_path)
     # possible that this leaks memory, so run in separate process
     # that is restarted after a number of jobs
     try:
@@ -500,6 +572,9 @@ async def optimize_netcdf(nctmpfile, final_path):
         raise
     else:
         tmp_path.rename(final_path)
+        final_path.chmod(stat.S_IRGRP | stat.S_IRUSR | stat.S_IROTH |
+                         stat.S_IWUSR)
+        logger.info('Done optimizing NetCDF at %s', final_path)
     finally:
         nctmpfile.unlink()
 
@@ -511,7 +586,8 @@ async def sleep_until_inittime(inittime, model):
         model['delay_to_first_forecast'])
     if likely_ready_time > now:
         seconds = (likely_ready_time - now).total_seconds()
-        logger.info('Sleeping %0.1fs for next model run', seconds)
+        logger.info('Sleeping %0.1fs for next model run %s', seconds,
+                    model.get('member', ''))
         await asyncio.sleep(seconds)
 
 
@@ -527,17 +603,15 @@ async def startup_find_next_runtime(model_path, session, model):
             path = model_path / dir_[:4] / dir_[4:6] / dir_[6:8]
             for hr in range(0, 24, int(model['update_freq'].strip('h'))):
                 hrpath = path / f'{hr:02d}'
-                glob = list(hrpath.glob('*.nc'))
                 hrtime = pd.Timestamp(f'{dir_[:8]}T{hr:02d}00Z')
-                if len(glob) == 0:
+                if not (hrpath / model['filename']).exists():
                     no_file.append(hrtime)
                 else:
                     max_time = max(max_time, hrtime)
         else:
             hrpath = model_path / dir_[:4] / dir_[4:6] / dir_[6:8] / dir_[8:10]
-            glob = list(hrpath.glob('*.nc'))
             hrtime = pd.Timestamp(f'{dir_[:8]}T{dir_[8:10]}00Z')
-            if len(glob) == 0:
+            if not (hrpath / model['filename']).exists():
                 no_file.append(hrtime)
             else:
                 max_time = max(max_time, hrtime)
@@ -545,7 +619,9 @@ async def startup_find_next_runtime(model_path, session, model):
         if max_time > first:
             inittime = max_time + pd.Timedelta(model['update_freq'])
         else:  # No available dirs?
-            raise ValueError('Failed to find next available model from NOMADS')
+            raise ValueError(
+                'Failed to find next available model from NOMADS %s' %
+                model.get('member', ''))
     else:
         inittime = min(no_file)
     await sleep_until_inittime(inittime, model)
@@ -555,17 +631,15 @@ async def startup_find_next_runtime(model_path, session, model):
 async def next_run_time(inittime, modelpath, model):
     inittime += pd.Timedelta(model['update_freq'])
     # check if nc file exists for this inittime
-    if len(list(
-            (modelpath / inittime.strftime('%Y/%m/%d/%H')).glob('*.nc'))) > 0:
+    if (
+            modelpath / inittime.strftime('%Y/%m/%d/%H') /
+            model['filename']).exists():
         return await next_run_time(inittime, modelpath, model)
     await sleep_until_inittime(inittime, model)
     return inittime
 
 
-async def run(basepath, model_name, chunksize, once=False):
-    session = make_session()
-    modelpath = basepath / model_name
-    model = model_map[model_name]
+async def _run_loop(session, model, modelpath, chunksize, once):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
@@ -576,10 +650,11 @@ async def run(basepath, model_name, chunksize, once=False):
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
             path_to_files = files[0].parent
-            nctmpfile = await process_grib_to_netcdf(path_to_files)
             try:
+                nctmpfile = await process_grib_to_netcdf(path_to_files,
+                                                         model)
                 await optimize_netcdf(
-                    nctmpfile, path_to_files / f'{model_name}.nc')
+                    nctmpfile, path_to_files / model['filename'])
             except Exception:
                 raise
             else:
@@ -591,11 +666,32 @@ async def run(basepath, model_name, chunksize, once=False):
         else:
             logger.info('Moving on to next model run')
             inittime = await next_run_time(inittime, modelpath, model)
+
+
+async def run(basepath, model_name, chunksize, once=False):
+    session = make_session()
+    modelpath = basepath / model_name
+    if model_name != 'gefs':
+        model = model_map[model_name]
+        await _run_loop(session, model, modelpath, chunksize, once)
+    else:
+        base_model = model_map[model_name].copy()
+        members = base_model.pop('members')
+        member_loops = set()
+        for member in members:
+            model = base_model.copy()
+            model['member'] = member
+            model['file'] = model['file'].replace('{stat_or_member}', member)
+            model['filename'] = model['filename'].format(stat_or_member=member)
+            member_loops.add(asyncio.create_task(
+                _run_loop(session, model, modelpath, chunksize, once)))
+        await asyncio.wait(member_loops)
     await session.close()
 
 
 async def optimize_only(path_to_files, model_name):
-    nctmpfile = await process_grib_to_netcdf(path_to_files)
+    model = model_map[model_name]
+    nctmpfile = await process_grib_to_netcdf(path_to_files, model)
     try:
         await optimize_netcdf(
             nctmpfile, path_to_files / f'{model_name}.nc')
@@ -603,7 +699,7 @@ async def optimize_only(path_to_files, model_name):
         raise
     else:
         # remove grib files
-        for f in path_to_files.glob('*.grib2'):
+        for f in path_to_files.glob(f'{model["file"].split(".")[0]}*.grib2'):
             f.unlink()
 
 
@@ -636,8 +732,7 @@ def main():
     argparser.add_argument('save_directory',
                            help='Directory to save data in')
     argparser.add_argument(
-        'model', choices=['gfs_0p25', 'nam_12km', 'rap', 'hrrr_hourly',
-                          'hrrr_subhourly'],
+        'model', choices=list(model_map.keys()),
         help='The model to get data for')
     args = argparser.parse_args()
 

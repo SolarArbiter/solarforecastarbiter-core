@@ -190,7 +190,7 @@ async def test_startup_find_next_runtime(mocker, tmp_path):
                                                  '2019041012']))
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
-    model = {'update_freq': '6h'}
+    model = {'update_freq': '6h', 'filename': 'file.nc'}
     withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
               '2019/04/09/18', '2019/04/10/00', '2019/04/10/12']
     for p in withnc:
@@ -211,7 +211,7 @@ async def test_startup_find_next_runtime_all_there(mocker, tmp_path):
                                                  '2019041012']))
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
-    model = {'update_freq': '6h'}
+    model = {'update_freq': '6h', 'filename': 'file.nc'}
     withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
               '2019/04/09/18', '2019/04/10/00', '2019/04/10/06',
               '2019/04/10/12']
@@ -234,7 +234,7 @@ async def test_startup_find_next_runtime_all_there_out_of_order(
                                                  '2019041000']))
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
-    model = {'update_freq': '6h'}
+    model = {'update_freq': '6h', 'filename': 'file.nc'}
     withnc = ['2019/04/09/00', '2019/04/09/06', '2019/04/09/12',
               '2019/04/10/00', '2019/04/10/06', '2019/04/09/18',
               '2019/04/10/12']
@@ -249,7 +249,7 @@ async def test_startup_find_next_runtime_all_there_out_of_order(
 
 @pytest.mark.asyncio
 async def test_next_run_time(mocker, tmp_path):
-    model = {'update_freq': '12h'}
+    model = {'update_freq': '12h', 'filename': 'file.nc'}
     mocker.patch('solarforecastarbiter.io.fetch.nwp.sleep_until_inittime',
                  new=CoroutineMock())
     init = pd.Timestamp('20190409T0000Z')
