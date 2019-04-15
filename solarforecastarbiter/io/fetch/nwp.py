@@ -491,7 +491,6 @@ async def process_grib_to_netcdf(folder, model):
         tmp_nc_tbl.write(NC_TBL)
         tmp_nc_tbl.flush()
 
-        breakpoint()
         proc = await asyncio.create_subprocess_shell(
             f'cat {str(folder)}/{grib_prefix}*.grib2 | '
             f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
