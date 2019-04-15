@@ -164,8 +164,7 @@ HRRR_SUBHOURLY = {
     'var_VBDSF': 'on',
     'var_VDDSF': 'on',
     'var_TMP': 'on',
-    'var_UGRD': 'on',
-    'var_VGRD': 'on',
+    'var_WIND': 'on',
     'update_freq': '1h',
     'valid_hr_gen': (lambda x: range(19)),
     'time_between_fcst_hrs': 120,
@@ -209,30 +208,7 @@ model_map = {'gfs_0p25': GFS_0P25_1HR, 'nam_12km': NAM_CONUS,
              'hrrr_subhourly': HRRR_SUBHOURLY,
              'gefs': GEFS_0P50_RAW}
 
-
-GRIB_TO_NC4 = """
-#/usr/bin/bash
-set -e
-
-FOLDER=$1
-NCFILENAME=$2
-GRIBPREFIX=$3
-AVGFMT="${4:-}"
-
-pushd $FOLDER
-pwd
-
-nctbl=$(mktemp -p . nc.tbl.XXXX)
-
-function finish {
-   rm $nctbl
-   popd
-}
-
-trap finish EXIT
-
-# make the nc_table
-cat <<EOF > $nctbl
+NC_TBL = """
 TMP:surface:ignore
 TMP:2 m above ground:t2m
 UGRD:10 m above ground:ignore
@@ -243,17 +219,6 @@ DSWRF:surface:dswrf
 VBDSF:surface:vbdsf
 VDDSF:surface:vddsf
 WIND:10 m above ground:si10
-EOF
-
-# add wind speed to grib files
-for file in $(ls -1 $GRIBPREFIX*.grib2); do
-    wgrib2 $file -wind_speed - -match "(UGRD|VGRD)" | \
-        wgrib2 - -append -grib_out $file;
-    done;
-
-# make netcdf
-cat $GRIBPREFIX*.grib2 | \
-    wgrib2 - -nc4 -nc_table $nctbl $AVGFMT -append -netcdf $NCFILENAME
 """
 
 COMPRESSION = {'zlib': True, 'complevel': 1, 'shuffle': True,
@@ -497,12 +462,27 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
 
 @abort_all_on_exception
 async def process_grib_to_netcdf(folder, model):
-    _handle, nctmp = tempfile.mkstemp(dir=folder)
-    os.close(_handle)
-    nctmp = Path(nctmp)
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
     grib_prefix = model['file'].split('.')[0]
+    if 'var_WIND' not in model:
+        # need to add wind to the grib files
+        for grbfile in folder.glob(f'{grib_prefix}*.grib2'):
+            path = str(grbfile.resolve())
+            proc = await asyncio.create_subprocess_shell(
+                f'wgrib2 {path} -wind_speed - -match "(UGRD|VGRD)" | '
+                f'wgrib2 - -append -grib_out {path}',
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE)
+            stdout, stderr = await proc.communicate()
+            if proc.returncode != 0:
+                logger.error('Error converting wind in file %s\n%s',
+                             grbfile, stderr.decode())
+                raise OSError
+
+    _handle, nctmp = tempfile.mkstemp(dir=folder)
+    os.close(_handle)
+    nctmp = Path(nctmp)
 
     if 'subhourly' in str(folder):
         # for hrrr subhourly, assume TMP and VDDSF have no average but others
@@ -510,12 +490,14 @@ async def process_grib_to_netcdf(folder, model):
     else:
         fmt = ''
 
-    with tempfile.NamedTemporaryFile(mode='w') as tmpfile:
-        tmpfile.write(GRIB_TO_NC4)
-        tmpfile.flush()
+    with tempfile.NamedTemporaryFile(mode='w') as tmp_nc_tbl:
+        tmp_nc_tbl.write(NC_TBL)
+        tmp_nc_tbl.flush()
 
+        breakpoint()
         proc = await asyncio.create_subprocess_shell(
-            f'sh {tmpfile.name} {str(folder)} {str(nctmp)} {grib_prefix} {fmt}',  # NOQA
+            f'cat {str(folder)}/{grib_prefix}*.grib2 | '
+            f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE)
 
