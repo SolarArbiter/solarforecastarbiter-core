@@ -229,6 +229,53 @@ def _is_intraday(forecast):
     return forecast.run_length < pd.Timedelta('1d')
 
 
+def _intraday_start_end(observation, forecast, run_time):
+    # time window over which observation data will be used to create
+    # persistence forecast.
+    if (observation.interval_length > forecast.run_length or
+            observation.interval_length > pd.Timedelta('1h')):
+        raise ValueError(
+            'Intraday persistence requires observation.interval_length '
+            '<= forecast.run_length and observation.interval_length <= 1h')
+    # no longer than 1 hour
+    window = min(forecast.run_length, pd.Timedelta('1hr'))
+    data_end = run_time
+    data_start = data_end - window
+    return data_start, data_end
+
+
+def _dayahead_start_end(forecast, run_time, forecast_start, forecast_end):
+    # day ahead persistence: tomorrow's forecast is equal to yesterday's
+    # observations. So, forecast always uses obs > 24 hr old at each valid
+    # time. Smarter approach might be to use today's observations up
+    # until issue_time, and use yesterday's observations for issue_time
+    # until end of day. So, forecast *never* uses obs > 24 hr old at each
+    # valid time. Arguably too much for a reference forecast.
+    data_end = run_time.floor('1d')
+    data_start = data_end - pd.Timedelta('1d')
+    if (forecast_start.round('1d') != forecast_start or
+            forecast_end - forecast_start > pd.Timedelta('1d')):
+        raise ValueError(
+            'Day ahead persistence requires midnight to midnight periods')
+    return data_start, data_end
+
+
+def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
+    # instantaneous observations require care.
+    # persistence models return forecasts with same closure as obs
+    if 'instant' in forecast.interval_label:
+        if forecast.interval_length != observation.interval_length:
+            raise ValueError('Instantaneous forecast requires instantaneous '
+                             'observation with identical interval length.')
+        else:
+            data_end -= pd.Timedelta('1s')
+    elif forecast.interval_label == 'beginning':
+        data_start += pd.Timedelta('1s')
+    else:
+        data_end -= pd.Timedelta('1s')
+    return data_start, data_end
+
+
 def get_data_start_end(observation, forecast, run_time, forecast_start,
                        forecast_end):
     """
@@ -241,47 +288,17 @@ def get_data_start_end(observation, forecast, run_time, forecast_start,
     data_end : pd.Timestamp
     """
     if _is_intraday(forecast):
-        # time window over which observation data will be used to create
-        # persistence forecast.
-        if (observation.interval_length > forecast.run_length or
-                observation.interval_length > pd.Timedelta('1h')):
-            raise ValueError(
-                'Intraday persistence requires observation.interval_length '
-                '<= forecast.run_length and observation.interval_length <= 1h')
-        # no longer than 1 hour
-        window = min(forecast.run_length, pd.Timedelta('1hr'))
-        data_end = run_time
-        data_start = data_end - window
+        data_start, data_end = _intraday_start_end(observation, forecast,
+                                                   run_time)
     else:
-        # day ahead persistence: tomorrow's forecast is equal to yesterday's
-        # observations. So, forecast always uses obs > 24 hr old at each valid
-        # time. Smarter approach might be to use today's observations up
-        # until issue_time, and use yesterday's observations for issue_time
-        # until end of day. So, forecast *never* uses obs > 24 hr old at each
-        # valid time. Arguably too much for a reference forecast.
-        data_end = run_time.floor('1d')
-        data_start = data_end - pd.Timedelta('1d')
-        if (forecast_start.round('1d') != forecast_start or
-                forecast_end - forecast_start > pd.Timedelta('1d')):
-            raise ValueError(
-                'Day ahead persistence requires midnight to midnight periods')
+        data_start, data_end = _dayahead_start_end(
+            forecast, run_time, forecast_start, forecast_end)
 
     # to ensure that each observation data point contributes to the correct
     # forecast, the data_end and data_start values may need to be nudged
     if 'instant' in observation.interval_label:
-        # instantaneous observations require care.
-        # persistence models return forecasts with same closure as obs
-        if 'instant' in forecast.interval_label:
-            if forecast.interval_length != observation.interval_length:
-                raise ValueError('Instantaneous forecast requires '
-                                 'instantaneous observation '
-                                 'with identical interval length.')
-            else:
-                data_end -= pd.Timedelta('1s')
-        elif forecast.interval_label == 'beginning':
-            data_start += pd.Timedelta('1s')
-        else:
-            data_end -= pd.Timedelta('1s')
+        data_start, data_end = _adjust_for_instant_obs(data_start, data_end,
+                                                       observation, forecast)
     else:
         if 'instant' in forecast.interval_label:
             raise ValueError('Instantaneous forecast cannot be made from '
