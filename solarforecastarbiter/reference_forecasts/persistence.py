@@ -188,7 +188,7 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
 
     .. math::
 
-       GHI_{t_f} = \frac{\overline{GHI_{t_{start}} \ldots GHI_{t_{end}}}}{\overline{GHI_{{clear}_{t_{start}}} \ldots GHI_{{clear}_{t_{end}}}}} \times GHI_{{clear}_{t_f}}
+       GHI_{t_f} = \overline{  \frac{ GHI_{t_{start}} }{ GHI_{{clear}_{t_{start}}} } \ldots \frac{ GHI_{t_{end}} }{ GHI_{{clear}_{t_{end}}} } }
 
     where :math:`t_f` is a forecast time, and the overline represents
     the average of all observations or clear sky values that occur
@@ -241,11 +241,15 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
                       site.latitude, site.longitude, site.elevation)
 
     # Calculate solar position and clearsky for obs time range.
-    # minimum time resolution 5 minutes to reduce errors from
-    # changing solar position during persistence data range.
+    # if data is instantaneous, calculate at the obs time.
+    # else (if data is interval average), calculate at 1 minute resolution to
+    # reduce errors from changing solar position during persistence data range.
     # Later, modeled clear sky or ac power will be averaged over the data range
-    freq = min(interval_length, pd.Timedelta('5min'))
     closed = datamodel.CLOSED_MAPPING[observation.interval_label]
+    if closed is None:
+        freq = observation.interval_length
+    else:
+        freq = pd.Timedelta('1min')
     obs_range = pd.date_range(start=data_start, end=data_end, freq=freq,
                               closed=closed)
     solar_position_obs = calc_solpos(obs_range)
@@ -282,12 +286,15 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
         clear_ref = clearsky_obs[observation.variable]
         clear_fx = clearsky_fx[observation.variable]
 
+    # resample sub-interval reference clear sky to observation intervals
+    clear_ref_resampled = clear_ref.resample(
+        observation.interval_length, closed=closed, label=closed).mean()
     # calculate persistence index (clear sky index or ac power index)
     # avg{index_{t_start}...index_{t_end}} =
-    #   avg{obs_{t_start}...obs_{t_end}} / avg{clear_{t_start}...clear_{t_end}}
+    #   avg{obs_{t_start}/clear_{t_start}...obs_{t_end}/clear_{t_end}}
     # clear_ref is calculated at high temporal resolution, so this is accurate
     # for any observation interval length
-    pers_index = obs.mean() / clear_ref.mean()
+    pers_index = (obs / clear_ref_resampled).mean()
 
     # average instantaneous clear forecasts over interval_length windows
     # resample operation should be safe due to

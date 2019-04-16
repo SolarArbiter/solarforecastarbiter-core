@@ -87,7 +87,7 @@ def run(site, model, init_time, start, end):
     return resampled
 
 
-def run_persistence(observation, forecast, issue_time, index=False):
+def run_persistence(observation, forecast, run_time, issue_time, index=False):
     """
     Run a persistence *forecast* for an *observation*.
 
@@ -99,15 +99,23 @@ def run_persistence(observation, forecast, issue_time, index=False):
     For day ahead forecasts, only persistence of measured values
     (*index = False*) is supported.
 
+    Forecasts may be run operationally or retrospectively. For
+    operational forecasts, *run_time* is typically set to now. For
+    retrospective forecasts, *run_time* is the time by which the
+    forecast should be run so that it could have been be delivered for
+    the *issue_time*. Forecasts will only use data with timestamps
+    before *run_time*.
+
     The persistence *window* is the time over which the persistence
     quantity (irradiance, power, clear sky index, or power index) is
-    averaged over. The persistence window is automatically determined
-    based on the type of persistence forecast desired:
+    averaged. The persistence window is automatically determined
+    from the *forecast* attributes:
 
-      * Intraday persistence forecasts: Maximum of observation interval
-        length, forecast interval length, and forecast lead time to
-        start. No longer than 1 hour.
-      * Day ahead forecasts: Equal to forecast interval length.
+      * Intraday persistence forecasts:
+           *window = run_time - forecast.run_length.
+           No longer than 1 hour.
+      * Day ahead forecasts:
+          *window = forecast.interval_length*.
 
     Users that would like more flexibility may use the lower-level
     functions in
@@ -120,6 +128,8 @@ def run_persistence(observation, forecast, issue_time, index=False):
         forecast.
     forecast : datamodel.Forecast
         The metadata of the desired forecast.
+    run_time : pd.Timestamp
+        Run time of the forecast.
     issue_time : pd.Timestamp
         Issue time of the forecast run.
     index : bool, default False
@@ -137,7 +147,12 @@ def run_persistence(observation, forecast, issue_time, index=False):
     ValueError
         If forecast and issue_time are incompatible.
     ValueError
-        If forecast.run_length >= 1 day and index=True.
+        If persistence window < observation.interval_length.
+    ValueError
+        If forecast.run_length = 1 day and forecast period is not
+        midnight to midnight.
+    ValueError
+        If forecast.run_length = 1 day and index=True.
     ValueError
         If instantaneous forecast and instantaneous observation interval
         lengths do not match.
@@ -145,52 +160,10 @@ def run_persistence(observation, forecast, issue_time, index=False):
         If average observations are used to make instantaneous forecast.
     """
     forecast_start, forecast_end = get_forecast_start_end(forecast, issue_time)
+    intraday = _is_intraday(forecast)
 
-    # intra day persistence and "day ahead" persistence require
-    # fairly different parameters.
-    # is this a sufficiently robust way to distinguish?
-    intraday = forecast.run_length < pd.Timedelta('1d')
-    if intraday:
-        # time window over which observation data will be used to create
-        # persistence forecast.
-        # assumes observation.interval_length <= 1h
-        window = min(
-            pd.Timedelta('1h'),
-            max(observation.interval_length, forecast.interval_length,
-                forecast.lead_time_to_start, forecast.run_length)
-        )
-        data_end = issue_time
-        data_start = data_end - window
-    else:
-        # day ahead persistence: tomorrow's forecast is equal to yesterday's
-        # observations. So, forecast always uses obs > 24 hr old at each valid
-        # time. Smarter approach might be to use today's observations up
-        # until issue_time, and use yesterday's observations for issue_time
-        # until end of day. So, forecast *never* uses obs > 24 hr old at each
-        # valid time. Arguably too much for a reference forecast.
-        data_end = issue_time.floor('1d')
-        data_start = data_end - pd.Timedelta('1d')
-
-    # to ensure that each observation data point contributes to the correct
-    # forecast, the data_end and data_start values may need to be nudged
-    if 'instant' in observation.interval_label:
-        # instantaneous observations require care.
-        # persistence models return forecasts with same closure as obs
-        if 'instant' in forecast.interval_label:
-            if forecast.interval_length != observation.interval_length:
-                raise ValueError('Instantaneous forecast requires '
-                                 'instantaneous observation '
-                                 'with identical interval length.')
-            else:
-                data_end -= pd.Timedelta('1s')
-        elif forecast.interval_label == 'beginning':
-            data_start += pd.Timedelta('1s')
-        else:
-            data_end -= pd.Timedelta('1s')
-    else:
-        if 'instant' in forecast.interval_label:
-            raise ValueError('Instantaneous forecast cannot be made from '
-                             'interval average observations')
+    data_start, data_end = get_data_start_end(
+        observation, forecast, run_time, forecast_start, forecast_end)
 
     if intraday and index:
         fx = persistence.persistence_scalar_index(
@@ -246,3 +219,71 @@ def get_forecast_start_end(forecast, issue_time):
     if 'instant' in forecast.interval_label:
         forecast_end -= pd.Timedelta('1s')
     return forecast_start, forecast_end
+
+
+def _is_intraday(forecast):
+    """Is the forecast intraday?"""
+    # intra day persistence and "day ahead" persistence require
+    # fairly different parameters.
+    # is this a sufficiently robust way to distinguish?
+    return forecast.run_length < pd.Timedelta('1d')
+
+
+def get_data_start_end(observation, forecast, run_time, forecast_start,
+                       forecast_end):
+    """
+    Determine the data start and data end times for a persistence
+    forecast.
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+    """
+    if _is_intraday(forecast):
+        # time window over which observation data will be used to create
+        # persistence forecast.
+        if (observation.interval_length > forecast.run_length or
+                observation.interval_length > pd.Timedelta('1h')):
+            raise ValueError(
+                'Intraday persistence requires observation.interval_length '
+                '<= forecast.run_length and observation.interval_length <= 1h')
+        # no longer than 1 hour
+        window = min(forecast.run_length, pd.Timedelta('1hr'))
+        data_end = run_time
+        data_start = data_end - window
+    else:
+        # day ahead persistence: tomorrow's forecast is equal to yesterday's
+        # observations. So, forecast always uses obs > 24 hr old at each valid
+        # time. Smarter approach might be to use today's observations up
+        # until issue_time, and use yesterday's observations for issue_time
+        # until end of day. So, forecast *never* uses obs > 24 hr old at each
+        # valid time. Arguably too much for a reference forecast.
+        data_end = run_time.floor('1d')
+        data_start = data_end - pd.Timedelta('1d')
+        if (forecast_start.round('1d') != forecast_start or
+                forecast_end - forecast_start > pd.Timedelta('1d')):
+            raise ValueError(
+                'Day ahead persistence requires midnight to midnight periods')
+
+    # to ensure that each observation data point contributes to the correct
+    # forecast, the data_end and data_start values may need to be nudged
+    if 'instant' in observation.interval_label:
+        # instantaneous observations require care.
+        # persistence models return forecasts with same closure as obs
+        if 'instant' in forecast.interval_label:
+            if forecast.interval_length != observation.interval_length:
+                raise ValueError('Instantaneous forecast requires '
+                                 'instantaneous observation '
+                                 'with identical interval length.')
+            else:
+                data_end -= pd.Timedelta('1s')
+        elif forecast.interval_label == 'beginning':
+            data_start += pd.Timedelta('1s')
+        else:
+            data_end -= pd.Timedelta('1s')
+    else:
+        if 'instant' in forecast.interval_label:
+            raise ValueError('Instantaneous forecast cannot be made from '
+                             'interval average observations')
+    return data_start, data_end
