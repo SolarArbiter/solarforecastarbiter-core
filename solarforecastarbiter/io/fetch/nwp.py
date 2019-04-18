@@ -674,8 +674,7 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
             except Exception:
                 raise
         if use_tmp:
-            del gribdir
-            del _tmpdir
+            _tmpdir.cleanup()
         if once:
             break
         else:
