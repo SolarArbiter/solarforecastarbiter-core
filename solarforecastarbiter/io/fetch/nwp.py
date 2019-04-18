@@ -287,17 +287,15 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
             retried += 1
-            if retried >= retries:
-                raise ValueError('Too many retries')
-            await asyncio.sleep(60)
         except aiohttp.ClientError:
             logger.warning('Request failed in connection, retrying')
             retried += 1
-            if retried >= retries:
-                raise ValueError('Too many retries')
-            await asyncio.sleep(60)
         else:
             return res
+
+        if retried >= retries:
+            raise ValueError('Too many retries')
+        await asyncio.sleep(60)
 
 
 def _simple_model(model):
