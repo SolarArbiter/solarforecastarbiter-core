@@ -646,18 +646,21 @@ async def next_run_time(inittime, modelpath, model):
     return inittime
 
 
-async def _run_loop(session, model, modelpath, chunksize, once):
+async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
         finalpath = (modelpath / inittime.strftime('%Y/%m/%d/%H') /
                      model['filename'])
-        _tmpdir = tempfile.TemporaryDirectory()
-        tmpdir = Path(_tmpdir.name)
-        async for params in files_to_retrieve(session, model, tmpdir,
+        if use_tmp:
+            _tmpdir = tempfile.TemporaryDirectory()
+            gribdir = Path(_tmpdir.name)
+        else:
+            gribdir = modelpath
+        async for params in files_to_retrieve(session, model, gribdir,
                                               inittime):
             fetch_tasks.add(asyncio.create_task(
-                fetch_grib_files(session, params, tmpdir, inittime,
+                fetch_grib_files(session, params, gribdir, inittime,
                                  chunksize)))
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
@@ -668,8 +671,9 @@ async def _run_loop(session, model, modelpath, chunksize, once):
                 await optimize_netcdf(nctmpfile, finalpath)
             except Exception:
                 raise
-        del tmpdir
-        del _tmpdir
+        if use_tmp:
+            del gribdir
+            del _tmpdir
         if once:
             break
         else:
@@ -677,12 +681,12 @@ async def _run_loop(session, model, modelpath, chunksize, once):
             inittime = await next_run_time(inittime, modelpath, model)
 
 
-async def run(basepath, model_name, chunksize, once=False):
+async def run(basepath, model_name, chunksize, once=False, use_tmp=False):
     session = make_session()
     modelpath = basepath / model_name
     if model_name != 'gefs':
         model = model_map[model_name]
-        await _run_loop(session, model, modelpath, chunksize, once)
+        await _run_loop(session, model, modelpath, chunksize, once, use_tmp)
     else:
         base_model = model_map[model_name].copy()
         members = base_model.pop('members')
@@ -693,7 +697,7 @@ async def run(basepath, model_name, chunksize, once=False):
             model['file'] = model['file'].replace('{stat_or_member}', member)
             model['filename'] = model['filename'].format(stat_or_member=member)
             member_loops.add(asyncio.create_task(
-                _run_loop(session, model, modelpath, chunksize, once)))
+                _run_loop(session, model, modelpath, chunksize, once, use_tmp)))
         await asyncio.wait(member_loops)
     await session.close()
 
@@ -733,6 +737,8 @@ def main():
                            help='Size of a chunk (in KB) to save at one time')
     argparser.add_argument('--once', action='store_true',
                            help='Only get one forecast initialization time')
+    argparser.add_argument('--use-tmp', action='store_true',
+                           help='Save grib files to /tmp')
     argparser.add_argument(
         '--netcdf-only', action='store_true',
         help='Only convert files at save_directory to netcdf')
@@ -764,7 +770,7 @@ def main():
         fut = asyncio.ensure_future(optimize_only(path_to_files, args.model))
     else:
         fut = asyncio.ensure_future(run(basepath, args.model, args.chunksize,
-                                        args.once))
+                                        args.once, args.use_tmp))
 
     loop = asyncio.get_event_loop()
 
