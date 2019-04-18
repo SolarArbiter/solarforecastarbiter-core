@@ -240,7 +240,6 @@ LEAST_SIGNIFICANT_DIGITS = {
 }
 
 
-@abort_all_on_exception
 async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
     Call get_func and retry if the request fails
@@ -271,14 +270,16 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             logger.warning('Request to %s failed with code %s, retrying',
                            e.request_info.url, e.status)
             retried += 1
+            if retried >= retries:
+                raise
         except aiohttp.ClientError:
             logger.warning('Request failed in connection, retrying')
             retried += 1
+            if retried >= retries:
+                raise
         else:
             return res
 
-        if retried >= retries:
-            raise ValueError('Too many retries')
         await asyncio.sleep(60)
 
 
@@ -286,6 +287,7 @@ def _simple_model(model):
     return model['dir'].split('.')[0][1:]
 
 
+@abort_all_on_exception
 async def get_available_dirs(session, model):
     """Get the available date/date+init_hr directories"""
     simple_model = _simple_model(model)
@@ -697,7 +699,8 @@ async def run(basepath, model_name, chunksize, once=False, use_tmp=False):
             model['file'] = model['file'].replace('{stat_or_member}', member)
             model['filename'] = model['filename'].format(stat_or_member=member)
             member_loops.add(asyncio.create_task(
-                _run_loop(session, model, modelpath, chunksize, once, use_tmp)))
+                _run_loop(session, model, modelpath, chunksize, once,
+                          use_tmp)))
         await asyncio.wait(member_loops)
     await session.close()
 

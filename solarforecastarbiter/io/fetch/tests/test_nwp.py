@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 import aiohttp
 from asynctest import CoroutineMock, MagicMock
 import pandas as pd
@@ -106,7 +109,7 @@ async def test_files_to_retrieve(mocker, mock_sleep):
     session.head.return_value.__aenter__.return_value.headers.__getitem__.return_value = '20190101T0000Z'  # NOQA
 
     params = [p async for p in nwp.files_to_retrieve(
-        session, nwp.RAP, pd.Timestamp('20190409T1200Z'))]
+        session, nwp.RAP, Path('/'), pd.Timestamp('20190409T1200Z'))]
     assert len(params) == 22
 
 
@@ -135,7 +138,8 @@ async def test_files_to_retrieve_ends_after_no_new(mocker, mock_sleep):
             new=CoroutineMock())
     checknext.return_value = False
 
-    params = [p async for p in nwp.files_to_retrieve(session, model, init)]
+    params = [p async for p in nwp.files_to_retrieve(session, model, Path('/'),
+                                                     init)]
 
     assert len(params) == 22
     assert checknext.await_count == 10
@@ -166,7 +170,8 @@ async def test_files_to_retrieve_cut_short(mocker, mock_sleep):
             'solarforecastarbiter.io.fetch.nwp.check_next_inittime',
             new=CoroutineMock())
     checknext.return_value = True
-    params = [p async for p in nwp.files_to_retrieve(session, model, init)]
+    params = [p async for p in nwp.files_to_retrieve(session, model, Path('/'),
+                                                     init)]
     assert len(params) == 10
 
 
