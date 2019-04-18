@@ -38,6 +38,7 @@ import re
 import shutil
 import signal
 import stat
+import subprocess
 import sys
 import tempfile
 
@@ -271,22 +272,22 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
             retried += 1
             if retried >= retries:
                 raise
-            await asyncio.sleep(60)
         except aiohttp.ClientError:
             logger.warning('Request failed in connection, retrying')
             retried += 1
             if retried >= retries:
                 raise
-            await asyncio.sleep(60)
-
         else:
             return res
+
+        await asyncio.sleep(60)
 
 
 def _simple_model(model):
     return model['dir'].split('.')[0][1:]
 
 
+@abort_all_on_exception
 async def get_available_dirs(session, model):
     """Get the available date/date+init_hr directories"""
     simple_model = _simple_model(model)
@@ -354,13 +355,25 @@ async def check_next_inittime(session, init_time, model):
         return False
 
 
-async def files_to_retrieve(session, model, init_time):
+def get_filename(basepath, init_time, params):
+    filename = (
+        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file'])
+    if not filename.suffix == '.grib2':
+        filename = filename.with_suffix(filename.suffix + '.grib2')
+    return filename
+
+
+async def files_to_retrieve(session, model, modelpath, init_time):
     """Generator to return the parameters of the available files for download
     """
     possible_params = _process_params(model, init_time)
     simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
+        filename = get_filename(modelpath, init_time, next_params)
+        if filename.exists():
+            yield next_params
+            continue
         next_model_url = (CHECK_URL.format(model.get('check_url_name',
                                                      simple_model))
                           + next_params['dir'] + '/' + next_params['file'])
@@ -375,9 +388,19 @@ async def files_to_retrieve(session, model, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
-            except (aiohttp.ClientOSError, aiohttp.ClientResponseError):
-                logger.debug('Next file not ready yet for %s at %s %s',
-                             simple_model, init_time, model.get('member', ''))
+            except aiohttp.ClientResponseError as e:
+                if e.status == 404:  # Not found
+                    logger.debug(
+                        'Next file not ready yet for %s at %s %s\n%s %s',
+                        simple_model, init_time, model.get('member', ''),
+                        e.status, e.message)
+                else:
+                    logger.error(
+                        'Error checking if next file is ready %s\n'
+                        '%s %s', model.get('member', ''), e.status, e.message)
+            except aiohttp.ClientError as e:
+                logger.warning('Error in checking for next file %s %s',
+                               model.get('member', ''), str(e))
             else:
                 logger.debug('%s/%s is ready for download',
                              next_params['dir'], next_params['file'])
@@ -441,10 +464,7 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     """
     endpoint = params.pop('endpoint')
     url = BASE_URL + endpoint
-    filename = (
-        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file'])
-    if not filename.suffix == '.grib2':
-        filename = filename.with_suffix(filename.suffix + '.grib2')
+    filename = get_filename(basepath, init_time, params)
     if filename.exists():
         return filename
     if not filename.parent.is_dir():
@@ -461,25 +481,36 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
 async def process_grib_to_netcdf(folder, model):
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
+    _handle, nctmp = tempfile.mkstemp()
+    os.close(_handle)
+    nctmp = Path(nctmp)
+    # possible that this holds up processing on file io
+    # so run in separate process
     grib_prefix = model['file'].split('.')[0]
-    if 'var_WIND' not in model:
+    wind_in_model = 'var_WIND' not in model
+    try:
+        await run_in_executor(_process_grib, folder, nctmp, grib_prefix,
+                              wind_in_model)
+    except Exception:
+        nctmp.unlink()
+        raise
+    return nctmp
+
+
+def _process_grib(folder, nctmp, grib_prefix, wind_in_model):
+    if wind_in_model:
         # need to add wind to the grib files
         for grbfile in folder.glob(f'{grib_prefix}*.grib2'):
             path = str(grbfile.resolve())
-            proc = await asyncio.create_subprocess_shell(
-                f'wgrib2 {path} -wind_speed - -match "(UGRD|VGRD)" | '
-                f'wgrib2 - -append -grib_out {path}',
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.PIPE)
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
+            try:
+                subprocess.run(
+                    f'wgrib2 {path} -wind_speed - -match "(UGRD|VGRD)" | '
+                    f'wgrib2 - -append -grib_out {path}',
+                    shell=True, check=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
                 logger.error('Error converting wind in file %s\n%s',
-                             grbfile, stderr.decode())
+                             grbfile, e.stderr)
                 raise OSError
-
-    _handle, nctmp = tempfile.mkstemp(dir=folder)
-    os.close(_handle)
-    nctmp = Path(nctmp)
 
     if 'subhourly' in str(folder):
         # for hrrr subhourly, assume TMP and VDDSF have no average but others
@@ -491,17 +522,14 @@ async def process_grib_to_netcdf(folder, model):
         tmp_nc_tbl.write(NC_TBL)
         tmp_nc_tbl.flush()
 
-        proc = await asyncio.create_subprocess_shell(
-            f'cat {str(folder)}/{grib_prefix}*.grib2 | '
-            f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE)
-
-        stdout, stderr = await proc.communicate()
-        if proc.returncode != 0:
+        try:
+            subprocess.run(
+                f'cat {str(folder)}/{grib_prefix}*.grib2 | '
+                f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
+                shell=True, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
             logger.error('Error converting grib files %s*.grib2 to netCDF\n%s',
-                         grib_prefix, stderr.decode())
-            nctmp.unlink()
+                         grib_prefix, e.stderr)
             raise OSError
     return nctmp
 
@@ -538,7 +566,10 @@ async def optimize_netcdf(nctmpfile, final_path):
     """Compress the netcdf file and adjust the chunking for fast time-series
     access"""
     logger.info('Optimizing NetCDF file to save at %s', final_path)
-    _handle, tmp_path = tempfile.mkstemp(dir=final_path.parent)
+    parent = Path(final_path.parent)
+    if not parent.is_dir():
+        parent.mkdir(parents=True)
+    _handle, tmp_path = tempfile.mkstemp(dir=parent)
     os.close(_handle)
     tmp_path = Path(tmp_path)
     # possible that this leaks memory, so run in separate process
@@ -617,13 +648,21 @@ async def next_run_time(inittime, modelpath, model):
     return inittime
 
 
-async def _run_loop(session, model, modelpath, chunksize, once):
+async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
-        async for params in files_to_retrieve(session, model, inittime):
+        finalpath = (modelpath / inittime.strftime('%Y/%m/%d/%H') /
+                     model['filename'])
+        if use_tmp:
+            _tmpdir = tempfile.TemporaryDirectory()
+            gribdir = Path(_tmpdir.name)
+        else:
+            gribdir = modelpath
+        async for params in files_to_retrieve(session, model, gribdir,
+                                              inittime):
             fetch_tasks.add(asyncio.create_task(
-                fetch_grib_files(session, params, modelpath, inittime,
+                fetch_grib_files(session, params, gribdir, inittime,
                                  chunksize)))
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
@@ -631,14 +670,11 @@ async def _run_loop(session, model, modelpath, chunksize, once):
             try:
                 nctmpfile = await process_grib_to_netcdf(path_to_files,
                                                          model)
-                await optimize_netcdf(
-                    nctmpfile, path_to_files / model['filename'])
+                await optimize_netcdf(nctmpfile, finalpath)
             except Exception:
                 raise
-            else:
-                # remove grib files
-                for f in files:
-                    f.unlink()
+        if use_tmp:
+            _tmpdir.cleanup()
         if once:
             break
         else:
@@ -646,12 +682,12 @@ async def _run_loop(session, model, modelpath, chunksize, once):
             inittime = await next_run_time(inittime, modelpath, model)
 
 
-async def run(basepath, model_name, chunksize, once=False):
+async def run(basepath, model_name, chunksize, once=False, use_tmp=False):
     session = make_session()
     modelpath = basepath / model_name
     if model_name != 'gefs':
         model = model_map[model_name]
-        await _run_loop(session, model, modelpath, chunksize, once)
+        await _run_loop(session, model, modelpath, chunksize, once, use_tmp)
     else:
         base_model = model_map[model_name].copy()
         members = base_model.pop('members')
@@ -662,7 +698,8 @@ async def run(basepath, model_name, chunksize, once=False):
             model['file'] = model['file'].replace('{stat_or_member}', member)
             model['filename'] = model['filename'].format(stat_or_member=member)
             member_loops.add(asyncio.create_task(
-                _run_loop(session, model, modelpath, chunksize, once)))
+                _run_loop(session, model, modelpath, chunksize, once,
+                          use_tmp)))
         await asyncio.wait(member_loops)
     await session.close()
 
@@ -702,6 +739,8 @@ def main():
                            help='Size of a chunk (in KB) to save at one time')
     argparser.add_argument('--once', action='store_true',
                            help='Only get one forecast initialization time')
+    argparser.add_argument('--use-tmp', action='store_true',
+                           help='Save grib files to /tmp')
     argparser.add_argument(
         '--netcdf-only', action='store_true',
         help='Only convert files at save_directory to netcdf')
@@ -733,7 +772,7 @@ def main():
         fut = asyncio.ensure_future(optimize_only(path_to_files, args.model))
     else:
         fut = asyncio.ensure_future(run(basepath, args.model, args.chunksize,
-                                        args.once))
+                                        args.once, args.use_tmp))
 
     loop = asyncio.get_event_loop()
 
