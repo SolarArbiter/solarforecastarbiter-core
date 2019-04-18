@@ -239,6 +239,24 @@ LEAST_SIGNIFICANT_DIGITS = {
 }
 
 
+UNLINK_QUEUE = asyncio.Queue()
+
+
+async def remove_worker():
+    timeout = 10.0
+    while True:
+        file_ = await UNLINK_QUEUE.get()
+        try:
+            asyncio.wait_for(
+                asyncio.get_current_loop().run_in_executor(
+                    file_.unlink),
+                timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.warning('Failed to remove file %s in %d seconds', timeout)
+            UNLINK_QUEUE.put_nowait(file_)
+
+
+@abort_all_on_exception
 async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
     Call get_func and retry if the request fails
@@ -270,15 +288,14 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
                            e.request_info.url, e.status)
             retried += 1
             if retried >= retries:
-                raise
+                raise ValueError('Too many retries')
             await asyncio.sleep(60)
         except aiohttp.ClientError:
             logger.warning('Request failed in connection, retrying')
             retried += 1
             if retried >= retries:
-                raise
+                raise ValueError('Too many retries')
             await asyncio.sleep(60)
-
         else:
             return res
 
@@ -354,13 +371,24 @@ async def check_next_inittime(session, init_time, model):
         return False
 
 
-async def files_to_retrieve(session, model, init_time):
+def get_filename(basepath, init_time, params):
+    filename = (
+        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file'])
+    if not filename.suffix == '.grib2':
+        filename = filename.with_suffix(filename.suffix + '.grib2')
+    return filename
+
+
+async def files_to_retrieve(session, model, modelpath, init_time):
     """Generator to return the parameters of the available files for download
     """
     possible_params = _process_params(model, init_time)
     simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
+        filename = get_filename(modelpath, init_time, next_params)
+        if filename.exists():
+            continue
         next_model_url = (CHECK_URL.format(model.get('check_url_name',
                                                      simple_model))
                           + next_params['dir'] + '/' + next_params['file'])
@@ -375,9 +403,19 @@ async def files_to_retrieve(session, model, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
-            except (aiohttp.ClientOSError, aiohttp.ClientResponseError):
-                logger.debug('Next file not ready yet for %s at %s %s',
-                             simple_model, init_time, model.get('member', ''))
+            except aiohttp.ClientResponseError as e:
+                if e.status == 404:  # Not found
+                    logger.debug(
+                        'Next file not ready yet for %s at %s %s\n%s %s',
+                        simple_model, init_time, model.get('member', ''),
+                        e.status, e.message)
+                else:
+                    logger.error(
+                        'Error checking if next file is ready %s\n'
+                        '%s %s', model.get('member', ''), e.status, e.message)
+            except aiohttp.ClientError as e:
+                logger.warning('Error in checking for next file %s %s',
+                               model.get('member', ''), str(e))
             else:
                 logger.debug('%s/%s is ready for download',
                              next_params['dir'], next_params['file'])
@@ -441,10 +479,7 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     """
     endpoint = params.pop('endpoint')
     url = BASE_URL + endpoint
-    filename = (
-        basepath / init_time.strftime('%Y/%m/%d/%H') / params['file'])
-    if not filename.suffix == '.grib2':
-        filename = filename.with_suffix(filename.suffix + '.grib2')
+    filename = get_filename(basepath, init_time, params)
     if filename.exists():
         return filename
     if not filename.parent.is_dir():
@@ -554,7 +589,7 @@ async def optimize_netcdf(nctmpfile, final_path):
                          stat.S_IWUSR)
         logger.info('Done optimizing NetCDF at %s', final_path)
     finally:
-        nctmpfile.unlink()
+        UNLINK_QUEUE.put_nowait(nctmpfile)
 
 
 async def sleep_until_inittime(inittime, model):
@@ -621,7 +656,8 @@ async def _run_loop(session, model, modelpath, chunksize, once):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
-        async for params in files_to_retrieve(session, model, inittime):
+        async for params in files_to_retrieve(session, model, modelpath,
+                                              inittime):
             fetch_tasks.add(asyncio.create_task(
                 fetch_grib_files(session, params, modelpath, inittime,
                                  chunksize)))
@@ -637,8 +673,8 @@ async def _run_loop(session, model, modelpath, chunksize, once):
                 raise
             else:
                 # remove grib files
-                for f in files:
-                    f.unlink()
+                for file_ in files:
+                    UNLINK_QUEUE.put_nowait(file_)
         if once:
             break
         else:
@@ -647,6 +683,7 @@ async def _run_loop(session, model, modelpath, chunksize, once):
 
 
 async def run(basepath, model_name, chunksize, once=False):
+    rm_task = asyncio.create_task(remove_worker())
     session = make_session()
     modelpath = basepath / model_name
     if model_name != 'gefs':
@@ -665,9 +702,11 @@ async def run(basepath, model_name, chunksize, once=False):
                 _run_loop(session, model, modelpath, chunksize, once)))
         await asyncio.wait(member_loops)
     await session.close()
+    await asyncio.wait({rm_task})
 
 
 async def optimize_only(path_to_files, model_name):
+    rm_task = asyncio.create_task(remove_worker())
     model = model_map[model_name]
     nctmpfile = await process_grib_to_netcdf(path_to_files, model)
     try:
@@ -678,7 +717,8 @@ async def optimize_only(path_to_files, model_name):
     else:
         # remove grib files
         for f in path_to_files.glob(f'{model["file"].split(".")[0]}*.grib2'):
-            f.unlink()
+            UNLINK_QUEUE.put_nowait(f)
+    await asyncio.wait({rm_task})
 
 
 def check_wgrib2():
