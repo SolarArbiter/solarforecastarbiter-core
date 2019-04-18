@@ -38,6 +38,7 @@ import re
 import shutil
 import signal
 import stat
+import subprocess
 import sys
 import tempfile
 
@@ -490,29 +491,39 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
-@abort_all_on_exception
 async def process_grib_to_netcdf(folder, model):
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
-    grib_prefix = model['file'].split('.')[0]
-    if 'var_WIND' not in model:
-        # need to add wind to the grib files
-        for grbfile in folder.glob(f'{grib_prefix}*.grib2'):
-            path = str(grbfile.resolve())
-            proc = await asyncio.create_subprocess_shell(
-                f'wgrib2 {path} -wind_speed - -match "(UGRD|VGRD)" | '
-                f'wgrib2 - -append -grib_out {path}',
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.PIPE)
-            stdout, stderr = await proc.communicate()
-            if proc.returncode != 0:
-                logger.error('Error converting wind in file %s\n%s',
-                             grbfile, stderr.decode())
-                raise OSError
-
     _handle, nctmp = tempfile.mkstemp(dir=folder)
     os.close(_handle)
     nctmp = Path(nctmp)
+    # possible that this holds up processing on file io
+    # so run in separate process
+    grib_prefix = model['file'].split('.')[0]
+    wind_in_model = 'var_WIND' not in model
+    try:
+        await run_in_executor(_process_grib, folder, nctmp, grib_prefix,
+                              wind_in_model)
+    except Exception:
+        nctmp.unlink()
+        raise
+    return nctmp
+
+
+def _process_grib(folder, nctmp, grib_prefix, wind_in_model):
+    if wind_in_model:
+        # need to add wind to the grib files
+        for grbfile in folder.glob(f'{grib_prefix}*.grib2'):
+            path = str(grbfile.resolve())
+            try:
+                subprocess.run(
+                    f'wgrib2 {path} -wind_speed - -match "(UGRD|VGRD)" | '
+                    f'wgrib2 - -append -grib_out {path}',
+                    shell=True, check=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
+                logger.error('Error converting wind in file %s\n%s',
+                             grbfile, e.stderr)
+                raise OSError
 
     if 'subhourly' in str(folder):
         # for hrrr subhourly, assume TMP and VDDSF have no average but others
@@ -524,17 +535,14 @@ async def process_grib_to_netcdf(folder, model):
         tmp_nc_tbl.write(NC_TBL)
         tmp_nc_tbl.flush()
 
-        proc = await asyncio.create_subprocess_shell(
-            f'cat {str(folder)}/{grib_prefix}*.grib2 | '
-            f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE)
-
-        stdout, stderr = await proc.communicate()
-        if proc.returncode != 0:
+        try:
+            subprocess.run(
+                f'cat {str(folder)}/{grib_prefix}*.grib2 | '
+                f'wgrib2 - -nc4 -nc_table {tmp_nc_tbl.name} {fmt} -append -netcdf {str(nctmp)}',  # NOQA
+                shell=True, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
             logger.error('Error converting grib files %s*.grib2 to netCDF\n%s',
-                         grib_prefix, stderr.decode())
-            nctmp.unlink()
+                         grib_prefix, e.stderr)
             raise OSError
     return nctmp
 
