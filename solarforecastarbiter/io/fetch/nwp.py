@@ -387,6 +387,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
     for next_params in possible_params:
         filename = get_filename(modelpath, init_time, next_params)
         if filename.exists():
+            yield next_params
             continue
         next_model_url = (CHECK_URL.format(model.get('check_url_name',
                                                      simple_model))
@@ -491,10 +492,11 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     return filename
 
 
+@abort_all_on_exception
 async def process_grib_to_netcdf(folder, model):
     logger.info('Converting GRIB files to NetCDF with wgrib2 %s',
                 model.get('member', ''))
-    _handle, nctmp = tempfile.mkstemp(dir=folder)
+    _handle, nctmp = tempfile.mkstemp()
     os.close(_handle)
     nctmp = Path(nctmp)
     # possible that this holds up processing on file io
@@ -505,7 +507,7 @@ async def process_grib_to_netcdf(folder, model):
         await run_in_executor(_process_grib, folder, nctmp, grib_prefix,
                               wind_in_model)
     except Exception:
-        nctmp.unlink()
+        UNLINK_QUEUE.put_nowait(nctmp)
         raise
     return nctmp
 
@@ -662,6 +664,8 @@ async def _run_loop(session, model, modelpath, chunksize, once):
     inittime = await startup_find_next_runtime(modelpath, session, model)
     while True:
         fetch_tasks = set()
+        finalpath = (modelpath / inittime.strftime('%Y/%m/%d/%H') /
+                     model['filename'])
         async for params in files_to_retrieve(session, model, modelpath,
                                               inittime):
             fetch_tasks.add(asyncio.create_task(
@@ -673,8 +677,7 @@ async def _run_loop(session, model, modelpath, chunksize, once):
             try:
                 nctmpfile = await process_grib_to_netcdf(path_to_files,
                                                          model)
-                await optimize_netcdf(
-                    nctmpfile, path_to_files / model['filename'])
+                await optimize_netcdf(nctmpfile, finalpath)
             except Exception:
                 raise
             else:
