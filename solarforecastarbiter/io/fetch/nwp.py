@@ -240,23 +240,6 @@ LEAST_SIGNIFICANT_DIGITS = {
 }
 
 
-UNLINK_QUEUE = asyncio.Queue()
-
-
-async def remove_worker():
-    timeout = 10.0
-    while True:
-        file_ = await UNLINK_QUEUE.get()
-        try:
-            asyncio.wait_for(
-                asyncio.get_current_loop().run_in_executor(
-                    file_.unlink),
-                timeout=timeout)
-        except asyncio.TimeoutError:
-            logger.warning('Failed to remove file %s in %d seconds', timeout)
-            UNLINK_QUEUE.put_nowait(file_)
-
-
 @abort_all_on_exception
 async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
@@ -507,7 +490,7 @@ async def process_grib_to_netcdf(folder, model):
         await run_in_executor(_process_grib, folder, nctmp, grib_prefix,
                               wind_in_model)
     except Exception:
-        UNLINK_QUEUE.put_nowait(nctmp)
+        nctmp.unlink()
         raise
     return nctmp
 
@@ -600,7 +583,7 @@ async def optimize_netcdf(nctmpfile, final_path):
                          stat.S_IWUSR)
         logger.info('Done optimizing NetCDF at %s', final_path)
     finally:
-        UNLINK_QUEUE.put_nowait(nctmpfile)
+        nctmpfile.unlink()
 
 
 async def sleep_until_inittime(inittime, model):
@@ -685,10 +668,8 @@ async def _run_loop(session, model, modelpath, chunksize, once):
                 await optimize_netcdf(nctmpfile, finalpath)
             except Exception:
                 raise
-            else:
-                # remove grib files
-                for file_ in files:
-                    UNLINK_QUEUE.put_nowait(file_)
+        del tmpdir
+        del _tmpdir
         if once:
             break
         else:
@@ -697,7 +678,6 @@ async def _run_loop(session, model, modelpath, chunksize, once):
 
 
 async def run(basepath, model_name, chunksize, once=False):
-    rm_task = asyncio.create_task(remove_worker())
     session = make_session()
     modelpath = basepath / model_name
     if model_name != 'gefs':
@@ -716,11 +696,9 @@ async def run(basepath, model_name, chunksize, once=False):
                 _run_loop(session, model, modelpath, chunksize, once)))
         await asyncio.wait(member_loops)
     await session.close()
-    await asyncio.wait({rm_task})
 
 
 async def optimize_only(path_to_files, model_name):
-    rm_task = asyncio.create_task(remove_worker())
     model = model_map[model_name]
     nctmpfile = await process_grib_to_netcdf(path_to_files, model)
     try:
@@ -731,8 +709,7 @@ async def optimize_only(path_to_files, model_name):
     else:
         # remove grib files
         for f in path_to_files.glob(f'{model["file"].split(".")[0]}*.grib2'):
-            UNLINK_QUEUE.put_nowait(f)
-    await asyncio.wait({rm_task})
+            f.unlink()
 
 
 def check_wgrib2():
