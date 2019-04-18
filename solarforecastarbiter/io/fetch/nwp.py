@@ -666,7 +666,8 @@ async def _run_loop(session, model, modelpath, chunksize, once):
         fetch_tasks = set()
         finalpath = (modelpath / inittime.strftime('%Y/%m/%d/%H') /
                      model['filename'])
-        async for params in files_to_retrieve(session, model, modelpath,
+        tmpdir = tempfile.TemporaryDirectory()
+        async for params in files_to_retrieve(session, model, tmpdir,
                                               inittime):
             fetch_tasks.add(asyncio.create_task(
                 fetch_grib_files(session, params, modelpath, inittime,
@@ -684,6 +685,7 @@ async def _run_loop(session, model, modelpath, chunksize, once):
                 # remove grib files
                 for file_ in files:
                     UNLINK_QUEUE.put_nowait(file_)
+        del tmpdir
         if once:
             break
         else:
