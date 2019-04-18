@@ -581,7 +581,10 @@ async def optimize_netcdf(nctmpfile, final_path):
     """Compress the netcdf file and adjust the chunking for fast time-series
     access"""
     logger.info('Optimizing NetCDF file to save at %s', final_path)
-    _handle, tmp_path = tempfile.mkstemp(dir=final_path.parent)
+    parent = Path(final_path.parent)
+    if not parent.is_dir():
+        parent.mkdir(parents=True)
+    _handle, tmp_path = tempfile.mkstemp(dir=parent)
     os.close(_handle)
     tmp_path = Path(tmp_path)
     # possible that this leaks memory, so run in separate process
@@ -666,11 +669,12 @@ async def _run_loop(session, model, modelpath, chunksize, once):
         fetch_tasks = set()
         finalpath = (modelpath / inittime.strftime('%Y/%m/%d/%H') /
                      model['filename'])
-        tmpdir = tempfile.TemporaryDirectory()
+        _tmpdir = tempfile.TemporaryDirectory()
+        tmpdir = Path(_tmpdir.name)
         async for params in files_to_retrieve(session, model, tmpdir,
                                               inittime):
             fetch_tasks.add(asyncio.create_task(
-                fetch_grib_files(session, params, modelpath, inittime,
+                fetch_grib_files(session, params, tmpdir, inittime,
                                  chunksize)))
         files = await asyncio.gather(*fetch_tasks)
         if len(files) != 0:  # skip to next inittime
@@ -685,7 +689,6 @@ async def _run_loop(session, model, modelpath, chunksize, once):
                 # remove grib files
                 for file_ in files:
                     UNLINK_QUEUE.put_nowait(file_)
-        del tmpdir
         if once:
             break
         else:
