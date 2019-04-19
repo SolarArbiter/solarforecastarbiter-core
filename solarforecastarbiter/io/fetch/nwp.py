@@ -381,6 +381,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
         while True:
             # is the next file ready?
             try:
+                logger.debug('Calling HEAD %s', next_model_url)
                 async with session.head(
                         next_model_url, raise_for_status=True) as r:
                     if first_file_modified_at is None:
@@ -389,6 +390,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
+                logger.debug('HEAD returned %s', next_model_url)
             except aiohttp.ClientResponseError as e:
                 if e.status == 404:  # Not found
                     logger.debug(
