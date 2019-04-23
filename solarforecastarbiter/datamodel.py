@@ -3,8 +3,8 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-
-from dataclasses import dataclass, field
+from collections import OrderedDict
+from dataclasses import dataclass, field, fields, MISSING
 import datetime
 
 
@@ -139,7 +139,7 @@ class SingleAxisModelingParameters(PVModelingParameters):
         coverage ratio is 0.286(=2/7).
     backtrack : bool
         Indicator of if a tracking system uses backtracking
-    maximum_rotation_angle : float
+    max_rotation_angle : float
         maximum rotation from horizontal of a single axis tracker, degrees
 
     See Also
@@ -150,7 +150,7 @@ class SingleAxisModelingParameters(PVModelingParameters):
     axis_azimuth: float
     ground_coverage_ratio: float
     backtrack: bool
-    maximum_rotation_angle: float
+    max_rotation_angle: float
 
 
 @dataclass(frozen=True)
@@ -286,3 +286,51 @@ class Forecast:
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
+
+
+def process_dict_into_datamodel(dict_, model, raise_on_extra=False):
+    """
+    extra keys ignored, keyerror on missing required params,
+    etc
+    """
+    model_fields = fields(model)
+    kwargs = OrderedDict()
+    errors = []
+    for model_field in model_fields:
+        if model_field.name in dict_:
+            kwargs[model_field.name] = dict_[model_field.name]
+        elif (
+                model_field.default is MISSING and
+                model_field.default_factory is MISSING
+        ):
+            errors.append(model_field.name)
+    if errors:
+        raise KeyError(
+            'Missing the following required arguments for the model '
+            f'{str(model)}: {",".join(errors)}')
+    return model(**kwargs)
+
+
+def process_site_dict(site_dict):
+    site_dict = site_dict.copy()
+    mp_dict = site_dict.pop('modeling_parameters', {})
+    tracking_type = mp_dict.pop('tracking_type', '')
+    if tracking_type == 'fixed':
+        modeling_parameters = process_dict_into_datamodel(
+            mp_dict,
+            FixedTiltModelingParameters)
+        site_dict['modeling_parameters'] = modeling_parameters
+        site = process_dict_into_datamodel(
+            site_dict,
+            SolarPowerPlant)
+    elif tracking_type == 'single_axis':
+        modeling_parameters = process_dict_into_datamodel(
+            mp_dict,
+            SingleAxisModelingParameters)
+        site_dict['modeling_parameters'] = modeling_parameters
+        site = process_dict_into_datamodel(
+            site_dict,
+            SolarPowerPlant)
+    else:
+        site = process_dict_into_datamodel(site_dict, Site)
+    return site
