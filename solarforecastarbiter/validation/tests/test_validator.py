@@ -140,7 +140,7 @@ def test_check_rh_limits(weather):
     expected = weather
     data = expected[['relative_humidity']]
     result_expected = expected[['extreme_rh_flag']]
-    result = validator.check_wind_limits(data)
+    result = validator.check_rh_limits(data)
     assert_series_equal(result, result_expected)
 
 
