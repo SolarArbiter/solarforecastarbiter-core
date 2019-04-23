@@ -570,9 +570,9 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
     flags = pd.Series(index=ac_power.index, data=False)
     power_plateaus, bins = detect_levels(ac_power, count=levels,
                                          num_bins=num_bins)
-    for M in power_plateaus:
+    for lower, upper in power_plateaus:
         temp = pd.Series(index=ac_power.index, data=0.0)
-        temp.loc[(ac_power >= M[0]) & (ac_power <= M[1])] = 1.0
+        temp.loc[(ac_power >= lower) & (ac_power <= upper)] = 1.0
         flags = flags | _label_clipping(temp, window=window,
                                         frac=fraction_in_window)
     return flags
