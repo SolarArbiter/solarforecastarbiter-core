@@ -144,12 +144,6 @@ def test_check_rh_limits(weather):
     assert_series_equal(result, result_expected)
 
 
-def test_check_rh_limits_fail(weather):
-    expected = weather
-    with pytest.raises(KeyError):
-        validator.check_wind_limits(expected[['temp_air']])
-
-
 def test_check_limits():
     # testing with input type Series
     expected = pd.Series(data=[True, False])
