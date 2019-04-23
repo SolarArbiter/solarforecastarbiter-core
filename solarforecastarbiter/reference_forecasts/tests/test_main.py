@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 import datetime as dt
 from functools import partial
 
+=======
+>>>>>>> solararbiter/master
 import pandas as pd
 # from pandas.util.testing import assert_series_equal
 
@@ -8,6 +11,10 @@ import pytest
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reference_forecasts import main, models
+<<<<<<< HEAD
+=======
+
+>>>>>>> solararbiter/master
 
 # we'll need to do something better once the load_forecast function works
 init_time = pd.Timestamp('20190328T1200Z')
@@ -51,7 +58,11 @@ def check_out(out, expected, site_type):
     pytest.param(
         models.gfs_quarter_deg_to_hourly_mean,
         load_forecast_return_value_3,
+<<<<<<< HEAD
         marks=pytest.mark.xfail(strict=True, raises=NotImplementedError)),
+=======
+        marks=[pytest.mark.xfail(strict=True, raises=NotImplementedError)]),
+>>>>>>> solararbiter/master
     (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
     (models.hrrr_subhourly_to_subhourly_instantaneous,
         load_forecast_return_value_5),
