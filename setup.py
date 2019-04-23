@@ -9,6 +9,15 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
     long_description = f.read()
 
 
+EXTRAS_REQUIRE = {
+    'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
+             'asynctest'],
+    'fetch': ['aiohttp'],
+}
+EXTRAS_REQUIRE['all'] = [
+    vv for v in EXTRAS_REQUIRE.values() for vv in v]
+
+
 setup(
     name='solarforecastarbiter',
     description='Core framework for Solar Forecast Arbiter',
@@ -32,11 +41,11 @@ setup(
         'numpy',
         'pandas',
         'requests',
+        'xarray',
+        'tables',
+        'pvlib'
     ],
-    extra_requires={
-        'test': ['pytest', 'pytest-cov', 'pytest-mock'],
-        'optional': ['tables']
-    },
+    extras_require=EXTRAS_REQUIRE,
     project_urls={
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,
         'Source': 'https://github.com/solararbiter/solarforecastarbiter-core'
