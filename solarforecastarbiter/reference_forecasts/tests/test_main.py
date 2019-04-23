@@ -118,14 +118,17 @@ def test_get_data_start_end_labels(site_metadata):
     # obs interval cannot be longer than forecast interval
     observation = _observation(
         interval_length=pd.Timedelta('15min'), interval_label='beginning')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
+    assert ("observation.interval_length <= forecast.run_length" in
+            str(excinfo.value))
 
     # obs interval cannot be longer than 1 hr
     observation = _observation(
         interval_length=pd.Timedelta('2h'), interval_label='beginning')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
+    assert 'observation.interval_length <= 1h' in str(excinfo.value)
 
     # day ahead doesn't care about obs interval length
     forecast = _forecast(
@@ -148,8 +151,9 @@ def test_get_data_start_end_labels(site_metadata):
         interval_length=pd.Timedelta('1h'),  # interval_length must be equal
         run_length=pd.Timedelta('1d'),
         interval_label='instant')            # if interval_label also instant
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
+    assert 'with identical interval length' in str(excinfo.value)
 
     forecast = _forecast(
         issue_time_of_day=dt.time(hour=5),
@@ -207,8 +211,9 @@ def test_get_data_start_end_labels(site_metadata):
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
         interval_label='instant')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
+    assert 'made from interval average obs' in str(excinfo.value)
 
 
 def test_get_forecast_start_end(site_metadata):
@@ -322,9 +327,10 @@ def test_run_persistence_fails(site_metadata, mocker):
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
     issue_time = pd.Timestamp('20190423T2300Z')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.run_persistence(observation, forecast, run_time, issue_time,
                              index=True)
+    assert 'index=True not supported' in str(excinfo.value)
 
     forecast = _forecast(
         issue_time_of_day=dt.time(hour=23),
@@ -334,8 +340,9 @@ def test_run_persistence_fails(site_metadata, mocker):
         interval_label='beginning')
 
     issue_time = pd.Timestamp('20190423T2300Z')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.run_persistence(observation, forecast, run_time, issue_time)
+    assert 'midnight to midnight' in str(excinfo.value)
 
     # not midnight to midnight
     forecast = _forecast(
@@ -345,5 +352,6 @@ def test_run_persistence_fails(site_metadata, mocker):
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
     issue_time = pd.Timestamp('20190423T2200Z')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         main.run_persistence(observation, forecast, run_time, issue_time)
+    assert 'midnight to midnight' in str(excinfo.value)

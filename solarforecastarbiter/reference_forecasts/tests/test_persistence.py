@@ -266,37 +266,67 @@ def test_persistence_scalar_index_invalid_times_instant(site_metadata):
             observation, data_start, data_end, forecast_start, forecast_end,
             interval_length, interval_label, load_data=load_data)
 
-    # interval average obs with invalid starts/ends
-    observation = _observation(site_metadata, '5min', 'beginning')
-    data_start = pd.Timestamp('20190404 1201', tz=tz)
-    with pytest.raises(ValueError):
-        persistence.persistence_scalar_index(
-            observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
 
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
+def test_persistence_scalar_index_invalid_times_interval(site_metadata,
+                                                         interval_label):
+    data = pd.Series(100., index=[0])
+    load_data = partial(load_data_base, data)
+    tz = 'America/Phoenix'
+    interval_length = pd.Timedelta('30min')
+
+    # base times to mess with
     data_start = pd.Timestamp('20190404 1200', tz=tz)
-    data_end = pd.Timestamp('20190404 1259', tz=tz)
-    with pytest.raises(ValueError):
-        persistence.persistence_scalar_index(
-            observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
-
     data_end = pd.Timestamp('20190404 1300', tz=tz)
-    forecast_start = pd.Timestamp('20190404 1301', tz=tz)
-    with pytest.raises(ValueError):
-        persistence.persistence_scalar_index(
-            observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
-
     forecast_start = pd.Timestamp('20190404 1300', tz=tz)
-    forecast_end = pd.Timestamp('20190404 1359', tz=tz)
-    with pytest.raises(ValueError):
+    forecast_end = pd.Timestamp('20190404 1400', tz=tz)
+
+    # interval average obs with invalid starts/ends
+    observation = _observation(site_metadata, '5min', interval_label)
+    errtext = "with interval_label beginning or ending"
+    with pytest.raises(ValueError) as excinfo:
         persistence.persistence_scalar_index(
-            observation, data_start, data_end, forecast_start, forecast_end,
+            observation, pd.Timestamp('20190404 1201', tz=tz), data_end,
+            forecast_start, forecast_end,
             interval_length, interval_label, load_data=load_data)
+    assert errtext in str(excinfo.value)
+
+    with pytest.raises(ValueError) as excinfo:
+        persistence.persistence_scalar_index(
+            observation, data_start, pd.Timestamp('20190404 1259', tz=tz),
+            forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
+    assert errtext in str(excinfo.value)
+
+    with pytest.raises(ValueError) as excinfo:
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end,
+            pd.Timestamp('20190404 1301', tz=tz), forecast_end,
+            interval_length, interval_label, load_data=load_data)
+    assert errtext in str(excinfo.value)
+
+    with pytest.raises(ValueError) as excinfo:
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start,
+            pd.Timestamp('20190404 1359', tz=tz),
+            interval_length, interval_label, load_data=load_data)
+    assert errtext in str(excinfo.value)
+
+
+def test_persistence_scalar_index_invalid_times_invalid_label(site_metadata):
+    data = pd.Series(100., index=[0])
+    load_data = partial(load_data_base, data)
+    tz = 'America/Phoenix'
+    interval_length = pd.Timedelta('30min')
 
     interval_label = 'invalid'
-    with pytest.raises(ValueError):
+    observation = _observation(site_metadata, '5min', interval_label)
+    data_start = pd.Timestamp('20190404 1200', tz=tz)
+    data_end = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_start = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_end = pd.Timestamp('20190404 1400', tz=tz)
+    with pytest.raises(ValueError) as excinfo:
         persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
             interval_length, interval_label, load_data=load_data)
+    assert "invalid interval_label" in str(excinfo.value)
