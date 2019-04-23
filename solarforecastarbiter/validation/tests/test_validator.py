@@ -96,11 +96,13 @@ def test_check_irradiance_consistency_QCRad_fail(irradiance_QCRad):
 @pytest.fixture
 def weather():
     output = pd.DataFrame(columns=['temp_air', 'wind_speed',
-                                   'extreme_temp_flag', 'extreme_wind_flag'],
-                          data=np.array([[-20, -5, 0, 0],
-                                         [10, 10, 1, 1],
-                                         [140, 75, 0, 0]]))
-    dtypes = ['float64', 'float64', 'bool', 'bool']
+                                   'relative_humidity',
+                                   'extreme_temp_flag', 'extreme_wind_flag',
+                                   'extreme_rh_flag'],
+                          data=np.array([[-20, -5, -5, 0, 0, 0],
+                                         [10, 10, 50, 1, 1, 1],
+                                         [140, 75, 105, 0, 0, 0]]))
+    dtypes = ['float64', 'float64', 'float64', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
         output[col] = output[col].astype(typ)
     return output
@@ -129,6 +131,20 @@ def test_check_wind_limits(weather):
 
 
 def test_check_wind_limits_fail(weather):
+    expected = weather
+    with pytest.raises(KeyError):
+        validator.check_wind_limits(expected[['temp_air']])
+
+
+def test_check_rh_limits(weather):
+    expected = weather
+    data = expected[['relative_humidity']]
+    result_expected = expected[['extreme_rh_flag']]
+    result = validator.check_wind_limits(data)
+    assert_series_equal(result, result_expected)
+
+
+def test_check_rh_limits_fail(weather):
     expected = weather
     with pytest.raises(KeyError):
         validator.check_wind_limits(expected[['temp_air']])

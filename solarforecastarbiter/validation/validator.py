@@ -262,6 +262,27 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
     return flags
 
 
+def check_rh_limits(rh, rh_limits=(5, 100)):
+    """ Checks for extreme relative humidity.
+
+    Parameters:
+    -----------
+    rh : Series
+        Relative humidity in %
+    rh_limits : tuple, default (5, 100)
+        (lower bound, upper bound) for relative humidity
+
+    Returns:
+    --------
+    flags : DataFrame
+        True if rh > lower bound and rh <= upper bound.
+    """
+
+    flags = pd.Series(index=rh.index, data=None, name='extreme_rh_flag')
+    flags = _check_limits(rh, lb=rh_limits[0], ub=rh_limits[1], ub_le=True)
+    return flags
+
+
 def get_solarposition(location, times, **kwargs):
     """ Calculates solar position.
 
