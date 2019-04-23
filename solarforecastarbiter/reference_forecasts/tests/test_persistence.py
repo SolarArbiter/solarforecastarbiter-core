@@ -232,3 +232,65 @@ def test_persistence_scalar_index(site_metadata, powerplant_metadata):
     expected_values = [99.32046515783028, 98.34762206379594]
     expected = pd.Series(expected_values, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
+
+    # instant obs and fx, but with offset added to starts instead of ends
+    data_start = pd.Timestamp('20190404 1201', tz=tz)
+    data_end = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_start = pd.Timestamp('20190404 1301', tz=tz)
+    forecast_end = pd.Timestamp('20190404 1400', tz=tz)
+    fx = persistence.persistence_scalar_index(
+        observation, data_start, data_end, forecast_start, forecast_end,
+        interval_length, interval_label, load_data=load_data)
+    expected_index = pd.DatetimeIndex(
+        ['20190404 1300', '20190404 1330'], tz=tz)
+    expected_values = [96.55340033645147, 91.89662922267517]
+    expected = pd.Series(expected_values, index=expected_index)
+    assert_series_equal(fx, expected, check_names=False)
+
+
+def test_persistence_scalar_index_invalid_times_instant(site_metadata):
+    data = pd.Series(100., index=[0])
+    load_data = partial(load_data_base, data)
+    tz = 'America/Phoenix'
+
+    observation = _observation(site_metadata, '5min', 'instant')
+    # instant obs that cover the whole interval - not allowed!
+    data_start = pd.Timestamp('20190404 1200', tz=tz)
+    data_end = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_start = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_end = pd.Timestamp('20190404 1400', tz=tz)
+    interval_length = pd.Timedelta('30min')
+    interval_label = 'instant'
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
+
+    # interval average obs with invalid starts/ends
+    observation = _observation(site_metadata, '5min', 'beginning')
+    data_start = pd.Timestamp('20190404 1201', tz=tz)
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
+
+    data_start = pd.Timestamp('20190404 1200', tz=tz)
+    data_end = pd.Timestamp('20190404 1259', tz=tz)
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
+
+    data_end = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_start = pd.Timestamp('20190404 1301', tz=tz)
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
+
+    forecast_start = pd.Timestamp('20190404 1300', tz=tz)
+    forecast_end = pd.Timestamp('20190404 1359', tz=tz)
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
