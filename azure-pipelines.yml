@@ -28,7 +28,7 @@ jobs:
 
   - script: pip install '.[all]'
     displayName: 'Install solarforecastarbiter with extras'
-    
+
   - script: |
       pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
@@ -36,28 +36,34 @@ jobs:
   - script: |
       flake8 solarforecastarbiter
     displayName: 'flake8'
+    condition: always()
 
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-results.xml'
       testRunTitle: 'Python $(python.version)'
+    condition: always()
 
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+    condition: always()
 
   - script: |
       bash <(curl https://codecov.io/bash) -t 09612e67-185b-4d89-9527-5e9322b8838b -f coverage.xml -F adder -F subtractor -F pypi
     displayName: 'codecov'
+    condition: always()
 
   - script: python -m pip install -r docs/requirements.txt
     displayName: 'install doc dependencies'
+    condition: always()
 
   - script: |
       make -C docs html
     displayName: 'makedocs'
+    condition: always()
 
 - job: 'Publish'
   dependsOn: 'Test_pypi'
