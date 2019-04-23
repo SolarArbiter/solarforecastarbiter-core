@@ -294,3 +294,9 @@ def test_persistence_scalar_index_invalid_times_instant(site_metadata):
         persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
             interval_length, interval_label, load_data=load_data)
+
+    interval_label = 'invalid'
+    with pytest.raises(ValueError):
+        persistence.persistence_scalar_index(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            interval_length, interval_label, load_data=load_data)
