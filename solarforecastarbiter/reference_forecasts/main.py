@@ -161,9 +161,12 @@ def run_persistence(observation, forecast, run_time, issue_time, index=False):
     """
     forecast_start, forecast_end = get_forecast_start_end(forecast, issue_time)
     intraday = _is_intraday(forecast)
+    if not intraday:
+        # raise ValueError if not intraday and not midnight to midnight
+        _check_midnight_to_midnight(forecast_start, forecast_end)
 
     data_start, data_end = get_data_start_end(
-        observation, forecast, run_time, forecast_start, forecast_end)
+        observation, forecast, run_time)
 
     if intraday and index:
         fx = persistence.persistence_scalar_index(
@@ -211,9 +214,10 @@ def get_forecast_start_end(forecast, issue_time):
                                 end=first_issue_time+pd.Timedelta('1d'),
                                 freq=forecast.run_length)
     if issue_time not in issue_times:
-        ValueError(('Incompatible forecast.issue_time_of_day %s,'
-                    'forecast.run_length %s, and issue_time %s') %
-                   forecast.issue_time_of_day, forecast.run_length, issue_time)
+        raise ValueError(
+            ('Incompatible forecast.issue_time_of_day %s, '
+             'forecast.run_length %s, and issue_time %s') % (
+             forecast.issue_time_of_day, forecast.run_length, issue_time))
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
     if 'instant' in forecast.interval_label:
@@ -227,6 +231,13 @@ def _is_intraday(forecast):
     # fairly different parameters.
     # is this a sufficiently robust way to distinguish?
     return forecast.run_length < pd.Timedelta('1d')
+
+
+def _check_midnight_to_midnight(forecast_start, forecast_end):
+    if (forecast_start.round('1d') != forecast_start or
+            forecast_end - forecast_start > pd.Timedelta('1d')):
+        raise ValueError(
+            'Day ahead persistence requires midnight to midnight periods')
 
 
 def _intraday_start_end(observation, forecast, run_time):
@@ -244,7 +255,7 @@ def _intraday_start_end(observation, forecast, run_time):
     return data_start, data_end
 
 
-def _dayahead_start_end(forecast, run_time, forecast_start, forecast_end):
+def _dayahead_start_end(run_time):
     # day ahead persistence: tomorrow's forecast is equal to yesterday's
     # observations. So, forecast always uses obs > 24 hr old at each valid
     # time. Smarter approach might be to use today's observations up
@@ -253,10 +264,6 @@ def _dayahead_start_end(forecast, run_time, forecast_start, forecast_end):
     # valid time. Arguably too much for a reference forecast.
     data_end = run_time.floor('1d')
     data_start = data_end - pd.Timedelta('1d')
-    if (forecast_start.round('1d') != forecast_start or
-            forecast_end - forecast_start > pd.Timedelta('1d')):
-        raise ValueError(
-            'Day ahead persistence requires midnight to midnight periods')
     return data_start, data_end
 
 
@@ -270,14 +277,13 @@ def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
         else:
             data_end -= pd.Timedelta('1s')
     elif forecast.interval_label == 'beginning':
-        data_start += pd.Timedelta('1s')
-    else:
         data_end -= pd.Timedelta('1s')
+    else:
+        data_start += pd.Timedelta('1s')
     return data_start, data_end
 
 
-def get_data_start_end(observation, forecast, run_time, forecast_start,
-                       forecast_end):
+def get_data_start_end(observation, forecast, run_time):
     """
     Determine the data start and data end times for a persistence
     forecast.
@@ -291,8 +297,7 @@ def get_data_start_end(observation, forecast, run_time, forecast_start,
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     else:
-        data_start, data_end = _dayahead_start_end(
-            forecast, run_time, forecast_start, forecast_end)
+        data_start, data_end = _dayahead_start_end(run_time)
 
     # to ensure that each observation data point contributes to the correct
     # forecast, the data_end and data_start values may need to be nudged

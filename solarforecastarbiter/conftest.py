@@ -105,6 +105,15 @@ def ac_power_observation_metadata(powerplant_metadata):
     return ac_power_meta
 
 
+@pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
+def ac_power_observation_metadata_label(request, powerplant_metadata):
+    ac_power_meta = datamodel.Observation(
+        name='Albuquerque Baseline AC Power', variable='ac_power',
+        value_type='mean', interval_length=pd.Timedelta('5min'),
+        interval_label=request.param, site=powerplant_metadata, uncertainty=1)
+    return ac_power_meta
+
+
 @pytest.fixture(scope='module')
 def ghi_observation_metadata(site_metadata):
     ghi_meta = datamodel.Observation(
@@ -123,6 +132,22 @@ def ac_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
+        value_type='mean',
+        variable='ac_power',
+        site=site_metadata
+    )
+    return ac_power_fx_meta
+
+
+@pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
+def ac_power_forecast_metadata_label(request, site_metadata):
+    ac_power_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline AC Power forecast 1',
+        issue_time_of_day=dt.time(hour=0),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label=request.param,
         value_type='mean',
         variable='ac_power',
         site=site_metadata

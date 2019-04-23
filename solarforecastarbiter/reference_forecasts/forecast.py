@@ -185,7 +185,7 @@ def interpolate(arg, freq='15min', closed=None):
     if arg is None:
         return None
     else:
-        return arg.resample(freq, closed=None).interpolate()
+        return arg.resample(freq, closed=closed).interpolate()
 
 
 def slice_args(*args, start, end):
