@@ -1,3 +1,5 @@
+# coding: utf-8
+
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
@@ -52,3 +54,14 @@ def observation_df_to_json_payload(
     else:
         payload_df['questionable'] = observation_df[questionable_label]
     return json.dumps({'values': payload_df.to_dict(orient='records')})
+
+
+def json_payload_to_observation_df(json_payload):
+    # in the future, might worry about reading the response in chunks
+    # to stream the data and avoid having it all in memory at once,
+    # but 30 days of 1 minute data is probably ~4 MB of text. A better
+    # approach would probably be to switch to a binary format.
+    df = pd.DataFrame.from_dict(json_payload['values'])
+    df.index = pd.to_datetime(df['timestamp'], utc=True,
+                              infer_datetime_format=True)
+    return df[['value', 'quality_flag']]
