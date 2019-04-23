@@ -112,7 +112,7 @@ def run_persistence(observation, forecast, run_time, issue_time, index=False):
     from the *forecast* attributes:
 
       * Intraday persistence forecasts:
-           *window = run_time - forecast.run_length.
+           *window = run_time - forecast.run_length*.
            No longer than 1 hour.
       * Day ahead forecasts:
           *window = forecast.interval_length*.

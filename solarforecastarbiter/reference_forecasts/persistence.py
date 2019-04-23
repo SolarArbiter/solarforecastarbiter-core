@@ -112,10 +112,14 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
 
     .. math::
 
-       m &\in \{0, 1, \ldots \frac{\textrm{data end} - \textrm{data start}}{\textrm{interval_length}} - 1\} \\
-       t_{start_m} &=  \textrm{data start} + m \times \textrm{interval_length}  \\
-       t_{end_m} &= \textrm{data start} + (1 + m) \times \textrm{interval_length} \\
-       t_{f_m} &= \textrm{forecast start} + m \times \textrm{interval_length}  \\
+       m &\in \{0, 1, \ldots \frac{\textrm{data end} - \textrm{data start}}
+           {\textrm{interval_length}} - 1\} \\
+       t_{start_m} &=  \textrm{data start} +
+           m \times \textrm{interval_length} \\
+       t_{end_m} &= \textrm{data start} +
+           (1 + m) \times \textrm{interval_length} \\
+       t_{f_m} &= \textrm{forecast start} +
+           m \times \textrm{interval_length} \\
 
     Further, persistence of multiple intervals requires that
     *data_start*, *data_end*, and *forecast_start* are all integer
@@ -188,7 +192,9 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
 
     .. math::
 
-       GHI_{t_f} = \overline{  \frac{ GHI_{t_{start}} }{ GHI_{{clear}_{t_{start}}} } \ldots \frac{ GHI_{t_{end}} }{ GHI_{{clear}_{t_{end}}} } }
+       GHI_{t_f} = \overline{
+           \frac{ GHI_{t_{start}} }{ GHI_{{clear}_{t_{start}}} } \ldots
+           \frac{ GHI_{t_{end}} }{ GHI_{{clear}_{t_{end}}} } }
 
     where :math:`t_f` is a forecast time, and the overline represents
     the average of all observations or clear sky values that occur
