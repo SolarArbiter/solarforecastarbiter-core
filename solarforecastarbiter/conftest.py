@@ -56,7 +56,7 @@ def site_metadata():
 def _site_metadata():
     metadata = datamodel.Site(
         name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
-        elevation=1657.0, timezone='America/Denver', network='Sandia')
+        elevation=1657.0, timezone='America/Denver', provider='Sandia')
     return metadata
 
 
@@ -266,7 +266,7 @@ def _powerplant_metadata():
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.SolarPowerPlant(
         name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
-        elevation=1657.0, timezone='America/Denver', network='Sandia',
+        elevation=1657.0, timezone='America/Denver', provider='Sandia',
         modeling_parameters=modeling_params)
     return metadata
 

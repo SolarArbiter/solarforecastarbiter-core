@@ -45,8 +45,8 @@ class Site:
         Elevation of the Site in meters above mean sea level, e.g. 1007
     timezone : str
         IANA timezone of the Site, e.g. Etc/GMT+8
-    network : str, optional
-        Measurement network name, e.g. SURFRAD
+    provider : str, optional
+        Provider of the Site information.
     well_known_text: str, optional
         Describes a geometric area for a Site which may be physically extended,
         e.g. a polygon over a city for a Site that describes many distributed
@@ -62,7 +62,7 @@ class Site:
     longitude: float
     elevation: float
     timezone: str
-    network: str = ''
+    provider: str = ''
     well_known_text: str = ''
     extra_parameters: str = ''
 
@@ -193,7 +193,7 @@ class Observation:
     variable : str
         Variable name, e.g. power, GHI. Each allowed variable has an
         associated pre-defined unit.
-    value_type : str
+    interval_value_type : str
         The type of the data in the observation. Typically interval mean or
         instantaneous, but additional types may be defined for events.
     interval_length : pandas.Timedelta
@@ -219,7 +219,7 @@ class Observation:
     """
     name: str
     variable: str
-    value_type: str
+    interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
     site: Site
@@ -259,7 +259,7 @@ class Forecast:
         Indicates if a time labels the beginning or the ending of an interval
         average, or indicates an instantaneous value, e.g. beginning, ending,
         instant.
-    value_type : str
+    interval_value_type : str
         The type of the data in the forecast, e.g. mean, max, 95th percentile.
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
@@ -280,7 +280,7 @@ class Forecast:
     interval_length: pd.Timedelta
     run_length: pd.Timedelta
     interval_label: str
-    value_type: str
+    interval_value_type: str
     variable: str
     site: Site
     extra_parameters: str = ''
@@ -301,13 +301,14 @@ def process_dict_into_datamodel(dict_, model, raise_on_extra=False):
             kwargs[model_field.name] = dict_[model_field.name]
         elif (
                 model_field.default is MISSING and
-                model_field.default_factory is MISSING
+                model_field.default_factory is MISSING and
+                model_field.init
         ):
             errors.append(model_field.name)
     if errors:
         raise KeyError(
             'Missing the following required arguments for the model '
-            f'{str(model)}: {",".join(errors)}')
+            f'{str(model)}: {", ".join(errors)}')
     return model(**kwargs)
 
 
