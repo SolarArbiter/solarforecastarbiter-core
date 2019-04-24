@@ -34,6 +34,8 @@ QCRAD_CONSISTENCY = {
 
 
 def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
+    """ Returns True where lb < (or <=) val < (or <=) ub
+    """
     if lb_ge:
         lb_op = np.greater_equal
     else:
@@ -372,6 +374,30 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
     kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
                         max_clearsky_index=np.Inf)
     flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
+    return flags
+
+
+def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
+    """
+    Flags plane of array irradiance values greater than clearsky values.
+
+    Parameters:
+    -----------
+    poa_global : Series
+        Plane of array irradiance in W/m^2
+    poa_clearsky : Series
+        Plane of array irradiance under clear sky conditions, in W/m^2
+    kt_max : float
+        maximum allowed ratio of poa_global to poa_clearsky
+
+    Returns:
+    --------
+    flags : Series
+        True if poa_global is less than or equal to clear sky value.
+    """
+    kt = clearsky_index(poa_global, poa_clearsky,
+                        max_clearsky_index=np.Inf)
+    flags = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
 
 

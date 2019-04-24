@@ -219,6 +219,19 @@ def test_check_ghi_clearsky(mocker, location, times):
     assert_frame_equal(result, expected)
 
 
+def test_check_poa_clearsky(mocker, location, times):
+    dt = pd.DatetimeIndex(start=datetime(2019, 6, 15, 12, 0, 0),
+                          freq='15T', periods=5)
+    poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
+    poa_clearsky = pd.Series(index=dt, data=1000)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky)
+    expected = pd.Series(index=dt, data=[True, True, False, True, False])
+    assert_series_equal(result, expected)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.2)
+    expected = pd.Series(index=dt, data=[True, True, True, True, False])
+    assert_series_equal(result, expected)
+
+
 def test_check_irradiance_day_night(location):
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
