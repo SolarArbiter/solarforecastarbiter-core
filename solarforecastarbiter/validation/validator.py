@@ -34,6 +34,8 @@ QCRAD_CONSISTENCY = {
 
 
 def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
+    """ Returns True where lb < (or <=) val < (or <=) ub
+    """
     if lb_ge:
         lb_op = np.greater_equal
     else:
@@ -262,6 +264,28 @@ def check_wind_limits(weather, wind_limits=(0., 60.)):
     return flags
 
 
+def check_rh_limits(rh, rh_limits=(0, 100)):
+    """ Checks for extreme relative humidity.
+
+    Parameters:
+    -----------
+    rh : Series
+        Relative humidity in %
+    rh_limits : tuple, default (0, 100)
+        (lower bound, upper bound) for relative humidity
+
+    Returns:
+    --------
+    flags : DataFrame
+        True if rh >= lower bound and rh <= upper bound.
+    """
+
+    flags = pd.Series(index=rh.index, data=None, name='extreme_rh_flag')
+    flags = _check_limits(rh, lb=rh_limits[0], ub=rh_limits[1], lb_ge=True,
+                          ub_le=True)
+    return flags
+
+
 def get_solarposition(location, times, **kwargs):
     """ Calculates solar position.
 
@@ -350,6 +374,30 @@ def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
     kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
                         max_clearsky_index=np.Inf)
     flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
+    return flags
+
+
+def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
+    """
+    Flags plane of array irradiance values greater than clearsky values.
+
+    Parameters:
+    -----------
+    poa_global : Series
+        Plane of array irradiance in W/m^2
+    poa_clearsky : Series
+        Plane of array irradiance under clear sky conditions, in W/m^2
+    kt_max : float
+        maximum allowed ratio of poa_global to poa_clearsky
+
+    Returns:
+    --------
+    flags : Series
+        True if poa_global is less than or equal to clear sky value.
+    """
+    kt = clearsky_index(poa_global, poa_clearsky,
+                        max_clearsky_index=np.Inf)
+    flags = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
 
 
@@ -497,4 +545,82 @@ def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     # reduce window by 1 because we're passing the first difference
     flags = detect_stale_values(x.diff(periods=1), window=window-1, rtol=rtol,
                                 atol=atol)
+    return flags
+
+
+def detect_levels(x, count=3, num_bins=100):
+    """ Detects plateau levels in data.
+
+    Parameters
+    ----------
+    x : Series
+        data to be processed
+    count : int
+        number of plateaus to return
+    num_bins : int
+        number of bins to use in histogram that finds plateau levels
+
+    Returns
+    -------
+    levels : list of tuples
+        (left, right) values of the interval in x with a detected plateau, in
+        decreasing order of count of x values in the interval. List length is
+        given by the kwarg count
+    """
+    hist, bin_edges = np.histogram(x, bins=num_bins, density=True)
+    level_index = np.argsort(hist * -1)  # decreasing order
+    levels = [(bin_edges[i], bin_edges[i + 1]) for i in level_index[:count]]
+    return levels, bin_edges
+
+
+def _label_clipping(x, window, frac):
+    """ Returns Series with True at the end of each window with
+    sum(x(window)) >= window * frac.
+    """
+    tmp = x.rolling(window).sum()
+    y = (tmp >= window * frac) & x.astype(bool)
+    return y
+
+
+def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
+                    levels=2):
+    """ Detects clipping in a series of AC power.
+
+    Possible clipped power levels are found by detect_levels. Within each
+    sliding window, clipping is indicated when at least fraction_in_window
+    of points are close to a clipped power level.
+
+    Parameters
+    ----------
+    ac_power : Series
+        data to be processed
+
+    window : int
+        number of data points defining the length of a rolling window
+
+    fraction_in_window : float
+        fraction of points which indicate clipping if AC power at each point
+        is close to the plateau level
+
+    rtol : float
+        a point is close to a clipped level M if
+        abs(ac_power - M) < rtol * max(ac_power)
+
+    levels : int
+        number of clipped power levels to consider.
+
+    Returns
+    -------
+    flags : Series
+        True when clipping is indicated.
+    """
+    num_bins = np.ceil(1.0 / rtol).astype(int)
+    flags = pd.Series(index=ac_power.index, data=False)
+    power_plateaus, bins = detect_levels(ac_power, count=levels,
+                                         num_bins=num_bins)
+    for lower, upper in power_plateaus:
+        temp = pd.Series(index=ac_power.index, data=0.0)
+        temp.loc[(ac_power >= lower) & (ac_power <= upper)] = 1.0
+        flags = flags | _label_clipping(temp, window=window,
+                                        frac=fraction_in_window)
     return flags

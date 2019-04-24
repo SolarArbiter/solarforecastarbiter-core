@@ -96,11 +96,13 @@ def test_check_irradiance_consistency_QCRad_fail(irradiance_QCRad):
 @pytest.fixture
 def weather():
     output = pd.DataFrame(columns=['temp_air', 'wind_speed',
-                                   'extreme_temp_flag', 'extreme_wind_flag'],
-                          data=np.array([[-20, -5, 0, 0],
-                                         [10, 10, 1, 1],
-                                         [140, 75, 0, 0]]))
-    dtypes = ['float64', 'float64', 'bool', 'bool']
+                                   'relative_humidity',
+                                   'extreme_temp_flag', 'extreme_wind_flag',
+                                   'extreme_rh_flag'],
+                          data=np.array([[-20, -5, -5, 0, 0, 0],
+                                         [10, 10, 50, 1, 1, 1],
+                                         [140, 75, 105, 0, 0, 0]]))
+    dtypes = ['float64', 'float64', 'float64', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
         output[col] = output[col].astype(typ)
     return output
@@ -132,6 +134,15 @@ def test_check_wind_limits_fail(weather):
     expected = weather
     with pytest.raises(KeyError):
         validator.check_wind_limits(expected[['temp_air']])
+
+
+def test_check_rh_limits(weather):
+    expected = weather
+    data = expected['relative_humidity']
+    result_expected = expected['extreme_rh_flag']
+    result = validator.check_rh_limits(data)
+    result.name = 'extreme_rh_flag'
+    assert_series_equal(result, result_expected)
 
 
 def test_check_limits():
@@ -206,6 +217,19 @@ def test_check_ghi_clearsky(mocker, location, times):
         validator.check_ghi_clearsky(irrad)
     result = validator.check_ghi_clearsky(irrad, location=location)
     assert_frame_equal(result, expected)
+
+
+def test_check_poa_clearsky(mocker, location, times):
+    dt = pd.DatetimeIndex(start=datetime(2019, 6, 15, 12, 0, 0),
+                          freq='15T', periods=5)
+    poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
+    poa_clearsky = pd.Series(index=dt, data=1000)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky)
+    expected = pd.Series(index=dt, data=[True, True, False, True, False])
+    assert_series_equal(result, expected)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.2)
+    expected = pd.Series(index=dt, data=[True, True, True, True, False])
+    assert_series_equal(result, expected)
 
 
 def test_check_irradiance_day_night(location):
@@ -316,3 +340,37 @@ def test_detect_interpolation():
                                         True]))
     with pytest.raises(ValueError):
         validator.detect_interpolation(x, window=2)
+
+
+@pytest.fixture
+def ghi_clipped():
+    MST = pytz.timezone('Etc/GMT+7')
+    dt = pd.DatetimeIndex(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
+                          periods=60, freq='15T')
+    loc = pvlib.location.Location(latitude=35, longitude=-110, tz=MST)
+    cs = loc.get_clearsky(dt)
+    ghi = cs['ghi']
+    ghi_clipped = ghi.copy()
+    ghi_clipped = np.minimum(ghi, 800)
+    ghi_clipped.iloc[12:17] = np.minimum(ghi, 300)
+    ghi_clipped.iloc[18:20] = np.minimum(ghi, 300)
+    ghi_clipped.iloc[26:28] *= 0.5
+    ghi_clipped.iloc[36:] = np.minimum(ghi, 400)
+    return ghi_clipped
+
+
+def test_detect_clipping(ghi_clipped):
+    placeholder = pd.Series(index=ghi_clipped.index, data=False)
+    expected = placeholder.copy()
+    # for window=4 and fraction_in_window=0.75
+    expected.iloc[3:6] = True
+    expected.iloc[14:17] = True
+    expected.iloc[18:20] = True
+    expected.iloc[25] = True
+    expected.iloc[30:36] = True
+    expected.iloc[38:46] = True
+    expected.iloc[56:60] = True
+    flags = validator.detect_clipping(ghi_clipped, window=4,
+                                      fraction_in_window=0.75, rtol=5e-3,
+                                      levels=4)
+    assert_series_equal(flags, expected)
