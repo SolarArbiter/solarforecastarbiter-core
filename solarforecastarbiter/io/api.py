@@ -26,7 +26,7 @@ class APISession(requests.Session):
         else:
             url = f'{self.base_url}/{url}'
         # handle basic errors
-        super().request(method, url, *args, **kwargs)
+        return super().request(method, url, *args, **kwargs)
 
     def get_site(self, site_id):
         req = self.get(f'/sites/{site_id}')
@@ -37,27 +37,39 @@ class APISession(requests.Session):
         return [datamodel.process_site_dict(site_dict)
                 for site_dict in req.json()]
 
+    def _process_observation_dict(self, observation_dict):
+        obs_dict = observation_dict.copy()
+        site_id = obs_dict['site_id']
+        site = self.get_site(site_id)
+        obs_dict['site'] = site
+        return datamodel.process_dict_into_datamodel(
+            obs_dict, datamodel.Observation)
+
     def get_observation(self, observation_id):
         req = self.get(f'/observations/{observation_id}')
-        return datamodel.process_dict_into_datamodel(
-            req.json(), datamodel.Observation)
+        return self._process_observation_dict(req.json())
 
     def list_observations(self):
         req = self.get('/observations/')
-        return [datamodel.process_dict_into_datamodel(
-            obs_dict, datamodel.Observation) for obs_dict in
-                req.json()]
+        return [self._process_observation_dict(obs_dict)
+                for obs_dict in req.json()]
+
+    def _process_forecast_dict(self, forecast_dict):
+        fx_dict = forecast_dict.copy()
+        site_id = forecast_dict['site_id']
+        site = self.get_site(site_id)
+        fx_dict['site'] = site
+        return datamodel.process_dict_into_datamodel(
+            fx_dict, datamodel.Forecast)
 
     def get_forecast(self, forecast_id):
         req = self.get(f'/forecasts/single/{forecast_id}')
-        return datamodel.process_dict_into_datamodel(
-            req.json(), datamodel.Forecast)
+        return self._process_forecast_dict(req.json())
 
     def list_forecasts(self):
         req = self.get('/forecasts/single/')
-        return [datamodel.process_dict_into_datamodel(
-            fx_dict, datamodel.Forecast) for fx_dict in
-                req.json()]
+        return [self._process_forecast_dict(fx_dict)
+                for fx_dict in req.json()]
 
     def get_observation_values(self, observation_id, start, end):
         # make sure response id and requested id match
