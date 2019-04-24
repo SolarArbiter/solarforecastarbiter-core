@@ -316,3 +316,37 @@ def test_detect_interpolation():
                                         True]))
     with pytest.raises(ValueError):
         validator.detect_interpolation(x, window=2)
+
+
+@pytest.fixture
+def ghi_clipped():
+    MST = pytz.timezone('Etc/GMT+7')
+    dt = pd.DatetimeIndex(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
+                          periods=60, freq='15T')
+    loc = pvlib.location.Location(latitude=35, longitude=-110, tz=MST)
+    cs = loc.get_clearsky(dt)
+    ghi = cs['ghi']
+    ghi_clipped = ghi.copy()
+    ghi_clipped = np.minimum(ghi, 800)
+    ghi_clipped.iloc[12:17] = np.minimum(ghi, 300)
+    ghi_clipped.iloc[18:20] = np.minimum(ghi, 300)
+    ghi_clipped.iloc[26:28] *= 0.5
+    ghi_clipped.iloc[36:] = np.minimum(ghi, 400)
+    return ghi_clipped
+
+
+def test_detect_clipping(ghi_clipped):
+    placeholder = pd.Series(index=ghi_clipped.index, data=False)
+    expected = placeholder.copy()
+    # for window=4 and fraction_in_window=0.75
+    expected.iloc[3:6] = True
+    expected.iloc[14:17] = True
+    expected.iloc[18:20] = True
+    expected.iloc[25] = True
+    expected.iloc[30:36] = True
+    expected.iloc[38:46] = True
+    expected.iloc[56:60] = True
+    flags = validator.detect_clipping(ghi_clipped, window=4,
+                                      fraction_in_window=0.75, rtol=5e-3,
+                                      levels=4)
+    assert_series_equal(flags, expected)
