@@ -58,3 +58,30 @@ def test_apisession_get_observation(requests_mock, single_observation,
     requests_mock.register_uri('GET', matcher, content=single_observation_text)
     obs = session.get_observation('')
     assert obs == single_observation
+
+
+def test_apisession_list_observations(requests_mock, many_observations,
+                                      many_observations_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*')
+    requests_mock.register_uri('GET', matcher, content=many_observations_text)
+    obs_list = session.list_observations()
+    assert obs_list == many_observations
+
+
+def test_apisession_get_forecast(requests_mock, single_forecast,
+                                 single_forecast_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/.*')
+    requests_mock.register_uri('GET', matcher, content=single_forecast_text)
+    fx = session.get_forecast('')
+    assert fx == single_forecast
+
+
+def test_apisession_list_forecasts(requests_mock, many_forecasts,
+                                      many_forecasts_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/.*')
+    requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
+    fx_list = session.list_forecasts()
+    assert fx_list == many_forecasts
