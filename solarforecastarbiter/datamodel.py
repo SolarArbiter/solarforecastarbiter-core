@@ -298,7 +298,14 @@ def process_dict_into_datamodel(dict_, model, raise_on_extra=False):
     errors = []
     for model_field in model_fields:
         if model_field.name in dict_:
-            kwargs[model_field.name] = dict_[model_field.name]
+            if model_field.type == pd.Timedelta:
+                kwargs[model_field.name] = pd.Timedelta(
+                    f'{dict_[model_field.name]}min')
+            elif model_field.type == datetime.time:
+                kwargs[model_field.name] = datetime.datetime.strptime(
+                    dict_[model_field.name], '%H:%M').time()
+            else:
+                kwargs[model_field.name] = dict_[model_field.name]
         elif (
                 model_field.default is MISSING and
                 model_field.default_factory is MISSING and

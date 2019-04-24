@@ -1,133 +1,92 @@
-from dataclasses import asdict
-import datetime as dt
+from dataclasses import fields, MISSING
+import json
 
 
+import pandas as pd
 import pytest
 
 
 from solarforecastarbiter import datamodel
 
 
+@pytest.fixture(params=['site', 'fixed', 'single', 'observation',
+                        'forecast'])
+def pdid_params(request, many_sites, many_sites_text, single_observation,
+                single_observation_text, single_site,
+                single_forecast_text, single_forecast):
+    if request.param == 'site':
+        return (many_sites[0], json.loads(many_sites_text)[0],
+                datamodel.Site)
+    elif request.param == 'fixed':
+        return (many_sites[1].modeling_parameters,
+                json.loads(many_sites_text)[1]['modeling_parameters'],
+                datamodel.FixedTiltModelingParameters)
+    elif request.param == 'single':
+        return (many_sites[2].modeling_parameters,
+                json.loads(many_sites_text)[2]['modeling_parameters'],
+                datamodel.SingleAxisModelingParameters)
+    elif request.param == 'observation':
+        obs_dict = json.loads(single_observation_text)
+        obs_dict['site'] = single_site
+        return (single_observation, obs_dict,
+                datamodel.Observation)
+    elif request.param == 'forecast':
+        fx_dict = json.loads(single_forecast_text)
+        fx_dict['site'] = single_site
+        return (single_forecast, fx_dict, datamodel.Forecast)
+
+
 @pytest.mark.parametrize('extra', [
     {},
     {'extra': 'thing'},
 ])
-@pytest.mark.parametrize('model', [
-    datamodel.Site, datamodel.Observation, datamodel.Forecast
-])
-def test_process_dict_into_datamodel_site(extra, model, site_metadata):
-    dict_ = asdict(site_metadata)
-    dict_.update(extra)
-    out = datamodel.process_dict_into_datamodel(dict_, datamodel.Site)
-    assert out == site_metadata
-
-# and modeling params, and obs, and forecasts, and pp
+def test_process_dict_into_datamodel(extra, pdid_params):
+    expected, obj_dict, model = pdid_params
+    obj_dict.update(extra)
+    out = datamodel.process_dict_into_datamodel(obj_dict, model)
+    assert out == expected
 
 
-@pytest.mark.parametrize('site_dict', [
-    {
-        "elevation": 786.0,
-        "extra_parameters": '{"network": "NREL MIDC"}',
-        "latitude": 32.22969,
-        "longitude": -110.95534,
-        "modeling_parameters": {
-            "ac_capacity": None,
-            "ac_loss_factor": None,
-            "axis_azimuth": None,
-            "axis_tilt": None,
-            "backtrack": None,
-            "dc_capacity": None,
-            "dc_loss_factor": None,
-            "ground_coverage_ratio": None,
-            "max_rotation_angle": None,
-            "surface_azimuth": None,
-            "surface_tilt": None,
-            "temperature_coefficient": None,
-            "tracking_type": None
-        },
-        "name": "Weather Station 1",
-        "provider": "Organization 1",
-        "timezone": "America/Phoenix",
-        "site_id": 'd2018f1d-82b1-422a-8ec4-4e8b3fe92a4a',
-        "created_at": dt.datetime(2019, 3, 1, 11, 44, 44),
-        "modified_at": dt.datetime(2019, 3, 1, 11, 44, 44)
-    },
-    {
-        "elevation": 786.0,
-        "extra_parameters": '{"network": "NREL MIDC"}',
-        "latitude": 32.22969,
-        "longitude": -110.95534,
-        "modeling_parameters": {},
-        "name": "no modeling params",
-        "provider": "Organization 1",
-        "timezone": "America/Phoenix",
-        "site_id": 'd2018f1d-82b1-422a-8ec4-4e8b3fe92a4a',
-        "created_at": dt.datetime(2019, 3, 1, 11, 44, 44),
-        "modified_at": dt.datetime(2019, 3, 1, 11, 44, 44)
-    },
-    {
-        "elevation": 786.0,
-        "extra_parameters": "",
-        "latitude": 43.73403,
-        "longitude": -96.62328,
-        "modeling_parameters": {
-            "ac_capacity": 0.015,
-            "ac_loss_factor": 0.0,
-            "axis_azimuth": None,
-            "axis_tilt": None,
-            "backtrack": None,
-            "dc_capacity": 0.015,
-            "dc_loss_factor": 0.0,
-            "ground_coverage_ratio": None,
-            "max_rotation_angle": None,
-            "surface_azimuth": 180.0,
-            "surface_tilt": 45.0,
-            "temperature_coefficient": -.002,
-            "tracking_type": "fixed"
-        },
-        "name": "Fixed plant",
-        "provider": "Organization 1",
-        "timezone": "Etc/GMT+6",
-        "site_id": '123e4567-e89b-12d3-a456-426655440002',
-        "created_at": dt.datetime(2019, 3, 1, 11, 44, 46),
-        "modified_at": dt.datetime(2019, 3, 1, 11, 44, 46)
-    },
-    {
-        "elevation": 786.0,
-        "extra_parameters": "",
-        "latitude": 43.73403,
-        "longitude": -96.62328,
-        "modeling_parameters": {
-            "ac_capacity": 0.015,
-            "ac_loss_factor": 0.0,
-            "axis_azimuth": 180,
-            "axis_tilt": 0,
-            "backtrack": True,
-            "dc_capacity": 0.015,
-            "dc_loss_factor": 0.0,
-            "ground_coverage_ratio": .233,
-            "max_rotation_angle": 90.0,
-            "surface_azimuth": None,
-            "surface_tilt": None,
-            "temperature_coefficient": -.002,
-            "tracking_type": "single_axis"
-        },
-        "name": "Tracking plant",
-        "provider": "Organization 1",
-        "timezone": "Etc/GMT+6",
-        "site_id": '123e4567-e89b-12d3-a456-426655440002',
-        "created_at": dt.datetime(2019, 3, 1, 11, 44, 46),
-        "modified_at": dt.datetime(2019, 3, 1, 11, 44, 46)
-    }
-])
-def test_process_site_json(site_dict):
-    out = datamodel.process_site_json(site_dict)
-    assert isinstance(out, datamodel.Site)
-    for param, val in site_dict.items():
-        if param in ['modeling_parameters', 'provider', 'created_at',
-                     'modified_at', 'site_id']:
+def test_process_dict_into_datamodel_missing_field(pdid_params):
+    _, obj_dict, model = pdid_params
+    for field in fields(model):
+        if field.default is MISSING and field.default_factory is MISSING:
+            break
+    del obj_dict[field.name]
+    with pytest.raises(KeyError):
+        datamodel.process_dict_into_datamodel(obj_dict, model)
+
+
+def test_process_dict_into_datamodel_no_extra(pdid_params):
+    expected, obj_dict, model = pdid_params
+    obj_dict.pop('extra_parameters', '')
+    out = datamodel.process_dict_into_datamodel(obj_dict, model)
+    for field in fields(model):
+        if field.name == 'extra_parameters':
             continue
-        assert getattr(out, param) == val
-    for param, val in site_dict['modeling_parameters'].items():
-        if hasattr(out, 'modeling_parameters') and val is not None:
-            assert getattr(out.modeling_parameters, param) == val
+        assert getattr(out, field.name) == getattr(expected, field.name)
+
+
+def test_invalid_variable(single_site):
+    with pytest.raises(ValueError):
+        datamodel.Observation(
+            name='test', variable='noway',
+            interval_value_type='mean',
+            interval_length=pd.Timedelta('1min'),
+            interval_label='beginning',
+            site=single_site,
+            uncertainty=0.1,
+        )
+
+
+@pytest.fixture(params=[0, 1, 2])
+def _sites(many_sites_text, many_sites, request):
+    param = request.param
+    site_dict_list = json.loads(many_sites_text)
+    return site_dict_list[param], many_sites[param]
+
+
+def test_process_site_dict(_sites):
+    site_dict, expected = _sites
+    out = datamodel.process_site_dict(site_dict)
+    assert out == expected
