@@ -1,5 +1,4 @@
 import datetime as dt
-from functools import partial
 
 import pandas as pd
 # from pandas.util.testing import assert_series_equal
@@ -74,29 +73,48 @@ def test_run(model, load_forecast_return_value, site_powerplant_site_type,
     check_out(out, out_forecast_exp, site_type)
 
 
-def test_get_data_start_end_labels(site_metadata):
-    # common variables
-    name = 'Albuquerque Baseline AC Power'
-    variable = 'ac_power'
-    value_type = 'mean'
-    uncertainty = 1
+def default_observation(
+        site_metadata,
+        name='Albuquerque Baseline AC Power', variable='ac_power',
+        value_type='mean', uncertainty=1, interval_length='1h',
+        interval_label='beginning'):
+    obs = datamodel.Observation(
+        name=name, variable=variable,
+        value_type=value_type, site=site_metadata, uncertainty=uncertainty,
+        interval_length=pd.Timedelta(interval_length),
+        interval_label=interval_label
+    )
+    return obs
 
-    _observation = partial(
-        datamodel.Observation, name=name, variable=variable,
-        value_type=value_type, site=site_metadata, uncertainty=uncertainty)
 
-    _forecast = partial(datamodel.Forecast, name=name, value_type=value_type,
-                        variable=variable, site=site_metadata)
+def default_forecast(
+        site_metadata,
+        name='Albuquerque Baseline AC Power', variable='ac_power',
+        value_type='mean', issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start='1h', interval_length='1h', run_length='12h',
+        interval_label='beginning'):
+    fx = datamodel.Forecast(
+        site=site_metadata,
+        name=name,
+        value_type=value_type,
+        variable=variable,
+        issue_time_of_day=issue_time_of_day,
+        lead_time_to_start=pd.Timedelta(lead_time_to_start),
+        interval_length=pd.Timedelta(interval_length),
+        run_length=pd.Timedelta(run_length),
+        interval_label=interval_label
+    )
+    return fx
 
-    observation = _observation(
+
+def test_get_data_start_end_labels_1h_window_limit(site_metadata):
+    observation = default_observation(
+        site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='beginning')
-    forecast = _forecast(
-        issue_time_of_day=dt.time(hour=5),
-        lead_time_to_start=pd.Timedelta('1h'),
-        interval_length=pd.Timedelta('1h'),
+    forecast = default_forecast(
+        site_metadata,
         run_length=pd.Timedelta('12h'),  # test 1 hr limit on window
         interval_label='beginning')
-
     # ensure data no later than run time
     run_time = pd.Timestamp('20190422T1945Z')
     data_start, data_end = main.get_data_start_end(observation, forecast,
@@ -104,94 +122,148 @@ def test_get_data_start_end_labels(site_metadata):
     assert data_start == pd.Timestamp('20190422T1845Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
-    forecast = _forecast(
-        issue_time_of_day=dt.time(hour=5),
-        lead_time_to_start=pd.Timedelta('1h'),
-        interval_length=pd.Timedelta('1h'),
+
+def test_get_data_start_end_labels_subhourly_window_limit(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning')
+    forecast = default_forecast(
+        site_metadata,
         run_length=pd.Timedelta('5min'),  # test subhourly limit on window
         interval_label='beginning')
+    run_time = pd.Timestamp('20190422T1945Z')
     data_start, data_end = main.get_data_start_end(observation, forecast,
                                                    run_time)
     assert data_start == pd.Timestamp('20190422T1940Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
+
+def test_get_data_start_end_labels_obs_longer_than_fx_run(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('15min'))
+    forecast = default_forecast(
+        site_metadata,
+        run_length=pd.Timedelta('5min'))
+    run_time = pd.Timestamp('20190422T1945Z')
     # obs interval cannot be longer than forecast interval
-    observation = _observation(
-        interval_length=pd.Timedelta('15min'), interval_label='beginning')
     with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
     assert ("observation.interval_length <= forecast.run_length" in
             str(excinfo.value))
 
+
+def test_get_data_start_end_labels_obs_longer_than_1h(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('2h'))
+    forecast = default_forecast(
+        site_metadata,
+        run_length=pd.Timedelta('5min'))
+    run_time = pd.Timestamp('20190422T1945Z')
     # obs interval cannot be longer than 1 hr
-    observation = _observation(
-        interval_length=pd.Timedelta('2h'), interval_label='beginning')
     with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
     assert 'observation.interval_length <= 1h' in str(excinfo.value)
 
-    # day ahead doesn't care about obs interval length
-    forecast = _forecast(
+
+def test_get_data_start_end_labels_obs_longer_than_1h_day_ahead(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('2h'), interval_label='beginning')
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1d'),  # day ahead
         interval_label='beginning')
+    run_time = pd.Timestamp('20190422T1945Z')
+    # day ahead doesn't care about obs interval length
     data_start, data_end = main.get_data_start_end(observation, forecast,
                                                    run_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
     assert data_end == pd.Timestamp('20190422T0000Z')
 
-    # instant obs
-    observation = _observation(
+
+def test_get_data_start_end_labels_obs_fx_instant_mismatch(site_metadata):
+    observation = default_observation(
+        site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='instant')
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),  # interval_length must be equal
         run_length=pd.Timedelta('1d'),
         interval_label='instant')            # if interval_label also instant
+    run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
         main.get_data_start_end(observation, forecast, run_time)
     assert 'with identical interval length' in str(excinfo.value)
 
-    forecast = _forecast(
+
+def test_get_data_start_end_labels_obs_fx_instant(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='instant')
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),  # interval_length must be equal
         run_length=pd.Timedelta('1d'),
         interval_label='instant')              # if interval_label also instant
+    run_time = pd.Timestamp('20190422T1945Z')
     data_start, data_end = main.get_data_start_end(observation, forecast,
                                                    run_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
     assert data_end == pd.Timestamp('20190421T235959Z')
 
-    # instant obs, but interval fx
-    forecast = _forecast(
+
+def test_get_data_start_end_labels_obs_instant_fx_avg(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='instant')
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
         interval_label='beginning')
+    run_time = pd.Timestamp('20190422T1945Z')
     data_start, data_end = main.get_data_start_end(observation, forecast,
                                                    run_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
     assert data_end == pd.Timestamp('20190421T235959Z')
 
-    # instant obs, but interval fx
-    forecast = _forecast(
+
+def test_get_data_start_end_labels_obs_instant_fx_avg_ending(site_metadata):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='instant')
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
         interval_label='ending')
+    run_time = pd.Timestamp('20190422T1945Z')
     data_start, data_end = main.get_data_start_end(observation, forecast,
                                                    run_time)
     assert data_start == pd.Timestamp('20190421T000001Z')
     assert data_end == pd.Timestamp('20190422T0000Z')
 
-    # instant obs, but interval fx, intraday
-    forecast = _forecast(
+
+def test_get_data_start_end_labels_obs_instant_fx_avg_intraday(site_metadata):
+    run_time = pd.Timestamp('20190422T1945Z')
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='instant')
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
@@ -202,10 +274,14 @@ def test_get_data_start_end_labels(site_metadata):
     assert data_start == pd.Timestamp('20190422T193001Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
-    # instant fx can't be made from interval avg obs
-    observation = _observation(
+
+def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
+    run_time = pd.Timestamp('20190422T1945Z')
+    observation = default_observation(
+        site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='ending')
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
@@ -216,46 +292,56 @@ def test_get_data_start_end_labels(site_metadata):
     assert 'made from interval average obs' in str(excinfo.value)
 
 
-def test_get_forecast_start_end(site_metadata):
-    # common variables
-    name = 'Albuquerque Baseline AC Power'
-    variable = 'ac_power'
-    value_type = 'mean'
-
-    _forecast = partial(datamodel.Forecast, name=name, value_type=value_type,
-                        variable=variable, site=site_metadata)
-
-    forecast = _forecast(
+@pytest.fixture
+def forecast_hr_begin(site_metadata):
+    return default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label='beginning')
 
+
+def test_get_forecast_start_end_time_same_as_issue_time(forecast_hr_begin):
     # time is same as issue time of day
     issue_time = pd.Timestamp('20190422T0500')
-    fx_start, fx_end = main.get_forecast_start_end(forecast, issue_time)
+    fx_start, fx_end = main.get_forecast_start_end(
+        forecast_hr_begin, issue_time)
     assert fx_start == pd.Timestamp('20190422T0600')
     assert fx_end == pd.Timestamp('20190422T0700')
 
+
+def test_get_forecast_start_end_time_same_as_issue_time_n_x_run(
+        forecast_hr_begin):
     # time is same as issue time of day + n * run_length
     issue_time = pd.Timestamp('20190422T1200')
-    fx_start, fx_end = main.get_forecast_start_end(forecast, issue_time)
+    fx_start, fx_end = main.get_forecast_start_end(
+        forecast_hr_begin, issue_time)
     assert fx_start == pd.Timestamp('20190422T1300')
     assert fx_end == pd.Timestamp('20190422T1400')
 
+
+def test_get_forecast_start_end_time_before_issue_time(forecast_hr_begin):
     # time is before issue time of day but otherwise valid
     issue_time = pd.Timestamp('20190422T0400')
     with pytest.raises(ValueError):
-        fx_start, fx_end = main.get_forecast_start_end(forecast, issue_time)
+        fx_start, fx_end = main.get_forecast_start_end(
+            forecast_hr_begin, issue_time)
 
+
+def test_get_forecast_start_end_time_invalid(forecast_hr_begin):
     # time is invalid
     issue_time = pd.Timestamp('20190423T0505')
     with pytest.raises(ValueError):
-        fx_start, fx_end = main.get_forecast_start_end(forecast, issue_time)
+        fx_start, fx_end = main.get_forecast_start_end(
+            forecast_hr_begin, issue_time)
 
+
+def test_get_forecast_start_end_time_instant(site_metadata):
     # instant
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
@@ -267,27 +353,19 @@ def test_get_forecast_start_end(site_metadata):
     assert fx_end == pd.Timestamp('20190422T065959')
 
 
-def test_run_persistence_fails(site_metadata, mocker):
-    # common variables
-    name = 'Albuquerque Baseline AC Power'
-    variable = 'ac_power'
-    value_type = 'mean'
-    uncertainty = 1
-
-    _observation = partial(
-        datamodel.Observation, name=name, variable=variable,
-        value_type=value_type, site=site_metadata, uncertainty=uncertainty)
-
-    _forecast = partial(datamodel.Forecast, name=name, value_type=value_type,
-                        variable=variable, site=site_metadata)
-
-    observation = _observation(
+@pytest.fixture
+def obs_5min_begin(site_metadata):
+    observation = default_observation(
+        site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='beginning')
+    return observation
 
+
+def test_run_persistence_scalar(site_metadata, obs_5min_begin, mocker):
     run_time = pd.Timestamp('20190422T1945Z')
-
     # intraday, index=False
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
@@ -296,18 +374,33 @@ def test_run_persistence_fails(site_metadata, mocker):
     issue_time = pd.Timestamp('20190423T2300Z')
     mocker.patch.object(main.persistence, 'persistence_scalar',
                         autospec=True)
-    main.run_persistence(observation, forecast, run_time, issue_time)
+    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
     assert main.persistence.persistence_scalar.call_count == 1
 
+
+def test_run_persistence_scalar_index(site_metadata, obs_5min_begin, mocker):
+    run_time = pd.Timestamp('20190422T1945Z')
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190423T2300Z')
     # intraday, index=True
     mocker.patch.object(main.persistence, 'persistence_scalar_index',
                         autospec=True)
-    main.run_persistence(observation, forecast, run_time, issue_time,
+    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time,
                          index=True)
     assert main.persistence.persistence_scalar_index.call_count == 1
 
+
+def test_run_persistence_interval(site_metadata, obs_5min_begin, mocker):
+    run_time = pd.Timestamp('20190422T1945Z')
     # day ahead, index = False
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
@@ -316,42 +409,54 @@ def test_run_persistence_fails(site_metadata, mocker):
     issue_time = pd.Timestamp('20190423T2300Z')
     mocker.patch.object(main.persistence, 'persistence_interval',
                         autospec=True)
-    main.run_persistence(observation, forecast, run_time, issue_time)
+    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
     assert main.persistence.persistence_interval.call_count == 1
 
+
+def test_run_persistence_interval_index(site_metadata, obs_5min_begin):
     # index=True not supported for day ahead
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
     issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(observation, forecast, run_time, issue_time,
+        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time,
                              index=True)
     assert 'index=True not supported' in str(excinfo.value)
 
-    forecast = _forecast(
+
+def test_run_persistence_interval_too_long(site_metadata, obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('48h'),  # too long
         interval_label='beginning')
-
     issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(observation, forecast, run_time, issue_time)
+        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
     assert 'midnight to midnight' in str(excinfo.value)
 
+
+def test_run_persistence_interval_not_midnight_to_midnight(site_metadata,
+                                                           obs_5min_begin):
     # not midnight to midnight
-    forecast = _forecast(
+    forecast = default_forecast(
+        site_metadata,
         issue_time_of_day=dt.time(hour=22),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
     issue_time = pd.Timestamp('20190423T2200Z')
+    run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(observation, forecast, run_time, issue_time)
+        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
     assert 'midnight to midnight' in str(excinfo.value)
