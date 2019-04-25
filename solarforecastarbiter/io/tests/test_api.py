@@ -1,10 +1,11 @@
 import re
 
 
+import pandas as pd
+import pandas.testing as pdt
 import pytest
 
 
-from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 
 
@@ -85,3 +86,14 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
     fx_list = session.list_forecasts()
     assert fx_list == many_forecasts
+
+
+def test_apisession_get_observation_values(requests_mock, observation_values,
+                                           observation_values_text):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    requests_mock.register_uri('GET', matcher, content=observation_values_text)
+    out = session.get_observation_values(
+        '', pd.Timestamp('2019-01-01T06:00:00-0600'),
+        pd.Timestamp('2019-01-01T11:00:00-0600'))
+    pdt.assert_frame_equal(out, observation_values.tz_convert('UTC'))

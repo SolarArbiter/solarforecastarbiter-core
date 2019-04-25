@@ -75,7 +75,8 @@ class APISession(requests.Session):
         # make sure response id and requested id match
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start_time': start, 'end_time': end})
-        return json_payload_to_observation_df(req.json())
+        resp = json_payload_to_observation_df(req.json())
+        return resp
 
     def write_values(self, object_id, values):
         pass

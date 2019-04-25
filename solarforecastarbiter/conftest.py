@@ -14,8 +14,53 @@ import pytest
 from solarforecastarbiter import datamodel
 
 
-@pytest.fixture(scope='module', params=[
-    pd.DataFrame.from_records(
+@pytest.fixture()
+def observation_values_text():
+    return b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "observation_id": "OBSID",
+  "values": [
+    {
+      "quality_flag": 0,
+      "timestamp": "2019-01-01T12:00:00-0700",
+      "value": 0
+    },
+    {
+      "quality_flag": 0,
+      "timestamp": "2019-01-01T12:05:00-0700",
+      "value": 1.0
+    },
+    {
+      "quality_flag": 0,
+      "timestamp": "2019-01-01T12:10:00-0700",
+      "value": 1.5
+    },
+    {
+      "quality_flag": 1,
+      "timestamp": "2019-01-01T12:15:00-0700",
+      "value": 9.9
+    },
+    {
+      "quality_flag": 0,
+      "timestamp": "2019-01-01T12:20:00-0700",
+      "value": 2.0
+    },
+    {
+      "quality_flag": 3,
+      "timestamp": "2019-01-01T12:25:00-0700",
+      "value": -999
+    }
+  ]
+}
+"""
+
+
+@pytest.fixture()
+def observation_values():
+    return pd.DataFrame.from_records(
         [(0, 0),
          (1.0, 0),
          (1.5, 0),
@@ -25,22 +70,54 @@ from solarforecastarbiter import datamodel
         index=pd.date_range(start='20190101T1200',
                             end='20190101T1225',
                             freq='5min',
-                            tz='America/Denver'),
-        columns=['value', 'quality'])
-])
-def short_test_observations(request):
-    """
-    Just a simple example of a DataFrame of observations.
-    Also an example of parametrizing fixtures
-    """
-    return request.param
+                            tz='America/Denver',
+                            name='timestamp'),
+        columns=['value', 'quality_flag'])
 
 
-@pytest.fixture(scope='module')
-def short_test_forecast():
-    return pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+@pytest.fixture()
+def forecast_values_text():
+    return b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "forecast_id": "OBSID",
+  "values": [
+    {
+      "timestamp": "2019-01-01T06:00:00-0600",
+      "value": 0.0
+    },
+    {
+      "timestamp": "2019-01-01T07:00:00-0600",
+      "value": 1.0
+    },
+    {
+      "timestamp": "2019-01-01T08:00:00-0600",
+      "value": 2.0
+    },
+    {
+      "timestamp": "2019-01-01T09:00:00-0600",
+      "value": 3.0
+    },
+    {
+      "timestamp": "2019-01-01T10:00:00-0600",
+      "value": 4.0
+    },
+    {
+      "timestamp": "2019-01-01T11:00:00-0600",
+      "value": 5.0
+    }
+  ]
+}
+"""
+
+
+@pytest.fixture()
+def forecast_values():
+    return pd.Series([0.0, 1, 2, 3, 4, 5],
                      index=pd.date_range(start='20190101T0600',
-                                         end='20190101T1700',
+                                         end='20190101T1100',
                                          freq='1h',
                                          tz='America/Denver'))
 
