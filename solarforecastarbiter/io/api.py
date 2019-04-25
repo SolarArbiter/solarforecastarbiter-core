@@ -5,9 +5,10 @@ import requests
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.io.utils import (observation_df_to_json_payload,
-                                           json_payload_to_observation_df,
-                                           json_payload_to_forecast_series)
+from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
+                                           json_payload_to_forecast_series,
+                                           observation_df_to_json_payload,
+                                           forecast_object_to_json)
 
 
 class APISession(requests.Session):
@@ -84,6 +85,16 @@ class APISession(requests.Session):
                        params={'start_time': start, 'end_time': end})
         return json_payload_to_forecast_series(req.json())
 
+    def post_observation_values(self, observation_id, observation_df,
+                                value_column='value',
+                                quality_flag_column='quality_flag'):
+        json_vals = observation_df_to_json_payload(
+            observation_df, value_column, quality_flag_column)
+        self.post(f'/observations/{observation_id}/values',
+                  data=json_vals)
 
-    def write_values(self, object_id, values):
-        pass
+    def post_forecast_values(self, forecast_id, forecast_obj,
+                             value_column=None):
+        json_vals = forecast_object_to_json(forecast_obj, value_column)
+        self.post(f'/forecasts/single/{forecast_id}/values',
+                  data=json_vals)

@@ -9,7 +9,7 @@ import pandas as pd
 def _dataframe_to_json(payload_df):
     payload_df.index.name = 'timestamp'
     return (
-        '{"values": ' +
+        '{"values":' +
         payload_df.tz_convert("UTC").reset_index().to_json(
             orient="records", date_format='iso', date_unit='s')
         + '}')

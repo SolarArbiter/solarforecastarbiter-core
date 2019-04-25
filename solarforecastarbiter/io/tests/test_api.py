@@ -1,3 +1,4 @@
+import json
 import re
 
 
@@ -108,3 +109,20 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
         'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
         pd.Timestamp('2019-01-01T11:00:00-0600'))
     pdt.assert_series_equal(out, forecast_values)
+
+
+def test_apisession_post_observation_values(requests_mock, observation_values):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    mocked = requests_mock.register_uri('POST', matcher)
+    session.post_observation_values('obsid', observation_values)
+    # observation_values_text has a different timestamp format
+    assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T19:00:00Z","value":0.0,"quality_flag":0},{"timestamp":"2019-01-01T19:05:00Z","value":1.0,"quality_flag":0},{"timestamp":"2019-01-01T19:10:00Z","value":1.5,"quality_flag":0},{"timestamp":"2019-01-01T19:15:00Z","value":9.9,"quality_flag":1},{"timestamp":"2019-01-01T19:20:00Z","value":2.0,"quality_flag":0},{"timestamp":"2019-01-01T19:25:00Z","value":-999.0,"quality_flag":3}]}'  # NOQA
+
+
+def test_apisession_post_forecast_values(requests_mock, forecast_values):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
+    mocked = requests_mock.register_uri('POST', matcher)
+    session.post_forecast_values('fxid', forecast_values)
+    assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
