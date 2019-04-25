@@ -82,30 +82,30 @@ def forecast_values_text():
   "_links": {
     "metadata": ""
   },
-  "forecast_id": "OBSID",
+  "forecast_id": "FXID",
   "values": [
     {
-      "timestamp": "2019-01-01T06:00:00-0600",
+      "timestamp": "2019-01-01T06:00:00-0700",
       "value": 0.0
     },
     {
-      "timestamp": "2019-01-01T07:00:00-0600",
+      "timestamp": "2019-01-01T07:00:00-0700",
       "value": 1.0
     },
     {
-      "timestamp": "2019-01-01T08:00:00-0600",
+      "timestamp": "2019-01-01T08:00:00-0700",
       "value": 2.0
     },
     {
-      "timestamp": "2019-01-01T09:00:00-0600",
+      "timestamp": "2019-01-01T09:00:00-0700",
       "value": 3.0
     },
     {
-      "timestamp": "2019-01-01T10:00:00-0600",
+      "timestamp": "2019-01-01T10:00:00-0700",
       "value": 4.0
     },
     {
-      "timestamp": "2019-01-01T11:00:00-0600",
+      "timestamp": "2019-01-01T11:00:00-0700",
       "value": 5.0
     }
   ]
@@ -116,10 +116,12 @@ def forecast_values_text():
 @pytest.fixture()
 def forecast_values():
     return pd.Series([0.0, 1, 2, 3, 4, 5],
+                     name='value',
                      index=pd.date_range(start='20190101T0600',
                                          end='20190101T1100',
                                          freq='1h',
-                                         tz='America/Denver'))
+                                         tz='America/Denver',
+                                         name='timestamp'))
 
 
 @pytest.fixture(scope='module')

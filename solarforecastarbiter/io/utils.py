@@ -56,7 +56,7 @@ def observation_df_to_json_payload(
     return json.dumps({'values': payload_df.to_dict(orient='records')})
 
 
-def json_payload_to_observation_df(json_payload):
+def _json_to_dataframe(json_payload):
     # in the future, might worry about reading the response in chunks
     # to stream the data and avoid having it all in memory at once,
     # but 30 days of 1 minute data is probably ~4 MB of text. A better
@@ -64,4 +64,14 @@ def json_payload_to_observation_df(json_payload):
     df = pd.DataFrame.from_dict(json_payload['values'])
     df.index = pd.to_datetime(df['timestamp'], utc=True,
                               infer_datetime_format=True)
+    return df
+
+
+def json_payload_to_observation_df(json_payload):
+    df = _json_to_dataframe(json_payload)
     return df[['value', 'quality_flag']]
+
+
+def json_payload_to_forecast_series(json_payload):
+    df = _json_to_dataframe(json_payload)
+    return df['value']
