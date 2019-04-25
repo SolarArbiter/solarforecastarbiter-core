@@ -68,10 +68,42 @@ def _json_to_dataframe(json_payload):
 
 
 def json_payload_to_observation_df(json_payload):
+    """
+    Convert the JSON payload dict as returned by the SolarForecastArbiter API
+    observations/values endpoint into a DataFrame
+
+    Parameters
+    ----------
+    json_payload : dict
+        Dictionary as returned by the API with a "values" key which is a list
+        of dicts like {'timestamp': <timestamp>, 'value': <float>,
+        'quality_flag': <int>}
+
+    Returns
+    -------
+    pandas.DataFrame
+       With a tz-aware DatetimeIndex and ['value', 'quality_flag'] columns
+    """
     df = _json_to_dataframe(json_payload)
     return df[['value', 'quality_flag']]
 
 
 def json_payload_to_forecast_series(json_payload):
+    """
+    Convert the JSON payload dict as returned by the SolarForecastArbiter API
+    forecasts/values endpoing into a Series
+
+    Parameters
+    ----------
+    json_payload : dict
+        Dictionary as returned by the API with a "values" key which is a list
+        of dicts like {'timestamp': <timestamp>, 'value': <float>}
+
+    Returns
+    -------
+    pandas.Series
+       With a tz-aware DatetimeIndex
+    """
+
     df = _json_to_dataframe(json_payload)
     return df['value']

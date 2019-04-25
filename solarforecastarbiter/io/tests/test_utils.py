@@ -34,44 +34,15 @@ def test_obs_df_to_json(df, var_label, flag_label, flag_value):
     assert isinstance(values[0]['value'], float)
 
 
-TEST_JSON = """
-{
-    "_links": {},
-    "observation_id": "OBSID",
-    "values": [
-        {
-            "quality_flag": 0,
-            "timestamp": "2019-01-24T00:00:00Z",
-            "value": 2.0
-        },
-        {
-            "quality_flag": 0,
-            "timestamp": "2019-01-24T00:01:00Z",
-            "value": 43.9
-        },
-        {
-            "quality_flag": 1,
-            "timestamp": "2019-01-24T00:02:00Z",
-            "value": 338.0
-        },
-        {
-            "quality_flag": 3,
-            "timestamp": "2019-01-24T00:03:00Z",
-            "value": -199.7
-        },
-        {
-            "quality_flag": 3,
-            "timestamp": "2019-01-23T17:04:00-07:00",
-            "value": 0.32
-        }
-    ]
-}
-"""
+def test_json_payload_to_observation_df(observation_values,
+                                        observation_values_text):
+    out = utils.json_payload_to_observation_df(
+        json.loads(observation_values_text))
+    pdt.assert_frame_equal(out, observation_values)
 
 
-def test_json_payload_to_observation_df():
-    expected = pd.DataFrame({'value': TEST_DICT['var_1'],
-                             'quality_flag': TEST_DICT['var_1_flag']},
-                            index=DF_INDEX)
-    out = utils.json_payload_to_observation_df(json.loads(TEST_JSON))
-    pdt.assert_frame_equal(expected, out)
+def test_json_payload_to_forecast_series(forecast_values,
+                                         forecast_values_text):
+    out = utils.json_payload_to_forecast_series(
+        json.loads(forecast_values_text))
+    pdt.assert_series_equal(out, forecast_values)

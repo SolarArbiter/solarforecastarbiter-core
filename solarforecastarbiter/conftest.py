@@ -72,7 +72,7 @@ def observation_values():
                             freq='5min',
                             tz='America/Denver',
                             name='timestamp'),
-        columns=['value', 'quality_flag'])
+        columns=['value', 'quality_flag']).tz_convert('UTC')
 
 
 @pytest.fixture()
@@ -121,7 +121,7 @@ def forecast_values():
                                          end='20190101T1100',
                                          freq='1h',
                                          tz='America/Denver',
-                                         name='timestamp'))
+                                         name='timestamp')).tz_convert('UTC')
 
 
 @pytest.fixture(scope='module')

@@ -96,7 +96,7 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
     out = session.get_observation_values(
         'obsid', pd.Timestamp('2019-01-01T12:00:00-0600'),
         pd.Timestamp('2019-01-01T12:25:00-0600'))
-    pdt.assert_frame_equal(out, observation_values.tz_convert('UTC'))
+    pdt.assert_frame_equal(out, observation_values)
 
 
 def test_apisession_get_forecast_values(requests_mock, forecast_values,
@@ -107,4 +107,4 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
     out = session.get_forecast_values(
         'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
         pd.Timestamp('2019-01-01T11:00:00-0600'))
-    pdt.assert_series_equal(out, forecast_values.tz_convert('UTC'))
+    pdt.assert_series_equal(out, forecast_values)
