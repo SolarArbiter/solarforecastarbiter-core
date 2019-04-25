@@ -396,7 +396,7 @@ def tracking_modeling_parameters():
         ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
         dc_loss_factor=3, ac_loss_factor=0,
         axis_tilt=0, axis_azimuth=0, ground_coverage_ratio=2/7,
-        backtrack=True, maximum_rotation_angle=45)
+        backtrack=True, max_rotation_angle=45)
     return modeling_params
 
 
