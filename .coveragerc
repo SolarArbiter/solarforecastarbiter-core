@@ -1,3 +1,6 @@
 [run]
 source=solarforecastarbiter
-omit=solarforecastarbiter/_version.py
+omit=
+  solarforecastarbiter/_version.py
+  solarforecastarbiter/*tests/*
+  solarforecastarbiter/conftest.py
