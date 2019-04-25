@@ -52,6 +52,11 @@ def test_forecast_series_to_json():
     assert json.loads(json_out)['values'] == expected
 
 
+def test_forecast_obj_to_json_nonpandas():
+    with pytest.raises(TypeError):
+        utils.forecast_object_to_json({'values': [0, 1, 2]})
+
+
 @pytest.mark.parametrize('colname', ['val1', 'fx'])
 def test_forecast_frame_to_json(colname):
     df = pd.DataFrame({colname: [0, 1, 2, 3, 4]},
