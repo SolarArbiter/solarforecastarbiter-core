@@ -176,7 +176,6 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
     ghi_ratio = ghi / component_sum
     dhi_ratio = dhi / ghi
 
-
     bounds = param['ghi_ratio']
     consistent_components = (
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
