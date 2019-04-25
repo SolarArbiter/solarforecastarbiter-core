@@ -18,20 +18,26 @@ DF_INDEX = pd.DatetimeIndex(start=pd.Timestamp('2019-01-24T00:00'),
 TEST_DATA = pd.DataFrame(TEST_DICT, index=DF_INDEX)
 
 
-@pytest.mark.parametrize('df,var_label,flag_label,flag_value', [
-    (TEST_DATA, 'var_1', 'var_1_flag', 0),
-    (TEST_DATA, 'var_1', None, 0),
-    (TEST_DATA, 'var_2', 'var_2_flag', 1),
+@pytest.mark.parametrize('df,var_label,flag_label,default_flag,flag_value', [
+    (TEST_DATA, 'var_1', 'var_1_flag', None, 0),
+    (TEST_DATA, 'var_1', None, 0, 0),
+    (TEST_DATA, 'var_2', 'var_2_flag', None, 1),
 ])
-def test_obs_df_to_json(df, var_label, flag_label, flag_value):
-    converted = utils.observation_df_to_json_payload(df, var_label, flag_label)
+def test_obs_df_to_json(df, var_label, flag_label, default_flag, flag_value):
+    converted = utils.observation_df_to_json_payload(df, var_label, flag_label,
+                                                     default_flag)
     converted_dict = json.loads(converted)
     assert 'values' in converted_dict
     values = converted_dict['values']
     assert len(values) == 5
     assert values[0]['timestamp'] == '2019-01-24T00:00:00Z'
-    assert values[0]['questionable'] == flag_value
+    assert values[0]['quality_flag'] == flag_value
     assert isinstance(values[0]['value'], float)
+
+
+def test_obs_df_to_json_no_quality():
+    with pytest.raises(KeyError):
+        utils.observation_df_to_json_payload(TEST_DATA, 'var_1')
 
 
 def test_json_payload_to_observation_df(observation_values,
