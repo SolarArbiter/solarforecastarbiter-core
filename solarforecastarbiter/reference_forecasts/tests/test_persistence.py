@@ -1,3 +1,4 @@
+from contextlib import nullcontext as does_not_raise
 from functools import partial
 
 import pandas as pd
@@ -60,9 +61,14 @@ def _observation_ac(site_metadata, interval_length, interval_label):
     return obs
 
 
-def test_persistence_scalar(site_metadata):
+@pytest.mark.parametrize('interval_label,closed,end', [
+    ('beginning', 'left', '20190404 1400'),
+    ('ending', 'right', '20190404 1400'),
+    ('instant', None, '20190404 1359')
+])
+def test_persistence_scalar(site_metadata, interval_label, closed, end):
     # interval beginning obs
-    observation = _observation(site_metadata, '5min', 'beginning')
+    observation = _observation(site_metadata, '5min', interval_label)
     tz = 'America/Phoenix'
     data_index = pd.date_range(
         start='20190404', end='20190406', freq='5min', tz=tz)
@@ -70,94 +76,66 @@ def test_persistence_scalar(site_metadata):
     data_start = pd.Timestamp('20190404 1200', tz=tz)
     data_end = pd.Timestamp('20190404 1300', tz=tz)
     forecast_start = pd.Timestamp('20190404 1300', tz=tz)
-    forecast_end = pd.Timestamp('20190404 1400', tz=tz)
+    forecast_end = pd.Timestamp(end, tz=tz)
     interval_length = pd.Timedelta('5min')
 
-    # interval beginning fx
-    interval_label = 'beginning'
     load_data = partial(load_data_base, data)
-    fx = persistence.persistence_scalar(
-        observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
-    expected_index = pd.date_range(
-        start='20190404 1300', end='20190404 1400', freq='5min', tz=tz,
-        closed='left')
-    expected = pd.Series(100., index=expected_index)
-    assert_series_equal(fx, expected)
 
-    # interval ending fx
-    interval_label = 'ending'
     fx = persistence.persistence_scalar(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data=load_data)
-    expected_index = pd.date_range(
-        start='20190404 1300', end='20190404 1400', freq='5min', tz=tz,
-        closed='right')
-    expected = pd.Series(100., index=expected_index)
-    assert_series_equal(fx, expected)
 
-    # instantaneous obs and fx
-    observation = _observation(site_metadata, '5min', 'instant')
-    interval_label = 'instant'
-    forecast_end = pd.Timestamp('20190404 1359', tz=tz)
-    fx = persistence.persistence_scalar(
-        observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
     expected_index = pd.date_range(
-        start='20190404 1300', end='20190404 1359', freq='5min', tz=tz)
+        start='20190404 1300', end=end, freq='5min', tz=tz,
+        closed=closed)
     expected = pd.Series(100., index=expected_index)
     assert_series_equal(fx, expected)
 
 
-def test_persistence_interval(site_metadata):
+@pytest.mark.parametrize('obs_interval_label',
+    ('beginning', 'ending', 'instant'))
+@pytest.mark.parametrize('interval_label,closed,end', [
+    ('beginning', 'left', '20190406 0000'),
+    ('ending', 'right', '20190406 0000'),
+    ('instant', None, '20190405 2359')
+])
+def test_persistence_interval(site_metadata, obs_interval_label,
+                              interval_label, closed, end):
     # interval beginning obs
-    observation = _observation(site_metadata, '5min', 'beginning')
+    observation = _observation(site_metadata, '5min', obs_interval_label)
     tz = 'America/Phoenix'
     data_index = pd.date_range(
         start='20190404', end='20190406', freq='5min', tz=tz)
     # each element of data is equal to the hour value of its label
-    data = pd.Series(data_index.hour, index=data_index)
+    data = pd.Series(data_index.hour, index=data_index, dtype=float)
+    if obs_interval_label == 'ending':
+        # e.g. timestamp 12:00:00 should be equal to 11
+        data = data.shift(1).fillna(0)
     data_start = pd.Timestamp('20190404 0000', tz=tz)
-    data_end = pd.Timestamp('20190405 0000', tz=tz)
+    data_end = pd.Timestamp(end, tz=tz) - pd.Timedelta('1d')
     forecast_start = pd.Timestamp('20190405 0000', tz=tz)
     interval_length = pd.Timedelta('60min')
 
-    # interval beginning fx
-    interval_label = 'beginning'
     load_data = partial(load_data_base, data)
-    fx = persistence.persistence_interval(
-        observation, data_start, data_end, forecast_start,
-        interval_length, interval_label, load_data=load_data)
+
     expected_index = pd.date_range(
-        start='20190405 0000', end='20190406 0000', freq='60min', tz=tz,
-        closed='left')
+        start='20190405 0000', end=end, freq='60min', tz=tz, closed=closed)
     expected_vals = list(range(0, 24))
-    expected = pd.Series(expected_vals, index=expected_index)
-    assert_series_equal(fx, expected)
+    expected = pd.Series(expected_vals, index=expected_index, dtype=float)
 
-    # interval ending fx
-    interval_label = 'ending'
-    fx = persistence.persistence_interval(
-        observation, data_start, data_end, forecast_start,
-        interval_length, interval_label, load_data=load_data)
-    expected_index = pd.date_range(
-        start='20190405 0000', end='20190406 0000', freq='60min', tz=tz,
-        closed='right')
-    expected = pd.Series(expected_vals, index=expected_index)
-    assert_series_equal(fx, expected)
-    assert len(fx) == 24
+    # handle permutations of parameters that should fail
+    if data_end.minute == 59 and obs_interval_label != 'instant':
+        expectation = pytest.raises(ValueError)
+    elif data_end.minute == 0 and obs_interval_label == 'instant':
+        expectation = pytest.raises(ValueError)
+    else:
+        expectation = does_not_raise()
 
-    # instantaneous obs and fx
-    observation = _observation(site_metadata, '5min', 'instant')
-    data_end = pd.Timestamp('20190404 2359', tz=tz)
-    interval_label = 'instant'
-    fx = persistence.persistence_interval(
-        observation, data_start, data_end, forecast_start,
-        interval_length, interval_label, load_data=load_data)
-    expected_index = pd.date_range(
-        start='20190405 0000', end='20190405 2359', freq='60min', tz=tz)
-    expected = pd.Series(expected_vals, index=expected_index)
-    assert_series_equal(fx, expected)
+    with expectation:
+        fx = persistence.persistence_interval(
+            observation, data_start, data_end, forecast_start,
+            interval_length, interval_label, load_data=load_data)
+        assert_series_equal(fx, expected)
 
 
 def test_persistence_scalar_index(site_metadata, powerplant_metadata):

@@ -164,7 +164,9 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     obs = load_data(observation, data_start, data_end)
 
     # average data within bins of length interval_length
-    persistence_quantity = obs.resample(interval_length).mean()
+    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
+    persistence_quantity = obs.resample(interval_length,
+                                        closed=closed_obs).mean()
 
     # Make the forecast time index.
     closed = datamodel.CLOSED_MAPPING[interval_label]
