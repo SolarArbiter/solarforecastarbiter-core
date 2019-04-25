@@ -73,12 +73,6 @@ def test_check_irradiance_consistency_QCRad(irradiance_QCRad):
     assert_series_equal(diffuse, expected['diffuse_ratio_limit'])
 
 
-def test_check_irradiance_consistency_QCRad_fail(irradiance_QCRad):
-    expected = irradiance_QCRad
-    with pytest.raises(KeyError):
-        validator.check_irradiance_consistency_QCRad(expected['ghi'])
-
-
 @pytest.fixture
 def weather():
     output = pd.DataFrame(columns=['temp_air', 'wind_speed',
