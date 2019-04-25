@@ -6,6 +6,15 @@ and vice versa.
 import pandas as pd
 
 
+def _dataframe_to_json(payload_df):
+    payload_df.index.name = 'timestamp'
+    return (
+        '{"values": ' +
+        payload_df.tz_convert("UTC").reset_index().to_json(
+            orient="records", date_format='iso', date_unit='s')
+        + '}')
+
+
 def observation_df_to_json_payload(
         observation_df,
         variable_label,
@@ -61,12 +70,38 @@ def observation_df_to_json_payload(
     else:
         raise KeyError(
             'Either quality_flag_label or default_quality_flag need to be set')
-    payload_df.index.name = 'timestamp'
-    return (
-        '{"values": ' +
-        payload_df.tz_convert("UTC").reset_index().to_json(
-            orient="records", date_format='iso', date_unit='s')
-        + '}')
+    return _dataframe_to_json(payload_df)
+
+
+def forecast_object_to_json(forecast_obj, column_label=None):
+    """
+    Converts a forecast Series or DataFrame to JSON to post to the
+    SolarForecastArbiter API.
+
+    Parameters
+    ----------
+    forecast_obj : pandas.Series or pandas.DataFrame
+        The series or dataframe that contains the forecast values with a
+        datetime index.
+    column_label : string
+        If forecast_obj is a DataFrame, use this column as the forecast values.
+
+    Returns
+    -------
+    string
+        The JSON encoded forecast values dict
+    """
+    if isinstance(forecast_obj, pd.Series):
+        forecast_df = forecast_obj.to_frame('value')
+        column_label = 'value'
+    elif isinstance(forecast_obj, pd.DataFrame):
+        forecast_df = forecast_obj
+    else:
+        raise TypeError('forecast_obj must be a pandas Series or DataFrame')
+
+    payload_df = forecast_df[[column_label]].rename(
+        columns={column_label: 'value'})
+    return _dataframe_to_json(payload_df)
 
 
 def _json_to_dataframe(json_payload):
