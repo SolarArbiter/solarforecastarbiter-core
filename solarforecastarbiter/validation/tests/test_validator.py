@@ -42,6 +42,33 @@ def irradiance_QCRad():
     return output
 
 
+def test_check_ghi_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    ghi_out_expected = expected['ghi_limit_flag']
+    ghi_out = validator.check_ghi_limits_QCRad(expected['ghi'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(ghi_out, ghi_out_expected)
+
+
+def test_check_dhi_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    dhi_out_expected = expected['dhi_limit_flag']
+    dhi_out = validator.check_dhi_limits_QCRad(expected['dhi'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(dhi_out, dhi_out_expected)
+
+
+def test_check_dni_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    dni_out_expected = expected['dni_limit_flag']
+    dni_out = validator.check_dni_limits_QCRad(expected['dni'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(dni_out, dni_out_expected)
+
+
 def test_check_irradiance_limits_QCRad(irradiance_QCRad):
     expected = irradiance_QCRad
     ghi_out_expected = expected['ghi_limit_flag']

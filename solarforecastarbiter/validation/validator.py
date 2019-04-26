@@ -59,12 +59,9 @@ def _QCRad_ub(dni_extra, sza, lim):
     return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
 
 
-def check_irradiance_limits_QCRad(ghi, solar_zenith, dni_extra, dhi=None,
-                                  dni=None, limits=None):
+def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     """
     Tests for physical limits on GHI using the QCRad criteria.
-
-    Also tests for physical limits on DHI and DNI if these data are present.
 
     Test passes if a value > lower bound and value < upper bound. Lower bounds
     are constant for all tests. Upper bounds are calculated as
@@ -80,6 +77,124 @@ def check_irradiance_limits_QCRad(ghi, solar_zenith, dni_extra, dhi=None,
         Solar zenith angle in degrees
     dni_extra : Series
         Extraterrestrial normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    ghi_limit_flag : Series
+        True if value passes physically-possible test
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    ghi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['ghi_ub'])
+
+    ghi_limit_flag = _check_limits(ghi, limits['ghi_lb'], ghi_ub)
+    ghi_limit_flag.name = 'ghi_limit_flag'
+
+    return ghi_limit_flag
+
+
+def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
+    """
+    Tests for physical limits on DHI using the QCRad criteria.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    ghi : Series
+        Diffuse horizontal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    ghi_limit_flag : Series
+        True if value passes physically-possible test
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    dhi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dhi_ub'])
+
+    dhi_limit_flag = _check_limits(dhi, limits['dhi_lb'], dhi_ub)
+    dhi_limit_flag.name = 'dhi_limit_flag'
+
+    return dhi_limit_flag
+
+
+def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
+    """
+    Tests for physical limits on DNI using the QCRad criteria.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    dni : Series
+        Direct normal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    dni_limit_flag : Series
+        True if value passes physically-possible test
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    dni_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dni_ub'])
+
+    dni_limit_flag = _check_limits(dni, limits['dni_lb'], dni_ub)
+    dni_limit_flag.name = 'dni_limit_flag'
+
+    return dni_limit_flag
+
+
+def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
+                                  dni=None, limits=None):
+    """
+    Tests for physical limits on GHI, DHI or DNI using the QCRad criteria.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    ghi : Series or None, default None
+        Global horizontal irradiance in W/m^2
     dhi : Series or None, default None
         Diffuse horizontal irradiance in W/m^2
     dni : Series or None, default None
@@ -91,7 +206,7 @@ def check_irradiance_limits_QCRad(ghi, solar_zenith, dni_extra, dhi=None,
 
     Returns:
     --------
-    ghi_limit_flag : Series
+    ghi_limit_flag : Series or None, default None
         True if value passes physically-possible test
     dhi_limit_flag : Series or None, default None
     dhi_limit_flag : Series or None, default None
@@ -99,22 +214,21 @@ def check_irradiance_limits_QCRad(ghi, solar_zenith, dni_extra, dhi=None,
     if not limits:
         limits = QCRAD_LIMITS
 
-    ghi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['ghi_ub'])
-
-    ghi_limit_flag = _check_limits(ghi, limits['ghi_lb'], ghi_ub)
-    ghi_limit_flag.name = 'ghi_limit_flag'
+    if ghi is not None:
+        ghi_limit_flag = check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra,
+                                                limits=None)
+    else:
+        ghi_limit_flag = None
 
     if dhi is not None:
-        dhi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dhi_ub'])
-        dhi_limit_flag = _check_limits(dhi, limits['dhi_lb'], dhi_ub)
-        dhi_limit_flag.name = 'dhi_limit_flag'
+        dhi_limit_flag = check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra,
+                                                limits=None)
     else:
         dhi_limit_flag = None
 
     if dni is not None:
-        dni_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dni_ub'])
-        dni_limit_flag = _check_limits(dni, limits['dni_lb'], dni_ub)
-        dni_limit_flag.name = 'dni_limit_flag'
+        dni_limit_flag = check_dni_limits_QCRad(dni, solar_zenith, dni_extra,
+                                                limits=None)
     else:
         dni_limit_flag = None
 
