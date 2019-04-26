@@ -2,6 +2,7 @@
 Functions to connect to and process data from SolarForecastArbiter API
 """
 import requests
+from urllib3 import Retry
 
 
 from solarforecastarbiter import datamodel
@@ -17,18 +18,32 @@ class APISession(requests.Session):
     """
     base_url = 'https://api.solarforecastarbiter.org'
 
-    def __init__(self, access_token):
+    def __init__(self, access_token, default_timeout=(10, 60)):
         super().__init__()
         self.headers = {'Authentication': f'Bearer {access_token}',
                         'Content-Type': 'application/json'}
+        self.default_timeout = default_timeout
+        # set requests to automatically retry
+        retries = Retry(total=10, connect=3, read=3, status=3,
+                        status_forcelist=[408, 423, 444, 500, 501, 502, 503,
+                                          504, 507, 508, 511, 599],
+                        backoff_factor=0.5,
+                        raise_on_status=False,
+                        remove_headers_on_redirect=[])
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        self.mount(self.base_url, adapter)
 
     def request(self, method, url, *args, **kwargs):
         if url.startswith('/'):
             url = f'{self.base_url}{url}'
         else:
             url = f'{self.base_url}/{url}'
-        # handle basic errors
-        return super().request(method, url, *args, **kwargs)
+        # set a defautl timeout so we never hang indefinitely
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self.default_timeout
+
+        result = super().request(method, url, *args, **kwargs)
+        return result
 
     def get_site(self, site_id):
         req = self.get(f'/sites/{site_id}')
