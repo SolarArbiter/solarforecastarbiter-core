@@ -121,7 +121,7 @@ class APISession(requests.Session):
         -------
         datamodel.Observation
         """
-        req = self.get(f'/observations/{observation_id}')
+        req = self.get(f'/observations/{observation_id}/metadata')
         return self._process_observation_dict(req.json())
 
     def list_observations(self):
@@ -157,7 +157,7 @@ class APISession(requests.Session):
         -------
         datamodel.Forecast
         """
-        req = self.get(f'/forecasts/single/{forecast_id}')
+        req = self.get(f'/forecasts/single/{forecast_id}/metadata')
         return self._process_forecast_dict(req.json())
 
     def list_forecasts(self):
