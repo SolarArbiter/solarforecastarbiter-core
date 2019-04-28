@@ -267,12 +267,14 @@ def _site_from_dict(site_dict):
             provider=site_dict.get('provider', ''),
             well_known_text=site_dict.get('well_known_text', ''),
             extra_parameters=site_dict.get('extra_parameters', ''),
+            site_id=site_dict.get('site_id', ''),
             modeling_parameters=site_dict['modeling_parameters'])
     else:
         return datamodel.Site(
             name=site_dict['name'], latitude=site_dict['latitude'],
             longitude=site_dict['longitude'], elevation=site_dict['elevation'],
             timezone=site_dict['timezone'],
+            site_id=site_dict.get('site_id', ''),
             provider=site_dict.get('provider', ''),
             well_known_text=site_dict.get('well_known_text', ''),
             extra_parameters=site_dict.get('extra_parameters', ''))
@@ -495,6 +497,7 @@ def _observation_from_dict(single_site):
             interval_length=pd.Timedelta(f'{obs_dict["interval_length"]}min'),
             interval_label=obs_dict['interval_label'],
             site=single_site, uncertainty=obs_dict['uncertainty'],
+            observation_id=obs_dict.get('observation_id', ''),
             description=obs_dict.get('description', ''),
             extra_parameters=obs_dict.get('extra_parameters', ''))
     return f
@@ -595,6 +598,7 @@ def _forecast_from_dict(single_site):
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''))
     return f
 

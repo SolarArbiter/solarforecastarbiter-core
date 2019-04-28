@@ -12,8 +12,8 @@ import pandas as pd
 
 
 ALLOWED_VARIABLES = {
-    'surface_temperature': 'degC',
-    'surface_wind_speed': 'm/s',
+    'temp_air': 'degC',
+    'wind_speed': 'm/s',
     'ghi': 'W/m^2',
     'dni': 'W/m^2',
     'dhi': 'W/m^2',
@@ -45,6 +45,8 @@ class Site:
         Elevation of the Site in meters above mean sea level, e.g. 1007
     timezone : str
         IANA timezone of the Site, e.g. Etc/GMT+8
+    site_id : str, optional
+        UUID of the Site in the API
     provider : str, optional
         Provider of the Site information.
     well_known_text: str, optional
@@ -62,6 +64,7 @@ class Site:
     longitude: float
     elevation: float
     timezone: str
+    site_id: str = ''
     provider: str = ''
     well_known_text: str = ''
     extra_parameters: str = ''
@@ -208,6 +211,8 @@ class Observation:
     uncertainty : float
         A measure of the uncertainty of the observation values. The format
         will be determined later.
+    observation_id : str, optional
+        UUID of the observation in the API
     description : str, optional
         A text description of the observation.
     extra_parameters : str, optional
@@ -224,6 +229,7 @@ class Observation:
     interval_label: str
     site: Site
     uncertainty: float
+    observation_id: str = ''
     description: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
@@ -267,6 +273,8 @@ class Forecast:
     site : Site
         The predefined site that the forecast is for, e.g. Power Plant X
         or Aggregate Y.
+    forecast_id : str, optional
+        UUID of the forecast in the API
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -283,6 +291,7 @@ class Forecast:
     interval_value_type: str
     variable: str
     site: Site
+    forecast_id: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
