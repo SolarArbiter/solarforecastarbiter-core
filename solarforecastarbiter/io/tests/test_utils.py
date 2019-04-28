@@ -72,7 +72,6 @@ def test_forecast_frame_to_json(colname):
     assert json.loads(json_out)['values'] == expected
 
 
-
 def test_json_payload_to_observation_df(observation_values,
                                         observation_values_text):
     out = utils.json_payload_to_observation_df(

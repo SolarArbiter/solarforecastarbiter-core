@@ -80,7 +80,7 @@ def test_apisession_get_forecast(requests_mock, single_forecast,
 
 
 def test_apisession_list_forecasts(requests_mock, many_forecasts,
-                                      many_forecasts_text, mock_get_site):
+                                   many_forecasts_text, mock_get_site):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)

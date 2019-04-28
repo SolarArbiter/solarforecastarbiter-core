@@ -258,7 +258,6 @@ def many_sites_text():
 ]"""
 
 
-
 def _site_from_dict(site_dict):
     if 'modeling_parameters' in site_dict:
         return datamodel.SolarPowerPlant(
@@ -277,7 +276,6 @@ def _site_from_dict(site_dict):
             provider=site_dict.get('provider', ''),
             well_known_text=site_dict.get('well_known_text', ''),
             extra_parameters=site_dict.get('extra_parameters', ''))
-
 
 
 @pytest.fixture()
@@ -537,6 +535,7 @@ def single_forecast_text():
 }
 """
 
+
 @pytest.fixture()
 def many_forecasts_text():
     return b"""
@@ -580,7 +579,7 @@ def many_forecasts_text():
     "variable": "ac_power"
   }
 ]
-"""
+"""  # NOQA
 
 
 @pytest.fixture()
