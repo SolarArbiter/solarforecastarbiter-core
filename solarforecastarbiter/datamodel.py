@@ -176,7 +176,7 @@ class SolarPowerPlant(Site):
 
 def __set_units__(cls):
     if cls.variable not in ALLOWED_VARIABLES:
-        raise ValueError('variable is not allowed')
+        raise ValueError('variable %s is not allowed' % cls.variable)
     object.__setattr__(cls, 'units', ALLOWED_VARIABLES[cls.variable])
 
 

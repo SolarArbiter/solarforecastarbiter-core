@@ -22,22 +22,25 @@ class APISession(requests.Session):
     Parameters
     ----------
     access_token : string
-       The base64 encoded Bearer token to authenticate with the API
+        The base64 encoded Bearer token to authenticate with the API
     default_timeout : float or tuple, optional
-       A default timeout to add to all requests. If a tuple, the first element
-       is the connection timeout and the second is the read timeout.
-       Default is 10 seconds for connection and 60 seconds to read from the
-       server.
+        A default timeout to add to all requests. If a tuple, the first element
+        is the connection timeout and the second is the read timeout.
+        Default is 10 seconds for connection and 60 seconds to read from the
+        server.
+    base_url : string
+        URL to use as the base for endpoints to APISession
     """
-    base_url = 'https://api.solarforecastarbiter.org'
 
-    def __init__(self, access_token, default_timeout=(10, 60)):
+    def __init__(self, access_token, default_timeout=(10, 60),
+                 base_url='https://api.solarforecastarbiter.org'):
         """
         """
         super().__init__()
-        self.headers = {'Authentication': f'Bearer {access_token}',
+        self.headers = {'Authorization': f'Bearer {access_token}',
                         'Content-Type': 'application/json'}
         self.default_timeout = default_timeout
+        self.base_url = base_url
         # set requests to automatically retry
         retries = Retry(total=10, connect=3, read=3, status=3,
                         status_forcelist=[408, 423, 444, 500, 501, 502, 503,

@@ -13,7 +13,7 @@ def test_apisession_init(requests_mock):
     session = api.APISession('TOKEN')
     requests_mock.register_uri('GET', session.base_url)
     res = session.get('')
-    assert res.request.headers['Authentication'] == 'Bearer TOKEN'
+    assert res.request.headers['Authorization'] == 'Bearer TOKEN'
 
 
 @pytest.mark.parametrize('method,endpoint,expected', [
