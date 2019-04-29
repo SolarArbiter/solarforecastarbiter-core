@@ -57,6 +57,11 @@ class APISession(requests.Session):
         Modify the default Session.request to add in the default timeout
         and make requests relative to the base_url. Users will likely
         use the standard get and post methods instead of calling this directly.
+
+        Raises
+        ------
+        requests.exceptions.HTTPError
+            When an error is encountered in when making the request to the API
         """
         if url.startswith('/'):
             url = f'{self.base_url}{url}'
@@ -67,6 +72,7 @@ class APISession(requests.Session):
             kwargs['timeout'] = self.default_timeout
 
         result = super().request(method, url, *args, **kwargs)
+        result.raise_for_status()
         return result
 
     def get_site(self, site_id):
@@ -241,10 +247,9 @@ class APISession(requests.Session):
         """
         json_vals = observation_df_to_json_payload(
             observation_df, value_column, quality_flag_column)
-        req = self.post(f'/observations/{observation_id}/values',
-                        data=json_vals,
-                        headers={'Content-Type': 'application/json'})
-        req.raise_for_status()
+        self.post(f'/observations/{observation_id}/values',
+                  data=json_vals,
+                  headers={'Content-Type': 'application/json'})
 
     def post_forecast_values(self, forecast_id, forecast_obj,
                              value_column=None):
@@ -263,7 +268,6 @@ class APISession(requests.Session):
             If forecast_obj is a pandas.DataFrame, upload data from this column
         """
         json_vals = forecast_object_to_json(forecast_obj, value_column)
-        req = self.post(f'/forecasts/single/{forecast_id}/values',
-                        data=json_vals,
-                        headers={'Content-Type': 'application/json'})
-        req.raise_for_status()
+        self.post(f'/forecasts/single/{forecast_id}/values',
+                  data=json_vals,
+                  headers={'Content-Type': 'application/json'})
