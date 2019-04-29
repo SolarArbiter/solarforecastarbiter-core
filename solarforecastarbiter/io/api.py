@@ -198,8 +198,6 @@ class APISession(requests.Session):
         pandas.DataFrame
             With a datetime index and (value, quality_flag) columns
         """
-        # make sure response id and requested id match
-        # json to df errors?
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start': start, 'end': end})
         return json_payload_to_observation_df(req.json())
