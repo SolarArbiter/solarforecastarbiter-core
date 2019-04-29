@@ -216,6 +216,7 @@ def real_session(auth_token):
     else:
         return session
 
+
 def test_real_apisession_get_site(real_session):
     site = real_session.get_site('2290b042-66a6-11e9-a7c8-0a580a82019c')
     assert isinstance(site, datamodel.Site)
@@ -223,7 +224,7 @@ def test_real_apisession_get_site(real_session):
 
 def test_real_apisession_list_sites(real_session):
     sites = real_session.list_sites()
-    assert isinstance(sites , list)
+    assert isinstance(sites, list)
     assert isinstance(sites[0], datamodel.Site)
 
 
@@ -281,7 +282,8 @@ def test_real_apisession_post_observation_values(real_session):
 
 
 def test_real_apisession_post_forecast_values(real_session):
-    test_ser = pd.Series([np.random.random()], name='value',
+    test_ser = pd.Series(
+        [np.random.random()], name='value',
         index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
                                name='timestamp'))
     real_session.post_forecast_values(
