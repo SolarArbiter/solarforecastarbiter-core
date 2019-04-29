@@ -137,8 +137,8 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
 @pytest.fixture()
 def empty_df():
     return pd.DataFrame([], columns=['value', 'quality_flag'],
-                        index=pd.DatetimeIndex(start='now', freq='1min',
-                                               periods=0, name='timestamp'))
+                        index=pd.DatetimeIndex([], name='timestamp'))
+
 
 
 def test_apisession_get_observation_values_empty(requests_mock, empty_df):

@@ -87,7 +87,7 @@ class APISession(requests.Session):
 
         Returns
         -------
-        datamodel.Site or SolarPowerPlant
+        datamodel.Site or datamodel.SolarPowerPlant
            Dataclass with all the metadata for the site depending on if
            the Site is a power plant with modeling parameters or not.
         """
@@ -100,7 +100,7 @@ class APISession(requests.Session):
 
         Returns
         -------
-        list of datamodel.Sites/SolarPowerPlants
+        list of datamodel.Sites and datamodel.SolarPowerPlants
         """
         req = self.get('/sites/')
         return [datamodel.process_site_dict(site_dict)

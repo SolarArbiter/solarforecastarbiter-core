@@ -3,7 +3,6 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-from collections import OrderedDict
 from dataclasses import dataclass, field, fields, MISSING
 import datetime
 
@@ -303,7 +302,7 @@ def process_dict_into_datamodel(dict_, model, raise_on_extra=False):
     etc
     """
     model_fields = fields(model)
-    kwargs = OrderedDict()
+    kwargs = {}
     errors = []
     for model_field in model_fields:
         if model_field.name in dict_:
