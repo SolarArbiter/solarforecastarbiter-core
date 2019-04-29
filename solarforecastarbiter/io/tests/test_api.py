@@ -47,12 +47,28 @@ def test_apisession_get_site(mock_get_site, single_site):
     assert site == single_site
 
 
+def test_apisession_get_site_dne(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri('GET', matcher, status_code=404)
+    with pytest.raises(requests.exceptions.HTTPError):
+        session.get_site('')
+
+
 def test_apisession_list_sites(requests_mock, many_sites_text, many_sites):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/.*')
     requests_mock.register_uri('GET', matcher, content=many_sites_text)
     site_list = session.list_sites()
     assert site_list == many_sites
+
+
+def test_apisession_list_sites_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri('GET', matcher, content=b"[]")
+    site_list = session.list_sites()
+    assert site_list == []
 
 
 def test_apisession_get_observation(requests_mock, single_observation,
@@ -73,6 +89,14 @@ def test_apisession_list_observations(requests_mock, many_observations,
     assert obs_list == many_observations
 
 
+def test_apisession_list_observations_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*')
+    requests_mock.register_uri('GET', matcher, content=b"[]")
+    obs_list = session.list_observations()
+    assert obs_list == []
+
+
 def test_apisession_get_forecast(requests_mock, single_forecast,
                                  single_forecast_text, mock_get_site):
     session = api.APISession('')
@@ -91,6 +115,14 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
     assert fx_list == many_forecasts
 
 
+def test_apisession_list_forecasts_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/.*')
+    requests_mock.register_uri('GET', matcher, content=b'[]')
+    fx_list = session.list_forecasts()
+    assert fx_list == []
+
+
 def test_apisession_get_observation_values(requests_mock, observation_values,
                                            observation_values_text):
     session = api.APISession('')
@@ -102,6 +134,23 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
     pdt.assert_frame_equal(out, observation_values)
 
 
+@pytest.fixture()
+def empty_df():
+    return pd.DataFrame([], columns=['value', 'quality_flag'],
+                        index=pd.DatetimeIndex(start='now', freq='1min',
+                                               periods=0, name='timestamp'))
+
+
+def test_apisession_get_observation_values_empty(requests_mock, empty_df):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
+    out = session.get_observation_values(
+        'obsid', pd.Timestamp('2019-01-01T12:00:00-0600'),
+        pd.Timestamp('2019-01-01T12:25:00-0600'))
+    pdt.assert_frame_equal(out, empty_df)
+
+
 def test_apisession_get_forecast_values(requests_mock, forecast_values,
                                         forecast_values_text):
     session = api.APISession('')
@@ -111,6 +160,16 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
         'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
         pd.Timestamp('2019-01-01T11:00:00-0600'))
     pdt.assert_series_equal(out, forecast_values)
+
+
+def test_apisession_get_forecast_values_empty(requests_mock, empty_df):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
+    requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
+    out = session.get_forecast_values(
+        'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
+        pd.Timestamp('2019-01-01T11:00:00-0600'))
+    pdt.assert_series_equal(out, empty_df['value'])
 
 
 def test_apisession_post_observation_values(requests_mock, observation_values):
@@ -173,7 +232,7 @@ def test_real_apisession_get_observation(real_session):
     assert isinstance(obs, datamodel.Observation)
 
 
-def test_real_apisession_list_obsevations(real_session):
+def test_real_apisession_list_observations(real_session):
     obs = real_session.list_observations()
     assert isinstance(obs, list)
     assert isinstance(obs[0], datamodel.Observation)

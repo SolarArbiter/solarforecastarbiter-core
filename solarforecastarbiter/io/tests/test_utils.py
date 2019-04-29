@@ -84,3 +84,14 @@ def test_json_payload_to_forecast_series(forecast_values,
     out = utils.json_payload_to_forecast_series(
         json.loads(forecast_values_text))
     pdt.assert_series_equal(out, forecast_values)
+
+
+def test_empty_payload_to_obsevation_df():
+    out = utils.json_payload_to_observation_df({'values': []})
+    assert set(out.columns) == {'value', 'quality_flag'}
+    assert isinstance(out.index, pd.DatetimeIndex)
+
+
+def test_empty_payload_to_forecast_series():
+    out = utils.json_payload_to_forecast_series({'values': []})
+    assert isinstance(out.index, pd.DatetimeIndex)
