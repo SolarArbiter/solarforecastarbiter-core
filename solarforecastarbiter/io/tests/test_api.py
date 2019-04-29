@@ -4,9 +4,11 @@ import re
 import pandas as pd
 import pandas.testing as pdt
 import pytest
+import requests
 
 
 from solarforecastarbiter.io import api
+from solarforecastarbiter import datamodel
 
 
 def test_apisession_init(requests_mock):
@@ -125,3 +127,80 @@ def test_apisession_post_forecast_values(requests_mock, forecast_values):
     mocked = requests_mock.register_uri('POST', matcher)
     session.post_forecast_values('fxid', forecast_values)
     assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
+
+
+@pytest.fixture(scope='session')
+def auth_token():
+    token_req = requests.post(
+        'https://solarforecastarbiter.auth0.com/oauth/token',
+        headers={'content-type': 'application/json'},
+        data=('{"grant_type": "password", '
+              '"username": "testing@solarforecastarbiter.org",'
+              '"password": "Thepassword123!", '
+              '"audience": "https://api.solarforecastarbiter.org", '
+              '"client_id": "c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7"}'))
+    if token_req.status_code != 200:
+        pytest.skip('Cannot retrieve valid Auth0 token')
+    else:
+        token = token_req.json()['access_token']
+        return token
+
+
+@pytest.fixture(scope='session')
+def real_session(auth_token):
+    session = api.APISession(
+        auth_token, base_url='https://dev-api.solarforecastarbiter.org')
+    req = session.get('')
+    if req.status_code != 200:
+        pytest.skip('Cannot connect to dev api')
+    else:
+        return session
+
+def test_real_apisession_get_site(real_session):
+    site = real_session.get_site('2290b042-66a6-11e9-a7c8-0a580a82019c')
+    assert isinstance(site, datamodel.Site)
+
+
+def test_real_apisession_list_sites(real_session):
+    sites = real_session.list_sites()
+    assert isinstance(sites , list)
+    assert isinstance(sites[0], datamodel.Site)
+
+
+def test_real_apisession_get_observation(real_session):
+    obs = real_session.get_observation('123e4567-e89b-12d3-a456-426655440000')
+    assert isinstance(obs, datamodel.Observation)
+
+
+def test_real_apisession_list_obsevations(real_session):
+    obs = real_session.list_observations()
+    assert isinstance(obs, list)
+    assert isinstance(obs[0], datamodel.Observation)
+
+
+def test_real_apisession_get_forecast(real_session):
+    fx = real_session.get_forecast('f8dd49fa-23e2-48a0-862b-ba0af6dec276')
+    assert isinstance(fx, datamodel.Forecast)
+
+
+def test_real_apisession_list_forecasts(real_session):
+    fxs = real_session.list_forecasts()
+    assert isinstance(fxs, list)
+    assert isinstance(fxs[0], datamodel.Forecast)
+
+
+def test_real_apisession_get_observation_values(real_session):
+    obs = real_session.get_observation_values(
+        '123e4567-e89b-12d3-a456-426655440000',
+        pd.Timestamp('2019-04-15T00:00:00Z'),
+        pd.Timestamp('2019-04-15T12:00:00Z'))
+    assert isinstance(obs, pd.DataFrame)
+    assert set(obs.columns) == set(['value', 'quality_flag'])
+
+
+def test_real_apisession_get_forecast_values(real_session):
+    fx = real_session.get_forecast_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        pd.Timestamp('2019-04-15T00:00:00Z'),
+        pd.Timestamp('2019-04-15T12:00:00Z'))
+    assert isinstance(fx, pd.Series)

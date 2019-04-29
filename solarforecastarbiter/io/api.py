@@ -38,7 +38,8 @@ class APISession(requests.Session):
         """
         super().__init__()
         self.headers = {'Authorization': f'Bearer {access_token}',
-                        'Content-Type': 'application/json'}
+                        'Accept': 'application/json',
+                        'Accept-Encoding': 'gzip,deflate'}
         self.default_timeout = default_timeout
         self.base_url = base_url
         # set requests to automatically retry
