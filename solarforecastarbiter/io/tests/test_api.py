@@ -1,6 +1,7 @@
 import re
 
 
+import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -204,3 +205,30 @@ def test_real_apisession_get_forecast_values(real_session):
         pd.Timestamp('2019-04-15T00:00:00Z'),
         pd.Timestamp('2019-04-15T12:00:00Z'))
     assert isinstance(fx, pd.Series)
+
+
+def test_real_apisession_post_observation_values(real_session):
+    test_df = pd.DataFrame(
+        {'value': [np.random.random()], 'quality_flag': [0]},
+        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
+                               name='timestamp'))
+    real_session.post_observation_values(
+        '123e4567-e89b-12d3-a456-426655440000', test_df)
+    obs = real_session.get_observation_values(
+        '123e4567-e89b-12d3-a456-426655440000',
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-14T00:01:00Z'))
+    pdt.assert_frame_equal(obs, test_df)
+
+
+def test_real_apisession_post_forecast_values(real_session):
+    test_ser = pd.Series([np.random.random()], name='value',
+        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
+                               name='timestamp'))
+    real_session.post_forecast_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
+    fx = real_session.get_forecast_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-14T00:01:00Z'))
+    pdt.assert_series_equal(fx, test_ser)

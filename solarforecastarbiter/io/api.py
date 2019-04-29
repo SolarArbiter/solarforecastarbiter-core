@@ -195,7 +195,7 @@ class APISession(requests.Session):
         # make sure response id and requested id match
         # json to df errors?
         req = self.get(f'/observations/{observation_id}/values',
-                       params={'start_time': start, 'end_time': end})
+                       params={'start': start, 'end': end})
         return json_payload_to_observation_df(req.json())
 
     def get_forecast_values(self, forecast_id, start, end):
@@ -217,7 +217,7 @@ class APISession(requests.Session):
            With the forecast values and a datetime index
         """
         req = self.get(f'/forecasts/single/{forecast_id}/values',
-                       params={'start_time': start, 'end_time': end})
+                       params={'start': start, 'end': end})
         return json_payload_to_forecast_series(req.json())
 
     def post_observation_values(self, observation_id, observation_df,
@@ -241,8 +241,10 @@ class APISession(requests.Session):
         """
         json_vals = observation_df_to_json_payload(
             observation_df, value_column, quality_flag_column)
-        self.post(f'/observations/{observation_id}/values',
-                  data=json_vals)
+        req = self.post(f'/observations/{observation_id}/values',
+                        data=json_vals,
+                        headers={'Content-Type': 'application/json'})
+        req.raise_for_status()
 
     def post_forecast_values(self, forecast_id, forecast_obj,
                              value_column=None):
@@ -261,5 +263,7 @@ class APISession(requests.Session):
             If forecast_obj is a pandas.DataFrame, upload data from this column
         """
         json_vals = forecast_object_to_json(forecast_obj, value_column)
-        self.post(f'/forecasts/single/{forecast_id}/values',
-                  data=json_vals)
+        req = self.post(f'/forecasts/single/{forecast_id}/values',
+                        data=json_vals,
+                        headers={'Content-Type': 'application/json'})
+        req.raise_for_status()
