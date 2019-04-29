@@ -25,8 +25,52 @@ ALLOWED_VARIABLES = {
 }
 
 
+class BaseModel:
+    @classmethod
+    def from_dict(model, dict_, raise_on_extra=False):
+        """
+        extra keys ignored, keyerror on missing required params,
+        etc
+        """
+        model_fields = fields(model)
+        kwargs = {}
+        errors = []
+        for model_field in model_fields:
+            if model_field.name in dict_:
+                if model_field.type == pd.Timedelta:
+                    kwargs[model_field.name] = pd.Timedelta(
+                        f'{dict_[model_field.name]}min')
+                elif model_field.type == datetime.time:
+                    kwargs[model_field.name] = datetime.datetime.strptime(
+                        dict_[model_field.name], '%H:%M').time()
+                elif model_field.name == 'modeling_parameters':
+                    mp_dict = dict_.pop('modeling_parameters', {})
+                    tracking_type = mp_dict.pop('tracking_type', '')
+                    if tracking_type == 'fixed':
+                        kwargs['modeling_parameters'] = (
+                            FixedTiltModelingParameters.from_dict(
+                                mp_dict))
+                    elif tracking_type == 'single_axis':
+                        kwargs['modeling_parameters'] = (
+                            SingleAxisModelingParameters.from_dict(
+                                mp_dict))
+                else:
+                    kwargs[model_field.name] = dict_[model_field.name]
+            elif (
+                    model_field.default is MISSING and
+                    model_field.default_factory is MISSING and
+                    model_field.init
+            ):
+                errors.append(model_field.name)
+        if errors:
+            raise KeyError(
+                'Missing the following required arguments for the model '
+                f'{str(model)}: {", ".join(errors)}')
+        return model(**kwargs)
+
+
 @dataclass(frozen=True)
-class Site:
+class Site(BaseModel):
     """
     Class for keeping track of Site metadata.
 
@@ -70,7 +114,7 @@ class Site:
 
 
 @dataclass(frozen=True)
-class PVModelingParameters:
+class PVModelingParameters(BaseModel):
     """
     Class for keeping track of generic PV modeling parameters
 
@@ -183,7 +227,7 @@ def __set_units__(cls):
 
 
 @dataclass(frozen=True)
-class Observation:
+class Observation(BaseModel):
     """
     A class for keeping track of metadata associated with an observation.
     Units are set according to the variable type.
@@ -236,7 +280,7 @@ class Observation:
 
 
 @dataclass(frozen=True)
-class Forecast:
+class Forecast(BaseModel):
     """
     A class to hold metadata for Forecast objects.
 
@@ -294,59 +338,3 @@ class Forecast:
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
-
-
-def process_dict_into_datamodel(dict_, model, raise_on_extra=False):
-    """
-    extra keys ignored, keyerror on missing required params,
-    etc
-    """
-    model_fields = fields(model)
-    kwargs = {}
-    errors = []
-    for model_field in model_fields:
-        if model_field.name in dict_:
-            if model_field.type == pd.Timedelta:
-                kwargs[model_field.name] = pd.Timedelta(
-                    f'{dict_[model_field.name]}min')
-            elif model_field.type == datetime.time:
-                kwargs[model_field.name] = datetime.datetime.strptime(
-                    dict_[model_field.name], '%H:%M').time()
-            else:
-                kwargs[model_field.name] = dict_[model_field.name]
-        elif (
-                model_field.default is MISSING and
-                model_field.default_factory is MISSING and
-                model_field.init
-        ):
-            errors.append(model_field.name)
-    if errors:
-        raise KeyError(
-            'Missing the following required arguments for the model '
-            f'{str(model)}: {", ".join(errors)}')
-    return model(**kwargs)
-
-
-def process_site_dict(site_dict):
-    site_dict = site_dict.copy()
-    mp_dict = site_dict.pop('modeling_parameters', {})
-    tracking_type = mp_dict.pop('tracking_type', '')
-    if tracking_type == 'fixed':
-        modeling_parameters = process_dict_into_datamodel(
-            mp_dict,
-            FixedTiltModelingParameters)
-        site_dict['modeling_parameters'] = modeling_parameters
-        site = process_dict_into_datamodel(
-            site_dict,
-            SolarPowerPlant)
-    elif tracking_type == 'single_axis':
-        modeling_parameters = process_dict_into_datamodel(
-            mp_dict,
-            SingleAxisModelingParameters)
-        site_dict['modeling_parameters'] = modeling_parameters
-        site = process_dict_into_datamodel(
-            site_dict,
-            SolarPowerPlant)
-    else:
-        site = process_dict_into_datamodel(site_dict, Site)
-    return site

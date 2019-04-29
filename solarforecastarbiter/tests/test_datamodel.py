@@ -40,27 +40,27 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
     {},
     {'extra': 'thing'},
 ])
-def test_process_dict_into_datamodel(extra, pdid_params):
+def test_from_dict_into_datamodel(extra, pdid_params):
     expected, obj_dict, model = pdid_params
     obj_dict.update(extra)
-    out = datamodel.process_dict_into_datamodel(obj_dict, model)
+    out = model.from_dict(obj_dict)
     assert out == expected
 
 
-def test_process_dict_into_datamodel_missing_field(pdid_params):
+def test_from_dict_into_datamodel_missing_field(pdid_params):
     _, obj_dict, model = pdid_params
     for field in fields(model):
         if field.default is MISSING and field.default_factory is MISSING:
             break
     del obj_dict[field.name]
     with pytest.raises(KeyError):
-        datamodel.process_dict_into_datamodel(obj_dict, model)
+        model.from_dict(obj_dict)
 
 
-def test_process_dict_into_datamodel_no_extra(pdid_params):
+def test_from_dict_into_datamodel_no_extra(pdid_params):
     expected, obj_dict, model = pdid_params
     obj_dict.pop('extra_parameters', '')
-    out = datamodel.process_dict_into_datamodel(obj_dict, model)
+    out = model.from_dict(obj_dict)
     for field in fields(model):
         if field.name == 'extra_parameters':
             continue
@@ -81,12 +81,14 @@ def test_invalid_variable(single_site):
 
 @pytest.fixture(params=[0, 1, 2])
 def _sites(many_sites_text, many_sites, request):
+    models = [datamodel.Site, datamodel.SolarPowerPlant,
+              datamodel.SolarPowerPlant]
     param = request.param
     site_dict_list = json.loads(many_sites_text)
-    return site_dict_list[param], many_sites[param]
+    return site_dict_list[param], many_sites[param], models[param]
 
 
 def test_process_site_dict(_sites):
-    site_dict, expected = _sites
-    out = datamodel.process_site_dict(site_dict)
+    site_dict, expected, model= _sites
+    out = model.from_dict(site_dict)
     assert out == expected
