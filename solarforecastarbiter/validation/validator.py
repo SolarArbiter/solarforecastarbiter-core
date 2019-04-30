@@ -59,13 +59,9 @@ def _QCRad_ub(dni_extra, sza, lim):
     return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
 
 
-def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
-                                  limits=None):
+def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     """
     Tests for physical limits on GHI using the QCRad criteria.
-
-    Also tests for physical limits on DHI and DNI if test_dhi and test_dni,
-    respectively, are set and these data are present.
 
     Test passes if a value > lower bound and value < upper bound. Lower bounds
     are constant for all tests. Upper bounds are calculated as
@@ -75,19 +71,12 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
 
     Parameters:
     -----------
-    irrad : DataFrame
-        ghi : float
-            Global horizontal irradiance in W/m^2
-        solar_zenith : float
-            Solar zenith angle in degrees
-        dni_extra : float
-            Extraterrestrial normal irradiance in W/m^2
-        dhi : float, optional
-            Diffuse horizontal irradiance in W/m^2
-        dni : float, optional
-            Direct normal irradiance in W/m^2
-    test_dhi : boolean, default False
-    test_dni : boolean, default False
+    ghi : Series
+        Global horizontal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
     limits : dict, default QCRAD_LIMITS
         for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
@@ -95,41 +84,155 @@ def check_irradiance_limits_QCRad(irrad, test_dhi=False, test_dni=False,
 
     Returns:
     --------
-    flags : DataFrame
-        physical_limit_flag : boolean
-            True if value passes physically-possible test
-        climate_limit_flag : boolean
-            True if value passes climatological test
+    ghi_limit_flag : Series
+        True if value passes physically-possible test
     """
-
     if not limits:
         limits = QCRAD_LIMITS
 
-    flags = pd.DataFrame(index=irrad.index, data=None,
-                         columns=['ghi_physical_limit_flag'])
+    ghi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['ghi_ub'])
 
-    ghi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                       limits['ghi_ub'])
+    ghi_limit_flag = _check_limits(ghi, limits['ghi_lb'], ghi_ub)
+    ghi_limit_flag.name = 'ghi_limit_flag'
 
-    flags['ghi_physical_limit_flag'] = _check_limits(irrad['ghi'],
-                                                     limits['ghi_lb'],
-                                                     ghi_ub)
+    return ghi_limit_flag
 
-    if test_dhi:
-        dhi_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                           limits['dhi_ub'])
-        flags['dhi_physical_limit_flag'] = _check_limits(irrad['dhi'],
-                                                         limits['dhi_lb'],
-                                                         dhi_ub)
 
-    if test_dni:
-        dni_ub = _QCRad_ub(irrad['dni_extra'], irrad['solar_zenith'],
-                           limits['dni_ub'])
-        flags['dni_physical_limit_flag'] = _check_limits(irrad['dni'],
-                                                         limits['dni_lb'],
-                                                         dni_ub)
+def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
+    """
+    Tests for physical limits on DHI using the QCRad criteria.
 
-    return flags
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    ghi : Series
+        Diffuse horizontal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    ghi_limit_flag : Series
+        True if value passes physically-possible test
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    dhi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dhi_ub'])
+
+    dhi_limit_flag = _check_limits(dhi, limits['dhi_lb'], dhi_ub)
+    dhi_limit_flag.name = 'dhi_limit_flag'
+
+    return dhi_limit_flag
+
+
+def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
+    """
+    Tests for physical limits on DNI using the QCRad criteria.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    dni : Series
+        Direct normal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    dni_limit_flag : Series
+        True if value passes physically-possible test
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    dni_ub = _QCRad_ub(dni_extra, solar_zenith, limits['dni_ub'])
+
+    dni_limit_flag = _check_limits(dni, limits['dni_lb'], dni_ub)
+    dni_limit_flag.name = 'dni_limit_flag'
+
+    return dni_limit_flag
+
+
+def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
+                                  dni=None, limits=None):
+    """
+    Tests for physical limits on GHI, DHI or DNI using the QCRad criteria.
+
+    Test passes if a value > lower bound and value < upper bound. Lower bounds
+    are constant for all tests. Upper bounds are calculated as
+
+    .. math::
+        ub = min + mult * dni_extra * cos( solar_zenith)^exp
+
+    Parameters:
+    -----------
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    ghi : Series or None, default None
+        Global horizontal irradiance in W/m^2
+    dhi : Series or None, default None
+        Diffuse horizontal irradiance in W/m^2
+    dni : Series or None, default None
+        Direct normal irradiance in W/m^2
+    limits : dict, default QCRAD_LIMITS
+        for keys 'ghi_ub', 'dhi_ub', 'dni_ub', value is a dict with
+        keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
+        value is a float.
+
+    Returns:
+    --------
+    ghi_limit_flag : Series or None, default None
+        True if value passes physically-possible test
+    dhi_limit_flag : Series or None, default None
+    dhi_limit_flag : Series or None, default None
+    """
+    if not limits:
+        limits = QCRAD_LIMITS
+
+    if ghi is not None:
+        ghi_limit_flag = check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra,
+                                                limits=None)
+    else:
+        ghi_limit_flag = None
+
+    if dhi is not None:
+        dhi_limit_flag = check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra,
+                                                limits=None)
+    else:
+        dhi_limit_flag = None
+
+    if dni is not None:
+        dni_limit_flag = check_dni_limits_QCRad(dni, solar_zenith, dni_extra,
+                                                limits=None)
+    else:
+        dni_limit_flag = None
+
+    return ghi_limit_flag, dhi_limit_flag, dni_limit_flag
 
 
 def _get_bounds(bounds):
@@ -147,24 +250,23 @@ def _check_irrad_ratio(ratio, ghi, sza, bounds):
             (_check_limits(ratio, lb=ratio_lb, ub=ratio_ub)))
 
 
-def check_irradiance_consistency_QCRad(irrad, param=None):
+def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
+                                       param=None):
     """
     Checks consistency of GHI, DHI and DNI.
 
     Parameters:
     -----------
-    irrad : DataFrame
-        ghi : float
-            Global horizontal irradiance in W/m^2
-        solar_zenith : float
-            Solar zenith angle in degrees
-        dni_extra : float
-            Extraterrestrial normal irradiance in W/m^2
-        dhi : float
-            Diffuse horizontal irradiance in W/m^2
-        dni : float
-            Direct normal irradiance in W/m^2
-
+    ghi : Series
+        Global horizontal irradiance in W/m^2
+    solar_zenith : Series
+        Solar zenith angle in degrees
+    dni_extra : Series
+        Extraterrestrial normal irradiance in W/m^2
+    dhi : Series
+        Diffuse horizontal irradiance in W/m^2
+    dni : Series
+        Direct normal irradiance in W/m^2
     param : dict
         keys are 'ghi_ratio' and 'dhi_ratio'. For each key, value is a dict
         with keys 'high_zenith' and 'low_zenith'; for each of these keys,
@@ -174,94 +276,80 @@ def check_irradiance_consistency_QCRad(irrad, param=None):
 
     Returns:
     --------
-    flags : DataFrame
-        consistent_components : boolean
-            True if ghi, dhi and dni components are consistent.
-        diffuse_ratio_limit : boolean
-            True if diffuse to ghi ratio passes limit test.
+    consistent_components : Series
+        True if ghi, dhi and dni components are consistent.
+    diffuse_ratio_limit : Series
+        True if diffuse to ghi ratio passes limit test.
     """
 
     if not param:
         param = QCRAD_CONSISTENCY
 
     # sum of components
-    component_sum = irrad['dni'] * cosd(irrad['solar_zenith']) + \
-        irrad['dhi']
-    ghi_ratio = irrad['ghi'] / component_sum
-    dhi_ratio = irrad['dhi'] / irrad['ghi']
-
-    flags = pd.DataFrame(index=irrad.index, data=None,
-                         columns=['consistent_components',
-                                  'diffuse_ratio_limit'])
+    component_sum = dni * cosd(solar_zenith) + dhi
+    ghi_ratio = ghi / component_sum
+    dhi_ratio = dhi / ghi
 
     bounds = param['ghi_ratio']
-    flags['consistent_components'] = (
+    consistent_components = (
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
-                           sza=irrad['solar_zenith'],
-                           bounds=bounds['high_zenith']) |
+                           sza=solar_zenith, bounds=bounds['high_zenith']) |
         _check_irrad_ratio(ratio=ghi_ratio, ghi=component_sum,
-                           sza=irrad['solar_zenith'],
-                           bounds=bounds['low_zenith']))
+                           sza=solar_zenith, bounds=bounds['low_zenith']))
+    consistent_components.name = 'consistent_components'
 
     bounds = param['dhi_ratio']
-    flags['diffuse_ratio_limit'] = (
-        _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
-                           sza=irrad['solar_zenith'],
+    diffuse_ratio_limit = (
+        _check_irrad_ratio(ratio=dhi_ratio, ghi=ghi, sza=solar_zenith,
                            bounds=bounds['high_zenith']) |
-        _check_irrad_ratio(ratio=dhi_ratio, ghi=irrad['ghi'],
-                           sza=irrad['solar_zenith'],
+        _check_irrad_ratio(ratio=dhi_ratio, ghi=ghi, sza=solar_zenith,
                            bounds=bounds['low_zenith']))
-    return flags
+    diffuse_ratio_limit.name = 'diffuse_ratio_limit'
+
+    return consistent_components, diffuse_ratio_limit
 
 
-def check_temperature_limits(weather, temp_limits=(-10., 50.)):
+def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
     """ Checks for extreme temperatures.
 
     Parameters:
     -----------
-    weather : DataFrame
-        temp_air : float
-            Air temperature in Celsius
+    temp_air : Series
+        Air temperature in Celsius
     temp_limits : tuple, default (-10, 50)
         (lower bound, upper bound) for temperature.
 
     Returns:
     --------
-    flags : DataFrame
+    extreme_temp_flag : Series
         True if temp_air > lower bound and temp_air < upper bound.
     """
-    temp_air = weather['temp_air']
 
-    flags = pd.DataFrame(index=weather.index, data=None,
-                         columns=['extreme_temp_flag'])
-    flags['extreme_temp_flag'] = _check_limits(temp_air, lb=temp_limits[0],
-                                               ub=temp_limits[1])
-    return flags
+    extreme_temp_flag = _check_limits(temp_air, lb=temp_limits[0],
+                                      ub=temp_limits[1])
+    extreme_temp_flag.name = 'extreme_temp_flag'
+    return extreme_temp_flag
 
 
-def check_wind_limits(weather, wind_limits=(0., 60.)):
+def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
     """ Checks for extreme wind speeds.
 
     Parameters:
     -----------
-    weather : DataFrame
-        wind_speed : float
-            Wind speed m/s
+    wind_speed : Series
+        Wind speed m/s
     wind_limits : tuple, default (0, 60)
         (lower bound, upper bound) for wind speed.
 
     Returns:
     --------
-    flags : DataFrame
+    extreme_wind_flag : DataFrame
         True if wind_speed > lower bound and wind_speed < upper bound.
     """
-    wind_speed = weather['wind_speed']
-
-    flags = pd.DataFrame(index=weather.index, data=None,
-                         columns=['extreme_wind_flag'])
-    flags['extreme_wind_flag'] = _check_limits(wind_speed, lb=wind_limits[0],
-                                               ub=wind_limits[1])
-    return flags
+    extreme_wind_flag = _check_limits(wind_speed, lb=wind_limits[0],
+                                      ub=wind_limits[1])
+    extreme_wind_flag.name = 'extreme_wind_flag'
+    return extreme_wind_flag
 
 
 def check_rh_limits(rh, rh_limits=(0, 100)):
