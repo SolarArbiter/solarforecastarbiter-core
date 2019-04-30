@@ -176,6 +176,31 @@ class APISession(requests.Session):
         return [self._process_observation_dict(obs_dict)
                 for obs_dict in req.json()]
 
+    def create_observation(self, observation):
+        """
+        Create a new observation in the API with the given Observation model
+
+        Parameters
+        ----------
+        observation : datamodel.Observation
+            Observation to create in the API
+
+        Returns
+        -------
+        datamodel.Observation
+            With the appropriate parameters such as observation_id set by the
+            API
+        """
+        obs_dict = observation.to_dict()
+        obs_dict.pop('observation_id')
+        site = obs_dict.pop('site')
+        obs_dict['site_id'] = site['site_id']
+        obs_json = json.dumps(obs_dict)
+        req = self.post('/observations/', data=obs_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_observation(new_id)
+
     def _process_forecast_dict(self, forecast_dict):
         fx_dict = forecast_dict.copy()
         site_id = forecast_dict['site_id']

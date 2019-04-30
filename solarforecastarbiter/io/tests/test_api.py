@@ -114,6 +114,21 @@ def test_apisession_list_observations_empty(requests_mock):
     assert obs_list == []
 
 
+def test_apisession_create_observation(requests_mock, single_observation,
+                                       single_observation_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*')
+    requests_mock.register_uri('POST', matcher,
+                               text=single_observation.observation_id)
+    requests_mock.register_uri('GET', matcher, content=single_observation_text)
+    observation_dict = single_observation.to_dict()
+    del observation_dict['observation_id']
+    del observation_dict['extra_parameters']
+    ss = type(single_observation).from_dict(observation_dict)
+    new_observation = session.create_observation(ss)
+    assert new_observation == single_observation
+
+
 def test_apisession_get_forecast(requests_mock, single_forecast,
                                  single_forecast_text, mock_get_site):
     session = api.APISession('')
@@ -282,6 +297,20 @@ def test_real_apisession_list_observations(real_session):
     assert isinstance(obs[0], datamodel.Observation)
 
 
+def test_real_apisession_create_observation(single_observation_text,
+                                            single_observation,
+                                            real_session):
+    observationd = json.loads(single_observation_text)
+    observationd['name'] = f'Test create observation {randint(0, 100)}'
+    observationd['site'] = single_observation.site
+    observation = datamodel.Observation.from_dict(observationd)
+    new_observation = real_session.create_observation(observation)
+    real_session.delete(f'/observations/{new_observation.observation_id}')
+    for attr in ('name', 'site', 'variable', 'interval_label',
+                 'interval_length', 'extra_parameters', 'uncertainty'):
+        assert getattr(new_observation, attr) == getattr(observation, attr)
+
+
 def test_real_apisession_get_forecast(real_session):
     fx = real_session.get_forecast('f8dd49fa-23e2-48a0-862b-ba0af6dec276')
     assert isinstance(fx, datamodel.Forecast)
@@ -297,7 +326,6 @@ def test_real_apisession_create_forecast(single_forecast_text, single_forecast,
                                          real_session):
     forecastd = json.loads(single_forecast_text)
     forecastd['name'] = f'Test create forecast {randint(0, 100)}'
-    forecastd['site_id'] = '123e4567-e89b-12d3-a456-426655440001'
     forecastd['site'] = single_forecast.site
     forecast = datamodel.Forecast.from_dict(forecastd)
     new_forecast = real_session.create_forecast(forecast)
