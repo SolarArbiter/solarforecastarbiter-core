@@ -496,7 +496,6 @@ def _observation_from_dict(single_site):
             interval_label=obs_dict['interval_label'],
             site=single_site, uncertainty=obs_dict['uncertainty'],
             observation_id=obs_dict.get('observation_id', ''),
-            description=obs_dict.get('description', ''),
             extra_parameters=obs_dict.get('extra_parameters', ''))
     return f
 

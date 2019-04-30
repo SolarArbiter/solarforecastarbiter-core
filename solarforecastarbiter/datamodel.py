@@ -293,8 +293,6 @@ class Observation(BaseModel):
         will be determined later.
     observation_id : str, optional
         UUID of the observation in the API
-    description : str, optional
-        A text description of the observation.
     extra_parameters : str, optional
         Any extra parameters for the observation
 
@@ -310,7 +308,6 @@ class Observation(BaseModel):
     site: Site
     uncertainty: float
     observation_id: str = ''
-    description: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
