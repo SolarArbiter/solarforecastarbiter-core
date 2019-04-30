@@ -32,7 +32,7 @@ def powerplant_metadata():
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.SolarPowerPlant(
         name='Albuquerque Baseline', latitude=35.05, longitude=-106.54,
-        elevation=1657.0, timezone='America/Denver', network='Sandia',
+        elevation=1657.0, timezone='America/Denver',
         modeling_parameters=modeling_params)
     return metadata
 
@@ -113,7 +113,7 @@ def test_persistence_interval(site_metadata, obs_interval_label,
     with expectation:
         fx = persistence.persistence_interval(
             observation, data_start, data_end, forecast_start,
-            interval_length, interval_label, load_data=load_data)
+            interval_length, interval_label, load_data)
         assert_series_equal(fx, expected)
 
 
@@ -157,14 +157,14 @@ def test_persistence_scalar_index(
     load_data = partial(load_data_base, data)
     fx = persistence.persistence_scalar_index(
         observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
+        interval_length, interval_label, load_data)
     expected_index = pd.DatetimeIndex(expected_index, tz=tz)
     expected = pd.Series(expected_ghi, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
 
     fx = persistence.persistence_scalar_index(
         observation_ac, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
+        interval_length, interval_label, load_data)
     expected = pd.Series(expected_ac, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
 
@@ -188,7 +188,7 @@ def test_persistence_scalar_index_instant_obs_fx(
     forecast_end = pd.Timestamp('20190404 1359', tz=tz)
     fx = persistence.persistence_scalar_index(
         observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
+        interval_length, interval_label, load_data)
     expected_index = pd.DatetimeIndex(
         ['20190404 1300', '20190404 1330'], tz=tz)
     expected_values = [96.59022431746838, 91.99405501672328]
@@ -197,7 +197,7 @@ def test_persistence_scalar_index_instant_obs_fx(
 
     fx = persistence.persistence_scalar_index(
         observation_ac, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
+        interval_length, interval_label, load_data)
     expected_values = [99.32046515783028, 98.34762206379594]
     expected = pd.Series(expected_values, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
@@ -209,7 +209,7 @@ def test_persistence_scalar_index_instant_obs_fx(
     forecast_end = pd.Timestamp('20190404 1400', tz=tz)
     fx = persistence.persistence_scalar_index(
         observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data=load_data)
+        interval_length, interval_label, load_data)
     expected_index = pd.DatetimeIndex(
         ['20190404 1300', '20190404 1330'], tz=tz)
     expected_values = [96.55340033645147, 91.89662922267517]
@@ -233,7 +233,7 @@ def test_persistence_scalar_index_invalid_times_instant(site_metadata):
     with pytest.raises(ValueError):
         persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
+            interval_length, interval_label, load_data)
 
 
 @pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
@@ -264,7 +264,7 @@ def test_persistence_scalar_index_invalid_times_interval(
     with pytest.raises(ValueError) as excinfo:
         persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
+            interval_length, interval_label, load_data)
     assert errtext in str(excinfo.value)
 
 
@@ -284,5 +284,5 @@ def test_persistence_scalar_index_invalid_times_invalid_label(site_metadata):
     with pytest.raises(ValueError) as excinfo:
         persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
-            interval_length, interval_label, load_data=load_data)
+            interval_length, interval_label, load_data)
     assert "invalid interval_label" in str(excinfo.value)

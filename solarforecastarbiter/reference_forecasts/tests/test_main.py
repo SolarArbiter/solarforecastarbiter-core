@@ -5,6 +5,7 @@ import pandas as pd
 
 import pytest
 
+from solarforecastarbiter.io import api
 from solarforecastarbiter.reference_forecasts import main, models
 from solarforecastarbiter.conftest import default_forecast, default_observation
 
@@ -327,7 +328,14 @@ def obs_5min_begin(site_metadata):
     return observation
 
 
-def test_run_persistence_scalar(site_metadata, obs_5min_begin, mocker):
+@pytest.fixture
+def session(requests_mock):
+    session = api.APISession('TOKEN')
+    requests_mock.register_uri('GET', session.base_url)
+
+
+def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
+                                mocker):
     run_time = pd.Timestamp('20190422T1945Z')
     # intraday, index=False
     forecast = default_forecast(
@@ -340,11 +348,13 @@ def test_run_persistence_scalar(site_metadata, obs_5min_begin, mocker):
     issue_time = pd.Timestamp('20190423T2300Z')
     mocker.patch.object(main.persistence, 'persistence_scalar',
                         autospec=True)
-    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
+    main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                         issue_time)
     assert main.persistence.persistence_scalar.call_count == 1
 
 
-def test_run_persistence_scalar_index(site_metadata, obs_5min_begin, mocker):
+def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
+                                      mocker):
     run_time = pd.Timestamp('20190422T1945Z')
     forecast = default_forecast(
         site_metadata,
@@ -357,12 +367,13 @@ def test_run_persistence_scalar_index(site_metadata, obs_5min_begin, mocker):
     # intraday, index=True
     mocker.patch.object(main.persistence, 'persistence_scalar_index',
                         autospec=True)
-    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time,
-                         index=True)
+    main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                         issue_time, index=True)
     assert main.persistence.persistence_scalar_index.call_count == 1
 
 
-def test_run_persistence_interval(site_metadata, obs_5min_begin, mocker):
+def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
+                                  mocker):
     run_time = pd.Timestamp('20190422T1945Z')
     # day ahead, index = False
     forecast = default_forecast(
@@ -375,11 +386,13 @@ def test_run_persistence_interval(site_metadata, obs_5min_begin, mocker):
     issue_time = pd.Timestamp('20190423T2300Z')
     mocker.patch.object(main.persistence, 'persistence_interval',
                         autospec=True)
-    main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
+    main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                         issue_time)
     assert main.persistence.persistence_interval.call_count == 1
 
 
-def test_run_persistence_interval_index(site_metadata, obs_5min_begin):
+def test_run_persistence_interval_index(session, site_metadata,
+                                        obs_5min_begin):
     # index=True not supported for day ahead
     forecast = default_forecast(
         site_metadata,
@@ -391,12 +404,13 @@ def test_run_persistence_interval_index(site_metadata, obs_5min_begin):
     issue_time = pd.Timestamp('20190423T2300Z')
     run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time,
-                             index=True)
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time, index=True)
     assert 'index=True not supported' in str(excinfo.value)
 
 
-def test_run_persistence_interval_too_long(site_metadata, obs_5min_begin):
+def test_run_persistence_interval_too_long(session, site_metadata,
+                                           obs_5min_begin):
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=23),
@@ -407,11 +421,13 @@ def test_run_persistence_interval_too_long(site_metadata, obs_5min_begin):
     issue_time = pd.Timestamp('20190423T2300Z')
     run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
     assert 'midnight to midnight' in str(excinfo.value)
 
 
-def test_run_persistence_interval_not_midnight_to_midnight(site_metadata,
+def test_run_persistence_interval_not_midnight_to_midnight(session,
+                                                           site_metadata,
                                                            obs_5min_begin):
     # not midnight to midnight
     forecast = default_forecast(
@@ -424,5 +440,6 @@ def test_run_persistence_interval_not_midnight_to_midnight(site_metadata,
     issue_time = pd.Timestamp('20190423T2200Z')
     run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(obs_5min_begin, forecast, run_time, issue_time)
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
     assert 'midnight to midnight' in str(excinfo.value)

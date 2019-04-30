@@ -87,7 +87,8 @@ def run(site, model, init_time, start, end):
     return resampled
 
 
-def run_persistence(observation, forecast, run_time, issue_time, index=False):
+def run_persistence(session, observation, forecast, run_time, issue_time,
+                    index=False):
     """
     Run a persistence *forecast* for an *observation*.
 
@@ -123,6 +124,9 @@ def run_persistence(observation, forecast, run_time, issue_time, index=False):
 
     Parameters
     ----------
+    session : api.Session
+        The session object to use to request data from the
+        SolarForecastArbiter API.
     observation : datamodel.Observation
         The metadata of the observation to be used to create the
         forecast.
@@ -168,18 +172,23 @@ def run_persistence(observation, forecast, run_time, issue_time, index=False):
     data_start, data_end = get_data_start_end(
         observation, forecast, run_time)
 
+    def load_data():
+        df = session.get_observation_values(observation.observation_id,
+                                            data_start, data_end)
+        return df['value']
+
     if intraday and index:
         fx = persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
-            forecast.interval_length, forecast.interval_label)
+            forecast.interval_length, forecast.interval_label, load_data)
     elif intraday and not index:
         fx = persistence.persistence_scalar(
             observation, data_start, data_end, forecast_start, forecast_end,
-            forecast.interval_length, forecast.interval_label)
+            forecast.interval_length, forecast.interval_label, load_data)
     elif not intraday and not index:
         fx = persistence.persistence_interval(
             observation, data_start, data_end, forecast_start,
-            forecast.interval_length, forecast.interval_label)
+            forecast.interval_length, forecast.interval_label, load_data)
     else:
         raise ValueError(
             'index=True not supported for forecasts with run_length >= 1day')

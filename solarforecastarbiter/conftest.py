@@ -360,7 +360,8 @@ def site_powerplant_site_type(request):
 def ac_power_observation_metadata(powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='instantaneous', interval_length=pd.Timedelta('5min'),
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
         interval_label='instant', site=powerplant_metadata, uncertainty=1)
     return ac_power_meta
 
@@ -369,7 +370,7 @@ def ac_power_observation_metadata(powerplant_metadata):
 def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='mean', interval_length=pd.Timedelta('5min'),
+        interval_value_type='mean', interval_length=pd.Timedelta('5min'),
         interval_label=request.param, site=powerplant_metadata, uncertainty=1)
     return ac_power_meta
 
@@ -378,7 +379,8 @@ def ac_power_observation_metadata_label(request, powerplant_metadata):
 def ghi_observation_metadata(site_metadata):
     ghi_meta = datamodel.Observation(
         name='Albuquerque Baseline GHI', variable='ghi',
-        value_type='instantaneous', interval_length=pd.Timedelta('5min'),
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
         interval_label='instant', site=site_metadata, uncertainty=1)
     return ghi_meta
 
@@ -386,15 +388,15 @@ def ghi_observation_metadata(site_metadata):
 def default_observation(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        value_type='mean', uncertainty=1, interval_length='1h',
+        interval_value_type='mean', uncertainty=1, interval_length='1h',
         interval_label='beginning'):
     """
     Helpful when you want to test a couple of parameters and don't
     need to worry about the rest.
     """
     obs = datamodel.Observation(
-        name=name, variable=variable,
-        value_type=value_type, site=site_metadata, uncertainty=uncertainty,
+        site=site_metadata, name=name, variable=variable,
+        interval_value_type=interval_value_type, uncertainty=uncertainty,
         interval_length=pd.Timedelta(interval_length),
         interval_label=interval_label
     )
@@ -404,7 +406,7 @@ def default_observation(
 def default_forecast(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        value_type='mean', issue_time_of_day=dt.time(hour=5),
+        interval_value_type='mean', issue_time_of_day=dt.time(hour=5),
         lead_time_to_start='1h', interval_length='1h', run_length='12h',
         interval_label='beginning'):
     """
@@ -414,7 +416,7 @@ def default_forecast(
     fx = datamodel.Forecast(
         site=site_metadata,
         name=name,
-        value_type=value_type,
+        interval_value_type=interval_value_type,
         variable=variable,
         issue_time_of_day=issue_time_of_day,
         lead_time_to_start=pd.Timedelta(lead_time_to_start),
@@ -434,7 +436,7 @@ def ac_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        value_type='mean',
+        interval_value_type='mean',
         variable='ac_power',
         site=site_metadata
     )
@@ -450,7 +452,7 @@ def ac_power_forecast_metadata_label(request, site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label=request.param,
-        value_type='mean',
+        interval_value_type='mean',
         variable='ac_power',
         site=site_metadata
     )

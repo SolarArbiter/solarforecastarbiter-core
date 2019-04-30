@@ -26,13 +26,11 @@ from functools import partial
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
-# does not exist yet
-from solarforecastarbiter.io.utils import load_data as _load_data
 
 
 def persistence_scalar(observation, data_start, data_end, forecast_start,
                        forecast_end, interval_length, interval_label,
-                       load_data=None):
+                       load_data):
     r"""
     Make a persistence forecast using the mean value of the
     *observation* from *data_start* to *data_end*.
@@ -68,16 +66,16 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
         Forecast interval length
     interval_label : str
         instantaneous, beginning, or ending
-    load_data : function, default solarforecastarbiter.io.utils.load_data
-        A function that loads the observation data. Must have the same
-        signature has the default function.
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
 
     Returns
     -------
     forecast : pd.Series
         The persistence forecast.
     """
-    load_data = _load_data if load_data is None else load_data
     obs = load_data(observation, data_start, data_end)
     persistence_quantity = obs.mean()
     closed = datamodel.CLOSED_MAPPING[interval_label]
@@ -91,7 +89,7 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
 # determined by the forecast start and data length. Could make them the
 # same for function call consistency, but readability counts.
 def persistence_interval(observation, data_start, data_end, forecast_start,
-                         interval_length, interval_label, load_data=None):
+                         interval_length, interval_label, load_data):
     r"""
     Make a persistence forecast for an *observation* using the mean
     values of each *interval_length* bin from *data_start* to
@@ -142,9 +140,10 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
         Forecast interval length
     interval_label : str
         instantaneous, beginning, or ending
-    load_data : function, default solarforecastarbiter.io.utils.load_data
-        A function that loads the observation data. Must have the same
-        signature has the default function.
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
 
     Returns
     -------
@@ -160,7 +159,6 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
                            forecast_start, forecast_end, interval_length)
 
     # get the data
-    load_data = _load_data if load_data is None else load_data
     obs = load_data(observation, data_start, data_end)
 
     # average data within bins of length interval_length
@@ -183,7 +181,7 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
 
 def persistence_scalar_index(observation, data_start, data_end, forecast_start,
                              forecast_end, interval_length, interval_label,
-                             load_data=None):
+                             load_data):
     r"""
     Calculate a persistence forecast using the mean value of the
     *observation* clear sky index or AC power index from *data_start* to
@@ -222,9 +220,10 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
         Forecast interval length
     interval_label : str
         instantaneous, beginning, or ending
-    load_data : function, default solarforecastarbiter.io.utils.load_data
-        A function that loads the observation data. Must have the same
-        signature has the default function.
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
 
     Returns
     -------
@@ -237,7 +236,6 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
                            forecast_start, forecast_end, interval_length)
 
     # get observation data for specified range
-    load_data = _load_data if load_data is None else load_data
     obs = load_data(observation, data_start, data_end)
 
     # partial-up the metadata for solar position and
