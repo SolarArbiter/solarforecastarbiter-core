@@ -75,6 +75,7 @@ def test_from_dict_no_extra(pdid_params):
             del obj_dict[key]
     assert model.from_dict(obj_dict, raise_on_extra=True) == expected
 
+
 def test_from_dict_extra_params_raise(pdid_params):
     _, obj_dict, model = pdid_params
     obj_dict['superextra'] = 'thing'
@@ -104,6 +105,6 @@ def _sites(many_sites_text, many_sites, request):
 
 
 def test_process_site_dict(_sites):
-    site_dict, expected, model= _sites
+    site_dict, expected, model = _sites
     out = model.from_dict(site_dict)
     assert out == expected
