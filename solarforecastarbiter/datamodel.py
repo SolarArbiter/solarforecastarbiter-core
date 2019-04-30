@@ -32,7 +32,12 @@ class BaseModel:
         Construct a dataclass from the given dict, matching keys with the class
         fields. A KeyError is raised for any missing values. If raise_on_extra
         is True, an errors is raised if keys of the dict are also not fields of
-        the dataclass.
+        the dataclass. For pandas.Timedelta model fields, it is assumed dict_
+        contains a number representing minutes. For datetime.time model fields,
+        dict_ values are assumed to be strings in the %H:%M format. If a
+        modeling_parameters field is present, the modeling_parameters key
+        from dict_ is automatically parsed into the appropriate
+        PVModelingParameters subclass based on tracking_type.
 
         Parameters
         ----------
@@ -47,6 +52,9 @@ class BaseModel:
         KeyError
             For missing required fields or if raise_on_extra is True and dict_
             contains extra keys.
+        ValueError
+            If a pandas.Timedelta, datetime.time, or modeling_parameters field
+            cannot be parsed from the dict_
         """
         dict_ = dict_.copy()
         model_fields = fields(model)
@@ -62,7 +70,7 @@ class BaseModel:
                         dict_[model_field.name], '%H:%M').time()
                 elif model_field.name == 'modeling_parameters':
                     mp_dict = dict_.pop('modeling_parameters', {})
-                    tracking_type = mp_dict.pop('tracking_type', '')
+                    tracking_type = mp_dict.pop('tracking_type', None)
                     if tracking_type == 'fixed':
                         kwargs['modeling_parameters'] = (
                             FixedTiltModelingParameters.from_dict(
@@ -71,6 +79,10 @@ class BaseModel:
                         kwargs['modeling_parameters'] = (
                             SingleAxisModelingParameters.from_dict(
                                 mp_dict))
+                    elif tracking_type is not None:
+                        raise ValueError(
+                            'tracking_type must be None, fixed, or '
+                            'single_axis')
                 else:
                     kwargs[model_field.name] = dict_[model_field.name]
             elif (

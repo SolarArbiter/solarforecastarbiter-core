@@ -83,6 +83,34 @@ def test_from_dict_extra_params_raise(pdid_params):
         model.from_dict(obj_dict, raise_on_extra=True)
 
 
+@pytest.mark.parametrize('site_num', [1, 2])
+def test_from_dict_invalid_tracking_type(site_num, many_sites_text):
+    model = datamodel.SolarPowerPlant
+    obj_dict = json.loads(many_sites_text)[site_num]
+    obj_dict['modeling_parameters']['tracking_type'] = 'invalid'
+    with pytest.raises(ValueError):
+        model.from_dict(obj_dict)
+
+
+@pytest.mark.parametrize('model', [datamodel.Observation, datamodel.Forecast])
+def test_from_dict_invalid_timedelta(model, many_observations_text,
+                                     many_forecasts_text):
+    if isinstance(model, datamodel.Observation):
+        obj_dict = json.loads(many_observations_text)[0]
+    else:
+        obj_dict = json.loads(many_forecasts_text)[0]
+    obj_dict['interval_length'] = 'blah'
+    with pytest.raises(ValueError):
+        model.from_dict(obj_dict)
+
+
+def test_from_dict_invalid_time_format(many_forecasts_text):
+    obj_dict = json.loads(many_forecasts_text)[0]
+    obj_dict['issue_time_of_day'] = '0000'
+    with pytest.raises(ValueError):
+        datamodel.Forecast.from_dict(obj_dict)
+
+
 def test_dict_roundtrip(pdid_params):
     expected, _, model = pdid_params
     dict_ = expected.to_dict()
