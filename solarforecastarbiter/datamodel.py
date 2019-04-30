@@ -3,8 +3,7 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
 
 
@@ -12,8 +11,8 @@ import pandas as pd
 
 
 ALLOWED_VARIABLES = {
-    'surface_temperature': 'degC',
-    'surface_wind_speed': 'm/s',
+    'air_temperature': 'degC',
+    'wind_speed': 'm/s',
     'ghi': 'W/m^2',
     'dni': 'W/m^2',
     'dhi': 'W/m^2',
@@ -26,8 +25,104 @@ ALLOWED_VARIABLES = {
 }
 
 
+class BaseModel:
+    @classmethod
+    def from_dict(model, dict_, raise_on_extra=False):
+        """
+        Construct a dataclass from the given dict, matching keys with the class
+        fields. A KeyError is raised for any missing values. If raise_on_extra
+        is True, an errors is raised if keys of the dict are also not fields of
+        the dataclass. For pandas.Timedelta model fields, it is assumed dict_
+        contains a number representing minutes. For datetime.time model fields,
+        dict_ values are assumed to be strings in the %H:%M format. If a
+        modeling_parameters field is present, the modeling_parameters key
+        from dict_ is automatically parsed into the appropriate
+        PVModelingParameters subclass based on tracking_type.
+
+        Parameters
+        ----------
+        dict_ : dict
+            The dict to process into dataclass fields
+        raise_on_extra : boolean, default False
+            If True, raise an exception on extra keys in dict_ that are not
+            dataclass fields.
+
+        Raises
+        ------
+        KeyError
+            For missing required fields or if raise_on_extra is True and dict_
+            contains extra keys.
+        ValueError
+            If a pandas.Timedelta, datetime.time, or modeling_parameters field
+            cannot be parsed from the dict_
+        """
+        dict_ = dict_.copy()
+        model_fields = fields(model)
+        kwargs = {}
+        errors = []
+        for model_field in model_fields:
+            if model_field.name in dict_:
+                if model_field.type == pd.Timedelta:
+                    kwargs[model_field.name] = pd.Timedelta(
+                        f'{dict_[model_field.name]}min')
+                elif model_field.type == datetime.time:
+                    kwargs[model_field.name] = datetime.datetime.strptime(
+                        dict_[model_field.name], '%H:%M').time()
+                elif model_field.name == 'modeling_parameters':
+                    mp_dict = dict_.pop('modeling_parameters', {})
+                    tracking_type = mp_dict.pop('tracking_type', None)
+                    if tracking_type == 'fixed':
+                        kwargs['modeling_parameters'] = (
+                            FixedTiltModelingParameters.from_dict(
+                                mp_dict))
+                    elif tracking_type == 'single_axis':
+                        kwargs['modeling_parameters'] = (
+                            SingleAxisModelingParameters.from_dict(
+                                mp_dict))
+                    elif tracking_type is not None:
+                        raise ValueError(
+                            'tracking_type must be None, fixed, or '
+                            'single_axis')
+                else:
+                    kwargs[model_field.name] = dict_[model_field.name]
+            elif (
+                    model_field.default is MISSING and
+                    model_field.default_factory is MISSING and
+                    model_field.init
+            ):
+                errors.append(model_field.name)
+        if errors:
+            raise KeyError(
+                'Missing the following required arguments for the model '
+                f'{str(model)}: {", ".join(errors)}')
+        names = [f.name for f in model_fields]
+        extra = [k for k in dict_.keys() if k not in names]
+        if extra and raise_on_extra:
+            raise KeyError(
+                f'Extra keys for the model {str(model)}: {", ".join(extra)}')
+        return model(**kwargs)
+
+    def to_dict(self):
+        """
+        Convert the dataclass into a dictionary suitable for uploading to the
+        API. This means some types (such as pandas.Timedelta and times) are
+        converted to strings.
+        """
+        dict_ = asdict(self)
+        for k, v in dict_.items():
+            if isinstance(v, datetime.time):
+                dict_[k] = v.strftime('%H:%M')
+            elif isinstance(v, pd.Timedelta):
+                # convert to integer minutes
+                dict_[k] = v.total_seconds() // 60
+
+        if 'units' in dict_:
+            del dict_['units']
+        return dict_
+
+
 @dataclass(frozen=True)
-class Site:
+class Site(BaseModel):
     """
     Class for keeping track of Site metadata.
 
@@ -45,12 +140,10 @@ class Site:
         Elevation of the Site in meters above mean sea level, e.g. 1007
     timezone : str
         IANA timezone of the Site, e.g. Etc/GMT+8
-    network : str, optional
-        Measurement network name, e.g. SURFRAD
-    well_known_text: str, optional
-        Describes a geometric area for a Site which may be physically extended,
-        e.g. a polygon over a city for a Site that describes many distributed
-        generation PV systems.
+    site_id : str, optional
+        UUID of the Site in the API
+    provider : str, optional
+        Provider of the Site information.
     extra_parameters : str, optional
         The extra parameters may be used by forecasters when
         implementing other PV models. The framework does not provide
@@ -62,13 +155,13 @@ class Site:
     longitude: float
     elevation: float
     timezone: str
-    network: str = ''
-    well_known_text: str = ''
+    site_id: str = ''
+    provider: str = ''
     extra_parameters: str = ''
 
 
 @dataclass(frozen=True)
-class PVModelingParameters:
+class PVModelingParameters(BaseModel):
     """
     Class for keeping track of generic PV modeling parameters
 
@@ -118,6 +211,7 @@ class FixedTiltModelingParameters(PVModelingParameters):
     """
     surface_tilt: float
     surface_azimuth: float
+    tracking_type: str = 'fixed'
 
 
 @dataclass(frozen=True)
@@ -139,7 +233,7 @@ class SingleAxisModelingParameters(PVModelingParameters):
         coverage ratio is 0.286(=2/7).
     backtrack : bool
         Indicator of if a tracking system uses backtracking
-    maximum_rotation_angle : float
+    max_rotation_angle : float
         maximum rotation from horizontal of a single axis tracker, degrees
 
     See Also
@@ -150,7 +244,8 @@ class SingleAxisModelingParameters(PVModelingParameters):
     axis_azimuth: float
     ground_coverage_ratio: float
     backtrack: bool
-    maximum_rotation_angle: float
+    max_rotation_angle: float
+    tracking_type: str = 'single_axis'
 
 
 @dataclass(frozen=True)
@@ -176,12 +271,12 @@ class SolarPowerPlant(Site):
 
 def __set_units__(cls):
     if cls.variable not in ALLOWED_VARIABLES:
-        raise ValueError('variable is not allowed')
+        raise ValueError('variable %s is not allowed' % cls.variable)
     object.__setattr__(cls, 'units', ALLOWED_VARIABLES[cls.variable])
 
 
 @dataclass(frozen=True)
-class Observation:
+class Observation(BaseModel):
     """
     A class for keeping track of metadata associated with an observation.
     Units are set according to the variable type.
@@ -193,7 +288,7 @@ class Observation:
     variable : str
         Variable name, e.g. power, GHI. Each allowed variable has an
         associated pre-defined unit.
-    value_type : str
+    interval_value_type : str
         The type of the data in the observation. Typically interval mean or
         instantaneous, but additional types may be defined for events.
     interval_length : pandas.Timedelta
@@ -208,8 +303,8 @@ class Observation:
     uncertainty : float
         A measure of the uncertainty of the observation values. The format
         will be determined later.
-    description : str, optional
-        A text description of the observation.
+    observation_id : str, optional
+        UUID of the observation in the API
     extra_parameters : str, optional
         Any extra parameters for the observation
 
@@ -219,19 +314,19 @@ class Observation:
     """
     name: str
     variable: str
-    value_type: str
+    interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
     site: Site
     uncertainty: float
-    description: str = ''
+    observation_id: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
 
 
 @dataclass(frozen=True)
-class Forecast:
+class Forecast(BaseModel):
     """
     A class to hold metadata for Forecast objects.
 
@@ -259,7 +354,7 @@ class Forecast:
         Indicates if a time labels the beginning or the ending of an interval
         average, or indicates an instantaneous value, e.g. beginning, ending,
         instant.
-    value_type : str
+    interval_value_type : str
         The type of the data in the forecast, e.g. mean, max, 95th percentile.
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
@@ -267,6 +362,8 @@ class Forecast:
     site : Site
         The predefined site that the forecast is for, e.g. Power Plant X
         or Aggregate Y.
+    forecast_id : str, optional
+        UUID of the forecast in the API
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -280,9 +377,10 @@ class Forecast:
     interval_length: pd.Timedelta
     run_length: pd.Timedelta
     interval_label: str
-    value_type: str
+    interval_value_type: str
     variable: str
     site: Site
+    forecast_id: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__

@@ -128,7 +128,7 @@ def aoi_func_factory(modeling_parameters):
             aoi_tracking,
             modeling_parameters.axis_tilt,
             modeling_parameters.axis_azimuth,
-            modeling_parameters.maximum_rotation_angle,
+            modeling_parameters.max_rotation_angle,
             modeling_parameters.backtrack,
             modeling_parameters.ground_coverage_ratio
         )
@@ -160,7 +160,7 @@ def aoi_fixed(surface_tilt, surface_azimuth, apparent_zenith, azimuth):
     return surface_tilt, surface_azimuth, aoi
 
 
-def aoi_tracking(axis_tilt, axis_azimuth, maximum_rotation_angle, backtrack,
+def aoi_tracking(axis_tilt, axis_azimuth, max_rotation_angle, backtrack,
                  ground_coverage_ratio, apparent_zenith, azimuth):
     """
     Calculate AOI, surface tilt, and surface azimuth for tracking system.
@@ -169,7 +169,7 @@ def aoi_tracking(axis_tilt, axis_azimuth, maximum_rotation_angle, backtrack,
     ----------
     axis_tilt : float
     axis_azimuth : float
-    maximum_rotation_angle : float
+    max_rotation_angle : float
     backtrack : bool
     ground_coverage_ratio : float
     apparent_zenith : pd.Series
@@ -186,7 +186,7 @@ def aoi_tracking(axis_tilt, axis_azimuth, maximum_rotation_angle, backtrack,
         azimuth,
         axis_tilt=axis_tilt,
         axis_azimuth=axis_azimuth,
-        max_angle=maximum_rotation_angle,
+        max_angle=max_rotation_angle,
         backtrack=backtrack,
         gcr=ground_coverage_ratio
     )
