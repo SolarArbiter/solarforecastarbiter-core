@@ -5,8 +5,8 @@ import pandas as pd
 
 import pytest
 
-from solarforecastarbiter import datamodel
 from solarforecastarbiter.reference_forecasts import main, models
+from solarforecastarbiter.conftest import default_forecast, default_observation
 
 # we'll need to do something better once the load_forecast function works
 init_time = pd.Timestamp('20190328T1200Z')
@@ -71,40 +71,6 @@ def test_run(model, load_forecast_return_value, site_powerplant_site_type,
     site, site_type = site_powerplant_site_type
     out = main.run(site, model, init_time, start, end)
     check_out(out, out_forecast_exp, site_type)
-
-
-def default_observation(
-        site_metadata,
-        name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='mean', uncertainty=1, interval_length='1h',
-        interval_label='beginning'):
-    obs = datamodel.Observation(
-        name=name, variable=variable,
-        value_type=value_type, site=site_metadata, uncertainty=uncertainty,
-        interval_length=pd.Timedelta(interval_length),
-        interval_label=interval_label
-    )
-    return obs
-
-
-def default_forecast(
-        site_metadata,
-        name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='mean', issue_time_of_day=dt.time(hour=5),
-        lead_time_to_start='1h', interval_length='1h', run_length='12h',
-        interval_label='beginning'):
-    fx = datamodel.Forecast(
-        site=site_metadata,
-        name=name,
-        value_type=value_type,
-        variable=variable,
-        issue_time_of_day=issue_time_of_day,
-        lead_time_to_start=pd.Timedelta(lead_time_to_start),
-        interval_length=pd.Timedelta(interval_length),
-        run_length=pd.Timedelta(run_length),
-        interval_label=interval_label
-    )
-    return fx
 
 
 def test_get_data_start_end_labels_1h_window_limit(site_metadata):
