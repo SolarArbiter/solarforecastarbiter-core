@@ -95,7 +95,7 @@ def test_from_dict_invalid_tracking_type(site_num, many_sites_text):
 @pytest.mark.parametrize('model', [datamodel.Observation, datamodel.Forecast])
 def test_from_dict_invalid_timedelta(model, many_observations_text,
                                      many_forecasts_text):
-    if isinstance(model, datamodel.Observation):
+    if model == datamodel.Observation:
         obj_dict = json.loads(many_observations_text)[0]
     else:
         obj_dict = json.loads(many_forecasts_text)[0]
