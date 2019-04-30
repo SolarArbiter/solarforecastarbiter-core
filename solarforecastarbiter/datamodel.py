@@ -11,7 +11,7 @@ import pandas as pd
 
 
 ALLOWED_VARIABLES = {
-    'temp_air': 'degC',
+    'air_temperature': 'degC',
     'wind_speed': 'm/s',
     'ghi': 'W/m^2',
     'dni': 'W/m^2',
