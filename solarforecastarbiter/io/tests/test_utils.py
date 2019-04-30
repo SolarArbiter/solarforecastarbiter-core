@@ -6,10 +6,8 @@ import pytest
 from solarforecastarbiter.io import utils
 
 # data for test Dataframe
-TEST_DICT = {'var_1': [2.0, 43.9, 338.0, -199.7, 0.32],
-             'var_1_flag': [0, 0, 1, 3, 3],
-             'var_2': [33.88, 3.22, 1e-2, 248.71, 48.7],
-             'var_2_flag': [1, 1, 1, 1, 1]}
+TEST_DICT = {'value': [2.0, 43.9, 338.0, -199.7, 0.32],
+             'quality_flag': [1, 1, 9, 5, 2]}
 
 DF_INDEX = pd.DatetimeIndex(start=pd.Timestamp('2019-01-24T00:00'),
                             freq='1min',
@@ -18,14 +16,15 @@ DF_INDEX = pd.DatetimeIndex(start=pd.Timestamp('2019-01-24T00:00'),
 TEST_DATA = pd.DataFrame(TEST_DICT, index=DF_INDEX)
 
 
-@pytest.mark.parametrize('df,var_label,flag_label,default_flag,flag_value', [
-    (TEST_DATA, 'var_1', 'var_1_flag', None, 0),
-    (TEST_DATA, 'var_1', None, 0, 0),
-    (TEST_DATA, 'var_2', 'var_2_flag', None, 1),
+@pytest.mark.parametrize('dump_quality,default_flag,flag_value', [
+    (False, None, 1),
+    (True, 2, 2)
 ])
-def test_obs_df_to_json(df, var_label, flag_label, default_flag, flag_value):
-    converted = utils.observation_df_to_json_payload(df, var_label, flag_label,
-                                                     default_flag)
+def test_obs_df_to_json(dump_quality, default_flag, flag_value):
+    td = TEST_DATA.copy()
+    if dump_quality:
+        del td['quality_flag']
+    converted = utils.observation_df_to_json_payload(td, default_flag)
     converted_dict = json.loads(converted)
     assert 'values' in converted_dict
     values = converted_dict['values']
@@ -36,12 +35,20 @@ def test_obs_df_to_json(df, var_label, flag_label, default_flag, flag_value):
 
 
 def test_obs_df_to_json_no_quality():
+    td = TEST_DATA.copy()
+    del td['quality_flag']
     with pytest.raises(KeyError):
-        utils.observation_df_to_json_payload(TEST_DATA, 'var_1')
+        utils.observation_df_to_json_payload(td)
+
+
+def test_obs_df_to_json_no_values():
+    td = TEST_DATA.copy().rename(columns={'value': 'val1'})
+    with pytest.raises(KeyError):
+        utils.observation_df_to_json_payload(td)
 
 
 def test_forecast_series_to_json():
-    series = pd.Series([0, 1, 2, 3, 4], index=pd.DatetimeIndex(
+    series = pd.Series([0, 1, 2, 3, 4], index=pd.date_range(
         start='2019-01-01T12:00Z', freq='5min', periods=5))
     expected = [{'value': 0.0, 'timestamp': '2019-01-01T12:00:00Z'},
                 {'value': 1.0, 'timestamp': '2019-01-01T12:05:00Z'},
@@ -49,26 +56,6 @@ def test_forecast_series_to_json():
                 {'value': 3.0, 'timestamp': '2019-01-01T12:15:00Z'},
                 {'value': 4.0, 'timestamp': '2019-01-01T12:20:00Z'}]
     json_out = utils.forecast_object_to_json(series)
-    assert json.loads(json_out)['values'] == expected
-
-
-def test_forecast_obj_to_json_nonpandas():
-    with pytest.raises(TypeError):
-        utils.forecast_object_to_json({'values': [0, 1, 2]})
-
-
-@pytest.mark.parametrize('colname', ['val1', 'fx'])
-def test_forecast_frame_to_json(colname):
-    df = pd.DataFrame({colname: [0, 1, 2, 3, 4]},
-                      index=pd.DatetimeIndex(
-                          start='2019-01-01T12:00Z', freq='5min',
-                          periods=5))
-    expected = [{'value': 0.0, 'timestamp': '2019-01-01T12:00:00Z'},
-                {'value': 1.0, 'timestamp': '2019-01-01T12:05:00Z'},
-                {'value': 2.0, 'timestamp': '2019-01-01T12:10:00Z'},
-                {'value': 3.0, 'timestamp': '2019-01-01T12:15:00Z'},
-                {'value': 4.0, 'timestamp': '2019-01-01T12:20:00Z'}]
-    json_out = utils.forecast_object_to_json(df, colname)
     assert json.loads(json_out)['values'] == expected
 
 

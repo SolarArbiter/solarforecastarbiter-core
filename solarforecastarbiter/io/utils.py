@@ -14,10 +14,7 @@ def _dataframe_to_json(payload_df):
 
 
 def observation_df_to_json_payload(
-        observation_df,
-        variable_label,
-        quality_flag_label=None,
-        default_quality_flag=None):
+        observation_df, default_quality_flag=None):
     """Extracts a variable from an observation DataFrame and formats it
     into a JSON payload for posting to the Solar Forecast Arbiter API.
 
@@ -25,15 +22,10 @@ def observation_df_to_json_payload(
     ----------
     observation_df : DataFrame
         Dataframe of observation data. Must contain a tz-aware DateTimeIndex
-        and a column of variable values. May contain a column of data quality
-        flags.
-    variable_label : string
-        Label of column containing the observation data.
-    quality_flag_label : string
-        Label of column containing quality flag integer. Defaults to None,
-        in which case a KeyError is raised unless default_quality_flag is set.
+        and a 'value' column. May contain a column of data quality
+        flags labeled 'quality_flag'.
     default_quality_flag : int
-        If quality_flag_label is not defined, the quality flag for each row is
+        If 'quality_flag' is not a column, the quality flag for each row is
         set to this value.
 
     Returns
@@ -46,7 +38,7 @@ def observation_df_to_json_payload(
             {
               “timestamp”: “2018-11-22T12:01:48Z”, # ISO 8601 datetime in UTC
               “value”: 10.23, # floating point value of observation
-              “quality_flag”: 0, # 0 or 1. 1 indicates data is questionable.
+              “quality_flag”: 0
             },...
           ]
         }
@@ -54,51 +46,34 @@ def observation_df_to_json_payload(
     Raises
     ------
     KeyError
-       When quality_flag_label and default_quality_flag are not set
+       When 'value' is missing from the columns or 'quality_flag'
+       is missing and default_quality_flag is None
     """
-    if quality_flag_label is not None:
-        payload_df = observation_df[
-            [variable_label, quality_flag_label]].rename(
-                columns={variable_label: 'value',
-                         quality_flag_label: 'quality_flag'})
-    elif default_quality_flag is not None:
-        payload_df = observation_df[[variable_label]].rename(
-            columns={variable_label: 'value'})
-        payload_df['quality_flag'] = int(default_quality_flag)
+    if default_quality_flag is None:
+        payload_df = observation_df[['value', 'quality_flag']]
     else:
-        raise KeyError(
-            'Either quality_flag_label or default_quality_flag need to be set')
+        payload_df = observation_df[['value']]
+        payload_df['quality_flag'] = int(default_quality_flag)
     return _dataframe_to_json(payload_df)
 
 
-def forecast_object_to_json(forecast_obj, column_label=None):
+def forecast_object_to_json(forecast_series):
     """
-    Converts a forecast Series or DataFrame to JSON to post to the
+    Converts a forecast Series to JSON to post to the
     SolarForecastArbiter API.
 
     Parameters
     ----------
-    forecast_obj : pandas.Series or pandas.DataFrame
-        The series or dataframe that contains the forecast values with a
+    forecast_series : pandas.Series
+        The series that contains the forecast values with a
         datetime index.
-    column_label : string
-        If forecast_obj is a DataFrame, use this column as the forecast values.
 
     Returns
     -------
     string
         The JSON encoded forecast values dict
     """
-    if isinstance(forecast_obj, pd.Series):
-        forecast_df = forecast_obj.to_frame('value')
-        column_label = 'value'
-    elif isinstance(forecast_obj, pd.DataFrame):
-        forecast_df = forecast_obj
-    else:
-        raise TypeError('forecast_obj must be a pandas Series or DataFrame')
-
-    payload_df = forecast_df[[column_label]].rename(
-        columns={column_label: 'value'})
+    payload_df = forecast_series.to_frame('value')
     return _dataframe_to_json(payload_df)
 
 

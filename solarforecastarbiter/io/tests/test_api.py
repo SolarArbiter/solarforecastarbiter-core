@@ -140,7 +140,6 @@ def empty_df():
                         index=pd.DatetimeIndex([], name='timestamp'))
 
 
-
 def test_apisession_get_observation_values_empty(requests_mock, empty_df):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/observations/.*/values')
@@ -220,7 +219,7 @@ def real_session(auth_token):
 
 
 def test_real_apisession_get_site(real_session):
-    site = real_session.get_site('2290b042-66a6-11e9-a7c8-0a580a82019c')
+    site = real_session.get_site('123e4567-e89b-12d3-a456-426655440001')
     assert isinstance(site, datamodel.Site)
 
 

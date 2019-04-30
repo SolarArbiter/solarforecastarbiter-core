@@ -232,9 +232,7 @@ class APISession(requests.Session):
                        params={'start': start, 'end': end})
         return json_payload_to_forecast_series(req.json())
 
-    def post_observation_values(self, observation_id, observation_df,
-                                value_column='value',
-                                quality_flag_column='quality_flag'):
+    def post_observation_values(self, observation_id, observation_df):
         """
         Upload the given observation values to the appropriate observation_id
         of the API.
@@ -244,21 +242,15 @@ class APISession(requests.Session):
         observation_id : string
             UUID of the observation to add values for
         observation_df : pandas.DataFrame
-            Dataframe with a datetime index and the values and quality_flag
-            to upload to the API
-        value_column : string
-            Column of the dataframe with the observation values
-        quality_flag_column : string
-            Column of the dataframe with the observation quality flags
+            Dataframe with a datetime index and the (required) value and
+            quality_flag columns to upload to the API.
         """
-        json_vals = observation_df_to_json_payload(
-            observation_df, value_column, quality_flag_column)
+        json_vals = observation_df_to_json_payload(observation_df)
         self.post(f'/observations/{observation_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
 
-    def post_forecast_values(self, forecast_id, forecast_obj,
-                             value_column=None):
+    def post_forecast_values(self, forecast_id, forecast_series):
         """
         Upload the given forecast values to the appropriate forecast_id of the
         API
@@ -267,13 +259,11 @@ class APISession(requests.Session):
         ----------
         forecast_id : string
             UUID of the forecast to upload values to
-        forecast_obj : pandas.DataFrame or Series
-            Pandas object with a datetime index that contains the values to
+        forecast_obj : pandas.Series
+            Pandas series with a datetime index that contains the values to
             upload to the API
-        value_column : string
-            If forecast_obj is a pandas.DataFrame, upload data from this column
         """
-        json_vals = forecast_object_to_json(forecast_obj, value_column)
+        json_vals = forecast_object_to_json(forecast_series)
         self.post(f'/forecasts/single/{forecast_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
