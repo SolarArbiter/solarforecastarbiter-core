@@ -265,7 +265,6 @@ def _site_from_dict(site_dict):
             longitude=site_dict['longitude'], elevation=site_dict['elevation'],
             timezone=site_dict['timezone'],
             provider=site_dict.get('provider', ''),
-            well_known_text=site_dict.get('well_known_text', ''),
             extra_parameters=site_dict.get('extra_parameters', ''),
             site_id=site_dict.get('site_id', ''),
             modeling_parameters=site_dict['modeling_parameters'])
@@ -276,7 +275,6 @@ def _site_from_dict(site_dict):
             timezone=site_dict['timezone'],
             site_id=site_dict.get('site_id', ''),
             provider=site_dict.get('provider', ''),
-            well_known_text=site_dict.get('well_known_text', ''),
             extra_parameters=site_dict.get('extra_parameters', ''))
 
 

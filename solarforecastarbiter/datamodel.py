@@ -132,10 +132,6 @@ class Site(BaseModel):
         UUID of the Site in the API
     provider : str, optional
         Provider of the Site information.
-    well_known_text: str, optional
-        Describes a geometric area for a Site which may be physically extended,
-        e.g. a polygon over a city for a Site that describes many distributed
-        generation PV systems.
     extra_parameters : str, optional
         The extra parameters may be used by forecasters when
         implementing other PV models. The framework does not provide
@@ -149,7 +145,6 @@ class Site(BaseModel):
     timezone: str
     site_id: str = ''
     provider: str = ''
-    well_known_text: str = ''
     extra_parameters: str = ''
 
 
