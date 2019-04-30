@@ -211,6 +211,30 @@ class APISession(requests.Session):
         return [self._process_forecast_dict(fx_dict)
                 for fx_dict in req.json()]
 
+    def create_forecast(self, forecast):
+        """
+        Create a new forecast in the API with the given Forecast model
+
+        Parameters
+        ----------
+        forecast : datamodel.Forecast
+            Forecast to create in the API
+
+        Returns
+        -------
+        datamodel.Forecast
+            With the appropriate parameters such as forecast_id set by the API
+        """
+        fx_dict = forecast.to_dict()
+        fx_dict.pop('forecast_id')
+        site = fx_dict.pop('site')
+        fx_dict['site_id'] = site['site_id']
+        fx_json = json.dumps(fx_dict)
+        req = self.post('/forecasts/single/', data=fx_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_forecast(new_id)
+
     def get_observation_values(self, observation_id, start, end):
         """
         Get observation values from start to end for observation_id from the

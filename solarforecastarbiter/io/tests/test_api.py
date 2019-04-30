@@ -132,6 +132,21 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
     assert fx_list == many_forecasts
 
 
+def test_apisession_create_forecast(requests_mock, single_forecast,
+                                    single_forecast_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*')
+    requests_mock.register_uri('POST', matcher,
+                               text=single_forecast.forecast_id)
+    requests_mock.register_uri('GET', matcher, content=single_forecast_text)
+    forecast_dict = single_forecast.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(single_forecast).from_dict(forecast_dict)
+    new_forecast = session.create_forecast(ss)
+    assert new_forecast == single_forecast
+
+
 def test_apisession_list_forecasts_empty(requests_mock):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
@@ -276,6 +291,21 @@ def test_real_apisession_list_forecasts(real_session):
     fxs = real_session.list_forecasts()
     assert isinstance(fxs, list)
     assert isinstance(fxs[0], datamodel.Forecast)
+
+
+def test_real_apisession_create_forecast(single_forecast_text, single_forecast,
+                                         real_session):
+    forecastd = json.loads(single_forecast_text)
+    forecastd['name'] = f'Test create forecast {randint(0, 100)}'
+    forecastd['site_id'] = '123e4567-e89b-12d3-a456-426655440001'
+    forecastd['site'] = single_forecast.site
+    forecast = datamodel.Forecast.from_dict(forecastd)
+    new_forecast = real_session.create_forecast(forecast)
+    real_session.delete(f'/forecasts/single/{new_forecast.forecast_id}')
+    for attr in ('name', 'site', 'variable', 'interval_label',
+                 'interval_length', 'lead_time_to_start', 'run_length',
+                 'extra_parameters'):
+        assert getattr(new_forecast, attr) == getattr(forecast, attr)
 
 
 def test_real_apisession_get_observation_values(real_session):

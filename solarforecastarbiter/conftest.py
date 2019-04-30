@@ -162,7 +162,7 @@ def site_text():
         "temperature_coefficient": -0.002,
         "tracking_type": "fixed"
     },
-    "name": "Fixed plant",
+    "name": "Power Plant 1",
     "provider": "Organization 1",
     "timezone": "Etc/GMT+6",
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
