@@ -3,7 +3,7 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-from dataclasses import dataclass, field, fields, MISSING
+from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
 
 
@@ -48,6 +48,7 @@ class BaseModel:
             For missing required fields or if raise_on_extra is True and dict_
             contains extra keys.
         """
+        dict_ = dict_.copy()
         model_fields = fields(model)
         kwargs = {}
         errors = []
@@ -88,6 +89,24 @@ class BaseModel:
             raise KeyError(
                 f'Extra keys for the model {str(model)}: {", ".join(extra)}')
         return model(**kwargs)
+
+    def to_dict(self):
+        """
+        Convert the dataclass into a dictionary suitable for uploading to the
+        API. This means some types (such as pandas.Timedelta and times) are
+        converted to strings.
+        """
+        dict_ = asdict(self)
+        for k, v in dict_.items():
+            if isinstance(v, datetime.time):
+                dict_[k] = v.strftime('%H:%M')
+            elif isinstance(v, pd.Timedelta):
+                # convert to integer minutes
+                dict_[k] = v.total_seconds() // 60
+
+        if 'units' in dict_:
+            del dict_['units']
+        return dict_
 
 
 @dataclass(frozen=True)
@@ -185,6 +204,7 @@ class FixedTiltModelingParameters(PVModelingParameters):
     """
     surface_tilt: float
     surface_azimuth: float
+    tracking_type: str = 'fixed'
 
 
 @dataclass(frozen=True)
@@ -218,6 +238,7 @@ class SingleAxisModelingParameters(PVModelingParameters):
     ground_coverage_ratio: float
     backtrack: bool
     max_rotation_angle: float
+    tracking_type: str = 'single_axis'
 
 
 @dataclass(frozen=True)

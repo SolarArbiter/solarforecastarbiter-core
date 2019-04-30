@@ -83,6 +83,15 @@ def test_from_dict_extra_params_raise(pdid_params):
         model.from_dict(obj_dict, raise_on_extra=True)
 
 
+def test_dict_roundtrip(pdid_params):
+    expected, _, model = pdid_params
+    dict_ = expected.to_dict()
+    if 'site' in dict_:
+        dict_['site'] = type(expected.site).from_dict(dict_['site'])
+    out = model.from_dict(dict_)
+    assert out == expected
+
+
 def test_invalid_variable(single_site):
     with pytest.raises(ValueError):
         datamodel.Observation(
