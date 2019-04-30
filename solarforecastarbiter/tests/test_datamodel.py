@@ -67,6 +67,21 @@ def test_from_dict_into_datamodel_no_extra(pdid_params):
         assert getattr(out, field.name) == getattr(expected, field.name)
 
 
+def test_from_dict_no_extra(pdid_params):
+    expected, obj_dict, model = pdid_params
+    names = [f.name for f in fields(model)]
+    for key in list(obj_dict.keys()):
+        if key not in names:
+            del obj_dict[key]
+    assert model.from_dict(obj_dict, raise_on_extra=True) == expected
+
+def test_from_dict_extra_params_raise(pdid_params):
+    _, obj_dict, model = pdid_params
+    obj_dict['superextra'] = 'thing'
+    with pytest.raises(KeyError):
+        model.from_dict(obj_dict, raise_on_extra=True)
+
+
 def test_invalid_variable(single_site):
     with pytest.raises(ValueError):
         datamodel.Observation(

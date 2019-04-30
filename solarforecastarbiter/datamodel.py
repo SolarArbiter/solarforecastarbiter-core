@@ -29,8 +29,24 @@ class BaseModel:
     @classmethod
     def from_dict(model, dict_, raise_on_extra=False):
         """
-        extra keys ignored, keyerror on missing required params,
-        etc
+        Construct a dataclass from the given dict, matching keys with the class
+        fields. A KeyError is raised for any missing values. If raise_on_extra
+        is True, an errors is raised if keys of the dict are also not fields of
+        the dataclass.
+
+        Parameters
+        ----------
+        dict_ : dict
+            The dict to process into dataclass fields
+        raise_on_extra : boolean, default False
+            If True, raise an exception on extra keys in dict_ that are not
+            dataclass fields.
+
+        Raises
+        ------
+        KeyError
+            For missing required fields or if raise_on_extra is True and dict_
+            contains extra keys.
         """
         model_fields = fields(model)
         kwargs = {}
@@ -66,6 +82,11 @@ class BaseModel:
             raise KeyError(
                 'Missing the following required arguments for the model '
                 f'{str(model)}: {", ".join(errors)}')
+        names = [f.name for f in model_fields]
+        extra = [k for k in dict_.keys() if k not in names]
+        if extra and raise_on_extra:
+            raise KeyError(
+                f'Extra keys for the model {str(model)}: {", ".join(extra)}')
         return model(**kwargs)
 
 

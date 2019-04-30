@@ -75,6 +75,15 @@ class APISession(requests.Session):
         result.raise_for_status()
         return result
 
+    def _process_site_dict(self, site_dict):
+        if (
+                site_dict.get('modeling_parameters', {}).get(
+                    'tracking_type', '') in ('fixed', 'single_axis')
+        ):
+            return datamodel.SolarPowerPlant.from_dict(site_dict)
+        else:
+            return datamodel.Site.from_dict(site_dict)
+
     def get_site(self, site_id):
         """
         Retrieve site metadata for site_id from the API and process
@@ -92,7 +101,8 @@ class APISession(requests.Session):
            the Site is a power plant with modeling parameters or not.
         """
         req = self.get(f'/sites/{site_id}')
-        return datamodel.process_site_dict(req.json())
+        site_dict = req.json()
+        return self._process_site_dict(site_dict)
 
     def list_sites(self):
         """
@@ -103,7 +113,7 @@ class APISession(requests.Session):
         list of datamodel.Sites and datamodel.SolarPowerPlants
         """
         req = self.get('/sites/')
-        return [datamodel.process_site_dict(site_dict)
+        return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
 
     def _process_observation_dict(self, observation_dict):
@@ -111,8 +121,7 @@ class APISession(requests.Session):
         site_id = obs_dict['site_id']
         site = self.get_site(site_id)
         obs_dict['site'] = site
-        return datamodel.process_dict_into_datamodel(
-            obs_dict, datamodel.Observation)
+        return datamodel.Observation.from_dict(obs_dict)
 
     def get_observation(self, observation_id):
         """
@@ -148,8 +157,7 @@ class APISession(requests.Session):
         site_id = forecast_dict['site_id']
         site = self.get_site(site_id)
         fx_dict['site'] = site
-        return datamodel.process_dict_into_datamodel(
-            fx_dict, datamodel.Forecast)
+        return datamodel.Forecast.from_dict(fx_dict)
 
     def get_forecast(self, forecast_id):
         """
