@@ -191,16 +191,17 @@ def test_apisession_post_forecast_values(requests_mock, forecast_values):
 
 @pytest.fixture(scope='session')
 def auth_token():
-    token_req = requests.post(
-        'https://solarforecastarbiter.auth0.com/oauth/token',
-        headers={'content-type': 'application/json'},
-        data=('{"grant_type": "password", '
-              '"username": "testing@solarforecastarbiter.org",'
-              '"password": "Thepassword123!", '
-              '"audience": "https://api.solarforecastarbiter.org", '
-              '"client_id": "c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7"}'))
-    if token_req.status_code != 200:
-        pytest.skip('Cannot retrieve valid Auth0 token')
+    try:
+        token_req = requests.post(
+            'https://solarforecastarbiter.auth0.com/oauth/token',
+            headers={'content-type': 'application/json'},
+            data=('{"grant_type": "password", '
+                  '"username": "testing@solarforecastarbiter.org",'
+                  '"password": "Thepassword123!", '
+                  '"audience": "https://api.solarforecastarbiter.org", '
+                  '"client_id": "c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7"}'))
+    except Exception:
+        return pytest.skip('Cannot retrieve valid Auth0 token')
     else:
         token = token_req.json()['access_token']
         return token
@@ -210,9 +211,10 @@ def auth_token():
 def real_session(auth_token):
     session = api.APISession(
         auth_token, base_url='https://dev-api.solarforecastarbiter.org')
-    req = session.get('')
-    if req.status_code != 200:
-        pytest.skip('Cannot connect to dev api')
+    try:
+        session.get('')
+    except Exception:
+        return pytest.skip('Cannot connect to dev api')
     else:
         return session
 
