@@ -11,7 +11,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 
 EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
-             'asynctest'],
+             'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
 }
 EXTRAS_REQUIRE['all'] = [
