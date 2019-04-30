@@ -1,6 +1,7 @@
 """
 Functions to connect to and process data from SolarForecastArbiter API
 """
+import json
 import requests
 from urllib3 import Retry
 
@@ -115,6 +116,29 @@ class APISession(requests.Session):
         req = self.get('/sites/')
         return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
+
+    def create_site(self, site):
+        """
+        Create a new site in the API with the given Site model
+
+        Parameters
+        ----------
+        site : datamodel.Site or datamodel.SolarPowerPlant
+            Site to create in the API
+
+        Returns
+        -------
+        datamodel.Site or datamodel.SolarPowerPlant
+            With the appropriate parameters such as site_id set by the API
+        """
+        site_dict = site.to_dict()
+        for k in ('site_id', 'provider'):
+            site_dict.pop(k, None)
+        site_json = json.dumps(site_dict)
+        req = self.post('/sites/', data=site_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_site(new_id)
 
     def _process_observation_dict(self, observation_dict):
         obs_dict = observation_dict.copy()

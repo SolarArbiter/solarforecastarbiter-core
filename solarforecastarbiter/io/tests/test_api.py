@@ -1,3 +1,5 @@
+import json
+from random import randint
 import re
 
 
@@ -69,6 +71,21 @@ def test_apisession_list_sites_empty(requests_mock):
     requests_mock.register_uri('GET', matcher, content=b"[]")
     site_list = session.list_sites()
     assert site_list == []
+
+
+def test_apisession_create_site(requests_mock, single_site, site_text):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/sites/.*')
+    requests_mock.register_uri('POST', matcher,
+                               text=single_site.site_id)
+    requests_mock.register_uri('GET', matcher, content=site_text)
+    site_dict = single_site.to_dict()
+    del site_dict['site_id']
+    del site_dict['provider']
+    del site_dict['extra_parameters']
+    ss = type(single_site).from_dict(site_dict)
+    new_site = session.create_site(ss)
+    assert new_site == single_site
 
 
 def test_apisession_get_observation(requests_mock, single_observation,
@@ -227,6 +244,16 @@ def test_real_apisession_list_sites(real_session):
     sites = real_session.list_sites()
     assert isinstance(sites, list)
     assert isinstance(sites[0], datamodel.Site)
+
+
+def test_real_apisession_create_site(site_text, real_session):
+    sited = json.loads(site_text)
+    sited['name'] = f'Test create site {randint(0, 100)}'
+    site = datamodel.SolarPowerPlant.from_dict(sited)
+    new_site = real_session.create_site(site)
+    real_session.delete(f'/sites/{new_site.site_id}')
+    assert new_site.name == site.name
+    assert new_site.modeling_parameters == site.modeling_parameters
 
 
 def test_real_apisession_get_observation(real_session):
