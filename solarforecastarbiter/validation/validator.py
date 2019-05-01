@@ -507,30 +507,33 @@ def check_irradiance_day_night(solar_zenith, max_zenith=87):
     return flags
 
 
-def check_timestamp_spacing(times, freq=None):
-    """ Checks for even spacing of times.
+def check_timestamp_spacing(times, freq):
+    """ Checks if spacing between times conforms to freq.
 
     Parameters
     ----------
     times : DatetimeIndex
-    freq : string or None, default None
-        resolution of rounding, e.g., '1T' to round to nearest minute
+    freq : string
+        Expected frequency of times
 
     Returns
     -------
-    boolean : True if the rounded timestamps are equally spaced
-    """
+    flags : Series
+        True when the difference between one time and the time before
+        conforms to freq
 
-    if times.size > 1:
-        if freq is not None:
-            dt = pd.Series(times.round(freq).values)
-        else:
-            dt = pd.Series(times.values)
-        delta = dt.diff()
-        gaps = delta[1:].unique()  # first value is NaT, rest are timedeltas
-        return len(gaps) == 1
-    else:
-        return True  # singleton DatetimeIndex passes
+    Raises
+    ------
+    ValueError
+        If the len(times) < 2
+    """
+    if times.size < 2:
+        raise ValueError('Times must have at least 2 elements')
+    expected_freq = pd.Timedelta(freq)
+    delta = times.to_series().diff()  # first value is NaT, rest are timedeltas
+    flags = delta == expected_freq
+    flags.iloc[0] = True
+    return flags
 
 
 def _all_close_to_first(x, rtol=1e-5, atol=1e-8):
