@@ -521,14 +521,7 @@ def check_timestamp_spacing(times, freq):
     flags : Series
         True when the difference between one time and the time before
         conforms to freq
-
-    Raises
-    ------
-    ValueError
-        If the len(times) < 2
     """
-    if times.size < 2:
-        raise ValueError('Times must have at least 2 elements')
     expected_freq = pd.Timedelta(freq)
     delta = times.to_series().diff()  # first value is NaT, rest are timedeltas
     flags = delta == expected_freq

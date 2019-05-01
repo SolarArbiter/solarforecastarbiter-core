@@ -212,7 +212,7 @@ def test_check_ghi_clearsky(mocker, location, times):
     assert_frame_equal(result, expected)
 
 
-def test_check_poa_clearsky(mocker, location, times):
+def test_check_poa_clearsky(mocker, times):
     dt = pd.DatetimeIndex(start=datetime(2019, 6, 15, 12, 0, 0),
                           freq='15T', periods=5)
     poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
@@ -225,35 +225,32 @@ def test_check_poa_clearsky(mocker, location, times):
     assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night(location):
+def test_check_irradiance_day_night():
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
              datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
-    expected = pd.DataFrame(index=times, columns=['daytime'],
-                            data=[True, False])
-    solar_position = pd.DataFrame(index=times, columns=['zenith'],
-                                  data=[11.8, 114.3])
-    result = validator.check_irradiance_day_night(
-        times, solar_position=solar_position)
-    assert_frame_equal(result, expected)
-    result = validator.check_irradiance_day_night(times, location=location)
-    assert_frame_equal(result, expected)
-    with pytest.raises(ValueError):
-        validator.check_irradiance_day_night(times)
+    expected = pd.Series(data=[True, False], index=times)
+    solar_zenith = pd.Series(data=[11.8, 114.3], index=times)
+    result = validator.check_irradiance_day_night(solar_zenith)
+    assert_series_equal(result, expected)
 
 
 def test_check_timestamp_spacing(times):
-    assert validator.check_timestamp_spacing(times)
-    assert validator.check_timestamp_spacing(pd.DatetimeIndex([times[0]]))
-    assert validator.check_timestamp_spacing(times[[0, 2]])
-    assert not validator.check_timestamp_spacing(times[[0, 2, 3]])
-    MST = pytz.timezone('MST')
-    times2 = pd.DatetimeIndex([datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 0, 57, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 13, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 46, tzinfo=MST)])
-    assert validator.check_timestamp_spacing(times2, freq='1T')
-    assert not validator.check_timestamp_spacing(times2, freq='5S')
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, times.freq),
+        pd.Series(True, index=times))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0]], times.freq),
+        pd.Series(True, index=[times[0]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0, 2, 3]], times.freq),
+        pd.Series([True, False, True], index=times[[0, 2, 3]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, '30min'),
+        pd.Series([True] + [False] * (len(times) - 1), index=times))
 
 
 def test_detect_stale_values():
