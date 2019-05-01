@@ -324,7 +324,6 @@ def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
     extreme_temp_flag : Series
         True if temp_air > lower bound and temp_air < upper bound.
     """
-
     extreme_temp_flag = _check_limits(temp_air, lb=temp_limits[0],
                                       ub=temp_limits[1])
     extreme_temp_flag.name = 'extreme_temp_flag'
@@ -343,7 +342,7 @@ def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
 
     Returns:
     --------
-    extreme_wind_flag : DataFrame
+    extreme_wind_flag : Series
         True if wind_speed > lower bound and wind_speed < upper bound.
     """
     extreme_wind_flag = _check_limits(wind_speed, lb=wind_limits[0],
@@ -364,104 +363,34 @@ def check_rh_limits(rh, rh_limits=(0, 100)):
 
     Returns:
     --------
-    flags : DataFrame
+    flags : Series
         True if rh >= lower bound and rh <= upper bound.
     """
-
-    flags = pd.Series(index=rh.index, data=None, name='extreme_rh_flag')
     flags = _check_limits(rh, lb=rh_limits[0], ub=rh_limits[1], lb_ge=True,
                           ub_le=True)
     return flags
 
 
-def get_solarposition(location, times, **kwargs):
-    """ Calculates solar position.
-
-    Wraps pvlib.location.Location.get_solarposition.
-
-    Parameters:
-    -----------
-    location : pvlib.Location
-    times : DatetimeIndex
-    optional kwargs include
-        pressure : float, Pa
-        temperature : float, degrees C
-        method : str, default 'nrel_numpy'
-            Other values are 'nrel_c', 'nrel_numba', 'pyephem', and 'ephemeris'
-    Other kwargs are passed to the underlying solar position function
-    specified by method kwarg.
-
-    Returns
-    -------
-    solar_position : DataFrame
-        Columns depend on the ``method`` kwarg, but always include
-        ``zenith`` and ``azimuth``.
-    """
-    return location.get_solarposition(times, **kwargs)
-
-
-def get_clearsky(location, times, **kwargs):
-    """ Calculates clear-sky GHI, DNI, DHI.
-
-    Wraps pvlib.location.Location.get_clearsky.
-
-    Parameters:
-    -----------
-    location : pvlib.Location
-    times : DatetimeIndex
-    optional kwargs include
-        solar_position : None or DataFrame, default None
-        dni_extra: None or numeric, default None
-        model: str, default 'ineichen'
-            Other values are 'haurwitz', 'simplified_solis'.
-    Other kwargs are passed to the underlying solar position function
-    specified by model kwarg.
-
-    Returns
-    -------
-    clearsky : DataFrame
-        Column names are: ``ghi, dni, dhi``.
-    """
-    return location.get_clearsky(times, **kwargs)
-
-
-def check_ghi_clearsky(irrad, clearsky=None, location=None, kt_max=1.1):
+def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     """
     Flags GHI values greater than clearsky values.
 
-    If clearsky is not provided, a Location is required and clear-sky
-    irradiance is calculated by pvlib.location.Location.get_clearsky.
-
     Parameters:
     -----------
-    irrad : DataFrame
-        ghi : float
-            Global horizontal irradiance in W/m^2
-    clearsky : DataFrame, default None
-        ghi : float
-            Global horizontal irradiance in W/m^2
-    location : Location, default None
-        instance of pvlib.location.Location
+    ghi : Series
+        Global horizontal irradiance in W/m^2
+    ghi_clearsky : Series
+         Global horizontal irradiance in W/m^2 under clear sky conditions
     kt_max : float
         maximum clearness index that defines when ghi exceeds clear-sky value.
 
     Returns:
     --------
-    flags : DataFrame
-        ghi_clearsky : boolean
-            True if ghi is less than or equal to clear sky value.
+    flags : Series
+        True if ghi is less than or equal to clear sky value.
     """
-    times = irrad.index
-
-    if clearsky is None and location is None:
-        raise ValueError("Either clearsky or location is required")
-    elif clearsky is None and location is not None:
-        clearsky = get_clearsky(location, times)
-
-    flags = pd.DataFrame(index=times, data=None, columns=['ghi_clearsky'])
-    kt = clearsky_index(irrad['ghi'], clearsky['ghi'],
-                        max_clearsky_index=np.Inf)
-    flags['ghi_clearsky'] = _check_limits(kt, ub=kt_max, ub_le=True)
+    kt = clearsky_index(ghi, ghi_clearsky, max_clearsky_index=np.Inf)
+    flags = _check_limits(kt, ub=kt_max, ub_le=True)
     return flags
 
 
