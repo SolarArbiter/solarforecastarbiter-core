@@ -334,7 +334,7 @@ def observation_values_text():
     """JSON text representation of test data"""
     tz = 'America/Phoenix'
     data_index = pd.date_range(
-        start='20190404', end='20190406', freq='5min', tz=tz)
+        start='20190101', end='20190102', freq='5min', tz=tz, closed='left')
     # each element of data is equal to the hour value of its label
     data = pd.DataFrame({'value': data_index.hour, 'quality_flag': 0},
                         index=data_index)
@@ -352,7 +352,7 @@ def session(requests_mock, observation_values_text):
 
 def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
                                 mocker):
-    run_time = pd.Timestamp('20190422T1945Z')
+    run_time = pd.Timestamp('20190101T1945Z')
     # intraday, index=False
     forecast = default_forecast(
         site_metadata,
@@ -361,7 +361,7 @@ def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label='beginning')
-    issue_time = pd.Timestamp('20190423T2300Z')
+    issue_time = pd.Timestamp('20190101T2300Z')
     mocker.spy(main.persistence, 'persistence_scalar')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
@@ -371,7 +371,7 @@ def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
 
 def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
                                       mocker):
-    run_time = pd.Timestamp('20190422T1945Z')
+    run_time = pd.Timestamp('20190101T1945Z')
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=23),
@@ -379,7 +379,7 @@ def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label='beginning')
-    issue_time = pd.Timestamp('20190423T2300Z')
+    issue_time = pd.Timestamp('20190101T2300Z')
     # intraday, index=True
     mocker.spy(main.persistence, 'persistence_scalar_index')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
@@ -390,7 +390,7 @@ def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
 
 def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
                                   mocker):
-    run_time = pd.Timestamp('20190422T1945Z')
+    run_time = pd.Timestamp('20190102T1945Z')
     # day ahead, index = False
     forecast = default_forecast(
         site_metadata,
@@ -399,7 +399,7 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
-    issue_time = pd.Timestamp('20190423T2300Z')
+    issue_time = pd.Timestamp('20190102T2300Z')
     mocker.spy(main.persistence, 'persistence_interval')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)

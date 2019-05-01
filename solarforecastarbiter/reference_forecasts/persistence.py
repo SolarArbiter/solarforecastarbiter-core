@@ -156,7 +156,8 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
 
     # ensure that we're using times rounded to multiple of interval_length
     _check_intervals_times(observation.interval_label, data_start, data_end,
-                           forecast_start, forecast_end, interval_length)
+                           forecast_start, forecast_end,
+                           observation.interval_length)
 
     # get the data
     obs = load_data(observation, data_start, data_end)
@@ -233,7 +234,8 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     """
     # ensure that we're using times rounded to multiple of interval_length
     _check_intervals_times(observation.interval_label, data_start, data_end,
-                           forecast_start, forecast_end, interval_length)
+                           forecast_start, forecast_end,
+                           observation.interval_length)
 
     # get observation data for specified range
     obs = load_data(observation, data_start, data_end)
