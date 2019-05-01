@@ -172,7 +172,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     data_start, data_end = get_data_start_end(
         observation, forecast, run_time)
 
-    def load_data():
+    def load_data(observation, data_start, data_end):
         df = session.get_observation_values(observation.observation_id,
                                             data_start, data_end)
         return df['value']
