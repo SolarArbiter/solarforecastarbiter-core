@@ -110,7 +110,7 @@ def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
 
     Parameters:
     -----------
-    ghi : Series
+    dhi : Series
         Diffuse horizontal irradiance in W/m^2
     solar_zenith : Series
         Solar zenith angle in degrees
@@ -123,7 +123,7 @@ def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
 
     Returns:
     --------
-    ghi_limit_flag : Series
+    dhi_limit_flag : Series
         True if value passes physically-possible test
     """
     if not limits:
@@ -489,33 +489,21 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
     return flags
 
 
-def check_irradiance_day_night(times, solar_position=None, location=None,
-                               max_zenith=87):
+def check_irradiance_day_night(solar_zenith, max_zenith=87):
     """ Checks for day/night periods based on solar zenith.
-
-    If solar_position is not provide, location must be provided and solar
-    position will be calculated.
 
     Parameters
     ----------
-    times : DatetimeIndex
-    solar_position : None or DataFrame, default None
-        If DataFrame, columns must include ``zenith``.
-    location : None or pvlib.location.Location, default None
+    solar_zenith : Series
+        Solar zenith angle in degrees
     max_zenith : maximum zenith angle for a daylight time
 
     Returns
     -------
-    flags : DataFrame
-        True when solar zenith is greater than max_zenith.
+    flags : Series
+        True when solar zenith is less than max_zenith.
     """
-    if solar_position is None and location is None:
-        raise ValueError("Either solar_position or location is required")
-    elif solar_position is None and location is not None:
-        solar_position = get_solarposition(location, times)
-
-    flags = pd.DataFrame(index=times, data=None, columns=['daytime'])
-    flags['daytime'] = _check_limits(solar_position['zenith'], ub=max_zenith)
+    flags = _check_limits(solar_zenith, ub=max_zenith)
     return flags
 
 
