@@ -7,6 +7,7 @@ from urllib.error import URLError
 
 
 import pandas as pd
+from requests.exceptions import HTTPError
 
 
 from pvlib import iotools
@@ -50,13 +51,35 @@ def decode_extra_parameters(metadata):
     return json.loads(metadata.extra_parameters)
 
 
+def surfrad_network(metadata):
+    """Checks to see if an object is in the SURFRAD network.
+
+    Parameters
+    ----------
+    metadata
+        An instantiated dataclass from teh datamodel.
+    Returns
+    -------
+    bool
+        True if the site belongs to the surfrad network.
+    """
+    extra_params = decode_extra_parameters(metadata)
+    try:
+        in_surfrad = extra_params['network'] == 'NOAA SURFRAD'
+    except KeyError:
+        return False
+    else:
+        return in_surfrad
+
+
 def fetch(api, site, start, end, realtime=False):
     """Retrieve observation data for a surfrad site between start and end.
 
     Parameters
     ----------
     api : io.APISession
-        An APISession with a valid JWT for accessing the Reference Data user.
+        An APISession with a valid JWT for accessing the Reference Data
+        user.
     site : datamodel.Site
         Site object with the appropriate metadata.
     start : datetime
@@ -76,26 +99,31 @@ def fetch(api, site, start, end, realtime=False):
         url_format = REALTIME_URL
     else:
         url_format = ARCHIVE_URL
+    # load extra parameters for api arguments.
     extra_params = decode_extra_parameters(site)
     abbreviation = extra_params['network_api_abbreviation']
-    date_range = pd.date_range(start, end)
     single_day_dfs = []
-    for day in date_range():
+    for day in pd.date_range(start, end):
         filename = url_format.format(abrv=abbreviation,
                                      year=day.year,
                                      year_2d=day.strftime('%y'),
                                      jday=day.strftime('%j'))
-        logger.info('Requesting SURFRAD site {}.'.format(site.name))
+        logger.info(f'Requesting data for SURFRAD site {site.name}'
+                    f' on {day.strftime("%Y%m%d")}.')
         try:
+            # Only get dataframe from the returned tuple
             surfrad_day = iotools.read_surfrad(filename)[0]
         except URLError:
-            logger.warning(f'Could not SURFRAD data for site {site.name}')
-            logger.debug(f'Failed SURFRAD URL: {site.name}')
+            logger.warning(f'Could not retrieve SURFRAD data for site '
+                           f'{site.name} on {day.strftime("%Y%m%d")}.')
+            logger.debug(f'Failed SURFRAD URL: {filename}.')
             continue
         else:
             single_day_dfs.append(surfrad_day)
     all_period_data = pd.concat(single_day_dfs)
     all_period_data = all_period_data.rename(rename_mapping)
+    all_period_data = all_period_data.rename(
+        columns={'temp_air': 'air_temperature'})
     return all_period_data
 
 
@@ -135,11 +163,9 @@ def create_observation(api, site, variable):
     uuid : string
         The uuid of the newly created Observation.
 
-    Raises
-    ------
-    ValueError
-        If the post failed.
     """
+    # Copy network api data from the site, and get the observation's
+    # interval length
     extra_parameters = decode_extra_parameters(site)
     observation = Observation.from_dict({
         'name': f"{site.name} {variable}",
@@ -166,8 +192,9 @@ def initialize_site_observations(api, site):
     for variable in surfrad_variables:
         try:
             create_observation(api, site, variable)
-        except ValueError as e:
-            logger.error(e)
+        except HTTPError as e:
+            logger.error(f'Failed to create {variable} observation as Site '
+                         f'{site.name}. Error: {e}')
 
 
 def initialize_metadata_objects(api, sites):
@@ -176,8 +203,10 @@ def initialize_metadata_objects(api, sites):
 
     Parameters
     ----------
-    api: solarforecastarbiter.io.api.APISession
+    api : io.api.APISession
         An active Reference user session.
+    sites : list
+        List of dictionaries of Site metadata.
     """
     for site_dict in sites:
         site = create_site(api, site_dict)
@@ -196,14 +225,18 @@ def update_observation_data(api, start, end):
         The end of the period to request data for.
     """
     sites = api.list_sites()
+    surfrad_sites = filter(surfrad_network, sites)
     observations = api.list_observations()
-    for site in sites:
+    for site in surfrad_sites:
         obs_df = fetch(api, site, start, end)
-        site_observations = observations
-        for observation in site_observations:
+        site_observations = [obs for obs in observations if obs.site == site]
+        for obs in site_observations:
             logger.info(
-                'Updating {observation.name} from '
-                '{start.strftime("%Y%m%dT%H%MZ")} '
-                'to {end.strftime("%Y%m%dT%H%MZ")}.')
-            api.post_observation_values(observation.observation_id,
-                                        obs_df[[observation.variable]])
+                f'Updating {obs.name} from '
+                f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
+                f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+            var_df = obs_df[[obs.variable]]
+            var_df = var_df.rename(columns={obs.variable: 'value'})
+            var_df['quality_flag'] = 0
+            var_df = var_df.dropna()
+            api.post_observation_values(obs.observation_id, var_df)

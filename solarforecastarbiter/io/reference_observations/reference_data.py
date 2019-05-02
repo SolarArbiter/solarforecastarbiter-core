@@ -2,6 +2,7 @@
 with data from their respective API.
 """
 import argparse
+from argparse import RawTextHelpFormatter
 import inspect
 import logging
 import os
@@ -24,24 +25,41 @@ NETWORK_OPTIONS = ['surfrad', 'midc', 'srml', 'solrad', 'arm']
 
 SCRIPT_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
-DEFAULT_SITEFILE = os.path.join(SCRIPT_DIR, "all_sfa_sites.csv")
+DEFAULT_SITEFILE = os.path.join(SCRIPT_DIR, "sfa_reference_sites.csv")
 
 logging.basicConfig()
 logger = logging.getLogger('reference_data')
 
+CLI_DESCRIPTION = """
+Tool for initializing and updating SolarForecastArbiter reference observation data.
+Supports importing sites from the following networks:
+
+NOAA SURFRAD: The National Oceanic and Atmospheric Administration Surface Radiation BudgetNetwork
+    https://www.esrl.noaa.gov/gmd/grad/surfrad/
+
+NREL MIDC: National Renewable Energy Laboratory Measurement and Instrumentation Data Center
+    https://midcdmz.nrel.gov/
+
+UO SRML: University of Oregon Solar Radiation Monitoring Laboratory
+    http://solardat.uoregon.edu/
+
+SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
+    https://pv-dashboard.sandia.gov/
+"""  # noqa: E501
 parser = argparse.ArgumentParser(
-    description="Tool for initializing and updating SolarForecastArbiter "
-                "reference observation data."
-)
+    formatter_class=RawTextHelpFormatter,
+    description=CLI_DESCRIPTION)
 parser.add_argument('-v', '--verbose', action='count')
 subparsers = parser.add_subparsers(help='Commands', dest='command',
                                    required=True)
 
 init_parser = subparsers.add_parser(
-    'init', help='Creates sites and observations from a site file.')
+    'init',
+    help='Creates sites and observations from a site file.')
 init_parser.add_argument(
     '--site-file', default=DEFAULT_SITEFILE,
-    help='The file from which to load all of the reference site metadata.')
+    help='The file from which to load all of the reference site metadata. '
+         'Defaults to `sfa_reference_sites.csv.')
 
 update_parser = subparsers.add_parser(
     'update',
@@ -98,16 +116,9 @@ def site_df_to_dicts(site_df):
     Parameters
     ----------
     site_df: DataFrame
-        Pandas Dataframe with these required columns:
-            interval_length
-            name
-            latitude
-            longitude
-            elevation
-            timezone
-            network
-            network_api_id
-            network_api_abbreviation
+        Pandas Dataframe with the columns:
+        interval_length, name, latitude, longitude, elevation,
+        timezone, network, network_api_id, network_api_abbreviation
 
     Returns
     -------
@@ -144,9 +155,9 @@ if __name__ == '__main__':
     if cmd == 'init':
         filename = cli_args.site_file
         try:
-            all_sites = pd.read_csv(filename)
+            all_sites = pd.read_csv(filename, comment='#')
         except FileNotFoundError:
-            logger.error(f'Site file does not exist:\n {filename}')
+            logger.error(f'Site file does not exist: {filename}')
             sys.exit()
         site_dictionaries = site_df_to_dicts(all_sites)
         initialize_reference_objects(site_dictionaries)
@@ -165,6 +176,7 @@ if __name__ == '__main__':
             except ValueError:
                 logger.error('Invalid end datetime.')
                 sys.exit()
+
         networks = cli_args.networks
         update_reference_observations(start, end, networks)
 

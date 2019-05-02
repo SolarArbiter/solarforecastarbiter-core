@@ -1,3 +1,29 @@
+# SolarForecastArbiter Reference sites
+#
+# This file contains metadata for SolarForecastArbiter reference observation sites.
+# It includes Arbiter specific metadata fields as well as fields which will be stored
+# in `extra_parameters` to be used by fetching code when requesting new data for that
+# site.
+#
+# Field descriptions:
+# interval_length (required): The length of between each measurement.
+# name (required) : A human readable name for the site.
+# latitude (required) : Latitude in degrees North of the equator.
+# longitude (required) : Longitude in degrees East of the Prime meridian.
+# elevation (required) : Elevation above sea level in meters.
+#
+# NOTE: `network_api_id` and `network_api_abbreviation` are not strictly defined, but
+#       must be consistent throughout a given network to function properly.
+#       For example, University of Oregon's SRML data organizes data by a two letter
+#       abbreviation on their file server, while their files contain a 5 digit float
+#       to identify their location.
+#
+# network_api_id : An alphanumeric code used by the network to identify the site. 
+# network_api_abbreviation : A text abbreviation used by the network to label the site.
+# timezone (required) : A timezone allowable by the SolarForecastArbiter API.
+# attribution: A field for including an attribution for the observation data at this site.
+# network (required) : The name of the network Providing the data.
+#
 interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abbreviation,timezone,attribution,network
 1,Seattle UW WA,47.653999999999996,-122.309,70,94291.0,ST,Etc/GMT+5,,UO SRML
 1,Challis ID,44.44,-114.13,1651,94185.0,CL,Etc/GMT+8,,UO SRML
@@ -49,3 +75,7 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1,Natural Energy Laboratory of Hawaii Authority (NELHA),19.728144,-156.05893600000002,4.0,NELHA,NELHA,,"Olson, K.; Andreas, A.; (2012). Natural Energy Laboratory of Hawaii Authority (NELHA): Hawaii Ocean Science & Technology Park; Kailua-Kona, Hawaii (Data); NREL Report No. DA-5500-64450. http://dx.doi.org/10.7799/1183461",NREL MIDC
 1,University of Texas Panamerican Solar Radiation Lab,26.3059,-98.1716,45.4,UTPASRL,UTPA SRL,,"Ramos, J.; Andreas, A.; (2011). University of Texas Panamerican (UTPA): Solar Radiation Lab (SRL); Edinburg, Texas (Data); NREL Report No. DA-5500-56514.http://dx.doi.org/10.5439/1052555",NREL MIDC
 1,Humboldt State University (SoRMS),40.876,-124.08,36.0,HSU,HSU SoRMS,,"Andreas, A.; Wilcox, S.; (2007). Solar Radiation Monitoring Station (SoRMS): Humboldt State University, Arcata, California (Data); NREL Report No. DA-5500-56515. http://dx.doi.org/10.5439/1052559",NREL MIDC
+1 min,Albuquerque NM,35.05,-106.53,1657,Albuquerque,,America/Denver,,Sandia
+1 min,Henderson NV,36.04,-114.92,538,Henderson,,America/Los Angeles,,Sandia
+1 min,Williston VT,44.5,-73.1,184,Williston,,America/New York,,Sandia
+1 min,Cocoa FL,28.4,-80.77,11,Cocoa,,America/New York,,Sandia
