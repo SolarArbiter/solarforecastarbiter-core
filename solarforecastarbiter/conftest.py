@@ -357,12 +357,74 @@ def site_powerplant_site_type(request):
 
 
 @pytest.fixture(scope='module')
-def ac_power_observation_metadata(site_metadata):
+def ac_power_observation_metadata(powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        value_type='instantaneous', interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=site_metadata, uncertainty=1)
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
     return ac_power_meta
+
+
+@pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
+def ac_power_observation_metadata_label(request, powerplant_metadata):
+    ac_power_meta = datamodel.Observation(
+        name='Albuquerque Baseline AC Power', variable='ac_power',
+        interval_value_type='mean', interval_length=pd.Timedelta('5min'),
+        interval_label=request.param, site=powerplant_metadata, uncertainty=1)
+    return ac_power_meta
+
+
+@pytest.fixture(scope='module')
+def ghi_observation_metadata(site_metadata):
+    ghi_meta = datamodel.Observation(
+        name='Albuquerque Baseline GHI', variable='ghi',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=site_metadata, uncertainty=1)
+    return ghi_meta
+
+
+def default_observation(
+        site_metadata,
+        name='Albuquerque Baseline', variable='ghi',
+        interval_value_type='mean', uncertainty=1, interval_length='1h',
+        interval_label='beginning'):
+    """
+    Helpful when you want to test a couple of parameters and don't
+    need to worry about the rest.
+    """
+    obs = datamodel.Observation(
+        site=site_metadata, name=name, variable=variable,
+        interval_value_type=interval_value_type, uncertainty=uncertainty,
+        interval_length=pd.Timedelta(interval_length),
+        interval_label=interval_label
+    )
+    return obs
+
+
+def default_forecast(
+        site_metadata,
+        name='Albuquerque Baseline', variable='ghi',
+        interval_value_type='mean', issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start='1h', interval_length='1h', run_length='12h',
+        interval_label='beginning'):
+    """
+    Helpful when you want to test a couple of parameters and don't
+    need to worry about the rest.
+    """
+    fx = datamodel.Forecast(
+        site=site_metadata,
+        name=name,
+        interval_value_type=interval_value_type,
+        variable=variable,
+        issue_time_of_day=issue_time_of_day,
+        lead_time_to_start=pd.Timedelta(lead_time_to_start),
+        interval_length=pd.Timedelta(interval_length),
+        run_length=pd.Timedelta(run_length),
+        interval_label=interval_label
+    )
+    return fx
 
 
 @pytest.fixture(scope='module')
@@ -374,7 +436,23 @@ def ac_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        value_type='mean',
+        interval_value_type='mean',
+        variable='ac_power',
+        site=site_metadata
+    )
+    return ac_power_fx_meta
+
+
+@pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
+def ac_power_forecast_metadata_label(request, site_metadata):
+    ac_power_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline AC Power forecast 1',
+        issue_time_of_day=dt.time(hour=0),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label=request.param,
+        interval_value_type='mean',
         variable='ac_power',
         site=site_metadata
     )

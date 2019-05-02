@@ -24,6 +24,13 @@ ALLOWED_VARIABLES = {
     'curtailment': 'MW',
 }
 
+CLOSED_MAPPING = {
+    'instant': None,
+    'instantaneous': None,
+    'beginning': 'left',
+    'ending': 'right'
+}
+
 
 class BaseModel:
     @classmethod
