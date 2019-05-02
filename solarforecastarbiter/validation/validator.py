@@ -11,7 +11,7 @@ from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
 
 
-from solarforecastarbiter.validation.constants import mask_flags
+from solarforecastarbiter.validation.quality_mapping import mask_flags
 
 
 QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
