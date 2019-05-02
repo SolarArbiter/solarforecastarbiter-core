@@ -7,52 +7,100 @@ from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter.validation import validator
 
 
-def _solpos_dni_extra(site, times):
+def _validate_timestamp(observation, values):
+    return validator.check_timestamp_spacing(
+        values.index, observation.interval_length, return_bool=False)
+
+
+def _solpos_dni_extra(observation, values):
     solar_position = pvmodel.calculate_solar_position(
-        site.latitude, site.longitude, site.elevation, times)
-    dni_extra = get_extra_radiation(times)
-    return solar_position, dni_extra
+        observation.site.latitude, observation.site.longitude,
+        observation.site.elevation, values.index)
+    dni_extra = get_extra_radiation(values.index)
+    new_flags = _validate_timestamp(observation, values)
+    new_flags |= validator.check_irradiance_day_night(solar_position['zenith'],
+                                                      return_bool=False)
+    return solar_position, dni_extra, new_flags
 
 
-def validate_ghi(site, values):
-    solar_position, dni_extra = _solpos_dni_extra(site, values.index)
+def validate_ghi(observation, values):
+    solar_position, dni_extra, new_flags = _solpos_dni_extra(observation,
+                                                             values)
     clearsky = pvmodel.calculate_clearsky(
-        site.latitude, site.longitude, site.elevation,
-        solar_position['apparent_zenith'])
+        observation.site.latitude, observation.site.longitude,
+        observation.site.elevation, solar_position['apparent_zenith'])
 
-    new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
-                                                     return_bool=False)
     new_flags |= validator.check_ghi_limits_QCRad(values,
                                                   solar_position['zenith'],
-                                                  dni_extra)
-    new_flags |= validator.check_ghi_clearsky(values, clearsky['ghi'])
+                                                  dni_extra,
+                                                  return_bool=False)
+    new_flags |= validator.check_ghi_clearsky(values, clearsky['ghi'],
+                                              return_bool=False)
     return new_flags
 
 
-def validate_dni(site, values):
-    solar_position, dni_extra = _solpos_dni_extra(site, values.index)
-    new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
-                                                     return_bool=False)
+def validate_dni(observation, values):
+    solar_position, dni_extra, new_flags = _solpos_dni_extra(observation,
+                                                             values)
     new_flags |= validator.check_dni_limits_QCRad(values,
                                                   solar_position['zenith'],
-                                                  dni_extra)
+                                                  dni_extra,
+                                                  return_bool=False)
     return new_flags
 
 
-def validate_dhi(site, values):
-    solar_position, dni_extra = _solpos_dni_extra(site, values.index)
-    new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
-                                                     return_bool=False)
+def validate_dhi(observation, values):
+    solar_position, dni_extra, new_flags = _solpos_dni_extra(observation,
+                                                             values)
     new_flags |= validator.check_dhi_limits_QCRad(values,
                                                   solar_position['zenith'],
-                                                  dni_extra)
+                                                  dni_extra,
+                                                  return_bool=False)
     return new_flags
 
 
-VARIABLE_VALIDATION_FUNCS = {
+def validate_poa_global(observation, values):
+    solar_position, dni_extra, new_flags = _solpos_dni_extra(observation,
+                                                             values)
+    clearsky = pvmodel.calculate_clearsky(
+        observation.site.latitude, observation.site.longitude,
+        observation.site.elevation, solar_position['apparent_zenith'])
+    aoi_func = pvmodel.aoi_func_factory(observation.site.modeling_parameters)
+    poa_clearsky = pvmodel.calculate_poa_effective(
+        aoi_func=aoi_func, apparent_zenith=solar_position['apparent_zenith'],
+        azimuth=solar_position['azimuth'], ghi=clearsky['ghi'],
+        dni=clearsky['dni'], dhi=clearsky['dhi'])
+    new_flags |= validator.check_poa_clearsky(values, poa_clearsky,
+                                              return_bool=False)
+    return new_flags
+
+
+def validate_air_temperature(observation, values):
+    new_flags = _validate_timestamp(observation, values)
+    new_flags |= validator.check_temperature_limits(values, return_bool=False)
+    return new_flags
+
+
+def validate_wind_speed(observation, values):
+    new_flags = _validate_timestamp(observation, values)
+    new_flags |= validator.check_wind_limits(values, return_bool=False)
+    return new_flags
+
+
+def validate_relative_humidity(observation, values):
+    new_flags = _validate_timestamp(observation, values)
+    new_flags |= validator.check_rh_limits(values, return_bool=False)
+    return new_flags
+
+
+IMMEDIATE_VALIDATION_FUNCS = {
+    'air_temperature': validate_air_temperature,
+    'wind_speed': validate_wind_speed,
     'ghi': validate_ghi,
     'dni': validate_dni,
     'dhi': validate_dhi,
+    'poa_global': validate_poa_global,
+    'relative_humidity': validate_relative_humidity
 }
 
 
@@ -64,14 +112,13 @@ def immediate_observation_validation(access_token, observation_id, start, end):
     value_series = observation_values['value']
     quality_flags = observation_values['quality_flag'].copy()
 
-    quality_flags |= validator.check_timestamp_spacing(
-        value_series.index, observation.interval_length, return_bool=False)
-
-    validation_func = VARIABLE_VALIDATION_FUNCS.get(
+    validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable,
         lambda x, y: pd.Series(0, index=value_series.index))
 
     quality_flags |= validation_func(observation.variable)(
-        observation.site, value_series)
+        observation, value_series)
 
-    # session.post
+    quality_flags.name = 'quality_flag'
+    observation_values.update(quality_flags)
+    session.post_observation_values(observation_id, observation_values)
