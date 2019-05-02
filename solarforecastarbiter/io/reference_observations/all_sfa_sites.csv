@@ -1,0 +1,51 @@
+interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abbreviation,timezone,attribution,network
+1,Seattle UW WA,47.653999999999996,-122.309,70,94291.0,ST,Etc/GMT+5,,UO SRML
+1,Challis ID,44.44,-114.13,1651,94185.0,CL,Etc/GMT+8,,UO SRML
+1,Ashland OR,42.19,-122.7,595,94040.0,AS,Etc/GMT+8,,UO SRML
+1,UO Solar Awning Eugene OR,44.05,-123.07,150,94255.0,AW,Etc/GMT+8,,UO SRML
+1,Kalapuya High School OR,45.0,-120.0,0,94259.0,KA,Etc/GMT+8,,UO SRML
+1,Salem OR,44.92100000000001,-123.01799999999999,62,94806.0,SA,Etc/GMT+8,,UO SRML
+1,Portland OR PV,45.51,-122.69,70,94808.0,PS,Etc/GMT+8,,UO SRML
+5,Cheney WA,47.49,-117.589,777,94158.0,CY,Etc/GMT+8,,UO SRML
+5,Cannon Beach OR,45.895,-123.963,30,,,Etc/GMT+8,,UO SRML
+5,Dillon MT,45.21,-112.64,1590,94145.0,DI,Etc/GMT+8,,UO SRML
+5,Aberdeen ID,42.95,-112.78,1433,94174.0,AB,Etc/GMT+8,,UO SRML
+5,Burns OR,43.52,-119.02,1265,94170.0,BU,Etc/GMT+8,,UO SRML
+5,Silver Lake OR,43.12,-121.06,1355,94249.0,SL,Etc/GMT+8,,UO SRML
+5,Willamette High School Eugene OR,44.08,-123.07,140,94254.0,WI,Etc/GMT+8,,UO SRML
+5,Bend OR,44.06,-121.31,1124,94807.0,BD,Etc/GMT+8,,UO SRML
+5,Eugene OR,44.05,-123.07,150,94255.0,EU,Etc/GMT+8,,UO SRML
+15,Moab UT,38.58,-109.54,1000,94102.0,MO,Etc/GMT+8,,UO SRML
+15,Green River WY,41.46,-109.44,1000,94101.0,GR,Etc/GMT+8,,UO SRML
+15,Seattle WA,47.68,-122.25,20,94290.0,SE,Etc/GMT+8,,UO SRML
+15,Forest Grove OR,45.55,-123.08,55,94008.0,FG,Etc/GMT+8,,UO SRML
+15,Picabo ID,43.31,-114.17,1472,94172.0,PI,Etc/GMT+8,,UO SRML
+15,Twin Falls ID,42.55,-114.35,1200,94171.0,TW,Etc/GMT+8,,UO SRML
+15,Boise ID,43.62,-116.21,701,94182.0,BO,Etc/GMT+8,,UO SRML
+15,Parma ID,43.8,-116.94,678,94173.0,PA,Etc/GMT+8,,UO SRML
+15,Christmas Valley OR,43.24,-120.88,1325,94251.0,CH,Etc/GMT+8,,UO SRML
+15,Bend OR,43.99,-121.35,1100,94256.0,BE,Etc/GMT+8,,UO SRML
+15,Madras OR,44.69,-121.16,997,94252.0,MA,Etc/GMT+8,,UO SRML
+60,Coeur D'Alened ID,47.72,-116.78,674,94181.0,CD,Etc/GMT+8,,UO SRML
+60,Hood River OR,45.7,-121.52,140,94277.0,HR,Etc/GMT+8,,UO SRML
+5,Hermiston OR,45.82,-119.28,180,94169.0,HE,Etc/GMT+8,,UO SRML
+1,Bondville IL,40.05192,-88.37309,230,BND,bon,Etc/GMT+6,,NOAA SURFRAD
+1,Table Mountain Boulder CO,40.12498,-105.2368,1689,TBL,tbl,Etc/GMT+7,,NOAA SURFRAD
+1,Desert Rock NV,36.62373,-116.01947,1007,DRA,dra,Etc/GMT+8,,NOAA SURFRAD
+1,Fort Peck MT,48.307829999999996,-105.1017,634,FPK,fpk,Etc/GMT+7,,NOAA SURFRAD
+1,Goodwin Creek MS,34.2547,-89.8729,98,GWN,gwn,Etc/GMT+6,,NOAA SURFRAD
+1,Penn State Univ PA,40.72012,-77.93085,376,PSU,psu,Etc/GMT+5,,NOAA SURFRAD
+1,Sioux Falls SD,43.73403,-96.62328000000001,473,SXF,sxf,Etc/GMT+6,,NOAA SURFRAD
+1,NREL National Wind Technology Center (M2),39.9106,-105.2347,1855.0,NWTC,NWTC M2,,"Jager, D.; Andreas, A.; (1996). NREL National Wind Technology Center (NWTC): M2 Tower; Boulder, Colorado (Data); NREL Report No. DA-5500-56489. http://dx.doi.org/10.5439/1052222",NREL MIDC
+1,NREL Solar Radiation Research Laboratory BMS,39.7423,-105.1785,1828.8,BMS,SRRL BMS,,"Andreas, A.; Stoffel, T.; (1981). NREL Solar Radiation Research Laboratory (SRRL): BaselineMeasurement System (BMS); Golden, Colorado (Data); NREL Report No. DA-5500-56488. http://dx.doi.org/10.5439/1052221",NREL MIDC
+1,NREL Vehicle Testing and Integration Facility RSR,39.74211,-105.17572,1793.0,VTIF,VTIF RSR,,"Lustbader, J.; Andreas, A.; (2012). NREL Vehicle Testing and Integration Facility (VTIF): Rotating Shadowband Radiometer (RSR); Golden, Colorado (Data); NREL Report No. DA-5500-56490. http://dx.doi.org/10.5439/1052223",NREL MIDC
+1,Solar Technology Acceleration Center (SolarTAC),39.75685,-104.62025,1674.0,STAC,SolarTAC,,"Andreas, A.; Wilcox, S.; (2011). Solar Technology Acceleration Center (SolarTAC); Aurora, Colorado (Data); NREL Report No. DA-5500-56491. http://dx.doi.org/10.5439/1052224",NREL MIDC
+1,Solar Technology Acceleration Center (GPS-based PWV),39.75685,-104.62025,1674.0,PWVSTAC,STAC PWV,,,NREL MIDC
+1,University of Oregon (SRML),44.0467,-123.0743,133.8,UOSMRL,UO SRML,,"Vignola, F.; Andreas, A.; (2013). University of Oregon: GPS-based Precipitable Water Vapor (Data); NREL Report No. DA-5500-64452. http://dx.doi.org/10.7799/1183467",NREL MIDC
+1,University of Louisiana at Lafayette,30.205059999999996,-92.39793,5.0,ULL,UL Lafayette,,,NREL MIDC
+1,SOLRMAP University of Arizona (OASIS),32.229690000000005,-110.95533999999999,786.0,UAT,UA OASIS,,"Andreas, A.; Wilcox, S.; (2010). Observed Atmospheric and Solar Information System (OASIS); Tucson, Arizona (Data); NREL Report No. DA-5500-56494. http://dx.doi.org/10.5439/1052226",NREL MIDC
+1,University of Nevada - Las Vegas,36.107,-115.1425,615.0,UNLV,UNLV,,"Andreas, A.; Stoffel, T.; (2006). University of Nevada (UNLV): Las Vegas, Nevada (Data); NREL Report No. DA-5500-56509. http://dx.doi.org/10.5439/1052548",NREL MIDC
+1,Oak Ridge National Laboratory (RSR),35.929959999999994,-84.30951999999999,245.0,ORNL,ORNL RSR,,"Maxey, C.; Andreas, A.; (2007). Oak Ridge National Laboratory (ORNL); Rotating Shadowband Radiometer (RSR); Oak Ridge, Tennessee (Data); NREL Report No. DA-5500-56512. http://dx.doi.org/10.5439/1052553",NREL MIDC
+1,Natural Energy Laboratory of Hawaii Authority (NELHA),19.728144,-156.05893600000002,4.0,NELHA,NELHA,,"Olson, K.; Andreas, A.; (2012). Natural Energy Laboratory of Hawaii Authority (NELHA): Hawaii Ocean Science & Technology Park; Kailua-Kona, Hawaii (Data); NREL Report No. DA-5500-64450. http://dx.doi.org/10.7799/1183461",NREL MIDC
+1,University of Texas Panamerican Solar Radiation Lab,26.3059,-98.1716,45.4,UTPASRL,UTPA SRL,,"Ramos, J.; Andreas, A.; (2011). University of Texas Panamerican (UTPA): Solar Radiation Lab (SRL); Edinburg, Texas (Data); NREL Report No. DA-5500-56514.http://dx.doi.org/10.5439/1052555",NREL MIDC
+1,Humboldt State University (SoRMS),40.876,-124.08,36.0,HSU,HSU SoRMS,,"Andreas, A.; Wilcox, S.; (2007). Solar Radiation Monitoring Station (SoRMS): Humboldt State University, Arcata, California (Data); NREL Report No. DA-5500-56515. http://dx.doi.org/10.5439/1052559",NREL MIDC
