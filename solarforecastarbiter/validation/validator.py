@@ -11,6 +11,9 @@ from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
 
 
+from solarforecastarbiter.validation.constants import mask_flags
+
+
 QCRAD_LIMITS = {'ghi_ub': {'mult': 1.5, 'exp': 1.2, 'min': 100},
                 'dhi_ub': {'mult': 0.95, 'exp': 1.2, 'min': 50},
                 'dni_ub': {'mult': 1.0, 'exp': 0.0, 'min': 0},
@@ -59,6 +62,7 @@ def _QCRad_ub(dni_extra, sza, lim):
     return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     """
     Tests for physical limits on GHI using the QCRad criteria.
@@ -98,6 +102,7 @@ def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     return ghi_limit_flag
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
     """
     Tests for physical limits on DHI using the QCRad criteria.
@@ -137,6 +142,7 @@ def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
     return dhi_limit_flag
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
     """
     Tests for physical limits on DNI using the QCRad criteria.
@@ -250,6 +256,7 @@ def _check_irrad_ratio(ratio, ghi, sza, bounds):
             (_check_limits(ratio, lb=ratio_lb, ub=ratio_ub)))
 
 
+@mask_flags('INCONSISTENT IRRADIANCE COMPONENTS')
 def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
                                        param=None):
     """
@@ -309,6 +316,7 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
     return consistent_components, diffuse_ratio_limit
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
     """ Checks for extreme temperatures.
 
@@ -330,6 +338,7 @@ def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
     return extreme_temp_flag
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
     """ Checks for extreme wind speeds.
 
@@ -351,6 +360,7 @@ def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
     return extreme_wind_flag
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_rh_limits(rh, rh_limits=(0, 100)):
     """ Checks for extreme relative humidity.
 
@@ -371,6 +381,7 @@ def check_rh_limits(rh, rh_limits=(0, 100)):
     return flags
 
 
+@mask_flags('CLEARSKY EXCEEDED')
 def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     """
     Flags GHI values greater than clearsky values.
@@ -394,6 +405,7 @@ def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     return flags
 
 
+@mask_flags('CLEARSKY EXCEEDED')
 def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
     """
     Flags plane of array irradiance values greater than clearsky values.
@@ -418,6 +430,7 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
     return flags
 
 
+@mask_flags('NIGHTTIME')
 def check_irradiance_day_night(solar_zenith, max_zenith=87):
     """ Checks for day/night periods based on solar zenith.
 
@@ -436,13 +449,14 @@ def check_irradiance_day_night(solar_zenith, max_zenith=87):
     return flags
 
 
+@mask_flags('UNEVEN FREQUENCY')
 def check_timestamp_spacing(times, freq):
     """ Checks if spacing between times conforms to freq.
 
     Parameters
     ----------
     times : DatetimeIndex
-    freq : string
+    freq : string or Timedelta
         Expected frequency of times
 
     Returns
@@ -451,9 +465,10 @@ def check_timestamp_spacing(times, freq):
         True when the difference between one time and the time before
         conforms to freq
     """
-    expected_freq = pd.Timedelta(freq)
+    if not isinstance(freq, pd.Timedelta):
+        freq = pd.Timedelta(freq)
     delta = times.to_series().diff()  # first value is NaT, rest are timedeltas
-    flags = delta == expected_freq
+    flags = delta == freq
     flags.iloc[0] = True
     return flags
 
@@ -476,6 +491,7 @@ def _all_close_to_first(x, rtol=1e-5, atol=1e-8):
     return np.allclose(a=x, b=x[0], rtol=rtol, atol=atol)
 
 
+@mask_flags('STALE VALUES', invert=False)
 def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     """ Detects stale data.
 
@@ -512,6 +528,7 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     return flags
 
 
+@mask_flags('INTERPOLATED VALUES', invert=False)
 def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     """ Detects sequences of data which appear linear.
 
@@ -583,6 +600,7 @@ def _label_clipping(x, window, frac):
     return y
 
 
+@mask_flags('CLIPPED VALUES', invert=False)
 def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
                     levels=2):
     """ Detects clipping in a series of AC power.
