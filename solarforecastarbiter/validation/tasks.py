@@ -22,10 +22,10 @@ def validate_ghi(site, values):
 
     new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
                                                      return_bool=False)
-    new_flags += validator.check_ghi_limits_QCRad(values,
+    new_flags |= validator.check_ghi_limits_QCRad(values,
                                                   solar_position['zenith'],
                                                   dni_extra)
-    new_flags += validator.check_ghi_clearsky(values, clearsky['ghi'])
+    new_flags |= validator.check_ghi_clearsky(values, clearsky['ghi'])
     return new_flags
 
 
@@ -33,7 +33,7 @@ def validate_dni(site, values):
     solar_position, dni_extra = _solpos_dni_extra(site, values.index)
     new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
                                                      return_bool=False)
-    new_flags += validator.check_dni_limits_QCRad(values,
+    new_flags |= validator.check_dni_limits_QCRad(values,
                                                   solar_position['zenith'],
                                                   dni_extra)
     return new_flags
@@ -43,7 +43,7 @@ def validate_dhi(site, values):
     solar_position, dni_extra = _solpos_dni_extra(site, values.index)
     new_flags = validator.check_irradiance_day_night(solar_position['zenith'],
                                                      return_bool=False)
-    new_flags += validator.check_dhi_limits_QCRad(values,
+    new_flags |= validator.check_dhi_limits_QCRad(values,
                                                   solar_position['zenith'],
                                                   dni_extra)
     return new_flags
@@ -64,14 +64,14 @@ def immediate_observation_validation(access_token, observation_id, start, end):
     value_series = observation_values['value']
     quality_flags = observation_values['quality_flag'].copy()
 
-    quality_flags += validator.check_timestamp_spacing(
+    quality_flags |= validator.check_timestamp_spacing(
         value_series.index, observation.interval_length, return_bool=False)
 
     validation_func = VARIABLE_VALIDATION_FUNCS.get(
         observation.variable,
         lambda x, y: pd.Series(0, index=value_series.index))
 
-    quality_flags += validation_func(observation.variable)(
+    quality_flags |= validation_func(observation.variable)(
         observation.site, value_series)
 
     # session.post

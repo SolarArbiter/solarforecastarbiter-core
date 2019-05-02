@@ -182,6 +182,7 @@ def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
     return dni_limit_flag
 
 
+@mask_flags('LIMITS EXCEEDED')
 def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
                                   dni=None, limits=None):
     """
