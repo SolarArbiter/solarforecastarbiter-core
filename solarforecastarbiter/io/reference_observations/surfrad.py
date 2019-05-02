@@ -1,7 +1,7 @@
 """Functions for Creating and Updating NOAA SURFRAD related objects
 within the SolarForecastArbiter
 """
-import json
+from functools import partial
 import logging
 from urllib.error import URLError
 
@@ -12,7 +12,8 @@ from requests.exceptions import HTTPError
 
 from pvlib import iotools
 from solarforecastarbiter.io.utils import observation_df_to_json_payload as obs_to_payload # NOQA
-from solarforecastarbiter.datamodel import Site, Observation
+from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.datamodel import Observation
 
 
 # Format strings for the location of a surfrad data file. Expects the following
@@ -31,45 +32,6 @@ surfrad_variables = ['ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed']
 rename_mapping = {'temp_air': 'air_temperature'}
 
 logger = logging.getLogger('reference_data')
-
-
-def decode_extra_parameters(metadata):
-    """Returns a dictionary parsed from the json string stored
-    in extra_parameters
-
-    Parameters
-    ----------
-    metadata
-        A SolarForecastArbiter.datamodel class with an extra_parameters
-        attribute
-
-    Returns
-    -------
-    dict
-        The extra parameters as a python dictionary
-    """
-    return json.loads(metadata.extra_parameters)
-
-
-def surfrad_network(metadata):
-    """Checks to see if an object is in the SURFRAD network.
-
-    Parameters
-    ----------
-    metadata
-        An instantiated dataclass from teh datamodel.
-    Returns
-    -------
-    bool
-        True if the site belongs to the surfrad network.
-    """
-    extra_params = decode_extra_parameters(metadata)
-    try:
-        in_surfrad = extra_params['network'] == 'NOAA SURFRAD'
-    except KeyError:
-        return False
-    else:
-        return in_surfrad
 
 
 def fetch(api, site, start, end, realtime=False):
@@ -100,7 +62,7 @@ def fetch(api, site, start, end, realtime=False):
     else:
         url_format = ARCHIVE_URL
     # load extra parameters for api arguments.
-    extra_params = decode_extra_parameters(site)
+    extra_params = common.decode_extra_parameters(site)
     abbreviation = extra_params['network_api_abbreviation']
     single_day_dfs = []
     for day in pd.date_range(start, end):
@@ -127,27 +89,6 @@ def fetch(api, site, start, end, realtime=False):
     return all_period_data
 
 
-def create_site(api, site):
-    """
-    Parameters
-    ----------
-    api : io.APISession
-        An APISession with a valid JWT for accessing the Reference Data user.
-    site : dict
-        Dictionary describing the site to post. This will be instantiated as
-        a datamodel.Site object and the value of 'extra_parameters' will be
-        serialized to json.
-
-    Returns
-    -------
-    uuid : string
-        UUID of the created Site.
-    """
-    site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
-    site_to_create = Site.from_dict(site)
-    return api.create_site(site_to_create)
-
-
 def create_observation(api, site, variable):
     """ Creates a new Observation for the variable and site.
 
@@ -166,7 +107,7 @@ def create_observation(api, site, variable):
     """
     # Copy network api data from the site, and get the observation's
     # interval length
-    extra_parameters = decode_extra_parameters(site)
+    extra_parameters = common.decode_extra_parameters(site)
     observation = Observation.from_dict({
         'name': f"{site.name} {variable}",
         'interval_label': 'ending',
@@ -197,22 +138,6 @@ def initialize_site_observations(api, site):
                          f'{site.name}. Error: {e}')
 
 
-def initialize_metadata_objects(api, sites):
-    """Create all Sites and associated Observations for Surfrad
-    stations.
-
-    Parameters
-    ----------
-    api : io.api.APISession
-        An active Reference user session.
-    sites : list
-        List of dictionaries of Site metadata.
-    """
-    for site_dict in sites:
-        site = create_site(api, site_dict)
-        initialize_site_observations(api, site)
-
-
 def update_observation_data(api, start, end):
     """Post new observation data to a list of Surfrad Observations
     from start to end.
@@ -225,7 +150,8 @@ def update_observation_data(api, start, end):
         The end of the period to request data for.
     """
     sites = api.list_sites()
-    surfrad_sites = filter(surfrad_network, sites)
+    surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
+                           sites)
     observations = api.list_observations()
     for site in surfrad_sites:
         obs_df = fetch(api, site, start, end)
