@@ -159,7 +159,8 @@ def create_site(api, site):
     try:
         created = api.create_site(site_to_create)
     except HTTPError as e:
-        logger.error(f"Failed to create Site {site['name']} with error:\n {e}.")
+        logger.error(f"Failed to create Site {site['name']} with "
+                     f"error:\n {e}.")
     else:
         logger.info(f'Created Site {created.name} successfully.')
         network_handler = NETWORKHANDLER_MAP.get(network)
