@@ -89,39 +89,6 @@ def fetch(api, site, start, end, realtime=False):
     return all_period_data
 
 
-def create_observation(api, site, variable):
-    """ Creates a new Observation for the variable and site.
-
-    Parameters
-    ----------
-    api : io.APISession
-        An APISession with a valid JWT for accessing the Reference Data user.
-    site : solarforecastarbiter.datamodel.site
-        A site object.
-
-    Returns
-    -------
-    uuid : string
-        The uuid of the newly created Observation.
-
-    """
-    # Copy network api data from the site, and get the observation's
-    # interval length
-    extra_parameters = common.decode_extra_parameters(site)
-    observation = Observation.from_dict({
-        'name': f"{site.name} {variable}",
-        'interval_label': 'ending',
-        'interval_length': extra_parameters['observation_interval_length'],
-        'interval_value_type': 'interval_mean',
-        'site': site,
-        'uncertainty': 0,
-        'variable': variable,
-        'extra_parameters': site.extra_parameters
-    })
-    created = api.create_observation(observation)
-    logger.info(f"{created.name} created successfully.")
-
-
 def initialize_site_observations(api, site):
     """Creates an observaiton at the site for each variable in surfrad_variables.
 
@@ -132,7 +99,7 @@ def initialize_site_observations(api, site):
     """
     for variable in surfrad_variables:
         try:
-            create_observation(api, site, variable)
+            common.create_observation(api, site, variable)
         except HTTPError as e:
             logger.error(f'Failed to create {variable} observation as Site '
                          f'{site.name}. Error: {e}')
@@ -151,7 +118,6 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    sites = api.list_sites()
     surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
                            sites)
     for site in surfrad_sites:

@@ -63,3 +63,37 @@ def filter_by_networks(object_list, networks):
     """
     filtered = [obj for obj in object_list if check_network(networks, obj)]
     return filtered
+
+
+def create_observation(api, site, variable):
+    """ Creates a new Observation for the variable and site.
+
+    Parameters
+    ----------
+    api : io.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.site
+        A site object.
+
+    Returns
+    -------
+    created
+        The datamodel object of the newly created observation.
+
+    """
+    # Copy network api data from the site, and get the observation's
+    # interval length
+    extra_parameters = common.decode_extra_parameters(site)
+    observation = Observation.from_dict({
+        'name': f"{site.name} {variable}",
+        'interval_label': 'ending',
+        'interval_length': extra_parameters['observation_interval_length'],
+        'interval_value_type': 'interval_mean',
+        'site': site,
+        'uncertainty': 0,
+        'variable': variable,
+        'extra_parameters': site.extra_parameters
+    })
+    created = api.create_observation(observation)
+    logger.info(f"{created.name} created successfully.")
+    return created
