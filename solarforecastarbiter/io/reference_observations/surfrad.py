@@ -13,7 +13,6 @@ from requests.exceptions import HTTPError
 from pvlib import iotools
 from solarforecastarbiter.io.utils import observation_df_to_json_payload as obs_to_payload # NOQA
 from solarforecastarbiter.io.reference_observations import common
-from solarforecastarbiter.datamodel import Observation
 
 
 # Format strings for the location of a surfrad data file. Expects the following
@@ -29,7 +28,6 @@ ARCHIVE_URL = SURFRAD_FTP_DIR + "/{abrv}/{year}/{abrv}{year_2d}{jday}.dat"
 # A list of variables that are available in all SURFRAD files to
 # parse and create observations for.
 surfrad_variables = ['ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed']
-rename_mapping = {'temp_air': 'air_temperature'}
 
 logger = logging.getLogger('reference_data')
 
@@ -83,7 +81,6 @@ def fetch(api, site, start, end, realtime=False):
         else:
             single_day_dfs.append(surfrad_day)
     all_period_data = pd.concat(single_day_dfs)
-    all_period_data = all_period_data.rename(rename_mapping)
     all_period_data = all_period_data.rename(
         columns={'temp_air': 'air_temperature'})
     return all_period_data
@@ -132,4 +129,15 @@ def update_observation_data(api, sites, observations, start, end):
             var_df = var_df.rename(columns={obs.variable: 'value'})
             var_df['quality_flag'] = 0
             var_df = var_df.dropna()
-            api.post_observation_values(obs.observation_id, var_df)
+            # temporarily skip post with empty data
+            if var_df.empty:
+                logger.warning(
+                    f'{obs.name} data empty from '
+                    f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
+                    f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+                continue
+            try:
+                api.post_observation_values(obs.observation_id, var_df)
+            except HTTPError as e:
+                logger.error(f'Posting data to {obs.name} failed'
+                             f'with error: {e}.')

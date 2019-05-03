@@ -1,4 +1,11 @@
 import json
+import logging
+
+
+from solarforecastarbiter.datamodel import Observation
+
+
+logger = logging.getLogger('reference_data')
 
 
 def decode_extra_parameters(metadata):
@@ -83,7 +90,7 @@ def create_observation(api, site, variable):
     """
     # Copy network api data from the site, and get the observation's
     # interval length
-    extra_parameters = common.decode_extra_parameters(site)
+    extra_parameters = decode_extra_parameters(site)
     observation = Observation.from_dict({
         'name': f"{site.name} {variable}",
         'interval_label': 'ending',

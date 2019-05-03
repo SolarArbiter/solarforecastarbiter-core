@@ -43,12 +43,14 @@ from requests.exceptions import HTTPError
 
 from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.io.reference_observations import surfrad, common
+from solarforecastarbiter.io.reference_observations import (surfrad, solrad,
+                                                            common)
 
 
 # maps network names to the modules that interact with their api
 NETWORKHANDLER_MAP = {
     'NOAA SURFRAD': surfrad,
+    'NOAA SOLRAD': solrad,
 }
 
 # list of options for the 'network' argument

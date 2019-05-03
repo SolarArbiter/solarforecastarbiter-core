@@ -1,5 +1,95 @@
+from functools import partial
+import logging
+from urllib.error import URLError
+
+
+import pandas as pd
+from pvlib import iotools
+from requests.exceptions import HTTPError
+
+
+from solarforecastarbiter.io.reference_observations import common
+
+
+solrad_variables = ['ghi', 'dni', 'dhi']
+
+SOLRAD_FTP_DIR = "ftp://aftp.cmdl.noaa.gov/data/radiation/solrad/"
+REALTIME_URL = SOLRAD_FTP_DIR + "/realtime/{abbr}/{abrv}{year_2d}{jday}.dat"
+ARCHIVE_URL = SOLRAD_FTP_DIR + "/{abrv}/{year}/{abrv}{year_2d}{jday}.dat"
+
+logger = logging.getLogger('reference_data')
+
+
+def fetch(api, site, start, end, realtime=False):
+    """Retrieve observation data for a solrad site between start and end.
+
+    Parameters
+    ----------
+    api : io.APISession
+        An APISession with a valid JWT for accessing the Reference Data
+        user.
+    site : datamodel.Site
+        Site object with the appropriate metadata.
+    start : datetime
+        The beginning of the period to request data for.
+    end : datetime
+        The end of the period to request data for.
+    realtime : bool
+        Whether or not to look for realtime data. Note that this data is
+        raw, unverified data from the instruments.
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        All of the requested data concatenated into a single DataFrame.
+    """
+    if realtime:
+        url_format = REALTIME_URL
+    else:
+        url_format = ARCHIVE_URL
+    # load extra parameters for api arguments.
+    extra_params = common.decode_extra_parameters(site)
+    abbreviation = extra_params['network_api_abbreviation']
+    single_day_dfs = []
+    for day in pd.date_range(start, end):
+        filename = url_format.format(abrv=abbreviation,
+                                     year=day.year,
+                                     year_2d=day.strftime('%y'),
+                                     jday=day.strftime('%j'))
+        logger.info(f'Requesting data for SOLRAD site {site.name}'
+                    f' on {day.strftime("%Y%m%d")}.')
+        try:
+            # Only get dataframe from the returned tuple
+            solrad_day = iotools.read_solrad(filename)
+        except URLError:
+            logger.warning(f'Could not retrieve SOLRAD data for site '
+                           f'{site.name} on {day.strftime("%Y%m%d")}.')
+            logger.debug(f'Failed SOLRAD URL: {filename}.')
+            continue
+        else:
+            single_day_dfs.append(solrad_day)
+    all_period_data = pd.concat(single_day_dfs)
+    return all_period_data
+
+
+def initialize_site_observations(api, site):
+    """Creates an observaiton at the site for each variable in solrad_variables.
+
+    Parameters
+    ----------
+    site : datamodel.Site
+        The site object for which to create Observations.
+    """
+    for variable in solrad_variables:
+        try:
+            common.create_observation(api, site, variable)
+        except HTTPError as e:
+            logger.error(f'Failed to create {variable} observation at Site '
+                         f'{site.name}. Error: {e}')
+
+
 def update_observation_data(api, sites, observations, start, end):
-    """Post new observation data to a list of Surfrad Observations
+    """Post new observation data to a list of SOLRAD Observations
     from start to end.
 
     api : solarforecastarbiter.io.api.APISession
@@ -11,10 +101,9 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    sites = api.list_sites()
-    surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
-                           sites)
-    for site in surfrad_sites:
+    solrad_sites = filter(partial(common.check_network, 'NOAA SOLRAD'),
+                          sites)
+    for site in solrad_sites:
         obs_df = fetch(api, site, start, end)
         site_observations = [obs for obs in observations if obs.site == site]
         for obs in site_observations:
@@ -24,6 +113,17 @@ def update_observation_data(api, sites, observations, start, end):
                 f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
             var_df = obs_df[[obs.variable]]
             var_df = var_df.rename(columns={obs.variable: 'value'})
-            var_df['quality_flag'] = 0 
+            var_df['quality_flag'] = 0
             var_df = var_df.dropna()
-            api.post_observation_values(obs.observation_id, var_df)
+            # temporarily skip post with empty data
+            if var_df.empty:
+                logger.warning(
+                    f'{obs.name} data empty from '
+                    f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
+                    f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+                continue
+            try:
+                api.post_observation_values(obs.observation_id, var_df)
+            except HTTPError as e:
+                logger.error(f'Posting data to {obs.name} failed'
+                             f'with error: {e}.')

@@ -78,3 +78,10 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1,Henderson NV,36.04,-114.92,538,Henderson,,America/Los_Angeles,,SANDI
 1,Williston VT,44.5,-73.1,184,Williston,,America/New_York,,SANDIA
 1,Cocoa FL,28.4,-80.77,11,Cocoa,,America/New_York,,SANDIA
+1,Albuquerque New Mexico,35.03796,-106.62211,1617,ABQ,abq,America/Denver,,NOAA SOLRAD
+1,Bismarck North Dakota,46.77179,-100.75955,503,BIS,bis,America/Chicago,,NOAA SOLRAD
+1,Hanford California,36.31357,-119.63163999999999,73,HNX,hnx,America/Los_Angeles,,NOAA SOLRAD
+1,Madison Wisconsin,43.0725,-89.41133,271,MSN,msn,America/Chicago,,NOAA SOLRAD
+1,Salt Lake City Utah,40.7722,-111.95495,1288,SLC,slc,America/Denver,,NOAA SOLRAD
+1,Seattle Washington,47.68685,-122.25667,20,SEA,sea,America/Los_Angeles,,NOAA SOLRAD
+1,Sterling Virginia,38.97203,-77.4869,85,STE,ste,America/New_York,,NOAA SOLRAD
