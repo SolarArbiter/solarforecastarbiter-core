@@ -31,8 +31,8 @@ _BITMASK_DESCRIPTION_DICT = {1: (
     ('INTERPOLATED VALUES', 1 << 11, 'bad'),
     ('CLIPPED VALUES', 1 << 12, 'bad'),
     ('INCONSISTENT IRRADIANCE COMPONENTS', 1 << 13, 'bad'),
-    ('RESERVED 0', 1 << 14, 'bad'),  # available for new flag
-    ('RESERVED 1', 1 << 15, 'bad'),  # available for new flag
+    ('RESERVED 0', 1 << 14, ''),  # available for new flag
+    ('RESERVED 1', 1 << 15, ''),  # available for new flag
     )
 }
 
@@ -91,18 +91,16 @@ def _get_mask_dict(flag):
     return {v[0]: v[1] for v in _BITMASK_DESCRIPTION_DICT[version]}
 
 
-def check_if_single_value_flagged(flag, flag_description, mask_dict=None):
+def check_if_single_value_flagged(flag, flag_description):
     if not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
-    if mask_dict is None:
-        mask_dict = _get_mask_dict(flag)
+    mask_dict = _get_mask_dict(flag)
     mask = mask_dict[flag_description]
     if mask == 0:
-        return (flag & ~VERSION_MASK) == 0
+        return which_data_is_ok(flag)
     else:
         return bool(flag & mask)
 
 
 def which_data_is_ok(flags):
-    return flags.apply(
-        partial(check_if_single_value_flagged, flag_description='OK'))
+    return flags & ~VERSION_MASK == 0
