@@ -1,10 +1,18 @@
 """A CLI tool for creating reference sites and observations and updating them
 with data from their respective API.
 
-As new networks are added, they should have their network as it appears in
-`sfa_reference_data.csv` to an imported module which handles the actual
-observation initialization and update. Each of these network specific modules
-should implement two functions:
+Requires that you set the environment variables:
+
+    SFA_REFERENCE_TOKEN
+        A valid access token for the SolarForecastArbiter reference user.
+    SFA_API_BASE_URL
+        The base url of the SolarForecastArbiter API to use.
+        e.g. https://api.solarforecastarbiter.org
+
+As new networks are added, their name should be added as it appears in
+`sfa_reference_data.csv` to `NETWORK_OPTIONS`. A module should be created
+to handle observation initialization and data update. Each of these network
+specific modules should implement two functions:
 
     initialize_site_observations(api, site)
 
@@ -14,6 +22,9 @@ should implement two functions:
 
         Where api is an `io.api.APISession` and `start` and `end` are
         datetime objects.
+The module should then be imported and added to `NETWORKHANDLER_MAP` below,
+so that it may be selected based on command line arguments. See the existing
+mappings for an example.
 """
 import argparse
 from argparse import RawTextHelpFormatter
@@ -148,14 +159,14 @@ def create_site(api, site):
     try:
         created = api.create_site(site_to_create)
     except HTTPError as e:
-        logger.error(f'Failed to create Site {site["name"]} with error:\n {e}')
+        logger.error(f"Failed to create Site {site['name']} with error:\n {e}.")
     else:
         logger.info(f'Created Site {created.name} successfully.')
         network_handler = NETWORKHANDLER_MAP.get(network)
         if network_handler is None:
-            logging.error(f'Unrecognized network, {network} on Site '
-                          f'{site["name"]} Observations cannot be '
-                          'automatically generated.')
+            logger.warning(f'Unrecognized network, {network} on Site '
+                           f'{site["name"]} Observations cannot be '
+                           'automatically generated.')
         else:
             network_handler.initialize_site_observations(api, created)
         return created
