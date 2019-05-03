@@ -138,12 +138,14 @@ def initialize_site_observations(api, site):
                          f'{site.name}. Error: {e}')
 
 
-def update_observation_data(api, start, end):
+def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of Surfrad Observations
     from start to end.
 
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
+    sites: list
+        List of all reference sites as Objects
     start : datetime
         The beginning of the period to request data for.
     end : datetime
@@ -152,7 +154,6 @@ def update_observation_data(api, start, end):
     sites = api.list_sites()
     surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
                            sites)
-    observations = api.list_observations()
     for site in surfrad_sites:
         obs_df = fetch(api, site, start, end)
         site_observations = [obs for obs in observations if obs.site == site]

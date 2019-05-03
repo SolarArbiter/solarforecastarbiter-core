@@ -18,10 +18,12 @@ specific modules should implement two functions:
 
         Where api is an `io.api.APISession` and site is a `datamodel.Site`.
 
-    update_observation_data(api, start end)
+    update_observation_data(api, sites, observations, start, end)
 
-        Where api is an `io.api.APISession` and `start` and `end` are
-        datetime objects.
+        Where api is an `io.api.APISession`, sites is the result of
+        `APISession.list_sites`, observations is the result of
+        `APISession.list_observations``start` and `end` are datetime
+        objects.
 The module should then be imported and added to `NETWORKHANDLER_MAP` below,
 so that it may be selected based on command line arguments. See the existing
 mappings for an example.
@@ -60,7 +62,6 @@ DEFAULT_SITEFILE = os.path.join(SCRIPT_DIR, "sfa_reference_sites.csv")
 SFA_REFERENCE_TOKEN = os.getenv('SFA_REFERENCE_TOKEN')
 SFA_API_BASE_URL = os.getenv('SFA_API_BASE_URL')
 
-logging.basicConfig()
 logger = logging.getLogger('reference_data')
 
 CLI_DESCRIPTION = """
@@ -87,13 +88,6 @@ SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
     https://pv-dashboard.sandia.gov/
 """  # noqa: E501
 
-parser = argparse.ArgumentParser(
-    formatter_class=RawTextHelpFormatter,
-    description=CLI_DESCRIPTION)
-parser.add_argument('-v', '--verbose', action='count')
-subparsers = parser.add_subparsers(help='Commands', dest='command',
-                                   required=True)
-
 
 def add_network_arg(parser):
     """Adds the `--networks` argument to a subparser so that it does not consume
@@ -103,31 +97,6 @@ def add_network_arg(parser):
         '--networks', nargs='+', default=NETWORK_OPTIONS,
         choices=NETWORK_OPTIONS,
         help="The Networks to act on. Defaults to all.")
-
-
-init_parser = subparsers.add_parser(
-    'init',
-    help='Creates sites and observations from a site file.')
-add_network_arg(init_parser)
-init_parser.add_argument(
-    '--site-file', default=DEFAULT_SITEFILE,
-    help='The file from which to load all of the reference site metadata. '
-         'Defaults to `sfa_reference_sites.csv.')
-
-update_parser = subparsers.add_parser(
-    'update',
-    help='Updates reference data for the given period.')
-add_network_arg(update_parser)
-update_parser.add_argument(
-    'start',
-    help="Beginning of the period to update as a ISO8601 datetime string.")
-update_parser.add_argument(
-    'end',
-    help="End of the period to update as an ISO8601 datetime string.")
-
-remove_parser = subparsers.add_parser(
-    'remove', help='Deletes all reference sites and observations.')
-add_network_arg(remove_parser)
 
 
 def get_apisession():
@@ -204,12 +173,15 @@ def update_reference_observations(start, end, networks):
         List of network names to update.
     """
     api = get_apisession()
+    sites = api.list_sites()
+    observations = api.list_observations()
     for network in networks:
         network_handler = NETWORKHANDLER_MAP.get(network)
         if network_handler is None:
             logger.info(f'{network} observation updates not configured.')
         else:
-            surfrad.update_observation_data(api, start, end)
+            network_handler.update_observation_data(api, sites, observations,
+                                                    start, end)
 
 
 def site_df_to_dicts(site_df):
@@ -248,6 +220,41 @@ def site_df_to_dicts(site_df):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
+
+    parser = argparse.ArgumentParser(
+        formatter_class=RawTextHelpFormatter,
+        description=CLI_DESCRIPTION)
+    parser.add_argument('-v', '--verbose', action='count')
+    subparsers = parser.add_subparsers(help='Commands', dest='command',
+                                       required=True)
+    # Init command parser/options
+    init_parser = subparsers.add_parser(
+        'init',
+        help='Creates sites and observations from a site file.')
+    add_network_arg(init_parser)
+    init_parser.add_argument(
+        '--site-file', default=DEFAULT_SITEFILE,
+        help='The file from which to load all of the reference site metadata. '
+             'Defaults to `sfa_reference_sites.csv.')
+
+    # Update command parser/options
+    update_parser = subparsers.add_parser(
+        'update',
+        help='Updates reference data for the given period.')
+    add_network_arg(update_parser)
+    update_parser.add_argument(
+        'start',
+        help="Beginning of the period to update as a ISO8601 datetime string.")
+    update_parser.add_argument(
+        'end',
+        help="End of the period to update as an ISO8601 datetime string.")
+
+    # Remove command parser/options
+    remove_parser = subparsers.add_parser(
+        'remove', help='Deletes all reference sites and observations.')
+    add_network_arg(remove_parser)
+
     cli_args = parser.parse_args()
     if cli_args.verbose == 1:
         logger.setLevel(logging.INFO)
@@ -257,6 +264,7 @@ if __name__ == '__main__':
     networks = cli_args.networks
 
     cmd = cli_args.command
+
     if cmd == 'init':
         # Create sites and optionally create observations from rows of a csv
         filename = cli_args.site_file
