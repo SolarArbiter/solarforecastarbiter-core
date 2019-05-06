@@ -11,7 +11,8 @@ from functools import wraps
 # is versioned so that future addtions or removals are backwards compatible
 # without rerunning the validation on all data.
 # DO NOT MODIFY THE VALUES OF THE _BITMASK_DESCRIPTION_DICT instead,
-# add a increment the key and add a new value tuple. The VERSION
+# add a increment the key and add a new value tuple, i.e. add version 2 like
+# 2: (('OK', 0, ''), ('USER FLAGGED, 1 << 0, ''), ...) . The VERSION
 # IDENTIFIER 0 - 2 must remain in their current positions. Versions 7
 # and up will require another identifier bit to be determined at that
 # time.  The version identifier also serves to mark data in the
@@ -62,9 +63,11 @@ def convert_bool_flags_to_flag_mask(flags, flag_description, invert):
 
 def mask_flags(flag_description, invert=True):
     """
-    Decorator to convert boolean flags to the integer of flag_description.
-    Will only apply if the 'return_bool' keyword is pass to the decorated
-    function is is False.
+    Decorator that will convert a boolean pandas object into an integer,
+    bitmasked object when `_return_mask=True`. This decorator adds the
+    `_return_mask` kwarg to the decorated function. Using this decorator
+    to mask values ensures the description and decorated function are
+    clearly linked.
 
     Parameters
     ----------
