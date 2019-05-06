@@ -7,8 +7,10 @@ from functools import wraps
 
 # The quality_flag field in MySQL is currently limited to 1 << 15;
 # fields beyond 1 << 15 will require a change in the MySQL datatype
-# for the quality_flag column.  versioned description-bitmask mapping
-# dict (key is version) DO NOT MODIFY THE VALUES OF THE DICT instead,
+# for the quality_flag column. The mapping from description to bitmask
+# is versioned so that future addtions or removals are backwards compatible
+# without rerunning the validation on all data.
+# DO NOT MODIFY THE VALUES OF THE _BITMASK_DESCRIPTION_DICT instead,
 # add a increment the key and add a new value tuple. The VERSION
 # IDENTIFIER 0 - 2 must remain in their current positions. Versions 7
 # and up will require another identifier bit to be determined at that
