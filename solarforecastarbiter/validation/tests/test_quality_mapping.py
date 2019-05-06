@@ -15,8 +15,7 @@ def test_ok_user_flagged():
 
 
 def test_description_dict_version_compatibility():
-    for descriptions in quality_mapping._BITMASK_DESCRIPTION_DICT.values():
-        dict_ = {v[0]: v[1] for v in descriptions}
+    for dict_ in quality_mapping.BITMASK_DESCRIPTION_DICT.values():
         assert dict_['VERSION IDENTIFIER 0'] == 1 << 1
         assert dict_['VERSION IDENTIFIER 1'] == 1 << 2
         assert dict_['VERSION IDENTIFIER 2'] == 1 << 3
@@ -25,8 +24,8 @@ def test_description_dict_version_compatibility():
 def test_latest_version_flag():
     # test valid while only identifiers 0 - 2 present
     last_identifier = max(
-        int(vi.split(' ')[-1]) for vi, *_ in
-        quality_mapping.LATEST_BITMASK_DESCRIPTION if
+        int(vi.split(' ')[-1]) for vi in
+        quality_mapping.DESCRIPTION_MASK_MAPPING.keys() if
         vi.startswith('VERSION IDENTIFIER'))
     assert last_identifier == 2
     assert (quality_mapping.LATEST_VERSION_FLAG ==

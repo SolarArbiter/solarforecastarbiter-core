@@ -12,40 +12,38 @@ from functools import wraps
 # without rerunning the validation on all data.
 # DO NOT MODIFY THE VALUES OF THE _BITMASK_DESCRIPTION_DICT instead,
 # add a increment the key and add a new value tuple, i.e. add version 2 like
-# 2: (('OK', 0, ''), ('USER FLAGGED, 1 << 0, ''), ...) . The VERSION
+# 2: {'OK': 0, 'USER FLAGGED: 1 << 0, ...} . The VERSION
 # IDENTIFIER 0 - 2 must remain in their current positions. Versions 7
 # and up will require another identifier bit to be determined at that
 # time.  The version identifier also serves to mark data in the
-# database as validated. The tuples are (description, bit mask, flag class)
-_BITMASK_DESCRIPTION_DICT = {1: (
+# database as validated. The tuples are (description, bit mask)
+BITMASK_DESCRIPTION_DICT = {1: {
     # start with 1 to distinguish validated vs not in DB
-    ('OK', 0, ''),
-    ('USER FLAGGED', 1 << 0, 'bad'),
-    ('VERSION IDENTIFIER 0', 1 << 1, ''),
-    ('VERSION IDENTIFIER 1', 1 << 2, ''),
-    ('VERSION IDENTIFIER 2', 1 << 3, ''),
-    ('NIGHTTIME', 1 << 4, 'informational'),
-    ('CLOUDY', 1 << 5, 'informational'),
-    ('SHADED', 1 << 6, 'informational'),
-    ('UNEVEN FREQUENCY', 1 << 7, 'bad'),
-    ('LIMITS EXCEEDED', 1 << 8, 'bad'),
-    ('CLEARSKY EXCEEDED', 1 << 9, 'bad'),
-    ('STALE VALUES', 1 << 10, 'bad'),
-    ('INTERPOLATED VALUES', 1 << 11, 'bad'),
-    ('CLIPPED VALUES', 1 << 12, 'bad'),
-    ('INCONSISTENT IRRADIANCE COMPONENTS', 1 << 13, 'bad'),
-    ('RESERVED 0', 1 << 14, ''),  # available for new flag
-    ('RESERVED 1', 1 << 15, ''),  # available for new flag
-    )
+    'OK': 0,
+    'USER FLAGGED': 1 << 0,
+    'VERSION IDENTIFIER 0': 1 << 1,
+    'VERSION IDENTIFIER 1': 1 << 2,
+    'VERSION IDENTIFIER 2': 1 << 3,
+    'NIGHTTIME': 1 << 4,
+    'CLOUDY': 1 << 5,
+    'SHADED': 1 << 6,
+    'UNEVEN FREQUENCY': 1 << 7,
+    'LIMITS EXCEEDED': 1 << 8,
+    'CLEARSKY EXCEEDED': 1 << 9,
+    'STALE VALUES': 1 << 10,
+    'INTERPOLATED VALUES': 1 << 11,
+    'CLIPPED VALUES': 1 << 12,
+    'INCONSISTENT IRRADIANCE COMPONENTS': 1 << 13,
+    'RESERVED 0': 1 << 14,  # available for new flag
+    'RESERVED 1': 1 << 15  # available for new flag
+    }
 }
 
 
 # should never change unless another VERSION IDENTIFIER is required
 VERSION_MASK = 0b1110
-LATEST_VERSION = max(_BITMASK_DESCRIPTION_DICT.keys())
-LATEST_BITMASK_DESCRIPTION = _BITMASK_DESCRIPTION_DICT[LATEST_VERSION]
-DESCRIPTION_MASK_MAPPING = {v[0]: v[1] for v in LATEST_BITMASK_DESCRIPTION}
-MASK_DESCRIPTION_MAPPING = {v[1]: v[0] for v in LATEST_BITMASK_DESCRIPTION}
+LATEST_VERSION = max(BITMASK_DESCRIPTION_DICT.keys())
+DESCRIPTION_MASK_MAPPING = BITMASK_DESCRIPTION_DICT[LATEST_VERSION]
 LATEST_VERSION_FLAG = (
     LATEST_VERSION * DESCRIPTION_MASK_MAPPING['VERSION IDENTIFIER 0'])
 
@@ -114,17 +112,12 @@ def get_version(flag):
     return (flag & VERSION_MASK) >> 1
 
 
-def _get_mask_dict(flag):
-    version = get_version(flag)
-    return {v[0]: v[1] for v in _BITMASK_DESCRIPTION_DICT[version]}
-
-
 def check_if_single_value_flagged(flag, flag_description):
     """Check if the single integer flag has been flagged for flag_description
     """
     if not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
-    mask_dict = _get_mask_dict(flag)
+    mask_dict = BITMASK_DESCRIPTION_DICT[get_version(flag)]
     mask = mask_dict[flag_description]
     if mask == 0:
         return which_data_is_ok(flag)
