@@ -4,7 +4,7 @@ from pvlib.irradiance import get_extra_radiation
 
 from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.validation import validator
+from solarforecastarbiter.validation import validator, quality_mapping
 
 
 def _validate_timestamp(observation, values):
@@ -93,6 +93,13 @@ def validate_relative_humidity(observation, values):
     return new_flags
 
 
+def validate_nothing(observation, values):
+    @quality_mapping.mask_flags('OK', invert=False)
+    def noop():
+        return pd.Series(1, index=values.index)
+    return noop(return_bool=False)
+
+
 IMMEDIATE_VALIDATION_FUNCS = {
     'air_temperature': validate_air_temperature,
     'wind_speed': validate_wind_speed,
@@ -105,6 +112,10 @@ IMMEDIATE_VALIDATION_FUNCS = {
 
 
 def immediate_observation_validation(access_token, observation_id, start, end):
+    """
+    Task that will run immediately after Observation values are uploaded to the
+    API to validate the data.
+    """
     session = APISession(access_token)
     observation = session.get_observation(observation_id)
     observation_values = session.get_observation_values(observation_id, start,
@@ -113,8 +124,7 @@ def immediate_observation_validation(access_token, observation_id, start, end):
     quality_flags = observation_values['quality_flag'].copy()
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
-        observation.variable,
-        lambda x, y: pd.Series(0, index=value_series.index))
+        observation.variable, validate_nothing)
 
     quality_flags |= validation_func(observation.variable)(
         observation, value_series)

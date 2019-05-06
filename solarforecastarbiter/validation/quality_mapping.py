@@ -59,6 +59,29 @@ def convert_bool_flags_to_flag_mask(flags, flag_description, invert):
 
 
 def mask_flags(flag_description, invert=True):
+    """
+    Decorator to convert boolean flags to the integer of flag_description.
+    Will only apply if the 'return_bool' keyword is pass to the decorated
+    function is is False.
+
+    Parameters
+    ----------
+    flag_description : str
+        Description of the flag to convert from a boolean to integer. Must be
+        a key of the DESCRIPTION_MASK_MAPPING dict.
+    invert : boolean
+        Whether to invert the boolean object before conversion e.g. if
+        flag_description = 'LIMITS EXCEEDED' and a True value indicates
+        that a parameter is within the limits, invert=True is required
+        for the proper mapping.
+
+    Returns
+    -------
+    flags : pandas Object
+        Returns the output of the decorated function (which must be a pandas
+        Object) as the original output or an object of type int with value
+        determined by the truthiness of the orignal output and flag_description
+    """
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -92,6 +115,7 @@ def _get_mask_dict(flag):
 
 
 def check_if_single_value_flagged(flag, flag_description):
+    """Check if the single integer flag has been flagged for flag_description"""
     if not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
     mask_dict = _get_mask_dict(flag)
@@ -103,4 +127,5 @@ def check_if_single_value_flagged(flag, flag_description):
 
 
 def which_data_is_ok(flags):
-    return flags & ~VERSION_MASK == 0
+    """Return True for flags that have been validated and are OK"""
+    return has_data_been_validated(flags) & ~VERSION_MASK == 0
