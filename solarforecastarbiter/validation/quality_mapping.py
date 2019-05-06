@@ -130,4 +130,4 @@ def check_if_single_value_flagged(flag, flag_description):
 
 def which_data_is_ok(flags):
     """Return True for flags that have been validated and are OK"""
-    return has_data_been_validated(flags) & ~VERSION_MASK == 0
+    return (flags & ~VERSION_MASK == 0) & has_data_been_validated(flags)

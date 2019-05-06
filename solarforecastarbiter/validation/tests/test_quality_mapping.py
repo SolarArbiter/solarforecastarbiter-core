@@ -181,12 +181,11 @@ def test_check_if_single_value_flagged_error(flag):
 
 
 @pytest.mark.parametrize('flags,expected', [
-    (pd.Series([0, 0, 0]), pd.Series([True, True, True])),
+    (pd.Series([0, 1, 0]), pd.Series([False, False, False])),
     (pd.Series([2, 2, 2]), pd.Series([True, True, True])),
-    (pd.Series([3, 0, 0]), pd.Series([False, True, True])),
-    (pd.Series([1, 32, 128]), pd.Series([False, False, False]))
+    (pd.Series([3, 2, 2]), pd.Series([False, True, True])),
+    (pd.Series([3, 34, 130]), pd.Series([False, False, False]))
 ])
 def test_which_data_is_ok(flags, expected):
-    flags |= quality_mapping.LATEST_VERSION_FLAG
     out = quality_mapping.which_data_is_ok(flags)
     assert_series_equal(out, expected)
