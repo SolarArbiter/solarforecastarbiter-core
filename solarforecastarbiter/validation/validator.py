@@ -357,7 +357,8 @@ def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
         True if wind_speed > lower bound and wind_speed < upper bound.
     """
     extreme_wind_flag = _check_limits(wind_speed, lb=wind_limits[0],
-                                      ub=wind_limits[1])
+                                      ub=wind_limits[1],
+                                      lb_ge=True)
     extreme_wind_flag.name = 'extreme_wind_flag'
     return extreme_wind_flag
 
