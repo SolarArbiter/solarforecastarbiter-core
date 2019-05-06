@@ -90,9 +90,9 @@ def mask_flags(flag_description, invert=True):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            return_bool = kwargs.pop('return_bool', True)
+            return_mask = kwargs.pop('_return_mask', False)
             flags = f(*args, **kwargs)
-            if not return_bool:
+            if return_mask:
                 if isinstance(flags, tuple):
                     return tuple(convert_bool_flags_to_flag_mask(
                         f, flag_description, invert) for f in flags)

@@ -35,14 +35,18 @@ def test_validate_ghi(mocker, make_observation, observation_values):
         pd.Timestamp('2019-01-01T09:00:00', tz=obs.site.timezone),
         pd.Timestamp('2019-01-01T10:00:00', tz=obs.site.timezone),
         pd.Timestamp('2019-01-01T12:00:00', tz=obs.site.timezone)])
-    out = tasks.validate_ghi(obs, data)
+    flags = tasks.validate_ghi(obs, data)
     for mock in mocks:
         assert mock.called
-    assert_series_equal(
-        out, pd.Series([DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
-                        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-                        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
-                        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
-                        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
-                        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']],
-                       index=data.index) | LATEST_VERSION_FLAG)
+
+    expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                pd.Series([0, 1, 1, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
+                pd.Series([0, 1, 0, 1, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'])
+    for flag, exp in zip(flags, expected):
+        assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
+                            check_names=False)

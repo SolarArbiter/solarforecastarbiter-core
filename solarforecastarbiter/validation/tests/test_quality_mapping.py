@@ -99,7 +99,7 @@ def test_mask_flags(flag_val):
     def f():
         return pd.Series([True, True, False, False])
 
-    out = f(return_bool=False)
+    out = f(_return_mask=True)
     assert_series_equal(out, pd.Series([latest, latest, mask, mask]))
 
 
@@ -114,7 +114,7 @@ def test_mask_flags_tuple(flag_val):
     def f():
         return pd.Series([True, True, False, False]), None
 
-    out = f(return_bool=False)
+    out = f(_return_mask=True)
     assert_series_equal(out[0], pd.Series([latest, latest, mask, mask]))
     assert out[1] is None
 
