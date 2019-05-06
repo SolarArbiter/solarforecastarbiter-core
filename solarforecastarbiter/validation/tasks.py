@@ -1,10 +1,9 @@
-import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
 from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.validation import validator, quality_mapping
+from solarforecastarbiter.validation import validator
 
 
 def _validate_timestamp(observation, values):
@@ -123,8 +122,7 @@ def immediate_observation_validation(access_token, observation_id, start, end):
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable, validate_timestamp)
-    validation_flags = validation_func(observation.variable)(
-        observation, value_series)
+    validation_flags = validation_func(observation, value_series)
 
     for flag in validation_flags:
         quality_flags |= flag

@@ -120,7 +120,8 @@ def _get_mask_dict(flag):
 
 
 def check_if_single_value_flagged(flag, flag_description):
-    """Check if the single integer flag has been flagged for flag_description"""
+    """Check if the single integer flag has been flagged for flag_description
+    """
     if not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
     mask_dict = _get_mask_dict(flag)

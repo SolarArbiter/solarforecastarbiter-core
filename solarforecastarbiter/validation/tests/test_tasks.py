@@ -1,5 +1,5 @@
 import pandas as pd
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_series_equal, assert_frame_equal
 import pytest
 
 
@@ -50,3 +50,39 @@ def test_validate_ghi(mocker, make_observation, observation_values):
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
                             check_names=False)
+
+
+def test_immediate_observation_validation_ghi(mocker, make_observation):
+    obs = make_observation('ghi')
+    data = pd.DataFrame(
+        [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
+        index=[
+            pd.Timestamp('2019-01-01T07:00:00', tz=obs.site.timezone),
+            pd.Timestamp('2019-01-01T08:00:00', tz=obs.site.timezone),
+            pd.Timestamp('2019-01-01T09:00:00', tz=obs.site.timezone),
+            pd.Timestamp('2019-01-01T10:00:00', tz=obs.site.timezone),
+            pd.Timestamp('2019-01-01T12:00:00', tz=obs.site.timezone)],
+        columns=['value', 'quality_flag'])
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        return_value=data)
+
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+
+    tasks.immediate_observation_validation(
+        '', obs.observation_id, data.index[0], data.index[-1])
+
+    out = data.copy()
+    out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']]
+    assert post_mock.called_once
+    assert_frame_equal(post_mock.call_args[0][1], out)
