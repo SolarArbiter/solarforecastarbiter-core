@@ -5,6 +5,8 @@ import pytest
 
 from solarforecastarbiter.datamodel import Observation
 from solarforecastarbiter.validation import tasks, validator
+from solarforecastarbiter.validation.quality_mapping import (
+    LATEST_VERSION_FLAG, DESCRIPTION_MASK_MAPPING)
 
 
 @pytest.fixture()
@@ -36,4 +38,11 @@ def test_validate_ghi(mocker, make_observation, observation_values):
     out = tasks.validate_ghi(obs, data)
     for mock in mocks:
         assert mock.called
-    assert_series_equal(out, pd.Series([18, 0, 0, 0, 0], index=data.index))
+    assert_series_equal(
+        out, pd.Series([DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
+                        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
+                        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
+                        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
+                        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']],
+                       index=data.index) | LATEST_VERSION_FLAG)
