@@ -2,7 +2,7 @@
 Define constant mappings between bit-mask values and understandable quality
 flags
 """
-from functools import wraps, partial
+from functools import wraps
 
 
 # The quality_flag field in MySQL is currently limited to 1 << 15;

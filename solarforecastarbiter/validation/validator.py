@@ -59,6 +59,7 @@ def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
 
 
 def _QCRad_ub(dni_extra, sza, lim):
+    sza[sza > 90] = 90
     return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
 
 
@@ -93,7 +94,6 @@ def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     """
     if not limits:
         limits = QCRAD_LIMITS
-
     ghi_ub = _QCRad_ub(dni_extra, solar_zenith, limits['ghi_ub'])
 
     ghi_limit_flag = _check_limits(ghi, limits['ghi_lb'], ghi_ub)
