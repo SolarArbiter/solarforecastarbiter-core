@@ -59,8 +59,9 @@ def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
 
 
 def _QCRad_ub(dni_extra, sza, lim):
-    sza[sza > 90] = 90
-    return lim['mult'] * dni_extra * cosd(sza)**lim['exp'] + lim['min']
+    cosd_sza = cosd(sza)
+    cosd_sza[cosd_sza < 0] = 0
+    return lim['mult'] * dni_extra * cosd_sza**lim['exp'] + lim['min']
 
 
 @mask_flags('LIMITS EXCEEDED')
@@ -261,7 +262,7 @@ def _check_irrad_ratio(ratio, ghi, sza, bounds):
 def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
                                        param=None):
     """
-    Checks consistency of GHI, DHI and DNI.
+    Checks consistency of GHI, DHI and DNI. Not valid for night time.
 
     Parameters:
     -----------

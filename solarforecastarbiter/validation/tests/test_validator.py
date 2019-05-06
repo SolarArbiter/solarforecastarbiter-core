@@ -35,8 +35,7 @@ def irradiance_QCRad():
                        [500, 600, 100, 60, 1370, 1, 1, 1, 0, 0],
                        [500, 600, 400, 80, 1370, 0, 0, 1, 0, 0],
                        [500, 500, 300, 80, 1370, 0, 0, 1, 1, 1],
-                       [0, 0, 0, 93, 1370, 1, 1, 1, 1, 1]
-        ]))
+                       [0, 0, 0, 93, 1370, 1, 1, 1, 0, 0]]))
     dtypes = ['float64', 'float64', 'float64', 'float64', 'float64',
               'bool', 'bool', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
