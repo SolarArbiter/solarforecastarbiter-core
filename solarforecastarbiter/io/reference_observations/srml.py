@@ -1,4 +1,3 @@
-import pdb
 from functools import partial
 import logging
 from urllib import error
@@ -38,7 +37,7 @@ logger = logging.getLogger('reference_data')
 
 
 def request_data(site, year, month):
-    """Tries a reuqest for each file type until successful or we
+    """Makes a request for each file type until successful or we
     run out of filetypes.
 
     Parameters
@@ -137,8 +136,8 @@ def initialize_site_observations(api, site):
     -----
     Since variables are labelled with an integer instrument
     number, Observations are named with their variable and
-    instrument number found in the source files. 
-    
+    instrument number found in the source files.
+
     e.g. A SRML file contains two columns labelled, 1001, and
     1002. These columns represent GHI at instrument 1 and
     instrument 2 respectively. The `pvlib.iotools` package
@@ -172,7 +171,8 @@ def initialize_site_observations(api, site):
                     # the same variable
                     common.create_observation(
                         api, site, srml_variable_map[variable],
-                        name= f'{site.name} {match}',
+                        name=f'{site.name} {match}',
+                        interval_label='beginning',
                         extra_params=observation_extra_parameters)
                 except HTTPError as e:
                     logger.error(
@@ -216,19 +216,18 @@ def update_observation_data(api, sites, observations, start, end):
             var_df = var_df[:var_df['value'].last_valid_index()]
             logger.info(
                 f'Updating {obs.name} from '
-                f'{var_df.index[0].strftime("%Y%m%dT%H%MZ")} '
-                f'to {var_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+                f'{var_df.index[0]} to {var_df.index[-1]}.')
             # will need to remove dropna() call when json NaNs work.
             var_df = var_df.dropna()
             # temporarily skip post with empty data
             if var_df.empty:
                 logger.warning(
                     f'{obs.name} data empty from '
-                    f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
-                    f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+                    f'{obs_df.index[0]} to {obs_df.index[-1]}.')
                 continue
             try:
-                api.post_observation_values(obs.observation_id, var_df[start:end])
+                api.post_observation_values(obs.observation_id,
+                                            var_df[start:end])
             except HTTPError as e:
                 logger.error(f'Posting data to {obs.name} failed'
                              f'with error: {e}.')

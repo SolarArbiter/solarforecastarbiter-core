@@ -116,9 +116,10 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         extra_parameters = decode_extra_parameters(site)
     observation = Observation.from_dict({
         'name': kwargs.get('name', f'{site.name} {variable}'),
-        'interval_label': kwargs.get('interval_label','ending'),
+        'interval_label': kwargs.get('interval_label', 'ending'),
         'interval_length': extra_parameters['observation_interval_length'],
-        'interval_value_type': kwargs.get('interval_value_type','interval_mean'),
+        'interval_value_type': kwargs.get('interval_value_type',
+                                          'interval_mean'),
         'site': site,
         'uncertainty': kwargs.get('uncertainty', 0),
         'variable': variable,
