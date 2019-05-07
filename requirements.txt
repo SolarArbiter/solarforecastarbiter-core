@@ -7,4 +7,3 @@ pvlib==0.6.1
 xarray==0.12.1
 tables==3.5.1
 dramatiq==1.6.0
-redis==3.2.1

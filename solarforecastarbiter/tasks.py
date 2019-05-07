@@ -5,21 +5,19 @@ import os
 
 
 import dramatiq
-from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
 
 
 from solarforecastarbiter.validation import tasks as validation_tasks
 
 
-if os.getenv('UNIT_TEST') == '1':
-    broker = StubBroker()
-else:  # pragma: no cover
-    broker = RedisBroker(host=os.getenv('REDIS_HOST', '127.0.0.1'),
-                         port=int(os.getenv('REDIS_PORT', '6379')),
+if 'REDIS_URL' in os.environ:  # pragma: no cover
+    from dramatiq.brokers.redis import RedisBroker
+    broker = RedisBroker(url=os.environ['REDIS_URL'],
                          db=0,
-                         password=os.getenv('REDIS_PASSWORD', ''),
                          namespace='sfa-queue')
+else:
+    broker = StubBroker()
 dramatiq.set_broker(broker)
 
 

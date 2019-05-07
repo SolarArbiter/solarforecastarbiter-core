@@ -1,12 +1,8 @@
 import dramatiq
 import pytest
-import os
 
 
-os.environ['UNIT_TEST'] = '1'
-
-
-from solarforecastarbiter import tasks  # NOQA
+from solarforecastarbiter import tasks
 
 
 @pytest.fixture()

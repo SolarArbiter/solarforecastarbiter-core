@@ -13,6 +13,7 @@ EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
              'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
+    'queue': ['redis']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -44,8 +45,7 @@ setup(
         'xarray',
         'tables',
         'pvlib',
-        'dramatiq',
-        'redis'
+        'dramatiq'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
