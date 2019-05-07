@@ -43,7 +43,9 @@ setup(
         'requests',
         'xarray',
         'tables',
-        'pvlib'
+        'pvlib',
+        'dramatiq',
+        'redis'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
