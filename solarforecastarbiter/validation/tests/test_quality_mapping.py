@@ -166,17 +166,33 @@ def test_has_data_been_validated():
     (16, 'NIGHTTIME', True),
     (33, 'CLOUDY', True),
     (33, 'NIGHTTIME', False),
+    (33, ['OK', 'NIGHTTIME'], False),
+    (33, ('OK', 'CLOUDY', 'USER FLAGGED'), True),
+    (2, ('OK', 'NIGHTTIME'), True),
     (9297, 'USER FLAGGED', True)
 ])
 def test_check_if_single_value_flagged(flag, desc, result):
     flag |= quality_mapping.LATEST_VERSION_FLAG
-    assert quality_mapping.check_if_single_value_flagged(flag, desc) == result
+    out = quality_mapping.check_if_single_value_flagged(flag, desc)
+    assert out == result
 
 
 @pytest.mark.parametrize('flag', [0, 1])
-def test_check_if_single_value_flagged_error(flag):
+def test_check_if_single_value_flagged_validation_error(flag):
     with pytest.raises(ValueError):
         quality_mapping.check_if_single_value_flagged(flag, 'OK')
+
+
+@pytest.mark.parametrize('desc', [33, b'OK', [1, 2], []])
+def test_check_if_single_value_flagged_type_error(desc):
+    with pytest.raises(TypeError):
+        quality_mapping.check_if_single_value_flagged(2, desc)
+
+
+@pytest.mark.parametrize('desc', ['NOPE', 'MAYBE', ['YES', 'NO']])
+def test_check_if_single_value_flagged_key_error(desc):
+    with pytest.raises(KeyError):
+        quality_mapping.check_if_single_value_flagged(2, desc)
 
 
 @pytest.mark.parametrize('flags,expected', [
@@ -246,6 +262,18 @@ def test_check_if_series_flagged(expected, desc):
     assert_series_equal(out, expected)
 
 
-def test_check_if_series_flagged_fail():
+def test_check_if_series_flagged_validated_fail():
     with pytest.raises(ValueError):
         quality_mapping.check_if_series_flagged(pd.Series([0, 1, 0]), 'OK')
+
+
+def test_check_if_series_flagged_type_fail():
+    with pytest.raises(TypeError):
+        quality_mapping.check_if_series_flagged(pd.Series([2, 3, 35]),
+                                                ['OK', b'CLOUDY', []])
+
+
+def test_check_if_series_flagged_key_fail():
+    with pytest.raises(KeyError):
+        quality_mapping.check_if_series_flagged(pd.Series([2, 3, 35]),
+                                                ['NOK'])

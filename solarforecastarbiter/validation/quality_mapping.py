@@ -107,26 +107,75 @@ def mask_flags(flag_description, invert=True):
 
 
 def has_data_been_validated(flags):
+    """Return True (or a boolean series) if flags has been validated"""
     return flags > 1
 
 
 def get_version(flag):
+    """Extract the version from flag"""
     # will be more complicated if another version identifier must be added
     return (flag & VERSION_MASK) >> 1
 
 
-def check_if_single_value_flagged(flag, flag_description,
-                                  check_if_validated=True):
-    """Check if the single integer flag has been flagged for flag_description
-    """
-    if check_if_validated and not has_data_been_validated(flag):
-        raise ValueError('Data has not been validated')
-    mask_dict = BITMASK_DESCRIPTION_DICT[get_version(flag)]
-    mask = mask_dict[flag_description]
-    if mask == 0:
-        return which_data_is_ok(flag)
+def _flag_description_checks(flag_description):
+    if isinstance(flag_description, str):
+        return
     else:
-        return bool(flag & mask)
+        if len(flag_description) == 0:
+            raise TypeError('flag_description must have len > 0')
+        for k in iter(flag_description):
+            if not isinstance(k, str):
+                raise TypeError(
+                    'Elements of flag_description must have type str')
+
+
+def check_if_single_value_flagged(flag, flag_description,
+                                  _perform_checks=True):
+    """Check if the single integer flag has been flagged for flag_description
+
+    Parameters
+    ----------
+    flag : integer
+        Integer flag
+    flag_description : string or iterable of strings
+        Checks to compare againsts flag
+
+
+    Returns
+    -------
+    Boolean
+        Whether any of `flag_description` checks are represented by `flag`
+
+    Raises
+    ------
+    ValueError
+        If flag has not been validated
+    TypeError
+        If flag_description is not a string or iterable of strings
+    KeyError
+        If flag_description is not a possible check for the flag version
+    """
+    if _perform_checks:
+        if not has_data_been_validated(flag):
+            raise ValueError('Data has not been validated')
+        _flag_description_checks(flag_description)
+    mask_dict = BITMASK_DESCRIPTION_DICT[get_version(flag)]
+    if isinstance(flag_description, str):
+        mask = mask_dict[flag_description]
+        ok_mask = mask == 0
+    else:
+        mask = 0
+        ok_mask = False
+        for k in flag_description:
+            m = mask_dict[k]
+            if m == 0:
+                ok_mask = True
+            mask |= m
+
+    out = bool(flag & mask)
+    if ok_mask:
+        out |= which_data_is_ok(flag)
+    return out
 
 
 def which_data_is_ok(flags):
@@ -134,8 +183,11 @@ def which_data_is_ok(flags):
     return (flags & ~VERSION_MASK == 0) & has_data_been_validated(flags)
 
 
-def check_for_all_descriptions(flag, check_if_validated=True):
-    if check_if_validated and not has_data_been_validated(flag):
+def check_for_all_descriptions(flag, _check_if_validated=True):
+    """
+    Return a boolean Series indicating the checks a flag represents
+    """
+    if _check_if_validated and not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
     version = get_version(flag)
     descriptions = [k for k in BITMASK_DESCRIPTION_DICT[version].keys()
@@ -152,15 +204,66 @@ def check_for_all_descriptions(flag, check_if_validated=True):
 
 
 def convert_mask_into_dataframe(flag_series):
+    """
+    Convert `flag_series` into a boolean DataFrame indicating which checks
+    the flags represent. Should not be used on large series as it must check
+    each row individually.
+
+    Parameters
+    ----------
+    flag_series : pandas.Series
+        Integer series of validated quality flags
+
+    Returns
+    -------
+    pandas.DataFrame
+       Columns are keys of BITMASK_DESCRIPTION_DICT and values are booleans
+       indicating if the input flag corresponds to the given check.
+
+    Raises
+    ------
+    ValueError
+        If any flags in `flag_series` have not been validated
+
+    """
     if not has_data_been_validated(flag_series).all():
         raise ValueError('Not all data has not been validated')
     return flag_series.apply(check_for_all_descriptions,
-                             check_if_validated=False)
+                             _check_if_validated=False)
 
 
 def check_if_series_flagged(flag_series, flag_description):
+    """
+    Check if `flag_series` has been flagged for the checks given by
+    flag_description
+
+    Parameters
+    ----------
+    flag_series : pandas.Series
+        Series of integer quality flags
+    flag_description : string or iterable of strings
+        Checks to compare `flag_series` to. If this is an iterable, the result
+        will be a boolean indicating if the flag represents *ANY* of the
+        checks.
+
+    Returns
+    -------
+    pandas.Series
+        Boolean Series indicating if *ANY* of `flag_description` checks are
+        represented by each flag
+
+    Raises
+    ------
+    ValueError
+        If any of `flag_series` has not been validated.
+    TypeError
+        If flag_description is not a string or iterable of strings
+    KeyError
+        If flag_description is not a possible check for the flag version
+    """
     if not has_data_been_validated(flag_series).all():
         raise ValueError('Not all data has not been validated')
+    _flag_description_checks(flag_description)
     return flag_series.apply(check_if_single_value_flagged,
                              flag_description=flag_description,
-                             check_if_validated=False)
+                             _perform_checks=False)
