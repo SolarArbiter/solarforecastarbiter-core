@@ -23,22 +23,60 @@ def _solpos_dni_extra(observation, values):
 
 
 def validate_ghi(observation, values):
+    """
+    Run validation checks on a GHI observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_irradiance_day_night`,
+        `validator.check_ghi_limits_QCRad`,
+        `validator.check_ghi_clearsky`
+    """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     clearsky = pvmodel.calculate_clearsky(
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, solar_position['apparent_zenith'])
 
-    ghi_limit_flag = validator.check_ghi_limits_QCRad(values,
-                                                      solar_position['zenith'],
-                                                      dni_extra,
-                                                      _return_mask=True)
+    ghi_limit_flag = validator.check_ghi_limits_QCRad(
+        values, solar_position['zenith'], dni_extra,
+        _return_mask=True)
     ghi_clearsky_flag = validator.check_ghi_clearsky(values, clearsky['ghi'],
                                                      _return_mask=True)
     return timestamp_flag, night_flag, ghi_limit_flag, ghi_clearsky_flag
 
 
 def validate_dni(observation, values):
+    """
+    Run validation checks on a DNI observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_irradiance_day_night`,
+        `validator.check_dni_limits_QCRad`
+    """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     dni_limit_flag = validator.check_dni_limits_QCRad(values,
@@ -49,6 +87,25 @@ def validate_dni(observation, values):
 
 
 def validate_dhi(observation, values):
+    """
+    Run validation checks on a DHI observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_irradiance_day_night`,
+        `validator.check_dhi_limits_QCRad`
+    """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     dhi_limit_flag = validator.check_dhi_limits_QCRad(values,
@@ -59,6 +116,25 @@ def validate_dhi(observation, values):
 
 
 def validate_poa_global(observation, values):
+    """
+    Run validation checks on a POA observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_irradiance_day_night`,
+        `validator.check_poa_clearsky`
+    """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     clearsky = pvmodel.calculate_clearsky(
@@ -75,6 +151,24 @@ def validate_poa_global(observation, values):
 
 
 def validate_air_temperature(observation, values):
+    """
+    Run validation checks on an air temperature observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_temperature_limits`
+    """
     timestamp_flag = _validate_timestamp(observation, values)
     temp_limit_flag = validator.check_temperature_limits(
         values, _return_mask=True)
@@ -82,18 +176,72 @@ def validate_air_temperature(observation, values):
 
 
 def validate_wind_speed(observation, values):
+    """
+    Run validation checks on a wind speed observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_wind_limits`
+    """
     timestamp_flag = _validate_timestamp(observation, values)
-    wind_limit_flag = validator.check_wind_limits(values, _return_mask=True)
+    wind_limit_flag = validator.check_wind_limits(values,
+                                                  _return_mask=True)
     return timestamp_flag, wind_limit_flag
 
 
 def validate_relative_humidity(observation, values):
+    """
+    Run validation checks on a relative humidity observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`,
+        `validator.check_rh_limits`
+    """
     timestamp_flag = _validate_timestamp(observation, values)
     rh_limit_flag = validator.check_rh_limits(values, _return_mask=True)
     return timestamp_flag, rh_limit_flag
 
 
 def validate_timestamp(observation, values):
+    """
+    Run validation checks on an observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`
+    """
     return (_validate_timestamp(observation, values),)
 
 
