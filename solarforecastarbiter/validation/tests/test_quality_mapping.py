@@ -229,6 +229,12 @@ def test_check_for_all_descriptions(flag, expected):
     assert_series_equal(out, expected)
 
 
+@pytest.mark.parametrize('flag', [0, 1])
+def test_check_for_all_validation_fail(flag):
+    with pytest.raises(ValueError):
+        quality_mapping.check_for_all_descriptions(flag)
+
+
 def test_convert_mask_into_dataframe():
     flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
              quality_mapping.LATEST_VERSION_FLAG)
