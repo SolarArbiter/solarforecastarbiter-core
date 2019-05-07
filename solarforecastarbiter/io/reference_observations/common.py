@@ -72,8 +72,11 @@ def filter_by_networks(object_list, networks):
     return filtered
 
 
-def create_observation(api, site, variable):
-    """ Creates a new Observation for the variable and site.
+def create_observation(api, site, variable, extra_params=None, **kwargs):
+    """ Creates a new Observation for the variable and site. Kwargs can be
+    provided to overwrite the default arguments to the Observation constructor.
+    Kwarg options are documented in 'Other Parameters' below but users should
+    reference the SolarForecastArbiter API for valid Observation field values.
 
     Parameters
     ----------
@@ -81,6 +84,23 @@ def create_observation(api, site, variable):
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
+    variable : string
+        Variable measured in the observation.
+    extra_params : dict, optional
+        If provided, this dict will be serialized as the 'extra_parameters'
+        field of the observation, otherwise the site's field is copied over.
+        Must contain the key 'observation_interval_length'.
+
+    Other Parameters
+    ----------------
+    name: string
+        Defaults to `<site.name> <variable>`
+    interval_label: string
+        Defaults to 'ending'
+    interval_value_type: string
+        Defaults to 'interval_mean'
+    uncertainty: float
+        Defaults to 0.
 
     Returns
     -------
@@ -90,16 +110,19 @@ def create_observation(api, site, variable):
     """
     # Copy network api data from the site, and get the observation's
     # interval length
-    extra_parameters = decode_extra_parameters(site)
+    if extra_params:
+        extra_parameters = extra_params
+    else:
+        extra_parameters = decode_extra_parameters(site)
     observation = Observation.from_dict({
-        'name': f"{site.name} {variable}",
-        'interval_label': 'ending',
+        'name': kwargs.get('name', f'{site.name} {variable}'),
+        'interval_label': kwargs.get('interval_label','ending'),
         'interval_length': extra_parameters['observation_interval_length'],
-        'interval_value_type': 'interval_mean',
+        'interval_value_type': kwargs.get('interval_value_type','interval_mean'),
         'site': site,
-        'uncertainty': 0,
+        'uncertainty': kwargs.get('uncertainty', 0),
         'variable': variable,
-        'extra_parameters': site.extra_parameters
+        'extra_parameters': json.dumps(extra_parameters)
     })
     created = api.create_observation(observation)
     logger.info(f"{created.name} created successfully.")

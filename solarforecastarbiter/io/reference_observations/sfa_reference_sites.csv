@@ -26,21 +26,18 @@
 #
 interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abbreviation,timezone,attribution,network
 1,Seattle UW WA,47.653999999999996,-122.309,70,94291.0,ST,Etc/GMT+5,,UO SRML
-1,Challis ID,44.44,-114.13,1651,94185.0,CL,Etc/GMT+8,,UO SRML
 1,Ashland OR,42.19,-122.7,595,94040.0,AS,Etc/GMT+8,,UO SRML
 1,UO Solar Awning Eugene OR,44.05,-123.07,150,94255.0,AW,Etc/GMT+8,,UO SRML
 1,Kalapuya High School OR,45.0,-120.0,0,94259.0,KA,Etc/GMT+8,,UO SRML
 1,Salem OR,44.92100000000001,-123.01799999999999,62,94806.0,SA,Etc/GMT+8,,UO SRML
 1,Portland OR PV,45.51,-122.69,70,94808.0,PS,Etc/GMT+8,,UO SRML
-5,Cheney WA,47.49,-117.589,777,94158.0,CY,Etc/GMT+8,,UO SRML
-5,Cannon Beach OR,45.895,-123.963,30,,,Etc/GMT+8,,UO SRML
-5,Dillon MT,45.21,-112.64,1590,94145.0,DI,Etc/GMT+8,,UO SRML
+1,Cheney WA,47.49,-117.589,777,94158.0,CY,Etc/GMT+8,,UO SRML
+1,Dillon MT,45.21,-112.64,1590,94145.0,DI,Etc/GMT+8,,UO SRML
+1,Eugene OR,44.05,-123.07,150,94255.0,EU,Etc/GMT+8,,UO SRML
+1,Burns OR,43.52,-119.02,1265,94170.0,BU,Etc/GMT+8,,UO SRML
 5,Aberdeen ID,42.95,-112.78,1433,94174.0,AB,Etc/GMT+8,,UO SRML
-5,Burns OR,43.52,-119.02,1265,94170.0,BU,Etc/GMT+8,,UO SRML
-5,Silver Lake OR,43.12,-121.06,1355,94249.0,SL,Etc/GMT+8,,UO SRML
-5,Willamette High School Eugene OR,44.08,-123.07,140,94254.0,WI,Etc/GMT+8,,UO SRML
-5,Bend OR,44.06,-121.31,1124,94807.0,BD,Etc/GMT+8,,UO SRML
-5,Eugene OR,44.05,-123.07,150,94255.0,EU,Etc/GMT+8,,UO SRML
+1,Silver Lake OR,43.12,-121.06,1355,94249.0,SL,Etc/GMT+8,,UO SRML
+1,Bend OR,44.06,-121.31,1124,94807.0,BD,Etc/GMT+8,,UO SRML
 15,Moab UT,38.58,-109.54,1000,94102.0,MO,Etc/GMT+8,,UO SRML
 15,Green River WY,41.46,-109.44,1000,94101.0,GR,Etc/GMT+8,,UO SRML
 15,Seattle WA,47.68,-122.25,20,94290.0,SE,Etc/GMT+8,,UO SRML
@@ -52,8 +49,6 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 15,Christmas Valley OR,43.24,-120.88,1325,94251.0,CH,Etc/GMT+8,,UO SRML
 15,Bend OR,43.99,-121.35,1100,94256.0,BE,Etc/GMT+8,,UO SRML
 15,Madras OR,44.69,-121.16,997,94252.0,MA,Etc/GMT+8,,UO SRML
-60,Coeur D'Alened ID,47.72,-116.78,674,94181.0,CD,Etc/GMT+8,,UO SRML
-60,Hood River OR,45.7,-121.52,140,94277.0,HR,Etc/GMT+8,,UO SRML
 5,Hermiston OR,45.82,-119.28,180,94169.0,HE,Etc/GMT+8,,UO SRML
 1,Bondville IL,40.05192,-88.37309,230,BND,bon,Etc/GMT+6,,NOAA SURFRAD
 1,Table Mountain Boulder CO,40.12498,-105.2368,1689,TBL,tbl,Etc/GMT+7,,NOAA SURFRAD
@@ -74,6 +69,7 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1,Natural Energy Laboratory of Hawaii Authority NELHA,19.728144,-156.05893600000002,4.0,NELHA,NELHA,Etc/GMT+10,"Olson, K.; Andreas, A.; (2012). Natural Energy Laboratory of Hawaii Authority (NELHA): Hawaii Ocean Science & Technology Park; Kailua-Kona, Hawaii (Data); NREL Report No. DA-5500-64450. http://dx.doi.org/10.7799/1183461",NREL MIDC
 1,University of Texas Panamerican Solar Radiation Lab,26.3059,-98.1716,45.4,UTPASRL,UTPA SRL,Etc/GMT+6,"Ramos, J.; Andreas, A.; (2011). University of Texas Panamerican (UTPA): Solar Radiation Lab (SRL); Edinburg, Texas (Data); NREL Report No. DA-5500-56514.http://dx.doi.org/10.5439/1052555",NREL MIDC
 1,Humboldt State University SoRMS,40.876,-124.08,36.0,HSU,HSU SoRMS,Etc/GMT+8,"Andreas, A.; Wilcox, S.; (2007). Solar Radiation Monitoring Station (SoRMS): Humboldt State University, Arcata, California (Data); NREL Report No. DA-5500-56515. http://dx.doi.org/10.5439/1052559",NREL MIDC
+5,South Park Mountain Data,39.27278,-105.62472,2944,SPMD,SPMD,America/Denver,"McKenna, E.; Andreas, A.; (1997). South Park Mountain Data: South Park, Colorado (Data); NREL Report No. DA-5500-56521. http://dx.doi.org/10.5439/1052562"
 1,Albuquerque NM,35.05,-106.53,1657,Albuquerque,,America/Denver,,SANDIA
 1,Henderson NV,36.04,-114.92,538,Henderson,,America/Los_Angeles,,SANDI
 1,Williston VT,44.5,-73.1,184,Williston,,America/New_York,,SANDIA

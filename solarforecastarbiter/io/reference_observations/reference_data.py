@@ -44,13 +44,14 @@ from requests.exceptions import HTTPError
 from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter.io.reference_observations import (surfrad, solrad,
-                                                            common)
+                                                            srml, common)
 
 
 # maps network names to the modules that interact with their api
 NETWORKHANDLER_MAP = {
     'NOAA SURFRAD': surfrad,
     'NOAA SOLRAD': solrad,
+    'UO SRML': srml,
 }
 
 # list of options for the 'network' argument
@@ -126,6 +127,7 @@ def create_site(api, site):
     # get a reference to network before we serialize extra_parameters
     network = site['extra_parameters']['network']
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
+    site['name'] = f'{network} {site["name"]}'
     site_to_create = Site.from_dict(site)
     try:
         created = api.create_site(site_to_create)
