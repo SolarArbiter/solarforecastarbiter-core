@@ -7,7 +7,7 @@ Created on Wed Feb 27 15:12:14 2019
 
 import numpy as np
 import pandas as pd
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from pandas.util.testing import assert_series_equal
 from datetime import datetime
 import pytz
 import pytest
@@ -34,7 +34,8 @@ def irradiance_QCRad():
                        [1000, 300, 1200, 0, 1370, 1, 1, 1, 0, 1],
                        [500, 600, 100, 60, 1370, 1, 1, 1, 0, 0],
                        [500, 600, 400, 80, 1370, 0, 0, 1, 0, 0],
-                       [500, 500, 300, 80, 1370, 0, 0, 1, 1, 1]]))
+                       [500, 500, 300, 80, 1370, 0, 0, 1, 1, 1],
+                       [0, 0, 0, 93, 1370, 1, 1, 1, 0, 0]]))
     dtypes = ['float64', 'float64', 'float64', 'float64', 'float64',
               'bool', 'bool', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
@@ -177,42 +178,20 @@ def times():
                          freq='10T')
 
 
-def test_get_solarposition(mocker, location, times):
-    m = mocker.spy(pvlib.solarposition, 'get_solarposition')
-    validator.get_solarposition(location, times)
-    validator.get_solarposition(location, times, pressure=100000)
-    validator.get_solarposition(location, times, method='ephemeris')
-    assert m.call_count == 3
-
-
-def test_get_clearsky(mocker, location, times):
-    m = mocker.spy(pvlib.clearsky, 'ineichen')
-    validator.get_clearsky(location, times)
-    assert m.call_count == 1
-    m = mocker.spy(pvlib.clearsky, 'haurwitz')
-    validator.get_clearsky(location, times, model='haurwitz')
-    assert m.call_count == 1
-
-
 def test_check_ghi_clearsky(mocker, location, times):
     clearsky = location.get_clearsky(times)
     # modify to create test conditions
-    irrad = clearsky.copy()
-    irrad.iloc[0] *= 0.5
-    irrad.iloc[-1] *= 2.0
+    ghi = clearsky['ghi'].copy()
+    ghi.iloc[0] *= 0.5
+    ghi.iloc[-1] *= 2.0
     clear_times = np.tile(True, len(times))
     clear_times[-1] = False
-    expected = pd.DataFrame(index=times, data=clear_times,
-                            columns=['ghi_clearsky'])
-    result = validator.check_ghi_clearsky(irrad, clearsky=clearsky)
-    assert_frame_equal(result, expected)
-    with pytest.raises(ValueError):
-        validator.check_ghi_clearsky(irrad)
-    result = validator.check_ghi_clearsky(irrad, location=location)
-    assert_frame_equal(result, expected)
+    expected = pd.Series(index=times, data=clear_times)
+    result = validator.check_ghi_clearsky(ghi, clearsky['ghi'])
+    assert_series_equal(result, expected)
 
 
-def test_check_poa_clearsky(mocker, location, times):
+def test_check_poa_clearsky(mocker, times):
     dt = pd.DatetimeIndex(start=datetime(2019, 6, 15, 12, 0, 0),
                           freq='15T', periods=5)
     poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
@@ -225,35 +204,32 @@ def test_check_poa_clearsky(mocker, location, times):
     assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night(location):
+def test_check_irradiance_day_night():
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
              datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
-    expected = pd.DataFrame(index=times, columns=['daytime'],
-                            data=[True, False])
-    solar_position = pd.DataFrame(index=times, columns=['zenith'],
-                                  data=[11.8, 114.3])
-    result = validator.check_irradiance_day_night(
-        times, solar_position=solar_position)
-    assert_frame_equal(result, expected)
-    result = validator.check_irradiance_day_night(times, location=location)
-    assert_frame_equal(result, expected)
-    with pytest.raises(ValueError):
-        validator.check_irradiance_day_night(times)
+    expected = pd.Series(data=[True, False], index=times)
+    solar_zenith = pd.Series(data=[11.8, 114.3], index=times)
+    result = validator.check_irradiance_day_night(solar_zenith)
+    assert_series_equal(result, expected)
 
 
 def test_check_timestamp_spacing(times):
-    assert validator.check_timestamp_spacing(times)
-    assert validator.check_timestamp_spacing(pd.DatetimeIndex([times[0]]))
-    assert validator.check_timestamp_spacing(times[[0, 2]])
-    assert not validator.check_timestamp_spacing(times[[0, 2, 3]])
-    MST = pytz.timezone('MST')
-    times2 = pd.DatetimeIndex([datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 0, 57, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 13, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 46, tzinfo=MST)])
-    assert validator.check_timestamp_spacing(times2, freq='1T')
-    assert not validator.check_timestamp_spacing(times2, freq='5S')
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, times.freq),
+        pd.Series(True, index=times))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0]], times.freq),
+        pd.Series(True, index=[times[0]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0, 2, 3]], times.freq),
+        pd.Series([True, False, True], index=times[[0, 2, 3]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, '30min'),
+        pd.Series([True] + [False] * (len(times) - 1), index=times))
 
 
 def test_detect_stale_values():
