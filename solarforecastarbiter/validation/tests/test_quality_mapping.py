@@ -2,7 +2,7 @@ from itertools import product
 
 
 import pandas as pd
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_series_equal, assert_frame_equal
 import pytest
 
 
@@ -188,3 +188,64 @@ def test_check_if_single_value_flagged_error(flag):
 def test_which_data_is_ok(flags, expected):
     out = quality_mapping.which_data_is_ok(flags)
     assert_series_equal(out, expected)
+
+
+DESCRIPTIONS = ['OK', 'USER FLAGGED', 'NIGHTTIME', 'CLOUDY',
+                'SHADED', 'UNEVEN FREQUENCY', 'LIMITS EXCEEDED',
+                'CLEARSKY EXCEEDED', 'STALE VALUES', 'INTERPOLATED VALUES',
+                'CLIPPED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS']
+
+
+@pytest.mark.parametrize('flag,expected', [
+    (2, pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  index=DESCRIPTIONS, dtype=bool)),
+    (3, pd.Series([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  index=DESCRIPTIONS, dtype=bool)),
+    (35, pd.Series([0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                   index=DESCRIPTIONS, dtype=bool)),
+    (2 | 1 << 13 | 1 << 12 | 1 << 10,
+     pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+               index=DESCRIPTIONS, dtype=bool))
+
+])
+def test_check_for_all_descriptions(flag, expected):
+    out = quality_mapping.check_for_all_descriptions(flag)
+    assert_series_equal(out, expected)
+
+
+def test_convert_mask_into_dataframe():
+    flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
+             quality_mapping.LATEST_VERSION_FLAG)
+    expected = pd.DataFrame([[1] + [0] * 11,
+                             [1] + [0] * 11,
+                             [0, 1] + [0] * 10,
+                             [0] * 10 + [1, 0],
+                             [0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0]],
+                            columns=DESCRIPTIONS,
+                            dtype=bool)
+    out = quality_mapping.convert_mask_into_dataframe(flags)
+    assert_frame_equal(out, expected)
+
+
+def test_convert_mask_into_dataframe_fail():
+    with pytest.raises(ValueError):
+        quality_mapping.convert_mask_into_dataframe(pd.Series([0, 1, 0]))
+
+
+@pytest.mark.parametrize('expected,desc', [
+    (pd.Series([1, 0, 0, 0], dtype=bool), 'OK'),
+    (pd.Series([0, 1, 0, 1], dtype=bool), 'USER FLAGGED'),
+    (pd.Series([0, 0, 1, 0], dtype=bool), 'CLEARSKY EXCEEDED'),
+    (pd.Series([0, 0, 0, 1], dtype=bool), 'CLOUDY'),
+    (pd.Series([0, 0, 0, 1], dtype=bool), 'CLIPPED VALUES'),
+    (pd.Series([0, 0, 0, 0], dtype=bool), 'STALE VALUES'),
+])
+def test_check_if_series_flagged(expected, desc):
+    flags = pd.Series([2, 3, 2 | 1 << 9, 2 | 1 << 5 | 1 << 12 | 1])
+    out = quality_mapping.check_if_series_flagged(flags, desc)
+    assert_series_equal(out, expected)
+
+
+def test_check_if_series_flagged_fail():
+    with pytest.raises(ValueError):
+        quality_mapping.check_if_series_flagged(pd.Series([0, 1, 0]), 'OK')

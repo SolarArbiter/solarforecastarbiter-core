@@ -5,6 +5,9 @@ flags
 from functools import wraps
 
 
+import pandas as pd
+
+
 # The quality_flag field in MySQL is currently limited to 1 << 15;
 # fields beyond 1 << 15 will require a change in the MySQL datatype
 # for the quality_flag column. The mapping from description to bitmask
@@ -112,10 +115,11 @@ def get_version(flag):
     return (flag & VERSION_MASK) >> 1
 
 
-def check_if_single_value_flagged(flag, flag_description):
+def check_if_single_value_flagged(flag, flag_description,
+                                  check_if_validated=True):
     """Check if the single integer flag has been flagged for flag_description
     """
-    if not has_data_been_validated(flag):
+    if check_if_validated and not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
     mask_dict = BITMASK_DESCRIPTION_DICT[get_version(flag)]
     mask = mask_dict[flag_description]
@@ -128,3 +132,35 @@ def check_if_single_value_flagged(flag, flag_description):
 def which_data_is_ok(flags):
     """Return True for flags that have been validated and are OK"""
     return (flags & ~VERSION_MASK == 0) & has_data_been_validated(flags)
+
+
+def check_for_all_descriptions(flag, check_if_validated=True):
+    if check_if_validated and not has_data_been_validated(flag):
+        raise ValueError('Data has not been validated')
+    version = get_version(flag)
+    descriptions = [k for k in BITMASK_DESCRIPTION_DICT[version].keys()
+                    if not (k.startswith('VERSION') or
+                            k.startswith('RESERVED'))]
+    out = []
+    for desc in descriptions:
+        mask = BITMASK_DESCRIPTION_DICT[version][desc]
+        if mask == 0:
+            out.append(which_data_is_ok(flag))
+        else:
+            out.append(bool(flag & mask))
+    return pd.Series(out, index=descriptions)
+
+
+def convert_mask_into_dataframe(flag_series):
+    if not has_data_been_validated(flag_series).all():
+        raise ValueError('Not all data has not been validated')
+    return flag_series.apply(check_for_all_descriptions,
+                             check_if_validated=False)
+
+
+def check_if_series_flagged(flag_series, flag_description):
+    if not has_data_been_validated(flag_series).all():
+        raise ValueError('Not all data has not been validated')
+    return flag_series.apply(check_if_single_value_flagged,
+                             flag_description=flag_description,
+                             check_if_validated=False)
