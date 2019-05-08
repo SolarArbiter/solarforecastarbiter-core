@@ -26,10 +26,10 @@ def test_enqueue_function_stub(stub_broker, stub_worker, mocker):
     assert ('arg1', 'arg2') == tasks.enqueue_function(noop, 'arg1', 'arg2')
 
 
-def test_enqueue_function_realtime(mocker):
+def test_enqueue_function(mocker):
     @dramatiq.actor()
     def noop(*args):
-        return args
+        return args  # pragma: no cover
     mocker.patch('solarforecastarbiter.tasks.broker',
                  new=None)
     mocked = mocker.patch.object(noop, 'send')
