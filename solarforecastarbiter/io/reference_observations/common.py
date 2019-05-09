@@ -114,8 +114,15 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         extra_parameters = extra_params
     else:
         extra_parameters = decode_extra_parameters(site)
+    site_name = site_name_no_network(site)
+    observation_name = f'{site_name} {variable}'
+    # Some site names are too long and exceed the API's limits,
+    # in those cases. Use the abbreviated version.
+    if len(observation_name) > 64:
+        site_abbreviation = extra_params["network_api_abbreviation"]
+        observation_name = f'{site_abbreviation} {variable}'
     observation = Observation.from_dict({
-        'name': kwargs.get('name', f'{site.name} {variable}'),
+        'name': kwargs.get('name', observation_name),
         'interval_label': kwargs.get('interval_label', 'ending'),
         'interval_length': extra_parameters['observation_interval_length'],
         'interval_value_type': kwargs.get('interval_value_type',
@@ -128,3 +135,20 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     created = api.create_observation(observation)
     logger.info(f"{created.name} created successfully.")
     return created
+
+
+def clean_name(string):
+    """Removes all disallowed characters from a string and converts
+    underscores to spaces.
+    """
+    return string.translate(string.maketrans('_', ' ', '(){}/\\[]@-'))
+
+
+def site_name_no_network(site):
+    """Removes the prefixed network from a site name for prepending
+    to an observation.
+    """
+    extra_params = decode_extra_parameters(site)
+    network = extra_params['network']
+    # only select the site name after the network name and a space.
+    return site.name[len(network) + 1:]

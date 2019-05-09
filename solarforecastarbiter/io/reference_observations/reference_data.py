@@ -132,8 +132,8 @@ def create_site(api, site):
     try:
         created = api.create_site(site_to_create)
     except HTTPError as e:
-        logger.error(f"Failed to create Site {site['name']} with "
-                     f"error:\n {e}.")
+        logger.error(f"Failed to create Site {site['name']}.")
+        logger.debug(f'HTTP Error: {e.response.text}')
     else:
         logger.info(f'Created Site {created.name} successfully.')
         network_handler = NETWORKHANDLER_MAP.get(network)
@@ -317,14 +317,16 @@ if __name__ == '__main__':
         for obs in observations:
             try:
                 api.delete(f'/observations/{obs.observation_id}')
-            except HTTPError:
+            except HTTPError as e:
                 logger.error(f'Could not delete observation {obs.name}'
                              f'with observation_id {obs.observation_id}.')
+                logger.debug(f'HTTP Error: {e.response.text}')
         sites = common.filter_by_networks(api.list_sites(),
                                           networks)
         for site in sites:
             try:
                 api.delete(f'/sites/{site.site_id}')
-            except HTTPError:
+            except HTTPError as e:
                 logger.error(f'Could not delete site {site.name} with '
                              f'site_id {site.site_id}.')
+                logger.debug(f'HTTP Error: {e.response.text}')

@@ -148,16 +148,20 @@ def initialize_site_observations(api, site):
     start = pd.Timestamp.now()
     end = pd.Timestamp.now()
     extra_params = common.decode_extra_parameters(site)
+    # use site name without network here to build
+    # a name with the original column label rather than
+    # the SFA variable
+    site_name = common.site_name_no_network(site)
     try:
         site_df = fetch(api, site, start, end)
     except error.HTTPError:
         logger.error('Could not find data to create observations '
-                     f'for SRML site {site.name}.')
+                     f'for SRML site {site_name}.')
         return
     else:
         if site_df is None:
             logger.error('Could not find data to create observations '
-                         f'for SRML site {site.name}.')
+                         f'for SRML site {site_name}.')
             return
         for variable in srml_variable_map.keys():
             matches = [col for col in site_df.columns if variable in col]
@@ -171,13 +175,13 @@ def initialize_site_observations(api, site):
                     # the same variable
                     common.create_observation(
                         api, site, srml_variable_map[variable],
-                        name=f'{site.name} {match}',
+                        name=f'{site_name} {match}',
                         interval_label='beginning',
                         extra_params=observation_extra_parameters)
                 except HTTPError as e:
                     logger.error(
                         f'Failed to create {variable} observation at Site '
-                        f'{site.name}. Error: {e}')
+                        f'{site.name}. Error: {e.response.text}')
 
 
 def update_observation_data(api, sites, observations, start, end):
