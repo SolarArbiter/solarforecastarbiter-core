@@ -62,7 +62,7 @@ midc_site_var_map = {
         'dni': 'dni_Normal',
         'dhi': 'dhi_Horizontal',
         'air_temperature': 'temp_air',
-        'relative_humidity': 'Rel_Humidity',
+        'relative_humidity': 'Rel Humidity [%]',
         'wind_speed': 'Avg Wind Speed @ 42ft [m/s]',
     },
     'NELHA':{
