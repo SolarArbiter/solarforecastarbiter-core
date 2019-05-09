@@ -13,6 +13,9 @@ from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
                                            forecast_object_to_json)
 
 
+BASE_URL = 'https://api.solarforecastarbiter.org'
+
+
 class APISession(requests.Session):
     """
     Subclass of requests.Session to handle requets to the SolarForecastArbiter
@@ -34,7 +37,7 @@ class APISession(requests.Session):
     """
 
     def __init__(self, access_token, default_timeout=(10, 60),
-                 base_url='https://api.solarforecastarbiter.org'):
+                 base_url=None):
         """
         """
         super().__init__()
@@ -42,7 +45,7 @@ class APISession(requests.Session):
                         'Accept': 'application/json',
                         'Accept-Encoding': 'gzip,deflate'}
         self.default_timeout = default_timeout
-        self.base_url = base_url
+        self.base_url = base_url or BASE_URL
         # set requests to automatically retry
         retries = Retry(total=10, connect=3, read=3, status=3,
                         status_forcelist=[408, 423, 444, 500, 501, 502, 503,
@@ -305,7 +308,8 @@ class APISession(requests.Session):
                        params={'start': start, 'end': end})
         return json_payload_to_forecast_series(req.json())
 
-    def post_observation_values(self, observation_id, observation_df):
+    def post_observation_values(self, observation_id, observation_df,
+                                params=None):
         """
         Upload the given observation values to the appropriate observation_id
         of the API.
@@ -317,10 +321,13 @@ class APISession(requests.Session):
         observation_df : pandas.DataFrame
             Dataframe with a datetime index and the (required) value and
             quality_flag columns to upload to the API.
-        """
+        params : dict, list, string, default None
+            Parameters passed through POST request. Types are the same as
+            Requests <https://2.python-requests.org/en/master/api/#requests.Request>
+        """  # NOQA
         json_vals = observation_df_to_json_payload(observation_df)
         self.post(f'/observations/{observation_id}/values',
-                  data=json_vals,
+                  data=json_vals, params=params,
                   headers={'Content-Type': 'application/json'})
 
     def post_forecast_values(self, forecast_id, forecast_series):

@@ -23,8 +23,13 @@ dramatiq.set_broker(broker)
 
 def enqueue_function(func, *args, **kwargs):
     """Convience function to queue function. Will allow for altering task
-    queue without changing code that queues up the tasks"""
-    return func.send(*args, **kwargs)
+    queue without changing code that queues up the tasks. If broker
+    is not a StubBroker, the task is sent to the broker. Otherwise
+    the task is commputed synchronously"""
+    if isinstance(broker, StubBroker):
+        return func(*args, **kwargs)
+    else:
+        return func.send(*args, **kwargs)
 
 
 @dramatiq.actor(max_retries=3)

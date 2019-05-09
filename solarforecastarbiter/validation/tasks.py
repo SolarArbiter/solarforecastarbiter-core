@@ -256,12 +256,13 @@ IMMEDIATE_VALIDATION_FUNCS = {
 }
 
 
-def immediate_observation_validation(access_token, observation_id, start, end):
+def immediate_observation_validation(access_token, observation_id, start, end,
+                                     base_url=None):
     """
     Task that will run immediately after Observation values are uploaded to the
     API to validate the data.
     """
-    session = APISession(access_token)
+    session = APISession(access_token, base_url=base_url)
     observation = session.get_observation(observation_id)
     observation_values = session.get_observation_values(observation_id, start,
                                                         end)
@@ -277,4 +278,5 @@ def immediate_observation_validation(access_token, observation_id, start, end):
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
-    session.post_observation_values(observation_id, observation_values)
+    session.post_observation_values(observation_id, observation_values,
+                                    params='donotvalidate')
