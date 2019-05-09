@@ -370,6 +370,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
     simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
+        logger.debug('Checking if file is available for %s', next_params)
         filename = get_filename(modelpath, init_time, next_params)
         if filename.exists():
             yield next_params
@@ -380,6 +381,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
         while True:
             # is the next file ready?
             try:
+                logger.debug('Calling HEAD %s', next_model_url)
                 async with session.head(
                         next_model_url, raise_for_status=True) as r:
                     if first_file_modified_at is None:
@@ -388,6 +390,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
+                logger.debug('HEAD returned %s', next_model_url)
             except aiohttp.ClientResponseError as e:
                 if e.status == 404:  # Not found
                     logger.debug(
@@ -661,6 +664,7 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
             gribdir = modelpath
         async for params in files_to_retrieve(session, model, gribdir,
                                               inittime):
+            logger.debug('Processing parameters %s', params)
             fetch_tasks.add(asyncio.create_task(
                 fetch_grib_files(session, params, gribdir, inittime,
                                  chunksize)))
