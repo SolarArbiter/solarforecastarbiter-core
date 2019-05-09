@@ -309,7 +309,7 @@ class APISession(requests.Session):
         return json_payload_to_forecast_series(req.json())
 
     def post_observation_values(self, observation_id, observation_df,
-                                params={}):
+                                params=None):
         """
         Upload the given observation values to the appropriate observation_id
         of the API.
@@ -321,7 +321,10 @@ class APISession(requests.Session):
         observation_df : pandas.DataFrame
             Dataframe with a datetime index and the (required) value and
             quality_flag columns to upload to the API.
-        """
+        params : dict, list, string, default None
+            Parameters passed through POST request. Types are the same as
+            Requests <https://2.python-requests.org/en/master/api/#requests.Request>
+        """  # NOQA
         json_vals = observation_df_to_json_payload(observation_df)
         self.post(f'/observations/{observation_id}/values',
                   data=json_vals, params=params,
