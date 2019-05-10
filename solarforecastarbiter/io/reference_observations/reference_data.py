@@ -127,7 +127,8 @@ def create_site(api, site):
     # get a reference to network before we serialize extra_parameters
     network = site['extra_parameters']['network']
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
-    site['name'] = f'{network} {site["name"]}'
+    site_name = common.clean_name(site['name'])
+    site['name'] = f'{network} {site_name}'
     site_to_create = Site.from_dict(site)
     try:
         created = api.create_site(site_to_create)
@@ -162,8 +163,14 @@ def initialize_reference_metadata_objects(sites):
     """
     logger.info('Initializing reference metadata...')
     api = get_apisession()
+    sites_created = 0
+    failures = 0
     for site in sites:
-        create_site(api, site)
+        if create_site(api, site):
+            sites_created = sites_created + 1
+        else:
+            failures = failures + 1
+    logger.info(f'Created {sites_created} sites successfully, with {failures} failures.')
 
 
 def update_reference_observations(start, end, networks):
