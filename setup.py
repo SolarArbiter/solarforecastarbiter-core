@@ -12,8 +12,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
              'asynctest', 'requests-mock'],
-    'fetch': ['aiohttp'],
-    'queue': ['redis']
+    'fetch': ['aiohttp']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -44,8 +43,7 @@ setup(
         'requests',
         'xarray',
         'tables',
-        'pvlib',
-        'dramatiq'
+        'pvlib'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
