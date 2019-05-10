@@ -10,7 +10,8 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
                                            json_payload_to_forecast_series,
                                            observation_df_to_json_payload,
-                                           forecast_object_to_json)
+                                           forecast_object_to_json,
+                                           HiddenToken)
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
@@ -25,7 +26,7 @@ class APISession(requests.Session):
 
     Parameters
     ----------
-    access_token : string
+    access_token : string or HiddenToken
         The base64 encoded Bearer token to authenticate with the API
     default_timeout : float or tuple, optional
         A default timeout to add to all requests. If a tuple, the first element
@@ -38,9 +39,9 @@ class APISession(requests.Session):
 
     def __init__(self, access_token, default_timeout=(10, 60),
                  base_url=None):
-        """
-        """
         super().__init__()
+        if isinstance(access_token, HiddenToken):
+            access_token = access_token.token
         self.headers = {'Authorization': f'Bearer {access_token}',
                         'Accept': 'application/json',
                         'Accept-Encoding': 'gzip,deflate'}

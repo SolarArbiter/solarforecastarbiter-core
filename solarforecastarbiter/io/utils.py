@@ -133,3 +133,11 @@ def json_payload_to_forecast_series(json_payload):
 
     df = _json_to_dataframe(json_payload)
     return df['value']
+
+
+class HiddenToken:
+    def __init__(self, token):
+        self.token = token
+
+    def __repr__(self):
+        return '****ACCESS*TOKEN****'

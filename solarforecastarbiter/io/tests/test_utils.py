@@ -82,3 +82,9 @@ def test_empty_payload_to_obsevation_df():
 def test_empty_payload_to_forecast_series():
     out = utils.json_payload_to_forecast_series({'values': []})
     assert isinstance(out.index, pd.DatetimeIndex)
+
+
+def test_hidden_token():
+    ht = utils.HiddenToken('THETOKEN')
+    assert str(ht) != 'THETOKEN'
+    assert ht.token == 'THETOKEN'
