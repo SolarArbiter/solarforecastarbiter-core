@@ -137,7 +137,7 @@ def json_payload_to_forecast_series(json_payload):
 
 class HiddenToken:
     def __init__(self, token):
-        self.token = token
+        self.token = str(token)  # make sure it isn't a localproxy
 
     def __repr__(self):
         return '****ACCESS*TOKEN****'
