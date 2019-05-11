@@ -56,7 +56,7 @@ from solarforecastarbiter.io.fetch import (
 
 try:
     import sentry_sdk  # NOQA
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 else:
     # Must set SENTRY_DSN for this to do anything
