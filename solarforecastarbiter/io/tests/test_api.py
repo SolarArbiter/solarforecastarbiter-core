@@ -10,12 +10,20 @@ import pytest
 import requests
 
 
-from solarforecastarbiter.io import api
+from solarforecastarbiter.io import api, utils
 from solarforecastarbiter import datamodel
 
 
 def test_apisession_init(requests_mock):
     session = api.APISession('TOKEN')
+    requests_mock.register_uri('GET', session.base_url)
+    res = session.get('')
+    assert res.request.headers['Authorization'] == 'Bearer TOKEN'
+
+
+def test_apisession_init_hidden(requests_mock):
+    ht = utils.HiddenToken('TOKEN')
+    session = api.APISession(ht)
     requests_mock.register_uri('GET', session.base_url)
     res = session.get('')
     assert res.request.headers['Authorization'] == 'Bearer TOKEN'
@@ -364,7 +372,8 @@ def test_real_apisession_post_observation_values(real_session):
         '123e4567-e89b-12d3-a456-426655440000',
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
-    pdt.assert_frame_equal(obs, test_df)
+    # quality flag may be altered by validation routine
+    pdt.assert_series_equal(obs['value'], test_df['value'])
 
 
 def test_real_apisession_post_forecast_values(real_session):
