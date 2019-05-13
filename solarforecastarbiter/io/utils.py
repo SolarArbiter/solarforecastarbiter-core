@@ -136,6 +136,10 @@ def json_payload_to_forecast_series(json_payload):
 
 
 class HiddenToken:
+    """
+    Obscure the representation of the input string `token` to avoid saving
+    or displaying access tokens in logs.
+    """
     def __init__(self, token):
         self.token = str(token)  # make sure it isn't a localproxy
 
