@@ -42,7 +42,7 @@ from requests.exceptions import HTTPError
 
 from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.io.reference_observations import (surfrad, solrad,
+from solarforecastarbiter.io.reference_observations import (surfrad, solrad, crn,
                                                             midc, srml, common)
 
 
@@ -50,6 +50,7 @@ from solarforecastarbiter.io.reference_observations import (surfrad, solrad,
 NETWORKHANDLER_MAP = {
     'NOAA SURFRAD': surfrad,
     'NOAA SOLRAD': solrad,
+    'NOAA USCRN': crn,
     'UO SRML': srml,
     'NREL MIDC': midc,
 }

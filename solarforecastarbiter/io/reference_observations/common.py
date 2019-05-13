@@ -1,3 +1,4 @@
+import pdb
 import json
 import logging
 
@@ -26,7 +27,12 @@ def decode_extra_parameters(metadata):
     dict
         The extra parameters as a python dictionary
     """
-    return json.loads(metadata.extra_parameters)
+    try:
+        params = json.loads(metadata.extra_parameters)
+    except json.decoder.JSONDecodeError:
+        logger.warning(f'Could not read extra parameters of site {site.name}')
+        return
+    return params
 
 
 def check_network(networks, metadata):
@@ -122,7 +128,12 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     # Some site names are too long and exceed the API's limits,
     # in those cases. Use the abbreviated version.
     if len(observation_name) > 64:
-        site_abbreviation = extra_params["network_api_abbreviation"]
+        try:
+            site_abbreviation = extra_parameters["network_api_abbreviation"]
+        except TypeError as e:
+            # network_api_abbreviation didnt exist!
+            pdb.set_trace()
+            logger.error('oops')
         observation_name = f'{site_abbreviation} {variable}'
     observation = Observation.from_dict({
         'name': kwargs.get('name', observation_name),
@@ -176,7 +187,7 @@ def clean_name(string):
     """Removes all disallowed characters from a string and converts
     underscores to spaces.
     """
-    return string.translate(string.maketrans('_', ' ', '(){}/\\[]@-'))
+    return string.translate(string.maketrans('_', ' ', '(){}/\\[]@-.'))
 
 
 def site_name_no_network(site):
