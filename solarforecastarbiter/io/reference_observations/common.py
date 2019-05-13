@@ -2,6 +2,9 @@ import json
 import logging
 
 
+from requests.exceptions import HTTPError
+
+
 from solarforecastarbiter.datamodel import Observation
 
 
@@ -135,6 +138,39 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     created = api.create_observation(observation)
     logger.info(f"{created.name} created successfully.")
     return created
+
+
+def post_observation_data(api, observation, data):
+    """
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.APISession
+        An active Reference user session
+    observation : solarforecastarbiter.datamodel.Observation
+        Data model object corresponding to the Observation to update.
+    data : pandas.DataFrame
+        Dataframe of values to post containing a column labelled with
+        the Observation's variable.
+    """
+    logger.info(
+            f'Updating {observation.name} from '
+            f'{data.index[0]} to {data.index[-1]}.')
+    var_df = data[[observation.variable]]
+    var_df = var_df.rename(columns={observation.variable: 'value'})
+    var_df['quality_flag'] = 0
+    # Drop NaNs and skip post if empty.
+    var_df = var_df.dropna()
+    if var_df.empty:
+        logger.warning(
+            f'{observation.name} data empty from '
+            f'{data.index[0]} to {data.index[-1]}.')
+        return
+    try:
+        api.post_observation_values(observation.observation_id, var_df)
+    except HTTPError as e:
+        logger.error(f'Posting data to {obervation.name} failed.')
+        logger.debug(f'HTTP Error: {e.response.text}.')
+    
 
 
 def clean_name(string):

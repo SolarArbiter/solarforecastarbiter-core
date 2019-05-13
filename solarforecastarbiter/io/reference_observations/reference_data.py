@@ -55,7 +55,7 @@ NETWORKHANDLER_MAP = {
 }
 
 # list of options for the 'network' argument
-NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA CRN', 'NREL MIDC',
+NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
                    'UO SRML', 'ARM', 'SANDIA']
 
 SCRIPT_DIR = os.path.dirname(

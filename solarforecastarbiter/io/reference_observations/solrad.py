@@ -104,26 +104,29 @@ def update_observation_data(api, sites, observations, start, end):
     solrad_sites = filter(partial(common.check_network, 'NOAA SOLRAD'),
                           sites)
     for site in solrad_sites:
-        obs_df = fetch(api, site, start, end)
+        obs_df = fetch(api, site, start, end)    
+        data_in_range(f'Data for site {site.name} contained no entries '
+                      f'from {start} to {end}.')
         site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            logger.info(
-                f'Updating {obs.name} from '
-                f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
-                f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
-            var_df = obs_df[[obs.variable]]
-            var_df = var_df.rename(columns={obs.variable: 'value'})
-            var_df['quality_flag'] = 0
-            var_df = var_df.dropna()
-            # temporarily skip post with empty data
-            if var_df.empty:
-                logger.warning(
-                    f'{obs.name} data empty from '
-                    f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
-                    f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
-                continue
-            try:
-                api.post_observation_values(obs.observation_id, var_df)
-            except HTTPError as e:
-                logger.error(f'Posting data to {obs.name} failed'
-                             f'with error: {e}.')
+        for obs in site_observations:        
+            common.post_observation_data(api, obs, data_in_range)
+            #logger.info(                    
+            #    f'Updating {obs.name} from '
+            #    f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
+            #    f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+            #var_df = obs_df[[obs.variable]] 
+            #var_df = var_df.rename(columns={obs.variable: 'value'})
+            #var_df['quality_flag'] = 0      
+            #var_df = var_df.dropna()
+            ## temporarily skip post with empty data
+            #if var_df.empty:
+            #    logger.warning(
+            #        f'{obs.name} data empty from '
+            #        f'{obs_df.index[0].strftime("%Y%m%dT%H%MZ")} '
+            #        f'to {obs_df.index[-1].strftime("%Y%m%dT%H%MZ")}.')
+            #    continue
+            #try:
+            #    api.post_observation_values(obs.observation_id, var_df)
+            #except HTTPError as e:
+            #    logger.error(f'Posting data to {obs.name} failed'
+            #                 f'with error: {e}.')
