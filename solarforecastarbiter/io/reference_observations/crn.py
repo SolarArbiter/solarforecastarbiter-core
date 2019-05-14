@@ -5,7 +5,6 @@ from urllib.error import URLError
 
 import pandas as pd
 from pvlib import iotools
-from requests.exceptions import HTTPError
 
 from solarforecastarbiter.io.reference_observations import common
 
@@ -94,28 +93,22 @@ def initialize_site_observations(api, site):
 
 
 def update_observation_data(api, sites, observations, start, end):
+    """ Post new observation data to all reference observations at each
+    USCRN site betweem start amd emd.
+
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    sites: list of solarforecastarbiter.datamodel.Site
+        List of all reference sites
+    observations: list of solarforecastarbiter.datamodel.Observation
+        List of all reference observations.
+    start : datetime
+        The beginning of the period to request data for.
+    end : datetime
+        The end of the period to request data for.
+    """
     crn_sites = filter(partial(common.check_network, 'NOAA USCRN'),
                        sites)
     for site in crn_sites:
-        obs_df = fetch(api, site, start, end)
-        site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            logger.info(
-                f'Updating {obs.name} from '
-                f'{obs_df.index[0]} to {obs_df.index[-1]}.')
-            var_df = obs_df[[obs.variable]]
-            var_df = var_df.rename(columns={obs.variable: 'value'})
-            var_df['quality_flag'] = 0
-            # temporary dropna
-            var_df = var_df.dropna()
-            if var_df.empty:
-                logger.warning(
-                    f'{obs.name} data empty from '
-                    f'{obs_df.index[0]} to {obs_df.index[-1]}.')
-                continue
-            try:
-                api.post_observation_values(obs.observation_id,
-                                            var_df[start:end])
-            except HTTPError as e:
-                logger.error(f'Posting data to {obs.name} failed.')
-                logger.debug(f'HTTP Error: {e.response.text}')
+        common.update_noaa_site_observations(
+            api, fetch, site, observations, start, end)

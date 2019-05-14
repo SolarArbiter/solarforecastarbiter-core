@@ -89,13 +89,15 @@ def initialize_site_observations(api, site):
 
 
 def update_observation_data(api, sites, observations, start, end):
-    """Post new observation data to a list of SOLRAD Observations
-    from start to end.
+    """Post new observation data to all reference observations
+    at each SOLRAD site between start and end.
 
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
-    sites: list
+    sites : list of solarforecastarbiter.datamodel.Site
         List of all reference sites as Objects
+    observations : list of solarforecastarbiter.datamodel.Observation
+        List of all reference observations.
     start : datetime
         The beginning of the period to request data for.
     end : datetime
@@ -104,12 +106,5 @@ def update_observation_data(api, sites, observations, start, end):
     solrad_sites = filter(partial(common.check_network, 'NOAA SOLRAD'),
                           sites)
     for site in solrad_sites:
-        obs_df = fetch(api, site, start, end)
-        data_in_range = obs_df[start:end]
-        if data_in_range.empty:
-            logger.warning(f'Data for site {site.name} contained no entries '
-                           f'from {start} to {end}.')
-            return
-        site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            common.post_observation_data(api, obs, data_in_range)
+        common.update_noaa_site_observations(
+            api, fetch, site, observations, start, end)

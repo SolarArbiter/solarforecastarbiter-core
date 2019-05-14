@@ -1,4 +1,3 @@
-import pdb
 import json
 import logging
 
@@ -30,7 +29,7 @@ def decode_extra_parameters(metadata):
     try:
         params = json.loads(metadata.extra_parameters)
     except json.decoder.JSONDecodeError:
-        logger.warning(f'Could not read extra parameters of site {site.name}')
+        logger.warning(f'Could not read extra parameters of {metadata.name}')
         return
     return params
 
@@ -128,12 +127,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     # Some site names are too long and exceed the API's limits,
     # in those cases. Use the abbreviated version.
     if len(observation_name) > 64:
-        try:
-            site_abbreviation = extra_parameters["network_api_abbreviation"]
-        except TypeError as e:
-            # network_api_abbreviation didnt exist!
-            pdb.set_trace()
-            logger.error('oops')
+        site_abbreviation = extra_parameters["network_api_abbreviation"]
         observation_name = f'{site_abbreviation} {variable}'
     observation = Observation.from_dict({
         'name': kwargs.get('name', observation_name),
@@ -151,12 +145,46 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     return created
 
 
+def update_noaa_site_observations(api, fetch_func, site, observations,
+                                  start, end):
+    """Updates data for all reference observations at a given NOAA site
+    for the period between start and end.
+
+    Prameters
+    ---------
+    api : solarforecastarbiter.io.APISession
+        An active Reference user session.
+
+    fetch_func : function
+        A function that requests data and returns a DataFrame for a given site.
+        The function should accept the parameters (api, site, start end) as
+        they appear in this function.
+    site : solarforecastarbiter.datamodel.Site
+        The Site with observations to update.
+    observations : list of solarforecastarbiter.datamodel.Observation
+        A full list of reference Observations to search.
+    start : datetime-like
+        The beginning of the period to update.
+    end : datetime-like
+        The end of the period to update.
+    """
+    obs_df = fetch_func(api, site, start, end)
+    data_in_range = obs_df[start:end]
+    if data_in_range.empty:
+        logger.warning(f'Data for site {site.name} contained no entries '
+                       f'from {start} to {end}.')
+        return
+    site_observations = [obs for obs in observations if obs.site == site]
+    for obs in site_observations:
+        post_observation_data(api, obs, data_in_range)
+
+
 def post_observation_data(api, observation, data):
     """
     Parameters
     ----------
     api : solarforecastarbiter.io.APISession
-        An active Reference user session
+        An active Reference user session.
     observation : solarforecastarbiter.datamodel.Observation
         Data model object corresponding to the Observation to update.
     data : pandas.DataFrame
