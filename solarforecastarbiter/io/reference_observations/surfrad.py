@@ -120,4 +120,5 @@ def update_observation_data(api, sites, observations, start, end):
     surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
                            sites)
     for site in surfrad_sites:
-        common.update_noaa_site_observations(api, fetch, site, observations, start, end)
+        common.update_noaa_site_observations(
+            api, fetch, site, observations, start, end)

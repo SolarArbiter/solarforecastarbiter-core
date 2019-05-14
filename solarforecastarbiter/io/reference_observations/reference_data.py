@@ -42,8 +42,14 @@ from requests.exceptions import HTTPError
 
 from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.io.reference_observations import (surfrad, solrad, crn,
-                                                            midc, srml, common)
+from solarforecastarbiter.io.reference_observations import (
+    surfrad,
+    solrad,
+    crn,
+    midc,
+    srml,
+    common
+)
 
 
 # maps network names to the modules that interact with their api
@@ -171,7 +177,8 @@ def initialize_reference_metadata_objects(sites):
             sites_created = sites_created + 1
         else:
             failures = failures + 1
-    logger.info(f'Created {sites_created} sites successfully, with {failures} failures.')
+    logger.info(f'Created {sites_created} sites successfully, with '
+                f'{failures} failures.')
 
 
 def update_reference_observations(start, end, networks):
