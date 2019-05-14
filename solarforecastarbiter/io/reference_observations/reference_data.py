@@ -48,6 +48,7 @@ from solarforecastarbiter.io.reference_observations import (
     crn,
     midc,
     srml,
+    sandia,
     common
 )
 
@@ -59,6 +60,7 @@ NETWORKHANDLER_MAP = {
     'NOAA USCRN': crn,
     'UO SRML': srml,
     'NREL MIDC': midc,
+    'SANDIA': sandia,
 }
 
 # list of options for the 'network' argument

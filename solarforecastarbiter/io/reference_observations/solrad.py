@@ -1,4 +1,3 @@
-from functools import partial
 import logging
 from urllib.error import URLError
 
@@ -103,8 +102,7 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    solrad_sites = filter(partial(common.check_network, 'NOAA SOLRAD'),
-                          sites)
+    solrad_sites = common.filter_by_networks(sites, 'NOAA SOLRAD')
     for site in solrad_sites:
         common.update_noaa_site_observations(
             api, fetch, site, observations, start, end)

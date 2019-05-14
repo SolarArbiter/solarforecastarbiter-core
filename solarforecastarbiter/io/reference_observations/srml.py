@@ -1,4 +1,3 @@
-from functools import partial
 import logging
 from urllib import error
 
@@ -197,8 +196,7 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    srml_sites = filter(partial(common.check_network, 'UO SRML'),
-                        sites)
+    srml_sites = common.filter_by_networks(sites, 'UO SRML')
     for site in srml_sites:
         obs_df = fetch(api, site, start, end)
         site_observations = [obs for obs in observations if obs.site == site]

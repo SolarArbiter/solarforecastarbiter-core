@@ -49,7 +49,8 @@ def check_network(networks, metadata):
     Returns
     -------
     bool
-        True if the site belongs to the surfrad network.
+        True if the site belongs to the network, or one of the
+        networks.
     """
     extra_params = decode_extra_parameters(metadata)
     try:
@@ -67,14 +68,14 @@ def filter_by_networks(object_list, networks):
     Parameters
     ----------
     object_list: list
-        List of datamodel objects to filer
-    networks: list
-        List of networks to check for.
+        List of datamodel objects.
+    networks: string or list
+        Network or list of networks to check for.
 
     Returns
     -------
     filtered
-        List of filtered objects objects.
+        List of filtered datamodel objects.
     """
     filtered = [obj for obj in object_list if check_network(networks, obj)]
     return filtered
@@ -194,7 +195,12 @@ def post_observation_data(api, observation, data):
     logger.info(
         f'Updating {observation.name} from '
         f'{data.index[0]} to {data.index[-1]}.')
-    var_df = data[[observation.variable]]
+    try:
+        var_df = data[[observation.variable]]
+    except KeyError:
+        logger.Error(f'Variable {observation.variable} could not'
+                      'found in the data file from {start} to {end}')
+        return
     var_df = var_df.rename(columns={observation.variable: 'value'})
     var_df['quality_flag'] = 0
     # Drop NaNs and skip post if empty.

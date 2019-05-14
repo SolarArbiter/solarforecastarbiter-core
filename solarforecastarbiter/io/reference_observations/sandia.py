@@ -13,12 +13,15 @@ logger = logging.getLogger('reference_data')
 
 
 SANDIA_VARIABLE_MAP = {
-    'AmbientTemp_weather': 'air_temperature',
-    'DiffuseIrrad': 'dhi',
     'GlobalIrrad': 'ghi',
+    'DiffuseIrrad': 'dhi',
     'DirectIrrad': 'dni',
+    'AmbientTemp_weather': 'air_temperature',
+    'WindSpeed': 'wind_speed',
     'RelativeHumidity': 'relative_humidity',
 }
+
+
 def initialize_site_observations(api, site):
     """Creates an observaiton at the site for each variable in surfrad_variables.
 
@@ -29,7 +32,6 @@ def initialize_site_observations(api, site):
     site : datamodel.Site
         The site object for which to create Observations.
     """
-    extra_params = common.decode_extra_parameters(site)
     for sfa_var in SANDIA_VARIABLE_MAP.values():
         logger.info(f'Creating {sfa_var} at {site.name}')
         try:
@@ -39,7 +41,7 @@ def initialize_site_observations(api, site):
             logger.error(f'Could not create Observation for "{sfa_var}" '
                          f'at SANDIA site {site.name}')
             logger.debug(f'Error: {e.response.text}')
-        
+
 
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of Surfrad Observations

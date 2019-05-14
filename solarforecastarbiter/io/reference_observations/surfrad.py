@@ -1,7 +1,6 @@
 """Functions for Creating and Updating NOAA SURFRAD related objects
 within the SolarForecastArbiter
 """
-from functools import partial
 import logging
 from urllib.error import URLError
 
@@ -117,8 +116,7 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    surfrad_sites = filter(partial(common.check_network, 'NOAA SURFRAD'),
-                           sites)
+    surfrad_sites = common.filter_by_networks(sites, 'NOAA SURFRAD')
     for site in surfrad_sites:
         common.update_noaa_site_observations(
             api, fetch, site, observations, start, end)

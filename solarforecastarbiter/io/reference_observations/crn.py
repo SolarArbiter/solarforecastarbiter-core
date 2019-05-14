@@ -1,4 +1,3 @@
-from functools import partial
 import logging
 from urllib.error import URLError
 
@@ -107,8 +106,7 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    crn_sites = filter(partial(common.check_network, 'NOAA USCRN'),
-                       sites)
+    crn_sites = common.filter_by_network(sites, 'NOAA USCRN')
     for site in crn_sites:
         common.update_noaa_site_observations(
             api, fetch, site, observations, start, end)
