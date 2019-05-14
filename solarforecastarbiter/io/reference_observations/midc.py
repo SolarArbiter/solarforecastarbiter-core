@@ -1,9 +1,6 @@
-import pdb
 import logging
-from urllib import error
 
 
-import pandas as pd
 from pvlib import iotools
 from requests.exceptions import HTTPError
 
@@ -27,7 +24,7 @@ def initialize_site_observations(api, site):
     """
     extra_params = common.decode_extra_parameters(site)
     site_api_id = extra_params['network_api_id']
-    for sfa_var, midc_var in midc_config.midc_site_var_map[site_api_id].items():
+    for sfa_var, midc_var in midc_config.midc_var_map[site_api_id].items():
         obs_extra_params = extra_params.copy()
         obs_extra_params['network_data_label'] = midc_var
         logger.info(f'Creating {sfa_var} at {site.name}')
@@ -36,7 +33,6 @@ def initialize_site_observations(api, site):
                 api, site, sfa_var,
                 extra_params=obs_extra_params)
         except HTTPError as e:
-            pdb.set_trace()
             logger.error(f'Could not create Observation for "{sfa_var}" '
                          f'at MIDC site {site.name}')
             logger.debug(f'Error: {e.response.text}')
@@ -69,7 +65,11 @@ def update_observation_data(api, sites, observations, start, end):
         for obs in site_observations:
             obs_extra_params = common.decode_extra_parameters(obs)
             var_label = obs_extra_params['network_data_label']
-            var_df = obs_df[[var_label]]
+            try:
+                var_df = obs_df[[var_label]]
+            except KeyError:
+                logger.error(f'Column {var_label} missing in MIDC data '
+                             f'for observation {obs.name}')
             var_df = var_df.rename(columns={var_label: 'value'})
             var_df['quality_flag'] = 0
             # remove when nans work
@@ -85,12 +85,6 @@ def update_observation_data(api, sites, observations, start, end):
             try:
                 api.post_observation_values(obs.observation_id,
                                             var_df[start:end])
-            except ValueError as e:
-                # Temporarily print an error to avoid crashing
-                # TODO: make stricter rules for mapping column names
-                # and determine which values are actually meaningful.
-                logger.error(f'Failed to post to {obs.name} because multiple'
-                             f'columns of {var_label} were found.')
             except HTTPError as e:
                 logger.error(f'Posting data to {obs.name} failed.')
                 logger.debug(f'HTTP Error: {e.response.text}')
