@@ -153,8 +153,8 @@ def post_observation_data(api, observation, data):
         the Observation's variable.
     """
     logger.info(
-            f'Updating {observation.name} from '
-            f'{data.index[0]} to {data.index[-1]}.')
+        f'Updating {observation.name} from '
+        f'{data.index[0]} to {data.index[-1]}.')
     var_df = data[[observation.variable]]
     var_df = var_df.rename(columns={observation.variable: 'value'})
     var_df['quality_flag'] = 0
@@ -168,9 +168,8 @@ def post_observation_data(api, observation, data):
     try:
         api.post_observation_values(observation.observation_id, var_df)
     except HTTPError as e:
-        logger.error(f'Posting data to {obervation.name} failed.')
+        logger.error(f'Posting data to {observation.name} failed.')
         logger.debug(f'HTTP Error: {e.response.text}.')
-    
 
 
 def clean_name(string):

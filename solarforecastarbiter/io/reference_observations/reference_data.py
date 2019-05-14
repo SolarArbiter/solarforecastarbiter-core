@@ -29,7 +29,6 @@ so that it may be selected based on command line arguments. See the existing
 mappings for an example.
 """
 import argparse
-from argparse import RawTextHelpFormatter
 import inspect
 import json
 import logging
@@ -227,7 +226,7 @@ if __name__ == '__main__':
     logging.basicConfig()
 
     parser = argparse.ArgumentParser(
-        formatter_class=RawTextHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         description=CLI_DESCRIPTION)
     parser.add_argument('-v', '--verbose', action='count')
     subparsers = parser.add_subparsers(help='Commands', dest='command',
