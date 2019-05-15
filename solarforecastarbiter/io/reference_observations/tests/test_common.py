@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError
 from solarforecastarbiter.datamodel import Site, Observation
 from solarforecastarbiter.io.reference_observations import common
 from solarforecastarbiter.io.reference_observations.tests.conftest import (
-    sites_dicts,
+    site_string_dicts,
     site_objects)
 
 
@@ -18,23 +18,8 @@ def log(mocker):
     return log
 
 
-@pytest.fixture(scope='module',
-                params=site_objects)
-def test_observations(site):
-    return Observation.from_dict({
-        'name': 'site ghi',
-        'variable': 'ghi',
-        'interval_label': 'beginning',
-        'interval_value_type': 'interval_mean',
-        'interval_length': 1,
-        'site': site_objects[1],
-        'uncertainty': 0,
-        'extra_parameters': "{}"
-    })
-
-
 site_test_observation = Observation.from_dict({
-    'name': 'site ghi',
+    'name': 'ARM site ghi',
     'variable': 'ghi',
     'interval_label': 'ending',
     'interval_value_type': 'interval_mean',
@@ -54,7 +39,7 @@ invalid_params = {
 
 
 def test_decode_extra_parameters():
-    metadata = Site.from_dict(sites_dicts[0])
+    metadata = Site.from_dict(site_string_dicts[0])
     params = common.decode_extra_parameters(metadata)
     assert params['network'] == 'ARM'
     assert params['observation_interval_length'] == 1
@@ -83,10 +68,10 @@ def test_clean_name(name, expected):
 
 
 @pytest.mark.parametrize('networks,site,expected', [
-    (['ARM'], sites_dicts[0], True),
-    ('ARM', sites_dicts[0], True),
-    (['ARM', 'NREL MIDC'], sites_dicts[1], False),
-    ('NREL MIDC', sites_dicts[3], False),
+    (['ARM'], site_string_dicts[0], True),
+    ('ARM', site_string_dicts[0], True),
+    (['ARM', 'NREL MIDC'], site_string_dicts[1], False),
+    ('NREL MIDC', site_string_dicts[3], False),
 ])
 def test_check_network(networks, site, expected):
     metadata = Site.from_dict(site)
@@ -143,7 +128,7 @@ def test_create_observation_long_site(mock_api, site, variable, expected):
 
 
 observation_with_extra_params = Observation.from_dict({
-    'name': 'site ghi',
+    'name': 'ARM site ghi',
     'variable': 'ghi',
     'interval_label': 'ending',
     'interval_value_type': 'interval_mean',

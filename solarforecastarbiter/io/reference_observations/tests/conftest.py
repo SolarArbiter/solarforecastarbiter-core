@@ -1,20 +1,21 @@
+import json
 import numpy as np
 import pandas as pd
 import pytest
 
 
-from solarforecastarbiter.datamodel import Site
+from solarforecastarbiter.datamodel import Site, Observation
 
 
-sites_dicts = [
+site_dicts = [
     {
         'name': 'ARM site',
         'latitude': 1,
         'longitude': 1,
         'elevation': 5,
         'timezone': 'Etc/GMT+8',
-        'extra_parameters': ('{"network": "ARM",'
-                             '"observation_interval_length": 1}'),
+        'extra_parameters': {"network": "ARM",
+                             "observation_interval_length": 1},
     },
     {
         'name': 'NOAA SURFRAD site2',
@@ -22,8 +23,8 @@ sites_dicts = [
         'longitude': 2,
         'elevation': 5,
         'timezone': 'Etc/GMT+8',
-        'extra_parameters': ('{"network": "NOAA SURFRAD",'
-                             '"observation_interval_length": 5}'),
+        'extra_parameters': {"network": "NOAA SURFRAD",
+                             "observation_interval_length": 5},
     },
     {
         'name': 'NOAA SOLRAD site3',
@@ -31,8 +32,8 @@ sites_dicts = [
         'longitude': -3,
         'elevation': 6,
         'timezone': 'Etc/GMT+8',
-        'extra_parameters': ('{"network": "NOAA SOLRAD",'
-                             '"observation_interval_length": 1}'),
+        'extra_parameters': {"network": "NOAA SOLRAD",
+                             "observation_interval_length": 1},
     },
     {
         'name': 'site4',
@@ -40,25 +41,60 @@ sites_dicts = [
         'longitude': -5,
         'elevation': 12,
         'timezone': 'Etc/GMT+8',
-        'extra_parameters': ('{ "observation_interval_length": 1}'),
+        'extra_parameters': { "observation_interval_length": 1},
     }
 ]
-site_objects = [Site.from_dict(site) for site in sites_dicts]
+
+
+def expected_site(site):
+    new_site = site.copy()
+    network = site['extra_parameters'].get('network', '')
+    new_site['name'] = f"{network} {site['name']}"
+    new_site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
+    return new_site
+
+
+site_string_dicts = [expected_site(site) for site in site_dicts]
+site_objects = [Site.from_dict(site) for site in site_string_dicts]
 
 
 @pytest.fixture
-def sites_dicts_param():
-    return sites_dicts
+def site_dicts_param():
+    return sites_string_dicts
 
 
 @pytest.fixture
-def site_objects_pram():
+def site_objects_param():
     return site_objects
 
 
 @pytest.fixture
-def mock_api(mocker):
-    return mocker.MagicMock()
+def observation_objects_param(site_objects_param):
+    return [Observation.from_dict({
+        'name': 'site ghi',
+        'variable': 'ghi',
+        'interval_label': 'beginning',
+        'interval_value_type': 'interval_mean',
+        'interval_length': 1,
+        'site': site,
+        'uncertainty': 0,
+        'extra_parameters': site.extra_parameters
+    }) for site in site_objects_param]
+
+
+@pytest.fixture
+def networks():
+    return ['ARM', 'NOAA SURFRAD', 'NOAA SOLRAD']
+
+
+
+@pytest.fixture
+def mock_api(mocker, site_objects_param, observation_objects_param):
+    api = mocker.MagicMock()
+    api.list_sites.return_value = site_objects_param
+    api.list_observations.return_value = observation_objects_param
+    return api
+
 
 
 @pytest.fixture
@@ -71,6 +107,16 @@ def mock_fetch(mocker):
 index = pd.date_range('20190101T1200Z', '20190101T1229Z',
                       freq='min', tz='UTC')
 values = np.arange(100, 130)
+
+
+@pytest.fixture
+def start():
+    return pd.Timestamp('20190101T1200Z')
+
+
+@pytest.fixture
+def end():
+    return pd.Timestamp('20190101T1229Z')
 
 
 @pytest.fixture

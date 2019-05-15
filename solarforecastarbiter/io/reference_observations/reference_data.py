@@ -32,6 +32,7 @@ import argparse
 import inspect
 import json
 import logging
+from pkg_resources import resource_filename, Requirement
 import os
 import sys
 
@@ -65,11 +66,11 @@ NETWORKHANDLER_MAP = {
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'ARM', 'SANDIA']
+                   'UO SRML', 'SANDIA']
 
-SCRIPT_DIR = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe())))
-DEFAULT_SITEFILE = os.path.join(SCRIPT_DIR, "sfa_reference_sites.csv")
+DEFAULT_SITEFILE = resource_filename(Requirement.parse('solarforecastarbiter'),
+        'solarforecastarbiter/io/reference_observations/sfa_reference_sites.csv')
+
 
 SFA_REFERENCE_TOKEN = os.getenv('SFA_REFERENCE_TOKEN')
 SFA_API_BASE_URL = os.getenv('SFA_API_BASE_URL')
@@ -103,7 +104,7 @@ SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
 
 def add_network_arg(parser):
     """Adds the `--networks` argument to a subparser so that it does not consume
-    the the init, update and remove commands
+    the the init and update.
     """
     parser.add_argument(
         '--networks', nargs='+', default=NETWORK_OPTIONS,
@@ -271,11 +272,6 @@ if __name__ == '__main__':
         'end',
         help="End of the period to update as an ISO8601 datetime string.")
 
-    # Remove command parser/options
-    remove_parser = subparsers.add_parser(
-        'remove', help='Deletes all reference sites and observations.')
-    add_network_arg(remove_parser)
-
     cli_args = parser.parse_args()
     if cli_args.verbose == 1:
         logger.setLevel(logging.INFO)
@@ -317,33 +313,3 @@ if __name__ == '__main__':
 
         networks = cli_args.networks
         update_reference_observations(start, end, networks)
-
-    elif cmd == 'remove':
-        # Remove all sites and observations in networks
-        confirm = input('This action will delete all sites and '
-                        'observations in the networks: '
-                        f'{", ".join(networks)} from the Reference '
-                        'organization are you sure you want to '
-                        'continue? [y/n]:')
-        if confirm != 'y':
-            print('Exiting.')
-            sys.exit()
-        api = get_apisession()
-        observations = common.filter_by_networks(api.list_observations(),
-                                                 networks)
-        for obs in observations:
-            try:
-                api.delete(f'/observations/{obs.observation_id}')
-            except HTTPError as e:
-                logger.error(f'Could not delete observation {obs.name}'
-                             f'with observation_id {obs.observation_id}.')
-                logger.debug(f'HTTP Error: {e.response.text}')
-        sites = common.filter_by_networks(api.list_sites(),
-                                          networks)
-        for site in sites:
-            try:
-                api.delete(f'/sites/{site.site_id}')
-            except HTTPError as e:
-                logger.error(f'Could not delete site {site.name} with '
-                             f'site_id {site.site_id}.')
-                logger.debug(f'HTTP Error: {e.response.text}')
