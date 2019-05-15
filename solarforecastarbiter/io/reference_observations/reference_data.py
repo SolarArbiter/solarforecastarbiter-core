@@ -29,7 +29,6 @@ so that it may be selected based on command line arguments. See the existing
 mappings for an example.
 """
 import argparse
-import inspect
 import json
 import logging
 from pkg_resources import resource_filename, Requirement
@@ -68,8 +67,9 @@ NETWORKHANDLER_MAP = {
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
                    'UO SRML', 'SANDIA']
 
-DEFAULT_SITEFILE = resource_filename(Requirement.parse('solarforecastarbiter'),
-        'solarforecastarbiter/io/reference_observations/sfa_reference_sites.csv')
+DEFAULT_SITEFILE = resource_filename(
+    Requirement.parse('solarforecastarbiter'),
+    'solarforecastarbiter/io/reference_observations/sfa_reference_sites.csv')
 
 
 SFA_REFERENCE_TOKEN = os.getenv('SFA_REFERENCE_TOKEN')

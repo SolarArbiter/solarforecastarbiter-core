@@ -41,7 +41,7 @@ site_dicts = [
         'longitude': -5,
         'elevation': 12,
         'timezone': 'Etc/GMT+8',
-        'extra_parameters': { "observation_interval_length": 1},
+        'extra_parameters': {"observation_interval_length": 1},
     }
 ]
 
@@ -60,7 +60,7 @@ site_objects = [Site.from_dict(site) for site in site_string_dicts]
 
 @pytest.fixture
 def site_dicts_param():
-    return sites_string_dicts
+    return site_string_dicts
 
 
 @pytest.fixture
@@ -87,14 +87,12 @@ def networks():
     return ['ARM', 'NOAA SURFRAD', 'NOAA SOLRAD']
 
 
-
 @pytest.fixture
 def mock_api(mocker, site_objects_param, observation_objects_param):
     api = mocker.MagicMock()
     api.list_sites.return_value = site_objects_param
     api.list_observations.return_value = observation_objects_param
     return api
-
 
 
 @pytest.fixture
