@@ -5,6 +5,7 @@ Data Model document. Python 3.7 is required.
 """
 from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
+from typing import Tuple
 
 
 import pandas as pd
@@ -391,3 +392,91 @@ class Forecast(BaseModel):
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
+
+
+@dataclass(frozen=True)
+class ForecastObservation(BaseModel):
+    """
+    Class for pairing Forecast and Observation objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    observation: Observation
+    # consider __post_init__ that checks for
+    # 1. unit compatiblity
+    # 2. interval length, label compability
+
+
+@dataclass(frozen=True)
+class Filters(BaseModel):
+    """
+    Class for keeping track of filters to be applied in a report.
+
+    Parameters
+    ----------
+    quality_flags : Tuple of ints
+        Ints corresponding to ``BITMASK_DESCRIPTION_DICT`` entries.
+        These periods will be excluded from the analysis.
+    time_of_day_range : None or (datetime.time, datetime.time) tuple
+        Time of day range to calculate errors. Range is inclusive of
+        both endpoints. Do not use this to exclude nighttime; instead
+        set the corresponding quality_flag.
+    observation_range : None or (Observation, float, float) tuple
+        Observation value range to calculate errors. Range is inclusive
+        of both endpoints. Filters are applied before resampling.
+    """
+    quality_flags: Tuple[int] = (7, 8, 9, 10, 13)  # a guess
+    time_of_day_range: Tuple[datetime.time, datetime.time] = None
+    observation_range: Tuple[Observation, float, float] = None
+
+
+@dataclass(frozen=True)
+class Metrics(BaseModel):
+    """
+    Class for keeping track of metrics to be applied in a report.
+    Probably does not also keep track of computed metrics because that
+    would require a mutable class.
+
+    Maybe not needed.
+    """
+    metrics: Tuple[str]
+
+
+@dataclass(frozen=True)
+class Report(BaseModel):
+    """
+    Class for keeping track of metadata associated with a report.
+
+    Parameters
+    ----------
+    name : str
+        Name of the report.
+    start : pandas.Timestamp
+        Start time of the reporting period.
+    end : pandas.Timestamp
+        End time of the reporting period.
+    forecast_observations : Tuple of ForecastObservation
+        Forecasts and Observations to be analyzed in the report.
+    filters : Filters
+        Filters to be applied to the data in the report.
+    metrics : Metrics
+        Metrics to be computed in the report.
+    """
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    # forecast_observations: ForecastObservations
+    forecast_observations: Tuple[ForecastObservation]
+    filters: Filters = field(default_factory=Filters)
+    metrics: Metrics = field(default_factory=Metrics)
+
+
+# @dataclass(frozen=True)
+# class ForecastObservations(BaseModel):
+#     """
+#     Class for keeping track of collection of paired Forecasts and
+#     Observation objects.
+#     """
+#     pass
