@@ -241,7 +241,7 @@ def site_df_to_dicts(site_df):
     return site_list
 
 
-if __name__ == '__main__':
+def main():
     logging.basicConfig()
 
     parser = argparse.ArgumentParser(
@@ -313,3 +313,7 @@ if __name__ == '__main__':
 
         networks = cli_args.networks
         update_reference_observations(start, end, networks)
+
+
+if __name__ == '__main__':
+    main()
