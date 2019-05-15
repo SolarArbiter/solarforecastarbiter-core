@@ -1,10 +1,21 @@
+import numpy as np
+import pandas as pd
 import pytest
+from requests.exceptions import HTTPError
+
 
 from solarforecastarbiter.datamodel import Site, Observation
 from solarforecastarbiter.io.reference_observations import common
 from solarforecastarbiter.io.reference_observations.tests.conftest import (
     sites_dicts,
     site_objects)
+
+
+@pytest.fixture
+def log(mocker):
+    log = mocker.patch('solarforecastarbiter.io.reference_observations.'
+                       'common.logger')
+    return log
 
 
 @pytest.fixture(scope='module',
@@ -22,6 +33,16 @@ def test_observations(site):
     })
 
 
+site_test_observation = Observation.from_dict({
+    'name': 'site ghi',
+    'variable': 'ghi',
+    'interval_label': 'ending',
+    'interval_value_type': 'interval_mean',
+    'interval_length': 1,
+    'site': site_objects[0],
+    'uncertainty': 0,
+    'extra_parameters': '{"network": "ARM", "observation_interval_length": 1}'
+})
 invalid_params = {
     'name': 'site-invalid-jsonparams',
     'latitude': 3,
@@ -39,12 +60,26 @@ def test_decode_extra_parameters():
     assert params['observation_interval_length'] == 1
 
 
-def test_decode_extra_parameters_error(mocker):
-    log = mocker.patch('solarforecastarbiter.io.reference_observations.'
-                       'common.logger')
+def test_decode_extra_parameters_error(mocker, log):
     ret = common.decode_extra_parameters(Site.from_dict(invalid_params))
     assert ret is None
     log.warning.assert_called()
+
+
+@pytest.mark.parametrize('site,expected', [
+    (site_objects[0], 'site'),
+    (site_objects[1], 'site2'),
+    (site_objects[2], 'site3')
+])
+def gest_site_name_no_network(site, expected):
+    assert common.site_name_no_network(site) == expected
+
+
+@pytest.mark.parametrize('name,expected', [
+    ('{n}_(a)_/m\\_.e@_[1]-', 'n a m e 1')
+])
+def test_clean_name(name, expected):
+    assert common.clean_name(name) == expected
 
 
 @pytest.mark.parametrize('networks,site,expected', [
@@ -65,18 +100,6 @@ def test_check_network(networks, site, expected):
 ])
 def test_filter_by_network(networks, expected):
     assert common.filter_by_networks(site_objects, networks) == expected
-
-
-site_test_observation = Observation.from_dict({
-    'name': 'site ghi',
-    'variable': 'ghi',
-    'interval_label': 'ending',
-    'interval_value_type': 'interval_mean',
-    'interval_length': 1,
-    'site': site_objects[0],
-    'uncertainty': 0,
-    'extra_parameters': '{"network": "ARM", "observation_interval_length": 1}'
-})
 
 
 @pytest.mark.parametrize('site,variable', [
@@ -174,5 +197,46 @@ def test_create_observation_with_kwargs(
     mock_api.create_observation.assert_called_with(expected)
 
 
-def test_update_noaa_site_no_data(mock_api):
+def test_update_noaa_site_observations_no_data():
     pass
+
+
+def test_post_observation_data_no_data(mock_api, log):
+    ret = common.post_observation_data(
+        mock_api, test_kwarg_observation,
+        pd.DataFrame({'a': [1, 2, 3],
+                      'b': ['a', 'b', 'c']}))
+    log.error.assert_called()
+    assert ret is None
+
+
+def test_post_observation_data(mock_api, log, fake_ghi_data):
+    common.post_observation_data(mock_api, site_test_observation,
+                                 fake_ghi_data)
+
+    args, _ = mock_api.post_observation_values.call_args
+    # test observations never get assigned an id so the observation_id
+    # argument should be an empty string
+    assert args[0] == ''
+    pd.testing.assert_frame_equal(
+        args[1], fake_ghi_data.rename(columns={'ghi': 'value'}))
+
+
+def test_post_observation_data_HTTPError(mock_api, log, fake_ghi_data):
+    # mocking this error means that when the debugging logging call
+    # fires, an AttributeError is thrown while looking for a response
+    # but this also tests that we've followed the correct logic.
+    mock_api.post_observation_values.side_effect = HTTPError
+    with pytest.raises(AttributeError):
+        common.post_observation_data(mock_api, site_test_observation,
+                                     fake_ghi_data)
+    log.error.assert_called()
+
+
+def test_post_observation_data_all_nans(mock_api, log, fake_ghi_data):
+    nan_data = fake_ghi_data.copy()
+    nan_data['ghi'] = np.NaN
+    ret = common.post_observation_data(mock_api, site_test_observation,
+                                       nan_data)
+    log.warning.assert_called()
+    assert ret is None

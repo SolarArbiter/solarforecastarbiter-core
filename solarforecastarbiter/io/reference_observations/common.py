@@ -191,6 +191,11 @@ def post_observation_data(api, observation, data):
     data : pandas.DataFrame
         Dataframe of values to post containing a column labelled with
         the Observation's variable.
+
+    Raises
+    ------
+    IndexError
+        If the data provided has an empty index.
     """
     logger.info(
         f'Updating {observation.name} from '
@@ -198,8 +203,9 @@ def post_observation_data(api, observation, data):
     try:
         var_df = data[[observation.variable]]
     except KeyError:
-        logger.Error(f'Variable {observation.variable} could not'
-                     'found in the data file from {start} to {end}')
+        logger.error(f'Variable {observation.variable} could not be'
+                     'found in the data file from {data.index[0]} to '
+                     '{data.index[-1]}')
         return
     var_df = var_df.rename(columns={observation.variable: 'value'})
     var_df['quality_flag'] = 0

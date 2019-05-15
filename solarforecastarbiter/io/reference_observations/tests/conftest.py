@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -65,3 +66,15 @@ def mock_fetch(mocker):
     fetch = mocker.MagicMock()
     fetch.return_value = pd.DataFrame({})
     return fetch
+
+
+index = pd.date_range('20190101T1200Z', '20190101T1229Z',
+                      freq='min', tz='UTC')
+values = np.arange(100, 130)
+
+
+@pytest.fixture
+def fake_ghi_data():
+    df = pd.DataFrame(index=index, data={'ghi': values})
+    df['quality_flag'] = 0
+    return df
