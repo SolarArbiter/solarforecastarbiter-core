@@ -199,7 +199,7 @@ def post_observation_data(api, observation, data):
         var_df = data[[observation.variable]]
     except KeyError:
         logger.Error(f'Variable {observation.variable} could not'
-                      'found in the data file from {start} to {end}')
+                     'found in the data file from {start} to {end}')
         return
     var_df = var_df.rename(columns={observation.variable: 'value'})
     var_df['quality_flag'] = 0

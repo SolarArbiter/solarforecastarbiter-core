@@ -21,6 +21,7 @@ def test_observations(site):
         'extra_parameters': "{}"
     })
 
+
 invalid_params = {
     'name': 'site-invalid-jsonparams',
     'latitude': 3,
@@ -39,10 +40,11 @@ def test_decode_extra_parameters():
 
 
 def test_decode_extra_parameters_error(mocker):
-    log = mocker.patch('solarforecastarbiter.io.reference_observations.common.logger')
+    log = mocker.patch('solarforecastarbiter.io.reference_observations.'
+                       'common.logger')
     ret = common.decode_extra_parameters(Site.from_dict(invalid_params))
-    assert ret == None
-    assert log.warning.called
+    assert ret is None
+    log.warning.assert_called()
 
 
 @pytest.mark.parametrize('networks,site,expected', [
@@ -61,7 +63,7 @@ def test_check_network(networks, site, expected):
     ('ARM', site_objects[:1]),
     (['NOAA SURFRAD', 'NOAA SOLRAD'], site_objects[1:3])
 ])
-def test_filter_by_network( networks, expected):
+def test_filter_by_network(networks, expected):
     assert common.filter_by_networks(site_objects, networks) == expected
 
 
@@ -76,6 +78,7 @@ site_test_observation = Observation.from_dict({
     'extra_parameters': '{"network": "ARM", "observation_interval_length": 1}'
 })
 
+
 @pytest.mark.parametrize('site,variable', [
     (site_objects[0], 'ghi'),
 ])
@@ -83,6 +86,7 @@ def test_create_observation(mock_api, site, variable):
     common.create_observation(mock_api, site, variable)
     mock_api.create_observation.assert_called()
     mock_api.create_observation.assert_called_with(site_test_observation)
+
 
 long_site_name = Site.from_dict({
     'name': 'ARM site with just abouts sixty four characters in its name oops',
@@ -93,8 +97,6 @@ long_site_name = Site.from_dict({
     'extra_parameters': ('{"network": "ARM", "network_api_abbreviation": '
                          '"site_abbrev", "observation_interval_length": 1}'),
 })
-
-
 observation_long_site_name = Observation.from_dict({
     'name': 'site_abbrev air_temperature',
     'variable': 'air_temperature',
@@ -106,6 +108,8 @@ observation_long_site_name = Observation.from_dict({
     'extra_parameters': ('{"network": "ARM", "network_api_abbreviation": '
                          '"site_abbrev", "observation_interval_length": 1}'),
 })
+
+
 @pytest.mark.parametrize('site,variable,expected', [
     (long_site_name, 'air_temperature', observation_long_site_name),
 ])
@@ -129,8 +133,11 @@ observation_params = {
     'network': '',
     'observation_interval_length': 5,
 }
+
+
 @pytest.mark.parametrize('site,variable,expected,extra_params', [
-    (site_objects[0], 'ghi', observation_with_extra_params, observation_params),
+    (site_objects[0], 'ghi', observation_with_extra_params,
+     observation_params),
 ])
 def test_create_observation_extra_parameters(
         mock_api, site, variable, expected, extra_params):
@@ -155,10 +162,17 @@ obs_kwargs = {
     'interval_value_type': 'instantaneous',
     'uncertainty': 2,
 }
+
+
 @pytest.mark.parametrize('site,variable,expected,kwargs', [
     (site_objects[0], 'ghi', test_kwarg_observation, obs_kwargs),
 ])
-def test_create_observation_with_kwargs(mock_api, site, variable, expected, kwargs):
+def test_create_observation_with_kwargs(
+        mock_api, site, variable, expected, kwargs):
     common.create_observation(mock_api, site, variable, **kwargs)
     mock_api.create_observation.assert_called()
     mock_api.create_observation.assert_called_with(expected)
+
+
+def test_update_noaa_site_no_data(mock_api):
+    pass
