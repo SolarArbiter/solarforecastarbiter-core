@@ -214,7 +214,8 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 240 hours.
     """
     cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_3h')
+        latitude, longitude, init_time, start, end, 'gfs_3h',
+        variables=('cloud_cover', 'temp_air', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, temp_air, wind_speed)
@@ -229,7 +230,8 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 120 hours.
     """
     cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_1h')
+        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        variables=('cloud_cover', 'temp_air', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, temp_air, wind_speed)
@@ -261,7 +263,8 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
     Max forecast horizon 36 hours.
     """
     ghi, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam')
+        latitude, longitude, init_time, start, end, 'nam_12km',
+        variables=('ghi', 'temp_air', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     # hourly instant in, hourly instant out
@@ -278,7 +281,7 @@ def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 72 hours.
     """
     cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam',
+        latitude, longitude, init_time, start, end, 'nam_12km',
         variables=('cloud_cover', 'temp_air', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, temp_air, wind_speed)
