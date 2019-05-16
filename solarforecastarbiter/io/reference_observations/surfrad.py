@@ -6,7 +6,6 @@ from urllib.error import URLError
 
 
 import pandas as pd
-from requests.exceptions import HTTPError
 
 
 from pvlib import iotools
@@ -94,11 +93,7 @@ def initialize_site_observations(api, site):
         The site object for which to create Observations.
     """
     for variable in surfrad_variables:
-        try:
-            common.create_observation(api, site, variable)
-        except HTTPError as e:
-            logger.error(f'Failed to create {variable} observation as Site '
-                         f'{site.name}. Error: {e}')
+        common.create_observation(api, site, variable)
 
 
 def update_observation_data(api, sites, observations, start, end):
@@ -118,5 +113,5 @@ def update_observation_data(api, sites, observations, start, end):
     """
     surfrad_sites = common.filter_by_networks(sites, 'NOAA SURFRAD')
     for site in surfrad_sites:
-        common.update_noaa_site_observations(
+        common.update_site_observations(
             api, fetch, site, observations, start, end)

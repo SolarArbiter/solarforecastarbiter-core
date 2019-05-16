@@ -10,7 +10,7 @@ from solarforecastarbiter.io.reference_observations import common
 
 CRN_URL = 'https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/'
 
-crn_variables = ['ghi', 'temp_air', 'relative_humidity', 'wind_speed']
+crn_variables = ['ghi', 'air_temperature', 'relative_humidity', 'wind_speed']
 
 logger = logging.getLogger('reference_data')
 
@@ -85,10 +85,7 @@ def initialize_site_observations(api, site):
 
     """
     for variable in crn_variables:
-        if variable == 'temp_air':
-            common.create_observation(api, site, 'air_temperature')
-        else:
-            common.create_observation(api, site, variable)
+        common.create_observation(api, site, variable)
 
 
 def update_observation_data(api, sites, observations, start, end):
@@ -108,5 +105,5 @@ def update_observation_data(api, sites, observations, start, end):
     """
     crn_sites = common.filter_by_network(sites, 'NOAA USCRN')
     for site in crn_sites:
-        common.update_noaa_site_observations(
+        common.update_site_observations(
             api, fetch, site, observations, start, end)

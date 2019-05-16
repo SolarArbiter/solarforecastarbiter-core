@@ -74,7 +74,7 @@ def request_data(site, year, month):
             logger.debug(f'Site abbreviation: {station_code}')
             continue
         except pd.errors.EmptyDataError:
-            logger.warning(f'SRML returned an empty file for station'
+            logger.warning(f'SRML returned an empty file for station '
                            f'{site.name} on {year}/{month}.')
             continue
         else:
@@ -117,7 +117,7 @@ def fetch(api, site, start, end):
         all_period_data = all_period_data[var_columns]
         return all_period_data
     else:
-        return None
+        return pd.DataFrame()
 
 
 def initialize_site_observations(api, site):
@@ -146,7 +146,12 @@ def initialize_site_observations(api, site):
     """
     start = pd.Timestamp.now()
     end = pd.Timestamp.now()
-    extra_params = common.decode_extra_parameters(site)
+    try:
+        extra_params = common.decode_extra_parameters(site)
+    except ValueError:
+        logger.warning('Cannot create reference observations at MIDC site '
+                       f'{site.name}, missing required parameters.')
+        return
     # use site name without network here to build
     # a name with the original column label rather than
     # the SFA variable
@@ -198,38 +203,5 @@ def update_observation_data(api, sites, observations, start, end):
     """
     srml_sites = common.filter_by_networks(sites, 'UO SRML')
     for site in srml_sites:
-        obs_df = fetch(api, site, start, end)
-        site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            obs_params = common.decode_extra_parameters(obs)
-            var_label = obs_params['network_data_label']
-            var_df = obs_df[[var_label]]
-            var_df = var_df.rename(columns={var_label: 'value'})
-            var_df['quality_flag'] = 0
-            # SRML files are provided by month, with future dates
-            # forward filled with missing values.
-            # e.g. On April 15th, An april file would contain valid
-            # data from April 1-15, and April 16-30 would contain
-            # NaNs during the day and 0s at night.
-            #
-            # To avoid inserting missing data, we select only up
-            # until the last valid index today.
-            var_df = var_df[:pd.Timestamp.now(tz=obs.site.timezone)]
-            var_df = var_df[:var_df['value'].last_valid_index()]
-            logger.info(
-                f'Updating {obs.name} from '
-                f'{var_df.index[0]} to {var_df.index[-1]}.')
-            # will need to remove dropna() call when json NaNs work.
-            var_df = var_df.dropna()
-            # temporarily skip post with empty data
-            if var_df.empty:
-                logger.warning(
-                    f'{obs.name} data empty from '
-                    f'{obs_df.index[0]} to {obs_df.index[-1]}.')
-                continue
-            try:
-                api.post_observation_values(obs.observation_id,
-                                            var_df[start:end])
-            except HTTPError as e:
-                logger.error(f'Posting data to {obs.name} failed'
-                             f'with error: {e}.')
+        common.update_site_observations(api, fetch, site, observations,
+                                        start, end)

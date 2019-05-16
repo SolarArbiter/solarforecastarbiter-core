@@ -136,6 +136,12 @@ def create_site(api, site):
     """
     # get a reference to network before we serialize extra_parameters
     network = site['extra_parameters']['network']
+    network_handler = NETWORKHANDLER_MAP.get(network)
+    if network_handler is None:
+        logger.warning(f'Unrecognized network, {network} on Site '
+                       f'{site["name"]} Observations cannot be '
+                       'automatically generated.')
+        return
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
     site_name = common.clean_name(site['name'])
     site['name'] = f'{network} {site_name}'
@@ -147,13 +153,7 @@ def create_site(api, site):
         logger.debug(f'HTTP Error: {e.response.text}')
     else:
         logger.info(f'Created Site {created.name} successfully.')
-        network_handler = NETWORKHANDLER_MAP.get(network)
-        if network_handler is None:
-            logger.warning(f'Unrecognized network, {network} on Site '
-                           f'{site["name"]} Observations cannot be '
-                           'automatically generated.')
-        else:
-            network_handler.initialize_site_observations(api, created)
+        network_handler.initialize_site_observations(api, created)
         return created
 
 
@@ -267,10 +267,12 @@ def main():
     add_network_arg(update_parser)
     update_parser.add_argument(
         'start',
-        help="Beginning of the period to update as a ISO8601 datetime string.")
+        help="Beginning of the period to update as a ISO8601 datetime string."
+             "If no timezone is defined, UTC will be assumed.")
     update_parser.add_argument(
         'end',
-        help="End of the period to update as an ISO8601 datetime string.")
+        help="End of the period to update as an ISO8601 datetime string."
+             "If no timezone is defined, UTC will be assumed.")
 
     cli_args = parser.parse_args()
     if cli_args.verbose == 1:
@@ -302,6 +304,11 @@ def main():
         except ValueError:
             logger.error('Invalid start datetime.')
             sys.exit()
+        else:
+            if start.tzinfo:
+                start = start.tz_convert('UTC')
+            else:
+                start = start.tz_localize('UTC')
 
         end = cli_args.end
         if end is not None:
@@ -310,7 +317,11 @@ def main():
             except ValueError:
                 logger.error('Invalid end datetime.')
                 sys.exit()
-
+            else:
+                if end.tzinfo:
+                    end = end.tz_convert('UTC')
+                else:
+                    end = end.tz_localize('UTC')
         networks = cli_args.networks
         update_reference_observations(start, end, networks)
 
