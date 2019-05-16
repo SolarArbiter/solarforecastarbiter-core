@@ -5,10 +5,13 @@ Data Model document. Python 3.7 is required.
 """
 from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
-from typing import Tuple
-
+import itertools
+from typing import Tuple, Union
 
 import pandas as pd
+
+from solarforecastarbiter.validation.quality_mapping import \
+    DESCRIPTION_MASK_MAPPING
 
 
 ALLOWED_VARIABLES = {
@@ -394,6 +397,22 @@ class Forecast(BaseModel):
     __post_init__ = __set_units__
 
 
+def __check_units__(*args):
+    ref_unit = args[0].units
+    if not all(arg.units == ref_unit for arg in args):
+        raise ValueError('All units must be identical.')
+
+
+def __check_interval_compatibility__(forecast, observation):
+    if observation.interval_length > forecast.interval_length:
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'forecast.interval_length.')
+    if ('instant' in forecast.interval_label and
+            'instant' not in observation.interval_label):
+        raise ValueError('Instantaneous forecasts cannot be evaluated against '
+                         'interval average observations.')
+
+
 @dataclass(frozen=True)
 class ForecastObservation(BaseModel):
     """
@@ -404,44 +423,82 @@ class ForecastObservation(BaseModel):
     """
     forecast: Forecast
     observation: Observation
-    # consider __post_init__ that checks for
-    # 1. unit compatiblity
-    # 2. interval length, label compability
+
+    def __post_init__(self):
+        __check_units__(self.forecast, self.observation)
+        __check_interval_compatibility__(self.forecast, self.observation)
 
 
 @dataclass(frozen=True)
-class Filters(BaseModel):
+class BaseFilter(BaseModel):
     """
-    Class for keeping track of filters to be applied in a report.
+    Base class for filters to be applied in a report.
+    """
+    pass
+
+
+@dataclass(frozen=True)
+class QualityFlagFilter(BaseFilter):
+    """
+    Class representing quality flag filters to be applied in a report.
 
     Parameters
     ----------
-    quality_flags : Tuple of ints
-        Ints corresponding to ``BITMASK_DESCRIPTION_DICT`` entries.
+    quality_flags : Tuple of str
+        Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
         These periods will be excluded from the analysis.
-    time_of_day_range : None or (datetime.time, datetime.time) tuple
-        Time of day range to calculate errors. Range is inclusive of
-        both endpoints. Do not use this to exclude nighttime; instead
-        set the corresponding quality_flag.
-    observation_range : None or (Observation, float, float) tuple
-        Observation value range to calculate errors. Range is inclusive
-        of both endpoints. Filters are applied before resampling.
     """
-    quality_flags: Tuple[int] = (7, 8, 9, 10, 13)  # a guess
-    time_of_day_range: Tuple[datetime.time, datetime.time] = None
-    observation_range: Tuple[Observation, float, float] = None
+    quality_flags: Tuple[str] = (
+        'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
+        'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
+    )
+
+    def __post_init__(self):
+        if not all(flag in DESCRIPTION_MASK_MAPPING
+                   for flag in self.quality_flags):
+            raise ValueError('Quality flags must be in '
+                             'BITMASK_DESCRIPTION_DICT')
 
 
 @dataclass(frozen=True)
-class Metrics(BaseModel):
+class TimeOfDayFilter(BaseFilter):
     """
-    Class for keeping track of metrics to be applied in a report.
-    Probably does not also keep track of computed metrics because that
-    would require a mutable class.
+    Class representing a time of day filter to be applied in a report.
 
-    Maybe not needed.
+    Parameters
+    ----------
+    time_of_day_range : (datetime.time, datetime.time) tuple
+        Time of day range to calculate errors. Range is inclusive of
+        both endpoints. Do not use this to exclude nighttime; instead
+        set the corresponding quality_flag.
     """
-    metrics: Tuple[str]
+    time_of_day_range: Tuple[datetime.time, datetime.time]
+
+
+@dataclass(frozen=True)
+class ValueFilter(BaseFilter):
+    """
+    Class representing an observation or forecast value filter to be
+    applied in a report.
+
+    Parameters
+    ----------
+    metadata : Observation or Forecast
+        Object to get values for.
+    value_range : (float, float) tuple
+        Value range to calculate errors. Range is inclusive
+        of both endpoints. Filters are applied before resampling.
+    """
+    metadata: Union[Observation, Forecast]
+    value_range: Tuple[float, float]
+
+
+def __check_metrics__():
+    # maybe belongs in the metrics package
+    # deterministic forecasts --> deterministic metrics
+    # probabilistic forecasts --> probabilistic metrics
+    # event forecasts --> event metrics
+    pass
 
 
 @dataclass(frozen=True)
@@ -458,25 +515,22 @@ class Report(BaseModel):
     end : pandas.Timestamp
         End time of the reporting period.
     forecast_observations : Tuple of ForecastObservation
-        Forecasts and Observations to be analyzed in the report.
-    filters : Filters
-        Filters to be applied to the data in the report.
-    metrics : Metrics
+        Paired Forecasts and Observations to be analyzed in the report.
+    metrics : Tuple of str
         Metrics to be computed in the report.
+    filters : Tuple of Filters
+        Filters to be applied to the data in the report.
     """
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    # forecast_observations: ForecastObservations
     forecast_observations: Tuple[ForecastObservation]
-    filters: Filters = field(default_factory=Filters)
-    metrics: Metrics = field(default_factory=Metrics)
+    metrics: Tuple[str]
+    filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
 
-
-# @dataclass(frozen=True)
-# class ForecastObservations(BaseModel):
-#     """
-#     Class for keeping track of collection of paired Forecasts and
-#     Observation objects.
-#     """
-#     pass
+    def __post_init__(self):
+        # ensure that all forecast and observation units are the same
+        __check_units__(*itertools.chain.from_iterable(
+            ((k.forecast, k.observation) for k in self.forecast_observations)))
+        # ensure the metrics can be applied to the forecasts and observations
+        __check_metrics__()

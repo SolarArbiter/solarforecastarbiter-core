@@ -47,22 +47,51 @@ Considerations:
   to be able to create time series, scatter, etc. plots.
 """
 
+from solarforecastarbiter.io.api import APISession
 
-def create_report_from_metadata(session, metadata):
+
+def get_data_for_report(session, report):
     """
-    API access needed.
+    Get data for report.
+
+    Parameters
+    ----------
+    session : solarforecastarbiter.api.APISession
+        API session for getting and posting data
+    report : solarforecastarbiter.datamodel.Report
+        Metadata describing report
+
+    Returns
+    -------
+    data : dict
+        Keys are Forecast and Observation objects, values are
+        the corresponding data.
     """
-    raise NotImplementedError
+    data = {}
+    for fxobs in report.forecast_observations:
+        data[fxobs.forecast] = session.get_forecast_values(
+            fxobs.forecast, report.start, report.end)
+        data[fxobs.observation] = session.get_observation_values(
+            fxobs.observation, report.start, report.end)
+    return data
 
-    # parse metadata
-    # get data from API
-    report = create_report_from_data()
-    # post report to API
 
-
-def create_report_from_data(metadata, data):
+def create_report_from_data(report, data):
     """
-    No API access needed
+    Create a report using data and report metadata.
+
+    Parameters
+    ----------
+    report : solarforecastarbiter.datamodel.Report
+        Metadata describing report
+    data : dict
+        Keys are all Forecast and Observation objects in the report,
+        values are the corresponding data.
+
+    Returns
+    -------
+    results : str
+        Report results in JSON format.
     """
     raise NotImplementedError
 
@@ -71,3 +100,26 @@ def create_report_from_data(metadata, data):
     # call function: format metrics into JSON
     # call function: add some metadata to JSON
     # return formatted metrics
+
+
+def create_report_from_metadata(access_token, report, base_url=None):
+    """
+    Create a report using data from API and report metadata.
+
+    Typically called as a task.
+
+    Parameters
+    ----------
+    session : solarforecastarbiter.api.APISession
+        API session for getting and posting data
+    report : solarforecastarbiter.datamodel.Report
+        Metadata describing report
+
+    Returns
+    -------
+    None
+    """
+    session = APISession(access_token, base_url=base_url)
+    data = get_data_for_report(session, report)
+    report = create_report_from_data(report, data)
+    session.post_report(report)
