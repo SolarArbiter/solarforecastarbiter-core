@@ -1,5 +1,13 @@
+from pathlib import Path
+
+import netCDF4 as nc4
+
+BASE_PATH = ''
+
+
 def load_forecast(latitude, longitude, init_time, start, end, model,
-                  variables=('ghi', 'dni', 'dhi', 'temp_air', 'wind_speed')):
+                  variables=('ghi', 'dni', 'dhi', 'temp_air', 'wind_speed'),
+                  base_path=BASE_PATH):
     """Load NWP model data.
 
     Parameters
@@ -41,4 +49,6 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
     ------
     ValueError : Raised if the requested variable is not found.
     """
-    raise NotImplementedError
+
+    filepath = Path(base_path) / model / init_time.strftime('%Y/%m/%d/%H')
+    nc4.Dataset(filepath, mode='r')

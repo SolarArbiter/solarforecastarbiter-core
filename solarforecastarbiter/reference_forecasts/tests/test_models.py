@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 import types
 
 import pandas as pd
@@ -6,6 +7,7 @@ import pandas as pd
 
 import pytest
 
+from solarforecastarbiter.io import nwp
 from solarforecastarbiter.reference_forecasts import models
 
 
@@ -13,7 +15,7 @@ from solarforecastarbiter.reference_forecasts import models
 latitude = 32.2
 longitude = -110.9
 elevation = 700
-init_time = pd.Timestamp('20190328T1200Z')
+init_time = pd.Timestamp('20190515T0000Z')
 start = pd.Timestamp('20190328T1300Z')
 end = pd.Timestamp('20190328T1400Z')
 
@@ -38,7 +40,6 @@ def check_out(out, expected):
     assert isinstance(out[6], (types.FunctionType, partial))
 
 
-@pytest.mark.xfail(raises=NotImplementedError, strict=True)
 @pytest.mark.parametrize('model', [
     models.gfs_quarter_deg_3hour_to_hourly_mean,
     models.gfs_quarter_deg_hourly_to_hourly_mean,
@@ -52,8 +53,11 @@ def check_out(out, expected):
     models.rap_ghi_to_instantaneous,
 ])
 def test_default_load_forecast(model):
-    out = models.hrrr_subhourly_to_subhourly_instantaneous(
-        latitude, longitude, elevation, init_time, start, end)
+    BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
+    load_forecast = partial(nwp.load_forecast, base_path=BASE_PATH)
+    out = model(
+        latitude, longitude, elevation, init_time, start, end,
+        load_forecast=load_forecast)
     check_out(out, out_forecast_exp)
 
 
