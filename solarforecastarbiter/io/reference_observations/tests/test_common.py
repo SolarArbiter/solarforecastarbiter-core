@@ -19,7 +19,7 @@ def log(mocker):
 
 
 site_test_observation = Observation.from_dict({
-    'name': 'ARM site ghi',
+    'name': 'site ghi',
     'variable': 'ghi',
     'interval_label': 'ending',
     'interval_value_type': 'interval_mean',
@@ -56,7 +56,7 @@ def test_decode_extra_parameters_error(mocker, log):
     (site_objects[1], 'site2'),
     (site_objects[2], 'site3')
 ])
-def gest_site_name_no_network(site, expected):
+def test_site_name_no_network(site, expected):
     assert common.site_name_no_network(site) == expected
 
 
@@ -128,7 +128,7 @@ def test_create_observation_long_site(mock_api, site, variable, expected):
 
 
 observation_with_extra_params = Observation.from_dict({
-    'name': 'ARM site ghi',
+    'name': 'site ghi',
     'variable': 'ghi',
     'interval_label': 'ending',
     'interval_value_type': 'interval_mean',

@@ -44,7 +44,7 @@ def check_network(networks, metadata):
         The name of the network to check for or a list of
         networks to check against.
     metadata
-        An instantiated dataclass from teh datamodel.
+        An instantiated dataclass from the datamodel.
 
     Returns
     -------

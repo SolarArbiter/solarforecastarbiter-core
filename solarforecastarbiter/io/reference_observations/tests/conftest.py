@@ -49,7 +49,7 @@ site_dicts = [
 def expected_site(site):
     new_site = site.copy()
     network = site['extra_parameters'].get('network', '')
-    new_site['name'] = f"{network} {site['name']}"
+    new_site['name'] = f"{site['name']}"
     new_site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
     return new_site
 
