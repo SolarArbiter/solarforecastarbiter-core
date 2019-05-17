@@ -4,28 +4,24 @@ import numpy as np
 
 from solarforecastarbiter import __version__
 
-template = f"""
-This report was automatically generated using the Solar Forecast Arbiter.
+from jinja2 import Environment, PackageLoader, select_autoescape
 
-Important metadata...
 
-warn if data checksum does not equal saved checksum
+def main():
+    env = Environment(
+        loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
 
-Data
-----
-INSERT figures.timeseries AND figures.scatter PLOTS
+    template = env.get_template('template.md')
 
-Metrics
--------
-USE FUNCTIONS TO RENDER TABLES AND figures.bar PLOTS FROM JSON DATA
-
-Versions
---------
+    print_versions = f"""
 solarforecastarbiter: {__version__}
 pandas: {pd.__version__}
 numpy: {np.__version__}
+    """
+    print(template.render(print_versions=print_versions))
 
-Hash
-----
-Report hash
-"""
+
+if __name__ == '__main__':
+    main()
