@@ -1,2 +1,3 @@
 include versioneer.py
 include solarforecastarbiter/_version.py
+include solarforecastarbiter/io/reference_observations/sfa_reference_sites.csv

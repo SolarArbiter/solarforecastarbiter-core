@@ -50,5 +50,9 @@ setup(
     project_urls={
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,
         'Source': 'https://github.com/solararbiter/solarforecastarbiter-core'
+    },
+    entry_points = {
+        'console_scripts': ['sfa_reference_data=solarforecastarbiter.io.reference_observations.reference_data:main']
     }
+
 )

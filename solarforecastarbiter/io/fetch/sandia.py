@@ -58,11 +58,17 @@ def fetch_sandia(location, api_key, start, end):
     dfs = []
     for data_type in data_types:
         df = request_sandia_data(location, data_type, start, end, api_key)
+        if df.empty:
+            continue
         df.index = pd.to_datetime(df['TmStamp'], unit='ms', utc=True)
         df = df.drop('TmStamp', axis=1)
         # Append the datatype to the end of AmbientTemp so we can differentiate
         # system from weather temperatures
         df = df.rename(columns={'AmbientTemp': f'AmbientTemp_{data_type}'})
         dfs.append(df)
-    data = pd.concat(dfs, axis=1)
+    try:
+        data = pd.concat(dfs, axis=1)
+    except ValueError:
+        # empty data
+        return pd.DataFrame()
     return data
