@@ -156,7 +156,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
-    # dni and dhi not in RAP output available from g2sub service
+    # ghi dni and dhi not in RAP output available from g2sub service
     ghi, temp_air, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'rap',
         variables=('ghi', 'temp_air', 'wind_speed'))
@@ -176,7 +176,7 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
-    # dni and dhi not in RAP output available from g2sub service
+    # ghi dni and dhi not in RAP output available from g2sub service
     ghi, temp_air, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'rap',
         variables=('ghi', 'temp_air', 'wind_speed'))
@@ -232,7 +232,7 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     cloud_cover, temp_air, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'gfs_0p25',
         variables=('cloud_cover', 'temp_air', 'wind_speed'))
-    cloud_cover = forecast.unmix_intervals(cloud_cover)
+    # cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, temp_air, wind_speed)
 

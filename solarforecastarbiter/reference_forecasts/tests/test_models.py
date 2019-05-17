@@ -40,17 +40,22 @@ def check_out(out, expected):
     assert isinstance(out[6], (types.FunctionType, partial))
 
 
+xfail_g2sub = pytest.mark.xfail(reason='ghi does not exist in g2sub')
+
+
 @pytest.mark.parametrize('model', [
-    models.gfs_quarter_deg_3hour_to_hourly_mean,
+    pytest.param(models.gfs_quarter_deg_3hour_to_hourly_mean,
+                 marks=pytest.mark.xfail(reason='gfs_3h not available')),
     models.gfs_quarter_deg_hourly_to_hourly_mean,
-    models.gfs_quarter_deg_to_hourly_mean,
+    pytest.param(models.gfs_quarter_deg_to_hourly_mean,
+                 marks=pytest.mark.xfail(raises=NotImplementedError)),
     models.hrrr_subhourly_to_hourly_mean,
     models.hrrr_subhourly_to_subhourly_instantaneous,
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
-    models.rap_ghi_to_hourly_mean,
-    models.rap_ghi_to_instantaneous,
+    pytest.param(models.rap_ghi_to_hourly_mean, marks=xfail_g2sub),
+    pytest.param(models.rap_ghi_to_instantaneous, marks=xfail_g2sub)
 ])
 def test_default_load_forecast(model):
     BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'

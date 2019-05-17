@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import xarray as xr
 
 BASE_PATH = ''
@@ -66,13 +67,61 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
 
     with xr.open_dataset(filepath) as ds:
         # might want to check for points that are (too far) out of the domain
-        pnt = ds.sel(latitude=latitude, longitude=longitude, method='nearest')
+        try:
+            pnt = ds.sel(latitude=latitude, longitude=longitude,
+                         method='nearest')
+        except ValueError:
+            iy_min, ix_min = tunnel_fast(ds.latitude, ds.longitude, latitude,
+                                         longitude)
+            pnt = ds.sel(y=iy_min, x=ix_min, method='nearest')
         pnt = pnt.rename(mapping_subset)
-        return [pnt[variable] for variable in variables]
+        return [pnt[variable].to_series() for variable in variables]
 
-    # with nc4.Dataset(filepath, mode='r') as store:
-    #     for variable in variables:
-    #         store.variables[variable][0]
-    #     timevar = store.variables['time'][0]
-    #     timeindex = pd.to_datetime(np.ma.compressed(timevar), utc=True,
-    #         unit='s')
+
+def tunnel_fast(latvar, lonvar, lat0, lon0):
+    """
+    Find closest point in a set of (lat, lon) points to specified point.
+
+    Returns iy,ix such that the square of the tunnel distance
+    between (latval[it,ix],lonval[iy,ix]) and (lat0,lon0)
+    is minimum.
+
+    Parameters
+    ----------
+    latvar : numpy.array
+        Model latitudes.
+    lonvar : numpy.array
+        Model longitudes.
+    lat0 : float
+        Latitude of desired point.
+    lon0 : float
+        Longitude of desired point.
+
+    Returns
+    -------
+    iy_min : int
+        Index of point in latitude array that minimizes distance to
+        desired point.
+    ix_min : int
+        Index of point in longitude array that minimizes distance to
+        desired point.
+
+    References
+    ----------
+    https://github.com/Unidata/python-workshop/blob/fall-2016/notebooks/netcdf-by-coordinates.ipynb
+    """
+    rad_factor = np.pi/180.0
+    latvals = latvar * rad_factor
+    lonvals = lonvar * rad_factor
+    ny, nx = latvals.shape
+    lat0_rad = lat0 * rad_factor
+    lon0_rad = lon0 * rad_factor
+    clat, clon = np.cos(latvals), np.cos(lonvals)
+    slat, slon = np.sin(latvals), np.sin(lonvals)
+    delX = np.cos(lat0_rad)*np.cos(lon0_rad) - clat*clon
+    delY = np.cos(lat0_rad)*np.sin(lon0_rad) - clat*slon
+    delZ = np.sin(lat0_rad) - slat
+    dist_sq = delX**2 + delY**2 + delZ**2
+    minindex_1d = dist_sq.argmin()  # 1D index of minimum element
+    iy_min, ix_min = np.unravel_index(minindex_1d, latvals.shape)
+    return iy_min, ix_min
