@@ -65,15 +65,24 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
 
     mapping_subset = {k: v for k, v in CF_MAPPING.items() if v in variables}
 
+    limit = 500  # maximum distance from point to closest grid point
+
     with xr.open_dataset(filepath) as ds:
         # might want to check for points that are (too far) out of the domain
         try:
             pnt = ds.sel(latitude=latitude, longitude=longitude,
                          method='nearest')
         except ValueError:
-            iy_min, ix_min = tunnel_fast(ds.latitude, ds.longitude, latitude,
-                                         longitude)
+            iy_min, ix_min = tunnel_fast(
+                ds.latitude.values, ds.longitude.values,
+                latitude, longitude, limit=limit)
             pnt = ds.sel(y=iy_min, x=ix_min, method='nearest')
+        else:
+            # we already have the point, but use tunnel_fast to determine
+            # if it's close enough
+            tunnel_fast(ds.latitude.values[:, np.newaxis],
+                        ds.longitude.values[:, np.newaxis],
+                        latitude, longitude, limit=limit)
         pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
         pnt['temp_air'] -= 273.15  # convert Kelvin to deg C
@@ -82,7 +91,7 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
         return series
 
 
-def tunnel_fast(latvar, lonvar, lat0, lon0):
+def tunnel_fast(latvar, lonvar, lat0, lon0, limit=None):
     """
     Find closest point in a set of (lat, lon) points to specified point.
 
@@ -100,6 +109,8 @@ def tunnel_fast(latvar, lonvar, lat0, lon0):
         Latitude of desired point.
     lon0 : float
         Longitude of desired point.
+    limit : None or float
+        Maximum distance allowed in units of km.
 
     Returns
     -------
@@ -109,6 +120,11 @@ def tunnel_fast(latvar, lonvar, lat0, lon0):
     ix : int
         Index of point in longitude array that minimizes distance to
         desired point.
+
+    Raises
+    ------
+    ValueError
+        If closest point exceeds minimum distance requirement.
 
     References
     ----------
@@ -126,6 +142,18 @@ def tunnel_fast(latvar, lonvar, lat0, lon0):
     delY = np.cos(lat0_rad)*np.sin(lon0_rad) - clat*slon
     delZ = np.sin(lat0_rad) - slat
     dist_sq = delX**2 + delY**2 + delZ**2
+    if limit is not None:
+        dist = 6378.1 * np.sqrt(dist_sq.min())
+        if dist > limit:
+            raise ValueError('Maximum distance limit exceeded')
     minindex_1d = dist_sq.argmin()  # 1D index of minimum element
     iy_min, ix_min = np.unravel_index(minindex_1d, latvals.shape)
     return iy_min, ix_min
+
+
+if __name__ == "__main__":
+
+    tunnel_fast(
+        np.array([32.0, 32.25, 32.5]),
+        np.array([-110.5, -110.25, -110.0]),
+        50, 60, limit=1)

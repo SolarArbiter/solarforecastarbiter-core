@@ -76,3 +76,19 @@ def test_gfs_quarter_deg_hourly_to_hourly_mean(model, end, end_strict):
         latitude, longitude, elevation, init_time, start, end,
         load_forecast=LOAD_FORECAST)
     check_out(out, start, end, end_strict=end_strict)
+
+
+@pytest.mark.parametrize('model', [
+    'hrrr_hourly',
+    'hrrr_subhourly',
+    'gfs_0p25',
+    'rap',
+    'nam_12km'
+])
+def test_domain_limits(model):
+    # test file has longitudes ranging from -110.50 to -110.35
+    # at midlatitudes, a degree of longitude is approximately 85 km
+    # a 10 degree difference is then 850 km.
+    # nwp.load_forecast calls lat/lon look up with max dist of 500 km
+    with pytest.raises(ValueError):
+        LOAD_FORECAST(latitude, -120.5, init_time, start, end_short, model)
