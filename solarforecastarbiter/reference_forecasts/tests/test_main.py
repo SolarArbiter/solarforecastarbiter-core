@@ -16,7 +16,7 @@ init_time = pd.Timestamp('20190515T0000Z')
 start = pd.Timestamp('20190515T0300Z')
 end = pd.Timestamp('20190515T0400Z')
 
-index_exp = pd.DatetimeIndex(start=start, end=end, freq='1h')
+index_exp = pd.date_range(start=start, end=end, freq='1h')
 ghi_exp = pd.Series([0, 10.], index=index_exp)
 dni_exp = pd.Series([0, 15.], index=index_exp)
 dhi_exp = pd.Series([0, 9.], index=index_exp)
