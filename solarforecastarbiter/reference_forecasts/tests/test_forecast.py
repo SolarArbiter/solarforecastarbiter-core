@@ -16,20 +16,20 @@ def assert_none_or_series(out, expected):
 
 
 def test_resample_args():
-    index = pd.DatetimeIndex(start='20190101', freq='15min', periods=5)
+    index = pd.date_range(start='20190101', freq='15min', periods=5)
     args = [
         None, pd.Series([1, 0, 0, 0, 2], index=index)
     ]
-    idx_exp = pd.DatetimeIndex(start='20190101', freq='1h', periods=2)
+    idx_exp = pd.date_range(start='20190101', freq='1h', periods=2)
     expected = [None, pd.Series([0.25, 2.], index=idx_exp)]
     out = forecast.resample_args(*args)
     assert_none_or_series(out, expected)
 
 
 def test_resample():
-    index = pd.DatetimeIndex(start='20190101', freq='15min', periods=5)
+    index = pd.date_range(start='20190101', freq='15min', periods=5)
     arg = pd.Series([1, 0, 0, 0, 2], index=index)
-    idx_exp = pd.DatetimeIndex(start='20190101', freq='1h', periods=2)
+    idx_exp = pd.date_range(start='20190101', freq='1h', periods=2)
     expected = pd.Series([0.25, 2.], index=idx_exp)
     out = forecast.resample(arg)
     assert_series_equal(out, expected)
@@ -37,12 +37,12 @@ def test_resample():
 
 
 def test_interpolate():
-    index = pd.DatetimeIndex(start='20190101', freq='15min', periods=2)
+    index = pd.date_range(start='20190101', freq='15min', periods=2)
     arg = pd.Series([0, 1.5], index=index)
     out = forecast.interpolate(arg)
     assert_series_equal(out, arg)
 
-    idx_exp = pd.DatetimeIndex(start='20190101', freq='5min', periods=4)
+    idx_exp = pd.date_range(start='20190101', freq='5min', periods=4)
     expected = pd.Series([0., 0.5, 1., 1.5], index=idx_exp)
     out = forecast.interpolate(arg, freq='5min')
     assert_series_equal(out, expected)
@@ -63,7 +63,7 @@ def test_cloud_cover_to_ghi_linear():
 
 @pytest.mark.xfail(raises=AssertionError, strict=True)
 def test_cloud_cover_to_irradiance_ghi_clear():
-    index = pd.DatetimeIndex(start='20190101', periods=3, freq='1h')
+    index = pd.date_range(start='20190101', periods=3, freq='1h')
     cloud_cover = pd.Series([0, 50, 100.], index=index)
     ghi_clear = pd.Series([10, 10, 1000.], index=index)
     zenith = pd.Series([90.0, 89.9, 45], index=index)
@@ -81,7 +81,7 @@ def test_cloud_cover_to_irradiance_ghi_clear():
 
 @pytest.mark.xfail(raises=AssertionError, strict=True)
 def test_cloud_cover_to_irradiance():
-    index = pd.DatetimeIndex(start='20190101', periods=3, freq='1h')
+    index = pd.date_range(start='20190101', periods=3, freq='1h')
     cloud_cover = pd.Series([0, 50, 100.], index=index)
     latitude = 32.2
     longitude = -110.9

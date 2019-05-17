@@ -690,6 +690,10 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
                 raise
         if use_tmp:
             _tmpdir.cleanup()
+        else:
+            # remove grib files
+            for f in files:
+                f.unlink()
         if once:
             break
         else:
