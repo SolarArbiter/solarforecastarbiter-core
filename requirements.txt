@@ -1,6 +1,6 @@
-netCDF4==1.4.2
-numpy==1.15.4
-pandas==0.23.4
+netCDF4==1.5.1.2
+numpy==1.16.3
+pandas==0.24.2
 python-dateutil==2.7.3
 requests==2.21.0
 pvlib==0.6.3

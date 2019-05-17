@@ -23,7 +23,7 @@ The functions return a tuple of:
   * ghi : pd.Series
   * dni : pd.Series
   * dhi : pd.Series
-  * temp_air : pd.Series
+  * air_temperature : pd.Series
   * wind_speed : pd.Series
   * resampler : function
       A function that resamples data to the appropriate frequency.
@@ -68,7 +68,7 @@ from solarforecastarbiter.reference_forecasts import forecast
 
 
 def _resample_using_cloud_cover(latitude, longitude, elevation,
-                                cloud_cover, temp_air, wind_speed):
+                                cloud_cover, air_temperature, wind_speed):
     """
     Calculate all irradiance components from cloud cover.
     """
@@ -77,8 +77,8 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     # inputs. Why 5 minutes? It's a round number that produces order 10 data
     # points per hour, so it's reasonable for hour average calculations.
     interpolator = partial(forecast.interpolate, freq='5min')
-    cloud_cover, temp_air, wind_speed = list(
-        map(interpolator, (cloud_cover, temp_air, wind_speed)))
+    cloud_cover, air_temperature, wind_speed = list(
+        map(interpolator, (cloud_cover, air_temperature, wind_speed)))
     solar_position = pvmodel.calculate_solar_position(
         latitude, longitude, elevation, cloud_cover.index)
     ghi, dni, dhi = forecast.cloud_cover_to_irradiance(
@@ -88,7 +88,8 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
 
     def solar_pos_calculator(): return solar_position
 
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def _ghi_to_dni_dhi(latitude, longitude, elevation, ghi):
@@ -112,7 +113,7 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
     GHI, DNI, DHI directly from model.
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
-    ghi, dni, dhi, temp_air, wind_speed = load_forecast(
+    ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'hrrr_subhourly')
     # resampler takes 15 min instantaneous in, retuns 15 min instantaneous out
     # still want to call resample, rather than pass through lambda x: x
@@ -121,7 +122,8 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,
         ghi.index)
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
@@ -132,20 +134,21 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     GHI, DNI, DHI directly from model, resampled.
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
-    ghi, dni, dhi, temp_air, wind_speed = load_forecast(
+    ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'hrrr_subhourly')
     # interpolate irrad, temp, wind data to 5 min to
     # minimize weather to power errors.
     interpolator = partial(forecast.interpolate, freq='5min')
-    ghi, dni, dhi, temp_air, wind_speed = list(
-        map(interpolator, (ghi, dni, dhi, temp_air, wind_speed)))
+    ghi, dni, dhi, air_temperature, wind_speed = list(
+        map(interpolator, (ghi, dni, dhi, air_temperature, wind_speed)))
     # user may weather (and optionally power) will eventually be resampled
     # to hourly average using resampler defined below
     resampler = partial(forecast.resample, freq='1h')
     solar_pos_calculator = partial(
         pvmodel.calculate_solar_position, latitude, longitude, elevation,
         ghi.index)
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def rap_ghi_to_instantaneous(latitude, longitude, elevation,
@@ -156,15 +159,16 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
-    # dni and dhi not in RAP output available from g2sub service
-    ghi, temp_air, wind_speed = load_forecast(
+    # ghi dni and dhi not in RAP output available from g2sub service
+    ghi, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'rap',
-        variables=('ghi', 'temp_air', 'wind_speed'))
+        variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     # hourly instant in, hourly instant out
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
@@ -176,17 +180,18 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
-    # dni and dhi not in RAP output available from g2sub service
-    ghi, temp_air, wind_speed = load_forecast(
+    # ghi dni and dhi not in RAP output available from g2sub service
+    ghi, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'rap',
-        variables=('ghi', 'temp_air', 'wind_speed'))
+        variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     interpolator = partial(forecast.interpolate, freq='5min')
-    ghi, dni, dhi, temp_air, wind_speed = list(
-        map(interpolator, (ghi, dni, dhi, temp_air, wind_speed)))
+    ghi, dni, dhi, air_temperature, wind_speed = list(
+        map(interpolator, (ghi, dni, dhi, air_temperature, wind_speed)))
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
@@ -198,11 +203,12 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
-    cloud_cover, temp_air, wind_speed = load_forecast(
+    cloud_cover, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'rap',
-        variables=('cloud_cover', 'temp_air', 'wind_speed'))
+        variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
-                                       cloud_cover, temp_air, wind_speed)
+                                       cloud_cover, air_temperature,
+                                       wind_speed)
 
 
 def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
@@ -213,11 +219,13 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 240 hours.
     """
-    cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_3h')
+    cloud_cover, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, 'gfs_3h',
+        variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
-                                       cloud_cover, temp_air, wind_speed)
+                                       cloud_cover, air_temperature,
+                                       wind_speed)
 
 
 def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
@@ -228,11 +236,13 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 120 hours.
     """
-    cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_1h')
-    cloud_cover = forecast.unmix_intervals(cloud_cover)
+    cloud_cover, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        variables=('cloud_cover', 'air_temperature', 'wind_speed'))
+    # cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
-                                       cloud_cover, temp_air, wind_speed)
+                                       cloud_cover, air_temperature,
+                                       wind_speed)
 
 
 def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
@@ -260,13 +270,15 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 36 hours.
     """
-    ghi, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam')
+    ghi, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, 'nam_12km',
+        variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
     # hourly instant in, hourly instant out
     resampler = partial(forecast.resample, freq='1h')
-    return ghi, dni, dhi, temp_air, wind_speed, resampler, solar_pos_calculator
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
 
 
 def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
@@ -277,8 +289,9 @@ def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 72 hours.
     """
-    cloud_cover, temp_air, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam',
-        variables=('cloud_cover', 'temp_air', 'wind_speed'))
+    cloud_cover, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, 'nam_12km',
+        variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
-                                       cloud_cover, temp_air, wind_speed)
+                                       cloud_cover, air_temperature,
+                                       wind_speed)

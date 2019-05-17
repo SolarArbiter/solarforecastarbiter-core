@@ -1,4 +1,6 @@
 import datetime as dt
+from functools import partial
+from pathlib import Path
 import re
 
 import pandas as pd
@@ -6,16 +8,15 @@ import pandas as pd
 
 import pytest
 
-from solarforecastarbiter.io import api, utils
+from solarforecastarbiter.io import api, nwp, utils
 from solarforecastarbiter.reference_forecasts import main, models
 from solarforecastarbiter.conftest import default_forecast, default_observation
 
-# we'll need to do something better once the load_forecast function works
-init_time = pd.Timestamp('20190328T1200Z')
-start = pd.Timestamp('20190328T1300Z')
-end = pd.Timestamp('20190328T1400Z')
+init_time = pd.Timestamp('20190515T0000Z')
+start = pd.Timestamp('20190515T0300Z')
+end = pd.Timestamp('20190515T0400Z')
 
-index_exp = pd.DatetimeIndex(start=start, end=end, freq='1h')
+index_exp = pd.date_range(start=start, end=end, freq='1h')
 ghi_exp = pd.Series([0, 10.], index=index_exp)
 dni_exp = pd.Series([0, 15.], index=index_exp)
 dhi_exp = pd.Series([0, 9.], index=index_exp)
@@ -39,20 +40,10 @@ def check_out(out, expected, site_type):
         assert out[5] is None
 
 
-# can't figure out how to mock the load_forecast function here, so
-# xfail for now. This all needs to change eventually anyways.
-@pytest.mark.xfail(raises=NotImplementedError, strict=True)
 @pytest.mark.parametrize('model,load_forecast_return_value', [
-    pytest.param(
-        models.gfs_quarter_deg_3hour_to_hourly_mean,
-        load_forecast_return_value_3),
     pytest.param(
         models.gfs_quarter_deg_hourly_to_hourly_mean,
         load_forecast_return_value_3),
-    pytest.param(
-        models.gfs_quarter_deg_to_hourly_mean,
-        load_forecast_return_value_3,
-        marks=pytest.mark.xfail(strict=True, raises=NotImplementedError)),
     (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
     (models.hrrr_subhourly_to_subhourly_instantaneous,
         load_forecast_return_value_5),
@@ -62,11 +53,12 @@ def check_out(out, expected, site_type):
      load_forecast_return_value_3),
     pytest.param(models.rap_cloud_cover_to_hourly_mean,
                  load_forecast_return_value_3),
-    (models.rap_ghi_to_hourly_mean, load_forecast_return_value_3),
-    (models.rap_ghi_to_instantaneous, load_forecast_return_value_3),
 ])
 def test_run(model, load_forecast_return_value, site_powerplant_site_type,
              mocker):
+    BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
+    load_forecast = partial(nwp.load_forecast, base_path=BASE_PATH)
+    model = partial(model, load_forecast=load_forecast)
     mocker.patch(
         'solarforecastarbiter.reference_forecasts.forecast.unmix_intervals',
         return_value=cloud_cover_exp)
