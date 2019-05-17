@@ -2,10 +2,8 @@
 Plots.
 """
 
-from dataclasses import dataclass
-
-from bokeh.embed import components
 from bokeh.models import ColumnDataSource
+from bokeh.models.ranges import Range1d
 from bokeh.plotting import figure
 from bokeh import palettes
 
@@ -15,14 +13,14 @@ import pandas as pd
 PALETTE = palettes.d3['Category10'][6]
 
 
-def format_variable_name(variable):
+def format_variable_name(variable, units):
     """Make a nice human readable name."""
     caps = ('ac_', 'dc_', 'poa_', 'ghi', 'dni', 'dhi')
     fname = variable
     for cap in caps:
         fname = fname.replace(cap, cap.upper())
     fname = fname.replace('_', ' ')
-    return fname
+    return fname + f' ({units})'
 
 
 def line_or_step(interval_label):
@@ -61,12 +59,16 @@ def construct_fx_obs_cds(fx_obs, fx_values, obs_values):
 
 def _obs_name(fx_obs):
     if fx_obs.forecast.name == fx_obs.observation.name:
-        return fx_obs.forecast.name + ' Observation'
+        return fx_obs.observation.name + ' Observation'
+    else:
+        return fx_obs.observation.name
 
 
 def _fx_name(fx_obs):
     if fx_obs.forecast.name == fx_obs.observation.name:
         return fx_obs.forecast.name + ' Forecast'
+    else:
+        return fx_obs.forecast.name
 
 
 def timeseries(fx_obs_cds, start, end):
@@ -121,14 +123,65 @@ def timeseries(fx_obs_cds, start, end):
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    fig.xaxis.axis_label = 'Time'
-    fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable)
+    fig.xaxis.axis_label = 'Time (UTC)'
+    fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable,
+                                                fx_obs.forecast.units)
 
     return fig
 
 
-def scatter():
-    raise NotImplementedError
+def _get_scatter_limits(fx_obs_cds):
+    extremes = []
+    for _, cds in fx_obs_cds:
+        for kind in ('forecast', 'observation'):
+            extremes.append(cds.data[kind].min())
+            extremes.append(cds.data[kind].max())
+    return min(extremes), max(extremes)
+
+
+def scatter(fx_obs_cds):
+    """
+    Scatter plot of one or more forecasts and observations.
+
+    Parameters
+    ----------
+    obs_fx_cds : tuple of (ForecastObservation, cds) tuples
+        ForecastObservation is a datamodel.ForecastObservation object.
+        cds is a Bokeh ColumnDataSource with columns
+        timestamp, observation, forecast.
+    start : pandas.Timestamp
+        Report start time
+    end : pandas.Timestamp
+        Report end time
+
+    Returns
+    -------
+    fig : bokeh.plotting.figure
+    """
+    xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
+
+    fig = figure(
+        plot_width=450, plot_height=400, match_aspect=True,  # does not work?
+        x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
+        tools='pan,wheel_zoom,reset')
+
+    kwargs = dict(size=6, line_color=None)
+
+    palette = iter(PALETTE)
+
+    for fx_obs, cds in fx_obs_cds:
+        fig.scatter(
+            x='observation', y='forecast', source=cds,
+            fill_color=next(palette), legend=fx_obs.forecast.name, **kwargs)
+
+    fig.legend.location = "top_left"
+    fig.legend.click_policy = "hide"
+    label = format_variable_name(fx_obs.forecast.variable,
+                                 fx_obs.forecast.units)
+    fig.xaxis.axis_label = 'Observed ' + label
+    fig.yaxis.axis_label = 'Forecast ' + label
+
+    return fig
 
 
 def bar():
