@@ -149,11 +149,3 @@ def tunnel_fast(latvar, lonvar, lat0, lon0, limit=None):
     minindex_1d = dist_sq.argmin()  # 1D index of minimum element
     iy_min, ix_min = np.unravel_index(minindex_1d, latvals.shape)
     return iy_min, ix_min
-
-
-if __name__ == "__main__":
-
-    tunnel_fast(
-        np.array([32.0, 32.25, 32.5]),
-        np.array([-110.5, -110.25, -110.0]),
-        50, 60, limit=1)
