@@ -11,13 +11,12 @@ from solarforecastarbiter.io import nwp
 from solarforecastarbiter.reference_forecasts import models
 
 
-# we'll need to do something better once the load_forecast function works
 latitude = 32.2
 longitude = -110.9
 elevation = 700
 init_time = pd.Timestamp('20190515T0000Z')
-start = pd.Timestamp('20190328T1300Z')
-end = pd.Timestamp('20190328T1400Z')
+start = pd.Timestamp('20190515T0300Z')
+end = pd.Timestamp('20190515T0400Z')
 
 index_exp = pd.DatetimeIndex(start=start, end=end, freq='1h')
 ghi_exp = pd.Series([0, 10.], index=index_exp)
