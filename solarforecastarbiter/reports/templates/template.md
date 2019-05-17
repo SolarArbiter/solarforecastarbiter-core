@@ -24,7 +24,7 @@ USE FUNCTIONS TO RENDER TABLES AND figures.bar PLOTS FROM JSON DATA
 Versions
 --------
 
-{{ print_versions }}
+{% print_versions %}
 
 Hash
 ----
