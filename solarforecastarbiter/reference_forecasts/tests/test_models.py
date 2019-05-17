@@ -1,5 +1,6 @@
 from functools import partial
 from pathlib import Path
+import types
 
 import pandas as pd
 # from pandas.util.testing import assert_series_equal
@@ -14,8 +15,9 @@ latitude = 32.2
 longitude = -110.9
 elevation = 700
 init_time = pd.Timestamp('20190515T0000Z')
-start = pd.Timestamp('20190515T0000Z')
-end = pd.Timestamp('20190515T0100Z')
+start = pd.Timestamp('20190515T0600Z')
+end_short = pd.Timestamp('20190515T0700Z')
+end_long = pd.Timestamp('20190630T0000Z')
 
 xfail_g2sub = pytest.mark.xfail(reason='ghi does not exist in g2sub')
 
@@ -33,20 +35,44 @@ LOAD_FORECAST = partial(nwp.load_forecast, base_path=BASE_PATH)
 ])
 def test_default_load_forecast_failures(model):
     model(
-        latitude, longitude, elevation, init_time, start, end,
+        latitude, longitude, elevation, init_time, start, end_long,
         load_forecast=LOAD_FORECAST)
 
 
-def test_gfs_quarter_deg_hourly_to_hourly_mean():
-    end = pd.Timestamp('20190615T0000Z')
-    out = models.gfs_quarter_deg_hourly_to_hourly_mean(
-        latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
+def check_out(out, start, end, end_strict=True):
+    # check times
+    for o in out[0:5]:
+        assert isinstance(o, pd.Series)
+        assert o.index[0] == start
+        if end_strict:
+            assert o.index[-1] == end
+        else:
+            assert o.index[-1] <= end
+    # check irradiance limits
+    for o in out[0:3]:
+        assert (o >= 0).all() and (o < 1300).all()
+    # check temperature limits
+    assert (out[3] > -40).all() and (out[3] < 60).all()
+    # check wind speed limits
+    assert (out[4] >= 0).all() and (out[4] < 60).all()
+    # check resampling function
+    assert isinstance(out[5], partial)
+    assert isinstance(out[6], (types.FunctionType, partial))
 
 
-def noop():
+@pytest.mark.parametrize('model', [
+    models.gfs_quarter_deg_hourly_to_hourly_mean,
     models.hrrr_subhourly_to_hourly_mean,
     models.hrrr_subhourly_to_subhourly_instantaneous,
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
+])
+@pytest.mark.parametrize('end,end_strict', [
+    (end_short, True), (end_long, False)
+])
+def test_gfs_quarter_deg_hourly_to_hourly_mean(model, end, end_strict):
+    out = model(
+        latitude, longitude, elevation, init_time, start, end,
+        load_forecast=LOAD_FORECAST)
+    check_out(out, start, end, end_strict=end_strict)

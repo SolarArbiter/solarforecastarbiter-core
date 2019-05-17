@@ -74,8 +74,12 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
             iy_min, ix_min = tunnel_fast(ds.latitude, ds.longitude, latitude,
                                          longitude)
             pnt = ds.sel(y=iy_min, x=ix_min, method='nearest')
+        pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
-        return [pnt[variable].to_series() for variable in variables]
+        pnt['temp_air'] -= 273.15  # convert Kelvin to deg C
+        series = [pnt[variable].to_series().tz_localize('UTC')
+                  for variable in variables]
+        return series
 
 
 def tunnel_fast(latvar, lonvar, lat0, lon0):
