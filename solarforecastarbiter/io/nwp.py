@@ -6,7 +6,7 @@ import xarray as xr
 BASE_PATH = ''
 
 CF_MAPPING = {
-    't2m': 'temp_air',
+    't2m': 'air_temperature',
     'si10': 'wind_speed',
     'dswrf': 'ghi',
     'vbdsf': 'dni',
@@ -15,9 +15,10 @@ CF_MAPPING = {
 }
 
 
-def load_forecast(latitude, longitude, init_time, start, end, model,
-                  variables=('ghi', 'dni', 'dhi', 'temp_air', 'wind_speed'),
-                  base_path=BASE_PATH):
+def load_forecast(
+        latitude, longitude, init_time, start, end, model,
+        variables=('ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed'),
+        base_path=BASE_PATH):
     """Load NWP model data.
 
     Parameters
@@ -52,7 +53,7 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
       * ghi : pd.Series
       * dni : pd.Series
       * dhi : pd.Series
-      * temp_air : pd.Series
+      * air_temperature : pd.Series
       * wind_speed : pd.Series
 
     Raises
@@ -85,7 +86,7 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
             pnt = ds.isel(y=iy_min, x=ix_min)
         pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
-        pnt['temp_air'] -= 273.15  # convert Kelvin to deg C
+        pnt['air_temperature'] -= 273.15  # convert Kelvin to deg C
         series = [pnt[variable].to_series().tz_localize('UTC')
                   for variable in variables]
         return series
