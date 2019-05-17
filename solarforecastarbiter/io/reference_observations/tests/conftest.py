@@ -1,3 +1,4 @@
+import copy
 import json
 import numpy as np
 import pandas as pd
@@ -7,54 +8,64 @@ import pytest
 from solarforecastarbiter.datamodel import Site, Observation
 
 
-site_dicts = [
-    {
-        'name': 'ARM site',
-        'latitude': 1,
-        'longitude': 1,
-        'elevation': 5,
-        'timezone': 'Etc/GMT+8',
-        'extra_parameters': {"network": "ARM",
-                             "observation_interval_length": 1},
-    },
-    {
-        'name': 'NOAA SURFRAD site2',
-        'latitude': 2,
-        'longitude': 2,
-        'elevation': 5,
-        'timezone': 'Etc/GMT+8',
-        'extra_parameters': {"network": "NOAA SURFRAD",
-                             "observation_interval_length": 5},
-    },
-    {
-        'name': 'NOAA SOLRAD site3',
-        'latitude': 3,
-        'longitude': -3,
-        'elevation': 6,
-        'timezone': 'Etc/GMT+8',
-        'extra_parameters': {"network": "NOAA SOLRAD",
-                             "observation_interval_length": 1},
-    },
-    {
-        'name': 'site4',
-        'latitude': 4,
-        'longitude': -5,
-        'elevation': 12,
-        'timezone': 'Etc/GMT+8',
-        'extra_parameters': {"observation_interval_length": 1},
-    }
-]
+def site_dicts():
+    return [copy.deepcopy(site) for site in [
+        {
+            'name': 'site',
+            'latitude': 1,
+            'longitude': 1,
+            'elevation': 5,
+            'timezone': 'Etc/GMT+8',
+            'extra_parameters': {"network": "ARM",
+                                 "network_api_id": 'some_id',
+                                 "network_api_abbreviation": 'abbrv',
+                                 "observation_interval_length": 1},
+        },
+        {
+            'name': 'site2',
+            'latitude': 2,
+            'longitude': 2,
+            'elevation': 5,
+            'timezone': 'Etc/GMT+8',
+            'extra_parameters': {"network": "NOAA SURFRAD",
+                                 "network_api_id": 'some_id',
+                                 "network_api_abbreviation": 'abbrv',
+                                 "observation_interval_length": 5},
+        },
+        {
+            'name': 'site3',
+            'latitude': 3,
+            'longitude': -3,
+            'elevation': 6,
+            'timezone': 'Etc/GMT+8',
+            'extra_parameters': {"network": "NOAA SOLRAD",
+                                 "network_api_id": 'some_id',
+                                 "network_api_abbreviation": 'abbrv',
+                                 "observation_interval_length": 1},
+        },
+        {
+            'name': 'site4',
+            'latitude': 4,
+            'longitude': -5,
+            'elevation': 12,
+            'timezone': 'Etc/GMT+8',
+            'extra_parameters': {"observation_interval_length": 1,
+                                 "network": 'NREL MIDC',
+                                 "network_api_id": 'BMS',
+                                 "network_api_abbreviation": 'abbrv'},
+        }
+    ]]
 
 
 def expected_site(site):
     new_site = site.copy()
     network = site['extra_parameters'].get('network', '')
-    new_site['name'] = f"{site['name']}"
+    new_site['name'] = f"{network} {site['name']}"
     new_site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
     return new_site
 
 
-site_string_dicts = [expected_site(site) for site in site_dicts]
+site_string_dicts = [expected_site(site) for site in site_dicts()]
 site_objects = [Site.from_dict(site) for site in site_string_dicts]
 
 
@@ -68,18 +79,24 @@ def site_objects_param():
     return site_objects
 
 
-@pytest.fixture
-def observation_objects_param(site_objects_param):
-    return [Observation.from_dict({
+def site_to_obs(site):
+    ep = json.loads(site.extra_parameters)
+    interval_length = ep['observation_interval_length']
+    return Observation.from_dict({
         'name': 'site ghi',
         'variable': 'ghi',
-        'interval_label': 'beginning',
+        'interval_label': 'ending',
         'interval_value_type': 'interval_mean',
-        'interval_length': 1,
+        'interval_length': interval_length,
         'site': site,
         'uncertainty': 0,
         'extra_parameters': site.extra_parameters
-    }) for site in site_objects_param]
+    })
+
+
+@pytest.fixture
+def observation_objects_param(site_objects_param):
+    return [site_to_obs(site) for site in site_objects_param]
 
 
 @pytest.fixture
@@ -93,13 +110,6 @@ def mock_api(mocker, site_objects_param, observation_objects_param):
     api.list_sites.return_value = site_objects_param
     api.list_observations.return_value = observation_objects_param
     return api
-
-
-@pytest.fixture
-def mock_fetch(mocker):
-    fetch = mocker.MagicMock()
-    fetch.return_value = pd.DataFrame({})
-    return fetch
 
 
 index = pd.date_range('20190101T1200Z', '20190101T1229Z',
@@ -122,3 +132,10 @@ def fake_ghi_data():
     df = pd.DataFrame(index=index, data={'ghi': values})
     df['quality_flag'] = 0
     return df
+
+
+@pytest.fixture
+def mock_fetch(mocker, fake_ghi_data):
+    fetch = mocker.MagicMock()
+    fetch.return_value = fake_ghi_data
+    return fetch

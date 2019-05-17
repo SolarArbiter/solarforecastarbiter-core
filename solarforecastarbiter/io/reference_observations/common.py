@@ -26,12 +26,19 @@ def decode_extra_parameters(metadata):
     -------
     dict
         The extra parameters as a python dictionary
+
+    Raises
+    ------
+    ValueError
+        If parameters cannot be decoded or are None. Or if missing the
+        required keys: network, network_api_id, network_api_abbreviation
+        and observation_interval_length.
     """
     try:
         params = json.loads(metadata.extra_parameters)
     except (json.decoder.JSONDecodeError, TypeError):
         raise ValueError(f'Could not read extra parameters of {metadata.name}')
-    required_keys = ['network_api_id', 'network_api_abbreviation',
+    required_keys = ['network', 'network_api_id', 'network_api_abbreviation',
                      'observation_interval_length']
     if not all([key in params for key in required_keys]):
         raise ValueError(f'{metadata.name} is missing required extra '
@@ -107,7 +114,8 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     extra_params : dict, optional
         If provided, this dict will be serialized as the 'extra_parameters'
         field of the observation, otherwise the site's field is copied over.
-        Must contain the key 'observation_interval_length'.
+        Must contain the keys 'network_api_length', 'network_api_id', and
+        'observation_interval_length'.
 
     Other Parameters
     ----------------
@@ -124,6 +132,13 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     -------
     created
         The datamodel object of the newly created observation.
+
+    Raises
+    ------
+    KeyError
+        When the extra_parameters, either loaded from the site or provided
+        by the user is missing 'network_api_abbreviation'
+        or 'observation_interval_length'
 
     """
     # Copy network api data from the site, and get the observation's
@@ -197,7 +212,8 @@ def update_site_observations(api, fetch_func, site, observations,
 
 
 def post_observation_data(api, observation, data, start, end):
-    """
+    """Posts data to an observation between start and end.
+
     Parameters
     ----------
     api : solarforecastarbiter.io.APISession

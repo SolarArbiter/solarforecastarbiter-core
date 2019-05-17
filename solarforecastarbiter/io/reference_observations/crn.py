@@ -103,7 +103,7 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    crn_sites = common.filter_by_network(sites, 'NOAA USCRN')
+    crn_sites = common.filter_by_networks(sites, 'NOAA USCRN')
     for site in crn_sites:
         common.update_site_observations(
             api, fetch, site, observations, start, end)

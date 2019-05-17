@@ -64,7 +64,10 @@ def update_observation_data(api, sites, observations, start, end):
                      'set to update SANDIA observation data.')
     sandia_sites = common.filter_by_networks(sites, 'SANDIA')
     for site in sandia_sites:
-        site_extra_params = common.decode_extra_parameters(site)
+        try:
+            site_extra_params = common.decode_extra_parameters(site)
+        except ValueError:
+            continue
         sandia_site_id = site_extra_params['network_api_id']
         obs_df = sandia.fetch_sandia(
             sandia_site_id,
@@ -78,4 +81,4 @@ def update_observation_data(api, sites, observations, start, end):
             continue
         site_observations = [obs for obs in observations if obs.site == site]
         for obs in site_observations:
-            common.post_observation_data(api, obs, data_in_range)
+            common.post_observation_data(api, obs, data_in_range, start, end)
