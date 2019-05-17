@@ -58,17 +58,19 @@ def construct_fx_obs_cds(fx_obs, fx_values, obs_values):
 
 
 def _obs_name(fx_obs):
+    # TODO: add code to ensure obs names are unique
+    name = fx_obs.observation.name
     if fx_obs.forecast.name == fx_obs.observation.name:
-        return fx_obs.observation.name + ' Observation'
-    else:
-        return fx_obs.observation.name
+        name += ' Observation'
+    return name
 
 
 def _fx_name(fx_obs):
+    # TODO: add code to ensure fx names are unique
+    name = fx_obs.forecast.name
     if fx_obs.forecast.name == fx_obs.observation.name:
-        return fx_obs.forecast.name + ' Forecast'
-    else:
-        return fx_obs.forecast.name
+        name += ' Forecast'
+    return name
 
 
 def timeseries(fx_obs_cds, start, end):
@@ -149,10 +151,6 @@ def scatter(fx_obs_cds):
         ForecastObservation is a datamodel.ForecastObservation object.
         cds is a Bokeh ColumnDataSource with columns
         timestamp, observation, forecast.
-    start : pandas.Timestamp
-        Report start time
-    end : pandas.Timestamp
-        Report end time
 
     Returns
     -------

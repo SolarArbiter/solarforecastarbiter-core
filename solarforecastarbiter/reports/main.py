@@ -69,10 +69,14 @@ def get_data_for_report(session, report):
     """
     data = {}
     for fxobs in report.forecast_observations:
-        data[fxobs.forecast] = session.get_forecast_values(
-            fxobs.forecast, report.start, report.end)
-        data[fxobs.observation] = session.get_observation_values(
-            fxobs.observation, report.start, report.end)
+        # forecasts and especially observations may be repeated.
+        # only get the raw data once.
+        if fxobs.forecast not in data:
+            data[fxobs.forecast] = session.get_forecast_values(
+                fxobs.forecast, report.start, report.end)
+        if fxobs.observation not in data:
+            data[fxobs.observation] = session.get_observation_values(
+                fxobs.observation, report.start, report.end)
     return data
 
 
