@@ -66,23 +66,23 @@ def load_forecast(latitude, longitude, init_time, start, end, model,
     mapping_subset = {k: v for k, v in CF_MAPPING.items() if v in variables}
 
     limit = 500  # maximum distance from point to closest grid point
-
     with xr.open_dataset(filepath) as ds:
-        # might want to check for points that are (too far) out of the domain
-        try:
-            pnt = ds.sel(latitude=latitude, longitude=longitude,
-                         method='nearest')
-        except ValueError:
-            iy_min, ix_min = tunnel_fast(
-                ds.latitude.values, ds.longitude.values,
-                latitude, longitude, limit=limit)
-            pnt = ds.sel(y=iy_min, x=ix_min, method='nearest')
+        lats = ds.latitude.values
+        lons = ds.longitude.values
+        if lats.ndim == 1:
+            # ds uses lat and lon as primary coordinates. We still want to use
+            # tunnel_fast to determine distance so that we can check that
+            # the query point is not too far out of the domain.
+            # tunnel_fast requires 2D grid
+            lats, lons = np.meshgrid(lats, lons)
+        iy_min, ix_min = tunnel_fast(lats, lons, latitude, longitude,
+                                     limit=limit)
+        # could avoid this if statement if we only use positional indexing
+        # like ds[iy_min, ix_min] but this seems safer
+        if ds.latitude.ndim == 1:
+            pnt = ds.isel(latitude=iy_min, longitude=ix_min)
         else:
-            # we already have the point, but use tunnel_fast to determine
-            # if it's close enough
-            tunnel_fast(ds.latitude.values[:, np.newaxis],
-                        ds.longitude.values[:, np.newaxis],
-                        latitude, longitude, limit=limit)
+            pnt = ds.isel(y=iy_min, x=ix_min)
         pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
         pnt['temp_air'] -= 273.15  # convert Kelvin to deg C
@@ -133,7 +133,6 @@ def tunnel_fast(latvar, lonvar, lat0, lon0, limit=None):
     rad_factor = np.pi/180.0
     latvals = latvar * rad_factor
     lonvals = lonvar * rad_factor
-    ny, nx = latvals.shape
     lat0_rad = lat0 * rad_factor
     lon0_rad = lon0 * rad_factor
     clat, clon = np.cos(latvals), np.cos(lonvals)
