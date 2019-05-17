@@ -82,8 +82,8 @@ def tunnel_fast(latvar, lonvar, lat0, lon0):
     """
     Find closest point in a set of (lat, lon) points to specified point.
 
-    Returns iy,ix such that the square of the tunnel distance
-    between (latval[it,ix],lonval[iy,ix]) and (lat0,lon0)
+    Returns iy, ix such that the square of the tunnel distance
+    between (latval[it, ix], lonval[iy, ix]) and (lat0, lon0)
     is minimum.
 
     Parameters
@@ -99,10 +99,10 @@ def tunnel_fast(latvar, lonvar, lat0, lon0):
 
     Returns
     -------
-    iy_min : int
+    iy : int
         Index of point in latitude array that minimizes distance to
         desired point.
-    ix_min : int
+    ix : int
         Index of point in longitude array that minimizes distance to
         desired point.
 
