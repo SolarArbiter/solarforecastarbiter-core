@@ -103,7 +103,11 @@ def create_report_from_data(report, data):
     # call function: loop through metrics
     # call function: format metrics into JSON
     # call function: add some metadata to JSON
-    # return formatted metrics
+    # configure tables and figures
+    # render report in html format
+    # pandoc html to pdf
+    # return (formatted metrics, tables configurations, figure configurations,
+    #         rendered html, rendered pdf)
 
 
 def create_report_from_metadata(access_token, report, base_url=None):

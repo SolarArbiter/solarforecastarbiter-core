@@ -20,8 +20,10 @@ solarforecastarbiter: {__version__}
 pandas: {pd.__version__}
 numpy: {np.__version__}
     """
-    print(template.render(print_versions=print_versions))
+    rendered = template.render(print_versions=print_versions)
+    return rendered
 
 
 if __name__ == '__main__':
-    main()
+    rendered = main()
+    print(rendered)

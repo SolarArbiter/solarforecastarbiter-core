@@ -1,3 +1,7 @@
 
+from solarforecastarbiter.reports import template
+
+
 def test_templates():
-    pass
+    out = template.main()
+    assert len(out) > 0

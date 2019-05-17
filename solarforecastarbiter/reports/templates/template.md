@@ -1,4 +1,3 @@
-
 Report
 ======
 
@@ -11,7 +10,11 @@ warn if data checksum does not equal saved checksum
 Data
 ----
 
-INSERT figures.timeseries AND figures.scatter PLOTS
+{{ figures_timeseries }}
+
+This is a scatter plot
+
+{{ figures_scatter }}
 
 Metrics
 -------
@@ -19,12 +22,12 @@ Metrics
 Metrics are displayed in tables and figures below. Metrics may be downloaded
 in csv format.
 
-USE FUNCTIONS TO RENDER TABLES AND figures.bar PLOTS FROM JSON DATA
+{{ tables_1 }} {{ figures_bar }}
 
 Versions
 --------
 
-{% print_versions %}
+{{ print_versions }}
 
 Hash
 ----
