@@ -10,11 +10,11 @@ warn if data checksum does not equal saved checksum
 Data
 ----
 
-{{ figures_timeseries }}
+{{ figures_timeseries | safe }}
 
 This is a scatter plot
 
-{{ figures_scatter }}
+{{ figures_scatter | safe }}
 
 Metrics
 -------

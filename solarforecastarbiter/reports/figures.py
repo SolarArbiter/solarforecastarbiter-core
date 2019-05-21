@@ -1,7 +1,8 @@
 """
-Plots.
+Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 
+from bokeh.embed import components
 from bokeh.models import ColumnDataSource
 from bokeh.models.ranges import Range1d
 from bokeh.plotting import figure
@@ -98,7 +99,8 @@ def timeseries(fx_obs_cds, start, end):
     fig = figure(
         sizing_mode='scale_width', plot_width=900, plot_height=300,
         x_range=(start, end), x_axis_type='datetime',
-        tools='pan,wheel_zoom,reset')
+        tools='pan,wheel_zoom,reset',
+        name='timeseries')
 
     plotted_objects = []
     for fx_obs, cds in fx_obs_cds:
@@ -128,7 +130,6 @@ def timeseries(fx_obs_cds, start, end):
     fig.xaxis.axis_label = 'Time (UTC)'
     fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable,
                                                 fx_obs.forecast.units)
-
     return fig
 
 
@@ -161,7 +162,8 @@ def scatter(fx_obs_cds):
     fig = figure(
         plot_width=450, plot_height=400, match_aspect=True,  # does not work?
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
-        tools='pan,wheel_zoom,reset')
+        tools='pan,wheel_zoom,reset',
+        name='scatter')
 
     kwargs = dict(size=6, line_color=None)
 
@@ -178,7 +180,6 @@ def scatter(fx_obs_cds):
                                  fx_obs.forecast.units)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
-
     return fig
 
 

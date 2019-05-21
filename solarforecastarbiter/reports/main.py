@@ -6,9 +6,9 @@ Steps:
   1. Consume metadata defined in :py:mod:`~solarforecastarbiter.datamodel`
   2. Run validation of metadata. Metadata creation might also include
      some validation so this may not be necessary.
-  3. Get data
-  4. Align observation data to forecast data. Is this a metrics function?
-  5. Compute metrics specified in metadata.
+  3. Get data using io.api.
+  4. Align observation data to forecast data using metrics subpackage.
+  5. Compute metrics specified in metadata using metrics subpackage
   6. Assemble metrics into output format. Maybe nested JSON with keys like:
         * metadata
             * checksum of data
@@ -34,7 +34,7 @@ Considerations:
 
 * API uses queue system to initiate report generation
 * Functions should not require an API session unless they really need it.
-* The bokeh plots in the html version should probably be rendered at
+* The bokeh plots in the html version will be rendered at
   client load time. The metrics data will be immediately available, but
   the API will need to call the data query and realignment functions
   to be able to create time series, scatter, etc. plots.
@@ -45,7 +45,6 @@ import pkg_resources
 from pkg_resources import DistributionNotFound
 import platform
 
-from bokeh.embed import components
 import pandas as pd
 
 from solarforecastarbiter.io.api import APISession
@@ -94,7 +93,7 @@ def data_dict_to_fxobs_data(data, report):
             for fxobs in report.forecast_observations}
 
 
-def create_metadata(report, data):
+def create_metadata(report):
     """
     Create prereport metadata.
 
@@ -135,34 +134,30 @@ def get_versions():
     return versions
 
 
-def add_figures_to_prereport(data, report, metadata, prereport):
+def get_data_for_report_embed(session, report):
     """
-    Convert pre-report to html report.
+    Get time series data for report.
+
+    1 API call is made for each unique forecast and observation object.
 
     Parameters
     ----------
-    data : dict
-        Keys are all Forecast and Observation objects in the report,
-        values are the corresponding data.
+    session : solarforecastarbiter.api.APISession
+        API session for getting and posting data
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    metadata : str, json
-        Describes the prereport
-    prereport : str, md
-        The templated pre-report.
 
     Returns
     -------
-    report : str, html
-        The full report.
+    fx_obs_cds : list
+        List of (forecast, observation, ColumnDataSource) tuples to
+        pass to bokeh plotting objects.
     """
+    data = get_data_for_report(session, report)
     fxobs_data = data_dict_to_fxobs_data(data, report)
     fx_obs_cds = [figures.construct_fx_obs_cds(k, v[0], v[1])
                   for k, v in fxobs_data.items()]
-    ts_fig = figures.timeseries(fx_obs_cds, report.start, report.end)
-    ts_script, ts_div = components(ts_fig)
-    scat_fig = figures.scatter(fx_obs_cds)
-    scat_script, scat_div = components(scat_fig)
+    return fx_obs_cds
 
 
 def create_prereport_from_data(report, data):
@@ -199,8 +194,8 @@ def create_prereport_from_data(report, data):
     from solarforecastarbiter.reports.tests.test_main import dummy_metrics
     metrics = dummy_metrics.copy()
 
-    metadata = create_metadata(report, data)
-    prereport = template.main(metadata, metrics)
+    metadata = create_metadata(report)
+    prereport = template.prereport(metadata, metrics)
 
     # put the metrics in the metadata because why not
     metadata['metrics'] = metrics
@@ -231,10 +226,10 @@ def create_prereport_from_metadata(access_token, report, base_url=None):
     session.post_report(metadata, prereport)
 
 
-def prereport_to_html(access_token, report, metadata, prereport,
-                      base_url=None):
+def prereport_to_report(access_token, report, metadata, prereport,
+                        base_url=None):
     """
-    Convert pre-report to html report.
+    Convert pre-report to full report.
 
     Parameters
     ----------
@@ -249,25 +244,30 @@ def prereport_to_html(access_token, report, metadata, prereport,
 
     Returns
     -------
-    report : str, html
+    report : str, markdown
         The full report.
     """
     session = APISession(access_token, base_url=base_url)
-    data = get_data_for_report(session, report)
-    report = add_figures_to_prereport(data, report, metadata, prereport)
+    fx_obs_cds = get_data_for_report_embed(session, report)
+    report = template.add_figures_to_prereport(fx_obs_cds, report, metadata,
+                                               prereport)
     return report
 
 
 def prereport_to_pdf(access_token, metadata, prereport, base_url=None):
     """
-    Maybe not necessary if we really can go from html to pdf.
+    Maybe not necessary if we can go from fully rendered markdown to pdf.
     """
-    report = prereport_to_html(access_token, metadata, prereport,
-                               base_url=base_url)
+    report = prereport_to_report(access_token, metadata, prereport,
+                                 base_url=base_url)
     report = report_to_pdf(report)
     return report
 
 
 def report_to_pdf(report):
     # call pandoc
+    raise NotImplementedError
+
+
+def prereport_to_jupyter(report):
     raise NotImplementedError
