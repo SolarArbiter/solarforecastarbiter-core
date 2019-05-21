@@ -13,7 +13,8 @@ EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
              'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
-    'log': ['sentry-sdk']
+    'log': ['sentry-sdk'],
+    'cli': ['click']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]

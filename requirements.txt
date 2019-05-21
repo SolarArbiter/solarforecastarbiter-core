@@ -7,3 +7,4 @@ pvlib==0.6.3
 xarray==0.12.1
 tables==3.5.1
 sentry-sdk==0.7.14
+Click==7.0
