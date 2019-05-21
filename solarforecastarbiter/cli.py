@@ -33,6 +33,16 @@ def cli_access_token(user, password):
         return token
 
 
+def set_log_level(verbose):
+    if verbose == 1:
+        loglevel = 'INFO'
+    elif verbose > 1:
+        loglevel = 'DEBUG'
+    else:
+        loglevel = 'WARNING'
+    logger.setLevel(loglevel)
+
+
 def common_options(cmd):
     def wrapper(f):
         decs = [
@@ -57,7 +67,7 @@ def common_options(cmd):
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(__version__)
 def cli():
-    pass
+    pass  # pragma: no cover
 
 
 @cli.command()
@@ -74,13 +84,7 @@ def cli():
 @click.argument('observation_id', nargs=-1)
 def dailyvalidation(verbose, user, password, start, end, base_url,
                     observation_id):
-    if verbose == 1:
-        loglevel = 'INFO'
-    elif verbose > 1:
-        loglevel = 'DEBUG'
-    else:
-        loglevel = 'WARNING'
-    logger.setLevel(loglevel)
+    set_log_level(verbose)
     token = cli_access_token(user, password)
     if not observation_id:
         logger.info(
