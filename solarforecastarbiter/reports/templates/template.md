@@ -5,10 +5,17 @@ This report was automatically generated using the Solar Forecast Arbiter.
 
 Important metadata...
 
+name = {{ name }}
+start = {{ start }}
+end = {{ end }}
+report generation time = {{ now }}
+
 warn if data checksum does not equal saved checksum
 
 Data
 ----
+
+{{ script | safe }}
 
 {{ figures_timeseries | safe }}
 
