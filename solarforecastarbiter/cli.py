@@ -44,6 +44,7 @@ def set_log_level(verbose):
 
 
 def common_options(cmd):
+    """Combine common options into one decorator"""
     def wrapper(f):
         decs = [
             click.option('-v', '--verbose', count=True,
@@ -67,6 +68,9 @@ def common_options(cmd):
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(__version__)
 def cli():
+    """
+    The SolarForecastArbiter core command line tool
+    """
     pass  # pragma: no cover
 
 
@@ -84,6 +88,9 @@ def cli():
 @click.argument('observation_id', nargs=-1)
 def dailyvalidation(verbose, user, password, start, end, base_url,
                     observation_id):
+    """
+    Run the daily validation tasks for a given set of observations
+    """
     set_log_level(verbose)
     token = cli_access_token(user, password)
     if not observation_id:
