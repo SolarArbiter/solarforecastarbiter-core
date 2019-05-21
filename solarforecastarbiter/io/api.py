@@ -2,6 +2,7 @@
 Functions to connect to and process data from SolarForecastArbiter API
 """
 import json
+import logging
 import requests
 from urllib3 import Retry
 
@@ -15,6 +16,18 @@ from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
+logger = logging.getLogger(__name__)
+
+
+def request_cli_access_token(user, password):
+    req = requests.post(
+        'https://solarforecastarbiter.auth0.com/oauth/token',
+        data={'grant_type': 'password', 'username': user,
+              'audience': BASE_URL,
+              'password': password,
+              'client_id': 'c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7'})
+    req.raise_for_status()
+    return req.json()['access_token']
 
 
 class APISession(requests.Session):

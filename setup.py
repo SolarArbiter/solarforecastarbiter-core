@@ -13,7 +13,8 @@ EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
              'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
-    'log': ['sentry-sdk']
+    'log': ['sentry-sdk'],
+    'cli': ['click']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -51,8 +52,11 @@ setup(
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,
         'Source': 'https://github.com/solararbiter/solarforecastarbiter-core'
     },
-    entry_points = {
-        'console_scripts': ['sfa_reference_data=solarforecastarbiter.io.reference_observations.reference_data:main']
+    entry_points={
+        'console_scripts': [
+            'sfa_reference_data=solarforecastarbiter.io.reference_observations.reference_data:main',
+            'solararbiter=solarforecastarbiter.cli:cli'
+        ]
     }
 
 )
