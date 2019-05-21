@@ -155,7 +155,7 @@ def get_data_for_report_embed(session, report):
     """
     data = get_data_for_report(session, report)
     fxobs_data = data_dict_to_fxobs_data(data, report)
-    fx_obs_cds = [figures.construct_fx_obs_cds(k, v[0], v[1])
+    fx_obs_cds = [(k, figures.construct_fx_obs_cds(v[0], v[1]))
                   for k, v in fxobs_data.items()]
     return fx_obs_cds
 

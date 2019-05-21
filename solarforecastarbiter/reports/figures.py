@@ -37,25 +37,24 @@ def line_or_step(interval_label):
     return plot_method, kwargs
 
 
-def construct_fx_obs_cds(fx_obs, fx_values, obs_values):
+def construct_fx_obs_cds(fx_values, obs_values):
     """
-    Construct a tuple of metadata, data for the plot functions.
+    Construct a standardized Bokeh CDS for the plot functions.
 
     Parameters
     ----------
-    fx_obs : solarforecastarbiter.datamodel.ForecastObservation
     fx_values : pandas.Series
     obs_values : pandas.Series
 
     Returns
     -------
-    fx_obs : solarforecastarbiter.datamodel.ForecastObservation
     cds : bokeh.models.ColumnDataSource
+        Keys are 'observation', 'forecast', and 'timestamp'.
     """
     data = pd.DataFrame({'observation': obs_values, 'forecast': fx_values})
     data = data.rename_axis('timestamp')
     cds = ColumnDataSource(data)
-    return fx_obs, cds
+    return cds
 
 
 def _obs_name(fx_obs):
