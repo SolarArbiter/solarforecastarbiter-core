@@ -24,7 +24,7 @@ def test_request_cli_access_token_mocked(requests_mock):
 def test_request_cli_access_token_real():
     try:
         requests.get('https://solarforecastarbiter.auth0.com')
-    except Exception:
+    except Exception:  # pragma: no cover
         return pytest.skip('Cannot connect to Auth0')
     else:
         assert api.request_cli_access_token('testing@solarforecastarbiter.org',
