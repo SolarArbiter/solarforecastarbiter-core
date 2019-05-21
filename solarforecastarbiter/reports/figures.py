@@ -53,7 +53,7 @@ def construct_fx_obs_cds(fx_obs, fx_values, obs_values):
     cds : bokeh.models.ColumnDataSource
     """
     data = pd.DataFrame({'observation': obs_values, 'forecast': fx_values})
-    data['timestamp'] = data.index
+    data = data.rename_axis('timestamp')
     cds = ColumnDataSource(data)
     return fx_obs, cds
 
