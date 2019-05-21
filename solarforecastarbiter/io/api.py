@@ -23,7 +23,7 @@ def request_cli_access_token(user, password):
     req = requests.post(
         'https://solarforecastarbiter.auth0.com/oauth/token',
         data={'grant_type': 'password', 'username': user,
-              'audience': 'https://api.solarforecastarbiter.org',
+              'audience': BASE_URL,
               'password': password,
               'client_id': 'c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7'})
     req.raise_for_status()

@@ -14,6 +14,23 @@ from solarforecastarbiter.io import api, utils
 from solarforecastarbiter import datamodel
 
 
+def test_request_cli_access_token_mocked(requests_mock):
+    requests_mock.register_uri(
+        'POST', 'https://solarforecastarbiter.auth0.com/oauth/token',
+        content=b'{"access_token": "token"}')
+    assert api.request_cli_access_token('test', 'pass') == 'token'
+
+
+def test_request_cli_access_token_real():
+    try:
+        requests.get('https://solarforecastarbiter.auth0.com')
+    except Exception:
+        return pytest.skip('Cannot connect to Auth0')
+    else:
+        assert api.request_cli_access_token('testing@solarforecastarbiter.org',
+                                            'Thepassword123!') is not None
+
+
 def test_apisession_init(requests_mock):
     session = api.APISession('TOKEN')
     requests_mock.register_uri('GET', session.base_url)
