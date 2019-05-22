@@ -165,7 +165,7 @@ def site_text():
     "name": "Power Plant 1",
     "provider": "Organization 1",
     "timezone": "Etc/GMT+6",
-    "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "site_id": "123e4567-e89b-12d3-a456-426655440001",
     "created_at": "2019-03-01T11:44:44Z",
     "modified_at": "2019-03-01T11:44:44Z"
 }"""
@@ -221,7 +221,7 @@ def many_sites_text():
             "temperature_coefficient": -0.002,
             "tracking_type": "fixed"
         },
-        "name": "Fixed plant",
+        "name": "Power Plant 1",
         "provider": "Organization 1",
         "timezone": "Etc/GMT+6",
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
@@ -251,7 +251,7 @@ def many_sites_text():
         "name": "Tracking plant",
         "provider": "Organization 1",
         "timezone": "Etc/GMT+6",
-        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "site_id": "123e4567-e89b-12d3-a456-426655440001",
         "created_at": "2019-03-01T11:44:46Z",
         "modified_at": "2019-03-01T11:44:46Z"
     }
@@ -326,6 +326,15 @@ def many_sites(many_sites_text):
     sites[2]['modeling_parameters'] = single
     out.append(_site_from_dict(sites[2]))
     return out
+
+
+@pytest.fixture()
+def get_site(many_sites):
+    site_dict = {site.site_id: site for site in many_sites}
+
+    def get(site_id):
+        return site_dict[site_id]
+    return get
 
 
 @pytest.fixture(scope='module')
@@ -489,7 +498,7 @@ def single_observation_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
   },
   "created_at": "2019-03-01T12:01:48+00:00",
   "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
@@ -500,7 +509,7 @@ def single_observation_text():
   "name": "DNI Instrument 2",
   "observation_id": "9ce9715c-bd91-47b7-989f-50bb558f1eb9",
   "provider": "Organization 1",
-  "site_id": "123e4567-e89b-12d3-a456-426655440001",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
   "uncertainty": 0.1,
   "variable": "dni"
 }
@@ -512,7 +521,7 @@ def many_observations_text():
     return b"""[
   {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
     },
     "created_at": "2019-03-01T12:01:48+00:00",
     "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
@@ -523,7 +532,7 @@ def many_observations_text():
     "name": "DNI Instrument 2",
     "observation_id": "9ce9715c-bd91-47b7-989f-50bb558f1eb9",
     "provider": "Organization 1",
-    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
     "uncertainty": 0.1,
     "variable": "dni"
   },
@@ -565,14 +574,15 @@ def many_observations_text():
 
 
 @pytest.fixture()
-def _observation_from_dict(single_site):
+def _observation_from_dict(get_site):
     def f(obs_dict):
         return datamodel.Observation(
             name=obs_dict['name'], variable=obs_dict['variable'],
             interval_value_type=obs_dict['interval_value_type'],
             interval_length=pd.Timedelta(f'{obs_dict["interval_length"]}min'),
             interval_label=obs_dict['interval_label'],
-            site=single_site, uncertainty=obs_dict['uncertainty'],
+            site=get_site(obs_dict['site_id']),
+            uncertainty=obs_dict['uncertainty'],
             observation_id=obs_dict.get('observation_id', ''),
             extra_parameters=obs_dict.get('extra_parameters', ''))
     return f
@@ -594,7 +604,7 @@ def single_forecast_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
   },
   "created_at": "2019-03-01T11:55:37+00:00",
   "extra_parameters": "",
@@ -608,7 +618,7 @@ def single_forecast_text():
   "name": "DA GHI",
   "provider": "Organization 1",
   "run_length": 1440,
-  "site_id": "123e4567-e89b-12d3-a456-426655440001",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
   "variable": "ghi"
 }
 """
@@ -661,14 +671,14 @@ def many_forecasts_text():
 
 
 @pytest.fixture()
-def _forecast_from_dict(single_site):
+def _forecast_from_dict(single_site, get_site):
     def f(fx_dict):
         return datamodel.Forecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=single_site,
+            site=get_site(fx_dict['site_id']),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA

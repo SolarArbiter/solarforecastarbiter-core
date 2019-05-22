@@ -63,15 +63,31 @@ def test_apisession_request(endpoint, method, expected, requests_mock):
 
 
 @pytest.fixture()
-def mock_get_site(requests_mock, site_text):
+def mock_get_site(requests_mock, site_text, many_sites_text):
+    def get_site_from_text(request, context):
+        site_id = request.url.split('/')[-1]
+        if site_id == '':
+            return many_sites_text
+        else:
+            sites = json.loads(many_sites_text)
+            for site in sites:
+                if site['site_id'] == site_id:
+                    return json.dumps(site).encode('utf-8')
+
     matcher = re.compile(f'https://api.solarforecastarbiter.org/sites/.*')
-    requests_mock.register_uri('GET', matcher, content=site_text)
+    requests_mock.register_uri('GET', matcher, content=get_site_from_text)
 
 
-def test_apisession_get_site(mock_get_site, single_site):
+@pytest.fixture()
+def mock_list_sites(mocker, many_sites):
+    mocker.patch('solarforecastarbiter.io.api.APISession.list_sites',
+                 return_value=many_sites)
+
+
+def test_apisession_get_site(mock_get_site, get_site):
     session = api.APISession('')
-    site = session.get_site('')
-    assert site == single_site
+    site = session.get_site('123e4567-e89b-12d3-a456-426655440002')
+    assert site == get_site('123e4567-e89b-12d3-a456-426655440002')
 
 
 def test_apisession_get_site_dne(requests_mock):
@@ -79,7 +95,7 @@ def test_apisession_get_site_dne(requests_mock):
     matcher = re.compile(f'{session.base_url}/.*')
     requests_mock.register_uri('GET', matcher, status_code=404)
     with pytest.raises(requests.exceptions.HTTPError):
-        session.get_site('')
+        session.get_site('123e4567-e89b-12d3-a456-426655440002')
 
 
 def test_apisession_list_sites(requests_mock, many_sites_text, many_sites):
@@ -123,7 +139,7 @@ def test_apisession_get_observation(requests_mock, single_observation,
 
 
 def test_apisession_list_observations(requests_mock, many_observations,
-                                      many_observations_text, mock_get_site):
+                                      many_observations_text, mock_list_sites):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/observations/.*')
     requests_mock.register_uri('GET', matcher, content=many_observations_text)
@@ -164,7 +180,7 @@ def test_apisession_get_forecast(requests_mock, single_forecast,
 
 
 def test_apisession_list_forecasts(requests_mock, many_forecasts,
-                                   many_forecasts_text, mock_get_site):
+                                   many_forecasts_text, mock_list_sites):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
