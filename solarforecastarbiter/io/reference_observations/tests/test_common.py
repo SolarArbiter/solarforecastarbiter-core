@@ -114,10 +114,19 @@ def test_filter_by_network(networks, expected):
 ])
 def test_create_observation(
         mock_api, site, variable, observation_objects_param):
+    mock_api.list_observations.return_value = []
     common.create_observation(mock_api, site, variable)
     mock_api.create_observation.assert_called()
     mock_api.create_observation.assert_called_with(
         observation_objects_param[0])
+
+
+def test_create_observation_exists(
+        mock_api, site_objects_param, observation_objects_param):
+    variable = 'ghi'
+    site = site_objects_param[0]
+    common.create_observation(mock_api, site, variable)
+    mock_api.create_observation.assert_not_called()
 
 
 long_site_name = Site.from_dict({
@@ -175,6 +184,7 @@ observation_params = {
 ])
 def test_create_observation_extra_parameters(
         mock_api, site, variable, expected, extra_params):
+    mock_api.list_observations.return_value = []
     common.create_observation(mock_api, site, variable, extra_params)
     mock_api.create_observation.assert_called()
     mock_api.create_observation.assert_called_with(expected)
@@ -274,6 +284,4 @@ def test_update_site_observations_no_data(
     common.update_site_observations(
         mock_api, fetch, site_objects[1],
         observation_objects_param, start, end)
-
     mock_api.assert_not_called()
-    log.warning.assert_called_once()
