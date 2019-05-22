@@ -91,7 +91,7 @@ def get_apisession(token, base_url=None):
     return APISession(token, base_url=base_url)
 
 
-def create_site(api, site):
+def create_site(api, site, existing_sites):
     """Post a new site to the API and create it's applicable reference
     observations.
 
@@ -118,14 +118,18 @@ def create_site(api, site):
                        'automatically generated.')
         return
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
-    site_name = common.clean_name(site['name'])
-    site['name'] = f'{network} {site_name}'
+    site_name = f"{network} {common.clean_name(site['name'])}"
+    if site_name in existing_sites:
+        logger.info('Site, %s, already exists', site_name)
+        return
+    site['name'] = site_name
     site_to_create = Site.from_dict(site)
     try:
         created = api.create_site(site_to_create)
     except HTTPError as e:
         logger.error(f"Failed to create Site {site['name']}.")
         logger.debug(f'HTTP Error: {e.response.text}')
+        return False
     else:
         logger.info(f'Created Site {created.name} successfully.')
         network_handler.initialize_site_observations(api, created)
@@ -152,10 +156,14 @@ def initialize_reference_metadata_objects(token, sites, base_url=None):
     """
     logger.info('Initializing reference metadata...')
     api = get_apisession(token, base_url)
+    current_sites = {site.name for site in api.list_sites()}
     sites_created = 0
     failures = 0
     for site in sites:
-        if create_site(api, site):
+        new_site = create_site(api, site, current_sites)
+        if new_site is None:
+            pass
+        elif new_site:
             sites_created = sites_created + 1
         else:
             failures = failures + 1
