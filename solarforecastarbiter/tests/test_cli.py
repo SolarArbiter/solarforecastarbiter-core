@@ -5,6 +5,7 @@ import logging
 
 import click
 from click.testing import CliRunner
+import pandas as pd
 import pytest
 import requests
 
@@ -39,6 +40,41 @@ def test_set_log_level():
     assert cli.logger.level == logging.INFO
     cli.set_log_level(2)
     assert cli.logger.level == logging.DEBUG
+
+
+@pytest.mark.parametrize('val', [
+    '20190101T0000Z',
+    '2019-03-04T03:04:58-0700',
+    "'2019-03-12 12:00'",
+    'now'
+])
+def test_utctimestamp(val):
+    @click.command()
+    @click.option('--timestamp', type=cli.UTCTIMESTAMP)
+    def testtime(timestamp):
+        if isinstance(timestamp, pd.Timestamp):
+            print('OK')
+
+    runner = CliRunner()
+    res = runner.invoke(testtime, f'--timestamp {val}')
+    assert res.output == 'OK\n'
+
+
+@pytest.mark.parametrize('val', [
+    '20190101T000Z',
+    '2019-03-0403:04:58-0700',
+    "'2019-03-32 12:00'"
+])
+def test_utctimestamp_invalid(val):
+    @click.command()
+    @click.option('--timestamp', type=cli.UTCTIMESTAMP)
+    def testtime(timestamp):
+        if isinstance(timestamp, pd.Timestamp):
+            print('OK')
+
+    runner = CliRunner()
+    res = runner.invoke(testtime, f'--timestamp {val}')
+    assert res.output.endswith('cannot be converted into a Pandas.Timestamp\n')
 
 
 def test_version():
