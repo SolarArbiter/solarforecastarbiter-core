@@ -123,7 +123,7 @@ def fetch(api, site, start, end):
 
 
 def initialize_site_observations(api, site):
-    """Creates an observaiton at the site for each variable in
+    """Creates an observation at the site for each variable in
     an SRML site's file.
 
     Parameters
