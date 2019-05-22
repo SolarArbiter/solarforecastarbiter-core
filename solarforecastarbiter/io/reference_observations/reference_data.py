@@ -179,7 +179,7 @@ def update_reference_observations(token, start, end, networks, base_url=None):
     """
     api = get_apisession(token, base_url)
     observations = api.list_observations()
-    sites = [obs.site for obs in observations]
+    sites = {obs.site for obs in observations}
     for network in networks:
         network_handler = NETWORKHANDLER_MAP.get(network)
         if network_handler is None:
