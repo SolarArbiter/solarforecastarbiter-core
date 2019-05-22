@@ -2,16 +2,21 @@
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 
-from bokeh.embed import components
 from bokeh.models import ColumnDataSource
 from bokeh.models.ranges import Range1d
 from bokeh.plotting import figure
 from bokeh import palettes
 
 import pandas as pd
+import numpy as np
 
 
 PALETTE = palettes.d3['Category10'][6]
+_num_obs_colors = 3
+OBS_PALETTE = palettes.grey(_num_obs_colors+1)[0:_num_obs_colors]  # drop white
+OBS_PALETTE.reverse()
+OBS_PALETTE_TD_RANGE = pd.timedelta_range(
+    freq='10min', end='60min', periods=_num_obs_colors)
 
 
 def format_variable_name(variable, units):
@@ -73,6 +78,12 @@ def _fx_name(fx_obs):
     return name
 
 
+def _obs_color(interval_length):
+    idx = np.searchsorted(OBS_PALETTE_TD_RANGE, interval_length)
+    obs_color = OBS_PALETTE[idx]
+    return obs_color
+
+
 def timeseries(fx_obs_cds, start, end):
     """
     Timeseries plot of one or more forecasts and observations.
@@ -110,9 +121,10 @@ def timeseries(fx_obs_cds, start, end):
             plot_method, kwargs = line_or_step(
                 fx_obs.observation.interval_label)
             name = _obs_name(fx_obs)
+            obs_color = _obs_color(fx_obs.observation.interval_length)
             getattr(fig, plot_method)(
                 x='timestamp', y='observation', source=cds,
-                color='black', legend=name,  **kwargs)
+                color=obs_color, legend=name,  **kwargs)
         if fx_obs.forecast in plotted_objects:
             pass
         else:
