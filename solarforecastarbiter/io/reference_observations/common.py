@@ -203,8 +203,6 @@ def update_site_observations(api, fetch_func, site, observations,
     obs_df = fetch_func(api, site, start, end)
     data_in_range = obs_df[start:end]
     if data_in_range.empty:
-        logger.warning(f'Data for site {site.name} contained no entries '
-                       f'from {start} to {end}.')
         return
     site_observations = [obs for obs in observations if obs.site == site]
     for obs in site_observations:
