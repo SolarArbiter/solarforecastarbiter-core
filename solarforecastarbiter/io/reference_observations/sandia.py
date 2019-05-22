@@ -60,8 +60,8 @@ def update_observation_data(api, sites, observations, start, end):
     """
     sandia_api_key = os.getenv('SANDIA_API_KEY')
     if sandia_api_key is None:
-        logger.error('"SANDIA_API_KEY" environment variable must be '
-                     'set to update SANDIA observation data.')
+        raise KeyError('"SANDIA_API_KEY" environment variable must be '
+                       'set to update SANDIA observation data.')
     sandia_sites = common.filter_by_networks(sites, 'SANDIA')
     for site in sandia_sites:
         try:
