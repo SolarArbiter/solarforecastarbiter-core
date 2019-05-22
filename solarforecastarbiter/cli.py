@@ -48,8 +48,6 @@ class UTCTimestamp(click.ParamType):
     name = 'UTCTimestamp'
 
     def convert(self, value, param, ctx):
-        if value is None:
-            return
         try:
             out = pd.Timestamp(value)
         except ValueError:

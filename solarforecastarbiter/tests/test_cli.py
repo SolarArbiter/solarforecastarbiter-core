@@ -1,4 +1,3 @@
-import datetime as dt
 from functools import partial
 import logging
 
@@ -60,6 +59,18 @@ def test_utctimestamp(val):
     assert res.output == 'OK\n'
 
 
+def test_utctimestamp_none():
+    @click.command()
+    @click.option('--timestamp', type=cli.UTCTIMESTAMP)
+    def testtime(timestamp):
+        if timestamp is None:
+            print('OK')
+
+    runner = CliRunner()
+    res = runner.invoke(testtime)
+    assert res.output == 'OK\n'
+
+
 @pytest.mark.parametrize('val', [
     '20190101T000Z',
     '2019-03-0403:04:58-0700',
@@ -114,16 +125,13 @@ def test_dailyvalidation_cmd_all(cli_token, mocker):
     mocked = mocker.patch(
         'solarforecastarbiter.validation.tasks.daily_observation_validation')
     mocker.patch.object(cli, 'midnight',
-                        new=dt.datetime(2019, 1, 2, 0, 0,
-                                        tzinfo=dt.timezone.utc))
+                        new=pd.Timestamp('2019-01-02T00:00:00Z'))
     runner = CliRunner()
     runner.invoke(cli.dailyvalidation, ['-u user', '-p pass'])
     assert mocked.called
     assert mocked.call_args[0] == ('TOKEN',
-                                   dt.datetime(2019, 1, 1, 0, 0,
-                                               tzinfo=dt.timezone.utc),
-                                   dt.datetime(2019, 1, 1, 23, 59, 59,
-                                               tzinfo=dt.timezone.utc),
+                                   pd.Timestamp('2019-01-01T00:00Z'),
+                                   pd.Timestamp('2019-01-01T23:59:59Z'),
                                    'https://api.solarforecastarbiter.org')
 
 
@@ -131,15 +139,34 @@ def test_dailyvalidation_cmd_single(cli_token, mocker):
     mocked = mocker.patch(
         'solarforecastarbiter.validation.tasks.daily_single_observation_validation')  # NOQA
     mocker.patch.object(cli, 'midnight',
-                        new=dt.datetime(2019, 1, 2, 0, 0,
-                                        tzinfo=dt.timezone.utc))
+                        new=pd.Timestamp('2019-01-02T00:00:00Z'))
     runner = CliRunner()
     runner.invoke(cli.dailyvalidation, ['-u user', '-p pass', 'OBS_ID'])
     assert mocked.called
     assert mocked.call_args[0] == ('TOKEN',
                                    'OBS_ID',
-                                   dt.datetime(2019, 1, 1, 0, 0,
-                                               tzinfo=dt.timezone.utc),
-                                   dt.datetime(2019, 1, 1, 23, 59, 59,
-                                               tzinfo=dt.timezone.utc),
+                                   pd.Timestamp('2019-01-01T00:00Z'),
+                                   pd.Timestamp('2019-01-01T23:59:59Z'),
                                    'https://api.solarforecastarbiter.org')
+
+
+def test_referencedata_init(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_data.initialize_reference_metadata_objects')  # NOQA
+    runner = CliRunner()
+    runner.invoke(cli.referencedata_init, ['-u user', '-p pass'])
+    assert mocked.called
+    assert mocked.call_args[0][0] == 'TOKEN'
+    assert mocked.call_args[0][-1] == 'https://api.solarforecastarbiter.org'
+
+
+def test_referencedata_update(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_data.update_reference_observations')  # NOQA
+    runner = CliRunner()
+    runner.invoke(cli.referencedata_update,
+                  ['-u user', '-p pass', '20190101T0000Z', '20190101T235959Z'])
+    assert mocked.called
+    assert mocked.call_args[0][:3] == ('TOKEN', pd.Timestamp('20190101T0000Z'),
+                                       pd.Timestamp('20190101T235959Z'))
+    assert mocked.call_args[0][-1] == 'https://api.solarforecastarbiter.org'
