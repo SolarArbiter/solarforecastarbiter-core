@@ -1,11 +1,14 @@
 """Collection of code for requesting and parsing Data from Sandia National
 Laboratories.
 """
+import logging
+
 
 import pandas as pd
 import requests
 
 SANDIA_API_URL = "https://pv-dashboard.sandia.gov/api/v1.0/location/{location}/data/{data_type}/start/{start}/end/{end}/key/{api_key}" # NOQA
+logger = logging.getLogger(__name__)
 
 
 def request_sandia_data(location, data_type, start, end, api_key):
@@ -36,7 +39,11 @@ def request_sandia_data(location, data_type, start, end, api_key):
         data_type=data_type,
         api_key=api_key)
     r = requests.get(request_url)
-    return pd.DataFrame(r.json())
+    resp = r.json()
+    if 'access' in resp and resp['access'] == 'denied':
+        raise ValueError('Invalid Sandia API key')
+    else:
+        return pd.DataFrame(resp)
 
 
 def fetch_sandia(location, api_key, start, end):
