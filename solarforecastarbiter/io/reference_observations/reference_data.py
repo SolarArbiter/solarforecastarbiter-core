@@ -184,7 +184,7 @@ def update_reference_observations(token, start, end, networks, base_url=None):
         The alternate base url of the SFA API
     """
     api = get_apisession(token, base_url)
-    observations = common.existing_observations(api)
+    observations = api.list_observations()
     sites = {obs.site for obs in observations}
     for network in networks:
         network_handler = NETWORKHANDLER_MAP.get(network)

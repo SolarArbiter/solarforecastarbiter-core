@@ -69,8 +69,8 @@ def request_data(site, year, month):
             srml_month = iotools.read_srml_month_from_solardat(
                 station_code, year, month, file_type)
         except error.URLError:
-            logger.info(f'Could not retrieve {file_type} for SRML data '
-                        f'for site {site.name} on {year}/{month} .')
+            logger.warning(f'Could not retrieve {file_type} for SRML data '
+                           f'for site {site.name} on {year}/{month} .')
             logger.debug(f'Site abbreviation: {station_code}')
             continue
         except pd.errors.EmptyDataError:
