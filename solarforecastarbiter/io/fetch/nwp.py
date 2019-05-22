@@ -48,9 +48,20 @@ import pandas as pd
 import xarray as xr
 
 
+from solarforecastarbiter import __version__
 from solarforecastarbiter.io.fetch import (
     handle_exception, basic_logging_config, make_session,
     run_in_executor, start_cluster, abort_all_on_exception)
+
+
+try:
+    import sentry_sdk  # NOQA
+except ImportError:  # pragma: no cover
+    pass
+else:
+    # Must set SENTRY_DSN for this to do anything
+    sentry_sdk.init(send_default_pii=False,
+                    release=f'solarforecastarbiter-core@{__version__}')
 
 
 logger = logging.getLogger(__name__)
@@ -370,6 +381,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
     simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
+        logger.debug('Checking if file is available for %s', next_params)
         filename = get_filename(modelpath, init_time, next_params)
         if filename.exists():
             yield next_params
@@ -380,6 +392,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
         while True:
             # is the next file ready?
             try:
+                logger.debug('Calling HEAD %s', next_model_url)
                 async with session.head(
                         next_model_url, raise_for_status=True) as r:
                     if first_file_modified_at is None:
@@ -388,6 +401,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
+                logger.debug('HEAD returned %s', next_model_url)
             except aiohttp.ClientResponseError as e:
                 if e.status == 404:  # Not found
                     logger.debug(
@@ -661,6 +675,7 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
             gribdir = modelpath
         async for params in files_to_retrieve(session, model, gribdir,
                                               inittime):
+            logger.debug('Processing parameters %s', params)
             fetch_tasks.add(asyncio.create_task(
                 fetch_grib_files(session, params, gribdir, inittime,
                                  chunksize)))
@@ -675,6 +690,10 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
                 raise
         if use_tmp:
             _tmpdir.cleanup()
+        else:
+            # remove grib files
+            for f in files:
+                f.unlink()
         if once:
             break
         else:

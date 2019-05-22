@@ -132,7 +132,7 @@ def resample_args(*args, freq='1h'):
     return list(map(f, args))
 
 
-def resample(arg, freq='1h'):
+def resample(arg, freq='1h', closed=None):
     """Resamples an argument, allowing for None. Use with map.
 
     Parameters
@@ -146,7 +146,7 @@ def resample(arg, freq='1h'):
     if arg is None:
         return None
     else:
-        return arg.resample(freq).mean()
+        return arg.resample(freq, closed=closed).mean()
 
 
 def interpolate_args(*args, freq='15min'):
@@ -169,7 +169,7 @@ def interpolate_args(*args, freq='15min'):
     return resampled_args
 
 
-def interpolate(arg, freq='15min'):
+def interpolate(arg, freq='15min', closed=None):
     """Interpolates an argument, allowing for None. Use with map.
 
     Parameters
@@ -185,7 +185,7 @@ def interpolate(arg, freq='15min'):
     if arg is None:
         return None
     else:
-        return arg.resample(freq).interpolate()
+        return arg.resample(freq, closed=closed).interpolate()
 
 
 def slice_args(*args, start, end):

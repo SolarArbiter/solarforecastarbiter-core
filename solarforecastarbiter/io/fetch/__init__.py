@@ -39,8 +39,9 @@ async def run_in_executor(func, *args, **kwargs):
 
 def make_session():
     """Make an aiohttp session"""
-    conn = aiohttp.TCPConnector(limit_per_host=5)
-    s = aiohttp.ClientSession(read_timeout=60, conn_timeout=60, connector=conn)
+    conn = aiohttp.TCPConnector(limit_per_host=20)
+    timeout = aiohttp.ClientTimeout(total=60, connect=10, sock_read=30)
+    s = aiohttp.ClientSession(connector=conn, timeout=timeout)
     return s
 
 
