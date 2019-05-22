@@ -11,14 +11,17 @@ from jinja2 import (Environment, DebugUndefined, PackageLoader,
 from solarforecastarbiter.reports import figures
 
 
-def prereport(metadata, metrics):
+def prereport(report, metadata, metrics):
     """
     Render the markdown prereport. Figures are left untemplated.
 
     Parameters
     ----------
-    metadata : dict
-    metrics : dict
+    report : solarforecastarbiter.datamodel.Report
+        Metadata describing report
+    metadata : str, dict
+        Describes the pre-report
+    metrics : tuple of dict
 
     Returns
     -------
@@ -34,13 +37,26 @@ def prereport(metadata, metrics):
 
     template = env.get_template('template.md')
 
+    cds = figures.construct_metrics_cds(metrics, 'total')
+    data_table = figures.metrics_table(cds)
+
+    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
+    figures_bar = {}
+    for num, metric in enumerate(report.metrics):
+        fig = figures.bar(cds, metric)
+        figures_bar[f'figures_bar_{num}'] = fig
+
+    script, divs = components(dict(tables=data_table, **figures_bar))
+
     print_versions = metadata['versions']
     rendered = template.render(
         name=metadata['name'],
         start=metadata['start'],
         end=metadata['end'],
         now=metadata['now'],
-        print_versions=print_versions)
+        print_versions=print_versions,
+        script_metrics=script,
+        **divs)
     return rendered
 
 
@@ -56,7 +72,7 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport):
         pass to bokeh plotting objects.
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    metadata : str, json
+    metadata : str, dict
         Describes the pre-report
     prereport : str, markdown or html
         The templated pre-report.
@@ -75,7 +91,7 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport):
     script, divs = components(
         {'figures_timeseries': ts_fig, 'figures_scatter': scat_fig})
 
-    body = body_template.render(script=script, **divs)
+    body = body_template.render(script_data=script, **divs)
     return body
 
 

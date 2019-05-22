@@ -15,7 +15,7 @@ warn if data checksum does not equal saved checksum
 Data
 ----
 
-{{ script | safe }}
+{{ script_data | safe }}
 
 {{ figures_timeseries | safe }}
 
@@ -26,10 +26,15 @@ This is a scatter plot
 Metrics
 -------
 
+{{ script_metrics | safe }}
+
 Metrics are displayed in tables and figures below. Metrics may be downloaded
 in csv format.
 
-{{ tables_1 }} {{ figures_bar }}
+{{ tables | safe }}
+{{ figures_bar_0 | safe }}
+{{ figures_bar_1 | safe }}
+{{ figures_bar_2 | safe }}
 
 Versions
 --------
