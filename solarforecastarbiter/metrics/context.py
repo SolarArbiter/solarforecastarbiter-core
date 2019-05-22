@@ -189,4 +189,4 @@ def print_context_string(context):
 
 def show_context(context):
     """Print context to screen."""
-    print(print_context_string)
+    print(print_context_string(context))
