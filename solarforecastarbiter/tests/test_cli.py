@@ -33,12 +33,13 @@ def test_cli_access_token_err(mocker):
 
 
 def test_set_log_level():
+    root_logger = logging.getLogger()
     cli.set_log_level(0)
-    assert cli.logger.level == logging.WARNING
+    assert root_logger.level == logging.WARNING
     cli.set_log_level(1)
-    assert cli.logger.level == logging.INFO
+    assert root_logger.level == logging.INFO
     cli.set_log_level(2)
-    assert cli.logger.level == logging.DEBUG
+    assert root_logger.level == logging.DEBUG
 
 
 @pytest.mark.parametrize('val', [

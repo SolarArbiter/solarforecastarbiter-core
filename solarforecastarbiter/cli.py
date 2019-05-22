@@ -40,7 +40,7 @@ def set_log_level(verbose):
         loglevel = 'DEBUG'
     else:
         loglevel = 'WARNING'
-    logger.setLevel(loglevel)
+    logging.getLogger().setLevel(loglevel)
 
 
 class UTCTimestamp(click.ParamType):
