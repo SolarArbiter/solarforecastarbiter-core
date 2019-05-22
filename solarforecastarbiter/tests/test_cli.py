@@ -80,8 +80,7 @@ def test_utctimestamp_invalid(val):
     @click.command()
     @click.option('--timestamp', type=cli.UTCTIMESTAMP)
     def testtime(timestamp):
-        if isinstance(timestamp, pd.Timestamp):
-            print('OK')
+        return  # pragma: no cover
 
     runner = CliRunner()
     res = runner.invoke(testtime, f'--timestamp {val}')

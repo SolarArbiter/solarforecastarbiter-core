@@ -22,6 +22,13 @@ def log(mocker):
 site_object_pairs = list(zip(site_dicts(), site_objects))[1:]
 
 
+def test_getapisession(mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.reference_data.APISession')  # NOQA
+    reference_data.get_apisession('TEST', 'url')
+    assert mocked.called_with('TEST', 'url')
+
+
 @pytest.mark.parametrize('site_dict,expected', site_object_pairs)
 def test_create_site(mock_api, site_dict, expected, mocker):
     mock_api.create_site.return_value = expected
