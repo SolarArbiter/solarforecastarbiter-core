@@ -68,7 +68,7 @@ def fetch(api, site, start, end):
     except ValueError:
         logger.warning(f'No data available for site {site.name} '
                        f'from {start} to {end}.')
-        return
+        return pd.DataFrame()
     all_period_data = all_period_data.rename(
         columns={'temp_air': 'air_temperature'})
     return all_period_data

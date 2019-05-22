@@ -66,7 +66,12 @@ def fetch(api, site, start, end, realtime=False):
             continue
         else:
             single_day_dfs.append(solrad_day)
-    all_period_data = pd.concat(single_day_dfs)
+    try:
+        all_period_data = pd.concat(single_day_dfs)
+    except ValueError:
+        logger.warning(f'No data available for site {site.name} '
+                       f'from {start} to {end}.')
+        return pd.DataFrame()
     return all_period_data
 
 

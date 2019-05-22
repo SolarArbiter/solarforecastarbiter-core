@@ -78,7 +78,12 @@ def fetch(api, site, start, end, realtime=False):
             continue
         else:
             single_day_dfs.append(surfrad_day)
-    all_period_data = pd.concat(single_day_dfs)
+    try:
+        all_period_data = pd.concat(single_day_dfs)
+    except ValueError:
+        logger.warning(f'No data available for site {site.name} '
+                       f'from {start} to {end}.')
+        return pd.DataFrame()
     all_period_data = all_period_data.rename(
         columns={'temp_air': 'air_temperature'})
     return all_period_data
