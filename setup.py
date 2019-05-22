@@ -54,7 +54,6 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'sfa_reference_data=solarforecastarbiter.io.reference_observations.reference_data:main',
             'solararbiter=solarforecastarbiter.cli:cli'
         ]
     }

@@ -1,14 +1,6 @@
 """A CLI tool for creating reference sites and observations and updating them
 with data from their respective API.
 
-Requires that you set the environment variables:
-
-    SFA_REFERENCE_TOKEN
-        A valid access token for the SolarForecastArbiter reference user.
-    SFA_API_BASE_URL
-        The base url of the SolarForecastArbiter API to use.
-        e.g. https://api.solarforecastarbiter.org
-
 As new networks are added, their name should be added as it appears in
 `sfa_reference_data.csv` to `NETWORK_OPTIONS`. A module should be created
 to handle observation initialization and data update. Each of these network
@@ -28,15 +20,11 @@ The module should then be imported and added to `NETWORKHANDLER_MAP` below,
 so that it may be selected based on command line arguments. See the existing
 mappings for an example.
 """
-import argparse
 import json
 import logging
 from pkg_resources import resource_filename, Requirement
-import os
-import sys
 
 
-import pandas as pd
 from requests.exceptions import HTTPError
 
 
@@ -72,9 +60,6 @@ DEFAULT_SITEFILE = resource_filename(
     'solarforecastarbiter/io/reference_observations/sfa_reference_sites.csv')
 
 
-SFA_REFERENCE_TOKEN = os.getenv('SFA_REFERENCE_TOKEN')
-SFA_API_BASE_URL = os.getenv('SFA_API_BASE_URL')
-
 logger = logging.getLogger('reference_data')
 
 CLI_DESCRIPTION = """
@@ -102,18 +87,8 @@ SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
 """  # noqa: E501
 
 
-def add_network_arg(parser):
-    """Adds the `--networks` argument to a subparser so that it does not consume
-    the the init and update.
-    """
-    parser.add_argument(
-        '--networks', nargs='+', default=NETWORK_OPTIONS,
-        choices=NETWORK_OPTIONS,
-        help="The Networks to act on. Defaults to all.")
-
-
-def get_apisession():
-    return APISession(SFA_REFERENCE_TOKEN, base_url=SFA_API_BASE_URL)
+def get_apisession(token, base_url=None):
+    return APISession(token, base_url=base_url)
 
 
 def create_site(api, site):
@@ -157,22 +132,26 @@ def create_site(api, site):
         return created
 
 
-def initialize_reference_metadata_objects(sites):
+def initialize_reference_metadata_objects(token, sites, base_url=None):
     """Instantiate an API session and create reference sites and
     observations.
 
     Parameters
     ----------
-    sites: list
+    token : str
+        Access token for the SFA API
+    sites : list
         List of site dictionary objects. The 'extra_parameters'
         key should contain a nested dict with the following keys:
             network
             network_api_id
             network_api_abbreviation
             observation_interval_length
+    base_url : str
+        The alternate base url of the SFA API
     """
     logger.info('Initializing reference metadata...')
-    api = get_apisession()
+    api = get_apisession(token, base_url)
     sites_created = 0
     failures = 0
     for site in sites:
@@ -184,17 +163,21 @@ def initialize_reference_metadata_objects(sites):
                 f'{failures} failures.')
 
 
-def update_reference_observations(start, end, networks):
+def update_reference_observations(token, start, end, networks, base_url=None):
     """Coordinate updating all existing reference observations.
 
     Parameters
     ----------
+    token : str
+        Access token for the SFA API
     start : datetime-like
     end : datetime-like
     networks : list
         List of network names to update.
+    base_url : str
+        The alternate base url of the SFA API
     """
-    api = get_apisession()
+    api = get_apisession(token, base_url)
     sites = api.list_sites()
     observations = api.list_observations()
     for network in networks:
@@ -239,92 +222,3 @@ def site_df_to_dicts(site_df):
         }
         site_list.append(site)
     return site_list
-
-
-def main():
-    logging.basicConfig()
-
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter,
-        description=CLI_DESCRIPTION)
-    parser.add_argument('-v', '--verbose', action='count')
-    subparsers = parser.add_subparsers(help='Commands', dest='command',
-                                       required=True)
-    # Init command parser/options
-    init_parser = subparsers.add_parser(
-        'init',
-        help='Creates sites and observations from a site file.')
-    add_network_arg(init_parser)
-    init_parser.add_argument(
-        '--site-file', default=DEFAULT_SITEFILE,
-        help='The file from which to load all of the reference site metadata. '
-             'Defaults to `sfa_reference_sites.csv.')
-
-    # Update command parser/options
-    update_parser = subparsers.add_parser(
-        'update',
-        help='Updates reference data for the given period.')
-    add_network_arg(update_parser)
-    update_parser.add_argument(
-        'start',
-        help="Beginning of the period to update as a ISO8601 datetime string."
-             "If no timezone is defined, UTC will be assumed.")
-    update_parser.add_argument(
-        'end',
-        help="End of the period to update as an ISO8601 datetime string."
-             "If no timezone is defined, UTC will be assumed.")
-
-    cli_args = parser.parse_args()
-    if cli_args.verbose == 1:
-        logger.setLevel(logging.INFO)
-    elif cli_args.verbose and cli_args.verbose > 1:
-        logger.setLevel(logging.DEBUG)
-
-    networks = cli_args.networks
-
-    cmd = cli_args.command
-
-    if cmd == 'init':
-        # Create sites and optionally create observations from rows of a csv
-        filename = cli_args.site_file
-        try:
-            all_sites = pd.read_csv(filename, comment='#')
-        except FileNotFoundError:
-            logger.error(f'Site file does not exist: {filename}')
-            sys.exit()
-        network_filtered_sites = all_sites[all_sites['network'].isin(networks)]
-        site_dictionaries = site_df_to_dicts(network_filtered_sites)
-        initialize_reference_metadata_objects(site_dictionaries)
-
-    elif cmd == 'update':
-        # Update observations with network data from the period between
-        # start and end
-        try:
-            start = pd.Timestamp(cli_args.start)
-        except ValueError:
-            logger.error('Invalid start datetime.')
-            sys.exit()
-        else:
-            if start.tzinfo:
-                start = start.tz_convert('UTC')
-            else:
-                start = start.tz_localize('UTC')
-
-        end = cli_args.end
-        if end is not None:
-            try:
-                end = pd.Timestamp(end)
-            except ValueError:
-                logger.error('Invalid end datetime.')
-                sys.exit()
-            else:
-                if end.tzinfo:
-                    end = end.tz_convert('UTC')
-                else:
-                    end = end.tz_localize('UTC')
-        networks = cli_args.networks
-        update_reference_observations(start, end, networks)
-
-
-if __name__ == '__main__':
-    main()

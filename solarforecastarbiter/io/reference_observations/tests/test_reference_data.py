@@ -22,6 +22,13 @@ def log(mocker):
 site_object_pairs = list(zip(site_dicts(), site_objects))[1:]
 
 
+def test_getapisession(mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.reference_data.APISession')  # NOQA
+    reference_data.get_apisession('TEST', 'url')
+    assert mocked.called_with('TEST', 'url')
+
+
 @pytest.mark.parametrize('site_dict,expected', site_object_pairs)
 def test_create_site(mock_api, site_dict, expected, mocker):
     mock_api.create_site.return_value = expected
@@ -40,7 +47,7 @@ def test_update_reference_observations(
     solrad = mocker.patch(
         'solarforecastarbiter.io.reference_observations.solrad.'
         'update_observation_data')
-    reference_data.update_reference_observations(start, end, networks)
+    reference_data.update_reference_observations('TOKEN', start, end, networks)
     mock_api.list_sites.assert_called_once()
     mock_api.list_observations.assert_called_once()
     surfrad.assert_called()
@@ -89,7 +96,7 @@ def test_initialize_reference_metadata_objects(
     api = mocker.patch('solarforecastarbiter.io.reference_observations.'
                        'reference_data.get_apisession')
     api.return_value = mock_api
-    reference_data.initialize_reference_metadata_objects(site_dicts())
+    reference_data.initialize_reference_metadata_objects('TOKEN', site_dicts())
     api.assert_called_once()
     assert mock_api.create_site.call_count == 3
     for site in site_objects_param[1:]:
