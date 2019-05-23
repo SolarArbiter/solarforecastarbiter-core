@@ -60,8 +60,8 @@ def update_observation_data(api, sites, observations, start, end):
     """
     sandia_api_key = os.getenv('SANDIA_API_KEY')
     if sandia_api_key is None:
-        logger.error('"SANDIA_API_KEY" environment variable must be '
-                     'set to update SANDIA observation data.')
+        raise KeyError('"SANDIA_API_KEY" environment variable must be '
+                       'set to update SANDIA observation data.')
     sandia_sites = common.filter_by_networks(sites, 'SANDIA')
     for site in sandia_sites:
         try:
@@ -70,10 +70,10 @@ def update_observation_data(api, sites, observations, start, end):
             continue
         sandia_site_id = site_extra_params['network_api_id']
         obs_df = sandia.fetch_sandia(
-            sandia_site_id,
-            sandia_api_key,
-            start, end)
-        obs_df = obs_df.rename(columns=SANDIA_VARIABLE_MAP)
+            sandia_site_id, sandia_api_key,
+            start.tz_convert(site.timezone), end.tz_convert(site.timezone))
+        obs_df = obs_df.rename(columns=SANDIA_VARIABLE_MAP).tz_localize(
+            site.timezone)
         data_in_range = obs_df[start:end]
         if data_in_range.empty:
             logger.warning(f'Data for site {site.name} contained no '

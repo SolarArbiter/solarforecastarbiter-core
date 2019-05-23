@@ -69,8 +69,8 @@ def request_data(site, year, month):
             srml_month = iotools.read_srml_month_from_solardat(
                 station_code, year, month, file_type)
         except error.URLError:
-            logger.info(f'Could not retrieve {file_type} for SRML data '
-                        f'for site {site.name} on {year}/{month} .')
+            logger.warning(f'Could not retrieve {file_type} for SRML data '
+                           f'for site {site.name} on {year}/{month} .')
             logger.debug(f'Site abbreviation: {station_code}')
             continue
         except pd.errors.EmptyDataError:
@@ -110,18 +110,20 @@ def fetch(api, site, start, end):
         srml_month = request_data(site, month.year, month.month)
         if srml_month is not None:
             month_dfs.append(srml_month)
-    if month_dfs:
+    try:
         all_period_data = pd.concat(month_dfs)
-        var_columns = [col for col in all_period_data.columns
-                       if '_flag' not in col]
-        all_period_data = all_period_data[var_columns]
-        return all_period_data
-    else:
+    except ValueError:
+        logger.warning(f'No data available for site {site.name} '
+                       f'from {start} to {end}.')
         return pd.DataFrame()
+    var_columns = [col for col in all_period_data.columns
+                   if '_flag' not in col]
+    all_period_data = all_period_data[var_columns]
+    return all_period_data
 
 
 def initialize_site_observations(api, site):
-    """Creates an observaiton at the site for each variable in
+    """Creates an observation at the site for each variable in
     an SRML site's file.
 
     Parameters

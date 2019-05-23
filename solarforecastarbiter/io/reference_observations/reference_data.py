@@ -106,8 +106,8 @@ def create_site(api, site):
 
     Returns
     -------
-    uuid : string
-        UUID of the created Site.
+    datamodel.Site
+        The created site object.
     """
     # get a reference to network before we serialize extra_parameters
     network = site['extra_parameters']['network']
@@ -118,18 +118,24 @@ def create_site(api, site):
                        'automatically generated.')
         return
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
-    site_name = common.clean_name(site['name'])
-    site['name'] = f'{network} {site_name}'
-    site_to_create = Site.from_dict(site)
-    try:
-        created = api.create_site(site_to_create)
-    except HTTPError as e:
-        logger.error(f"Failed to create Site {site['name']}.")
-        logger.debug(f'HTTP Error: {e.response.text}')
+    site_name = f"{network} {common.clean_name(site['name'])}"
+    existing = common.existing_sites(api)
+    if site_name in existing:
+        logger.info('Site, %s, already exists', site_name)
+        created = existing[site_name]
     else:
-        logger.info(f'Created Site {created.name} successfully.')
-        network_handler.initialize_site_observations(api, created)
-        return created
+        site['name'] = site_name
+        site_to_create = Site.from_dict(site)
+        try:
+            created = api.create_site(site_to_create)
+        except HTTPError as e:
+            logger.error(f"Failed to create Site {site['name']}.")
+            logger.debug(f'HTTP Error: {e.response.text}')
+            return False
+        else:
+            logger.info(f'Created Site {created.name} successfully.')
+    network_handler.initialize_site_observations(api, created)
+    return created
 
 
 def initialize_reference_metadata_objects(token, sites, base_url=None):
@@ -178,8 +184,8 @@ def update_reference_observations(token, start, end, networks, base_url=None):
         The alternate base url of the SFA API
     """
     api = get_apisession(token, base_url)
-    sites = api.list_sites()
     observations = api.list_observations()
+    sites = {obs.site for obs in observations}
     for network in networks:
         network_handler = NETWORKHANDLER_MAP.get(network)
         if network_handler is None:

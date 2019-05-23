@@ -11,7 +11,7 @@ midc_var_map = {
         'ghi': 'Global CMP22 (vent/cor) [W/m^2]',
         'dni': 'Direct NIP [W/m^2]',
         'dhi': 'Diffuse CM22-1 (vent/cor) [W/m^2]',
-        'wind_speed': 'Avg Wind Speed @ 6ft [m/s]',
+        'wind_speed': 'Avg Wind Speed @ 33ft [m/s]',
         'air_temperature': 'Tower Dry Bulb Temp [deg C]',
         'relative_humidity': 'Tower RH [%]',
     },
@@ -26,7 +26,7 @@ midc_var_map = {
     'HSU': {
         'ghi': 'Global Horiz [W/m^2]',
         'dni': 'Direct Normal (calc) [W/m^2]',
-        'dhi': 'Diffuse Horiz (band_corr) [W/m^2]',
+        'dhi': 'Diffuse Horiz (band corr) [W/m^2]',
     },
     'UTPASRL': {
         'ghi': 'Global Horizontal [W/m^2]',
@@ -35,7 +35,7 @@ midc_var_map = {
         'air_temperature': 'CHP1 Temp [deg C]',
     },
     'UAT': {
-        'ghi': 'Global Horiz_(platform) [W/m^2]',
+        'ghi': 'Global Horiz (platform) [W/m^2]',
         'dni': 'Direct Normal [W/m^2]',
         'dhi': 'Diffuse Horiz [W/m^2]',
         'air_temperature': 'Air Temperature [deg C]',
@@ -67,7 +67,7 @@ midc_var_map = {
     },
     'NELHA': {
         'ghi': 'Global Horizontal [W/m^2]',
-        'air_temperature': 'Air Temperature [W/m^2]',
+        'air_temperature': 'Air Temperature [deg C]',
         'wind_speed': 'Avg Wind Speed @ 10m [m/s]',
         'relative_humidity': 'Rel Humidity [%]',
     },
@@ -90,7 +90,7 @@ midc_var_map = {
     'NWTC': {
         'ghi': 'Global PSP [W/m^2]',
         'air_temperature': 'Temperature @ 2m [deg C]',
-        'wind_speed': 'Avg Wind Speed @ 2m [m/s]',
+        'wind_speed': 'Avg Wind Speed @ 10m [m/s]',
         'relative_humidity': 'Relative Humidity [%]',
     },
 }

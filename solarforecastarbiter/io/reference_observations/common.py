@@ -1,3 +1,4 @@
+from functools import lru_cache
 import json
 import logging
 
@@ -75,6 +76,16 @@ def check_network(networks, metadata):
         return False
     else:
         return in_network
+
+
+@lru_cache(maxsize=4)
+def existing_observations(api):
+    return {obs.name: obs for obs in api.list_observations()}
+
+
+@lru_cache(maxsize=4)
+def existing_sites(api):
+    return {site.name: site for site in api.list_sites()}
 
 
 def filter_by_networks(object_list, networks):
@@ -159,6 +170,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
     if len(observation_name) > 64:
         site_abbreviation = extra_parameters["network_api_abbreviation"]
         observation_name = f'{site_abbreviation} {variable}'
+
     observation = Observation.from_dict({
         'name': kwargs.get('name', observation_name),
         'interval_label': kwargs.get('interval_label', 'ending'),
@@ -170,6 +182,11 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         'variable': variable,
         'extra_parameters': json.dumps(extra_parameters)
     })
+    existing = existing_observations(api)
+    if observation.name in existing:
+        logger.info('Observation, %s, already exists', observation_name)
+        return existing[observation.name]
+
     try:
         created = api.create_observation(observation)
     except HTTPError as e:
@@ -203,8 +220,6 @@ def update_site_observations(api, fetch_func, site, observations,
     obs_df = fetch_func(api, site, start, end)
     data_in_range = obs_df[start:end]
     if data_in_range.empty:
-        logger.warning(f'Data for site {site.name} contained no entries '
-                       f'from {start} to {end}.')
         return
     site_observations = [obs for obs in observations if obs.site == site]
     for obs in site_observations:
