@@ -381,6 +381,8 @@ DAILY_VALIDATION_FUNCS = {
 
 
 def _daily_validation(session, observation, start, end, base_url):
+    logger.info('Validating data for %s from %s to %s',
+                observation.name, start, end)
     observation_values = session.get_observation_values(
         observation.observation_id, start, end)
     value_series = observation_values['value']
@@ -435,6 +437,6 @@ def daily_observation_validation(access_token, start, end, base_url=None):
         try:
             _daily_validation(session, observation, start, end, base_url)
         except IndexError:
-            logger.warning(('Skipping daily validation of %s'
+            logger.warning(('Skipping daily validation of %s '
                             'not enough values'), observation.name)
             continue
