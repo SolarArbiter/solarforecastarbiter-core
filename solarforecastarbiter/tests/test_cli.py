@@ -176,6 +176,7 @@ def test_referencedata_update(cli_token, mocker):
 
 def test_fetchnwp(mocker):
     mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
     mocked = mocker.patch('solarforecastarbiter.io.fetch.nwp.run',
                           return_value=asyncio.sleep(0))
     runner = CliRunner()
@@ -186,6 +187,7 @@ def test_fetchnwp(mocker):
 
 def test_fetchnwp_netcdfonly(mocker):
     mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
     mocked = mocker.patch('solarforecastarbiter.io.fetch.nwp.optimize_only',
                           return_value=asyncio.sleep(0))
     runner = CliRunner()
@@ -197,6 +199,7 @@ def test_fetchnwp_netcdfonly(mocker):
 
 def test_fetchnwp_netcdfonly_nogrib(mocker):
     mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
         res = runner.invoke(cli.fetchnwp, ['--netcdf-only', tmpdir, 'rap'])
