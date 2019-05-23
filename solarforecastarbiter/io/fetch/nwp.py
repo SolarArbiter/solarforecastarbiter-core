@@ -28,15 +28,12 @@ https://www.nco.ncep.noaa.gov/pmb/nwprod/prodstat/
 This script uses features of asyncio that are likely not available in Windows.
 """
 import asyncio
-import argparse
-from functools import partial
 from itertools import chain
 import logging
 import os
 from pathlib import Path
 import re
 import shutil
-import signal
 import stat
 import subprocess
 import sys
@@ -48,20 +45,8 @@ import pandas as pd
 import xarray as xr
 
 
-from solarforecastarbiter import __version__
 from solarforecastarbiter.io.fetch import (
-    handle_exception, basic_logging_config, make_session,
-    run_in_executor, start_cluster, abort_all_on_exception)
-
-
-try:
-    import sentry_sdk  # NOQA
-except ImportError:  # pragma: no cover
-    pass
-else:
-    # Must set SENTRY_DSN for this to do anything
-    sentry_sdk.init(send_default_pii=False,
-                    release=f'solarforecastarbiter-core@{__version__}')
+    make_session, run_in_executor, abort_all_on_exception)
 
 
 logger = logging.getLogger(__name__)
@@ -741,70 +726,3 @@ def check_wgrib2():
     if shutil.which('wgrib2') is None:
         logger.error('wgrib2 was not found in PATH and is required')
         sys.exit(1)
-
-
-def main():
-    sys.excepthook = handle_exception
-    basic_logging_config()
-    check_wgrib2()
-
-    argparser = argparse.ArgumentParser(
-        description=('Retrieve weather forecasts with variables relevant to '
-                     'solar power from the NCEP NOMADS server. The utility '
-                     'function  wgrib2 is required to convert these forecasts '
-                     'into netCDF format.'))
-    argparser.add_argument('-v', '--verbose', action='count')
-    argparser.add_argument('--chunksize', default=128,
-                           help='Size of a chunk (in KB) to save at one time')
-    argparser.add_argument('--once', action='store_true',
-                           help='Only get one forecast initialization time')
-    argparser.add_argument('--use-tmp', action='store_true',
-                           help='Save grib files to /tmp')
-    argparser.add_argument(
-        '--netcdf-only', action='store_true',
-        help='Only convert files at save_directory to netcdf')
-    argparser.add_argument('--workers', type=int, default=1,
-                           help='Number of worker processes')
-    argparser.add_argument('save_directory',
-                           help='Directory to save data in')
-    argparser.add_argument(
-        'model', choices=list(model_map.keys()),
-        help='The model to get data for')
-    args = argparser.parse_args()
-
-    if args.verbose == 1:
-        logging.getLogger().setLevel(logging.INFO)
-    elif args.verbose and args.verbose > 1:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    start_cluster(args.workers, 4)
-    basepath = Path(args.save_directory).resolve()
-    if args.netcdf_only:
-        path_to_files = basepath
-        if (
-                not path_to_files.is_dir() or
-                len(list(path_to_files.glob('*.grib2'))) == 0
-        ):
-            logger.error('%s is not a valid directory with grib files',
-                         path_to_files)
-            sys.exit(1)
-        fut = asyncio.ensure_future(optimize_only(path_to_files, args.model))
-    else:
-        fut = asyncio.ensure_future(run(basepath, args.model, args.chunksize,
-                                        args.once, args.use_tmp))
-
-    loop = asyncio.get_event_loop()
-
-    def bail(ecode):
-        fut.cancel()
-        sys.exit(ecode)
-
-    loop.add_signal_handler(signal.SIGUSR1, partial(bail, 1))
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, partial(bail, 0))
-
-    loop.run_until_complete(fut)
-
-
-if __name__ == '__main__':
-    main()
