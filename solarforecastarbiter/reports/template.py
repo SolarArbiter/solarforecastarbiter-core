@@ -126,8 +126,8 @@ def prereport_to_html(prereport):
     prereport : str, html
     """
     try:
-        out = subprocess.run(args=['pandoc'], input=prereport.encode(),
-                             capture_output=True)
+        out = subprocess.run(args=['pandoc', '--from', 'markdown+pipe_tables'],
+                             input=prereport.encode(), capture_output=True)
     except (FileNotFoundError, subprocess.CalledProcessError) as e:
         raise OSError('Error converting prereport to html using pandoc') from e
     return out.stdout.decode()

@@ -285,14 +285,18 @@ def metrics_table(cds):
     """
     formatter = NumberFormatter(format="0.000")
     # construct list of columns. make sure that forecast name is first
-    columns = [TableColumn(field='forecast', title='Forecast')]
+    name_width = 200
+    metric_width = 60
+    columns = [TableColumn(field='forecast', title='Forecast',
+                           width=name_width)]
     for field in filter(lambda x: x != 'forecast', cds.data):
         title = _table_title(field)
         col = TableColumn(field=field, title=title.upper(),
-                          formatter=formatter)
+                          formatter=formatter, width=metric_width)
         columns.append(col)
-    data_table = DataTable(source=cds, columns=columns,
-                           width=500, height=200, index_position=None)
+    width = name_width + metric_width * (len(field) - 1)
+    data_table = DataTable(source=cds, columns=columns, width=width,
+                           height=200, index_position=None, fit_columns=False)
     return data_table
 
 

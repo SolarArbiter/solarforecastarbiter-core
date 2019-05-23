@@ -34,10 +34,10 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 
 {# reformat into table with information described above. Left side should be block titled Observations with columns Name, Interval label, Interval length, Aligned interval label, Resampled interval length. Right side should be block titled Forecasts with same columns. Need some nice formatting to make it readable. Also fix forecast link's hard coded /single route #}
 
-{% for obs, obsid, fx, fxid in fx_obs %}
-
-* Observation: [{{ obs|safe }}]({{ dash_url|safe }}/observations/{{ obsid|safe }}), Forecast: [{{ fx|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fxid|safe }})
-
+Observation | Forecast
+------------|---------
+{% for obs, obsid, fx, fxid in fx_obs -%}
+[{{ obs|safe }}]({{ dash_url|safe }}/observations/{{ obsid|safe }}) | [{{ fx|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fxid|safe }})
 {% endfor %}
 
 The plot below shows the realigned and resampled time series of observation and forecast data.
