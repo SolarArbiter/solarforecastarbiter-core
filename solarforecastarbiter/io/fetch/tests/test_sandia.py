@@ -54,8 +54,8 @@ def test_fetch_sandia(location, api_key, start, end, mocker):
     mocker.patch('solarforecastarbiter.io.fetch.sandia.requests.get',
                  side_effect=mocked_get)
     data = sandia.fetch_sandia(location, api_key, start, end)
-    assert data.index[0] == pd.Timestamp('2019-01-23T00:01:00Z', freq='T')
-    assert data.index[-1] == pd.Timestamp('2019-01-23T23:59:00Z', freq='T')
+    assert data.index[0] == pd.Timestamp('2019-01-23T00:01:00', freq='T')
+    assert data.index[-1] == pd.Timestamp('2019-01-23T23:59:00', freq='T')
     assert 'AmbientTemp_weather' in data.columns
     assert 'AmbientTemp_system' in data.columns
     assert 'TmStamp' not in data.columns
