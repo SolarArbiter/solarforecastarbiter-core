@@ -199,7 +199,7 @@ def scatter(fx_obs_cds):
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='metric'):
+def construct_metrics_cds(metrics, kind, index='forecast'):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, total, month, day, hour
@@ -207,6 +207,8 @@ def construct_metrics_cds(metrics, kind, index='metric'):
     Parameters
     ----------
     metrics : list of metrics dicts
+        Each metric dict is for a different forecast. Forecast name is
+        specified by the name key.
     kind : str
         One of total, month, day, hour
     index : str
@@ -275,18 +277,19 @@ def metrics_table(cds):
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
-        Fields must be 'metric' and the names of the forecasts.
+        Fields must be 'forecast' and the names of the metrics.
 
     Returns
     -------
     data_table : bokeh.widgets.DataTable
     """
     formatter = NumberFormatter(format="0.000")
-    # construct list of columns. make sure that metric is first
-    columns = [TableColumn(field='metric', title='Metric')]
-    for field in filter(lambda x: x != 'metric', cds.data):
+    # construct list of columns. make sure that forecast name is first
+    columns = [TableColumn(field='forecast', title='Forecast')]
+    for field in filter(lambda x: x != 'forecast', cds.data):
         title = _table_title(field)
-        col = TableColumn(field=field, title=title, formatter=formatter)
+        col = TableColumn(field=field, title=title.upper(),
+                          formatter=formatter)
         columns.append(col)
     data_table = DataTable(source=cds, columns=columns,
                            width=500, height=200, index_position=None)

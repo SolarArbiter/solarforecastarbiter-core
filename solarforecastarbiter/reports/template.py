@@ -37,10 +37,9 @@ def prereport(report, metadata, metrics):
 
     template = env.get_template('template.md')
 
-    cds = figures.construct_metrics_cds(metrics, 'total')
+    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
     data_table = figures.metrics_table(cds)
 
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
     figures_bar = {}
     for num, metric in enumerate(report.metrics):
         fig = figures.bar(cds, metric)

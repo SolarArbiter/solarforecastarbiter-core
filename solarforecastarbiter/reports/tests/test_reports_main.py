@@ -177,6 +177,11 @@ metrics = (metrics_a, metrics_b)
 
 prereport = template.prereport(report, metadata, metrics)
 
+# optionally post prereport to API
+
+with open('bokeh_prereport.md', 'w') as f:
+    f.write(prereport)
+
 fx_obs_cds = [
     (fxobs1, figures.construct_fx_obs_cds(fx_values, obs_values)),
     (fxobs2, figures.construct_fx_obs_cds(fx_values*.5, obs_values))
