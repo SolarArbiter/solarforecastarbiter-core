@@ -10,11 +10,10 @@ from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.reference_forecasts import persistence
 
 
-# maybe rename run_nwp
 # maybe rework in terms of forecast run *issue time* as described in
 # https://solarforecastarbiter.org/usecases/#forecastrun
 # and datamodel.Forecast (as demonstrated in run_persistence below)
-def run(site, model, init_time, start, end):
+def run_nwp(site, model, init_time, start, end):
     """
     Calculate benchmark irradiance and power forecasts for a site.
 

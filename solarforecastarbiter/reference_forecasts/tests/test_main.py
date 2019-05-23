@@ -54,13 +54,13 @@ def check_out(out, expected, site_type):
     pytest.param(models.rap_cloud_cover_to_hourly_mean,
                  load_forecast_return_value_3),
 ])
-def test_run(model, load_forecast_return_value, site_powerplant_site_type,
+def test_run_nwp(model, load_forecast_return_value, site_powerplant_site_type,
              mocker):
     BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
     load_forecast = partial(nwp.load_forecast, base_path=BASE_PATH)
     model = partial(model, load_forecast=load_forecast)
     site, site_type = site_powerplant_site_type
-    out = main.run(site, model, init_time, start, end)
+    out = main.run_nwp(site, model, init_time, start, end)
     check_out(out, out_forecast_exp, site_type)
 
 
