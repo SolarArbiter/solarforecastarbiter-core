@@ -105,6 +105,7 @@ def create_metadata(report):
         name=report.name, start=report.start, end=report.end,
         now=pd.Timestamp.utcnow())
     metadata['versions'] = get_versions()
+    metadata['validation_issues'] = get_validation_issues()
     return metadata
 
 
@@ -132,6 +133,10 @@ def get_versions():
     versions['python'] = platform.python_version()
     versions['platform'] = platform.platform()
     return versions
+
+
+def get_validation_issues():
+    return {}
 
 
 def get_data_for_report_embed(session, report):

@@ -114,7 +114,7 @@ def timeseries(fx_obs_cds, start, end):
     fig = figure(
         sizing_mode='scale_width', plot_width=900, plot_height=300,
         x_range=(start, end), x_axis_type='datetime',
-        tools='pan,wheel_zoom,reset',
+        tools='pan,xwheel_zoom,box_zoom,reset,save',
         name='timeseries')
 
     plotted_objects = []
@@ -178,7 +178,7 @@ def scatter(fx_obs_cds):
     fig = figure(
         plot_width=450, plot_height=400, match_aspect=True,  # does not work?
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
-        tools='pan,wheel_zoom,reset',
+        tools='pan,wheel_zoom,box_zoom,reset,save',
         name='scatter')
 
     kwargs = dict(size=6, line_color=None)
@@ -281,11 +281,12 @@ def metrics_table(cds):
     -------
     data_table : bokeh.widgets.DataTable
     """
+    formatter = NumberFormatter(format="0.000")
     # construct list of columns. make sure that metric is first
     columns = [TableColumn(field='metric', title='Metric')]
     for field in filter(lambda x: x != 'metric', cds.data):
         title = _table_title(field)
-        col = TableColumn(field=field, title=title)
+        col = TableColumn(field=field, title=title, formatter=formatter)
         columns.append(col)
     data_table = DataTable(source=cds, columns=columns,
                            width=500, height=200, index_position=None)

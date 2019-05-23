@@ -9,7 +9,6 @@ from solarforecastarbiter import datamodel, pvmodel
 
 from solarforecastarbiter.reports import template, figures, main
 
-
 dummy_metrics = {
     'total': {
         'mae': 5,
@@ -140,7 +139,7 @@ fxobs1 = datamodel.ForecastObservation(forecast, observation)
 fxobs2 = datamodel.ForecastObservation(forecast2, observation)
 
 report = datamodel.Report(
-    name='My Awesome Report',
+    name='Albuquerque GHI Forecast Analysis',
     start=pd.Timestamp('20190101 0000', tz=tz),
     end=pd.Timestamp('20190201 0000', tz=tz),
     forecast_observations=(fxobs1, fxobs2),
@@ -149,15 +148,16 @@ report = datamodel.Report(
 
 
 obs_values = load_data(observation, '20190101', '20200105')
-fx_values = obs_values * np.random.randn(len(obs_values)).clip(0)
+fx_values = obs_values * (0.5 * np.random.randn(len(obs_values)) + 1)
+fx_values = fx_values.clip(0)
 data = pd.DataFrame({'observation': obs_values, 'forecast A': fx_values})
 data['timestamp'] = data.index
 
 obs_values = load_data(observation, '20190101', '20200105')
-fx_values = obs_values * np.random.randn(len(obs_values)).clip(0)
-data = pd.DataFrame({'observation': obs_values, 'forecast B': fx_values})
+fx_values2 = obs_values * (0.5 * np.random.randn(len(obs_values)) + 0.75)
+fx_values2 = fx_values2.clip(0)
+data = pd.DataFrame({'observation': obs_values, 'forecast B': fx_values2})
 data['timestamp'] = data.index
-
 
 metadata = main.create_metadata(report)
 
@@ -165,8 +165,14 @@ metrics_a = deepcopy(dummy_metrics)
 metrics_b = deepcopy(dummy_metrics)
 metrics_a['name'] = forecast.name
 metrics_b['name'] = forecast2.name
-metrics_b['total'] = {k: v*0.75 for k, v in metrics_b['total'].items()}
-metrics_b['total']['mbe'] = -2.77789268789
+metrics_a['total']['mae'] = (fx_values - obs_values).abs().mean()
+metrics_a['total']['rmse'] = (fx_values - obs_values).std().mean()
+metrics_a['total']['mbe'] = (fx_values - obs_values).mean()
+metrics_b['total']['mae'] = (fx_values2 - obs_values).abs().mean()
+metrics_b['total']['rmse'] = (fx_values2 - obs_values).std().mean()
+metrics_b['total']['mbe'] = (fx_values2 - obs_values).mean()
+# metrics_b['total'] = {k: v*0.75 for k, v in metrics_b['total'].items()}
+# metrics_b['total']['mbe'] = -2.77789268789
 metrics = (metrics_a, metrics_b)
 
 prereport = template.prereport(report, metadata, metrics)

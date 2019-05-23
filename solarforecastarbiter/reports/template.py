@@ -6,7 +6,7 @@ import subprocess
 from bokeh.embed import components
 
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
-                    select_autoescape, Template)
+                    select_autoescape, Template, Markup)
 
 from solarforecastarbiter.reports import figures
 
@@ -48,20 +48,34 @@ def prereport(report, metadata, metrics):
 
     script, divs = components(dict(tables=data_table, **figures_bar))
 
-    print_versions = metadata['versions']
+    figures_bar_divs = [
+        div for name, div in divs.items() if 'figures_bar' in name]
+
+    fx_obs = [[fx_obs.observation.name,
+               getattr(fx_obs.observation, 'uuid', ''),
+               fx_obs.forecast.name,
+               getattr(fx_obs.forecast, 'uuid', '')]
+              for fx_obs in report.forecast_observations]
+
+    strftime = '%Y-%m-%d %H:%M:%S'
+
     rendered = template.render(
         name=metadata['name'],
-        start=metadata['start'],
-        end=metadata['end'],
-        now=metadata['now'],
-        print_versions=print_versions,
+        start=metadata['start'].strftime(strftime),
+        end=metadata['end'].strftime(strftime),
+        now=metadata['now'].strftime(strftime),
+        fx_obs=fx_obs,
+        validation_issues=metadata['validation_issues'],
+        versions=metadata['versions'],
         script_metrics=script,
-        **divs)
+        tables=divs['tables'],
+        figures_bar=figures_bar_divs)
     return rendered
 
 
 # not all args currently used, but expect they will eventually be used
-def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport):
+def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport,
+                             html=True):
     """
     Add figures to the prereport, convert to html
 
@@ -76,6 +90,8 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport):
         Describes the pre-report
     prereport : str, markdown or html
         The templated pre-report.
+    html : bool
+        Indicates if the template will be rendered into html or pdf.
 
     Returns
     -------
@@ -91,7 +107,10 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport):
     script, divs = components(
         {'figures_timeseries': ts_fig, 'figures_scatter': scat_fig})
 
-    body = body_template.render(script_data=script, **divs)
+    body = body_template.render(
+        script_data=script,
+        html=html,
+        **divs)
     return body
 
 
