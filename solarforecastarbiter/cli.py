@@ -1,4 +1,8 @@
+import asyncio
+from functools import partial
 import logging
+from pathlib import Path
+import signal
 import sys
 
 
@@ -10,6 +14,7 @@ import sentry_sdk
 
 from solarforecastarbiter import __version__
 from solarforecastarbiter.io.api import request_cli_access_token
+from solarforecastarbiter.io.fetch import start_cluster
 from solarforecastarbiter.io.reference_observations import reference_data
 from solarforecastarbiter.validation import tasks as validation_tasks
 
@@ -18,8 +23,20 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                     level=logging.WARNING)
-sentry_sdk.init(send_default_pii=False)
+sentry_sdk.init(send_default_pii=False,
+                release=f'solarforecastarbiter-core@{__version__}')
 midnight = pd.Timestamp.utcnow().floor('1d')
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):  # pragma: no cover
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.error("Uncaught exception",
+                  exc_info=(exc_type, exc_value, exc_traceback))
+
+
+sys.excepthook = handle_exception
 
 
 def cli_access_token(user, password):
@@ -181,3 +198,60 @@ def referencedata_update(verbose, user, password, base_url, network, start,
     token = cli_access_token(user, password)
     reference_data.update_reference_observations(token, start, end, network,
                                                  base_url)
+
+
+@cli.command()
+@click.option('-v', '--verbose', count=True,
+              help='Increase logging verbosity')
+@click.option('--chunksize', default=128,
+              help='Size of a chunk (in KB) to save at one time')
+@click.option('--once', is_flag=True,
+              help='Only get one forecast initialization time')
+@click.option('--use-tmp', is_flag=True,
+              help='Save grib files to /tmp')
+@click.option('--netcdf-only', is_flag=True,
+              help='Only convert files at save_directory to netcdf')
+@click.option('--workers', type=int, default=1,
+              help='Number of worker processes')
+@click.argument('save_directory', type=click.Path(
+    exists=True, writable=True, resolve_path=True, file_okay=False))
+@click.argument('model', type=click.Choice([
+    'gfs_0p25', 'nam_12km', 'rap', 'hrrr_hourly', 'hrrr_subhourly', 'gefs']))
+def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
+             save_directory, model):
+    """
+    Retrieve weather forecasts with variables relevant to solar power
+    from the NCEP NOMADS server. The utility function wgrib2 is
+    required to convert these forecasts into netCDF format.
+    """
+    set_log_level(verbose)
+    from solarforecastarbiter.io.fetch import nwp
+    nwp.check_wgrib2()
+    start_cluster(workers, 4)
+    basepath = Path(save_directory)
+    if netcdf_only:
+        path_to_files = basepath
+        if (
+                not path_to_files.is_dir() or
+                len(list(path_to_files.glob('*.grib2'))) == 0
+        ):
+            logger.error('%s is not a valid directory with grib files',
+                         path_to_files)
+            sys.exit(1)
+        fut = asyncio.ensure_future(nwp.optimize_only(path_to_files, model))
+    else:
+        logger.info('Fetching NWP forecasts for %s', model)
+        fut = asyncio.ensure_future(nwp.run(basepath, model, chunksize,
+                                            once, use_tmp))
+
+    loop = asyncio.get_event_loop()
+
+    def bail(ecode):
+        fut.cancel()
+        sys.exit(ecode)
+
+    loop.add_signal_handler(signal.SIGUSR1, partial(bail, 1))
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, partial(bail, 0))
+
+    loop.run_until_complete(fut)

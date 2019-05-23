@@ -1,5 +1,7 @@
+import asyncio
 from functools import partial
 import logging
+import tempfile
 
 
 import click
@@ -170,3 +172,35 @@ def test_referencedata_update(cli_token, mocker):
     assert mocked.call_args[0][:3] == ('TOKEN', pd.Timestamp('20190101T0000Z'),
                                        pd.Timestamp('20190101T235959Z'))
     assert mocked.call_args[0][-1] == 'https://api.solarforecastarbiter.org'
+
+
+def test_fetchnwp(mocker):
+    mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
+    mocked = mocker.patch('solarforecastarbiter.io.fetch.nwp.run',
+                          return_value=asyncio.sleep(0))
+    runner = CliRunner()
+    res = runner.invoke(cli.fetchnwp, ['/tmp', 'rap'])
+    assert res.exit_code == 0
+    assert mocked.called
+
+
+def test_fetchnwp_netcdfonly(mocker):
+    mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
+    mocked = mocker.patch('solarforecastarbiter.io.fetch.nwp.optimize_only',
+                          return_value=asyncio.sleep(0))
+    runner = CliRunner()
+    with tempfile.NamedTemporaryFile(suffix='.grib2', dir='/tmp'):
+        res = runner.invoke(cli.fetchnwp, ['--netcdf-only', '/tmp', 'rap'])
+    assert res.exit_code == 0
+    assert mocked.called
+
+
+def test_fetchnwp_netcdfonly_nogrib(mocker):
+    mocker.patch('solarforecastarbiter.cli.start_cluster')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = runner.invoke(cli.fetchnwp, ['--netcdf-only', tmpdir, 'rap'])
+    assert res.exit_code == 1
