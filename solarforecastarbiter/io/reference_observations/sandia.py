@@ -70,10 +70,10 @@ def update_observation_data(api, sites, observations, start, end):
             continue
         sandia_site_id = site_extra_params['network_api_id']
         obs_df = sandia.fetch_sandia(
-            sandia_site_id,
-            sandia_api_key,
-            start, end)
-        obs_df = obs_df.rename(columns=SANDIA_VARIABLE_MAP)
+            sandia_site_id, sandia_api_key,
+            start.tz_convert(site.timezone), end.tz_convert(site.timezone))
+        obs_df = obs_df.rename(columns=SANDIA_VARIABLE_MAP).tz_localize(
+            site.timezone)
         data_in_range = obs_df[start:end]
         if data_in_range.empty:
             logger.warning(f'Data for site {site.name} contained no '

@@ -47,7 +47,8 @@ def request_sandia_data(location, data_type, start, end, api_key):
 
 
 def fetch_sandia(location, api_key, start, end):
-    """Requests and concatenates data from the Sandia API into a single dataframe.
+    """
+    Requests and concatenates data from the Sandia API into a single dataframe.
 
     Parameters
     ----------
@@ -60,6 +61,11 @@ def fetch_sandia(location, api_key, start, end):
     end: datetime
         End of the period for which to request data.
 
+    Returns
+    -------
+    pandas.DataFrame
+        With data from start to end. Index is a datetime-index NOT localized
+        but in the timezone for the location
     """
     data_types = ['system', 'weather']
     dfs = []
@@ -67,7 +73,7 @@ def fetch_sandia(location, api_key, start, end):
         df = request_sandia_data(location, data_type, start, end, api_key)
         if df.empty:
             continue
-        df.index = pd.to_datetime(df['TmStamp'], unit='ms', utc=True)
+        df.index = pd.to_datetime(df['TmStamp'], unit='ms', utc=False)
         df = df.drop('TmStamp', axis=1)
         # Append the datatype to the end of AmbientTemp so we can differentiate
         # system from weather temperatures
