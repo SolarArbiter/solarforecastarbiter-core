@@ -161,33 +161,47 @@ data['timestamp'] = data.index
 
 metadata = main.create_metadata(report)
 
+
+def rmse(diff):
+    return np.sqrt((diff * diff).sum() / (len(diff) - 1))
+
+# breakpoint()
 metrics_a = defaultdict(dict)
 metrics_b = defaultdict(dict)
 metrics_a['name'] = forecast.name
 metrics_b['name'] = forecast2.name
 metrics_a['total']['mae'] = (fx_values - obs_values).abs().mean()
-metrics_a['total']['rmse'] = (fx_values - obs_values).std()
+_rmse = (fx_values - obs_values).aggregate(rmse)
+metrics_a['total']['rmse'] = _rmse
 metrics_a['total']['mbe'] = (fx_values - obs_values).mean()
 metrics_b['total']['mae'] = (fx_values2 - obs_values).abs().mean()
-metrics_b['total']['rmse'] = (fx_values2 - obs_values).std()
+_rmse = (fx_values2 - obs_values).aggregate(rmse)
+metrics_b['total']['rmse'] = _rmse
 metrics_b['total']['mbe'] = (fx_values2 - obs_values).mean()
 metrics_a['day']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.date).mean()
-metrics_a['day']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.date).std()
+_rmse = (fx_values - obs_values).groupby(lambda x: x.date).aggregate(rmse)
+print(_rmse)
+metrics_a['day']['rmse'] = _rmse
 metrics_a['day']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.date).mean()
 metrics_b['day']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.date).mean()
-metrics_b['day']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.date).std()
+_rmse = (fx_values2 - obs_values).groupby(lambda x: x.date).aggregate(rmse)
+metrics_b['day']['rmse'] = _rmse
 metrics_b['day']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.date).mean()
 metrics_a['month']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.month).mean()
-metrics_a['month']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.month).std()
+_rmse = (fx_values - obs_values).groupby(lambda x: x.month).aggregate(rmse)
+metrics_a['month']['rmse'] = _rmse
 metrics_a['month']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.month).mean()
 metrics_b['month']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.month).mean()
-metrics_b['month']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.month).std()
+_rmse = (fx_values2 - obs_values).groupby(lambda x: x.month).aggregate(rmse)
+metrics_b['month']['rmse'] = _rmse
 metrics_b['month']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.month).mean()
 metrics_a['hour']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.hour).mean()
-metrics_a['hour']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.hour).std()
+_rmse = (fx_values - obs_values).groupby(lambda x: x.hour).aggregate(rmse)
+metrics_a['hour']['rmse'] = _rmse
 metrics_a['hour']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.hour).mean()
 metrics_b['hour']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.hour).mean()
-metrics_b['hour']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.hour).std()
+_rmse = (fx_values2 - obs_values).groupby(lambda x: x.hour).aggregate(rmse)
+metrics_b['hour']['rmse'] = _rmse
 metrics_b['hour']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.hour).mean()
 metrics = (metrics_a, metrics_b)
 
