@@ -45,7 +45,8 @@ setup(
         'requests',
         'xarray',
         'tables',
-        'pvlib'
+        'pvlib',
+        'bokeh'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
