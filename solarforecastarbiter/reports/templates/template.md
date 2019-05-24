@@ -46,18 +46,14 @@ Observation | Forecast
 [{{ obs|safe }}]({{ dash_url|safe }}/observations/{{ obsid|safe }}) | [{{ fx|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fxid|safe }})
 {% endfor %}
 
-The plot below shows the realigned and resampled time series of observation and forecast data.
+The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
 {# if html   commented out because it doesn't work yet - something about the 2 step rendering #}
 Controls to pan, zoom, and save the plot are shown on the right. Clicking on an item in the legend will hide/show it.
 {# endif #}
 
 {{ script_data | safe }}
 
-{{ figures_timeseries | safe }}
-
-The scatter plot below shows realigned and resampled forecast vs observed values.
-
-{{ figures_scatter | safe }}
+{{ figures_timeseries_scatter | safe }}
 
 ### Data validation
 

@@ -114,7 +114,7 @@ def timeseries(fx_obs_cds, start, end):
     fig = figure(
         sizing_mode='scale_width', plot_width=900, plot_height=300,
         x_range=(start, end), x_axis_type='datetime',
-        tools='pan,xwheel_zoom,box_zoom,reset,save',
+        tools='pan,xwheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='timeseries')
 
     plotted_objects = []
@@ -178,7 +178,7 @@ def scatter(fx_obs_cds):
     fig = figure(
         plot_width=450, plot_height=400, match_aspect=True,  # does not work?
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
-        tools='pan,wheel_zoom,box_zoom,reset,save',
+        tools='pan,wheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='scatter')
 
     kwargs = dict(size=6, line_color=None)
@@ -350,29 +350,38 @@ def bar_subdivisions(cds, kind, metric):
 
     Returns
     -------
-    data_table : bokeh.widgets.DataTable
+    figs : tuple of figures
     """
     palette = iter(PALETTE)
-    # x_range = cds.data[kind]
+    tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
+    fig_kwargs = dict(tools=tools)
     figs = []
     if kind == 'day':
-        fig_kwargs = dict(x_axis_type='datetime')
+        fig_kwargs['x_axis_type'] = 'datetime'
         width = 0.8 * pd.Timedelta('1day')
     else:
-        fig_kwargs = dict()
         width = 0.8
 
-    for field in filter(lambda x: x != kind, cds.data):
+    y_min = min(d.min() for k, d in cds.data.items() if k != kind)
+    y_max = max(d.max() for k, d in cds.data.items() if k != kind)
+    pad_factor = 1.03
+    y_max, y_min = pad_factor * y_max, pad_factor * y_min
+
+    for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
         title = field + ' ' + metric.upper()
         fig = figure(width=800, height=200, title=title, **fig_kwargs)
         fig.vbar(x=kind, top=field, width=width, source=cds,
                  line_color='white', fill_color=next(palette))
         fig.xgrid.grid_line_color = None
+        fig.y_range.end = y_max
         if metric in START_AT_ZER0:
             fig.y_range.start = 0
         else:
             # TODO: add heavy 0 line
-            pass
+            fig.y_range.start = y_min
+        if num == 0:
+            # add x_range to plots to link panning
+            fig_kwargs['x_range'] = fig.x_range
         figs.append(fig)
     return figs
 

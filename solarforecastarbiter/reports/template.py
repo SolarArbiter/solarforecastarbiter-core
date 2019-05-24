@@ -4,7 +4,7 @@ Inserts metadata and figures into the report template.
 import subprocess
 
 from bokeh.embed import components
-from bokeh.layouts import column
+from bokeh.layouts import column, gridplot
 
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
                     select_autoescape, Template, Markup)
@@ -55,35 +55,14 @@ def prereport(report, metadata, metrics):
     script, (data_table_div, *figures_bar_divs) = components((data_table,
                                                               *figures_bar))
 
-    figures_bar_month = []
-    # series with MultiIndex of metric, forecast, month
-    metrics_series = figures.construct_metrics_series(metrics, 'month')
-    for num, metric in enumerate(report.metrics):
-        cds = figures.construct_metrics_cds2(metrics_series, metric)
-        figs = figures.bar_subdivisions(cds, 'month', metric)
-        figures_bar_month.append(column(figs))
+    script_month, figures_bar_month_divs = _loop_over_metrics(report, metrics,
+                                                              'month')
 
-    script_month, figures_bar_month_divs = components(figures_bar_month)
+    script_day, figures_bar_day_divs = _loop_over_metrics(report, metrics,
+                                                          'day')
 
-    figures_bar_day = []
-    # series with MultiIndex of metric, forecast, day
-    metrics_series = figures.construct_metrics_series(metrics, 'day')
-    for num, metric in enumerate(report.metrics):
-        cds = figures.construct_metrics_cds2(metrics_series, metric)
-        figs = figures.bar_subdivisions(cds, 'day', metric)
-        figures_bar_day.append(column(figs))
-
-    script_day, figures_bar_day_divs = components(figures_bar_day)
-
-    figures_bar_hour = []
-    # series with MultiIndex of metric, forecast, hour
-    metrics_series = figures.construct_metrics_series(metrics, 'hour')
-    for num, metric in enumerate(report.metrics):
-        cds = figures.construct_metrics_cds2(metrics_series, metric)
-        figs = figures.bar_subdivisions(cds, 'hour', metric)
-        figures_bar_hour.append(column(figs))
-
-    script_hour, figures_bar_hour_divs = components(figures_bar_hour)
+    script_hour, figures_bar_hour_divs = _loop_over_metrics(report, metrics,
+                                                            'hour')
 
     script_metrics = script + script_month + script_day + script_hour
 
@@ -106,8 +85,17 @@ def prereport(report, metadata, metrics):
     return rendered
 
 
-def _loop_over_metrics():
-    pass
+def _loop_over_metrics(report, metrics, kind):
+    figs = []
+    # series with MultiIndex of metric, forecast, day
+    metrics_series = figures.construct_metrics_series(metrics, kind)
+    for num, metric in enumerate(report.metrics):
+        cds = figures.construct_metrics_cds2(metrics_series, metric)
+        # one figure with a subfig for each forecast
+        fig = figures.bar_subdivisions(cds, kind, metric)
+        figs.append(gridplot(fig, ncols=1))
+    script, divs = components(figs)
+    return script, divs
 
 
 # not all args currently used, but expect they will eventually be used
@@ -140,14 +128,12 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport,
 
     ts_fig = figures.timeseries(fx_obs_cds, report.start, report.end)
     scat_fig = figures.scatter(fx_obs_cds)
-
-    script, divs = components(
-        {'figures_timeseries': ts_fig, 'figures_scatter': scat_fig})
+    script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
 
     body = body_template.render(
         script_data=script,
         html=html,
-        **divs)
+        figures_timeseries_scatter=div)
     return body
 
 
