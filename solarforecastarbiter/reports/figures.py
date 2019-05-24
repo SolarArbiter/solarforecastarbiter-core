@@ -129,7 +129,7 @@ def timeseries(fx_obs_cds, start, end):
             obs_color = _obs_color(fx_obs.observation.interval_length)
             getattr(fig, plot_method)(
                 x='timestamp', y='observation', source=cds,
-                color=obs_color, legend=name,  **kwargs)
+                color=obs_color, legend=name, **kwargs)
         if fx_obs.forecast in plotted_objects:
             pass
         else:
@@ -139,7 +139,7 @@ def timeseries(fx_obs_cds, start, end):
             name = _fx_name(fx_obs)
             getattr(fig, plot_method)(
                 x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend=name,  **kwargs)
+                color=next(palette), legend=name, **kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
