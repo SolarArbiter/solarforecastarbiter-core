@@ -4,10 +4,10 @@ Inserts metadata and figures into the report template.
 import subprocess
 
 from bokeh.embed import components
-from bokeh.layouts import column, gridplot
+from bokeh.layouts import gridplot
 
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
-                    select_autoescape, Template, Markup)
+                    select_autoescape, Template)
 
 from solarforecastarbiter.reports import figures
 
@@ -38,12 +38,6 @@ def prereport(report, metadata, metrics):
 
     template = env.get_template('template.md')
 
-    fx_obs = [[fx_obs.observation.name,
-               getattr(fx_obs.observation, 'uuid', ''),
-               fx_obs.forecast.name,
-               getattr(fx_obs.forecast, 'uuid', '')]
-              for fx_obs in report.forecast_observations]
-
     cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
     data_table = figures.metrics_table(cds)
 
@@ -73,7 +67,7 @@ def prereport(report, metadata, metrics):
         start=metadata['start'].strftime(strftime),
         end=metadata['end'].strftime(strftime),
         now=metadata['now'].strftime(strftime),
-        fx_obs=fx_obs,
+        fx_obs=report.forecast_observations,
         validation_issues=metadata['validation_issues'],
         versions=metadata['versions'],
         script_metrics=script_metrics,

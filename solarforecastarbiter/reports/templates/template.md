@@ -38,12 +38,13 @@ This report covers the period from {{ start }} to {{ end }}.
 
 The table below shows the observation, forecast pairs analyzed in this report. The table includes the unprocessed observation and forecast *interval label* (beginning, ending, instanteous) and *interval length*. If these quantities do not match, the Solar Forecast Arbiter must align and/or resample the data before computing error statistics. The Solar Forecast Arbiter typically aligns the observation data to the forecast data. The aligned and resampled parameters are also shown below.
 
-{# reformat into table with information described above. Left side should be block titled Observations with columns Name, Interval label, Interval length, Aligned interval label, Resampled interval length. Right side should be block titled Forecasts with same columns. Need some nice formatting to make it readable. Also fix forecast link's hard coded /single route #}
+{# Need to get report's realignment and resampling info into here. Need some nice formatting to make this table more readable. Also fix forecast link's hard coded /single route. column widths controlled by |--|--| line #}
 
-Observation | Forecast
-------------|---------
-{% for obs, obsid, fx, fxid in fx_obs -%}
-[{{ obs|safe }}]({{ dash_url|safe }}/observations/{{ obsid|safe }}) | [{{ fx|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fxid|safe }})
+| Observations | | | | | Forecasts | | | | |
+|:--------|---|---|---|---|:--------|---|---|---|---|
+Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
+{% for fx_ob in fx_obs -%}
+[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.name|safe }}) | {{ fx_ob.observation.interval_label|safe }} | {{ fx_ob.observation.interval_length|safe }} | beginning | 5min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.name|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ fx_ob.forecast.interval_length|safe }} | beginning | 5min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.

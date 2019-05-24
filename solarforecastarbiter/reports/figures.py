@@ -317,7 +317,7 @@ def bar(cds, metric):
     """
     x_range = cds.data['forecast']
     # TODO: add units to title
-    fig = figure(x_range=x_range, width=400, height=400, title=metric.upper())
+    fig = figure(x_range=x_range, width=400, height=200, title=metric.upper())
     fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
              line_color='white',
              fill_color=factor_cmap('forecast', PALETTE, factors=x_range))
