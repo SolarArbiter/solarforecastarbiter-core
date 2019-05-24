@@ -2,6 +2,7 @@
 Functions to connect to and process data from SolarForecastArbiter API
 """
 import json
+import logging
 import requests
 from urllib3 import Retry
 
@@ -15,6 +16,18 @@ from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
+logger = logging.getLogger(__name__)
+
+
+def request_cli_access_token(user, password):
+    req = requests.post(
+        'https://solarforecastarbiter.auth0.com/oauth/token',
+        data={'grant_type': 'password', 'username': user,
+              'audience': BASE_URL,
+              'password': password,
+              'client_id': 'c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7'})
+    req.raise_for_status()
+    return req.json()['access_token']
 
 
 class APISession(requests.Session):
@@ -144,13 +157,6 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_site(new_id)
 
-    def _process_observation_dict(self, observation_dict):
-        obs_dict = observation_dict.copy()
-        site_id = obs_dict['site_id']
-        site = self.get_site(site_id)
-        obs_dict['site'] = site
-        return datamodel.Observation.from_dict(obs_dict)
-
     def get_observation(self, observation_id):
         """
         Get the metadata from the API for the a given observation_id
@@ -166,7 +172,10 @@ class APISession(requests.Session):
         datamodel.Observation
         """
         req = self.get(f'/observations/{observation_id}/metadata')
-        return self._process_observation_dict(req.json())
+        obs_dict = req.json()
+        site = self.get_site(obs_dict['site_id'])
+        obs_dict['site'] = site
+        return datamodel.Observation.from_dict(obs_dict)
 
     def list_observations(self):
         """
@@ -177,8 +186,15 @@ class APISession(requests.Session):
         list of datamodel.Observation
         """
         req = self.get('/observations/')
-        return [self._process_observation_dict(obs_dict)
-                for obs_dict in req.json()]
+        obs_dicts = req.json()
+        if len(obs_dicts) == 0:
+            return []
+        sites = {site.site_id: site for site in self.list_sites()}
+        out = []
+        for obs_dict in obs_dicts:
+            obs_dict['site'] = sites.get(obs_dict['site_id'])
+            out.append(datamodel.Observation.from_dict(obs_dict))
+        return out
 
     def create_observation(self, observation):
         """
@@ -205,13 +221,6 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_observation(new_id)
 
-    def _process_forecast_dict(self, forecast_dict):
-        fx_dict = forecast_dict.copy()
-        site_id = forecast_dict['site_id']
-        site = self.get_site(site_id)
-        fx_dict['site'] = site
-        return datamodel.Forecast.from_dict(fx_dict)
-
     def get_forecast(self, forecast_id):
         """
         Get Forecast metadata from the API for the given forecast_id
@@ -226,7 +235,10 @@ class APISession(requests.Session):
         datamodel.Forecast
         """
         req = self.get(f'/forecasts/single/{forecast_id}/metadata')
-        return self._process_forecast_dict(req.json())
+        fx_dict = req.json()
+        site = self.get_site(fx_dict['site_id'])
+        fx_dict['site'] = site
+        return datamodel.Forecast.from_dict(fx_dict)
 
     def list_forecasts(self):
         """
@@ -237,8 +249,15 @@ class APISession(requests.Session):
         list of datamodel.Forecast
         """
         req = self.get('/forecasts/single/')
-        return [self._process_forecast_dict(fx_dict)
-                for fx_dict in req.json()]
+        fx_dicts = req.json()
+        if len(fx_dicts) == 0:
+            return []
+        sites = {site.site_id: site for site in self.list_sites()}
+        out = []
+        for fx_dict in fx_dicts:
+            fx_dict['site'] = sites.get(fx_dict['site_id'])
+            out.append(datamodel.Forecast.from_dict(fx_dict))
+        return out
 
     def create_forecast(self, forecast):
         """
