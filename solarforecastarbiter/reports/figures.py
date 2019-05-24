@@ -253,11 +253,11 @@ def construct_metrics_series(metrics, kind):
     metric_values = []
     for m in metrics:
         df = pd.DataFrame(m[kind])
-        metric_values.append(df.to_numpy().ravel())
+        metric_values.append(df.unstack())
         forecasts.append(m['name'])
     metric_values = np.concatenate(metric_values)
-    index = pd.MultiIndex.from_product((df.index, df.columns, forecasts),
-                                       names=[kind, 'metric', 'forecast'])
+    index = pd.MultiIndex.from_product((forecasts, df.columns, df.index),
+                                       names=['forecast', 'metric', kind])
     metrics_series = pd.Series(metric_values, index=index)
     metrics_series = metrics_series.reorder_levels(
         ('metric', 'forecast', kind))

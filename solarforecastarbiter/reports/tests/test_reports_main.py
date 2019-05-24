@@ -165,7 +165,7 @@ metadata = main.create_metadata(report)
 def rmse(diff):
     return np.sqrt((diff * diff).sum() / (len(diff) - 1))
 
-# breakpoint()
+
 metrics_a = defaultdict(dict)
 metrics_b = defaultdict(dict)
 metrics_a['name'] = forecast.name
@@ -180,7 +180,6 @@ metrics_b['total']['rmse'] = _rmse
 metrics_b['total']['mbe'] = (fx_values2 - obs_values).mean()
 metrics_a['day']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.date).mean()
 _rmse = (fx_values - obs_values).groupby(lambda x: x.date).aggregate(rmse)
-print(_rmse)
 metrics_a['day']['rmse'] = _rmse
 metrics_a['day']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.date).mean()
 metrics_b['day']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.date).mean()
