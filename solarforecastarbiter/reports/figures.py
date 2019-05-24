@@ -232,9 +232,79 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
     return cds
 
 
+def construct_metrics_series(metrics, kind):
+    """
+    Contructs a series of metrics values with a MultiIndex.
+    MultiIndex names are metric, forecast, kind.
+
+    Parameters
+    ----------
+    metrics : list of metrics dicts
+        Each metric dict is for a different forecast. Forecast name is
+        specified by the name key.
+    kind : str
+        One of total, month, day, hour
+
+    Returns
+    -------
+    pandas.Series
+    """
+    forecasts = []
+    metric_values = []
+    for m in metrics:
+        df = pd.DataFrame(m[kind])
+        metric_values.append(df.to_numpy().ravel())
+        forecasts.append(m['name'])
+    metric_values = np.concatenate(metric_values)
+    index = pd.MultiIndex.from_product((df.index, df.columns, forecasts),
+                                       names=[kind, 'metric', 'forecast'])
+    metrics_series = pd.Series(metric_values, index=index)
+    metrics_series = metrics_series.reorder_levels(
+        ('metric', 'forecast', kind))
+    return metrics_series
+
+
+def construct_metrics_series_nested(metrics, kind):
+    """
+    Contructs a series of metrics values with a MultiIndex.
+    MultiIndex names are metric, forecast, kind.
+
+    Parameters
+    ----------
+    metrics : list of metrics dicts
+        Each metric dict is for a different forecast. Forecast name is
+        specified by the name key.
+    kind : str
+        One of total, month, day, hour
+
+    Returns
+    -------
+    pandas.Series
+    """
+    metric_labels = []
+    metric_values = []
+    for m in metrics:
+        for _kind, metrics_values in m[kind].items():
+            if kind == 'day':
+                _kind = pd.Timestamp(_kind)
+            for metric, value in metrics_values.items():
+                metric_labels.append((metric, m['name'], _kind))
+                metric_values.append(value)
+    index = pd.MultiIndex.from_tuples(metric_labels,
+                                      names=['metric', 'forecast', kind])
+    metrics_series = pd.Series(metric_values, index=index)
+    return metrics_series
+
+
+def construct_metrics_cds2(metrics_series, metric):
+    df = metrics_series.xs(metric, level='metric').unstack().T
+    cds = ColumnDataSource(df)
+    return cds
+
+
 def bar(cds, metric):
     """
-    Create a table of metrics
+    Create a bar graph comparing a single metric across forecasts.
 
     Parameters
     ----------
@@ -258,6 +328,53 @@ def bar(cds, metric):
         # TODO: add heavy 0 line
         pass
     return fig
+
+
+def bar_subdivisions(cds, kind, metric):
+    """
+    Create bar graphs comparing a single metric across subdivisions of
+    time for multiple forecasts. e.g.
+
+    Fx 1 MAE |
+             |_________________
+    Fx 2 MAE |
+             |_________________
+               year, month, day, or hour
+
+    Parameters
+    ----------
+    cds : bokeh.models.ColumnDataSource
+        Fields must be kind and the names of the forecasts
+    kind : str
+        One of year, month, day, hour
+
+    Returns
+    -------
+    data_table : bokeh.widgets.DataTable
+    """
+    palette = iter(PALETTE)
+    # x_range = cds.data[kind]
+    figs = []
+    if kind == 'day':
+        fig_kwargs = dict(x_axis_type='datetime')
+        width = 0.8 * pd.Timedelta('1day')
+    else:
+        fig_kwargs = dict()
+        width = 0.8
+
+    for field in filter(lambda x: x != kind, cds.data):
+        title = field + ' ' + metric.upper()
+        fig = figure(width=800, height=200, title=title, **fig_kwargs)
+        fig.vbar(x=kind, top=field, width=width, source=cds,
+                 line_color='white', fill_color=next(palette))
+        fig.xgrid.grid_line_color = None
+        if metric in START_AT_ZER0:
+            fig.y_range.start = 0
+        else:
+            # TODO: add heavy 0 line
+            pass
+        figs.append(fig)
+    return figs
 
 
 def nested_bar():

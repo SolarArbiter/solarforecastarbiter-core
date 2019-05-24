@@ -1,4 +1,4 @@
-from copy import deepcopy
+from collections import defaultdict
 import datetime
 from functools import partial
 
@@ -81,7 +81,7 @@ def _site_metadata():
 site = _site_metadata()
 tz = 'America/Phoenix'
 data_index = pd.date_range(
-    start='20190101', end='20190201', freq='5min', tz=tz, closed='left')
+    start='20190101', end='20190401', freq='5min', tz=tz, closed='left')
 solar_position = pvmodel.calculate_solar_position(
     site.latitude, site.longitude, site.elevation, data_index)
 data_cs = pvmodel.calculate_clearsky(
@@ -141,7 +141,7 @@ fxobs2 = datamodel.ForecastObservation(forecast2, observation)
 report = datamodel.Report(
     name='Albuquerque GHI Forecast Analysis',
     start=pd.Timestamp('20190101 0000', tz=tz),
-    end=pd.Timestamp('20190201 0000', tz=tz),
+    end=pd.Timestamp('20190331 2359', tz=tz),
     forecast_observations=(fxobs1, fxobs2),
     metrics=('mae', 'rmse', 'mbe')
 )
@@ -161,18 +161,34 @@ data['timestamp'] = data.index
 
 metadata = main.create_metadata(report)
 
-metrics_a = deepcopy(dummy_metrics)
-metrics_b = deepcopy(dummy_metrics)
+metrics_a = defaultdict(dict)
+metrics_b = defaultdict(dict)
 metrics_a['name'] = forecast.name
 metrics_b['name'] = forecast2.name
 metrics_a['total']['mae'] = (fx_values - obs_values).abs().mean()
-metrics_a['total']['rmse'] = (fx_values - obs_values).std().mean()
+metrics_a['total']['rmse'] = (fx_values - obs_values).std()
 metrics_a['total']['mbe'] = (fx_values - obs_values).mean()
 metrics_b['total']['mae'] = (fx_values2 - obs_values).abs().mean()
-metrics_b['total']['rmse'] = (fx_values2 - obs_values).std().mean()
+metrics_b['total']['rmse'] = (fx_values2 - obs_values).std()
 metrics_b['total']['mbe'] = (fx_values2 - obs_values).mean()
-# metrics_b['total'] = {k: v*0.75 for k, v in metrics_b['total'].items()}
-# metrics_b['total']['mbe'] = -2.77789268789
+metrics_a['day']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.date).mean()
+metrics_a['day']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.date).std()
+metrics_a['day']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.date).mean()
+metrics_b['day']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.date).mean()
+metrics_b['day']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.date).std()
+metrics_b['day']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.date).mean()
+metrics_a['month']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.month).mean()
+metrics_a['month']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.month).std()
+metrics_a['month']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.month).mean()
+metrics_b['month']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.month).mean()
+metrics_b['month']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.month).std()
+metrics_b['month']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.month).mean()
+metrics_a['hour']['mae'] = (fx_values - obs_values).abs().groupby(lambda x: x.hour).mean()
+metrics_a['hour']['rmse'] = (fx_values - obs_values).groupby(lambda x: x.hour).std()
+metrics_a['hour']['mbe'] = (fx_values - obs_values).groupby(lambda x: x.hour).mean()
+metrics_b['hour']['mae'] = (fx_values2 - obs_values).abs().groupby(lambda x: x.hour).mean()
+metrics_b['hour']['rmse'] = (fx_values2 - obs_values).groupby(lambda x: x.hour).std()
+metrics_b['hour']['mbe'] = (fx_values2 - obs_values).groupby(lambda x: x.hour).mean()
 metrics = (metrics_a, metrics_b)
 
 prereport = template.prereport(report, metadata, metrics)

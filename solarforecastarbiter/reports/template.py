@@ -4,6 +4,7 @@ Inserts metadata and figures into the report template.
 import subprocess
 
 from bokeh.embed import components
+from bokeh.layouts import column
 
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
                     select_autoescape, Template, Markup)
@@ -37,24 +38,54 @@ def prereport(report, metadata, metrics):
 
     template = env.get_template('template.md')
 
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
-    data_table = figures.metrics_table(cds)
-
-    figures_bar = {}
-    for num, metric in enumerate(report.metrics):
-        fig = figures.bar(cds, metric)
-        figures_bar[f'figures_bar_{num}'] = fig
-
-    script, divs = components(dict(tables=data_table, **figures_bar))
-
-    figures_bar_divs = [
-        div for name, div in divs.items() if 'figures_bar' in name]
-
     fx_obs = [[fx_obs.observation.name,
                getattr(fx_obs.observation, 'uuid', ''),
                fx_obs.forecast.name,
                getattr(fx_obs.forecast, 'uuid', '')]
               for fx_obs in report.forecast_observations]
+
+    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
+    data_table = figures.metrics_table(cds)
+
+    figures_bar = []
+    for num, metric in enumerate(report.metrics):
+        fig = figures.bar(cds, metric)
+        figures_bar.append(fig)
+
+    script, (data_table_div, *figures_bar_divs) = components((data_table,
+                                                              *figures_bar))
+
+    figures_bar_month = []
+    # series with MultiIndex of metric, forecast, month
+    metrics_series = figures.construct_metrics_series(metrics, 'month')
+    for num, metric in enumerate(report.metrics):
+        cds = figures.construct_metrics_cds2(metrics_series, metric)
+        figs = figures.bar_subdivisions(cds, 'month', metric)
+        figures_bar_month.append(column(figs))
+
+    script_month, figures_bar_month_divs = components(figures_bar_month)
+
+    figures_bar_day = []
+    # series with MultiIndex of metric, forecast, day
+    metrics_series = figures.construct_metrics_series(metrics, 'day')
+    for num, metric in enumerate(report.metrics):
+        cds = figures.construct_metrics_cds2(metrics_series, metric)
+        figs = figures.bar_subdivisions(cds, 'day', metric)
+        figures_bar_day.append(column(figs))
+
+    script_day, figures_bar_day_divs = components(figures_bar_day)
+
+    figures_bar_hour = []
+    # series with MultiIndex of metric, forecast, hour
+    metrics_series = figures.construct_metrics_series(metrics, 'hour')
+    for num, metric in enumerate(report.metrics):
+        cds = figures.construct_metrics_cds2(metrics_series, metric)
+        figs = figures.bar_subdivisions(cds, 'hour', metric)
+        figures_bar_hour.append(column(figs))
+
+    script_hour, figures_bar_hour_divs = components(figures_bar_hour)
+
+    script_metrics = script + script_month + script_day + script_hour
 
     strftime = '%Y-%m-%d %H:%M:%S'
 
@@ -66,10 +97,17 @@ def prereport(report, metadata, metrics):
         fx_obs=fx_obs,
         validation_issues=metadata['validation_issues'],
         versions=metadata['versions'],
-        script_metrics=script,
-        tables=divs['tables'],
-        figures_bar=figures_bar_divs)
+        script_metrics=script_metrics,
+        tables=data_table_div,
+        figures_bar=figures_bar_divs,
+        figures_bar_month=figures_bar_month_divs,
+        figures_bar_day=figures_bar_day_divs,
+        figures_bar_hour=figures_bar_hour_divs)
     return rendered
+
+
+def _loop_over_metrics():
+    pass
 
 
 # not all args currently used, but expect they will eventually be used

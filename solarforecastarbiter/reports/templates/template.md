@@ -1,8 +1,14 @@
 # {{ name }}
 
+{# this document is designed to be rendered in 3 steps #}
+{# 1. jinja renders the "prereport" - a markdown file with bokeh html/js tables and metrics graphics #}
+{# 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
+{# 3. pandoc renders the html or pdf version of the full report }
+
 {# fix this #}
 {% set dash_url = 'https://dev-dashboard.solarforecastarbiter.org' %}
 
+{# jinja requires that we escape the markdown div specification #}
 {{ '::: {#metadata-table}' }}
 Report Metadata
 
@@ -89,8 +95,8 @@ Metrics for the total analysis period are displayed in tables and figures below.
 
 Metrics for each month of the analysis period are displayed in tables and figures below.
 
-{{ '::: {#figures_bar}' }}
-{% for figure in figures_bar_monthly %}
+{{ '::: {.figures_bar}' }}
+{% for figure in figures_bar_month %}
     {# each figure is for a different metric #}
     {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
     {# consider putting the figures in collapsable divs with only the first one open #}
@@ -102,9 +108,27 @@ Metrics for each month of the analysis period are displayed in tables and figure
 
 Metrics for each day of the analysis period are displayed in tables and figures below.
 
+{{ '::: {.figures_bar}' }}
+{% for figure in figures_bar_day %}
+    {# each figure is for a different metric #}
+    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
+    {# consider putting the figures in collapsable divs with only the first one open #}
+    {{ figure | safe }}
+{% endfor %}
+:::
+
 ### Hourly
 
 Metrics for each hour of the day during the analysis period are displayed in tables and figures below.
+
+{{ '::: {.figures_bar}' }}
+{% for figure in figures_bar_hour %}
+    {# each figure is for a different metric #}
+    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
+    {# consider putting the figures in collapsable divs with only the first one open #}
+    {{ figure | safe }}
+{% endfor %}
+:::
 
 ## Versions
 
