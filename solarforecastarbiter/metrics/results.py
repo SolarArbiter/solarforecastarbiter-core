@@ -34,7 +34,7 @@ _PREPROCESSING_RESULT = {
 EVALUATOR_RESULTS = {
     
     # Timeseries
-    'series' : {
+    'timeseries' : {
         'observations' : None,
         'forecasts' : None,
         'errors' : None

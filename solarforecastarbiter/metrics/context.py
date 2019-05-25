@@ -11,13 +11,8 @@ It also provides the default contexts for different Use Cases.
 import copy
 import numpy as np
 
+from solarforecastarbiter.metrics import preprocessing
 
-FILL_METHODS = [
-    'exclude'              # no fill in, exclude from analysis
-    'static',              # fill with value
-    'fill_forward',        # fill forward
-    'linear_interpolate'   # linear interpolate
-]
 
 _PREPROCESSING_CONTEXT = {
     
@@ -38,12 +33,19 @@ _PREPROCESSING_CONTEXT = {
                                         
 }
 
+_FILL_METHODS = {
+    'exclude' : preprocessing.exclude,
+    'static' : preprocessing.fill_static_value,
+    'fill_forward' : preprocessing.fill_forward,
+    'linear_interpolate' : preprocessing.fill_by_interpolation
+}
+
 _RESULTS_CONTEXT = {
     
     # result will always include the metrics specified overall timeframes
     
     # Timeseries to include
-    'series' : {
+    'timeseries' : {
         'observations' : False, # result will return the processed observation timeseries
         'forecasts' : False,    # result will return the processed forecast(s) timeseries
         'errors' : False,       # result will return the error timeseries
@@ -161,7 +163,7 @@ def get_default_deterministic_context(is_pv_power=False,
     context['use_obs_interval_length'] = False
     
     # set default results
-    context_res_ser = context['results']['series']
+    context_res_ser = context['results']['timeseries']
     context_res_ser['observations'] = True
     context_res_ser['forecasts'] = True
     context_res_ser['errors'] = True

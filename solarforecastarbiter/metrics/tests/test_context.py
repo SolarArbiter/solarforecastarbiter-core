@@ -36,9 +36,9 @@ def test_get_default_deterministic_context():
     assert preproc['use_obs_interval_length'] == False
     
     results = default_context['results']
-    assert results['series']['observations'] == True
-    assert results['series']['forecasts'] == True
-    assert results['series']['errors'] == True
+    assert results['timeseries']['observations'] == True
+    assert results['timeseries']['forecasts'] == True
+    assert results['timeseries']['errors'] == True
     assert results['groupings']['season'] == False
     assert results['groupings']['month'] == False
     assert results['groupings']['dow'] == False
