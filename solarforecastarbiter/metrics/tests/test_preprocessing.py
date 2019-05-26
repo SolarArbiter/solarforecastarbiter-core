@@ -22,10 +22,36 @@ def observation_dataframe():
 @pytest.fixture
 def forecast_series():
     series_index = copy.deepcopy(DATE_INDEXES)
-    series = pd.Series(data=[np.arange(series_index.size)].astype(float),
+    series = pd.Series(data=np.arange(series_index.size).astype(float),
                        index=series_index)
     return series
 
+
+def test_exclude_on_forecast(forecast_series):
+    ser_fx = forecast_series
+    n_values = ser_fx.size
+    
+    # No bad data
+    processed_fx_values = preprocessing.exclude(ser_fx)
+    
+    assert processed_fx_values.isna().any() == False
+    pd.testing.assert_series_equal(ser_fx,
+                                   processed_fx_values)
+    
+    # Missing data
+    ser_fx_missing = ser_fx.copy(deep=True)
+    n_miss = int(0.25 * n_values)  # 25%
+    ser_sample = ser_fx_missing.sample(n_miss)
+    ser_sample.values[:] = -99999 # have to use placeholder as update doesn't copy NaNs
+    ser_fx_missing.update(ser_sample)
+    ser_fx_missing.replace(-99999, np.NaN, inplace=True)
+    processed_fx_values = preprocessing.exclude(ser_fx_missing)
+    
+    assert (n_values - n_miss) == processed_fx_values.size
+    assert processed_fx_values.isna().any() == False
+    pd.testing.assert_series_equal(ser_fx_missing[~ser_fx_missing.isna()],
+                                   processed_fx_values)
+    
 
 def test_exclude_on_observation(observation_dataframe):
     df_obs = observation_dataframe
@@ -81,12 +107,4 @@ def test_exclude_on_observation(observation_dataframe):
                                   df_obs_mixed.quality_flag == 1)].value
     pd.testing.assert_series_equal(check_values,
                                    processed_obs_values)
-    
-    
-
-# def test_exclude_on_forecast(forecast_series):
-#     ser_fx = forecast_series
-    
-    
-    
     
