@@ -242,6 +242,13 @@ def unmix_intervals(mixed):
         # mixed_6 = (f1 + f2 + f3 + f4 + f5 + f6) / 6
         # some algebra will show that the f1...f6 can be obtained as
         # coded below.
+        # the cycle repeats itself after 6 hours so
+        # mixed_7 = f7
+        # mixed_8 = (f8 + f9) / 2 ...
+        # To efficiently compute the values for all forecast times,
+        # we use slices for every 6th element, calculate the forecasts
+        # at every 6th point, then interleave them by constructing a 2D
+        # array and flatting it to a 1D array.
         mixed_1 = mixed_vals[0::6]
         mixed_2 = mixed_vals[1::6]
         mixed_3 = mixed_vals[2::6]
