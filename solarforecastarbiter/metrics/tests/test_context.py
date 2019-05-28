@@ -4,28 +4,28 @@ from solarforecastarbiter.metrics import context
 
 
 def test_get_default_deterministic_context():
-    
+
     default_context = context.get_default_deterministic_context()
-    
+
     # Check default parameters
-    assert default_context['is_pv_power'] == False
-    assert default_context['include_night_hours'] == False
-    
+    assert default_context['is_pv_power'] is False
+    assert default_context['include_night_hours'] is False
+
     metrics = default_context['metrics']
-    assert metrics['mean']  == False
-    assert metrics['std']   == False
-    assert metrics['mae']   == True
-    assert metrics['mape']  == False
-    assert metrics['mbe']   == True
-    assert metrics['rmse']  == True
-    assert metrics['nrmse'] == False
-    assert metrics['crmse'] == False
-    assert metrics['pearson_r'] == False
-    assert metrics['r2_score']  == False
-    assert metrics['ksi']   == False
-    assert metrics['over_ksi']  == False
-    assert metrics['cpi']   == False
-    
+    assert metrics['mean'] is False
+    assert metrics['std'] is False
+    assert metrics['mae'] is True
+    assert metrics['mape'] is False
+    assert metrics['mbe'] is True
+    assert metrics['rmse'] is True
+    assert metrics['nrmse'] is False
+    assert metrics['crmse'] is False
+    assert metrics['pearson_r'] is False
+    assert metrics['r2_score'] is False
+    assert metrics['ksi'] is False
+    assert metrics['over_ksi'] is False
+    assert metrics['cpi'] is False
+
     preproc = default_context['preprocessing']
     assert preproc['observations']['fill_method'] == 'exclude'
     assert preproc['observations']['fill_value'] is None
@@ -33,25 +33,27 @@ def test_get_default_deterministic_context():
     assert preproc['forecasts']['fill_method'] == 'exclude'
     assert preproc['forecasts']['fill_value'] is None
     assert preproc['forecasts']['max_fill_intervals'] is None
-    assert preproc['use_obs_interval_length'] == False
-    
+    assert preproc['use_obs_interval_length'] is False
+
     results = default_context['results']
-    assert results['timeseries']['observations'] == True
-    assert results['timeseries']['forecasts'] == True
-    assert results['groupings']['month'] == False
-    assert results['groupings']['dow'] == False
-    assert results['groupings']['hod'] == True
-    
+    assert results['timeseries']['observations'] is True
+    assert results['timeseries']['forecasts'] is True
+    assert results['groupings']['month'] is False
+    assert results['groupings']['dow'] is False
+    assert results['groupings']['hod'] is True
+
     # Check setting arguments
-    default_context_1 = context.get_default_deterministic_context(is_pv_power=True)
-    assert default_context_1['is_pv_power'] == True
-    assert default_context_1['metrics']['rmse'] == False
-    assert default_context_1['metrics']['nrmse'] == True
-    
-    default_context_2 = context.get_default_deterministic_context(include_night_hours=True)
-    assert default_context_2['include_night_hours'] == True
-    
-    
+    default_context_1 = context.get_default_deterministic_context(
+        is_pv_power=True)
+    assert default_context_1['is_pv_power'] is True
+    assert default_context_1['metrics']['rmse'] is False
+    assert default_context_1['metrics']['nrmse'] is True
+
+    default_context_2 = context.get_default_deterministic_context(
+        include_night_hours=True)
+    assert default_context_2['include_night_hours'] is True
+
+
 @pytest.mark.skip(reason="not yet implemented")
 def test_get_default_event_context():
     pass
@@ -60,4 +62,3 @@ def test_get_default_event_context():
 @pytest.mark.skip(reason="not yet implemented")
 def test_get_default_probabilistic_context():
     pass
- 

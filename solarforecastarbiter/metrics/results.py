@@ -10,31 +10,29 @@ It can include:
 
 """
 
-import pandas as pd
-
 
 # Result dictionary that can be associated with each observation and forecast
 _PREPROCESSING_RESULT = {
-    'fill_value' : None,
-    'fill_method' : None,
-    'max_fill_intervals' : None,
-    'missing_timestamps' : None,
-    'filled_timestamps' : None,
-    'excluded_timestamps' : None
+    'fill_value': None,
+    'fill_method': None,
+    'max_fill_intervals': None,
+    'missing_timestamps': None,
+    'filled_timestamps': None,
+    'excluded_timestamps': None
 }
 
 # Main result diction
 EVALUATOR_RESULTS = {
-    
+
     # Timeseries
-    'timeseries' : {
-        'observations' : None,
-        'forecasts' : None
+    'timeseries': {
+        'observations': None,
+        'forecasts': None
     },
-    
+
     # Metrics
-    'metrics' : {
-        'total' : {}
+    'metrics': {
+        'total': {}
     }
 
 }
