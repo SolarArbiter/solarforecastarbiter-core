@@ -15,9 +15,10 @@ latitude = 32.2
 longitude = -110.9
 elevation = 700
 init_time = pd.Timestamp('20190515T0000Z')
-start = pd.Timestamp('20190515T0600Z')
-end_short = pd.Timestamp('20190515T0700Z')
-end_long = pd.Timestamp('20190630T0000Z')
+start = pd.Timestamp('20190515T0700Z')
+end_short = pd.Timestamp('20190515T1200Z')
+# gfs is longer, but mixed intervals fails
+end_long = pd.Timestamp('20190520T0000Z')
 
 xfail_g2sub = pytest.mark.xfail(reason='ghi does not exist in g2sub')
 

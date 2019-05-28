@@ -13,16 +13,16 @@ from solarforecastarbiter.reference_forecasts import main, models
 from solarforecastarbiter.conftest import default_forecast, default_observation
 
 init_time = pd.Timestamp('20190515T0000Z')
-start = pd.Timestamp('20190515T0300Z')
-end = pd.Timestamp('20190515T0400Z')
+start = pd.Timestamp('20190515T0100Z')
+end = pd.Timestamp('20190515T0600Z')
 
 index_exp = pd.date_range(start=start, end=end, freq='1h')
-ghi_exp = pd.Series([0, 10.], index=index_exp)
-dni_exp = pd.Series([0, 15.], index=index_exp)
-dhi_exp = pd.Series([0, 9.], index=index_exp)
-temp_air_exp = pd.Series([10, 11.], index=index_exp)
-wind_speed_exp = pd.Series([0, 1.], index=index_exp)
-cloud_cover_exp = pd.Series([100., 0.], index=index_exp)
+ghi_exp = pd.Series([0, 10.]*3, index=index_exp)
+dni_exp = pd.Series([0, 15.]*3, index=index_exp)
+dhi_exp = pd.Series([0, 9.]*3, index=index_exp)
+temp_air_exp = pd.Series([10, 11.]*3, index=index_exp)
+wind_speed_exp = pd.Series([0, 1.]*3, index=index_exp)
+cloud_cover_exp = pd.Series([100., 0.]*3, index=index_exp)
 load_forecast_return_value_3 = (cloud_cover_exp, temp_air_exp, wind_speed_exp)
 load_forecast_return_value_5 = (
     ghi_exp, dni_exp, dhi_exp, temp_air_exp, wind_speed_exp)
@@ -59,9 +59,6 @@ def test_run(model, load_forecast_return_value, site_powerplant_site_type,
     BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
     load_forecast = partial(nwp.load_forecast, base_path=BASE_PATH)
     model = partial(model, load_forecast=load_forecast)
-    mocker.patch(
-        'solarforecastarbiter.reference_forecasts.forecast.unmix_intervals',
-        return_value=cloud_cover_exp)
     site, site_type = site_powerplant_site_type
     out = main.run(site, model, init_time, start, end)
     check_out(out, out_forecast_exp, site_type)

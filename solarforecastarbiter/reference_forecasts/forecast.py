@@ -2,6 +2,9 @@
 Functions for forecasting.
 """
 
+import pandas as pd
+import numpy as np
+
 from solarforecastarbiter import pvmodel
 
 # some functions originally implemented in pvlib-python.
@@ -194,7 +197,7 @@ def slice_args(*args, start, end):
     return resampled_args
 
 
-def unmix_intervals(cloud_cover):
+def unmix_intervals(mixed):
     """Convert mixed interval averages into pure interval averages.
 
     For example, the GFS 3 hour output contains the following data:
@@ -213,10 +216,38 @@ def unmix_intervals(cloud_cover):
 
     Parameters
     ----------
-    cloud_cover : pd.Series
+    data : pd.Series
+        The first time must be the first output of a cycle.
 
     Returns
     -------
     pd.Series
+        Data is the unmixed interval average with ending label.
     """
-    raise NotImplementedError
+    period = pd.Timedelta('6hr')
+    data_interval = mixed.index[1] - mixed.index[0]
+    points_per_cyle = period / data_interval
+    mixed_vals = np.array(mixed)
+    if points_per_cyle == 6:
+        mixed_1 = mixed_vals[0::6]
+        mixed_2 = mixed_vals[1::6]
+        mixed_3 = mixed_vals[2::6]
+        mixed_4 = mixed_vals[3::6]
+        mixed_5 = mixed_vals[4::6]
+        mixed_6 = mixed_vals[5::6]
+        f1 = mixed_1
+        f2 = 2 * mixed_2 - mixed_1
+        f3 = 3 * mixed_3 - 2 * mixed_2
+        f4 = 4 * mixed_4 - 3 * mixed_3
+        f5 = 5 * mixed_5 - 4 * mixed_4
+        f6 = 6 * mixed_6 - 5 * mixed_5
+        f = np.array([f1, f2, f3, f4, f5, f6])
+    elif points_per_cyle == 2:
+        f3 = mixed_vals[0::2]
+        f6 = 2 * mixed_vals[1::2] - f3
+        f = np.array([f3, f6])
+    else:
+        raise ValueError('mixed period must be 6 hours and data interval must '
+                         'be 3 hours or 1 hour')
+    unmixed = pd.Series(f.flatten(), index=mixed.index)
+    return unmixed

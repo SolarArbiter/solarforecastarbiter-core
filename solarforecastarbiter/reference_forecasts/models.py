@@ -239,7 +239,7 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     cloud_cover, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start, end, 'gfs_0p25',
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
-    # cloud_cover = forecast.unmix_intervals(cloud_cover)
+    cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed)
