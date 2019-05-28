@@ -117,8 +117,15 @@ def test_unmix_intervals(mixed, expected):
     assert_series_equal(out, expected_s)
 
 
-def test_unmix_intervals_error():
+def test_unmix_intervals_invalidfreq():
     index = pd.date_range(start='20190101 01', freq='2h', periods=3)
+    mixed_s = pd.Series([1, 1/3, 1/6], index=index)
+    with pytest.raises(ValueError):
+        forecast.unmix_intervals(mixed_s)
+
+
+def test_unmix_intervals_two_freq():
+    index = pd.DatetimeIndex(['20190101 01', '20190101 02', '20190101 04'])
     mixed_s = pd.Series([1, 1/3, 1/6], index=index)
     with pytest.raises(ValueError):
         forecast.unmix_intervals(mixed_s)

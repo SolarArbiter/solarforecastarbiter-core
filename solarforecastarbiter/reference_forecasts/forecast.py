@@ -224,11 +224,13 @@ def unmix_intervals(mixed):
     pd.Series
         Data is the unmixed interval average with ending label.
     """
-    period = pd.Timedelta('6hr')
-    data_interval = mixed.index[1] - mixed.index[0]
-    points_per_cyle = period / data_interval
+    intervals = (mixed.index[1:] - mixed.index[:-1]).unique()
+    if len(intervals) > 1:
+        raise ValueError('multiple interval lengths detected. slice forecasts '
+                         'into sections with unique interval lengths first.')
+    interval = intervals[0]
     mixed_vals = np.array(mixed)
-    if points_per_cyle == 6:
+    if interval == pd.Timedelta('1h'):
         mixed_1 = mixed_vals[0::6]
         mixed_2 = mixed_vals[1::6]
         mixed_3 = mixed_vals[2::6]
@@ -242,7 +244,7 @@ def unmix_intervals(mixed):
         f5 = 5 * mixed_5 - 4 * mixed_4
         f6 = 6 * mixed_6 - 5 * mixed_5
         f = np.array([f1, f2, f3, f4, f5, f6])
-    elif points_per_cyle == 2:
+    elif interval == pd.Timedelta('3h'):
         f3 = mixed_vals[0::2]
         f6 = 2 * mixed_vals[1::2] - f3
         f = np.array([f3, f6])
