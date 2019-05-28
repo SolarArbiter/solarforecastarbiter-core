@@ -206,21 +206,21 @@ def test_which_data_is_ok(flags, expected):
     assert_series_equal(out, expected)
 
 
-DESCRIPTIONS = ['OK', 'USER FLAGGED', 'NIGHTTIME', 'CLOUDY',
+DESCRIPTIONS = ['USER FLAGGED', 'NIGHTTIME', 'CLOUDY',
                 'SHADED', 'UNEVEN FREQUENCY', 'LIMITS EXCEEDED',
                 'CLEARSKY EXCEEDED', 'STALE VALUES', 'INTERPOLATED VALUES',
                 'CLIPPED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS']
 
 
 @pytest.mark.parametrize('flag,expected', [
-    (2, pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    (2, pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   index=DESCRIPTIONS, dtype=bool)),
-    (3, pd.Series([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    (3, pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   index=DESCRIPTIONS, dtype=bool)),
-    (35, pd.Series([0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    (35, pd.Series([1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
                    index=DESCRIPTIONS, dtype=bool)),
     (2 | 1 << 13 | 1 << 12 | 1 << 10,
-     pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+     pd.Series([0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
                index=DESCRIPTIONS, dtype=bool))
 
 ])
@@ -238,11 +238,11 @@ def test_check_for_all_validation_fail(flag):
 def test_convert_mask_into_dataframe():
     flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
              quality_mapping.LATEST_VERSION_FLAG)
-    expected = pd.DataFrame([[1] + [0] * 11,
-                             [1] + [0] * 11,
-                             [0, 1] + [0] * 10,
-                             [0] * 10 + [1, 0],
-                             [0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0]],
+    expected = pd.DataFrame([[0] * 11,
+                             [0] * 11,
+                             [1] + [0] * 10,
+                             [0] * 9 + [1, 0],
+                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0]],
                             columns=DESCRIPTIONS,
                             dtype=bool)
     out = quality_mapping.convert_mask_into_dataframe(flags)
