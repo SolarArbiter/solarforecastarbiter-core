@@ -248,7 +248,7 @@ def unmix_intervals(mixed):
         # To efficiently compute the values for all forecast times,
         # we use slices for every 6th element, calculate the forecasts
         # at every 6th point, then interleave them by constructing a 2D
-        # array and flatting it to a 1D array.
+        # array and reshaping it to a 1D array.
         mixed_1 = mixed_vals[0::6]
         mixed_2 = mixed_vals[1::6]
         mixed_3 = mixed_vals[2::6]
@@ -272,5 +272,5 @@ def unmix_intervals(mixed):
     else:
         raise ValueError('mixed period must be 6 hours and data interval must '
                          'be 3 hours or 1 hour')
-    unmixed = pd.Series(f.flatten('F'), index=mixed.index)
+    unmixed = pd.Series(f.reshape(-1, order='F'), index=mixed.index)
     return unmixed
