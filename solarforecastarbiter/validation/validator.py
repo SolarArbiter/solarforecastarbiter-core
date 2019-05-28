@@ -470,7 +470,8 @@ def check_timestamp_spacing(times, freq):
     """
     if not isinstance(freq, pd.Timedelta):
         freq = pd.Timedelta(freq)
-    delta = times.to_series().diff()  # first value is NaT, rest are timedeltas
+    # first value is NaT, rest are timedeltas
+    delta = times.to_series(keep_tz=True).diff()
     flags = delta == freq
     flags.iloc[0] = True
     return flags
