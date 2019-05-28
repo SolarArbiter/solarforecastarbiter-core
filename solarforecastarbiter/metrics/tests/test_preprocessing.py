@@ -7,7 +7,7 @@ from solarforecastarbiter.metrics import preprocessing
 
 
 DATE_INDEXES = pd.date_range(start='2019-03-31T12:00:00.0000000000',
-                             end='2019-03-31T16:00:00.0000000000',
+                             end='2019-04-02T16:00:00.0000000000',
                              freq='5min')
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_exclude_on_forecast(forecast_series):
     assert processed_fx_values.isna().any() == False
     pd.testing.assert_series_equal(ser_fx_missing[~ser_fx_missing.isna()],
                                    processed_fx_values)
-    
+
 
 def test_exclude_on_observation(observation_dataframe):
     df_obs = observation_dataframe

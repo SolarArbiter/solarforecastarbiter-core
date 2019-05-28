@@ -12,8 +12,8 @@ def test_get_default_deterministic_context():
     assert default_context['include_night_hours'] == False
     
     metrics = default_context['metrics']
-    assert metrics['mean']  == True
-    assert metrics['std']   == True
+    assert metrics['mean']  == False
+    assert metrics['std']   == False
     assert metrics['mae']   == True
     assert metrics['mape']  == False
     assert metrics['mbe']   == True
@@ -38,8 +38,6 @@ def test_get_default_deterministic_context():
     results = default_context['results']
     assert results['timeseries']['observations'] == True
     assert results['timeseries']['forecasts'] == True
-    assert results['timeseries']['errors'] == True
-    assert results['groupings']['season'] == False
     assert results['groupings']['month'] == False
     assert results['groupings']['dow'] == False
     assert results['groupings']['hod'] == True

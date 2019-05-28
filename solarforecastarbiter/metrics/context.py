@@ -11,7 +11,21 @@ It also provides the default contexts for different Use Cases.
 import copy
 import numpy as np
 
-from solarforecastarbiter.metrics import preprocessing
+from solarforecastarbiter.metrics import preprocessing, deterministic, probabilistic, event
+
+
+_FILL_FUNCTIONS_MAP = {
+    'exclude' : preprocessing.exclude,
+    'static' : preprocessing.fill_static_value,
+    'fill_forward' : preprocessing.fill_forward,
+    'linear_interpolate' : preprocessing.fill_by_interpolation
+}
+
+_METRICS_MAP = {
+    'mae' : deterministic._mean_absolute,
+    'mbe' : deterministic._mean_bias,
+    'rmse' : deterministic._root_mean_square
+}
 
 
 _PREPROCESSING_CONTEXT = {
@@ -33,13 +47,6 @@ _PREPROCESSING_CONTEXT = {
                                         
 }
 
-_FILL_METHODS = {
-    'exclude' : preprocessing.exclude,
-    'static' : preprocessing.fill_static_value,
-    'fill_forward' : preprocessing.fill_forward,
-    'linear_interpolate' : preprocessing.fill_by_interpolation
-}
-
 _RESULTS_CONTEXT = {
     
     # result will always include the metrics specified overall timeframes
@@ -48,12 +55,11 @@ _RESULTS_CONTEXT = {
     'timeseries' : {
         'observations' : False, # result will return the processed observation timeseries
         'forecasts' : False,    # result will return the processed forecast(s) timeseries
-        'errors' : False,       # result will return the error timeseries
     },
     
     # additional groupings to report metrics by
     'groupings' : {
-        'season' : False,
+        #'season' : False,  # TODO: determine consistent way to calculate
         'month' : False,
         'dow' : False,     # day of the week
         'hod' : False      # hour of the day
@@ -144,8 +150,8 @@ def get_default_deterministic_context(is_pv_power=False,
     
     # set default metrics
     context_met = context['metrics']
-    context_met['mean'] = True
-    context_met['std'] = True
+    #context_met['mean'] = True
+    #context_met['std'] = True
     context_met['mae'] = True
     context_met['mbe'] = True
     if is_pv_power:
@@ -166,13 +172,27 @@ def get_default_deterministic_context(is_pv_power=False,
     context_res_ser = context['results']['timeseries']
     context_res_ser['observations'] = True
     context_res_ser['forecasts'] = True
-    context_res_ser['errors'] = True
     
     context_res_grp = context['results']['groupings']
     context_res_grp['hod'] = True
     
     return context
     
+
+def supported_groupings():
+    """Returns a list of supported groupings."""
+    return _RESULTS_CONTEXT['groupings'].keys()
+
+
+def supported_fill_functions():
+    """Returns a list of supported fill functions."""
+    return _FILL_FUNCTIONS_MAP.keys()
+
+
+def supported_metrics():
+    """Returns a list of supported metrics."""
+    return _METRICS_MAP.keys()
+
 
 def get_default_event_context():
     """Get a default events metrics context."""

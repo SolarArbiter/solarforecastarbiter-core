@@ -13,7 +13,7 @@ import pandas as pd
 from solarforecastarbiter.metrics import context, results, deterministic, probabilistic, event, errors
 
 
-def evaluate(observations, forecasts, context):
+def evaluate(observations, forecasts, metrics_context):
     """
     Evaluate the performance of the forecasts to the observations using the 
     context to define the preprocessing, metrics and results to returnself.
@@ -24,7 +24,7 @@ def evaluate(observations, forecasts, context):
         observations are a DataFrame of values and quality flags with timestamp as index
     forecasts : pd.Series
         forecasts are a Series of values with timestamp as index
-    context : dict
+    metrics_context : dict
         a context dictionary as defined in :py:mod:`solarforecastarbiter.metrics.context`
     
     Returns
@@ -34,12 +34,14 @@ def evaluate(observations, forecasts, context):
     
     Raises
     ------
-    
+    SfaMetricsInputError : if invalid input data.
     """
+    # Create empty results
+    result = results.EVALUATOR_RESULTS
     
-    # Verify input - probably isn't necessary
-    if not are_validate_observations(observations):
-        raise errors.SfaMetricsInputError("Observations must be a pandas DataFrame \ 
+    # Verify input
+    if not are_valid_observations(observations):
+        raise errors.SfaMetricsInputError("Observations must be a pandas DataFrame \
                                           with value and quality_flag columns \
                                           and an index of datetimes.")
     
@@ -48,22 +50,111 @@ def evaluate(observations, forecasts, context):
                                           with value \
                                           and an index of datetimes")
     
-    # Preprocessing
-    obs_context = context['preprocessing']['observations']
+    # TODO: 
+    # - enforce interval consistency
+    # - replace this with mapping to preprocessing functions and add decorators
     
-    # TODO: replace this with mapping to preprocessing functions and add decorators
-    if obs_context == 'exclude': 
-        obs_values = method(observations.values, 
-                            observations.quality_flags)
+    # Preprocessing observations
+    obs_context = metrics_context['preprocessing']['observations']
+    obs_method = obs_context['fill_method']
+    if obs_method in context.supported_fill_functions():
+        obs_values = context._FILL_FUNCTIONS_MAP[obs_method](observations.value, 
+                                               observations.quality_flag)
+    else:
+        obs_values = observations.values
     
-    for key,val context['metrics']:
+    # Preprocessing forecasts
+    fx_context = metrics_context['preprocessing']['forecasts']
+    fx_method = fx_context['fill_method']
+    if fx_method in context.supported_fill_functions():
+        fx_values = context._FILL_FUNCTIONS_MAP[fx_method](forecasts)
+    else:
+        fx_values = forecasts
+    
+    # Copy preprocessed timeseries to result
+    if metrics_context['results']['timeseries']['observations']:
+        result['timeseries']['observations'] = obs_values
+    
+    if metrics_context['results']['timeseries']['forecasts']:
+        result['timeseries']['forecasts'] = fx_values
+    
+    # Calculate metrics
+    for metric,do_calc in metrics_context['metrics'].items():
+        if do_calc and metric in context.supported_metrics():
+
+            # For all
+            metric_func = context._METRICS_MAP[metric]
+            result['metrics']['total'][metric] = metric_func(obs_values,
+                                                             fx_values)
+            
+            # Group by calculations
+            group_context = metrics_context['results']['groupings']
+            for groupby,do_group in group_context.items():
+                if do_group and groupby in context.supported_groupings():
+                    
+                    if not groupby in result['metrics'].keys():
+                        result['metrics'][groupby] = {}
+                    
+                    result['metrics'][groupby][metric] = evaluate_by_group(obs_values,
+                                                                           fx_values,
+                                                                           groupby,
+                                                                           metric_func)
+            
+    return result
+
+
+def evaluate_by_group(observation, forecast, groupby, metric_func):
+    """Evaluate the performance according to the groupby.
+    
+    Parameters
+    ----------
+    observation : pd.Series
+    forecast : pd.Series
+    groupby : string
+        one of the supported types of groupings
+    metric_func : function
+        a py:func:`solarforecastarbiter.metrics` metrics function
         
+    Returns
+    -------
+    pd.Series :
+    
+    Raises
+    ------
+    SfaMetricsConfigError if `groupby` is not a supported groupby type.
+    """
+    result = None
+
+    # Verify timestamps
+    assert np.array_equal(observation.index, forecast.index)
+    
+    # Group into single DataFrame
+    df = pd.DataFrame({'observation': observation,
+                       'forecast': forecast},
+                      index=observation.index)
+    
+    # Determine proper groupby
+    if groupby == 'month':
+        df_group = df.groupby(df.index.month)
+    elif groupby == 'dow':
+        df_group = df.groupby(df.index.weekday)
+    elif groupby == 'hod':
+        df_group = df.groupby(df.index.hour)
+    else:
+        raise errors.SfaMetricsConfigError(f"No supported groupby type {groupby}.")
+    
+    # Calculate metrics for each group
+    #for group_key, group_data in df_group.iteritems():
+    result = df_group.apply(lambda x: metric_func(x['observation'], x['forecast']))
+    
+    return result
+    
 
 def are_valid_observations(observations):
     """Validate observations in expected format."""
     if not isinstance(observations, pd.DataFrame):
         return False
-    if not ['value','quality_flag'] in observations.columns:
+    if not ['value','quality_flag'] == list(observations.columns):
         return False
     if not observations.index.is_all_dates:
         return False
@@ -72,7 +163,7 @@ def are_valid_observations(observations):
 
 def are_valid_forecasts(forecasts):
     """Validate forecasts are in expected format."""
-    if not isinstace(forecasts, pd.Series)
+    if not isinstance(forecasts, pd.Series):
         return False
     if not forecasts.index.is_all_dates:
         return False

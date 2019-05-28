@@ -10,6 +10,6 @@ class SfaMetricsConfigError(SfaMetricsError):
     """Error thrown when the metrics context is configured incorrectly."""
     pass
 
-class SfaMetricsInputEror(SfaMetricsError):
+class SfaMetricsInputError(SfaMetricsError):
     """Error thrown when the input provided is incorrect."""
     pass

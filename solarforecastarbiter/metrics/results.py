@@ -13,21 +13,14 @@ It can include:
 import pandas as pd
 
 
-# Individual timeseries results
-_SERIES_RESULT = {
-    'values' : None,
-    'preprocessing' : None
-}
-
 # Result dictionary that can be associated with each observation and forecast
 _PREPROCESSING_RESULT = {
-    'name' : None,
     'fill_value' : None,
     'fill_method' : None,
     'max_fill_intervals' : None,
-    'missing_timestamps' : [],
-    'filled_timestamps' : [],
-    'excluded_timestamps' : []
+    'missing_timestamps' : None,
+    'filled_timestamps' : None,
+    'excluded_timestamps' : None
 }
 
 # Main result diction
@@ -36,26 +29,25 @@ EVALUATOR_RESULTS = {
     # Timeseries
     'timeseries' : {
         'observations' : None,
-        'forecasts' : None,
-        'errors' : None
+        'forecasts' : None
     },
     
     # Metrics
-    'metrics' : None
+    'metrics' : {
+        'total' : {}
+    }
 
 }
 
 
-def build_results(context):
+def create_empty_results(context):
     """Get an empty results dictionary from context."""
-    # TODO  how should this work?, check type of context?
-    pass
-    
+    raise NotImplementedError
 
 
 def get_number_of_missing_timestamps(results, type='both'):
     """Get the number of missing timestamps."""
-    if results['preprocessing']['']
+    raise NotImplementedError
 
 
 def print_results_string(results):
