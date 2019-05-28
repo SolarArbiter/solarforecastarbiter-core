@@ -103,14 +103,18 @@ def test_cloud_cover_to_irradiance():
 @pytest.mark.parametrize('mixed,expected', [
     ([1, 1/2, 1/3, 1/4, 1/5, 1/6], [1., 0, 0, 0, 0, 0]),
     ([0, 0, 0, 0, 0, 1/6], [0, 0, 0, 0, 0, 1.]),
+    ([0, 0, 0, 0, 0, 1/6, 1, 1/2, 1/3, 1/4, 1/5, 1/6],
+     [0, 0, 0, 0, 0, 1., 1., 0, 0, 0, 0, 0]),
     ([1, 1/2], [1., 0]),
-    ([0, 1/2], [0, 1.])
+    ([0, 1/2], [0, 1.]),
+    ([0, 1/2, 1, 1/2], [0, 1., 1., 0])
 ])
 def test_unmix_intervals(mixed, expected):
-    if len(mixed) == 2:
-        index = pd.date_range(start='20190101 01', freq='3h', periods=2)
+    if len(mixed) in [2, 4]:
+        freq = '3h'
     else:
-        index = pd.date_range(start='20190101 01', freq='1h', periods=6)
+        freq = '1h'
+    index = pd.date_range(start='20190101 01', freq=freq, periods=len(mixed))
     mixed_s = pd.Series(mixed, index=index)
     out = forecast.unmix_intervals(mixed_s)
     expected_s = pd.Series(expected, index=index)

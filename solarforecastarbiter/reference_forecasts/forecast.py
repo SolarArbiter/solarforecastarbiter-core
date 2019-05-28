@@ -231,6 +231,17 @@ def unmix_intervals(mixed):
     interval = intervals[0]
     mixed_vals = np.array(mixed)
     if interval == pd.Timedelta('1h'):
+        # mixed_1...mixed_6 are the values in the raw forecast file at
+        # each hour of the mixed interval period. Let f1...f6 be unmixed,
+        # true hourly average values. The relationship is:
+        # mixed_1 = f1
+        # mixed_2 = (f1 + f2) / 2
+        # mixed_3 = (f1 + f2 + f3) / 3
+        # mixed_4 = (f1 + f2 + f3 + f4) / 4
+        # mixed_5 = (f1 + f2 + f3 + f4 + f5) / 5
+        # mixed_6 = (f1 + f2 + f3 + f4 + f5 + f6) / 6
+        # some algebra will show that the f1...f6 can be obtained as
+        # coded below.
         mixed_1 = mixed_vals[0::6]
         mixed_2 = mixed_vals[1::6]
         mixed_3 = mixed_vals[2::6]
@@ -245,11 +256,14 @@ def unmix_intervals(mixed):
         f6 = 6 * mixed_6 - 5 * mixed_5
         f = np.array([f1, f2, f3, f4, f5, f6])
     elif interval == pd.Timedelta('3h'):
+        # similar to above, but
+        # mixed_3 = f_0_3
+        # mixed_6 = (f_0_3 + f_3_6) / 2
         f3 = mixed_vals[0::2]
         f6 = 2 * mixed_vals[1::2] - f3
         f = np.array([f3, f6])
     else:
         raise ValueError('mixed period must be 6 hours and data interval must '
                          'be 3 hours or 1 hour')
-    unmixed = pd.Series(f.flatten(), index=mixed.index)
+    unmixed = pd.Series(f.flatten('F'), index=mixed.index)
     return unmixed
