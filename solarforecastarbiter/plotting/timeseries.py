@@ -64,8 +64,7 @@ def _build_quality_bar(flag_name, plot_width, x_range, color, source):
     return qfig
 
 
-def generate_quality_bars(flags, plot_width, source=None):
-    x_range = (flags.index[0], flags.index[-1])
+def generate_quality_bars(flags, plot_width, x_range, source=None):
     if source is None:
         source = ColumnDataSource(flags)
     colors = iter(palettes.all_palettes['Category10'][8][::-1])
@@ -161,7 +160,7 @@ def generate_observation_figure(metadata, json_value_response):
     if df.empty:
         raise ValueError('No data')
     df = align_index(df, metadata['interval_length'])
-    quality_flag = df.pop('quality_flag').dropna().astype(int)
+    quality_flag = df.pop('quality_flag').astype(int)
     flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     flags = flags.mask(~flags)
     # need to fill as line needs more than a single point to show up
@@ -177,7 +176,8 @@ def generate_observation_figure(metadata, json_value_response):
                                       metadata['variable'], plot_width,
                                       source=cds)]
 
-    figs.extend(generate_quality_bars(flags, plot_width, cds))
+    figs.extend(generate_quality_bars(flags, plot_width, figs[0].x_range,
+                                      cds))
     layout = gridplot(figs,
                       ncols=1,
                       merge_tools=False,
