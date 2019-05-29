@@ -181,8 +181,7 @@ def generate_forecast_figure(metadata, json_value_response):
         raise ValueError('No data')
     series = plot_utils.align_index(series, metadata['interval_length'])
     cds = ColumnDataSource(series.reset_index())
-    plot_method, plot_kwargs = plot_utils.line_or_step(
-        metadata['interval_label'])
+    plot_method, plot_kwargs = 'line', {}
     fig = make_basic_timeseries(series, metadata['name'],
                                 metadata['variable'], PLOT_WIDTH,
                                 plot_method, source=cds,
@@ -234,8 +233,7 @@ def generate_observation_figure(metadata, json_value_response):
         flags.ffill(axis=0, limit=1, inplace=True)
 
     cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
-    plot_method, plot_kwargs = plot_utils.line_or_step(
-        metadata['interval_label'])
+    plot_method, plot_kwargs = 'line', {}
     figs = [make_basic_timeseries(df['value'], metadata['name'],
                                   metadata['variable'], PLOT_WIDTH,
                                   plot_method, source=cds,
