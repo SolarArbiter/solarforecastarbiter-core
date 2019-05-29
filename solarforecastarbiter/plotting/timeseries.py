@@ -215,8 +215,9 @@ def generate_observation_figure(metadata, json_value_response):
     df = io_utils.json_payload_to_observation_df(json_value_response)
     if df.empty:
         raise ValueError('No data')
-    df = plot_utils.align_index(df, metadata['interval_length'])
-    quality_flag = df.pop('quality_flag').astype(int)
+    df = plot_utils.align_index(df, metadata['interval_length'],
+                                pd.Timedelta('3d'))
+    quality_flag = df.pop('quality_flag').dropna().astype(int)
     bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)
     active_flags.name = 'active_flags'
