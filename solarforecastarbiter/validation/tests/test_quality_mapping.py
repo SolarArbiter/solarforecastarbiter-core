@@ -238,20 +238,30 @@ def test_check_for_all_validation_fail(flag):
 def test_convert_mask_into_dataframe():
     flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
              quality_mapping.LATEST_VERSION_FLAG)
-    expected = pd.DataFrame([[0] * 11,
-                             [0] * 11,
-                             [1] + [0] * 10,
-                             [0] * 9 + [1, 0],
-                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0]],
-                            columns=DESCRIPTIONS,
+    expected = pd.DataFrame([[0] * 12,
+                             [0] * 12,
+                             [1] + [0] * 11,
+                             [0] * 9 + [1, 0, 0],
+                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0]],
+                            columns=DESCRIPTIONS + ['NOT VALIDATED'],
                             dtype=bool)
     out = quality_mapping.convert_mask_into_dataframe(flags)
     assert_frame_equal(out, expected)
 
 
-def test_convert_mask_into_dataframe_fail():
-    with pytest.raises(ValueError):
-        quality_mapping.convert_mask_into_dataframe(pd.Series([0, 1, 0]))
+def test_convert_mask_into_dataframe_w_unvalidated():
+    flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
+             quality_mapping.LATEST_VERSION_FLAG)
+    flags.iloc[0] = 0
+    expected = pd.DataFrame([[0] * 11 + [1],
+                             [0] * 12,
+                             [1] + [0] * 11,
+                             [0] * 9 + [1, 0, 0],
+                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0]],
+                            columns=DESCRIPTIONS + ['NOT VALIDATED'],
+                            dtype=bool)
+    out = quality_mapping.convert_mask_into_dataframe(flags)
+    assert_frame_equal(out, expected, check_like=True)
 
 
 @pytest.mark.parametrize('expected,desc', [

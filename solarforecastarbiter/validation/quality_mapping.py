@@ -207,6 +207,9 @@ def check_for_all_descriptions(flag, _check_if_validated=True):
 
 def _convert_version_mask(ser):
     version = ser.name
+    if version == 0:
+        return pd.DataFrame({'NOT VALIDATED': [True] * len(ser.index)},
+                            index=ser.index)
     mask_series = _make_mask_series(version)
     out = pd.DataFrame(
         np.bitwise_and(mask_series.values[None, :],
@@ -214,6 +217,7 @@ def _convert_version_mask(ser):
         columns=mask_series.index,
         index=ser.index,
         dtype=bool)
+    out['NOT VALIDATED'] = False
     return out
 
 
@@ -231,18 +235,14 @@ def convert_mask_into_dataframe(flag_series):
     -------
     pandas.DataFrame
        Columns are keys of BITMASK_DESCRIPTION_DICT and values are booleans
-       indicating if the input flag corresponds to the given check.
-
-    Raises
-    ------
-    ValueError
-        If any flags in `flag_series` have not been validated
-
+       indicating if the input flag corresponds to the given check. An
+       additional column, NOT VALIDATED, indicates if the data has not
+       been validated. Columns may vary depending the version of the quality
+       flags in the series.
     """
-    if not has_data_been_validated(flag_series).all():
-        raise ValueError('Not all data has been validated')
     vers = get_version(flag_series)
-    out = flag_series.groupby(vers).apply(_convert_version_mask)
+    out = flag_series.groupby(vers, sort=False).apply(
+        _convert_version_mask).fillna(False)
     return out
 
 
