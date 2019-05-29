@@ -112,7 +112,7 @@ def make_quality_bars(flags, plot_width, x_range, source=None):
 
 
 def make_basic_timeseries(values, object_name, variable, plot_width,
-                          source=None):
+                          plot_method, source=None, **plot_kwargs):
     """Make a basic timeseries plot"""
     if source is None:
         source = ColumnDataSource(values)
@@ -125,7 +125,8 @@ def make_basic_timeseries(values, object_name, variable, plot_width,
                  tools='pan,wheel_zoom,box_zoom,zoom_in,zoom_out,reset,save',
                  toolbar_location='above',
                  min_border_bottom=50)
-    fig.line(x='timestamp', y='value', source=source)
+    getattr(fig, plot_method)(x='timestamp', y='value', source=source,
+                              **plot_kwargs)
     fig.yaxis.axis_label = plot_utils.format_variable_name(variable)
     fig.xaxis.axis_label = 'Time (UTC)'
 
@@ -180,9 +181,12 @@ def generate_forecast_figure(metadata, json_value_response):
         raise ValueError('No data')
     series = plot_utils.align_index(series, metadata['interval_length'])
     cds = ColumnDataSource(series.reset_index())
+    plot_method, plot_kwargs = plot_utils.line_or_step(
+        metadata['interval_label'])
     fig = make_basic_timeseries(series, metadata['name'],
                                 metadata['variable'], PLOT_WIDTH,
-                                source=cds)
+                                plot_method, source=cds,
+                                **plot_kwargs)
     layout = _make_layout([fig])
     logger.info('Figure generated succesfully')
     return layout
@@ -230,9 +234,12 @@ def generate_observation_figure(metadata, json_value_response):
         flags.ffill(axis=0, limit=1, inplace=True)
 
     cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
+    plot_method, plot_kwargs = plot_utils.line_or_step(
+        metadata['interval_label'])
     figs = [make_basic_timeseries(df['value'], metadata['name'],
                                   metadata['variable'], PLOT_WIDTH,
-                                  source=cds)]
+                                  plot_method, source=cds,
+                                  **plot_kwargs)]
 
     figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
                                   cds))
