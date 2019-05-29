@@ -24,6 +24,22 @@ ALLOWED_VARIABLES = {
     'curtailment': 'MW',
 }
 
+
+COMMON_NAMES = {
+    'air_temperature': 'Air Temperature',
+    'wind_speed': 'Wind Speed',
+    'ghi': 'GHI',
+    'dni': 'DNI',
+    'dhi': 'DHI',
+    'poa_global': 'Plane of Array Irradiance',
+    'relative_humidity': 'Relative Humidty',
+    'ac_power': 'AC Power',
+    'dc_power': 'DC Power',
+    'availability': 'Availability',
+    'curtailment': 'Curtailment'
+}
+
+
 CLOSED_MAPPING = {
     'instant': None,
     'instantaneous': None,
