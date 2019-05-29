@@ -52,28 +52,47 @@ def _build_quality_bar(flag_name, plot_width, x_range, color, source):
     qfig.ygrid.grid_line_color = None
     qfig.line(x='timestamp', y=flag_name,
               line_width=qfig.plot_height,
-              source=source,
+              source=source, alpha=0.6,
               line_color=color)
     flag_label = Label(x=5, y=0,
                        x_units='screen', y_units='screen',
                        text=flag_name, render_mode='css',
                        border_line_color=None,
                        background_fill_alpha=0,
-                       text_font_size='1em')
+                       text_font_size='1em',
+                       text_font_style='bold')
     qfig.add_layout(flag_label)
     return qfig
+
+
+PALETTE = iter(palettes.all_palettes['Category20b'][20][::4] * 5)
+FLAG_COLORS = {
+    'NOT VALIDATED': '#ff7f0e',
+    'USER FLAGGED': '#d62728',
+    'NIGHTTIME': None,
+    'CLOUDY': None,
+    'SHADED': None,
+    'UNEVEN FREQUENCY': None,
+    'LIMITS EXCEEDED': None,
+    'CLEARSKY EXCEEDED': None,
+    'STALE VALUES': None,
+    'INTERPOLATED VALUES': None,
+    'CLIPPED VALUES': None,
+    'INCONSISTENT IRRADIANCE COMPONENTS': None
+}
 
 
 def generate_quality_bars(flags, plot_width, x_range, source=None):
     if source is None:
         source = ColumnDataSource(flags)
-    colors = iter(palettes.all_palettes['Category10'][8][::-1])
     out = []
-    for flag in flags.columns:
-        if flags[flag].dropna().empty:
+    for flag, color in FLAG_COLORS.items():
+        if flag not in flags or flags[flag].dropna().empty:
             continue
+        if color is None:
+            color = next(PALETTE)
         nextfig = _build_quality_bar(flag, plot_width, x_range,
-                                     next(colors), source)
+                                     color, source)
         out.append(nextfig)
 
     if out:
@@ -130,7 +149,7 @@ def generate_forecast_figure(metadata, json_value_response):
     if series.empty:
         raise ValueError('No data')
     series = align_index(series, metadata['interval_length'])
-    cds = ColumnDataSource(series)
+    cds = ColumnDataSource(series.reset_index())
     plot_width = 900
     fig = generate_basic_timeseries(series, metadata['name'],
                                     metadata['variable'], plot_width,
