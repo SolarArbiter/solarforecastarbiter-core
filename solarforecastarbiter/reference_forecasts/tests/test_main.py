@@ -41,9 +41,9 @@ def check_out(out, expected, site_type):
 
 
 @pytest.mark.parametrize('model,load_forecast_return_value', [
-    pytest.param(
-        models.gfs_quarter_deg_hourly_to_hourly_mean,
-        load_forecast_return_value_3),
+    (models.gfs_quarter_deg_hourly_to_hourly_mean,
+     load_forecast_return_value_3),
+    (models.gfs_quarter_deg_to_hourly_mean, load_forecast_return_value_3),
     (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
     (models.hrrr_subhourly_to_subhourly_instantaneous,
         load_forecast_return_value_5),

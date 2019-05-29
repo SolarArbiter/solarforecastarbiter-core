@@ -29,8 +29,6 @@ LOAD_FORECAST = partial(nwp.load_forecast, base_path=BASE_PATH)
 @pytest.mark.parametrize('model', [
     pytest.param(models.gfs_quarter_deg_3hour_to_hourly_mean,
                  marks=pytest.mark.xfail(reason='gfs_3h not available')),
-    pytest.param(models.gfs_quarter_deg_to_hourly_mean,
-                 marks=pytest.mark.xfail(raises=NotImplementedError)),
     pytest.param(models.rap_ghi_to_hourly_mean, marks=xfail_g2sub),
     pytest.param(models.rap_ghi_to_instantaneous, marks=xfail_g2sub)
 ])
@@ -63,6 +61,7 @@ def check_out(out, start, end, end_strict=True):
 
 @pytest.mark.parametrize('model', [
     models.gfs_quarter_deg_hourly_to_hourly_mean,
+    models.gfs_quarter_deg_to_hourly_mean,
     models.hrrr_subhourly_to_hourly_mean,
     models.hrrr_subhourly_to_subhourly_instantaneous,
     models.nam_12km_cloud_cover_to_hourly_mean,
@@ -72,11 +71,26 @@ def check_out(out, start, end, end_strict=True):
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
 ])
-def test_gfs_quarter_deg_hourly_to_hourly_mean(model, end, end_strict):
+def test_models(model, end, end_strict):
     out = model(
         latitude, longitude, elevation, init_time, start, end,
         load_forecast=LOAD_FORECAST)
     check_out(out, start, end, end_strict=end_strict)
+
+
+@pytest.mark.parametrize('start,end', [
+    ('20190515T0100Z', '20190520T0000Z'),
+    ('20190520T0300Z', '20190522T0000Z'),
+    ('20190525T1200Z', '20190531T0000Z'),
+    ('20190525T1200Z', '20190531T0000Z'),
+])
+def test_gfs_quarter_deg_to_hourly_mean(start, end):
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+    out = models.gfs_quarter_deg_to_hourly_mean(
+        latitude, longitude, elevation, init_time, start, end,
+        load_forecast=LOAD_FORECAST)
+    check_out(out, start, end, end_strict=True)
 
 
 @pytest.mark.parametrize('model', [

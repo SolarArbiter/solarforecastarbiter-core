@@ -66,6 +66,8 @@ from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.nwp import load_forecast
 from solarforecastarbiter.reference_forecasts import forecast
 
+import pandas as pd
+
 
 def _resample_using_cloud_cover(latitude, longitude, elevation,
                                 cloud_cover, air_temperature, wind_speed):
@@ -249,17 +251,29 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
                                    load_forecast=load_forecast):
     """
-    Hourly average forecasts derived from GFS 1-3 hr frequency output.
-    GHI directly from NWP model. DNI, DHI computed.
-    Max forecast horizon 240 hours.
+    Hourly average forecasts derived from GFS 1, 3, and 12 hr frequency
+    output. GHI from NWP model cloud cover. DNI, DHI computed.
+    Max forecast horizon 384 hours.
     """
-    # this function is supposed to be able to handle the switch from
-    # hourly to 3 hourly output.
-    # unclear if this should call gfs_quarter_deg_hourly_to_hourly_mean
-    # and then gfs_quarter_deg_3hour_to_hourly_mean or if it should
-    # do everything here. defer until after storage implementation is
-    # more clear.
-    raise NotImplementedError
+    cloud_cover, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        variables=('cloud_cover', 'air_temperature', 'wind_speed'))
+    end_1h = init_time + pd.Timedelta('120hr')
+    end_3h = init_time + pd.Timedelta('240hr')
+    cloud_cover_1h_mixed = cloud_cover.loc[start:end_1h]
+    cloud_cover_3h_mixed = cloud_cover.loc[end_1h+pd.Timedelta('3hr'):end_3h]
+    cloud_cover_12h = cloud_cover.loc[end_3h+pd.Timedelta('12hr'):end]
+    cloud_covers = []
+    if not cloud_cover_1h_mixed.empty:
+        cloud_covers.append(forecast.unmix_intervals(cloud_cover_1h_mixed))
+    if not cloud_cover_3h_mixed.empty:
+        cloud_covers.append(forecast.unmix_intervals(cloud_cover_3h_mixed))
+    if not cloud_cover_12h.empty:
+        cloud_covers.append(cloud_cover_12h)
+    cloud_cover = pd.concat(cloud_covers)
+    return _resample_using_cloud_cover(latitude, longitude, elevation,
+                                       cloud_cover, air_temperature,
+                                       wind_speed)
 
 
 def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
