@@ -1,3 +1,6 @@
+import logging
+
+
 from bokeh.embed import components
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource, Label, HoverTool
@@ -6,20 +9,21 @@ from bokeh import palettes
 import pandas as pd
 
 
-from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
-                                           json_payload_to_forecast_series)
-from solarforecastarbiter.plotting.utils import format_variable_name
+from solarforecastarbiter.io import utils as io_utils
+from solarforecastarbiter.plotting import utils as plot_utils
 from solarforecastarbiter.validation import quality_mapping
 
 
+logger = logging.getLogger('sfa.plotting.timeseries')
+
+
 def build_figure_title(object_name, start, end):
-    """Builds a title for the plot from a metadata object.
+    """Builds a title for the plot
 
     Parameters
     ----------
-    metadata: dict
-        Metadata dictionary used to label the plot. Must include a 'site'
-        key containing a nested site object as well as the 'variable' key.
+    object_name : str
+        Name of the object being plotted
 
     start: datetime-like
         The start of the interval being plot.
@@ -38,7 +42,7 @@ def build_figure_title(object_name, start, end):
     return figure_title
 
 
-def _build_quality_bar(flag_name, plot_width, x_range, color, source):
+def _single_quality_bar(flag_name, plot_width, x_range, color, source):
     qfig = figure(sizing_mode='stretch_width',
                   plot_height=30,
                   plot_width=plot_width,
@@ -65,6 +69,7 @@ def _build_quality_bar(flag_name, plot_width, x_range, color, source):
     return qfig
 
 
+PLOT_WIDTH = 900
 PALETTE = iter(palettes.all_palettes['Category20b'][20][::4] * 5)
 FLAG_COLORS = {
     'NOT VALIDATED': '#ff7f0e',
@@ -82,7 +87,8 @@ FLAG_COLORS = {
 }
 
 
-def generate_quality_bars(flags, plot_width, x_range, source=None):
+def make_quality_bars(flags, plot_width, x_range, source=None):
+    """Make the quality bar figures for observation validation"""
     if source is None:
         source = ColumnDataSource(flags)
     out = []
@@ -91,10 +97,11 @@ def generate_quality_bars(flags, plot_width, x_range, source=None):
             continue
         if color is None:
             color = next(PALETTE)
-        nextfig = _build_quality_bar(flag, plot_width, x_range,
-                                     color, source)
+        nextfig = _single_quality_bar(flag, plot_width, x_range,
+                                      color, source)
         out.append(nextfig)
 
+    # add the title to the top bar if there are any bars
     if out:
         out[0].plot_height = 60
         out[0].title.text = 'Quality Flags'
@@ -103,8 +110,9 @@ def generate_quality_bars(flags, plot_width, x_range, source=None):
     return out
 
 
-def generate_basic_timeseries(values, object_name, variable, plot_width,
-                              source=None):
+def make_basic_timeseries(values, object_name, variable, plot_width,
+                          source=None):
+    """Make a basic timeseries plot"""
     if source is None:
         source = ColumnDataSource(values)
     figure_title = build_figure_title(object_name, values.index[0],
@@ -113,81 +121,90 @@ def generate_basic_timeseries(values, object_name, variable, plot_width,
                  plot_width=plot_width,
                  plot_height=300, x_range=(values.index[0], values.index[-1]),
                  x_axis_type='datetime',
-                 tools='pan,wheel_zoom,box_zoom,reset,save',
+                 tools='pan,wheel_zoom,box_zoom,zoom_in,zoom_out,reset,save',
                  toolbar_location='above',
                  min_border_bottom=50)
     fig.line(x='timestamp', y='value', source=source)
-    fig.yaxis.axis_label = format_variable_name(variable)
+    fig.yaxis.axis_label = plot_utils.format_variable_name(variable)
     fig.xaxis.axis_label = 'Time (UTC)'
+
+    tooltips = [
+        ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
+        ('value', '@value{%0.2f}')
+    ]
+    if 'active_flags' in source.data.keys():
+        tooltips.append(('quality flags', '@active_flags'))
+    hover = HoverTool(tooltips=tooltips, formatters={
+        'timestamp': 'datetime', 'value': 'printf'}, mode='vline')
+    fig.add_tools(hover)
+
     return fig
 
 
-def align_index(df, interval_length):
-    # If there is more than 3 days of data, limit the default x_range
-    # to display only the most recent 3 day. Enable scrolling back in future
-    # release.
-    period_end = df.index[-1]
-    x_range_start = df.index[df.index.get_loc(
-        period_end - pd.Timedelta('3d'), method='bfill')]
-    # align the data on the index it should have according to the metadata
-    nindex = pd.date_range(start=x_range_start, end=period_end,
-                           freq=f'{interval_length}min',
-                           name='timestamp')
-    df = df.reindex(nindex, axis=0)
-    return df
-
-
-def generate_figure(metadata, json_value_response):
-    if 'forecast_id' in metadata:
-        return generate_forecast_figure(metadata, json_value_response)
-    else:
-        return generate_observation_figure(metadata, json_value_response)
-
-
 def generate_forecast_figure(metadata, json_value_response):
-    series = json_payload_to_forecast_series(json_value_response)
-    if series.empty:
-        raise ValueError('No data')
-    series = align_index(series, metadata['interval_length'])
-    cds = ColumnDataSource(series.reset_index())
-    plot_width = 900
-    fig = generate_basic_timeseries(series, metadata['name'],
-                                    metadata['variable'], plot_width,
-                                    source=cds)
-    hover = HoverTool(
-        tooltips=[
-            ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
-            ('value', '@value{%0.2f}')],
-        formatters={
-            'timestamp': 'datetime',
-            'value': 'printf'},
-        mode='vline')
-    fig.add_tools(hover)
-    return components(fig)
-
-
-def generate_observation_figure(metadata, json_value_response):
-    """Creates a bokeh figure from API responses
+    """
+    Creates a bokeh timeseries figure for forcast data
 
     Parameters
     ----------
     metadata: dict
-        Metadata dictionary used to label the plot. Must include
-        a full nested site object. Only works with Metadata for
-        types observation, forecast and cdf_forecast.
+        Metadata dictionary of the forecast being plotted
 
-    json_response: dict
-        The json response parsed into a dictionary.
+    json_value_response: dict
+        The json response for the forecast values from the API,
+        parsed into a dictionary.
+
+    Returns
+    -------
+    script, div : str
+        The <script> and <div> components for the Bokeh plot
 
     Raises
     ------
     ValueError
         When the supplied json contains an empty "values" field.
     """
-    df = json_payload_to_observation_df(json_value_response)
+    logger.info('Starting forecast figure generation...')
+    series = io_utils.json_payload_to_forecast_series(json_value_response)
+    if series.empty:
+        raise ValueError('No data')
+    series = plot_utils.align_index(series, metadata['interval_length'])
+    cds = ColumnDataSource(series.reset_index())
+    fig = make_basic_timeseries(series, metadata['name'],
+                                metadata['variable'], PLOT_WIDTH,
+                                source=cds)
+    logger.info('Figure generated succesfully')
+    return components(fig)
+
+
+def generate_observation_figure(metadata, json_value_response):
+    """
+    Creates a bokeh figure from API responses for an observation
+
+    Parameters
+    ----------
+    metadata: dict
+        Metadata dictionary of the observation being plotted
+
+    json_value_response: dict
+        The json response for the observation values from the API,
+        parsed into a dictionary.
+
+    Returns
+    -------
+    script, div : str
+        The <script> and <div> components for the Bokeh plot
+
+    Raises
+    ------
+    ValueError
+        When the supplied json contains an empty "values" field.
+    """
+    logger.info('Starting observation forecast generation...')
+    df = io_utils.json_payload_to_observation_df(json_value_response)
     if df.empty:
         raise ValueError('No data')
-    df = align_index(df, metadata['interval_length'])
+    df = plot_utils.align_index(df, metadata['interval_length'])
     quality_flag = df.pop('quality_flag').astype(int)
     bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)
@@ -201,25 +218,15 @@ def generate_observation_figure(metadata, json_value_response):
         flags.ffill(axis=0, limit=1, inplace=True)
 
     cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
-    plot_width = 900
-    figs = [generate_basic_timeseries(df['value'], metadata['name'],
-                                      metadata['variable'], plot_width,
-                                      source=cds)]
+    figs = [make_basic_timeseries(df['value'], metadata['name'],
+                                  metadata['variable'], PLOT_WIDTH,
+                                  source=cds)]
 
-    figs.extend(generate_quality_bars(flags, plot_width, figs[0].x_range,
-                                      cds))
-    hover = HoverTool(
-        tooltips=[
-            ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
-            ('value', '@value{%0.2f}'),
-            ('quality flags', '@active_flags')],
-        formatters={
-            'timestamp': 'datetime',
-            'value': 'printf'},
-        mode='vline')
-    figs[0].add_tools(hover)
+    figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
+                                  cds))
     layout = gridplot(figs,
                       ncols=1,
                       merge_tools=False,
                       sizing_mode='scale_width')
+    logger.info('Figure generated succesfully')
     return components(layout)
