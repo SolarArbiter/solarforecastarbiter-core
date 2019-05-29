@@ -246,6 +246,11 @@ def convert_mask_into_dataframe(flag_series):
     return out
 
 
+def convert_flag_frame_to_strings(flag_frame, sep=', '):
+    return np.logical_and(flag_frame, flag_frame.columns + sep).replace(
+        False, '').sum(axis=1).str.rstrip(sep).replace('', 'OK')
+
+
 def check_if_series_flagged(flag_series, flag_description):
     """
     Check if `flag_series` has been flagged for the checks given by

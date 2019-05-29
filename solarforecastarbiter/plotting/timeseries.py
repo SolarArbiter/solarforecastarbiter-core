@@ -1,6 +1,6 @@
 from bokeh.embed import components
 from bokeh.layouts import gridplot
-from bokeh.models import ColumnDataSource, Label
+from bokeh.models import ColumnDataSource, Label, HoverTool
 from bokeh.plotting import figure
 from bokeh import palettes
 import pandas as pd
@@ -135,6 +135,15 @@ def generate_forecast_figure(metadata, json_value_response):
     fig = generate_basic_timeseries(series, metadata['name'],
                                     metadata['variable'], plot_width,
                                     source=cds)
+    hover = HoverTool(
+        tooltips=[
+            ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
+            ('value', '@value{%0.2f}')],
+        formatters={
+            'timestamp': 'datetime',
+            'value': 'printf'},
+        mode='vline')
+    fig.add_tools(hover)
     return components(fig)
 
 
@@ -161,8 +170,10 @@ def generate_observation_figure(metadata, json_value_response):
         raise ValueError('No data')
     df = align_index(df, metadata['interval_length'])
     quality_flag = df.pop('quality_flag').astype(int)
-    flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
-    flags = flags.mask(~flags)
+    bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
+    active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)
+    active_flags.name = 'active_flags'
+    flags = bool_flags.mask(~bool_flags)
     # need to fill as line needs more than a single point to show up
     if metadata['interval_label'] == ' ending':
         flags.bfill(axis=0, limit=1, inplace=True)
@@ -170,7 +181,7 @@ def generate_observation_figure(metadata, json_value_response):
         # for interval beginning and instantaneous
         flags.ffill(axis=0, limit=1, inplace=True)
 
-    cds = ColumnDataSource(pd.concat([df, flags], axis=1))
+    cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
     plot_width = 900
     figs = [generate_basic_timeseries(df['value'], metadata['name'],
                                       metadata['variable'], plot_width,
@@ -178,6 +189,16 @@ def generate_observation_figure(metadata, json_value_response):
 
     figs.extend(generate_quality_bars(flags, plot_width, figs[0].x_range,
                                       cds))
+    hover = HoverTool(
+        tooltips=[
+            ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
+            ('value', '@value{%0.2f}'),
+            ('quality flags', '@active_flags')],
+        formatters={
+            'timestamp': 'datetime',
+            'value': 'printf'},
+        mode='vline')
+    figs[0].add_tools(hover)
     layout = gridplot(figs,
                       ncols=1,
                       merge_tools=False,
