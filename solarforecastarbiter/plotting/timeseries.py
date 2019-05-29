@@ -70,7 +70,7 @@ def _single_quality_bar(flag_name, plot_width, x_range, color, source):
 
 
 PLOT_WIDTH = 900
-PALETTE = iter(palettes.all_palettes['Category20b'][20][::4] * 5)
+PALETTE = palettes.all_palettes['Category20b'][20][::4]
 FLAG_COLORS = {
     'NOT VALIDATED': '#ff7f0e',
     'USER FLAGGED': '#d62728',
@@ -91,12 +91,13 @@ def make_quality_bars(flags, plot_width, x_range, source=None):
     """Make the quality bar figures for observation validation"""
     if source is None:
         source = ColumnDataSource(flags)
+    palette = iter(PALETTE * 3)
     out = []
     for flag, color in FLAG_COLORS.items():
         if flag not in flags or flags[flag].dropna().empty:
             continue
         if color is None:
-            color = next(PALETTE)
+            color = next(palette)
         nextfig = _single_quality_bar(flag, plot_width, x_range,
                                       color, source)
         out.append(nextfig)
