@@ -141,6 +141,15 @@ def make_basic_timeseries(values, object_name, variable, plot_width,
     return fig
 
 
+def _make_layout(figs):
+    layout = gridplot(figs,
+                      ncols=1,
+                      merge_tools=True,
+                      toolbar_location='above',
+                      sizing_mode='scale_width')
+    return components(layout)
+
+
 def generate_forecast_figure(metadata, json_value_response):
     """
     Creates a bokeh timeseries figure for forcast data
@@ -173,8 +182,9 @@ def generate_forecast_figure(metadata, json_value_response):
     fig = make_basic_timeseries(series, metadata['name'],
                                 metadata['variable'], PLOT_WIDTH,
                                 source=cds)
+    layout = _make_layout([fig])
     logger.info('Figure generated succesfully')
-    return components(fig)
+    return layout
 
 
 def generate_observation_figure(metadata, json_value_response):
@@ -224,9 +234,6 @@ def generate_observation_figure(metadata, json_value_response):
 
     figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
                                   cds))
-    layout = gridplot(figs,
-                      ncols=1,
-                      merge_tools=False,
-                      sizing_mode='scale_width')
+    layout = _make_layout(figs)
     logger.info('Figure generated succesfully')
-    return components(layout)
+    return layout
