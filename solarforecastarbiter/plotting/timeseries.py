@@ -19,6 +19,7 @@ UTCS = (dt.timezone.utc, pytz.UTC)
 logger = logging.getLogger('sfa.plotting.timeseries')
 PLOT_WIDTH = 900
 PALETTE = palettes.all_palettes['Category20b'][20][::4]
+# flags with color None will be assigned a color from PALETTE
 FLAG_COLORS = {
     'MISSING': '#e6550d',
     'NOT VALIDATED': '#ff7f0e',
@@ -45,10 +46,10 @@ def build_figure_title(object_name, start, end):
         Name of the object being plotted
 
     start: datetime-like
-        The start of the interval being plot.
+        The start of the interval being plotted.
 
     end: datetime-like
-        The end of the interval being plot.
+        The end of the interval being plotted.
 
     Returns
     -------
@@ -97,12 +98,37 @@ def _single_quality_bar(flag_name, plot_width, x_range, color, source):
 
 
 def make_quality_bars(flags, plot_width, x_range, source=None):
-    """Make the quality bar figures for observation validation"""
+    """
+    Make figures to display the whether a time is flagged for any
+    of the columns in flags.
+
+    Parameters
+    ----------
+    flags : pandas.DataFrame
+        The masked DataFrame with a datetime index that indicates
+        if the time should be flagged for each flag. Only columns
+        in FLAG_COLORS will be made into bars. If a given column
+        is empty, a bar will not be generated for that flag.
+    plot_width : int
+        The width of the figures
+    x_range : bokeh.Range or tuple
+        If x_range is a bokeh Range from another plot, the plots will
+        be linked on panning/zooming/etc.
+    source : bokeh.models.ColumnDataSource or None
+        The predefined data source with flags loaded. If None,
+        flags will be added to a new datasource.
+
+    Returns
+    -------
+    list
+       Of bar figures. The top figure will have an appropriate title.
+    """
     if source is None:
         source = ColumnDataSource(flags)
     palette = iter(PALETTE * 3)
     out = []
     for flag, color in FLAG_COLORS.items():
+        # only display bars for flags that have at least on occurence
         if flag not in flags or flags[flag].dropna().empty:
             continue
         if color is None:
