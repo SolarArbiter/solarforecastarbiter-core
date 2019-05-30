@@ -264,6 +264,15 @@ def test_convert_mask_into_dataframe_w_unvalidated():
     assert_frame_equal(out, expected, check_like=True)
 
 
+def test_convert_flag_frame_to_strings():
+    frame = pd.DataFrame({'FIRST': [True, False, False],
+                          'SECOND': [False, False, True],
+                          'THIRD': [True, False, True]})
+    expected = pd.Series(['FIRST, THIRD', 'OK', 'SECOND, THIRD'])
+    out = quality_mapping.convert_flag_frame_to_strings(frame)
+    assert_series_equal(expected, out)
+
+
 @pytest.mark.parametrize('expected,desc', [
     (pd.Series([1, 0, 0, 0], dtype=bool), 'OK'),
     (pd.Series([0, 1, 0, 1], dtype=bool), 'USER FLAGGED'),

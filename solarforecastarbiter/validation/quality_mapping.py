@@ -246,9 +246,29 @@ def convert_mask_into_dataframe(flag_series):
     return out
 
 
-def convert_flag_frame_to_strings(flag_frame, sep=', '):
+def convert_flag_frame_to_strings(flag_frame, sep=', ', empty='OK'):
+    """
+    Convert the `flag_frame` output of :py:func:`~convert_mask_into_dataframe`
+    into a pandas.Series of strings which are the active flag names separated
+    by `sep`. Any row where all columns are false will have a value of `empty`.
+
+    Parameters
+    ----------
+    flag_frame : pandas.DataFrame
+        Boolean DataFrame with descriptive column names
+    sep : str
+        String to separate column names by
+    empty : str
+        String to replace rows where no columns are True
+
+    Returns
+    -------
+    pandas.Series
+        Of joined column names from `flag_frame` separated by `sep` if True.
+        Has the same index as `flag_frame`.
+    """
     return np.logical_and(flag_frame, flag_frame.columns + sep).replace(
-        False, '').sum(axis=1).str.rstrip(sep).replace('', 'OK')
+        False, '').sum(axis=1).str.rstrip(sep).replace('', empty)
 
 
 def check_if_series_flagged(flag_series, flag_description):
