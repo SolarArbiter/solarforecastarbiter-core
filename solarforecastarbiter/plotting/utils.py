@@ -48,11 +48,20 @@ def align_index(df, interval_length, limit=None):
 def line_or_step(interval_label):
     if 'instant' in interval_label:
         plot_method = 'line'
-        kwargs = dict()
+        plot_kwargs = dict()
+        hover_kwargs = dict(line_policy='nearest',
+                            attachment='horizontal')
     elif interval_label == 'beginning':
         plot_method = 'step'
-        kwargs = dict(mode='before')
+        plot_kwargs = dict(mode='after')
+        hover_kwargs = dict(line_policy='prev',
+                            attachment='left',
+                            add_line=True)
     elif interval_label == 'ending':
         plot_method = 'step'
-        kwargs = dict(mode='after')
-    return plot_method, kwargs
+        plot_kwargs = dict(mode='before')
+        hover_kwargs = dict(line_policy='next',
+                            attachment='right',
+                            add_line=True)
+
+    return plot_method, plot_kwargs, hover_kwargs

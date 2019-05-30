@@ -111,11 +111,29 @@ def make_quality_bars(flags, plot_width, x_range, source=None):
     return out
 
 
-def make_basic_timeseries(values, object_name, variable, plot_width,
-                          plot_method, source=None, **plot_kwargs):
+def add_hover_tool(fig, source, **hover_kwargs):
+    if hover_kwargs.pop('add_line', False):
+        fig.line(x='timestamp', y='value', source=source, line_alpha=0)
+
+    tooltips = [
+        ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
+        ('value', '@value{%0.2f}')
+    ]
+    if 'active_flags' in source.data.keys():
+        tooltips.append(('quality flags', '@active_flags'))
+    hover = HoverTool(tooltips=tooltips, formatters={
+        'timestamp': 'datetime', 'value': 'printf'}, mode='vline',
+                      **hover_kwargs)
+    fig.add_tools(hover)
+
+
+def make_basic_timeseries(values, object_name, variable, interval_label,
+                          plot_width, source=None):
     """Make a basic timeseries plot"""
     if source is None:
         source = ColumnDataSource(values)
+    plot_method, plot_kwargs, hover_kwargs = plot_utils.line_or_step(
+        interval_label)
     figure_title = build_figure_title(object_name, values.index[0],
                                       values.index[-1])
     fig = figure(title=figure_title, sizing_mode='scale_width',
@@ -129,17 +147,7 @@ def make_basic_timeseries(values, object_name, variable, plot_width,
                               **plot_kwargs)
     fig.yaxis.axis_label = plot_utils.format_variable_name(variable)
     fig.xaxis.axis_label = 'Time (UTC)'
-
-    tooltips = [
-        ('timestamp', '@timestamp{%FT%H:%M:%S%z}'),
-        ('value', '@value{%0.2f}')
-    ]
-    if 'active_flags' in source.data.keys():
-        tooltips.append(('quality flags', '@active_flags'))
-    hover = HoverTool(tooltips=tooltips, formatters={
-        'timestamp': 'datetime', 'value': 'printf'}, mode='vline')
-    fig.add_tools(hover)
-
+    add_hover_tool(fig, source, **hover_kwargs)
     return fig
 
 
@@ -167,25 +175,19 @@ def generate_forecast_figure(metadata, json_value_response):
 
     Returns
     -------
-    script, div : str
-        The <script> and <div> components for the Bokeh plot
-
-    Raises
-    ------
-    ValueError
-        When the supplied json contains an empty "values" field.
+    script, div or None: str
+        The <script> and <div> components for the Bokeh plot.
+        Returns None when no data
     """
     logger.info('Starting forecast figure generation...')
     series = io_utils.json_payload_to_forecast_series(json_value_response)
     if series.empty:
-        raise ValueError('No data')
+        return None
     series = plot_utils.align_index(series, metadata['interval_length'])
     cds = ColumnDataSource(series.reset_index())
-    plot_method, plot_kwargs = 'line', {}
-    fig = make_basic_timeseries(series, metadata['name'],
-                                metadata['variable'], PLOT_WIDTH,
-                                plot_method, source=cds,
-                                **plot_kwargs)
+    fig = make_basic_timeseries(
+        series, metadata['name'], metadata['variable'],
+        metadata['interval_label'], PLOT_WIDTH, source=cds)
     layout = _make_layout([fig])
     logger.info('Figure generated succesfully')
     return layout
@@ -217,7 +219,7 @@ def generate_observation_figure(metadata, json_value_response):
     logger.info('Starting observation forecast generation...')
     df = io_utils.json_payload_to_observation_df(json_value_response)
     if df.empty:
-        raise ValueError('No data')
+        return None
     df = plot_utils.align_index(df, metadata['interval_length'],
                                 pd.Timedelta('3d'))
     quality_flag = df.pop('quality_flag').dropna().astype(int)
@@ -233,11 +235,9 @@ def generate_observation_figure(metadata, json_value_response):
         flags.ffill(axis=0, limit=1, inplace=True)
 
     cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
-    plot_method, plot_kwargs = 'line', {}
-    figs = [make_basic_timeseries(df['value'], metadata['name'],
-                                  metadata['variable'], PLOT_WIDTH,
-                                  plot_method, source=cds,
-                                  **plot_kwargs)]
+    figs = [make_basic_timeseries(
+        df['value'], metadata['name'], metadata['variable'],
+        metadata['interval_label'], PLOT_WIDTH, source=cds)]
 
     figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
                                   cds))
