@@ -9,3 +9,4 @@ tables==3.5.1
 sentry-sdk==0.7.14
 Click==7.0
 aiohttp==3.5.4
+bokeh==1.2.0
