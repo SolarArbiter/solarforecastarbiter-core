@@ -14,6 +14,22 @@ from solarforecastarbiter.validation import quality_mapping
 
 
 logger = logging.getLogger('sfa.plotting.timeseries')
+PLOT_WIDTH = 900
+PALETTE = palettes.all_palettes['Category20b'][20][::4]
+FLAG_COLORS = {
+    'NOT VALIDATED': '#ff7f0e',
+    'USER FLAGGED': '#d62728',
+    'NIGHTTIME': None,
+    'CLOUDY': None,
+    'SHADED': None,
+    'UNEVEN FREQUENCY': None,
+    'LIMITS EXCEEDED': None,
+    'CLEARSKY EXCEEDED': None,
+    'STALE VALUES': None,
+    'INTERPOLATED VALUES': None,
+    'CLIPPED VALUES': None,
+    'INCONSISTENT IRRADIANCE COMPONENTS': None
+}
 
 
 def build_figure_title(object_name, start, end):
@@ -66,24 +82,6 @@ def _single_quality_bar(flag_name, plot_width, x_range, color, source):
                        text_font_style='bold')
     qfig.add_layout(flag_label)
     return qfig
-
-
-PLOT_WIDTH = 900
-PALETTE = palettes.all_palettes['Category20b'][20][::4]
-FLAG_COLORS = {
-    'NOT VALIDATED': '#ff7f0e',
-    'USER FLAGGED': '#d62728',
-    'NIGHTTIME': None,
-    'CLOUDY': None,
-    'SHADED': None,
-    'UNEVEN FREQUENCY': None,
-    'LIMITS EXCEEDED': None,
-    'CLEARSKY EXCEEDED': None,
-    'STALE VALUES': None,
-    'INTERPOLATED VALUES': None,
-    'CLIPPED VALUES': None,
-    'INCONSISTENT IRRADIANCE COMPONENTS': None
-}
 
 
 def make_quality_bars(flags, plot_width, x_range, source=None):
