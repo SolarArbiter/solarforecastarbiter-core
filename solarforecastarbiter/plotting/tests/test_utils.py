@@ -53,6 +53,7 @@ def test_align_index_limit():
     ('instant', 'line'),
     ('beginning', 'step'),
     ('ending', 'step'),
+    pytest.param('other', '', marks=pytest.mark.xfail(raises=ValueError))
 ])
 def test_line_or_step(label, method):
     out = utils.line_or_step(label)

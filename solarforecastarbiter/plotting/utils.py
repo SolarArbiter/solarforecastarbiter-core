@@ -46,6 +46,11 @@ def align_index(df, interval_length, limit=None):
 
 
 def line_or_step(interval_label):
+    """
+    For a given interval_label, determine the plot_method of the data,
+    any kwargs for that plot method, and kwargs for adding a hovertool
+    for the data.
+    """
     if 'instant' in interval_label:
         plot_method = 'line'
         plot_kwargs = dict()
@@ -63,5 +68,9 @@ def line_or_step(interval_label):
         hover_kwargs = dict(line_policy='next',
                             attachment='right',
                             add_line=True)
+    else:
+        raise ValueError(
+            'interval_label must be one of "instant", "beginning", '
+            'or "ending"')
 
     return plot_method, plot_kwargs, hover_kwargs
