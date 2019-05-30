@@ -234,7 +234,7 @@ def generate_observation_figure(observation, data):
     flags = bool_flags.mask(~bool_flags).reindex(data.index)  # add missing
     flags['MISSING'] = pd.Series(1.0, index=data.index)[pd.isna(data['value'])]
     # need to fill as line needs more than a single point to show up
-    if observation.interval_label == ' ending':
+    if observation.interval_label == 'ending':
         flags.bfill(axis=0, limit=1, inplace=True)
     else:
         # for interval beginning and instantaneous
