@@ -39,7 +39,7 @@ def align_index(df, interval_length, limit=None):
         period_start = df.index[0]
     # align the data on the index it should have according to the metadata
     nindex = pd.date_range(start=period_start, end=period_end,
-                           freq=f'{interval_length}min',
+                           freq=interval_length,
                            name='timestamp')
     df = df.reindex(nindex, axis=0)
     return df

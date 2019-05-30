@@ -9,7 +9,6 @@ from bokeh import palettes
 import pandas as pd
 
 
-from solarforecastarbiter.io import utils as io_utils
 from solarforecastarbiter.plotting import utils as plot_utils
 from solarforecastarbiter.validation import quality_mapping
 
@@ -160,84 +159,77 @@ def _make_layout(figs):
     return components(layout)
 
 
-def generate_forecast_figure(metadata, json_value_response):
+def generate_forecast_figure(forecast, data):
     """
     Creates a bokeh timeseries figure for forcast data
 
     Parameters
     ----------
-    metadata: dict
-        Metadata dictionary of the forecast being plotted
+    forecast : datamodel.Forecast
+        The Forecast that is being plotted
 
-    json_value_response: dict
-        The json response for the forecast values from the API,
-        parsed into a dictionary.
+    data : pandas.Series
+        The forecast data with a datetime index to be plotted
 
     Returns
     -------
     script, div or None: str
         The <script> and <div> components for the Bokeh plot.
-        Returns None when no data
+        Returns None when data is empty
     """
     logger.info('Starting forecast figure generation...')
-    series = io_utils.json_payload_to_forecast_series(json_value_response)
-    if series.empty:
+    if len(data.index) == 0:
         return None
-    series = plot_utils.align_index(series, metadata['interval_length'])
-    cds = ColumnDataSource(series.reset_index())
+    data = plot_utils.align_index(data, forecast.interval_length)
+    cds = ColumnDataSource(data.reset_index())
     fig = make_basic_timeseries(
-        series, metadata['name'], metadata['variable'],
-        metadata['interval_label'], PLOT_WIDTH, source=cds)
+        data, forecast.name, forecast.variable,
+        forecast.interval_label, PLOT_WIDTH, source=cds)
     layout = _make_layout([fig])
     logger.info('Figure generated succesfully')
     return layout
 
 
-def generate_observation_figure(metadata, json_value_response):
+def generate_observation_figure(observation, data):
     """
     Creates a bokeh figure from API responses for an observation
 
     Parameters
     ----------
-    metadata: dict
-        Metadata dictionary of the observation being plotted
+    observation : datamodel.Observation
+        The Observation that is being plotted
 
-    json_value_response: dict
-        The json response for the observation values from the API,
-        parsed into a dictionary.
+    data : pandas.DataFrame
+        The observation data to be plotted with datetime index
+        and ('value', 'quality_flag') columns
 
     Returns
     -------
-    script, div : str
-        The <script> and <div> components for the Bokeh plot
-
-    Raises
-    ------
-    ValueError
-        When the supplied json contains an empty "values" field.
+    script, div or None: str
+        The <script> and <div> components for the Bokeh plot.
+        Returns None when data is empty
     """
     logger.info('Starting observation forecast generation...')
-    df = io_utils.json_payload_to_observation_df(json_value_response)
-    if df.empty:
+    if len(data.index) == 0:
         return None
-    df = plot_utils.align_index(df, metadata['interval_length'],
-                                pd.Timedelta('3d'))
-    quality_flag = df.pop('quality_flag').dropna().astype(int)
+    data = plot_utils.align_index(data, observation.interval_length,
+                                  pd.Timedelta('3d'))
+    quality_flag = data.pop('quality_flag').dropna().astype(int)
     bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)
     active_flags.name = 'active_flags'
     flags = bool_flags.mask(~bool_flags)
     # need to fill as line needs more than a single point to show up
-    if metadata['interval_label'] == ' ending':
+    if observation.interval_label == ' ending':
         flags.bfill(axis=0, limit=1, inplace=True)
     else:
         # for interval beginning and instantaneous
         flags.ffill(axis=0, limit=1, inplace=True)
 
-    cds = ColumnDataSource(pd.concat([df, flags, active_flags], axis=1))
+    cds = ColumnDataSource(pd.concat([data, flags, active_flags], axis=1))
     figs = [make_basic_timeseries(
-        df['value'], metadata['name'], metadata['variable'],
-        metadata['interval_label'], PLOT_WIDTH, source=cds)]
+        data['value'], observation.name, observation.variable,
+        observation.interval_label, PLOT_WIDTH, source=cds)]
 
     figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
                                   cds))
