@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 
 
@@ -7,12 +8,14 @@ from bokeh.models import ColumnDataSource, Label, HoverTool
 from bokeh.plotting import figure
 from bokeh import palettes
 import pandas as pd
+import pytz
 
 
 from solarforecastarbiter.plotting import utils as plot_utils
 from solarforecastarbiter.validation import quality_mapping
 
 
+UTCS = (dt.timezone.utc, pytz.UTC)
 logger = logging.getLogger('sfa.plotting.timeseries')
 PLOT_WIDTH = 900
 PALETTE = palettes.all_palettes['Category20b'][20][::4]
@@ -50,7 +53,15 @@ def build_figure_title(object_name, start, end):
     -------
     string
         The appropriate figure title.
+
+    Raises
+    ------
+    ValueError
+        If start or end is not localized to UTC
     """
+    if start.tzinfo not in UTCS or end.tzinfo not in UTCS:
+        raise ValueError('start and end must be localized to UTC')
+
     start_string = start.strftime('%Y-%m-%d %H:%M')
     end_string = end.strftime('%Y-%m-%d %H:%M')
     figure_title = (f'{object_name} {start_string} to {end_string} UTC')
@@ -109,6 +120,8 @@ def make_quality_bars(flags, plot_width, x_range, source=None):
 
 
 def add_hover_tool(fig, source, **hover_kwargs):
+    """Add a hover tool to fig. If `add_line=True` in `hover_kwargs`
+    an invisible line is added to enable hover values step plots"""
     if hover_kwargs.pop('add_line', False):
         fig.line(x='timestamp', y='value', source=source, line_alpha=0)
 
@@ -126,7 +139,8 @@ def add_hover_tool(fig, source, **hover_kwargs):
 
 def make_basic_timeseries(values, object_name, variable, interval_label,
                           plot_width, source=None):
-    """Make a basic timeseries plot"""
+    """Make a basic timeseries plot (with either a step or line)
+    and add a hover tool"""
     if source is None:
         source = ColumnDataSource(values)
     plot_method, plot_kwargs, hover_kwargs = plot_utils.line_or_step(
