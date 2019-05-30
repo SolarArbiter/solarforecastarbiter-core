@@ -20,6 +20,7 @@ logger = logging.getLogger('sfa.plotting.timeseries')
 PLOT_WIDTH = 900
 PALETTE = palettes.all_palettes['Category20b'][20][::4]
 FLAG_COLORS = {
+    'MISSING': '#e6550d',
     'NOT VALIDATED': '#ff7f0e',
     'USER FLAGGED': '#d62728',
     'NIGHTTIME': None,
@@ -230,7 +231,8 @@ def generate_observation_figure(observation, data):
     bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)
     active_flags.name = 'active_flags'
-    flags = bool_flags.mask(~bool_flags)
+    flags = bool_flags.mask(~bool_flags).reindex(data.index)  # add missing
+    flags['MISSING'] = pd.Series(1.0, index=data.index)[pd.isna(data['value'])]
     # need to fill as line needs more than a single point to show up
     if observation.interval_label == ' ending':
         flags.bfill(axis=0, limit=1, inplace=True)
