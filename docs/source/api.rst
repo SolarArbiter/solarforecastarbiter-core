@@ -4,10 +4,10 @@
 API reference
 #############
 
-datamodel
-=========
+Data model
+==========
 
-The datamodel.
+The data model.
 
 .. autosummary::
    :toctree: generated/
@@ -40,8 +40,8 @@ The Observation and Forecast:
    datamodel.Forecast
 
 
-pvmodel
-=======
+PV modeling
+===========
 
 The :py:mod:`~solarforecastarbiter.pvmodel` module contains functions
 closely associated with PV modeling.
@@ -83,11 +83,13 @@ See :py:func:`~pvmodel.calculate_poa_effective`, for example.
    pvmodel.irradiance_to_power
 
 
-Reference Forecasts
+Reference forecasts
 ===================
 
 Entry points
 ------------
+
+High-level functions for NWP and persistence forecasts.
 
 .. autosummary::
    :toctree: generated/
@@ -114,6 +116,8 @@ NWP models
 
 Forecast processing
 -------------------
+
+Functions that process forecast data.
 
 .. autosummary::
    :toctree: generated/
@@ -182,7 +186,7 @@ Sandia
    io.fetch.sandia.request_sandia_data
    io.fetch.sandia.fetch_sandia
 
-Reference Observations
+Reference observations
 ----------------------
 
 .. autosummary::
