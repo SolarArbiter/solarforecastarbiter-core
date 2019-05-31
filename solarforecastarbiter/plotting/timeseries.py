@@ -97,39 +97,33 @@ def _single_quality_bar(flag_name, plot_width, x_range, color, source):
     return qfig
 
 
-def make_quality_bars(flags, plot_width, x_range, source=None):
+def make_quality_bars(source, plot_width, x_range):
     """
     Make figures to display the whether a time is flagged for any
-    of the columns in flags.
+    of the columns in source.
 
     Parameters
     ----------
-    flags : pandas.DataFrame
-        The masked DataFrame with a datetime index that indicates
-        if the time should be flagged for each flag. Only columns
-        in FLAG_COLORS will be made into bars. If a given column
+    source : bokeh.models.ColumnDataSource
+        The predefined data source with flags loaded. Only columns
+        in FLAG_COLORS will be made into bars. If data for a flag
         is empty, a bar will not be generated for that flag.
     plot_width : int
         The width of the figures
     x_range : bokeh.Range or tuple
         If x_range is a bokeh Range from another plot, the plots will
         be linked on panning/zooming/etc.
-    source : bokeh.models.ColumnDataSource or None
-        The predefined data source with flags loaded. If None,
-        flags will be added to a new datasource.
 
     Returns
     -------
     list
        Of bar figures. The top figure will have an appropriate title.
     """
-    if source is None:
-        source = ColumnDataSource(flags)
     palette = iter(PALETTE * 3)
     out = []
     for flag, color in FLAG_COLORS.items():
         # only display bars for flags that have at least on occurence
-        if flag not in flags or flags[flag].dropna().empty:
+        if flag not in source.data or pd.isna(source.data[flag]).all():
             continue
         if color is None:
             color = next(palette)
@@ -164,19 +158,48 @@ def add_hover_tool(fig, source, **hover_kwargs):
     fig.add_tools(hover)
 
 
-def make_basic_timeseries(values, object_name, variable, interval_label,
-                          plot_width, source=None):
-    """Make a basic timeseries plot (with either a step or line)
-    and add a hover tool"""
-    if source is None:
-        source = ColumnDataSource(values)
+def make_basic_timeseries(source, object_name, variable, interval_label,
+                          plot_width):
+    """
+    Make a basic timeseries plot (with either a step or line)
+    and add a hover tool.
+
+    Parameters
+    ----------
+    source : bokeh.models.ColumnDataSource
+        The datasource with 'timestamp' and 'value' columns that will be
+        plotted.
+    object_name : str
+        Name of the object to be plotted so an appropriate title can be made.
+    variable : str
+        Variable of the plotted object
+    interval_label : str
+        Interval label of the object to determine whether a line or step
+        is most appropriate.
+    plot_width : int
+        The width of the output figure
+
+    Returns
+    -------
+    bokeh.models.Figure
+        The figure with the timeseries
+
+    Raises
+    ------
+    KeyError
+       If timestamp is not a column in source
+    IndexError
+       If the timestamp column is empty
+    """
+    timestamps = source.data['timestamp']
+    first = pd.Timestamp(timestamps[0], tz='UTC')
+    last = pd.Timestamp(timestamps[-1], tz='UTC')
     plot_method, plot_kwargs, hover_kwargs = plot_utils.line_or_step(
         interval_label)
-    figure_title = build_figure_title(object_name, values.index[0],
-                                      values.index[-1])
+    figure_title = build_figure_title(object_name, first, last)
     fig = figure(title=figure_title, sizing_mode='scale_width',
                  plot_width=plot_width,
-                 plot_height=300, x_range=(values.index[0], values.index[-1]),
+                 plot_height=300, x_range=(first, last),
                  x_axis_type='datetime',
                  tools='pan,wheel_zoom,box_zoom,zoom_in,zoom_out,reset,save',
                  toolbar_location='above',
@@ -221,9 +244,8 @@ def generate_forecast_figure(forecast, data):
         return None
     data = plot_utils.align_index(data, forecast.interval_length)
     cds = ColumnDataSource(data.reset_index())
-    fig = make_basic_timeseries(
-        data, forecast.name, forecast.variable,
-        forecast.interval_label, PLOT_WIDTH, source=cds)
+    fig = make_basic_timeseries(cds, forecast.name, forecast.variable,
+                                forecast.interval_label, PLOT_WIDTH)
     layout = _make_layout([fig])
     logger.info('Figure generated succesfully')
     return layout
@@ -265,14 +287,11 @@ def generate_observation_figure(observation, data):
     else:
         # for interval beginning and instantaneous
         flags.ffill(axis=0, limit=1, inplace=True)
-
     cds = ColumnDataSource(pd.concat([data, flags, active_flags], axis=1))
-    figs = [make_basic_timeseries(
-        data['value'], observation.name, observation.variable,
-        observation.interval_label, PLOT_WIDTH, source=cds)]
+    figs = [make_basic_timeseries(cds, observation.name, observation.variable,
+                                  observation.interval_label, PLOT_WIDTH)]
 
-    figs.extend(make_quality_bars(flags, PLOT_WIDTH, figs[0].x_range,
-                                  cds))
+    figs.extend(make_quality_bars(cds, PLOT_WIDTH, figs[0].x_range))
     layout = _make_layout(figs)
     logger.info('Figure generated succesfully')
     return layout

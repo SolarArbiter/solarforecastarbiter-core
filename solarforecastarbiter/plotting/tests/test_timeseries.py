@@ -39,9 +39,9 @@ TEST_FLAGS = pd.DataFrame({'USER FLAGGED': [False, False, True],
 
 
 def test_make_quality_bars():
+    source = bokeh.models.ColumnDataSource(TEST_FLAGS)
     out = timeseries.make_quality_bars(
-        TEST_FLAGS, 800,
-        (TEST_FLAGS.index[0], TEST_FLAGS.index[-1]))
+        source, 800, (TEST_FLAGS.index[0], TEST_FLAGS.index[-1]))
     assert isinstance(out, list)
     assert out[0].title.text == 'Quality Flags'
     assert len(out) == 2
@@ -66,17 +66,20 @@ def test_add_hover_tool(addline, active):
         assert len(fig.tools[-1].tooltips) == 2
 
 
+@pytest.mark.parametrize('df', [
+    pd.DataFrame(
+        index=pd.date_range(start='now', freq='1min',
+                            periods=2, tz='UTC', name='timestamp')),
+    pytest.param(pd.DataFrame(), marks=pytest.mark.xfail(raises=KeyError)),
+    pytest.param(pd.DataFrame(index=pd.date_range(
+        start='now', freq='1min', periods=0, name='timestamp')),
+                 marks=pytest.mark.xfail(raises=IndexError))
+])
 @pytest.mark.parametrize('label', ['instant', 'beginning', 'ending'])
-@pytest.mark.parametrize('source', [True, False])
-def test_make_basic_timeseries(source, label):
-    if source:
-        source = bokeh.models.ColumnDataSource()
-    else:
-        source = None
-    vals = pd.DataFrame(index=pd.date_range(start='now', freq='1min',
-                                            periods=2, tz='UTC'))
-    fig = timeseries.make_basic_timeseries(vals, 'OBJECT', 'ghi',
-                                           label, 800, source)
+def test_make_basic_timeseries(label, df):
+    source = bokeh.models.ColumnDataSource(df)
+    fig = timeseries.make_basic_timeseries(source, 'OBJECT', 'ghi',
+                                           label, 800)
 
     if label == 'instant':
         assert len(fig.renderers) == 1
