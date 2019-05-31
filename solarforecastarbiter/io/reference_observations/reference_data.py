@@ -6,20 +6,19 @@ As new networks are added, their name should be added as it appears in
 to handle observation initialization and data update. Each of these network
 specific modules should implement two functions:
 
-    initialize_site_observations(api, site)
+ * ``initialize_site_observations(api, site)``
+    * Where api is an `io.api.APISession` and site is a `datamodel.Site`.
+ * ``update_observation_data(api, sites, observations, start, end)``
+    * Where api is an `io.api.APISession`, sites is the result of
+      `APISession.list_sites`, observations is the result of
+      `APISession.list_observations``start` and `end` are datetime
+      objects.
 
-        Where api is an `io.api.APISession` and site is a `datamodel.Site`.
-
-    update_observation_data(api, sites, observations, start, end)
-
-        Where api is an `io.api.APISession`, sites is the result of
-        `APISession.list_sites`, observations is the result of
-        `APISession.list_observations``start` and `end` are datetime
-        objects.
 The module should then be imported and added to `NETWORKHANDLER_MAP` below,
 so that it may be selected based on command line arguments. See the existing
 mappings for an example.
 """
+
 import json
 import logging
 from pkg_resources import resource_filename, Requirement
