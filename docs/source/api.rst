@@ -273,7 +273,7 @@ Validation
 Validator
 ---------
 
-Functions to perform validation
+Functions to perform validation.
 
 .. autosummary::
    :toctree: generated/
