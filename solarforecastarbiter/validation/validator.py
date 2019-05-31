@@ -218,6 +218,12 @@ def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
         True if value passes physically-possible test
     dhi_limit_flag : Series or None, default None
     dhi_limit_flag : Series or None, default None
+
+    References
+    ----------
+    [1] C. N. Long and Y. Shi, An Automated Quality Assessment and Control
+        Algorithm for Surface Radiation Measurements, The Open Atmospheric
+        Science Journal 2, pp. 23-37, 2008.
     """
     if not limits:
         limits = QCRAD_LIMITS
@@ -289,6 +295,9 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
         True if ghi, dhi and dni components are consistent.
     diffuse_ratio_limit : Series
         True if diffuse to ghi ratio passes limit test.
+    [1] C. N. Long and Y. Shi, An Automated Quality Assessment and Control
+        Algorithm for Surface Radiation Measurements, The Open Atmospheric
+        Science Journal 2, pp. 23-37, 2008.
     """
 
     if not param:
