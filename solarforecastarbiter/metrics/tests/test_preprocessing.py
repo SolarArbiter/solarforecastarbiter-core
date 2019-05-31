@@ -36,10 +36,11 @@ def test_exclude_on_forecast(forecast_series):
     # No bad data
     processed_fx_values = preprocessing.exclude(ser_fx)
 
-    assert processed_fx_values.isna().any() is False
+    print(processed_fx_values.isna().any)
+    assert not processed_fx_values.isna().any()
     pd.testing.assert_series_equal(ser_fx,
                                    processed_fx_values)
-
+    
     # Missing data
     ser_fx_missing = ser_fx.copy(deep=True)
     n_miss = int(0.25 * n_values)  # 25%
@@ -50,7 +51,7 @@ def test_exclude_on_forecast(forecast_series):
     processed_fx_values = preprocessing.exclude(ser_fx_missing)
 
     assert (n_values - n_miss) == processed_fx_values.size
-    assert processed_fx_values.isna().any() is False
+    assert not processed_fx_values.isna().any()
     pd.testing.assert_series_equal(ser_fx_missing[~ser_fx_missing.isna()],
                                    processed_fx_values)
 
@@ -64,7 +65,7 @@ def test_exclude_on_observation(observation_dataframe):
                                                  df_obs.quality_flag)
 
     assert n_values == processed_obs_values.size
-    assert processed_obs_values.isna().any() is False
+    assert not processed_obs_values.isna().any()
     pd.testing.assert_series_equal(df_obs.value,
                                    processed_obs_values)
 
@@ -79,7 +80,7 @@ def test_exclude_on_observation(observation_dataframe):
                                                  df_obs_missing.quality_flag)
 
     assert (n_values - n_miss) == processed_obs_values.size
-    assert processed_obs_values.isna().any() is False
+    assert not processed_obs_values.isna().any()
     pd.testing.assert_series_equal(
         df_obs_missing.value[~df_obs_missing.value.isna()],
         processed_obs_values)

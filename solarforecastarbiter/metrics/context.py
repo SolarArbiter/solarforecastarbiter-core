@@ -22,9 +22,9 @@ _FILL_FUNCTIONS_MAP = {
 
 
 _METRICS_MAP = {
-    'mae': deterministic._mean_absolute,
-    'mbe': deterministic._mean_bias,
-    'rmse': deterministic._root_mean_square
+    'mae': deterministic.mean_absolute,
+    'mbe': deterministic.mean_bias,
+    'rmse': deterministic.root_mean_square
 }
 
 

@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def _mean_absolute(y_true, y_pred):
+def mean_absolute(y_true, y_pred):
     """Mean absolute error (MAE).
 
     Parameters
@@ -22,7 +22,7 @@ def _mean_absolute(y_true, y_pred):
     return np.mean(np.abs(y_true - y_pred))
 
 
-def _mean_bias(y_true, y_pred):
+def mean_bias(y_true, y_pred):
     """Mean bias error (MBE).
 
     Parameters
@@ -42,7 +42,7 @@ def _mean_bias(y_true, y_pred):
     return np.mean(y_pred - y_true)
 
 
-def _root_mean_square(y_true, y_pred):
+def root_mean_square(y_true, y_pred):
     """Root mean square error (RMSE).
 
     Parameters
