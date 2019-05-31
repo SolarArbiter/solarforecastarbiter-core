@@ -6,6 +6,7 @@ from functools import wraps
 
 
 import pandas as pd
+import numpy as np
 
 
 # The quality_flag field in MySQL is currently limited to 1 << 15;
@@ -114,7 +115,7 @@ def has_data_been_validated(flags):
 def get_version(flag):
     """Extract the version from flag"""
     # will be more complicated if another version identifier must be added
-    return (flag & VERSION_MASK) >> 1
+    return np.right_shift(flag & VERSION_MASK, 1)
 
 
 def _flag_description_checks(flag_description):
@@ -183,6 +184,15 @@ def which_data_is_ok(flags):
     return (flags & ~VERSION_MASK == 0) & has_data_been_validated(flags)
 
 
+def _make_mask_series(version):
+    descriptions = [k for k in BITMASK_DESCRIPTION_DICT[version].keys()
+                    if not (k.startswith('VERSION') or
+                            k.startswith('RESERVED') or k == 'OK')]
+    masks = [BITMASK_DESCRIPTION_DICT[version][desc]
+             for desc in descriptions]
+    return pd.Series(masks, index=descriptions)
+
+
 def check_for_all_descriptions(flag, _check_if_validated=True):
     """
     Return a boolean Series indicating the checks a flag represents
@@ -190,24 +200,31 @@ def check_for_all_descriptions(flag, _check_if_validated=True):
     if _check_if_validated and not has_data_been_validated(flag):
         raise ValueError('Data has not been validated')
     version = get_version(flag)
-    descriptions = [k for k in BITMASK_DESCRIPTION_DICT[version].keys()
-                    if not (k.startswith('VERSION') or
-                            k.startswith('RESERVED'))]
-    out = []
-    for desc in descriptions:
-        mask = BITMASK_DESCRIPTION_DICT[version][desc]
-        if mask == 0:
-            out.append(which_data_is_ok(flag))
-        else:
-            out.append(bool(flag & mask))
-    return pd.Series(out, index=descriptions)
+    mask_series = _make_mask_series(version)
+    out = (mask_series & flag).astype(bool)
+    return out
+
+
+def _convert_version_mask(ser):
+    version = ser.name
+    if version == 0:
+        return pd.DataFrame({'NOT VALIDATED': [True] * len(ser.index)},
+                            index=ser.index)
+    mask_series = _make_mask_series(version)
+    out = pd.DataFrame(
+        np.bitwise_and(mask_series.values[None, :],
+                       ser.values[:, None]),
+        columns=mask_series.index,
+        index=ser.index,
+        dtype=bool)
+    out['NOT VALIDATED'] = False
+    return out
 
 
 def convert_mask_into_dataframe(flag_series):
     """
     Convert `flag_series` into a boolean DataFrame indicating which checks
-    the flags represent. Should not be used on large series as it must check
-    each row individually.
+    the flags represent.
 
     Parameters
     ----------
@@ -218,18 +235,40 @@ def convert_mask_into_dataframe(flag_series):
     -------
     pandas.DataFrame
        Columns are keys of BITMASK_DESCRIPTION_DICT and values are booleans
-       indicating if the input flag corresponds to the given check.
-
-    Raises
-    ------
-    ValueError
-        If any flags in `flag_series` have not been validated
-
+       indicating if the input flag corresponds to the given check. An
+       additional column, NOT VALIDATED, indicates if the data has not
+       been validated. Columns may vary depending the version of the quality
+       flags in the series.
     """
-    if not has_data_been_validated(flag_series).all():
-        raise ValueError('Not all data has not been validated')
-    return flag_series.apply(check_for_all_descriptions,
-                             _check_if_validated=False)
+    vers = get_version(flag_series)
+    out = flag_series.groupby(vers, sort=False).apply(
+        _convert_version_mask).fillna(False)
+    return out
+
+
+def convert_flag_frame_to_strings(flag_frame, sep=', ', empty='OK'):
+    """
+    Convert the `flag_frame` output of :py:func:`~convert_mask_into_dataframe`
+    into a pandas.Series of strings which are the active flag names separated
+    by `sep`. Any row where all columns are false will have a value of `empty`.
+
+    Parameters
+    ----------
+    flag_frame : pandas.DataFrame
+        Boolean DataFrame with descriptive column names
+    sep : str
+        String to separate column names by
+    empty : str
+        String to replace rows where no columns are True
+
+    Returns
+    -------
+    pandas.Series
+        Of joined column names from `flag_frame` separated by `sep` if True.
+        Has the same index as `flag_frame`.
+    """
+    return np.logical_and(flag_frame, flag_frame.columns + sep).replace(
+        False, '').sum(axis=1).str.rstrip(sep).replace('', empty)
 
 
 def check_if_series_flagged(flag_series, flag_description):

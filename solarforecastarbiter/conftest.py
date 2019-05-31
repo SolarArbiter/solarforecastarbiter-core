@@ -76,6 +76,23 @@ def observation_values():
 
 
 @pytest.fixture()
+def validated_observation_values():
+    return pd.DataFrame.from_records(
+        [(0, 2),
+         (1.0, 3),
+         (1.5, 2),
+         (9.9, 2),
+         (2.0, 34),
+         (-999, 1 << 8 | 2)],
+        index=pd.date_range(start='20190101T1200',
+                            end='20190101T1225',
+                            freq='5min',
+                            tz='America/Denver',
+                            name='timestamp'),
+        columns=['value', 'quality_flag']).tz_convert('UTC')
+
+
+@pytest.fixture()
 def forecast_values_text():
     return b"""
 {
