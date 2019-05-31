@@ -1,2 +1,29 @@
+include MANIFEST.in
+include AUTHORS.md
+include LICENSE
+include README.md
+include setup.py
+
+# include most everything under solarforecastarbiter by default
+# better to package too much than not enough
+graft solarforecastarbiter
+
+graft docs
+prune docs/build
+prune docs/source/generated
+# all doc figures created by doc build
+prune docs/source/savefig
+
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude *.so
+global-exclude *~
+global-exclude .DS_Store
+global-exclude .git*
+global-exclude \#*
+global-exclude .ipynb_checkpoints
+
 include versioneer.py
 include solarforecastarbiter/_version.py
