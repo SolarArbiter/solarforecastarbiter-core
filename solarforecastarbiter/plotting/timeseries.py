@@ -1,4 +1,5 @@
 import datetime as dt
+from functools import wraps
 import logging
 
 
@@ -218,9 +219,26 @@ def _make_layout(figs):
                       merge_tools=True,
                       toolbar_location='above',
                       sizing_mode='scale_width')
-    return components(layout)
+    return layout
 
 
+def to_components(f):
+    """Return script and div of a bokeh object if the return_components
+    kwarg is True"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if kwargs.pop('return_components', False):
+            out = f(*args, **kwargs)
+            if out is not None:
+                return components(out)
+            else:
+                return out
+        else:
+            return f(*args, **kwargs)
+    return wrapper
+
+
+@to_components
 def generate_forecast_figure(forecast, data):
     """
     Creates a bokeh timeseries figure for forcast data
@@ -251,6 +269,7 @@ def generate_forecast_figure(forecast, data):
     return layout
 
 
+@to_components
 def generate_observation_figure(observation, data):
     """
     Creates a bokeh figure from API responses for an observation

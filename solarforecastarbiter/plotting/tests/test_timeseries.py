@@ -91,23 +91,43 @@ def test_make_basic_timeseries(label, df):
     assert 'OBJECT'in fig.title.text
 
 
-def test_generate_forecast_figure(ac_power_forecast_metadata, forecast_values):
+def test_generate_forecast_figure(ac_power_forecast_metadata,
+                                  forecast_values):
     # not great, just testing that script and div are returned
     out = timeseries.generate_forecast_figure(ac_power_forecast_metadata,
                                               forecast_values)
+    assert isinstance(out, bokeh.models.Column)
+
+
+def test_generate_forecast_figure_components(ac_power_forecast_metadata,
+                                             forecast_values):
+    # not great, just testing that script and div are returned
+    out = timeseries.generate_forecast_figure(ac_power_forecast_metadata,
+                                              forecast_values,
+                                              return_components=True)
     assert '<script' in out[0]
     assert '<div' in out[1]
 
 
-def test_generate_forecast_figure_empty(ac_power_forecast_metadata):
+@pytest.mark.parametrize('rc', [True, False])
+def test_generate_forecast_figure_empty(ac_power_forecast_metadata, rc):
     assert timeseries.generate_forecast_figure(ac_power_forecast_metadata,
-                                               pd.Series()) is None
+                                               pd.Series(),
+                                               return_components=rc) is None
 
 
 def test_generate_observation_figure(validated_observation_values,
                                      ac_power_observation_metadata_label):
     out = timeseries.generate_observation_figure(
         ac_power_observation_metadata_label, validated_observation_values)
+    assert isinstance(out, bokeh.models.Column)
+
+
+def test_generate_observation_figure_components(
+        validated_observation_values, ac_power_observation_metadata_label):
+    out = timeseries.generate_observation_figure(
+        ac_power_observation_metadata_label, validated_observation_values,
+        return_components=True)
     assert '<script' in out[0]
     assert '<div' in out[1]
 
@@ -116,12 +136,15 @@ def test_generate_observation_figure_missing_data(
         validated_observation_values, ac_power_observation_metadata):
     validated_observation_values.iloc[1] = [None, None]
     out = timeseries.generate_observation_figure(
-        ac_power_observation_metadata, validated_observation_values)
+        ac_power_observation_metadata, validated_observation_values,
+        return_components=True)
     assert '<script' in out[0]
     assert 'MISSING' in out[0]
     assert '<div' in out[1]
 
 
-def test_generate_observation_figure_empty(ghi_observation_metadata):
+@pytest.mark.parametrize('rc', [True, False])
+def test_generate_observation_figure_empty(ghi_observation_metadata, rc):
     assert timeseries.generate_observation_figure(ghi_observation_metadata,
-                                                  pd.DataFrame()) is None
+                                                  pd.DataFrame(),
+                                                  return_components=rc) is None
