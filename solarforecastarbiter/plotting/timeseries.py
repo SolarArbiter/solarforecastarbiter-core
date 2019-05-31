@@ -253,9 +253,13 @@ def generate_forecast_figure(forecast, data):
 
     Returns
     -------
-    script, div or None: str
-        The <script> and <div> components for the Bokeh plot.
-        Returns None when data is empty
+    None
+        When the data is empty
+    script, div : str
+        When return_components = True, return the <script> and <div>
+        components for the Bokeh plot.
+    bokeh components from gridplot
+        When return_components = False
     """
     logger.info('Starting forecast figure generation...')
     if len(data.index) == 0:
@@ -285,9 +289,13 @@ def generate_observation_figure(observation, data):
 
     Returns
     -------
-    script, div or None: str
-        The <script> and <div> components for the Bokeh plot.
-        Returns None when data is empty
+    None
+        When the data is empty
+    script, div : str
+        When return_components = True, return the <script> and <div>
+        components for the Bokeh plot.
+    bokeh components from gridplot
+        When return_components = False
     """
     logger.info('Starting observation forecast generation...')
     if len(data.index) == 0:
