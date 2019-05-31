@@ -90,6 +90,8 @@ def test_evaluate_by_group():
                                                  group,
                                                  metric_func)
 
+            print(metric)
+            print(result)
             # Checks
             if metric == 'month':
                 assert result.size == 12
@@ -97,8 +99,10 @@ def test_evaluate_by_group():
                 assert result.size == 7
             if metric == 'hour':
                 assert result.size == 24
+            if metric == 'date':
+                assert result.size == 365
 
             if metric in ['mae', 'rsme']:
                 assert (result > 0.).all()
             if metric in ['mbe']:
-                assert (result < 0.5).all()
+                assert (result < 1.).all()

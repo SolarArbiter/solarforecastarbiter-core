@@ -144,6 +144,8 @@ def evaluate_by_group(observation, forecast, groupby, metric_func):
         df_group = df.groupby(df.index.weekday)
     elif groupby == 'hour':
         df_group = df.groupby(df.index.hour)
+    elif groupby == 'date':
+        df_group = df.groupby(df.index.date)
     else:
         raise errors.SfaMetricsConfigError(
             f"No supported groupby type {groupby}.")

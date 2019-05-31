@@ -41,6 +41,7 @@ def test_get_default_deterministic_context():
     assert results['groupings']['month'] is False
     assert results['groupings']['weekday'] is False
     assert results['groupings']['hour'] is True
+    assert results['groupings']['date'] is False
 
     # Check setting arguments
     default_context_1 = context.get_default_deterministic_context(

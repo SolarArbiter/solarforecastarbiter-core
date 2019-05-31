@@ -61,8 +61,9 @@ _RESULTS_CONTEXT = {
     'groupings': {
         # 'season': False,  # TODO: determine consistent way to calculate
         'month': False,
-        'weekday': False,     # day of the week
-        'hour': False      # hour of the day
+        'weekday': False,
+        'hour': False,
+        'date': False
     }
 }
 
