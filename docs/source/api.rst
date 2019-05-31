@@ -39,6 +39,15 @@ The Observation and Forecast:
    datamodel.Observation
    datamodel.Forecast
 
+All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
+``to_dict`` methods:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.BaseModel.from_dict
+   datamodel.BaseModel.to_dict
+
 
 PV modeling
 ===========
