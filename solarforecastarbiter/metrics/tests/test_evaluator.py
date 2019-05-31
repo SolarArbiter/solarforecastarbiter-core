@@ -93,9 +93,9 @@ def test_evaluate_by_group():
             # Checks
             if metric == 'month':
                 assert result.size == 12
-            if metric == 'dow':
+            if metric == 'weekday':
                 assert result.size == 7
-            if metric == 'hod':
+            if metric == 'hour':
                 assert result.size == 24
 
             if metric in ['mae', 'rsme']:

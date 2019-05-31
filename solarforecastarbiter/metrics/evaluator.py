@@ -140,9 +140,9 @@ def evaluate_by_group(observation, forecast, groupby, metric_func):
     # Determine proper groupby
     if groupby == 'month':
         df_group = df.groupby(df.index.month)
-    elif groupby == 'dow':
+    elif groupby == 'weekday':
         df_group = df.groupby(df.index.weekday)
-    elif groupby == 'hod':
+    elif groupby == 'hour':
         df_group = df.groupby(df.index.hour)
     else:
         raise errors.SfaMetricsConfigError(

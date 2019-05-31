@@ -61,8 +61,8 @@ _RESULTS_CONTEXT = {
     'groupings': {
         # 'season': False,  # TODO: determine consistent way to calculate
         'month': False,
-        'dow': False,     # day of the week
-        'hod': False      # hour of the day
+        'weekday': False,     # day of the week
+        'hour': False      # hour of the day
     }
 }
 
@@ -175,7 +175,7 @@ def get_default_deterministic_context(is_pv_power=False,
     context_res_ser['forecasts'] = True
 
     context_res_grp = context['results']['groupings']
-    context_res_grp['hod'] = True
+    context_res_grp['hour'] = True
 
     return context
 

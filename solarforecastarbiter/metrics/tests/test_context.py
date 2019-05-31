@@ -39,8 +39,8 @@ def test_get_default_deterministic_context():
     assert results['timeseries']['observations'] is True
     assert results['timeseries']['forecasts'] is True
     assert results['groupings']['month'] is False
-    assert results['groupings']['dow'] is False
-    assert results['groupings']['hod'] is True
+    assert results['groupings']['weekday'] is False
+    assert results['groupings']['hour'] is True
 
     # Check setting arguments
     default_context_1 = context.get_default_deterministic_context(
