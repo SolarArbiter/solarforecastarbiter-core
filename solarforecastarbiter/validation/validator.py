@@ -75,8 +75,8 @@ def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
     .. math::
         ub = min + mult * dni_extra * cos( solar_zenith)^exp
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     ghi : Series
         Global horizontal irradiance in W/m^2
     solar_zenith : Series
@@ -88,8 +88,8 @@ def check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra, limits=None):
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
 
-    Returns:
-    --------
+    Returns
+    -------
     ghi_limit_flag : Series
         True if value passes physically-possible test
     """
@@ -114,8 +114,8 @@ def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
     .. math::
         ub = min + mult * dni_extra * cos( solar_zenith)^exp
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     dhi : Series
         Diffuse horizontal irradiance in W/m^2
     solar_zenith : Series
@@ -127,8 +127,8 @@ def check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra, limits=None):
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
 
-    Returns:
-    --------
+    Returns
+    -------
     dhi_limit_flag : Series
         True if value passes physically-possible test
     """
@@ -154,8 +154,8 @@ def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
     .. math::
         ub = min + mult * dni_extra * cos( solar_zenith)^exp
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     dni : Series
         Direct normal irradiance in W/m^2
     solar_zenith : Series
@@ -167,8 +167,8 @@ def check_dni_limits_QCRad(dni, solar_zenith, dni_extra, limits=None):
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
 
-    Returns:
-    --------
+    Returns
+    -------
     dni_limit_flag : Series
         True if value passes physically-possible test
     """
@@ -195,8 +195,8 @@ def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
     .. math::
         ub = min + mult * dni_extra * cos( solar_zenith)^exp
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     solar_zenith : Series
         Solar zenith angle in degrees
     dni_extra : Series
@@ -212,8 +212,8 @@ def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
         keys {'mult', 'exp', 'min'}. For keys 'ghi_lb', 'dhi_lb', 'dni_lb',
         value is a float.
 
-    Returns:
-    --------
+    Returns
+    -------
     ghi_limit_flag : Series or None, default None
         True if value passes physically-possible test
     dhi_limit_flag : Series or None, default None
@@ -270,8 +270,8 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
     """
     Checks consistency of GHI, DHI and DNI. Not valid for night time.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     ghi : Series
         Global horizontal irradiance in W/m^2
     solar_zenith : Series
@@ -289,8 +289,8 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
         'ratio_bounds' and value is an ordered pair [lower, upper]
         of float.
 
-    Returns:
-    --------
+    Returns
+    -------
     consistent_components : Series
         True if ghi, dhi and dni components are consistent.
     diffuse_ratio_limit : Series
@@ -334,15 +334,15 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
 def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
     """ Checks for extreme temperatures.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     temp_air : Series
         Air temperature in Celsius
     temp_limits : tuple, default (-10, 50)
         (lower bound, upper bound) for temperature.
 
-    Returns:
-    --------
+    Returns
+    -------
     extreme_temp_flag : Series
         True if temp_air > lower bound and temp_air < upper bound.
     """
@@ -356,15 +356,15 @@ def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
 def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
     """ Checks for extreme wind speeds.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     wind_speed : Series
         Wind speed m/s
     wind_limits : tuple, default (0, 60)
         (lower bound, upper bound) for wind speed.
 
-    Returns:
-    --------
+    Returns
+    -------
     extreme_wind_flag : Series
         True if wind_speed > lower bound and wind_speed < upper bound.
     """
@@ -379,15 +379,15 @@ def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
 def check_rh_limits(rh, rh_limits=(0, 100)):
     """ Checks for extreme relative humidity.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     rh : Series
         Relative humidity in %
     rh_limits : tuple, default (0, 100)
         (lower bound, upper bound) for relative humidity
 
-    Returns:
-    --------
+    Returns
+    -------
     flags : Series
         True if rh >= lower bound and rh <= upper bound.
     """
@@ -401,8 +401,8 @@ def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     """
     Flags GHI values greater than clearsky values.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     ghi : Series
         Global horizontal irradiance in W/m^2
     ghi_clearsky : Series
@@ -410,8 +410,8 @@ def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     kt_max : float
         maximum clearness index that defines when ghi exceeds clear-sky value.
 
-    Returns:
-    --------
+    Returns
+    -------
     flags : Series
         True if ghi is less than or equal to clear sky value.
     """
@@ -425,8 +425,8 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
     """
     Flags plane of array irradiance values greater than clearsky values.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     poa_global : Series
         Plane of array irradiance in W/m^2
     poa_clearsky : Series
@@ -434,8 +434,8 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
     kt_max : float
         maximum allowed ratio of poa_global to poa_clearsky
 
-    Returns:
-    --------
+    Returns
+    -------
     flags : Series
         True if poa_global is less than or equal to clear sky value.
     """
@@ -531,6 +531,7 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     -------
     flags : Series
         True if the value is part of a stale sequence of data
+
     Raises
     ------
         ValueError if window < 2
