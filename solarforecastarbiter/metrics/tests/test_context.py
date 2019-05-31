@@ -55,11 +55,11 @@ def test_get_default_deterministic_context():
     assert default_context_2['include_night_hours'] is True
 
 
-@pytest.mark.skip(reason="not yet implemented")
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_get_default_event_context():
     pass
 
 
-@pytest.mark.skip(reason="not yet implemented")
+@pytest.mark.xfail(raises=NotImplementedError)
 def test_get_default_probabilistic_context():
     pass
