@@ -295,6 +295,9 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
         True if ghi, dhi and dni components are consistent.
     diffuse_ratio_limit : Series
         True if diffuse to ghi ratio passes limit test.
+
+    References
+    ----------
     [1] C. N. Long and Y. Shi, An Automated Quality Assessment and Control
         Algorithm for Surface Radiation Measurements, The Open Atmospheric
         Science Journal 2, pp. 23-37, 2008.
