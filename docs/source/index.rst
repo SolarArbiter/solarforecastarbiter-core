@@ -16,6 +16,7 @@ for more information about the Solar Forecast Arbiter project.
 
    installation
    contributing
+   reference-forecasts
    api
    whatsnew/index
 
