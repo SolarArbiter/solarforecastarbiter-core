@@ -65,6 +65,7 @@ def test_apisession_get_site_dne(requests_mock):
         session.get_site('')
 
 
+
 def test_apisession_list_sites(requests_mock, many_sites_text, many_sites):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/.*')
@@ -342,6 +343,18 @@ def test_real_apisession_create_forecast(single_forecast_text, single_forecast,
                  'interval_length', 'lead_time_to_start', 'run_length',
                  'extra_parameters'):
         assert getattr(new_forecast, attr) == getattr(forecast, attr)
+
+
+def test_real_apisession_create_forecast_invalid(
+        single_forecast_text, single_forecast, real_session):
+    forecastd = json.loads(single_forecast_text)
+    forecastd['name'] = f'Test create forecast {randint(0, 100)}'
+    forecastd['site'] = single_forecast.site
+    forecastd['interval_label'] = 'mean'
+    forecast = datamodel.Forecast.from_dict(forecastd)
+    with pytest.raises(requests.exceptions.HTTPError) as e:
+        new_forecast = real_session.create_forecast(forecast)
+    assert 'Must be one of' in str(e.value)
 
 
 def test_real_apisession_get_observation_values(real_session):

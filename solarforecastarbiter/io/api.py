@@ -77,7 +77,12 @@ class APISession(requests.Session):
             kwargs['timeout'] = self.default_timeout
 
         result = super().request(method, url, *args, **kwargs)
-        result.raise_for_status()
+        if result.status_code >= 400:
+            raise requests.exceptions.HTTPError(
+                f'{result.status_code} API Request Error: {result.reason} for '
+                f'url: {result.url} and text: {result.text}',
+                response=result)
+
         return result
 
     def _process_site_dict(self, site_dict):
