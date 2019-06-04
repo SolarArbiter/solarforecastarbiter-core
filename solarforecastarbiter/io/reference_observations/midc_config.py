@@ -3,9 +3,10 @@ The values in these fields are as they would appear returned from the
 `pvlib.iotools.read_midc_raw_data_from_nrel` function.
 
 All site's field list can be found at:
-    https://midcdmz.nrel.gov/apps/daily.pl?site=<SITE ID>&live=1
+https://midcdmz.nrel.gov/apps/daily.pl?site=<SITE ID>&live=1
 Where id is the key found in this dictionary
 """
+
 midc_var_map = {
     'BMS': {
         'ghi': 'Global CMP22 (vent/cor) [W/m^2]',

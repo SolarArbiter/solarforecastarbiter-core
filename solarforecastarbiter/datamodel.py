@@ -28,6 +28,22 @@ ALLOWED_VARIABLES = {
     'curtailment': 'MW',
 }
 
+
+COMMON_NAMES = {
+    'air_temperature': 'Air Temperature',
+    'wind_speed': 'Wind Speed',
+    'ghi': 'GHI',
+    'dni': 'DNI',
+    'dhi': 'DHI',
+    'poa_global': 'Plane of Array Irradiance',
+    'relative_humidity': 'Relative Humidty',
+    'ac_power': 'AC Power',
+    'dc_power': 'DC Power',
+    'availability': 'Availability',
+    'curtailment': 'Curtailment'
+}
+
+
 CLOSED_MAPPING = {
     'instant': None,
     'instantaneous': None,
@@ -38,36 +54,42 @@ CLOSED_MAPPING = {
 
 class BaseModel:
     @classmethod
-    def from_dict(model, dict_, raise_on_extra=False):
+    def from_dict(model, input_dict, raise_on_extra=False):
         """
-        Construct a dataclass from the given dict, matching keys with the class
-        fields. A KeyError is raised for any missing values. If raise_on_extra
-        is True, an errors is raised if keys of the dict are also not fields of
-        the dataclass. For pandas.Timedelta model fields, it is assumed dict_
-        contains a number representing minutes. For datetime.time model fields,
-        dict_ values are assumed to be strings in the %H:%M format. If a
-        modeling_parameters field is present, the modeling_parameters key
-        from dict_ is automatically parsed into the appropriate
+        Construct a dataclass from the given dict, matching keys with
+        the class fields. A KeyError is raised for any missing values.
+        If raise_on_extra is True, an errors is raised if keys of the
+        dict are also not fields of the dataclass. For pandas.Timedelta
+        model fields, it is assumed input_dict contains a number
+        representing minutes. For datetime.time model fields, input_dict
+        values are assumed to be strings in the %H:%M format. If a
+        modeling_parameters field is present, the modeling_parameters
+        key from input_dict is automatically parsed into the appropriate
         PVModelingParameters subclass based on tracking_type.
 
         Parameters
         ----------
-        dict_ : dict
+        input_dict : dict
             The dict to process into dataclass fields
         raise_on_extra : boolean, default False
-            If True, raise an exception on extra keys in dict_ that are not
-            dataclass fields.
+            If True, raise an exception on extra keys in input_dict that
+            are not dataclass fields.
+
+        Returns
+        -------
+        model : subclass of BaseModel
+            Instance of the desired model.
 
         Raises
         ------
         KeyError
-            For missing required fields or if raise_on_extra is True and dict_
-            contains extra keys.
+            For missing required fields or if raise_on_extra is True and
+            input_dict contains extra keys.
         ValueError
-            If a pandas.Timedelta, datetime.time, or modeling_parameters field
-            cannot be parsed from the dict_
+            If a pandas.Timedelta, datetime.time, or modeling_parameters
+            field cannot be parsed from the input_dict
         """
-        dict_ = dict_.copy()
+        dict_ = input_dict.copy()
         model_fields = fields(model)
         kwargs = {}
         errors = []

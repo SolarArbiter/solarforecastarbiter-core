@@ -14,7 +14,8 @@ EXTRAS_REQUIRE = {
              'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
     'log': ['sentry-sdk'],
-    'cli': ['click']
+    'cli': ['click'],
+    'plotting': ['bokeh']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
