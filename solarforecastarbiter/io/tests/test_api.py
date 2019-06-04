@@ -377,6 +377,18 @@ def test_real_apisession_create_forecast(single_forecast_text, single_forecast,
         assert getattr(new_forecast, attr) == getattr(forecast, attr)
 
 
+def test_real_apisession_create_forecast_invalid(
+        single_forecast_text, single_forecast, real_session):
+    forecastd = json.loads(single_forecast_text)
+    forecastd['name'] = f'Test create forecast {randint(0, 100)}'
+    forecastd['site'] = single_forecast.site
+    forecastd['interval_label'] = 'mean'
+    forecast = datamodel.Forecast.from_dict(forecastd)
+    with pytest.raises(requests.exceptions.HTTPError) as e:
+        real_session.create_forecast(forecast)
+    assert 'Must be one of' in str(e.value)
+
+
 def test_real_apisession_get_observation_values(real_session):
     obs = real_session.get_observation_values(
         '123e4567-e89b-12d3-a456-426655440000',
