@@ -65,7 +65,6 @@ def test_apisession_get_site_dne(requests_mock):
         session.get_site('')
 
 
-
 def test_apisession_list_sites(requests_mock, many_sites_text, many_sites):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/.*')
@@ -353,7 +352,7 @@ def test_real_apisession_create_forecast_invalid(
     forecastd['interval_label'] = 'mean'
     forecast = datamodel.Forecast.from_dict(forecastd)
     with pytest.raises(requests.exceptions.HTTPError) as e:
-        new_forecast = real_session.create_forecast(forecast)
+        real_session.create_forecast(forecast)
     assert 'Must be one of' in str(e.value)
 
 
