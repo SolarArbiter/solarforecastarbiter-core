@@ -82,7 +82,9 @@ def prereport(report, metadata, metrics):
 def _loop_over_metrics(report, metrics, kind):
     figs = []
     # series with MultiIndex of metric, forecast, day
-    metrics_series = figures.construct_metrics_series(metrics, kind).dropna()
+    # JSON serialization issues if we don't drop or fill na.
+    # fillna ensures 0 - 24 hrs on hourly plots.
+    metrics_series = figures.construct_metrics_series(metrics, kind).fillna(0)
     for num, metric in enumerate(report.metrics):
         cds = figures.construct_metrics_cds2(metrics_series, metric)
         # one figure with a subfig for each forecast

@@ -352,14 +352,17 @@ def bar_subdivisions(cds, kind, metric):
         fig.vbar(x=kind, top=field, width=width, source=cds,
                  line_color='white', fill_color=next(palette))
         fig.xgrid.grid_line_color = None
+        fig.y_range.start = y_min
         fig.y_range.end = y_max
         if metric in START_AT_ZER0:
             fig.y_range.start = 0
         elif metric in START_OR_END_AT_ZER0:
             if y_max < 0:
+                fig.y_range.start = y_min
                 fig.y_range.end = 0
             if y_min > 0:
                 fig.y_range.start = 0
+                fig.y_range.end = y_max
         if num == 0:
             # add x_range to plots to link panning
             fig_kwargs['x_range'] = fig.x_range
