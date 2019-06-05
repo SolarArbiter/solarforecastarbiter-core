@@ -15,6 +15,26 @@ CF_MAPPING = {
 }
 
 
+def _load_pnt(ds, latitude, longitude, limit):
+    lats = ds.latitude.values
+    lons = ds.longitude.values
+    if lats.ndim == 1:
+        # ds uses lat and lon as primary coordinates. We still want to use
+        # tunnel_fast to determine distance so that we can check that
+        # the query point is not too far out of the domain.
+        # tunnel_fast requires 2D grid
+        lons, lats = np.meshgrid(lons, lats)
+    iy_min, ix_min = tunnel_fast(lats, lons, latitude, longitude,
+                                 limit=limit)
+    # could avoid this if statement if we only use positional indexing
+    # like ds[iy_min, ix_min] but this seems safer
+    if ds.latitude.ndim == 1:
+        pnt = ds.isel(latitude=iy_min, longitude=ix_min)
+    else:
+        pnt = ds.isel(y=iy_min, x=ix_min)
+    return pnt
+
+
 def load_forecast(
         latitude, longitude, init_time, start, end, model,
         variables=('ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed'),
@@ -68,22 +88,7 @@ def load_forecast(
 
     limit = 500  # maximum distance from point to closest grid point
     with xr.open_dataset(filepath) as ds:
-        lats = ds.latitude.values
-        lons = ds.longitude.values
-        if lats.ndim == 1:
-            # ds uses lat and lon as primary coordinates. We still want to use
-            # tunnel_fast to determine distance so that we can check that
-            # the query point is not too far out of the domain.
-            # tunnel_fast requires 2D grid
-            lats, lons = np.meshgrid(lats, lons)
-        iy_min, ix_min = tunnel_fast(lats, lons, latitude, longitude,
-                                     limit=limit)
-        # could avoid this if statement if we only use positional indexing
-        # like ds[iy_min, ix_min] but this seems safer
-        if ds.latitude.ndim == 1:
-            pnt = ds.isel(latitude=iy_min, longitude=ix_min)
-        else:
-            pnt = ds.isel(y=iy_min, x=ix_min)
+        pnt = _load_pnt(ds, latitude, longitude, limit)
         pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
         pnt['air_temperature'] -= 273.15  # convert Kelvin to deg C
