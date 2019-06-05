@@ -10,9 +10,9 @@ from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.io.api import APISession, request_cli_access_token
 from solarforecastarbiter.reports import template, figures, main
 
-
-start = pd.Timestamp('20190401 0000Z')
-end = pd.Timestamp('20190531 2359Z')
+tz = 'America/Phoenix'
+start = pd.Timestamp('20190401 0000', tz=tz)
+end = pd.Timestamp('20190531 2359', tz=tz)
 
 # don't store your real passwords or tokens in plain text like this!
 # only for demonstration purposes!
@@ -67,7 +67,7 @@ def rmse(diff):
 
 df = pd.DataFrame({'obs': observation_values_1h['value'],
                    'fx0': forecast_values_0, 'fx1': forecast_values_1})
-df = df.dropna()
+df = df.dropna().tz_convert(tz)
 # obs_values = observation_values_1h['value']
 # fx_values = forecast_values_0
 # fx_values2 = forecast_values_1

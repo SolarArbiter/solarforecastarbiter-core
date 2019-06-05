@@ -400,7 +400,7 @@ def metrics_table(cds):
         columns.append(col)
     width = name_width + metric_width * (len(field) - 1)
     data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=200, index_position=None, fit_columns=False)
+                           height=100, index_position=None, fit_columns=False)
     return data_table
 
 
