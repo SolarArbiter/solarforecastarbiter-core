@@ -2,7 +2,6 @@ from pathlib import Path
 
 
 import numpy as np
-import pytest
 import xarray as xr
 
 
@@ -19,7 +18,7 @@ def test_load_pnt_latlon():
     pnt = nwp._load_pnt(ds, 32.22, -110.9, 500)
     assert pnt.latitude == 32.25
     assert pnt.longitude == -111.0
-    
+
 
 def test_load_pnt_xy():
     y = xr.Variable(
