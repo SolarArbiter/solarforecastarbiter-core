@@ -28,9 +28,6 @@ def align_index(df, interval_length, limit=None):
     pandas.DataFrame or pandas.Series
        Same type as input `df` with an index with frequency `interval_length`
     """
-    # If there is more than 3 days of data, limit the default x_range
-    # to display only the most recent 3 day. Enable scrolling back in future
-    # release.
     period_end = df.index[-1]
     if limit is not None:
         period_start = df.index[
