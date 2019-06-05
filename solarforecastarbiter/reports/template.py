@@ -82,7 +82,7 @@ def prereport(report, metadata, metrics):
 def _loop_over_metrics(report, metrics, kind):
     figs = []
     # series with MultiIndex of metric, forecast, day
-    metrics_series = figures.construct_metrics_series(metrics, kind)
+    metrics_series = figures.construct_metrics_series(metrics, kind).dropna()
     for num, metric in enumerate(report.metrics):
         cds = figures.construct_metrics_cds2(metrics_series, metric)
         # one figure with a subfig for each forecast

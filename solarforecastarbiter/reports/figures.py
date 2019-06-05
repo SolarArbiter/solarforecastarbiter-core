@@ -13,6 +13,9 @@ from bokeh import palettes
 import pandas as pd
 import numpy as np
 
+from solarforecastarbiter.plotting.utils import (line_or_step,
+                                                 format_variable_name)
+
 
 PALETTE = palettes.d3['Category10'][6]
 _num_obs_colors = 3
@@ -22,29 +25,6 @@ OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
 START_AT_ZER0 = ['mae', 'rmse']
-
-
-def format_variable_name(variable, units):
-    """Make a nice human readable name."""
-    caps = ('ac_', 'dc_', 'poa_', 'ghi', 'dni', 'dhi')
-    fname = variable
-    for cap in caps:
-        fname = fname.replace(cap, cap.upper())
-    fname = fname.replace('_', ' ')
-    return fname + f' ({units})'
-
-
-def line_or_step(interval_label):
-    if 'instant' in interval_label:
-        plot_method = 'line'
-        kwargs = dict()
-    elif interval_label == 'beginning':
-        plot_method = 'step'
-        kwargs = dict(mode='before')
-    elif interval_label == 'ending':
-        plot_method = 'step'
-        kwargs = dict(mode='after')
-    return plot_method, kwargs
 
 
 def construct_fx_obs_cds(fx_values, obs_values):
@@ -123,29 +103,28 @@ def timeseries(fx_obs_cds, start, end):
             pass
         else:
             plotted_objects.append(fx_obs.observation)
-            plot_method, kwargs = line_or_step(
+            plot_method, plot_kwargs, hover_kwargs = line_or_step(
                 fx_obs.observation.interval_label)
             name = _obs_name(fx_obs)
             obs_color = _obs_color(fx_obs.observation.interval_length)
             getattr(fig, plot_method)(
                 x='timestamp', y='observation', source=cds,
-                color=obs_color, legend=name, **kwargs)
+                color=obs_color, legend=name, **plot_kwargs)
         if fx_obs.forecast in plotted_objects:
             pass
         else:
             plotted_objects.append(fx_obs.forecast)
-            plot_method, kwargs = line_or_step(
+            plot_method, plot_kwargs, hover_kwargs = line_or_step(
                 fx_obs.forecast.interval_label)
             name = _fx_name(fx_obs)
             getattr(fig, plot_method)(
                 x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend=name, **kwargs)
+                color=next(palette), legend=name, **plot_kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
     fig.xaxis.axis_label = 'Time (UTC)'
-    fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable,
-                                                fx_obs.forecast.units)
+    fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable)
     return fig
 
 
@@ -192,8 +171,7 @@ def scatter(fx_obs_cds):
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    label = format_variable_name(fx_obs.forecast.variable,
-                                 fx_obs.forecast.units)
+    label = format_variable_name(fx_obs.forecast.variable)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
     return fig

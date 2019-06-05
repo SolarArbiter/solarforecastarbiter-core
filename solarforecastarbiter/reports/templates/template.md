@@ -6,11 +6,11 @@
 {# 3. pandoc renders the html or pdf version of the full report }
 
 {# fix this #}
-{% set dash_url = 'https://dev-dashboard.solarforecastarbiter.org' %}
+{% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
 
 {# jinja requires that we escape the markdown div specification #}
 {{ '::: {#metadata-table}' }}
-Report Metadata
+## Report metadata
 
 * Name: {{ name }}
 * Start: {{ start }}
@@ -25,6 +25,20 @@ This report of solar forecast accuracy was automatically generated using the [So
 
 This report was generated at {{ now }}.
 
+Contents:
+
+* [Report metadata](#report-metadata)
+* [Data](#data)
+  * [Observations and forecasts](#observations-and-forecasts)
+  * [Data validation](#data-validation)
+* [Metrics](#metrics)
+  * [Total analysis period](#total-analysis-period)
+  * [Monthly](#monthly)
+  * [Daily](#daily)
+  * [Hourly](#hourly)
+* [Versions](#versions)
+* [Hash](#hash)
+
 ## Data
 
 {# fix this so it is evaluated at report render time #}
@@ -36,6 +50,8 @@ WARNING: One or more of the observation or forecast data has changed since this 
 
 This report covers the period from {{ start }} to {{ end }}.
 
+### Observations and forecasts
+
 The table below shows the observation, forecast pairs analyzed in this report. The table includes the unprocessed observation and forecast *interval label* (beginning, ending, instanteous) and *interval length*. If these quantities do not match, the Solar Forecast Arbiter must align and/or resample the data before computing error statistics. The Solar Forecast Arbiter typically aligns the observation data to the forecast data. The aligned and resampled parameters are also shown below.
 
 {# Need to get report's realignment and resampling info into here. Need some nice formatting to make this table more readable. Also fix forecast link's hard coded /single route. column widths controlled by |--|--| line #}
@@ -44,7 +60,7 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
 {% for fx_ob in fx_obs -%}
-[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.name|safe }}) | {{ fx_ob.observation.interval_label|safe }} | {{ fx_ob.observation.interval_length|safe }} | beginning | 5min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.name|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ fx_ob.forecast.interval_length|safe }} | beginning | 5min
+[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.name|safe }}) | ending | 1 min | {{ fx_ob.observation.interval_label|safe }} | {{ (fx_ob.observation.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.name|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
