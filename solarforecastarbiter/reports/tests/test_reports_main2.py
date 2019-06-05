@@ -1,18 +1,20 @@
 from collections import defaultdict
-import datetime
-from functools import partial
 import logging
 
 import pandas as pd
 import numpy as np
 
-from solarforecastarbiter import datamodel, pvmodel
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.io.api import APISession, request_cli_access_token
 from solarforecastarbiter.reports import template, figures, main
+from solarforecastarbiter.validation.quality_mapping import \
+    convert_mask_into_dataframe
 
 tz = 'America/Phoenix'
 start = pd.Timestamp('20190401 0000', tz=tz)
+start_utc = start.tz_convert('UTC')
 end = pd.Timestamp('20190531 2359', tz=tz)
+end_utc = end.tz_convert('UTC')
 
 # don't store your real passwords or tokens in plain text like this!
 # only for demonstration purposes!
@@ -27,16 +29,23 @@ site = session.get_site('9f61b880-7e49-11e9-9624-0a580a8003e9')
 observation = session.get_observation('9f657636-7e49-11e9-b77f-0a580a8003e9')
 logging.info('getting observation values')
 observation_values = session.get_observation_values(observation.observation_id,
-                                                    start, end)
+                                                    start_utc, end_utc)
 # current day (0) and day ahead (1) GHI forecasts derived from GFS
 forecast_0 = session.get_forecast('da2bc386-8712-11e9-a1c7-0a580a8200ae')
 forecast_1 = session.get_forecast('68a1c22c-87b5-11e9-bf88-0a580a8200ae')
 logging.info('getting forecast_0 values')
 forecast_values_0 = session.get_forecast_values(forecast_0.forecast_id,
-                                                start, end)
+                                                start_utc, end_utc)
 logging.info('getting forecast_1 values')
 forecast_values_1 = session.get_forecast_values(forecast_1.forecast_id,
-                                                start, end)
+                                                start_utc, end_utc)
+
+validation_df = convert_mask_into_dataframe(observation_values['quality_flag'])
+
+drop = ['USER FLAGGED', 'NIGHTTIME', 'LIMITS EXCEEDED', 'STALE VALUES',
+        'INTERPOLATED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS']
+observation_values = (
+    observation_values['value'].where(~validation_df[drop].any(axis=1)))
 
 # forecast intervals are 1h and labels are beginning
 # make new observation that matches forecasts and resample data
@@ -65,9 +74,9 @@ def rmse(diff):
     return np.sqrt((diff * diff).sum() / (len(diff) - 1))
 
 
-df = pd.DataFrame({'obs': observation_values_1h['value'],
+df = pd.DataFrame({'obs': observation_values_1h,
                    'fx0': forecast_values_0, 'fx1': forecast_values_1})
-df = df.dropna().tz_convert(tz)
+df = df.tz_convert(tz)
 # obs_values = observation_values_1h['value']
 # fx_values = forecast_values_0
 # fx_values2 = forecast_values_1

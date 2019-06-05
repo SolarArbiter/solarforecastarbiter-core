@@ -14,7 +14,7 @@
 
 * Name: {{ name }}
 * Start: {{ start }}
-* etc
+* End: {{ end }}
 :::
 
 {{ '::: {#download}' }}
@@ -60,7 +60,7 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
 {% for fx_ob in fx_obs -%}
-[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.name|safe }}) | ending | 1 min | {{ fx_ob.observation.interval_label|safe }} | {{ (fx_ob.observation.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.name|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min
+[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.observation_id|safe }}) | ending | 1 min | {{ fx_ob.observation.interval_label|safe }} | {{ (fx_ob.observation.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.forecast_id|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
@@ -76,12 +76,11 @@ Controls to pan, zoom, and save the plot are shown on the right. Clicking on an 
 
 The Solar Forecast Arbiter's data validation toolkit identified the following issues with the unprocessed observation data:
 
-{% for issue in validation_issues %}
-* {{ issue.name }}: {{ issue.points }} intervals
+{% for issue, points in validation_issues.items() %}
+* {{ issue }}: {{ points }} intervals
 {% endfor %}
-* Test Flag: 5 intervals
 
-These intervals were removed from the raw time series before resampling and realignment. RULES FOR RESAMPLING WITH BAD DATA. For more details on the data validation results for each observation, please see the observation page linked to in the table above. Data providers may elect to reupload data to fix issues identified by the validation toolkit. The metrics computed in this report will remain unchanged, however, a user may generate a new report after the data provider submits new data. The online version of this report verifies that the data was not modified after the metrics were computed.
+These intervals were removed from the raw time series before resampling and realignment. For more details on the data validation results for each observation, please see the observation page linked to in the table above. Data providers may elect to reupload data to fix issues identified by the validation toolkit. The metrics computed in this report will remain unchanged, however, a user may generate a new report after the data provider submits new data. The online version of this report verifies that the data was not modified after the metrics were computed.
 
 ## Metrics
 

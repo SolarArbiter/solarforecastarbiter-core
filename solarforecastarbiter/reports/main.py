@@ -136,7 +136,19 @@ def get_versions():
 
 
 def get_validation_issues():
-    return {}
+    test = {
+        'USER FLAGGED': 0, 'NIGHTTIME': 39855,
+        # 'CLOUDY': 0, 'SHADED': 0,
+        # 'UNEVEN FREQUENCY': 4,
+        'LIMITS EXCEEDED': 318,
+        # 'CLEARSKY EXCEEDED': 9548,
+        'STALE VALUES': 12104,
+        'INTERPOLATED VALUES': 5598,
+        # 'CLIPPED VALUES': 0,
+        'INCONSISTENT IRRADIANCE COMPONENTS': 0,
+        # 'NOT VALIDATED': 0
+    }
+    return test
 
 
 def get_data_for_report_embed(session, report):

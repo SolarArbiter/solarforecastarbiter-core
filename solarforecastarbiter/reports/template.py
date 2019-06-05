@@ -60,7 +60,7 @@ def prereport(report, metadata, metrics):
 
     script_metrics = script + script_month + script_day + script_hour
 
-    strftime = '%Y-%m-%d %H:%M:%S'
+    strftime = '%Y-%m-%d %H:%M:%S %z'
 
     rendered = template.render(
         name=metadata['name'],
