@@ -426,7 +426,7 @@ def test_real_apisession_get_forecast_values(real_session):
 
 def test_real_apisession_get_forecast_values_tz(real_session):
     start = pd.Timestamp('2019-04-14T20:00:00-0400')
-    end = pd.Timestamp('2019-04-15T14:00:00+0200')
+    end = pd.Timestamp('2019-04-15T13:00:00+0100')
     fx = real_session.get_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
         start, end)
