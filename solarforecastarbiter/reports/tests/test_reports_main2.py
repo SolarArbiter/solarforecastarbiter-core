@@ -136,6 +136,9 @@ fx_obs_cds = [
 
 prereport_html = template.prereport_to_html(prereport)
 
+with open('bokeh_prereport.html', 'w') as f:
+    f.write(prereport_html)
+
 body = template.add_figures_to_prereport(
     fx_obs_cds, report, metadata, prereport_html)
 
