@@ -10,6 +10,7 @@
 
 {# jinja requires that we escape the markdown div specification #}
 {{ '::: {#metadata-table}' }}
+
 ## Report metadata
 
 * Name: {{ name }}

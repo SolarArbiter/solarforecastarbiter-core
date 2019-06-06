@@ -38,6 +38,26 @@ def prereport(report, metadata, metrics):
 
     template = env.get_template('template.md')
 
+    script_metrics, data_table_div, figures_dict = _metrics_script_divs(
+        report, metrics)
+
+    strftime = '%Y-%m-%d %H:%M:%S %z'
+
+    rendered = template.render(
+        name=metadata['name'],
+        start=metadata['start'].strftime(strftime),
+        end=metadata['end'].strftime(strftime),
+        now=metadata['now'].strftime(strftime),
+        fx_obs=report.forecast_observations,
+        validation_issues=metadata['validation_issues'],
+        versions=metadata['versions'],
+        script_metrics=script_metrics,
+        tables=data_table_div,
+        **figures_dict)
+    return rendered
+
+
+def _metrics_script_divs(report, metrics):
     cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
     data_table = figures.metrics_table(cds)
 
@@ -60,23 +80,13 @@ def prereport(report, metadata, metrics):
 
     script_metrics = script + script_month + script_day + script_hour
 
-    strftime = '%Y-%m-%d %H:%M:%S %z'
-
-    rendered = template.render(
-        name=metadata['name'],
-        start=metadata['start'].strftime(strftime),
-        end=metadata['end'].strftime(strftime),
-        now=metadata['now'].strftime(strftime),
-        fx_obs=report.forecast_observations,
-        validation_issues=metadata['validation_issues'],
-        versions=metadata['versions'],
-        script_metrics=script_metrics,
-        tables=data_table_div,
+    figures_dict = dict(
         figures_bar=figures_bar_divs,
         figures_bar_month=figures_bar_month_divs,
         figures_bar_day=figures_bar_day_divs,
         figures_bar_hour=figures_bar_hour_divs)
-    return rendered
+
+    return script_metrics, data_table_div, figures_dict
 
 
 def _loop_over_metrics(report, metrics, kind):
