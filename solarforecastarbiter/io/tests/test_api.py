@@ -390,20 +390,49 @@ def test_real_apisession_create_forecast_invalid(
 
 
 def test_real_apisession_get_observation_values(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
     obs = real_session.get_observation_values(
         '123e4567-e89b-12d3-a456-426655440000',
-        pd.Timestamp('2019-04-15T00:00:00Z'),
-        pd.Timestamp('2019-04-15T12:00:00Z'))
+        start, end)
     assert isinstance(obs, pd.DataFrame)
     assert set(obs.columns) == set(['value', 'quality_flag'])
+    assert len(obs.index) > 0
+    pdt.assert_frame_equal(obs.loc[start:end], obs)
+
+
+def test_real_apisession_get_observation_values_tz(real_session):
+    start = pd.Timestamp('2019-04-14T22:00:00-0200')
+    end = pd.Timestamp('2019-04-15T05:00:00-0700')
+    obs = real_session.get_observation_values(
+        '123e4567-e89b-12d3-a456-426655440000',
+        start, end)
+    assert isinstance(obs, pd.DataFrame)
+    assert set(obs.columns) == set(['value', 'quality_flag'])
+    assert len(obs.index) > 0
+    pdt.assert_frame_equal(obs.loc[start:end], obs)
 
 
 def test_real_apisession_get_forecast_values(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
     fx = real_session.get_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
-        pd.Timestamp('2019-04-15T00:00:00Z'),
-        pd.Timestamp('2019-04-15T12:00:00Z'))
+        start, end)
     assert isinstance(fx, pd.Series)
+    assert len(fx) > 0
+    pdt.assert_series_equal(fx.loc[start:end], fx)
+
+
+def test_real_apisession_get_forecast_values_tz(real_session):
+    start = pd.Timestamp('2019-04-14T20:00:00-0400')
+    end = pd.Timestamp('2019-04-15T14:00:00+0200')
+    fx = real_session.get_forecast_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        start, end)
+    assert isinstance(fx, pd.Series)
+    assert len(fx) > 0
+    pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
 def test_real_apisession_post_observation_values(real_session):
