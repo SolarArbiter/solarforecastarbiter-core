@@ -3,7 +3,7 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 import textwrap
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -306,6 +306,12 @@ def bar(cds, metric):
     else:
         # TODO: add heavy 0 line
         pass
+    tooltips = [
+        ('forecast', '@forecast'),
+        (metric.upper(), f'@{metric}'),
+    ]
+    hover = HoverTool(tooltips=tooltips, mode='vline')
+    fig.add_tools(hover)
     return fig
 
 
@@ -366,6 +372,21 @@ def bar_subdivisions(cds, kind, metric):
         if num == 0:
             # add x_range to plots to link panning
             fig_kwargs['x_range'] = fig.x_range
+        if kind == 'day':
+            tooltips = [
+                (kind, f'@{kind}{{%F}}'),
+                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+            ]
+            formatters = {kind: 'datetime'}
+            hover_kwargs = dict(tooltips=tooltips, formatters=formatters)
+        else:
+            tooltips = [
+                (kind, f'@{kind}'),
+                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+            ]
+            hover_kwargs = dict(tooltips=tooltips)
+        hover = HoverTool(mode='vline', **hover_kwargs)
+        fig.add_tools(hover)
         figs.append(fig)
     return figs
 
