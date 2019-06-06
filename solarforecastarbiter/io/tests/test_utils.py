@@ -9,10 +9,10 @@ from solarforecastarbiter.io import utils
 TEST_DICT = {'value': [2.0, 43.9, 338.0, -199.7, 0.32],
              'quality_flag': [1, 1, 9, 5, 2]}
 
-DF_INDEX = pd.DatetimeIndex(start=pd.Timestamp('2019-01-24T00:00'),
-                            freq='1min',
-                            periods=5,
-                            tz='UTC', name='timestamp')
+DF_INDEX = pd.date_range(start=pd.Timestamp('2019-01-24T00:00'),
+                         freq='1min',
+                         periods=5,
+                         tz='UTC', name='timestamp')
 TEST_DATA = pd.DataFrame(TEST_DICT, index=DF_INDEX)
 
 
@@ -82,6 +82,45 @@ def test_empty_payload_to_obsevation_df():
 def test_empty_payload_to_forecast_series():
     out = utils.json_payload_to_forecast_series({'values': []})
     assert isinstance(out.index, pd.DatetimeIndex)
+
+
+@pytest.mark.parametrize('label,exp,start,end', [
+    ('instant', TEST_DATA, None, None),
+    ('instantaneous', TEST_DATA, None, None),
+    (None, TEST_DATA, None, None),
+    ('ending', TEST_DATA.iloc[1:], None, None),
+    ('beginning', TEST_DATA.iloc[:-1], None, None),
+    pytest.param('er', TEST_DATA, None, None,
+                 marks=pytest.mark.xfail(raises=ValueError)),
+    # start/end outside data
+    ('ending', TEST_DATA, pd.Timestamp('20190123T2300Z'), None),
+    ('beginning', TEST_DATA, None, pd.Timestamp('20190124T0100Z')),
+    # more limited
+    ('ending', TEST_DATA.iloc[2:], pd.Timestamp('20190124T0001Z'), None),
+    ('beginning', TEST_DATA.iloc[:-2], None,
+     pd.Timestamp('20190124T0003Z')),
+    ('instant', TEST_DATA.iloc[1:-1], pd.Timestamp('20190124T0001Z'),
+     pd.Timestamp('20190124T0003Z')),
+])
+def test_adjust_timeseries_for_interval_label(label, exp, start, end):
+    start = start or pd.Timestamp('2019-01-24T00:00Z')
+    end = end or pd.Timestamp('2019-01-24T00:04Z')
+    out = utils.adjust_timeseries_for_interval_label(
+        TEST_DATA, label, start, end)
+    pdt.assert_frame_equal(exp, out)
+
+
+@pytest.mark.parametrize('label,exp', [
+    ('instant', TEST_DATA['value']),
+    ('ending', TEST_DATA['value'].iloc[1:]),
+    ('beginning', TEST_DATA['value'].iloc[:-1])
+])
+def test_adjust_timeserise_for_interval_label_series(label, exp):
+    start = pd.Timestamp('2019-01-24T00:00Z')
+    end = pd.Timestamp('2019-01-24T00:04Z')
+    out = utils.adjust_timeseries_for_interval_label(
+        TEST_DATA['value'], label, start, end)
+    pdt.assert_series_equal(exp, out)
 
 
 def test_hidden_token():

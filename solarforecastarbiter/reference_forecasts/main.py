@@ -174,7 +174,9 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
 
     def load_data(observation, data_start, data_end):
         df = session.get_observation_values(observation.observation_id,
-                                            data_start, data_end)
+                                            data_start, data_end,
+                                            observation.interval_label)
+        df = df.tz_convert(observation.site.timezone)
         return df['value']
 
     if intraday and index:

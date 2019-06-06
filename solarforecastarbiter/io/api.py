@@ -8,11 +8,13 @@ from urllib3 import Retry
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
-                                           json_payload_to_forecast_series,
-                                           observation_df_to_json_payload,
-                                           forecast_object_to_json,
-                                           HiddenToken)
+from solarforecastarbiter.io.utils import (
+    json_payload_to_observation_df,
+    json_payload_to_forecast_series,
+    observation_df_to_json_payload,
+    forecast_object_to_json,
+    adjust_timeseries_for_interval_label,
+    HiddenToken)
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
@@ -288,7 +290,8 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
-    def get_observation_values(self, observation_id, start, end):
+    def get_observation_values(self, observation_id, start, end,
+                               interval_label=None):
         """
         Get observation values from start to end for observation_id from the
         API
@@ -309,9 +312,11 @@ class APISession(requests.Session):
         """
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start': start, 'end': end})
-        return json_payload_to_observation_df(req.json())
+        out = json_payload_to_observation_df(req.json())
+        return adjust_timeseries_for_interval_label(out, interval_label, start, end)
 
-    def get_forecast_values(self, forecast_id, start, end):
+    def get_forecast_values(self, forecast_id, start, end,
+                            interval_label=None):
         """
         Get forecast values from start to end for forecast_id
 
@@ -331,7 +336,8 @@ class APISession(requests.Session):
         """
         req = self.get(f'/forecasts/single/{forecast_id}/values',
                        params={'start': start, 'end': end})
-        return json_payload_to_forecast_series(req.json())
+        out = json_payload_to_forecast_series(req.json())
+        return adjust_timeseries_for_interval_label(out, interval_label, start, end)
 
     def post_observation_values(self, observation_id, observation_df,
                                 params=None):

@@ -135,6 +135,48 @@ def json_payload_to_forecast_series(json_payload):
     return df['value']
 
 
+def adjust_timeseries_for_interval_label(data, interval_label, start, end):
+    """
+    Adjusts the index of the data depending on the interval_label, start,
+    and end. Will always return the data located between start, end.
+
+    Parameters
+    ----------
+    data : pandas.Series or pandas.DataFrame
+       The data with a DatetimeIndex
+    interval_label : str or None
+       The interval label for the the object the data represents
+    start : pandas.Timestamp
+       Start time to restrict data to
+    end : pandas.Timestamp
+       End time to restrict data to
+
+    Returns
+    -------
+    pandas.Series or pandas.DataFrame
+       Return data between start and end, in/excluding the endpoints
+       depending on interval_label
+
+    Raises
+    ------
+    ValueError
+       If an invalid interval_label is given
+    """
+    if (
+            interval_label is not None and
+            interval_label not in ('instant', 'instantaneous',
+                                   'beginning', 'ending')
+    ):
+        raise ValueError('Invalid interval_label')
+
+    data.sort_index(axis=0, inplace=True)
+    if interval_label == 'beginning':
+        end -= pd.Timedelta(1, unit='nano')
+    elif interval_label == 'ending':
+        start += pd.Timedelta(1, unit='nano')
+    return data.loc[start:end]
+
+
 class HiddenToken:
     """
     Obscure the representation of the input string `token` to avoid saving
