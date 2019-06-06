@@ -217,8 +217,8 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
     matcher = re.compile(f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
     out = session.get_observation_values(
-        'obsid', pd.Timestamp('2019-01-01T12:00:00-0600'),
-        pd.Timestamp('2019-01-01T12:25:00-0600'))
+        'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
+        pd.Timestamp('2019-01-01T12:25:00-0700'))
     pdt.assert_frame_equal(out, observation_values)
 
 
@@ -233,8 +233,8 @@ def test_apisession_get_observation_values_empty(requests_mock, empty_df):
     matcher = re.compile(f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
     out = session.get_observation_values(
-        'obsid', pd.Timestamp('2019-01-01T12:00:00-0600'),
-        pd.Timestamp('2019-01-01T12:25:00-0600'))
+        'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
+        pd.Timestamp('2019-01-01T12:25:00-0700'))
     pdt.assert_frame_equal(out, empty_df)
 
 
@@ -244,8 +244,8 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     requests_mock.register_uri('GET', matcher, content=forecast_values_text)
     out = session.get_forecast_values(
-        'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
-        pd.Timestamp('2019-01-01T11:00:00-0600'))
+        'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
+        pd.Timestamp('2019-01-01T11:00:00-0700'))
     pdt.assert_series_equal(out, forecast_values)
 
 
@@ -254,8 +254,8 @@ def test_apisession_get_forecast_values_empty(requests_mock, empty_df):
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
     out = session.get_forecast_values(
-        'fxid', pd.Timestamp('2019-01-01T06:00:00-0600'),
-        pd.Timestamp('2019-01-01T11:00:00-0600'))
+        'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
+        pd.Timestamp('2019-01-01T11:00:00-0700'))
     pdt.assert_series_equal(out, empty_df['value'])
 
 
