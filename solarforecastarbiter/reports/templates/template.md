@@ -52,7 +52,7 @@ This report covers the period from {{ start }} to {{ end }}.
 
 ### Observations and forecasts
 
-The table below shows the observation, forecast pairs analyzed in this report. The table includes the unprocessed observation and forecast *interval label* (beginning, ending, instanteous) and *interval length*. If these quantities do not match, the Solar Forecast Arbiter must align and/or resample the data before computing error statistics. The Solar Forecast Arbiter typically aligns the observation data to the forecast data. The aligned and resampled parameters are also shown below.
+The table below shows the observation, forecast pairs analyzed in this report. The table includes the unprocessed observation and forecast *interval label* (beginning, ending, instantaneous) and *interval length*. If these quantities do not match, the Solar Forecast Arbiter must align and/or resample the data before computing error statistics. The Solar Forecast Arbiter typically aligns the observation data to the forecast data. The aligned and resampled parameters are also shown below.
 
 {# Need to get report's realignment and resampling info into here. Need some nice formatting to make this table more readable. Also fix forecast link's hard coded /single route. column widths controlled by |--|--| line #}
 
