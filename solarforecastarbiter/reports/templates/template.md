@@ -84,7 +84,9 @@ These intervals were removed from the raw time series before resampling and real
 
 ## Metrics
 
+{{ '{%' }} raw {{ '%}' }}
 {{ script_metrics | safe }}
+{{ '{%' }} endraw {{ '%}' }}
 
 Metrics are displayed in tables and figures below for one or more time periods. **(TODO)** Metrics may be downloaded
 in csv format.
