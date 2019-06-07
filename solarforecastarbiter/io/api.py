@@ -304,6 +304,10 @@ class APISession(requests.Session):
             Start time in interval to retrieve values for
         end : timelike object
             End time of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
 
         Returns
         -------
@@ -329,6 +333,10 @@ class APISession(requests.Session):
             Start of the interval to retrieve values for
         end : timelike object
             End of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
 
         Returns
         -------
