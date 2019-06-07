@@ -222,6 +222,23 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
     pdt.assert_frame_equal(out, observation_values)
 
 
+@pytest.mark.parametrize('label,theslice', [
+    (None, slice(0, 10)),
+    ('beginning', slice(0, -1)),
+    ('ending', slice(1, 10))
+])
+def test_apisession_get_observation_values_interval_label(
+        requests_mock, observation_values, observation_values_text,
+        label, theslice):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    requests_mock.register_uri('GET', matcher, content=observation_values_text)
+    out = session.get_observation_values(
+        'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
+        pd.Timestamp('2019-01-01T12:25:00-0700'), label)
+    pdt.assert_frame_equal(out, observation_values.iloc[theslice])
+
+
 @pytest.fixture()
 def empty_df():
     return pd.DataFrame([], columns=['value', 'quality_flag'],
@@ -247,6 +264,22 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
         'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
         pd.Timestamp('2019-01-01T11:00:00-0700'))
     pdt.assert_series_equal(out, forecast_values)
+
+
+@pytest.mark.parametrize('label,theslice', [
+    (None, slice(0, 10)),
+    ('beginning', slice(0, -1)),
+    ('ending', slice(1, 10))
+])
+def test_apisession_get_forecast_values_interval_label(
+        requests_mock, forecast_values, forecast_values_text, label, theslice):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
+    requests_mock.register_uri('GET', matcher, content=forecast_values_text)
+    out = session.get_forecast_values(
+        'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
+        pd.Timestamp('2019-01-01T11:00:00-0700'), label)
+    pdt.assert_series_equal(out, forecast_values.iloc[theslice])
 
 
 def test_apisession_get_forecast_values_empty(requests_mock, empty_df):

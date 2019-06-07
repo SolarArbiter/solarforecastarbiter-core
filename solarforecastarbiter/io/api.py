@@ -313,7 +313,8 @@ class APISession(requests.Session):
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start': start, 'end': end})
         out = json_payload_to_observation_df(req.json())
-        return adjust_timeseries_for_interval_label(out, interval_label, start, end)
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
 
     def get_forecast_values(self, forecast_id, start, end,
                             interval_label=None):
@@ -337,7 +338,8 @@ class APISession(requests.Session):
         req = self.get(f'/forecasts/single/{forecast_id}/values',
                        params={'start': start, 'end': end})
         out = json_payload_to_forecast_series(req.json())
-        return adjust_timeseries_for_interval_label(out, interval_label, start, end)
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
 
     def post_observation_values(self, observation_id, observation_df,
                                 params=None):
