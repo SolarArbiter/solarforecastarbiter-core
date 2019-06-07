@@ -10,6 +10,7 @@ def test_get_default_deterministic_context():
     # Check default parameters
     assert default_context['is_pv_power'] is False
     assert default_context['include_night_hours'] is False
+    assert default_context['timezone'] is None
 
     metrics = default_context['metrics']
     assert metrics['mean'] is False

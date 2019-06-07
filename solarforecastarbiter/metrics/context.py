@@ -71,6 +71,7 @@ DETERMINISTIC_METRICS_CONTEXT = {
 
     'is_pv_power': False,
     'include_night_hours': False,
+    'timezone': None,
 
     'metrics': {
         'mean': False,       # mean

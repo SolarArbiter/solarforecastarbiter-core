@@ -40,7 +40,7 @@ def test_exclude_on_forecast(forecast_series):
     assert not processed_fx_values.isna().any()
     pd.testing.assert_series_equal(ser_fx,
                                    processed_fx_values)
-    
+
     # Missing data
     ser_fx_missing = ser_fx.copy(deep=True)
     n_miss = int(0.25 * n_values)  # 25%

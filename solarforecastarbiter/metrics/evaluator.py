@@ -6,6 +6,8 @@ context :py:mod:`solarforecastarbiter.metrics.context` and returns the results
 :py:mod:`solarforecastarbiter.metrics.results`.
 """
 
+import copy
+import pytz
 import numpy as np
 import pandas as pd
 
@@ -39,18 +41,34 @@ def evaluate(observations, forecasts, metrics_context):
     SfaMetricsInputError : if invalid input data.
     """
     # Create empty results
-    result = results.EVALUATOR_RESULTS
+    result = copy.deepcopy(results.EVALUATOR_RESULTS)
+
+    # Copies
+    obs_copy = copy.deepcopy(observations)
+    fx_copy = copy.deepcopy(forecasts)
 
     # Verify input
-    if not are_valid_observations(observations):
+    if not are_valid_observations(obs_copy):
         raise errors.SfaMetricsInputError("Observations must be a pandas DataFrame \
                                           with value and quality_flag columns \
                                           and an index of datetimes.")
 
-    if not are_valid_forecasts(forecasts):
+    if not are_valid_forecasts(fx_copy):
         raise errors.SfaMetricsInputError("Forecasts must be a pandas Series \
                                           with value \
                                           and an index of datetimes")
+
+    # Timezone aware and conversion of timeseries
+    if metrics_context['timezone']:
+        if not obs_copy.index.tz:
+            obs_copy.index = obs_copy.index.tz_localize(pytz.utc)
+        obs_copy.index = obs_copy.index.tz_convert(
+            metrics_context['timezone'])
+
+        if not fx_copy.index.tz:
+            fx_copy.index = fx_copy.index.tz_localize(pytz.utc)
+        fx_copy.index = fx_copy.index.tz_convert(
+            metrics_context['timezone'])
 
     # TODO:
     # - enforce interval consistency
@@ -61,18 +79,26 @@ def evaluate(observations, forecasts, metrics_context):
     obs_method = obs_context['fill_method']
     if obs_method in context.supported_fill_functions():
         fill_func = context._FILL_FUNCTIONS_MAP[obs_method]
-        obs_values = fill_func(observations.value, observations.quality_flag)
+        obs_values = fill_func(obs_copy.value, obs_copy.quality_flag)
     else:
-        obs_values = observations.values
+        obs_values = obs_copy.value
 
     # Preprocessing forecasts
     fx_context = metrics_context['preprocessing']['forecasts']
     fx_method = fx_context['fill_method']
     if fx_method in context.supported_fill_functions():
         fill_func = context._FILL_FUNCTIONS_MAP[fx_method]
-        fx_values = fill_func(forecasts)
+        fx_values = fill_func(fx_copy)
     else:
-        fx_values = forecasts
+        fx_values = fx_copy
+
+    # Force consistency of indexes
+    obs_values.drop(obs_values.index.difference(fx_values.index),
+                    axis=0,
+                    inplace=True)
+    fx_values.drop(fx_values.index.difference(obs_values.index),
+                   axis=0,
+                   inplace=True)
 
     # Copy preprocessed timeseries to result
     if metrics_context['results']['timeseries']['observations']:
@@ -121,11 +147,12 @@ def evaluate_by_group(observation, forecast, groupby, metric_func):
 
     Returns
     -------
-    pd.Series :
+    pd.Series
 
     Raises
     ------
-    SfaMetricsConfigError if `groupby` is not a supported groupby type.
+    py:class:`solarforecastarbiter.metrics.SfaMetricsConfigError` if `groupby`
+        is not a supported groupby type.
     """
     result = None
 
