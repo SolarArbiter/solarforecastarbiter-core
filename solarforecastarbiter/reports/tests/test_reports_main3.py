@@ -38,22 +38,22 @@ report = datamodel.Report(
     filters=(quality_flag_filter, )
 )
 
+# create md file with metadata and metrics
 metadata, prereport = main.create_prereport_from_metadata(token, report)
-
 with open('bokeh_prereport.md', 'w') as f:
     f.write(prereport)
 
-fx_obs_cds = main.get_data_for_report_embed(session, report)
-
+# convert md file to html using pandoc
 prereport_html = template.prereport_to_html(prereport)
-
 with open('bokeh_prereport.html', 'w') as f:
     f.write(prereport_html)
 
+# get data for time series and scatter plots, render report with data
+fx_obs_cds = main.get_data_for_report_embed(session, report)
 body = template.add_figures_to_prereport(
     fx_obs_cds, report, metadata, prereport_html)
 
+# add header. only needed for testing. dashboard will do this in production.
 full_report = template.full_html(body)
-
 with open('bokeh_report.html', 'w') as f:
     f.write(full_report)
