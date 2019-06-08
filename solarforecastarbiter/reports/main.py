@@ -48,6 +48,7 @@ import platform
 import pandas as pd
 
 from solarforecastarbiter.io.api import APISession
+from solarforecastarbiter import metrics
 from solarforecastarbiter.reports import figures, template
 
 
@@ -67,30 +68,33 @@ def get_data_for_report(session, report):
     Returns
     -------
     data : dict
-        Keys are Forecast and Observation objects, values are
+        Keys are Forecast and Observation uuids, values are
         the corresponding data.
     """
     data = {}
     for fxobs in report.forecast_observations:
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
-        if fxobs.forecast not in data:
+        forecast_id = fxobs.forecast.forecast_id
+        observation_id = fxobs.observation.observation_id
+        if forecast_id not in data:
             data[fxobs.forecast] = session.get_forecast_values(
-                fxobs.forecast, report.start, report.end)
-        if fxobs.observation not in data:
+                forecast_id, report.start, report.end)
+        if observation_id not in data:
             data[fxobs.observation] = session.get_observation_values(
-                fxobs.observation, report.start, report.end)
+                observation_id, report.start, report.end)
     return data
 
 
-def data_dict_to_fxobs_data(data, report):
+def data_dict_to_fxobs_data(data, forecast_observations):
     """
     Sorts the data dict into a new dict where the keys are the report's
     ForecastObservation objects and the values are tuples of
     (forecast values, observation values).
     """
-    return {fxobs: (data[fxobs.forecast], data[fxobs.observation])
-            for fxobs in report.forecast_observations}
+    return {fxobs: (data[fxobs.forecast.forecast_id],
+                    data[fxobs.observation.observation_id])
+            for fxobs in forecast_observations}
 
 
 def create_metadata(report):
@@ -171,9 +175,12 @@ def get_data_for_report_embed(session, report):
         pass to bokeh plotting objects.
     """
     data = get_data_for_report(session, report)
-    fxobs_data = data_dict_to_fxobs_data(data, report)
-    fx_obs_cds = [(k, figures.construct_fx_obs_cds(v[0], v[1]))
-                  for k, v in fxobs_data.items()]
+    fxobs_resamp, data_resamp = metrics.validate_resample_align(report, data)
+    fx_obs_cds = [(
+        fxobs,
+        figures.construct_fx_obs_cds(data_resamp[fxobs.forecast],
+                                     data_resamp[fxobs.observation]))
+                  for fxobs in fxobs_resamp]
     return fx_obs_cds
 
 
@@ -207,16 +214,23 @@ def create_prereport_from_data(report, data):
     # call function: pre-render report in md format
     # return json, prereport
 
-    # debug
-    from solarforecastarbiter.reports.tests.test_main import dummy_metrics
-    metrics = dummy_metrics.copy()
-
     metadata = create_metadata(report)
-    prereport = template.prereport(metadata, metrics)
+
+    fxobs_resampled, data_resampled = metrics.validate_resample_align(report,
+                                                                      data)
+
+    metrics_list = metrics.loop_forecasts_calculate_metrics(fxobs_resampled,
+                                                            data_resampled)
 
     # put the metrics in the metadata because why not
-    metadata['metrics'] = metrics
-    metadata_json = json.dumps(metadata)
+    metadata['metrics'] = metrics_list
+
+    prereport = template.prereport(report, metadata, metrics_list)
+
+    # fails because
+    # "TypeError: Object of type Timestamp is not JSON serializable"
+    # metadata_json = json.dumps(metadata)
+    metadata_json = metadata
     return metadata_json, prereport
 
 
@@ -240,7 +254,8 @@ def create_prereport_from_metadata(access_token, report, base_url=None):
     session = APISession(access_token, base_url=base_url)
     data = get_data_for_report(session, report)
     metadata, prereport = create_prereport_from_data(report, data)
-    session.post_report(metadata, prereport)
+    # session.post_report(metadata, prereport)
+    return metadata, prereport
 
 
 def prereport_to_report(access_token, report, metadata, prereport,

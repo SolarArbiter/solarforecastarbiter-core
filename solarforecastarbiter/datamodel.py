@@ -419,6 +419,47 @@ class Forecast(BaseModel):
     __post_init__ = __set_units__
 
 
+# might be a good idea to keep track of if an observation is an original or
+# a resampled/realigned derivative.
+# yet another idea is ObservationResampled(Observation) and similar for fx.
+@dataclass(frozen=True)
+class ObservationResampled(BaseModel):
+    """
+    """
+    observation: Observation
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+
+
+@dataclass(frozen=True)
+class ForecastResampled(BaseModel):
+    """
+    """
+    forecast: Forecast
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+
+
+# ResamplingParameters and ObservationResampled2 (and corresponding fx)
+# are yet another idea...
+@dataclass(frozen=True)
+class ResamplingParameters(BaseModel):
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+
+
+@dataclass(frozen=True)
+class ObservationResampled2(Observation):
+    """
+    """
+    # can't have a required argument after optional arguments inserted
+    # by inheritance
+    resampling_parameters: ResamplingParameters = None
+
+
 def __check_units__(*args):
     ref_unit = args[0].units
     if not all(arg.units == ref_unit for arg in args):
