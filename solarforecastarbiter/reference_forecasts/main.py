@@ -4,10 +4,20 @@ Make benchmark irradiance and power forecasts.
 The functions in this module use the
 :py:mod:`solarforecastarbiter.datamodel` objects.
 """
+from functools import partial
+import json
+import logging
+
+
 import pandas as pd
 
+
 from solarforecastarbiter import datamodel, pvmodel
-from solarforecastarbiter.reference_forecasts import persistence
+from solarforecastarbiter.io.fetch import nwp as fetch_nwp
+from solarforecastarbiter.reference_forecasts import persistence, models
+
+
+logger = logging.getLogger(__name__)
 
 
 # maybe rework in terms of forecast run *issue time* as described in
@@ -230,8 +240,13 @@ def get_forecast_start_end(forecast, issue_time):
              forecast.issue_time_of_day, forecast.run_length, issue_time))
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
-    if 'instant' in forecast.interval_label:
+    if (
+            'instant' in forecast.interval_label
+            or forecast.interval_label == 'beginning'
+    ):
         forecast_end -= pd.Timedelta('1s')
+    else:
+        forecast_start += pd.Timedelta('1s')
     return forecast_start, forecast_end
 
 
@@ -319,3 +334,56 @@ def get_data_start_end(observation, forecast, run_time):
             raise ValueError('Instantaneous forecast cannot be made from '
                              'interval average observations')
     return data_start, data_end
+
+
+def get_init_time(run_time, fetch_metadata):
+    """Determine the most recent init time for which all forecast data is
+    available."""
+    run_finish = (pd.Timedelta(fetch_metadata['delay_to_first_forecast']) +
+                  pd.Timedelta(fetch_metadata['avg_max_run_length']))
+    freq = fetch_metadata['update_freq']
+    init_time = (run_time - run_finish).floor(freq=freq)
+    return init_time
+
+
+def process_forecast_groups(forecasts, session, run_time, issue_time,
+                            load_forecast):
+    forecast_df = pd.DataFrame(
+        [(fx.forecast_id, fx,
+          json.loads(fx.extra_parameters).get('piggyback_on',
+                                              fx.forecast_id))
+         for fx in forecasts],
+        columns=['forecast_id', 'forecast', 'piggyback_on']
+        ).set_index('forecast_id')
+    for run_for, group in forecast_df.groupby('piggyback_on'):
+        key_fx = group.loc[run_for].forecast
+        extra_params = json.loads(key_fx.extra_parameters)
+
+        try:
+            fetch_metadata = getattr(
+                fetch_nwp, extra_params['fetch_metadata'])
+        except AttributeError:
+            if len(group) == 1:
+                logger.info(
+                    'No fetch_metadata defined for %s, not creating '
+                    'reference forecast', key_fx.name)
+            else:
+
+                logger.warning(
+                    'No fetch_metadata for the key forecast, %s, '
+                    'not generating forecasts for group',
+                    key_fx.name)
+            continue
+        init_time = get_init_time(run_time, fetch_metadata)
+        forecast_start, forecast_end = get_forecast_start_end(
+            key_fx, issue_time)
+        model = getattr(models, extra_params['model'])
+        # for testing
+        model = partial(model, load_forecast=load_forecast)
+        nwp_result = run_nwp(key_fx.site, model, init_time,
+                             forecast_start, forecast_end)
+        for fx_id, fx in group['forecast'].iteritems():
+            fx_vals = getattr(nwp_result, fx.variable)
+            if fx_vals is None:
+                continue
+            session.post_forecast_values(fx_id, fx_vals)
