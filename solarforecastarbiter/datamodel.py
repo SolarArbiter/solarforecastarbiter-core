@@ -413,3 +413,13 @@ class Forecast(BaseModel):
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
+
+
+@dataclass()
+class NWPOutput:
+    ghi: pd.Series
+    dni: pd.Series
+    dhi: pd.Series
+    air_temperature: pd.Series
+    wind_speed: pd.Series
+    ac_power: pd.Series

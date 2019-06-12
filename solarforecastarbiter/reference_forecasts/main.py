@@ -83,7 +83,7 @@ def run_nwp(site, model, init_time, start, end):
 
     # resample data after power calculation
     resampled = list(map(resampler, (*forecast, ac_power)))
-    return resampled
+    return datamodel.NWPOutput(*resampled)
 
 
 def run_persistence(session, observation, forecast, run_time, issue_time,
