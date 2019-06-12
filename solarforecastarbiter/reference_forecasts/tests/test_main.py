@@ -321,7 +321,7 @@ def obs_5min_begin(site_metadata):
 @pytest.fixture
 def observation_values_text():
     """JSON text representation of test data"""
-    tz = 'America/Phoenix'
+    tz = 'UTC'
     data_index = pd.date_range(
         start='20190101', end='20190102', freq='5min', tz=tz, closed='left')
     # each element of data is equal to the hour value of its label
