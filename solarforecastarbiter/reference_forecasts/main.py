@@ -14,6 +14,7 @@ import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.io.fetch import nwp as fetch_nwp
+from solarforecastarbiter.io import utils as io_utils
 from solarforecastarbiter.reference_forecasts import persistence, models
 
 
@@ -240,14 +241,8 @@ def get_forecast_start_end(forecast, issue_time):
              forecast.issue_time_of_day, forecast.run_length, issue_time))
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
-    if (
-            'instant' in forecast.interval_label
-            or forecast.interval_label == 'beginning'
-    ):
-        forecast_end -= pd.Timedelta('1s')
-    else:
-        forecast_start += pd.Timedelta('1s')
-    return forecast_start, forecast_end
+    return io_utils.adjust_start_end_for_interval_label(
+        forecast.interval_label, forecast_start, forecast_end)
 
 
 def _is_intraday(forecast):
