@@ -135,7 +135,8 @@ def json_payload_to_forecast_series(json_payload):
     return df['value']
 
 
-def adjust_start_end_for_interval_label(interval_label, start, end):
+def adjust_start_end_for_interval_label(interval_label, start, end,
+                                        limit_instant=False):
     """
     Adjusts the start and end times depending on the interval_label.
 
@@ -147,6 +148,10 @@ def adjust_start_end_for_interval_label(interval_label, start, end):
        Start time to restrict data to
     end : pandas.Timestamp
        End time to restrict data to
+    limit_instant : boolean
+       If true, an interval label of 'instant' will remove a nanosecond
+       from end to ensure forecasts do not overlap. If False, instant
+       returns start, end unmodified
 
     Returns
     -------
@@ -161,12 +166,14 @@ def adjust_start_end_for_interval_label(interval_label, start, end):
 
     if (
             interval_label is not None and
-            interval_label not in ('instant', 'instantaneous',
-                                   'beginning', 'ending')
+            interval_label not in ('instant', 'beginning', 'ending')
     ):
         raise ValueError('Invalid interval_label')
 
-    if interval_label == 'beginning':
+    if (
+            interval_label == 'beginning' or
+            (interval_label == 'instant' and limit_instant)
+    ):
         end -= pd.Timedelta(1, unit='nano')
     elif interval_label == 'ending':
         start += pd.Timedelta(1, unit='nano')
