@@ -59,14 +59,32 @@ because we anticipate that these functions may be of more general use
 and that functions that accept primitives may be easier to maintain in
 the long run.
 """
+from functools import partial, wraps
+import inspect
 
-from functools import partial
 
 from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.nwp import load_forecast
 from solarforecastarbiter.reference_forecasts import forecast
 
+
 import pandas as pd
+
+
+def set_nwp_model(nwp_model):
+    def dec(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        wrapper.__nwp_model__ = nwp_model
+        return wrapper
+    return dec
+
+
+def get_nwp_model(func=None):
+    if func is None:
+        func = globals()[inspect.stack()[1].function]
+    return getattr(func, '__nwp_model__', None)
 
 
 def _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -107,6 +125,7 @@ def _ghi_to_dni_dhi(latitude, longitude, elevation, ghi):
     return dni, dhi, solar_pos_calculator
 
 
+@set_nwp_model('hrrr_subhourly')
 def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
                                               init_time, start, end,
                                               load_forecast=load_forecast):
@@ -116,7 +135,7 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
     ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'hrrr_subhourly')
+        latitude, longitude, init_time, start, end, get_nwp_model())
     # resampler takes 15 min instantaneous in, retuns 15 min instantaneous out
     # still want to call resample, rather than pass through lambda x: x
     # so that DatetimeIndex has well-defined freq attribute
@@ -128,6 +147,7 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
+@set_nwp_model('hrrr_subhourly')
 def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
                                   init_time, start, end,
                                   load_forecast=load_forecast):
@@ -137,7 +157,7 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
     ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'hrrr_subhourly')
+        latitude, longitude, init_time, start, end, get_nwp_model())
     # interpolate irrad, temp, wind data to 5 min to
     # minimize weather to power errors.
     interpolator = partial(forecast.interpolate, freq='5min')
@@ -153,6 +173,7 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
+@set_nwp_model('rap')
 def rap_ghi_to_instantaneous(latitude, longitude, elevation,
                              init_time, start, end,
                              load_forecast=load_forecast):
@@ -163,7 +184,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     """
     # ghi dni and dhi not in RAP output available from g2sub service
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -173,6 +194,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
+@set_nwp_model('rap')
 def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
                            init_time, start, end,
                            load_forecast=load_forecast):
@@ -184,7 +206,7 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
     """
     # ghi dni and dhi not in RAP output available from g2sub service
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -196,6 +218,7 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
+@set_nwp_model('rap')
 def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
                                    load_forecast=load_forecast):
@@ -206,13 +229,14 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed)
 
 
+@set_nwp_model('gfs_3h')
 def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
                                          init_time, start, end,
                                          load_forecast=load_forecast):
@@ -222,7 +246,7 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 240 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_3h',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -230,6 +254,7 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
                                        wind_speed)
 
 
+@set_nwp_model('gfs_0p25')
 def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
                                           init_time, start, end,
                                           load_forecast=load_forecast):
@@ -239,7 +264,7 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 120 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -247,6 +272,7 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
                                        wind_speed)
 
 
+@set_nwp_model('gfs_0p25')
 def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
                                    load_forecast=load_forecast):
@@ -256,7 +282,7 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 384 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     end_1h = init_time + pd.Timedelta('120hr')
     end_3h = init_time + pd.Timedelta('240hr')
@@ -276,6 +302,7 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
                                        wind_speed)
 
 
+@set_nwp_model('nam_12km')
 def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
                                             init_time, start, end,
                                             load_forecast=load_forecast):
@@ -285,7 +312,7 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
     Max forecast horizon 36 hours.
     """
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam_12km',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -295,6 +322,7 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
+@set_nwp_model('nam_12km')
 def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
                                         init_time, start, end,
                                         load_forecast=load_forecast):
@@ -304,7 +332,7 @@ def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 72 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam_12km',
+        latitude, longitude, init_time, start, end, get_nwp_model(),
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
