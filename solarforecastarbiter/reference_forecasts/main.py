@@ -20,41 +20,33 @@ from solarforecastarbiter.reference_forecasts import persistence, models, utils
 logger = logging.getLogger(__name__)
 
 
-# maybe rework in terms of forecast run *issue time* as described in
-# https://solarforecastarbiter.org/usecases/#forecastrun
-# and datamodel.Forecast (as demonstrated in run_persistence below)
-def run_nwp(site, model, init_time, start, end):
+def run_nwp(forecast, model, run_time, issue_time):
     """
-    Calculate benchmark irradiance and power forecasts for a site.
+    Calculate benchmark irradiance and power forecasts for a Forecast.
 
-    The meaning of the timestamps (instantaneous or interval average)
-    is determined by the model processing function.
-
-    It's currently the user's job to determine time parameters that
-    correspond to a particular Forecast Evaluation Time Series.
+    Forecasts may be run operationally or retrospectively. For
+    operational forecasts, *run_time* is typically set to now. For
+    retrospective forecasts, *run_time* is the time by which the
+    forecast should be run so that it could have been be delivered for
+    the *issue_time*. Forecasts will only use data with timestamps
+    before *run_time*.
 
     Parameters
     ----------
-    site : datamodel.Site
+    forecast : datamodel.Forecast
+        The metadata of the desired forecast.
     model : function
         NWP model loading and processing function.
         See :py:mod:`solarforecastarbiter.reference_forecasts.models`
         for options.
-    init_time : pd.Timestamp
-        NWP model initialization time.
-    start : pd.Timestamp
-        Start of the forecast.
-    end : pd.Timestamp
-        End of the forecast.
+    run_time : pd.Timestamp
+        Run time of the forecast.
+    issue_time : pd.Timestamp
+        Issue time of the forecast run.
 
     Returns
     -------
-    ghi : pd.Series
-    dni : pd.Series
-    dhi : pd.Series
-    temp_air : None or pd.Series
-    wind_speed : None or pd.Series
-    ac_power : None or pd.Series
+    datamodel.NWPOutput
 
     Examples
     --------
@@ -78,8 +70,12 @@ def run_nwp(site, model, init_time, start, end):
     ...     power_plant, models.hrrr_subhourly_to_hourly_mean,
     ...     init_time, start, end)
     """
+    fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
+    init_time = utils.get_init_time(run_time, fetch_metadata)
+    start, end = utils.get_forecast_start_end(forecast, issue_time)
+    site = forecast.site
 
-    *forecast, resampler, solar_position_calculator = model(
+    *forecasts, resampler, solar_position_calculator = model(
         site.latitude, site.longitude, site.elevation,
         init_time, start, end)
 
@@ -87,12 +83,12 @@ def run_nwp(site, model, init_time, start, end):
         solar_position = solar_position_calculator()
         ac_power = pvmodel.irradiance_to_power(
             site.modeling_parameters, solar_position['apparent_zenith'],
-            solar_position['azimuth'], *forecast)
+            solar_position['azimuth'], *forecasts)
     else:
         ac_power = None
 
     # resample data after power calculation
-    resampled = list(map(resampler, (*forecast, ac_power)))
+    resampled = list(map(resampler, (*forecasts, ac_power)))
     return datamodel.NWPOutput(*resampled)
 
 
@@ -249,14 +245,9 @@ def process_forecast_groups(session, run_time, forecasts=None):
                 run_for)
         key_fx = group.loc[run_for].forecast
         model = getattr(models, group.loc[run_for].model)
-        fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
-        init_time = utils.get_init_time(run_time, fetch_metadata)
         issue_time = utils.get_next_issue_time(key_fx, run_time)
-        forecast_start, forecast_end = utils.get_forecast_start_end(
-            key_fx, issue_time)
 
-        nwp_result = run_nwp(key_fx.site, model, init_time,
-                             forecast_start, forecast_end)
+        nwp_result = run_nwp(key_fx, model, run_time, issue_time)
         for fx_id, fx in group['forecast'].iteritems():
             fx_vals = getattr(nwp_result, fx.variable)
             if fx_vals is None:

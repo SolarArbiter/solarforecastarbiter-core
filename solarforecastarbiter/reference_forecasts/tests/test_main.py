@@ -1,67 +1,63 @@
 import datetime as dt
 from functools import partial
+import inspect
 from pathlib import Path
 import re
 
-import pandas as pd
-# from pandas.util.testing import assert_series_equal
 
+import pandas as pd
+import pandas.testing as pdt
 import pytest
 
+
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api, nwp, utils
 from solarforecastarbiter.reference_forecasts import main, models
 from solarforecastarbiter.conftest import default_forecast, default_observation
 
-init_time = pd.Timestamp('20190515T0000Z')
-start = pd.Timestamp('20190515T0100Z')
-end = pd.Timestamp('20190515T0600Z')
 
-index_exp = pd.date_range(start=start, end=end, freq='1h')
-ghi_exp = pd.Series([0, 10.]*3, index=index_exp)
-dni_exp = pd.Series([0, 15.]*3, index=index_exp)
-dhi_exp = pd.Series([0, 9.]*3, index=index_exp)
-temp_air_exp = pd.Series([10, 11.]*3, index=index_exp)
-wind_speed_exp = pd.Series([0, 1.]*3, index=index_exp)
-cloud_cover_exp = pd.Series([100., 0.]*3, index=index_exp)
-load_forecast_return_value_3 = (cloud_cover_exp, temp_air_exp, wind_speed_exp)
-load_forecast_return_value_5 = (
-    ghi_exp, dni_exp, dhi_exp, temp_air_exp, wind_speed_exp)
-out_forecast_exp = (ghi_exp, dni_exp, dhi_exp, temp_air_exp, wind_speed_exp)
+BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
 
 
-def check_out(out, expected, site_type):
-    assert len(out) == 6
-    for o, e in zip(out[0:5], expected):
-        assert isinstance(o, pd.Series)
-        # assert_series_equal(o, e)
-    if site_type == 'powerplant':
-        assert isinstance(out[5], pd.Series)
-    elif site_type == 'site':
-        assert out[5] is None
-
-
-@pytest.mark.parametrize('model,load_forecast_return_value', [
-    (models.gfs_quarter_deg_hourly_to_hourly_mean,
-     load_forecast_return_value_3),
-    (models.gfs_quarter_deg_to_hourly_mean, load_forecast_return_value_3),
-    (models.hrrr_subhourly_to_hourly_mean, load_forecast_return_value_5),
-    (models.hrrr_subhourly_to_subhourly_instantaneous,
-        load_forecast_return_value_5),
-    pytest.param(models.nam_12km_cloud_cover_to_hourly_mean,
-                 load_forecast_return_value_3),
-    (models.nam_12km_hourly_to_hourly_instantaneous,
-     load_forecast_return_value_3),
-    pytest.param(models.rap_cloud_cover_to_hourly_mean,
-                 load_forecast_return_value_3),
+@pytest.mark.parametrize('model', [
+    models.gfs_quarter_deg_hourly_to_hourly_mean,
+    models.gfs_quarter_deg_to_hourly_mean,
+    models.hrrr_subhourly_to_hourly_mean,
+    models.hrrr_subhourly_to_subhourly_instantaneous,
+    models.nam_12km_cloud_cover_to_hourly_mean,
+    models.nam_12km_hourly_to_hourly_instantaneous,
+    models.rap_cloud_cover_to_hourly_mean,
 ])
-def test_run_nwp(model, load_forecast_return_value, site_powerplant_site_type,
-             mocker):
-    BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
-    load_forecast = partial(nwp.load_forecast, base_path=BASE_PATH)
-    model = partial(model, load_forecast=load_forecast)
+def test_run_nwp(model, site_powerplant_site_type, mocker):
+    """ to later patch the return value of load forecast, do something like
+    def load(*args, **kwargs):
+        return load_forecast_return_value
+    mocker.patch.object(inspect.unwrap(model), '__defaults__',
+        (partial(load),))
+    """
+    mocker.patch.object(inspect.unwrap(model), '__defaults__',
+                        (partial(nwp.load_forecast, base_path=BASE_PATH),))
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.utils.get_init_time',
+        return_value=pd.Timestamp('20190515T0000Z'))
     site, site_type = site_powerplant_site_type
-    out = main.run_nwp(site, model, init_time, start, end)
-    check_out(out, out_forecast_exp, site_type)
+    fx = datamodel.Forecast('Test', dt.time(5), pd.Timedelta('1h'),
+                            pd.Timedelta('1h'), pd.Timedelta('6h'),
+                            'beginning', 'interval_mean', 'ghi', site)
+    run_time = pd.Timestamp('20190515T1100Z')
+    issue_time = pd.Timestamp('20190515T1100Z')
+    out = main.run_nwp(fx, model, run_time, issue_time)
+
+    for var in ('ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed',
+                'ac_power'):
+        if site_type == 'site' and var == 'ac_power':
+            assert out.ac_power is None
+        else:
+            ser = getattr(out, var)
+            assert len(ser) >= 6
+            assert isinstance(ser, pd.Series)
+            assert ser.index[0] == pd.Timestamp('20190515T1200Z')
+            assert ser.index[-1] < pd.Timestamp('20190515T1800Z')
 
 
 @pytest.fixture
