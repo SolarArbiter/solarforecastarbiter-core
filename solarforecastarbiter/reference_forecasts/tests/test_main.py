@@ -6,7 +6,6 @@ import re
 
 
 import pandas as pd
-import pandas.testing as pdt
 import pytest
 
 
