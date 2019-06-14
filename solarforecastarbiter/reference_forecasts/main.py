@@ -208,40 +208,53 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     return fx
 
 
-def process_forecast_groups(forecasts, session, run_time, issue_time,
-                            load_forecast):
-    forecast_df = pd.DataFrame(
-        [(fx.forecast_id, fx,
-          json.loads(fx.extra_parameters).get('piggyback_on',
-                                              fx.forecast_id))
-         for fx in forecasts],
-        columns=['forecast_id', 'forecast', 'piggyback_on']
-        ).set_index('forecast_id')
-    for run_for, group in forecast_df.groupby('piggyback_on'):
-        key_fx = group.loc[run_for].forecast
-        extra_params = json.loads(key_fx.extra_parameters)
+def process_forecast_groups(session, run_time, forecasts=None):
+    if forecasts is None:
+        forecasts = session.list_forecasts()
+
+    df_vals = []
+    for fx in forecasts:
+        try:
+            extra_parameters = json.loads(fx.extra_parameters)
+        except json.JSONDecodeError:
+            logger.warning(
+                'Failed to decode extra_parameters for %s: %s as JSON',
+                fx.name, fx.forecast_id)
+            continue
 
         try:
-            fetch_metadata = getattr(
-                fetch_nwp, extra_params['fetch_metadata'])
-        except AttributeError:
-            if len(group) == 1:
-                logger.info(
-                    'No fetch_metadata defined for %s, not creating '
-                    'reference forecast', key_fx.name)
+            model = extra_parameters['model']
+        except KeyError:
+            if 'piggyback_on' in extra_parameters:
+                logger.error(
+                    'Forecast, %s: %s, has piggyback_on in extra_parameters'
+                    ' but no model. Cannot make forecast.',
+                    fx.name, fx.forecast_id)
             else:
-
-                logger.warning(
-                    'No fetch_metadata for the key forecast, %s, '
-                    'not generating forecasts for group',
-                    key_fx.name)
+                logger.debug(
+                    'Not model found for %s:%s, no forecast will be made',
+                    fx.name, fx.forecast_id)
             continue
+
+        piggyback_on = extra_parameters.get('piggyback_on', fx.forecast_id)
+        df_vals.append((fx.forecast_id, fx, piggyback_on, model))
+
+    forecast_df = pd.DataFrame(
+        df_vals, columns=['forecast_id', 'forecast', 'piggyback_on', 'model']
+        ).set_index('forecast_id')
+    for run_for, group in forecast_df.groupby('piggyback_on'):
+        if not len(group.model.unique()) == 1:
+            logger.warning(
+                'Not all forecasts in group with %s have the same model',
+                run_for)
+        key_fx = group.loc[run_for].forecast
+        model = getattr(models, group.loc[run_for].model)
+        fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
         init_time = utils.get_init_time(run_time, fetch_metadata)
+        issue_time = utils.get_next_issue_time(key_fx, run_time)
         forecast_start, forecast_end = utils.get_forecast_start_end(
             key_fx, issue_time)
-        model = getattr(models, extra_params['model'])
-        # for testing
-        model = partial(model, load_forecast=load_forecast)
+
         nwp_result = run_nwp(key_fx.site, model, init_time,
                              forecast_start, forecast_end)
         for fx_id, fx in group['forecast'].iteritems():
