@@ -1,10 +1,11 @@
+import numpy as np
 import pandas as pd
 
 
 from solarforecastarbiter.io import utils as io_utils
 
 
-def issue_times(forecast, start_from=None):
+def get_issue_times(forecast, start_from=None):
     """
     Return a list of the issue times for a given Forecast.
 
@@ -21,6 +22,7 @@ def issue_times(forecast, start_from=None):
     list
         Either of datetime.time objects indicating the possible issue times, or
         pandas.Timestamp objects with the issues times for the particular day
+        including the first issue time for the next day.
     """
     if start_from is None:
         issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
@@ -31,14 +33,21 @@ def issue_times(forecast, start_from=None):
                                          start_from.tz)
     next_day = (issue + pd.Timedelta('1d')).floor('1d')
     # works even for midnight issue
-    out = []
+    out = [issue]
     while issue < next_day:
-        if start_from is None:
-            out.append(issue.time())
-        else:
-            out.append(issue)
         issue += forecast.run_length
+        out.append(issue)
+    if start_from is None:
+        out = [o.time() for o in out]
     return out
+
+
+def get_next_issue_time(forecast, run_time):
+    """Determine the next issue time from a forecast and run time
+    """
+    issue_times = get_issue_times(forecast, run_time)
+    idx = np.searchsorted(issue_times, run_time)
+    return issue_times[idx]
 
 
 def get_init_time(run_time, fetch_metadata):
@@ -72,11 +81,7 @@ def get_forecast_start_end(forecast, issue_time):
     ------
     ValueError if forecast and issue_time are incompatible
     """
-    first_issue_time = pd.Timestamp.combine(issue_time.floor('1D'),
-                                            forecast.issue_time_of_day)
-    issue_times = pd.date_range(start=first_issue_time,
-                                end=first_issue_time+pd.Timedelta('1d'),
-                                freq=forecast.run_length)
+    issue_times = get_issue_times(forecast, issue_time)
     if issue_time not in issue_times:
         raise ValueError(
             ('Incompatible forecast.issue_time_of_day %s, '
