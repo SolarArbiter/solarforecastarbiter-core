@@ -1,9 +1,18 @@
 from pathlib import Path
 
+
 import numpy as np
 import xarray as xr
 
+
 BASE_PATH = ''
+
+
+def set_base_path(new_path):
+    global BASE_PATH
+    if new_path is not None:
+        BASE_PATH = new_path
+
 
 CF_MAPPING = {
     't2m': 'air_temperature',
@@ -38,7 +47,7 @@ def _load_pnt(ds, latitude, longitude, limit):
 def load_forecast(
         latitude, longitude, init_time, start, end, model,
         variables=('ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed'),
-        base_path=BASE_PATH):
+        base_path=None):
     """Load NWP model data.
 
     Parameters
@@ -80,10 +89,11 @@ def load_forecast(
     ------
     ValueError : Raised if the requested variable is not found.
     """
-
+    base_path = base_path if base_path is not None else BASE_PATH
     filepath = (Path(base_path) / model /
                 init_time.strftime('%Y/%m/%d/%H') / (model + '.nc'))
-
+    if not filepath.is_file():
+        raise FileNotFoundError(f'{filepath} does not exist')
     mapping_subset = {k: v for k, v in CF_MAPPING.items() if v in variables}
 
     limit = 500  # maximum distance from point to closest grid point

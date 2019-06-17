@@ -346,4 +346,7 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
     execute_for = forecast_df[
         forecast_df.next_issue_time <= run_time + issue_buffer]
+    if execute_for.empty:
+        logger.info('No forecasts to be made at %s', run_time)
+        return
     return process_nwp_forecast_groups(session, run_time, execute_for)
