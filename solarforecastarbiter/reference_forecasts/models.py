@@ -275,7 +275,7 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
 @set_nwp_model('gfs_0p25')
 def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
-                                   load_forecast='load_forecast'):
+                                   load_forecast=load_forecast):
     """
     Hourly average forecasts derived from GFS 1, 3, and 12 hr frequency
     output. GHI from NWP model cloud cover. DNI, DHI computed.

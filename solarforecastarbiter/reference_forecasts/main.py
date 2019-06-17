@@ -4,10 +4,15 @@ Make benchmark irradiance and power forecasts.
 The functions in this module use the
 :py:mod:`solarforecastarbiter.datamodel` objects.
 """
+import json
 import logging
 
 
+import pandas as pd
+
+
 from solarforecastarbiter import datamodel, pvmodel
+from solarforecastarbiter.io import api
 from solarforecastarbiter.io.fetch import nwp as fetch_nwp
 from solarforecastarbiter.reference_forecasts import persistence, models, utils
 
@@ -197,3 +202,148 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
             'index=True not supported for forecasts with run_length >= 1day')
 
     return fx
+
+
+def _verify_nwp_forecasts_compatible(fx_group):
+    """Verify that all the forecasts grouped by piggyback_on are compatible
+    """
+    errors = []
+    if not len(fx_group.model.unique()) == 1:
+        errors.append('model')
+    for var in ('issue_time_of_day', 'lead_time_to_start', 'interval_length',
+                'run_length', 'interval_label', 'interval_value_type',
+                'site'):
+        if len({getattr(fx, var) for fx in fx_group.forecast}) > 1:
+            errors.append(var)
+    return errors
+
+
+def find_reference_nwp_forecasts(forecasts, run_time=None):
+    """
+    Sort through all *forecasts* to find those that should be generated
+    by the Arbiter from NWP models. The forecast must have a *model* key
+    in *extra_parameters* (formated as a JSON string). If *piggyback_on*
+    is also defined in *extra_parameters*, it should be the forecast_id
+    of another forecast that has the same parameters, including site,
+    except the variable.
+
+    Parameters
+    ----------
+    forecasts : list of datamodel.Forecasts
+        The forecasts that should be filtered to find references.
+    run_time : pandas.Timestamp or None, default None
+        The run_time of that forecast generation is taking place. If not
+        None, the next issue time for each forecast is added to the output.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Of NWP reference forecasts With index of forecast_id and columns
+        (forecast, piggyback_on, model, next_issue_time).
+    """
+    df_vals = []
+    for fx in forecasts:
+        if fx.extra_parameters == '':
+            continue
+        try:
+            extra_parameters = json.loads(fx.extra_parameters)
+        except json.JSONDecodeError:
+            logger.warning(
+                'Failed to decode extra_parameters for %s: %s as JSON',
+                fx.name, fx.forecast_id)
+            continue
+
+        try:
+            model = extra_parameters['model']
+        except KeyError:
+            if 'piggyback_on' in extra_parameters:
+                logger.error(
+                    'Forecast, %s: %s, has piggyback_on in extra_parameters'
+                    ' but no model. Cannot make forecast.',
+                    fx.name, fx.forecast_id)
+            else:
+                logger.debug(
+                    'Not model found for %s:%s, no forecast will be made',
+                    fx.name, fx.forecast_id)
+            continue
+
+        if run_time is not None:
+            next_issue_time = utils.get_next_issue_time(fx, run_time)
+        else:
+            next_issue_time = None
+        piggyback_on = extra_parameters.get('piggyback_on', fx.forecast_id)
+        df_vals.append((fx.forecast_id, fx, piggyback_on, model,
+                        next_issue_time))
+
+    forecast_df = pd.DataFrame(
+        df_vals, columns=['forecast_id', 'forecast', 'piggyback_on', 'model',
+                          'next_issue_time']
+        ).set_index('forecast_id')
+    return forecast_df
+
+
+def process_nwp_forecast_groups(session, run_time, forecast_df):
+    """
+    Groups NWP forecasts based on piggyback_on, calculates the forecast as
+    appropriate for *run_time*, and uploads the values to the API.
+
+    Parameters
+    ----------
+    session : io.api.APISession
+        API session for uploading forecast values
+    run_time : pandas.Timestamp
+        Run time of the forecast. Also used along with the forecast metadata
+        to determine the issue_time of the forecast.
+    forecast_df : pandas.DataFrame
+        Dataframe of the forecast objects as procduced by
+        :py:func:`solarforecastarbiter.reference_forecasts.main.find_reference_nwp_forecasts``.
+    """  # NOQA
+    for run_for, group in forecast_df.groupby('piggyback_on'):
+        errors = _verify_nwp_forecasts_compatible(group)
+        if errors:
+            logging.error(
+                'Not all forecasts compatible in group with %s. '
+                'The following parameters may differ: %s', run_for, errors)
+            # Continue running? move to next?
+        try:
+            key_fx = group.loc[run_for].forecast
+        except KeyError:
+            logging.error('Forecast, %s,  that others are piggybacking on not '
+                          'found', run_for)
+            continue
+        model = getattr(models, group.loc[run_for].model)
+        issue_time = group.loc[run_for].next_issue_time
+
+        nwp_result = run_nwp(key_fx, model, run_time, issue_time)
+        for fx_id, fx in group['forecast'].iteritems():
+            fx_vals = getattr(nwp_result, fx.variable)
+            if fx_vals is None:
+                logger.warning('No forecast produced for %s in group with %s',
+                               fx_id, run_for)
+                continue
+            session.post_forecast_values(fx_id, fx_vals)
+
+
+def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
+    """
+    Make all reference NWP forecasts for *run_time* that are within
+    *issue_buffer* of the next issue time for the forecast.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    run_time : pandas.Timestamp
+        Run time of the forecast generation
+    issue_buffer : pandas.Timedelta
+        Maximum time between *run_time* and the next initialization time of
+        each forecast that will be updated
+    base_url : str or None, default None
+        Alternate base_url of the API
+    """
+    session = api.APISession(token, base_url=base_url)
+    forecasts = session.list_forecasts()
+    forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
+    execute_for = forecast_df[
+        forecast_df.next_issue_time <= run_time + issue_buffer]
+    return process_nwp_forecast_groups(session, run_time, execute_for)
