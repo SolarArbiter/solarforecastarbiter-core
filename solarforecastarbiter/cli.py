@@ -13,9 +13,11 @@ import sentry_sdk
 
 
 from solarforecastarbiter import __version__
+from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token
 from solarforecastarbiter.io.fetch import start_cluster
 from solarforecastarbiter.io.reference_observations import reference_data
+import solarforecastarbiter.reference_forecasts.main as reference_forecasts
 from solarforecastarbiter.validation import tasks as validation_tasks
 
 
@@ -276,8 +278,6 @@ def referencenwp(verbose, user, password, base_url, run_time,
     """
     Make the reference NWP forecasts that should be issued around run_time
     """
-    from solarforecastarbiter.io import nwp
-    import solarforecastarbiter.reference_forecasts.main as reference_forecasts
     set_log_level(verbose)
     token = cli_access_token(user, password)
     issue_buffer = pd.Timedelta(issue_time_buffer)
