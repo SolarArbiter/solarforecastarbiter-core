@@ -5,6 +5,7 @@ Data Model document. Python 3.7 is required.
 """
 from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
+from typing import Optional
 
 
 import pandas as pd
@@ -416,9 +417,21 @@ class Forecast(BaseModel):
 
 @dataclass()
 class NWPOutput:
+    """
+    A simple class to hold the output of NWP forecast results
+
+    Parameters
+    ----------
+    ghi : pandas.Series
+    dni: pd.Series
+    dhi: pd.Series
+    air_temperature: pd.Series or None
+    wind_speed: pd.Series or None
+    ac_power: pd.Series or None
+    """
     ghi: pd.Series
     dni: pd.Series
     dhi: pd.Series
-    air_temperature: pd.Series
-    wind_speed: pd.Series
-    ac_power: pd.Series
+    air_temperature: Optional[pd.Series]
+    wind_speed: Optional[pd.Series]
+    ac_power: Optional[pd.Series]
