@@ -66,6 +66,15 @@ def test_get_next_issue_time(single_forecast, runtime, expected):
     assert out == expected
 
 
+def test_get_init_time():
+    run_time = pd.Timestamp('20190501T1200Z')
+    fetch_metadata = {'delay_to_first_forecast': '1h',
+                      'avg_max_run_length': '5h',
+                      'update_freq': '6h'}
+    assert utils.get_init_time(run_time, fetch_metadata) == pd.Timestamp(
+        '20190501T0600Z')
+
+
 def test_get_data_start_end_labels_1h_window_limit(site_metadata):
     observation = default_observation(
         site_metadata,
