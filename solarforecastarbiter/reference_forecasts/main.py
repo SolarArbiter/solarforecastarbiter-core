@@ -301,18 +301,20 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
     for run_for, group in forecast_df.groupby('piggyback_on'):
         errors = _verify_nwp_forecasts_compatible(group)
         if errors:
-            logging.error(
+            logger.error(
                 'Not all forecasts compatible in group with %s. '
                 'The following parameters may differ: %s', run_for, errors)
-            # Continue running? move to next?
+            continue
         try:
             key_fx = group.loc[run_for].forecast
         except KeyError:
-            logging.error('Forecast, %s,  that others are piggybacking on not '
-                          'found', run_for)
+            logger.error('Forecast, %s,  that others are piggybacking on not '
+                         'found', run_for)
             continue
         model = getattr(models, group.loc[run_for].model)
         issue_time = group.loc[run_for].next_issue_time
+        if issue_time is None:
+            issue_time = utils.get_next_issue_time(key_fx, run_time)
 
         nwp_result = run_nwp(key_fx, model, run_time, issue_time)
         for fx_id, fx in group['forecast'].iteritems():
