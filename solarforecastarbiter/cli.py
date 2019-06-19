@@ -271,7 +271,7 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
               show_default=True,
               default='1h')
 @click.argument('nwp_directory', type=click.Path(
-    exists=True, writable=True, resolve_path=True, file_okay=False),
+    exists=True, resolve_path=True, file_okay=False),
                 required=False)
 def referencenwp(verbose, user, password, base_url, run_time,
                  issue_time_buffer, nwp_directory):
