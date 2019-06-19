@@ -74,7 +74,9 @@ def run_nwp(forecast, model, run_time, issue_time):
     init_time = utils.get_init_time(run_time, fetch_metadata)
     start, end = utils.get_forecast_start_end(forecast, issue_time)
     site = forecast.site
-
+    logger.info(
+        'Calculating forecast for model %s starting at %s from %s to %s',
+        model, init_time, start, end)
     *forecasts, resampler, solar_position_calculator = model(
         site.latitude, site.longitude, site.elevation,
         init_time, start, end)
@@ -299,6 +301,7 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
         :py:func:`solarforecastarbiter.reference_forecasts.main.find_reference_nwp_forecasts``.
     """  # NOQA
     for run_for, group in forecast_df.groupby('piggyback_on'):
+        logger.info('Computing forecasts for group %s', run_for)
         errors = _verify_nwp_forecasts_compatible(group)
         if errors:
             logger.error(
@@ -323,6 +326,8 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
                 logger.warning('No forecast produced for %s in group with %s',
                                fx_id, run_for)
                 continue
+            logger.info('Posting values %s for %s:%s issued at %s',
+                        len(fx_vals), fx.name, fx_id, issue_time)
             session.post_forecast_values(fx_id, fx_vals)
 
 
