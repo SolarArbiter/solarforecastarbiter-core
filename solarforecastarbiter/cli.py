@@ -269,7 +269,7 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
               help=('Max time-delta between the run time and next '
                     'initialization time'),
               show_default=True,
-              default='1h')
+              default='10min')
 @click.argument('nwp_directory', type=click.Path(
     exists=True, resolve_path=True, file_okay=False),
                 required=False)
