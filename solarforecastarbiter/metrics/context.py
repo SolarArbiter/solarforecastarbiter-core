@@ -47,6 +47,7 @@ _PREPROCESSING_CONTEXT = {
 
 }
 
+
 _RESULTS_CONTEXT = {
 
     # result will always include the metrics specified overall timeframes
@@ -62,10 +63,11 @@ _RESULTS_CONTEXT = {
         # 'season': False,  # TODO: determine consistent way to calculate
         'month': False,
         'weekday': False,
-        'hour': False,
-        'date': False
+        'date': False,
+        'hour': False
     }
 }
+
 
 DETERMINISTIC_METRICS_CONTEXT = {
 
@@ -94,6 +96,7 @@ DETERMINISTIC_METRICS_CONTEXT = {
     'results': copy.deepcopy(_RESULTS_CONTEXT)
 
 }
+
 
 EVENT_METRICS_CONTEXT = {
 
@@ -177,6 +180,7 @@ def get_default_deterministic_context(is_pv_power=False,
     context_res_ser['forecasts'] = True
 
     context_res_grp = context['results']['groupings']
+    context_res_grp['year'] = True
     context_res_grp['hour'] = True
 
     return context

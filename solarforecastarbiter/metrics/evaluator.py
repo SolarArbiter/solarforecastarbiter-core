@@ -8,6 +8,7 @@ context :py:mod:`solarforecastarbiter.metrics.context` and returns the results
 
 import copy
 import pytz
+import itertools
 import numpy as np
 import pandas as pd
 
@@ -40,10 +41,7 @@ def evaluate(observations, forecasts, metrics_context):
     ------
     SfaMetricsInputError : if invalid input data.
     """
-    # Create empty results
-    result = copy.deepcopy(results.EVALUATOR_RESULTS)
-
-    # Copies
+    # Copies of timeseries
     obs_copy = copy.deepcopy(observations)
     fx_copy = copy.deepcopy(forecasts)
 
@@ -100,41 +98,79 @@ def evaluate(observations, forecasts, metrics_context):
                    axis=0,
                    inplace=True)
 
-    # Copy preprocessed timeseries to result
-    if metrics_context['results']['timeseries']['observations']:
-        result['timeseries']['observations'] = obs_values
+    # Create results
+    result = results.MetricsResult(obs_values, fx_values, metrics_context)
+    groups = create_groups_list_from_context(metrics_context)
+    metrics = create_metrics_list_from_context(metrics_context)
 
-    if metrics_context['results']['timeseries']['forecasts']:
-        result['timeseries']['forecasts'] = fx_values
+    # Group into single DataFrame
+    df = pd.DataFrame({'observation': obs_values,
+                       'forecast': fx_values},
+                      index=obs_values.index)
 
-    # Calculate metrics
-    for metric, do_calc in metrics_context['metrics'].items():
-        if do_calc and metric in context.supported_metrics():
+    group_combinations = [itertools.combinations(groups, i) 
+                          for i in range(1,len(groups)+1)]
+    group_combinations = list(itertools.chain(*group_combinations))  # flatten
+    group_combinations.append('total')
 
-            # For all
+    # Calculate metrics for each grouping combination
+    for group in group_combinations:
+        
+        # Temp metrics DataFrame
+        temp_df = pd.DataFrame()
+        
+        for metric in metrics:
+
+            # Get metric function
             metric_func = context._METRICS_MAP[metric]
-            result['metrics']['total'][metric] = metric_func(obs_values,
-                                                             fx_values)
 
-            # Group by calculations
-            group_context = metrics_context['results']['groupings']
-            for groupby, do_group in group_context.items():
-                if do_group and groupby in context.supported_groupings():
+            # Calculate metrics
+            if group != ('total'):
+                indexed_groups = [getattr(df.index, g) for g in group]
+                # HACK : half to convert date to nump.int64
+                # in order to be consistent type with np.nan
+                indexed_groups = [pd.to_datetime(a).astype(np.int64) 
+                                  if a.dtype == object else a 
+                                  for a in indexed_groups]
+                df_grouped = df.groupby(indexed_groups)
+                temp_temp_df = df_grouped.apply(
+                    lambda x: pd.Series({metric: 
+                        metric_func(x['observation'], x['forecast'])})
+                )
+                temp_temp_df.index.names = group
+            else:
+                # special case for total
+                temp_temp_df = pd.DataFrame(data=\
+                    {metric: [metric_func(df['observation'], df['forecast'])]},
+                    index=pd.MultiIndex.from_product(
+                        [[np.nan]]*len(groups),
+                        names=groups)
+                )
 
-                    if groupby not in result['metrics'].keys():
-                        result['metrics'][groupby] = {}
+            # Concatenate metrics
+            temp_df = pd.concat([temp_df, temp_temp_df], axis=1, sort=False)
 
-                    result['metrics'][groupby][metric] = \
-                        evaluate_by_group(obs_values,
-                                          fx_values,
-                                          groupby,
-                                          metric_func)
+        if group != ('total'):
+            # Add nulls for missing groups and add to index
+            misses = list(set(groups).difference(group))
+            for missed_group in misses:
+                temp_df[missed_group] = np.nan
+                temp_df.set_index(missed_group, append=True)
+
+        # Merge into MetricsResults.metrics
+        if result.metrics is None:
+            result.metrics = temp_df
+        else:
+            result.metrics = pd.merge(result.metrics.reset_index(),
+                                      temp_df.reset_index(),
+                                      how='outer').set_index(groups)
 
     return result
 
 
 def evaluate_by_group(observation, forecast, groupby, metric_func):
-    """Evaluate the performance according to the groupby.
+    """
+    Evaluate the performance according to the groupby.
 
     Parameters
     ----------
@@ -202,3 +238,30 @@ def are_valid_forecasts(forecasts):
     if not forecasts.index.is_all_dates:
         return False
     return True
+
+
+def create_groups_list_from_context(metrics_context):
+    """Create list of datetime groups form a 
+    `solarforecastarbiter.metrics.MetricsContext`
+    """
+    dt_groups = []
+    for groupby, use in metrics_context['results']['groupings'].items():
+        if use:
+            dt_groups.append(groupby)
+
+    # Reorder
+    dt_groups = [x for x in results.PREF_METRIC_GROUP_ORDER if x in dt_groups]
+
+    return dt_groups
+
+
+def create_metrics_list_from_context(metrics_context):
+    """Create list of metics groups form a 
+    `solarforecastarbiter.metrics.MetricsContext`
+    """
+    metric_groups = []
+    for metric, use in metrics_context['metrics'].items():
+        if use:
+            metric_groups.append(metric)
+
+    return metric_groups

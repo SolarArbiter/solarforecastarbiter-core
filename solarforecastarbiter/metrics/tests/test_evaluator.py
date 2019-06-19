@@ -1,5 +1,6 @@
 import sys
 import copy
+import itertools
 import numpy as np
 import pandas as pd
 import pytest
@@ -11,7 +12,7 @@ EPSILON = sys.float_info.epsilon
 
 
 SHORT_DATE_INDEXES = pd.date_range(start='2019-02-20T12:00:00.0000000000',
-                                   end='2019-02-27T16:00:00.0000000000',
+                                   end='2019-02-20T16:00:00.0000000000',
                                    freq='1H')
 
 
@@ -64,30 +65,32 @@ def test_evaluator_with_single_deterministic(observation_dataframe,
                                         forecast_series,
                                         default_context)
 
-    assert np.array_equal(default_result['timeseries']['observations'],
+    assert np.array_equal(default_result.processed_observations,
                           observation_dataframe.value)
-    assert np.array_equal(default_result['timeseries']['forecasts'],
+    assert np.array_equal(default_result.processed_forecasts,
                           forecast_series)
 
     # Check Metrics
     for metric_name, metric_val in default_context['metrics'].items():
+        
         # Total
-        metric_key_list = default_result['metrics']['total'].keys()
+        metrics_list = list(default_result.metrics.columns)
         if not metric_val:
-            assert metric_name not in metric_key_list
+            assert metric_name not in metrics_list
         else:
-            assert metric_name in metric_key_list
+            # Metric is defined
+            assert metric_name in metrics_list
 
-            # Groupings
+            # Check groups
             res_groups = default_context['results']['groupings']
             for group_name, group_val in res_groups.items():
-                group_key_list = default_result['metrics'].keys()
+                group_list = list(default_result.metrics.index.names)
                 if not group_val:
-                    assert group_name not in group_key_list
+                    assert group_name not in group_list
                 else:
-                    assert group_name in group_key_list
-                    mg_key_list = default_result['metrics'][group_name].keys()
-                    assert metric_name in mg_key_list
+                    assert group_name in group_list
+                    assert default_result.metrics.index.get_level_values(
+                        group_name) is not None
 
 
 def test_evaluate_by_group():
@@ -139,9 +142,9 @@ def test_evaluate_with_timezone(random_observation_dataframe,
                                         random_forecast_series,
                                         context_eastern)
 
-    assert result_eastern['timeseries']['observations'].index.tz.zone == \
+    assert result_eastern.processed_observations.index.tz.zone == \
         context_eastern['timezone']
-    assert result_eastern['timeseries']['forecasts'].index.tz.zone == \
+    assert result_eastern.processed_forecasts.index.tz.zone == \
         context_eastern['timezone']
 
     # Test America/Phoenix - Mountain without DST
@@ -153,26 +156,19 @@ def test_evaluate_with_timezone(random_observation_dataframe,
                                          random_forecast_series,
                                          context_mountain)
 
-    assert result_mountain['timeseries']['observations'].index.tz.zone == \
+    assert result_mountain.processed_observations.index.tz.zone == \
         context_mountain['timezone']
-    assert result_mountain['timeseries']['forecasts'].index.tz.zone == \
+    assert result_mountain.processed_forecasts.index.tz.zone == \
         context_mountain['timezone']
 
     # Compare groupings
-    e_metrics = result_eastern['metrics']
-    m_metrics = result_mountain['metrics']
+    e_metrics = result_eastern.metrics
+    m_metrics = result_mountain.metrics
 
-    for metric, v in e_metrics['total'].items():
-        assert abs(e_metrics['total'][metric] -
-                   m_metrics['total'][metric]) < EPSILON
-
-    for group, truefalse in context_eastern['results']['groupings'].items():
-        assert truefalse
-        if group in ['total', 'month']:
-            continue
-        for metric, v in e_metrics[group].items():
-            assert sum(abs(e_metrics[group][metric] -
-                           m_metrics[group][metric])) > EPSILON
-
-# Compare after converting back
-# assert result_mountain['timeseries']['observations'].index.tz_convert('UTC')
+    # Check values
+    for e_row, m_row in zip(e_metrics.iterrows(), m_metrics.iterrows()):
+        e_idx, e_vals = e_row[0], e_row[1]
+        m_idx, m_vals = m_row[0], m_row[1]
+        e_idx_ok = [i for i in e_idx if not np.isnan(i)]
+        m_idx_ok = [i for i in m_idx if not np.isnan(i)]
+        # TODO provide checks 
