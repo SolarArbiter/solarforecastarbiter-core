@@ -297,8 +297,8 @@ def test_process_nwp_forecast_groups(mocker, forecast_list):
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
 
     class res:
-        ac_power = 0
-        ghi = 0
+        ac_power = [0]
+        ghi = [0]
 
     run_nwp.return_value = res
     fxs = main.find_reference_nwp_forecasts(forecast_list[:-3])
@@ -318,8 +318,8 @@ def test_process_nwp_forecast_groups_issue_time(mocker, forecast_list,
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
 
     class res:
-        ac_power = 0
-        ghi = 0
+        ac_power = [0]
+        ghi = [0]
 
     run_nwp.return_value = res
     fxs = main.find_reference_nwp_forecasts(forecast_list[:-3], run_time)
@@ -335,8 +335,8 @@ def test_process_nwp_forecast_groups_missing_var(mocker, forecast_list):
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
 
     class res:
-        ac_power = 0
-        ghi = 0
+        ac_power = [0]
+        ghi = [0]
         dni = None
 
     run_nwp.return_value = res
@@ -355,8 +355,8 @@ def test_process_nwp_forecast_groups_bad_model(mocker, forecast_list):
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
 
     class res:
-        ac_power = 0
-        ghi = 0
+        ac_power = [0]
+        ghi = [0]
         dni = None
 
     run_nwp.return_value = res
@@ -375,8 +375,8 @@ def test_process_nwp_forecast_groups_missing_runfor(mocker, forecast_list):
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
 
     class res:
-        ac_power = 0
-        ghi = 0
+        ac_power = [0]
+        ghi = [0]
         dni = None
 
     run_nwp.return_value = res
