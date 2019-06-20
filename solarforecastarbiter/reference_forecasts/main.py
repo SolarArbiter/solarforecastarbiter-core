@@ -5,6 +5,7 @@ The functions in this module use the
 :py:mod:`solarforecastarbiter.datamodel` objects.
 """
 from collections import namedtuple
+import itertools
 import json
 import logging
 import re
@@ -216,6 +217,12 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     return fx
 
 
+def all_equal(iterable):
+    "Returns True if all the elements are equal to each other"
+    g = itertools.groupby(iterable)
+    return next(g, True) and not next(g, False)
+
+
 def _verify_nwp_forecasts_compatible(fx_group):
     """Verify that all the forecasts grouped by piggyback_on are compatible
     """
@@ -225,7 +232,7 @@ def _verify_nwp_forecasts_compatible(fx_group):
     for var in ('issue_time_of_day', 'lead_time_to_start', 'interval_length',
                 'run_length', 'interval_label', 'interval_value_type',
                 'site'):
-        if len({getattr(fx, var) for fx in fx_group.forecast}) > 1:
+        if not all_equal(getattr(fx, var) for fx in fx_group.forecast):
             errors.append(var)
     return errors
 
