@@ -209,17 +209,32 @@ def test_verify_nwp_forecasts_compatible(ac_power_forecast_metadata):
     assert set(errs) == {'model', 'run_length', 'interval_label'}
 
 
+@pytest.mark.parametrize('string,expected', [
+    ('{"is_reference_forecast": true}', True),
+    ('{"is_reference_forecast": "True"}', True),
+    ('{"is_reference_forecast":"True"}', True),
+    ('is_reference_forecast" : "True"}', True),
+    ('{"is_reference_forecast" : true, "otherkey": badjson, 9}', True),
+    ('reference_forecast": true', False),
+    ('{"is_reference_forecast": false}', False),
+    ("is_reference_forecast", False)
+])
+def test_is_reference_forecast(string, expected):
+    assert main._is_reference_forecast(string) == expected
+
+
 def test_find_reference_nwp_forecasts_json_err(ac_power_forecast_metadata,
                                                mocker):
     logger = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.logger')
-    extra_params = '{"model": "themodel"}'
+    extra_params = '{"model": "themodel", "is_reference_forecast": true}'
     fxs = [replace(ac_power_forecast_metadata, extra_parameters=extra_params),
+           replace(ac_power_forecast_metadata,
+                   extra_parameters='{"model": "yes"}'),
            replace(ac_power_forecast_metadata, extra_parameters='{'),
            replace(ac_power_forecast_metadata, extra_parameters='')]
     out = main.find_reference_nwp_forecasts(fxs)
     assert len(out) == 1
-    assert logger.warning.called
 
 
 def test_find_reference_nwp_forecasts_no_model(ac_power_forecast_metadata,
@@ -229,7 +244,7 @@ def test_find_reference_nwp_forecasts_no_model(ac_power_forecast_metadata,
     fxs = [replace(ac_power_forecast_metadata, extra_parameters='{}',
                    forecast_id='0'),
            replace(ac_power_forecast_metadata,
-                   extra_parameters='{"piggyback_on": "0"}',
+                   extra_parameters='{"piggyback_on": "0", "is_reference_forecast": true}',  # NOQA
                    forecast_id='1')]
     out = main.find_reference_nwp_forecasts(fxs)
     assert len(out) == 0
@@ -239,10 +254,10 @@ def test_find_reference_nwp_forecasts_no_model(ac_power_forecast_metadata,
 
 def test_find_reference_nwp_forecasts_no_init(ac_power_forecast_metadata):
     fxs = [replace(ac_power_forecast_metadata,
-                   extra_parameters='{"model": "am"}',
+                   extra_parameters='{"model": "am", "is_reference_forecast": true}',  # NOQA
                    forecast_id='0'),
            replace(ac_power_forecast_metadata,
-                   extra_parameters='{"piggyback_on": "0", "model": "am"}',
+                   extra_parameters='{"piggyback_on": "0", "model": "am", "is_reference_forecast": true}',  # NOQA
                    forecast_id='1')]
     out = main.find_reference_nwp_forecasts(fxs)
     assert len(out) == 2
@@ -252,10 +267,10 @@ def test_find_reference_nwp_forecasts_no_init(ac_power_forecast_metadata):
 
 def test_find_reference_nwp_forecasts(ac_power_forecast_metadata):
     fxs = [replace(ac_power_forecast_metadata,
-                   extra_parameters='{"model": "am"}',
+                   extra_parameters='{"model": "am", "is_reference_forecast": true}',  # NOQA
                    forecast_id='0'),
            replace(ac_power_forecast_metadata,
-                   extra_parameters='{"piggyback_on": "0", "model": "am"}',
+                   extra_parameters='{"piggyback_on": "0", "model": "am", "is_reference_forecast": true}',  # NOQA
                    forecast_id='1')]
     out = main.find_reference_nwp_forecasts(
         fxs, pd.Timestamp('20190501T0000Z'))
@@ -268,25 +283,31 @@ def test_find_reference_nwp_forecasts(ac_power_forecast_metadata):
 def forecast_list(ac_power_forecast_metadata):
     model = 'nam_12km_cloud_cover_to_hourly_mean'
     return [replace(ac_power_forecast_metadata,
-                    extra_parameters='{"model": "%s"}' % model,
+                    extra_parameters=(
+                        '{"model": "%s", "is_reference_forecast": true}'
+                        % model),
                     forecast_id='0'),
             replace(ac_power_forecast_metadata,
-                    extra_parameters='{"model": "gfs_quarter_deg_hourly_to_hourly_mean"}',  # NOQA
+                    extra_parameters='{"model": "gfs_quarter_deg_hourly_to_hourly_mean", "is_reference_forecast": true}',  # NOQA
                     forecast_id='1'),
             replace(ac_power_forecast_metadata,
-                    extra_parameters='{"piggyback_on": "0", "model": "%s"}' % model,  # NOQA
+                    extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='2',
                     variable='ghi'),
             replace(ac_power_forecast_metadata,
-                    extra_parameters='{"piggyback_on": "0", "model": "%s"}' % model,  # NOQA
+                    extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='3',
                     variable='dni'),
             replace(ac_power_forecast_metadata,
-                    extra_parameters='{"piggyback_on": "0", "model": "badmodel"}',  # NOQA
+                    extra_parameters='{"piggyback_on": "0", "model": "badmodel", "is_reference_forecast": true}',  # NOQA
                     forecast_id='4'),
             replace(ac_power_forecast_metadata,
-                    extra_parameters='{"piggyback_on": "6", "model": "%s"}' % model,  # NOQA
+                    extra_parameters='{"piggyback_on": "6", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='5',
+                    variable='ghi'),
+            replace(ac_power_forecast_metadata,
+                    extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": false}' % model,  # NOQA
+                    forecast_id='7',
                     variable='ghi'),
            ]
 
@@ -301,7 +322,7 @@ def test_process_nwp_forecast_groups(mocker, forecast_list):
         ghi = [0]
 
     run_nwp.return_value = res
-    fxs = main.find_reference_nwp_forecasts(forecast_list[:-3])
+    fxs = main.find_reference_nwp_forecasts(forecast_list[:-4])
     logger = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.logger')
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
@@ -322,7 +343,7 @@ def test_process_nwp_forecast_groups_issue_time(mocker, forecast_list,
         ghi = [0]
 
     run_nwp.return_value = res
-    fxs = main.find_reference_nwp_forecasts(forecast_list[:-3], run_time)
+    fxs = main.find_reference_nwp_forecasts(forecast_list[:-4], run_time)
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
     assert api.post_forecast_values.call_count == 3
     run_nwp.assert_called_with(mocker.ANY, mocker.ANY, mocker.ANY,
@@ -340,7 +361,7 @@ def test_process_nwp_forecast_groups_missing_var(mocker, forecast_list):
         dni = None
 
     run_nwp.return_value = res
-    fxs = main.find_reference_nwp_forecasts(forecast_list[:-2])
+    fxs = main.find_reference_nwp_forecasts(forecast_list[:-3])
     logger = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.logger')
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
@@ -380,7 +401,7 @@ def test_process_nwp_forecast_groups_missing_runfor(mocker, forecast_list):
         dni = None
 
     run_nwp.return_value = res
-    fxs = main.find_reference_nwp_forecasts(forecast_list[-1:])
+    fxs = main.find_reference_nwp_forecasts(forecast_list[-2:])
     logger = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.logger')
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)

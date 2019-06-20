@@ -4,8 +4,10 @@ Make benchmark irradiance and power forecasts.
 The functions in this module use the
 :py:mod:`solarforecastarbiter.datamodel` objects.
 """
+from collections import namedtuple
 import json
 import logging
+import re
 
 
 import pandas as pd
@@ -46,7 +48,12 @@ def run_nwp(forecast, model, run_time, issue_time):
 
     Returns
     -------
-    datamodel.NWPOutput
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+    air_temperature : pd.Series
+    wind_speed : pd.Series
+    ac_power : pd.Series
 
     Examples
     --------
@@ -91,7 +98,10 @@ def run_nwp(forecast, model, run_time, issue_time):
 
     # resample data after power calculation
     resampled = list(map(resampler, (*forecasts, ac_power)))
-    return datamodel.NWPOutput(*resampled)
+    nwpoutput = namedtuple(
+        'NWPOutput', ['ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed',
+                      'ac_power'])
+    return nwpoutput(*resampled)
 
 
 def run_persistence(session, observation, forecast, run_time, issue_time,
@@ -220,11 +230,17 @@ def _verify_nwp_forecasts_compatible(fx_group):
     return errors
 
 
+def _is_reference_forecast(extra_params_string):
+    match = re.search('is_reference_forecast(["\\s\\:]*)true',
+                      extra_params_string, re.I)
+    return match is not None
+
+
 def find_reference_nwp_forecasts(forecasts, run_time=None):
     """
     Sort through all *forecasts* to find those that should be generated
     by the Arbiter from NWP models. The forecast must have a *model* key
-    in *extra_parameters* (formated as a JSON string). If *piggyback_on*
+    in *extra_parameters* (formatted as a JSON string). If *piggyback_on*
     is also defined in *extra_parameters*, it should be the forecast_id
     of another forecast that has the same parameters, including site,
     except the variable.
@@ -240,13 +256,17 @@ def find_reference_nwp_forecasts(forecasts, run_time=None):
     Returns
     -------
     pandas.DataFrame
-        Of NWP reference forecasts With index of forecast_id and columns
+        NWP reference forecasts with index of forecast_id and columns
         (forecast, piggyback_on, model, next_issue_time).
     """
     df_vals = []
     for fx in forecasts:
-        if fx.extra_parameters == '':
+        # more explicit than filter()
+        if not _is_reference_forecast(fx.extra_parameters):
+            logger.debug('Forecast %s is not labeled as a reference forecast',
+                         fx.forecast_id)
             continue
+
         try:
             extra_parameters = json.loads(fx.extra_parameters)
         except json.JSONDecodeError:
@@ -258,15 +278,9 @@ def find_reference_nwp_forecasts(forecasts, run_time=None):
         try:
             model = extra_parameters['model']
         except KeyError:
-            if 'piggyback_on' in extra_parameters:
-                logger.error(
-                    'Forecast, %s: %s, has piggyback_on in extra_parameters'
-                    ' but no model. Cannot make forecast.',
-                    fx.name, fx.forecast_id)
-            else:
-                logger.debug(
-                    'Not model found for %s:%s, no forecast will be made',
-                    fx.name, fx.forecast_id)
+            logger.error(
+                'Forecast, %s: %s, has no model. Cannot make forecast.',
+                fx.name, fx.forecast_id)
             continue
 
         if run_time is not None:
@@ -334,7 +348,11 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
 def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     """
     Make all reference NWP forecasts for *run_time* that are within
-    *issue_buffer* of the next issue time for the forecast.
+    *issue_buffer* of the next issue time for the forecast. For example,
+    this function may run in a cronjob every five minutes with *run_time*
+    set to now. By setting *issue_buffer* to '5min', only forecasts that
+    should be issued in the next five minutes will be generated on each
+    run.
 
     Parameters
     ----------

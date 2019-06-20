@@ -413,25 +413,3 @@ class Forecast(BaseModel):
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
-
-
-@dataclass()
-class NWPOutput:
-    """
-    A simple class to hold the output of NWP forecast results
-
-    Parameters
-    ----------
-    ghi : pandas.Series
-    dni: pd.Series
-    dhi: pd.Series
-    air_temperature: pd.Series or None
-    wind_speed: pd.Series or None
-    ac_power: pd.Series or None
-    """
-    ghi: pd.Series
-    dni: pd.Series
-    dhi: pd.Series
-    air_temperature: Optional[pd.Series]
-    wind_speed: Optional[pd.Series]
-    ac_power: Optional[pd.Series]
