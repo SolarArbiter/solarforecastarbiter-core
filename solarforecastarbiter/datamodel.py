@@ -5,7 +5,6 @@ Data Model document. Python 3.7 is required.
 """
 from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
-from typing import Optional
 
 
 import pandas as pd
