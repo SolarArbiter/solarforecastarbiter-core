@@ -225,13 +225,16 @@ def test_is_reference_forecast(string, expected):
 
 def test_find_reference_nwp_forecasts_json_err(ac_power_forecast_metadata,
                                                mocker):
+    logger = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.logger')
     extra_params = '{"model": "themodel", "is_reference_forecast": true}'
     fxs = [replace(ac_power_forecast_metadata, extra_parameters=extra_params),
            replace(ac_power_forecast_metadata,
                    extra_parameters='{"model": "yes"}'),
-           replace(ac_power_forecast_metadata, extra_parameters='{'),
+           replace(ac_power_forecast_metadata, extra_parameters='{"is_reference_forecast": true'),  # NOQA
            replace(ac_power_forecast_metadata, extra_parameters='')]
     out = main.find_reference_nwp_forecasts(fxs)
+    assert logger.warning.called
     assert len(out) == 1
 
 
