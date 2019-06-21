@@ -13,9 +13,11 @@ import sentry_sdk
 
 
 from solarforecastarbiter import __version__
+from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token
 from solarforecastarbiter.io.fetch import start_cluster
 from solarforecastarbiter.io.reference_observations import reference_data
+import solarforecastarbiter.reference_forecasts.main as reference_forecasts
 from solarforecastarbiter.validation import tasks as validation_tasks
 
 
@@ -255,3 +257,30 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
         loop.add_signal_handler(sig, partial(bail, 0))
 
     loop.run_until_complete(fut)
+
+
+@cli.command()
+@common_options
+@click.option('--run-time', type=UTCTIMESTAMP,
+              help='Run time for the forecasts',
+              show_default='now',
+              default=pd.Timestamp.utcnow())
+@click.option('--issue-time-buffer', type=str,
+              help=('Max time-delta between the run time and next '
+                    'initialization time'),
+              show_default=True,
+              default='10min')
+@click.argument('nwp_directory', type=click.Path(
+    exists=True, resolve_path=True, file_okay=False),
+                required=False)
+def referencenwp(verbose, user, password, base_url, run_time,
+                 issue_time_buffer, nwp_directory):
+    """
+    Make the reference NWP forecasts that should be issued around run_time
+    """
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    issue_buffer = pd.Timedelta(issue_time_buffer)
+    nwp.set_base_path(nwp_directory)
+    reference_forecasts.make_latest_nwp_forecasts(
+        token, run_time, issue_buffer, base_url)

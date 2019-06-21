@@ -59,14 +59,21 @@ because we anticipate that these functions may be of more general use
 and that functions that accept primitives may be easier to maintain in
 the long run.
 """
-
 from functools import partial
+import inspect
+
 
 from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.nwp import load_forecast
 from solarforecastarbiter.reference_forecasts import forecast
 
+
 import pandas as pd
+
+
+def get_nwp_model(func):
+    """Get the NWP model string from a modeling function"""
+    return inspect.signature(func).parameters['__model'].default
 
 
 def _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -109,14 +116,15 @@ def _ghi_to_dni_dhi(latitude, longitude, elevation, ghi):
 
 def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
                                               init_time, start, end,
-                                              load_forecast=load_forecast):
+                                              load_forecast=load_forecast,
+                                              *, __model='hrrr_subhourly'):
     """
     Subhourly (15 min) instantantaneous HRRR forecast.
     GHI, DNI, DHI directly from model.
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
     ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'hrrr_subhourly')
+        latitude, longitude, init_time, start, end, __model)
     # resampler takes 15 min instantaneous in, retuns 15 min instantaneous out
     # still want to call resample, rather than pass through lambda x: x
     # so that DatetimeIndex has well-defined freq attribute
@@ -130,14 +138,15 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
 
 def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
                                   init_time, start, end,
-                                  load_forecast=load_forecast):
+                                  load_forecast=load_forecast,
+                                  *, __model='hrrr_subhourly'):
     """
     Hourly mean HRRR forecast.
     GHI, DNI, DHI directly from model, resampled.
     Max forecast horizon 18 or 36 hours (0Z, 6Z, 12Z, 18Z).
     """
     ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'hrrr_subhourly')
+        latitude, longitude, init_time, start, end, __model)
     # interpolate irrad, temp, wind data to 5 min to
     # minimize weather to power errors.
     interpolator = partial(forecast.interpolate, freq='5min')
@@ -155,7 +164,8 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
 
 def rap_ghi_to_instantaneous(latitude, longitude, elevation,
                              init_time, start, end,
-                             load_forecast=load_forecast):
+                             load_forecast=load_forecast,
+                             *, __model='rap'):
     """
     Hourly instantantaneous RAP forecast.
     GHI directly from NWP model. DNI, DHI computed.
@@ -163,7 +173,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     """
     # ghi dni and dhi not in RAP output available from g2sub service
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, __model,
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -175,7 +185,8 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
 
 def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
                            init_time, start, end,
-                           load_forecast=load_forecast):
+                           load_forecast=load_forecast,
+                           *, __model='rap'):
     """
     Take hourly RAP instantantaneous irradiance and convert it to hourly
     average forecasts.
@@ -184,7 +195,7 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
     """
     # ghi dni and dhi not in RAP output available from g2sub service
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, __model,
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -198,7 +209,8 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
 
 def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
-                                   load_forecast=load_forecast):
+                                   load_forecast=load_forecast,
+                                   *, __model='rap'):
     """
     Take hourly RAP instantantaneous cloud cover and convert it to
     hourly average forecasts.
@@ -206,7 +218,7 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
     Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'rap',
+        latitude, longitude, init_time, start, end, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
@@ -215,14 +227,15 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
 
 def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
                                          init_time, start, end,
-                                         load_forecast=load_forecast):
+                                         load_forecast=load_forecast,
+                                         *, __model='gfs_3h'):
     """
     Take 3 hr GFS and convert it to hourly average data.
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 240 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_3h',
+        latitude, longitude, init_time, start, end, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -232,14 +245,15 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
 
 def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
                                           init_time, start, end,
-                                          load_forecast=load_forecast):
+                                          load_forecast=load_forecast,
+                                          *, __model='gfs_0p25'):
     """
     Take 1 hr GFS and convert it to hourly average data.
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 120 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        latitude, longitude, init_time, start, end, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
@@ -249,14 +263,15 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
 
 def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end,
-                                   load_forecast=load_forecast):
+                                   load_forecast=load_forecast,
+                                   *, __model='gfs_0p25'):
     """
     Hourly average forecasts derived from GFS 1, 3, and 12 hr frequency
     output. GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 384 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'gfs_0p25',
+        latitude, longitude, init_time, start, end, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     end_1h = init_time + pd.Timedelta('120hr')
     end_3h = init_time + pd.Timedelta('240hr')
@@ -278,14 +293,15 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
 
 def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
                                             init_time, start, end,
-                                            load_forecast=load_forecast):
+                                            load_forecast=load_forecast,
+                                            *, __model='nam_12km'):
     """
     Hourly instantantaneous forecast.
     GHI directly from NWP model. DNI, DHI computed.
     Max forecast horizon 36 hours.
     """
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam_12km',
+        latitude, longitude, init_time, start, end, __model,
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
@@ -297,14 +313,15 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
 
 def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
                                         init_time, start, end,
-                                        load_forecast=load_forecast):
+                                        load_forecast=load_forecast,
+                                        *, __model='nam_12km'):
     """
     Hourly average forecast.
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 72 hours.
     """
     cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, 'nam_12km',
+        latitude, longitude, init_time, start, end, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,

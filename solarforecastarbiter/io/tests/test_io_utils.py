@@ -86,7 +86,6 @@ def test_empty_payload_to_forecast_series():
 
 @pytest.mark.parametrize('label,exp,start,end', [
     ('instant', TEST_DATA, None, None),
-    ('instantaneous', TEST_DATA, None, None),
     (None, TEST_DATA, None, None),
     ('ending', TEST_DATA.iloc[1:], None, None),
     ('beginning', TEST_DATA.iloc[:-1], None, None),
