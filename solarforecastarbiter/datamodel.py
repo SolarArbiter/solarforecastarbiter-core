@@ -42,7 +42,6 @@ COMMON_NAMES = {
 
 CLOSED_MAPPING = {
     'instant': None,
-    'instantaneous': None,
     'beginning': 'left',
     'ending': 'right'
 }

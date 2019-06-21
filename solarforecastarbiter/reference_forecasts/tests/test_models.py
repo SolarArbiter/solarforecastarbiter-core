@@ -107,3 +107,18 @@ def test_domain_limits(model):
     # nwp.load_forecast calls lat/lon look up with max dist of 500 km
     with pytest.raises(ValueError):
         LOAD_FORECAST(latitude, -120.5, init_time, start, end_short, model)
+
+
+@pytest.mark.parametrize('model,exp', [
+    (models.gfs_quarter_deg_hourly_to_hourly_mean, 'gfs_0p25'),
+    (models.gfs_quarter_deg_to_hourly_mean, 'gfs_0p25'),
+    (models.hrrr_subhourly_to_hourly_mean, 'hrrr_subhourly'),
+    (models.hrrr_subhourly_to_subhourly_instantaneous, 'hrrr_subhourly'),
+    (models.nam_12km_cloud_cover_to_hourly_mean, 'nam_12km'),
+    (models.nam_12km_hourly_to_hourly_instantaneous, 'nam_12km'),
+    (models.rap_cloud_cover_to_hourly_mean, 'rap'),
+    (models.rap_ghi_to_hourly_mean, 'rap'),
+    (models.rap_ghi_to_instantaneous, 'rap')
+])
+def test_get_nwp_model(model, exp):
+    assert models.get_nwp_model(model) == exp

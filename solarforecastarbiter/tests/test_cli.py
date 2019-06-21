@@ -204,3 +204,18 @@ def test_fetchnwp_netcdfonly_nogrib(mocker):
     with tempfile.TemporaryDirectory() as tmpdir:
         res = runner.invoke(cli.fetchnwp, ['--netcdf-only', tmpdir, 'rap'])
     assert res.exit_code == 1
+
+
+def test_reference_nwp(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.make_latest_nwp_forecasts')  # NOQA
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = runner.invoke(cli.referencenwp,
+                            ['-u user', '-p pass', '--run-time=20190501T1200Z',
+                             '--issue-time-buffer=2h',
+                             tmpdir])
+        assert cli.nwp.BASE_PATH == tmpdir
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
+                              pd.Timedelta('2h'), mocker.ANY)
