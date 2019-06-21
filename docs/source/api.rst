@@ -103,8 +103,11 @@ High-level functions for NWP and persistence forecasts.
 .. autosummary::
    :toctree: generated/
 
-   reference_forecasts.main.run
+   reference_forecasts.main.run_nwp
    reference_forecasts.main.run_persistence
+   reference_forecasts.main.find_reference_nwp_forecasts
+   reference_forecasts.main.process_nwp_forecast_groups
+   reference_forecasts.main.make_latest_nwp_forecasts
 
 NWP models
 ----------
@@ -370,4 +373,3 @@ Utility functions for plotting.
    plotting.utils.format_variable_name
    plotting.utils.align_index
    plotting.utils.line_or_step
-
