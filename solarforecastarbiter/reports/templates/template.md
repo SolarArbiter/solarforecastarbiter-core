@@ -3,13 +3,13 @@
 {# this document is designed to be rendered in 3 steps #}
 {# 1. jinja renders the "prereport" - a markdown file with bokeh html/js tables and metrics graphics #}
 {# 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
-{# 3. pandoc renders the html or pdf version of the full report }
+{# 3. pandoc renders the html or pdf version of the full report #}
 
 {# fix this #}
 {% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
 
 {# jinja requires that we escape the markdown div specification #}
-{{ '::: {#metadata-table}' }}
+{{ '::: {.metadata-table}' }}
 
 ## Report metadata
 
@@ -18,7 +18,7 @@
 * End: {{ end }}
 :::
 
-{{ '::: {#download}' }}
+{{ '::: {.download}' }}
 Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or [pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }})
 :::
 
@@ -42,7 +42,7 @@ Contents:
 
 ## Data
 
-{# fix this so it is evaluated at report render time #}
+{# replace with warning if not all forecast/obs data is accessible #}
 {% if checksum_failure %}
 {{ '::: warning' }}
 WARNING: One or more of the observation or forecast data has changed since this report was created. Consider creating a new report.
@@ -98,7 +98,7 @@ Metrics for the total analysis period are displayed in tables and figures below.
 
 {{ tables | safe }}
 
-{{ '::: {#figures_bar}' }}
+{{ '::: {.figures_bar}' }}
 {% for figure in figures_bar %}
     {{ figure | safe }}
 {% endfor %}

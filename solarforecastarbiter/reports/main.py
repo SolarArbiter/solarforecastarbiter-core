@@ -165,39 +165,6 @@ def get_validation_issues():
     return test
 
 
-def get_data_for_report_embed(session, report):
-    """
-    Get time series data for report.
-
-    1 API call is made for each unique forecast and observation object.
-
-    Parameters
-    ----------
-    session : solarforecastarbiter.api.APISession
-        API session for getting and posting data
-    report : solarforecastarbiter.datamodel.Report
-        Metadata describing report
-
-    Returns
-    -------
-    fx_obs_cds : list
-        List of (forecast, observation, ColumnDataSource) tuples to
-        pass to bokeh plotting objects.
-    """
-    # this is a dictionary of just the raw timeseries
-    data = get_data_for_report(session, report)
-    # validates data, resamples, and aligns
-    fxobs_resamp, data_resamp = metrics.validate_resample_align(report, data)
-    # so instead, get report values.
-    # from prereport, get mapping from fx-obs to report_values ids
-    fx_obs_cds = [(
-        fxobs,
-        figures.construct_fx_obs_cds(data_resamp[fxobs.forecast],
-                                     data_resamp[fxobs.observation]))
-                  for fxobs in fxobs_resamp]
-    return fx_obs_cds
-
-
 def create_raw_report_from_data(report, data):
     """
     Create a pre-report using data and report metadata.
@@ -246,16 +213,6 @@ def create_raw_report_from_data(report, data):
     return raw_report
 
 
-def post_raw():
-    # separate metrics as JSON
-    # bundle metadata, template, processed_fxobs into raw_report
-    # process_fxobs need to split out forecast and obs values
-    # then post those, get id, and replace *_values with the id
-    # for each processed fxobs
-    # on load, replace string with value from read_report_values
-    pass
-
-
 def create_raw_report_from_metadata(access_token, report, base_url=None):
     """
     Create a pre-report using data from API and report metadata.
@@ -280,8 +237,7 @@ def create_raw_report_from_metadata(access_token, report, base_url=None):
     return raw_report
 
 
-def prereport_to_report(access_token, report, metadata, prereport,
-                        base_url=None):
+def render_raw_report(raw_report):
     """
     Convert pre-report to full report.
 
@@ -301,21 +257,12 @@ def prereport_to_report(access_token, report, metadata, prereport,
     report : str, markdown
         The full report.
     """
-    session = APISession(access_token, base_url=base_url)
-    # should instead read prereport to get data
-    fx_obs_cds = get_data_for_report_embed(session, report)
-    report = template.add_figures_to_prereport(fx_obs_cds, report, metadata,
-                                               prereport)
-    return report
-
-
-def prereport_to_pdf(access_token, metadata, prereport, base_url=None):
-    """
-    Maybe not necessary if we can go from fully rendered markdown to pdf.
-    """
-    report = prereport_to_report(access_token, metadata, prereport,
-                                 base_url=base_url)
-    report = report_to_pdf(report)
+    fx_obs_cds = [
+        (pfxobs.original, figures.construct_fx_obs_cds(
+            pfxobs.forecast_values, pfxobs.observation_values))
+        for pfxobs in raw_report.processed_forecasts_observations]
+    report = template.add_figures_to_prereport(
+        fx_obs_cds, raw_report.metadata, raw_report.template)
     return report
 
 
@@ -324,5 +271,5 @@ def report_to_pdf(report):
     raise NotImplementedError
 
 
-def prereport_to_jupyter(report):
+def report_to_jupyter(report):
     raise NotImplementedError

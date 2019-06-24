@@ -105,7 +105,7 @@ def _loop_over_metrics(report, metrics, kind):
 
 
 # not all args currently used, but expect they will eventually be used
-def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport,
+def add_figures_to_prereport(fx_obs_cds, metadata, prereport,
                              html=True):
     """
     Add figures to the prereport, convert to html
@@ -117,8 +117,6 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport,
         pass to bokeh plotting objects.
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    metadata : str, dict
-        Describes the pre-report
     prereport : str, markdown or html
         The templated pre-report.
     html : bool
@@ -132,7 +130,7 @@ def add_figures_to_prereport(fx_obs_cds, report, metadata, prereport,
     """
     body_template = Template(prereport)
 
-    ts_fig = figures.timeseries(fx_obs_cds, report.start, report.end)
+    ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end)
     scat_fig = figures.scatter(fx_obs_cds)
     script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
 

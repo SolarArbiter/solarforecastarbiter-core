@@ -600,8 +600,6 @@ class RawReport(BaseModel):
     request: ReportRequest
     metadata: ReportMetadata
     template: str
-    metrics: str  # later MetricsResult
+    metrics: dict  # later MetricsResult
     processed_forecasts_observations: Tuple[ProcessedForecastObservation]
-
-    def bundle(self):
-        """combine and compress"""
+    __version__: int = 0  # should add version to api

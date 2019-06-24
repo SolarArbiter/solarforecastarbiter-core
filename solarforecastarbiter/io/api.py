@@ -480,7 +480,8 @@ class APISession(requests.Session):
         bundle = {'template': raw_report.template,
                   'processed_forecasts_observations': posted_fxobs,
                   'metadata': raw_report.metadata.to_dict(),
-                  'metrics': raw_report.metrics}
+                  'metrics': raw_report.metrics,
+                  '__version__': raw_report.__version__}
         compressed_bundle = serialize_data(bundle)
         self.post(f'/reports/{raw_report.report_id}/metrics',
                   json={'metrics': {}, 'raw_report': compressed_bundle},
