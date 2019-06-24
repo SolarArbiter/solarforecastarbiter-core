@@ -57,7 +57,7 @@ import pandas as pd
 
 
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter import metrics
+from solarforecastarbiter import metrics, datamodel
 from solarforecastarbiter.reports import figures, template
 
 
@@ -106,7 +106,7 @@ def data_dict_to_fxobs_data(data, forecast_observations):
             for fxobs in forecast_observations}
 
 
-def create_metadata(report):
+def create_metadata(report_request):
     """
     Create metadata for the raw report.
 
@@ -114,11 +114,12 @@ def create_metadata(report):
     -------
     metadata: dict
     """
-    metadata = dict(
-        name=report.name, start=report.start, end=report.end,
-        now=pd.Timestamp.utcnow())
-    metadata['versions'] = get_versions()
-    metadata['validation_issues'] = get_validation_issues()
+    versions = get_versions()
+    validation_issues = get_validation_issues()
+    metadata = datamodel.ReportMetadata(
+        name=report_request.name, start=report_request.start,
+        end=report_request.end, now=pd.Timestamp.utcnow(),
+        versions=versions, validation_issues=validation_issues)
     return metadata
 
 
@@ -197,7 +198,7 @@ def get_data_for_report_embed(session, report):
     return fx_obs_cds
 
 
-def create_prereport_from_data(report, data):
+def create_raw_report_from_data(report, data):
     """
     Create a pre-report using data and report metadata.
 
@@ -229,28 +230,32 @@ def create_prereport_from_data(report, data):
 
     metadata = create_metadata(report)
 
-    fxobs_resampled, data_resampled = metrics.validate_resample_align(report,
-                                                                      data)
+    processed_fxobs = metrics.validate_resample_align(report, data)
 
     # needs to be in json
-    metrics_list = metrics.loop_forecasts_calculate_metrics(fxobs_resampled,
-                                                            data_resampled)
+    metrics_list = metrics.loop_forecasts_calculate_metrics(
+        report, processed_fxobs)
 
-    # put the metrics in the metadata because why not
-    metadata['metrics'] = metrics_list
+    # can be ~50kb
+    report_template = template.prereport(report, metadata, metrics_list)
 
-    prereport = template.prereport(report, metadata, metrics_list)
-
-    # fails because
-    # "TypeError: Object of type Timestamp is not JSON serializable"
-    # metadata_json = json.dumps(metadata)
-    metadata_json = metadata
-    # package metadata and prereport template together in one dict
-    # return prereport and metrics and resampled data
-    return metadata_json, prereport
+    raw_report = datamodel.RawReport(
+        name=report.name, request=report, metadata=metadata,
+        template=report_template, metrics=metrics_list,
+        processed_forecasts_observations=tuple(processed_fxobs))
+    return raw_report
 
 
-def create_prereport_from_metadata(access_token, report, base_url=None):
+def post_raw():
+    # separate metrics as JSON
+    # bundle metadata, template, processed_fxobs into raw_report
+    # process_fxobs need to split out forecast and obs values
+    # then post those, get id, and replace *_values with the id
+    # for each processed fxobs
+    # on load, replace string with value from read_report_values
+    pass
+
+def create_raw_report_from_metadata(access_token, report, base_url=None):
     """
     Create a pre-report using data from API and report metadata.
 
@@ -269,7 +274,8 @@ def create_prereport_from_metadata(access_token, report, base_url=None):
     """
     session = APISession(access_token, base_url=base_url)
     data = get_data_for_report(session, report)
-    metadata, prereport = create_prereport_from_data(report, data)
+    raw_report = create_raw_report_from_data(report, data)
+    return raw_report
     # session.post_report(metadata, prereport)
     return metadata, prereport
 

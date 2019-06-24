@@ -44,13 +44,13 @@ def prereport(report, metadata, metrics):
     strftime = '%Y-%m-%d %H:%M:%S %z'
 
     rendered = template.render(
-        name=metadata['name'],
-        start=metadata['start'].strftime(strftime),
-        end=metadata['end'].strftime(strftime),
-        now=metadata['now'].strftime(strftime),
+        name=metadata.name,
+        start=metadata.start.strftime(strftime),
+        end=metadata.end.strftime(strftime),
+        now=metadata.now.strftime(strftime),
         fx_obs=report.forecast_observations,
-        validation_issues=metadata['validation_issues'],
-        versions=metadata['versions'],
+        validation_issues=metadata.validation_issues,
+        versions=metadata.versions,
         script_metrics=script_metrics,
         tables=data_table_div,
         **figures_dict)

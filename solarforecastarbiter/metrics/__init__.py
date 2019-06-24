@@ -2,9 +2,12 @@
 To be deleted and replaced by
 https://github.com/SolarArbiter/solarforecastarbiter-core/pull/102
 """
-import numpy as np
-
 from collections import defaultdict
+import datetime as dt
+import json
+
+import numpy as np
+import pandas as pd
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.validation.quality_mapping import \
@@ -13,8 +16,8 @@ from solarforecastarbiter.validation.quality_mapping import \
 
 def validate_resample_align(report, data):
     data_validated = apply_validation(report, data)
-    fxobs_resampled, data_resampled = resample_realign(report, data_validated)
-    return fxobs_resampled, data_resampled
+    processed_fxobs = resample_realign(report, data_validated)
+    return processed_fxobs
 
 
 def apply_validation(report, data):
@@ -29,7 +32,7 @@ def apply_validation(report, data):
                 validation_df = convert_mask_into_dataframe(
                     values['quality_flag'])
                 _data_validated = (_data_validated['value'].where(
-                    ~validation_df[flags].any(axis=1)))
+                    ~validation_df[list(flags)].any(axis=1)))
             data_validated[fx_or_ob] = _data_validated
         else:
             # assume it's a forecast
@@ -40,43 +43,34 @@ def apply_validation(report, data):
 
 def resample_realign(report, data):
     """Probably apply validation and other filters before this"""
+    processed = []
     data_resampled = {}
-    fxobs_resampled = []
     for fxobs in report.forecast_observations:
-        obs_resampled = match_observation_to_forecast_intervals(
-            fxobs.observation, fxobs.forecast)
-        _fxobs_resampled = datamodel.ForecastObservation(
-            fxobs.forecast, obs_resampled)
-        fxobs_resampled.append(_fxobs_resampled)
+        # for now just resample to forecast
+        interval_label = fxobs.forecast.interval_label
+        interval_value_type = fxobs.forecast.interval_value_type
+        interval_length = fxobs.forecast.interval_length
         # if this obs has not already been resampled, do it
-        if obs_resampled not in data_resampled:
-            label = datamodel.CLOSED_MAPPING[obs_resampled.interval_label]
+        if fxobs.observation not in data_resampled:
+            label = datamodel.CLOSED_MAPPING[interval_label]
             resampled = data[fxobs.observation].resample(
-                obs_resampled.interval_length, label=label).mean()
-            data_resampled[obs_resampled] = resampled
+                interval_length, label=label).mean()
+            data_resampled[fxobs.observation] = resampled
         # no resampling allowed for forecasts for now
-        data_resampled[fxobs.forecast] = data[fxobs.forecast]
-
-    return fxobs_resampled, data_resampled
-
-
-def match_observation_to_forecast_intervals(observation, forecast):
-    # forecast intervals are 1h and labels are beginning
-    # make new observation that matches forecasts and resample data
-    obs_dict = observation.to_dict()
-    obs_dict['interval_label'] = forecast.interval_label
-    obs_dict['interval_length'] = forecast.interval_length
-    # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/125
-    obs_dict['site'] = datamodel.Site.from_dict(obs_dict['site'])
-    observation_resampled = datamodel.Observation.from_dict(obs_dict)
-    return observation_resampled
+        processed_fxobs = datamodel.ProcessedForecastObservation(
+            original=fxobs, interval_value_type=interval_value_type,
+            interval_length=interval_length, interval_label=interval_label,
+            forecast_values=data[fxobs.forecast],
+            observation_values=data_resampled[fxobs.observation])
+        processed.append(processed_fxobs)
+    return processed
 
 
-def loop_forecasts_calculate_metrics(fxobs, data):
+def loop_forecasts_calculate_metrics(report, processed_fxobs):
     metrics = []
-    for fxobs_ in fxobs:
-        metrics_ = calculate_metrics(fxobs_, data[fxobs_.forecast],
-                                     data[fxobs_.observation])
+    for fxobs_ in processed_fxobs:
+        metrics_ = calculate_metrics(fxobs_.original, fxobs_.forecast_values,
+                                     fxobs_.observation_values)
         metrics.append(metrics_)
     return metrics
 
@@ -102,6 +96,16 @@ def calculate_metrics(forecast_observation, fx_values, obs_values):
     metrics['hour']['rmse'] = _rmse
     metrics['hour']['mbe'] = diff.groupby(lambda x: x.hour).mean()
     return metrics
+
+
+# not ideal, but works for now
+class MetricsEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, (pd.Series, pd.DataFrame)):
+            return json.loads(o.to_json(date_format='iso',
+                                        date_unit='s',
+                                        double_precision=3))
+        return super().default(o)
 
 
 def rmse(diff):

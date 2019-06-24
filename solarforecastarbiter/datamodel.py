@@ -6,7 +6,8 @@ Data Model document. Python 3.7 is required.
 from dataclasses import dataclass, field, fields, MISSING, asdict
 import datetime
 import itertools
-from typing import Tuple, Union, Iterable
+import json
+from typing import Tuple, Union
 
 
 import pandas as pd
@@ -87,8 +88,8 @@ class BaseModel:
             For missing required fields or if raise_on_extra is True and
             input_dict contains extra keys.
         ValueError
-            If a pandas.Timedelta, datetime.time, or modeling_parameters
-            field cannot be parsed from the input_dict
+            If a pandas.Timedelta, pandas.Timestamp, datetime.time, or
+            modeling_parameters field cannot be parsed from the input_dict
         """
         dict_ = input_dict.copy()
         model_fields = fields(model)
@@ -99,6 +100,9 @@ class BaseModel:
                 if model_field.type == pd.Timedelta:
                     kwargs[model_field.name] = pd.Timedelta(
                         f'{dict_[model_field.name]}min')
+                elif model_field.type == pd.Timestamp:
+                    kwargs[model_field.name] = pd.Timestamp(
+                        dict_[model_field.name])
                 elif model_field.type == datetime.time:
                     kwargs[model_field.name] = datetime.datetime.strptime(
                         dict_[model_field.name], '%H:%M').time()
@@ -146,6 +150,8 @@ class BaseModel:
         for k, v in dict_.items():
             if isinstance(v, datetime.time):
                 dict_[k] = v.strftime('%H:%M')
+            elif isinstance(v, datetime.datetime):
+                dict_[k] = v.isoformat()
             elif isinstance(v, pd.Timedelta):
                 # convert to integer minutes
                 dict_[k] = v.total_seconds() // 60
@@ -453,19 +459,6 @@ class ForecastObservation(BaseModel):
 
 
 @dataclass(frozen=True)
-class ResamplingParameters(BaseModel):
-    """
-    Define how a Forecast or Observation is resampled to match the
-    other object in a ForecastObservation pair.
-    """
-    forecastobservation: ForecastObservation
-    applies_to: str
-    interval_value_type: str
-    interval_length: pd.Timedelta
-    interval_label: str
-
-
-@dataclass(frozen=True)
 class BaseFilter(BaseModel):
     """
     Base class for filters to be applied in a report.
@@ -562,8 +555,9 @@ class ReportRequest(BaseModel):
     start: pd.Timestamp
     end: pd.Timestamp
     forecast_observations: Tuple[ForecastObservation]
-    metrics: Tuple[str]
+    metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
+    report_id: str = ''
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
@@ -573,18 +567,32 @@ class ReportRequest(BaseModel):
         __check_metrics__()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class ReportMetadata(BaseModel):
-    created_at: pd.Timestamp
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    now: pd.Timestamp
     versions: tuple
-    resampling_parameters: Tuple[ResamplingParameters, ...]
     validation_issues: tuple
+
+
+# need apply filtering + resampling to each forecast obs pair
+@dataclass(frozen=True, eq=False)
+class ProcessedForecastObservation(BaseModel):
+    original: ForecastObservation  # do this instead of subclass to compare objects later
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    forecast_values: Union[pd.Series, str]
+    observation_values: Union[pd.Series, str]
 
 
 @dataclass(frozen=True)
 class RawReport(BaseModel):
+    name: str
     request: ReportRequest
     metadata: ReportMetadata
     template: str
     metrics: str  # MetricsResult
-    report_id: str = ''
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
