@@ -54,6 +54,22 @@ CLOSED_MAPPING = {
 }
 
 
+def _dict_factory(inp):
+    dict_ = dict(inp)
+    for k, v in dict_.items():
+        if isinstance(v, datetime.time):
+            dict_[k] = v.strftime('%H:%M')
+        elif isinstance(v, datetime.datetime):
+            dict_[k] = v.isoformat()
+        elif isinstance(v, pd.Timedelta):
+            # convert to integer minutes
+            dict_[k] = v.total_seconds() // 60
+
+    if 'units' in dict_:
+        del dict_['units']
+    return dict_
+
+
 class BaseModel:
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
@@ -146,18 +162,7 @@ class BaseModel:
         API. This means some types (such as pandas.Timedelta and times) are
         converted to strings.
         """
-        dict_ = asdict(self)
-        for k, v in dict_.items():
-            if isinstance(v, datetime.time):
-                dict_[k] = v.strftime('%H:%M')
-            elif isinstance(v, datetime.datetime):
-                dict_[k] = v.isoformat()
-            elif isinstance(v, pd.Timedelta):
-                # convert to integer minutes
-                dict_[k] = v.total_seconds() // 60
-
-        if 'units' in dict_:
-            del dict_['units']
+        dict_ = asdict(self, dict_factory=_dict_factory)
         return dict_
 
 
