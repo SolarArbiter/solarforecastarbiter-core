@@ -243,38 +243,6 @@ def construct_metrics_series(metrics, kind):
     return metrics_series
 
 
-def construct_metrics_series_nested(metrics, kind):
-    """
-    Contructs a series of metrics values with a MultiIndex.
-    MultiIndex names are metric, forecast, kind.
-
-    Parameters
-    ----------
-    metrics : list of metrics dicts
-        Each metric dict is for a different forecast. Forecast name is
-        specified by the name key.
-    kind : str
-        One of total, month, day, hour
-
-    Returns
-    -------
-    pandas.Series
-    """
-    metric_labels = []
-    metric_values = []
-    for m in metrics:
-        for _kind, metrics_values in m[kind].items():
-            if kind == 'day':
-                _kind = pd.Timestamp(_kind)
-            for metric, value in metrics_values.items():
-                metric_labels.append((metric, m['name'], _kind))
-                metric_values.append(value)
-    index = pd.MultiIndex.from_tuples(metric_labels,
-                                      names=['metric', 'forecast', kind])
-    metrics_series = pd.Series(metric_values, index=index)
-    return metrics_series
-
-
 def construct_metrics_cds2(metrics_series, metric):
     df = metrics_series.xs(metric, level='metric').unstack().T
     cds = ColumnDataSource(df)

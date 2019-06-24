@@ -452,7 +452,6 @@ class APISession(requests.Session):
                         headers={'Content-Type': 'application/json'})
         new_id = req.text
         return new_id
-        #return self.get_forecast(new_id)
 
     def post_raw_report(self, raw_report):
         posted_fxobs = []

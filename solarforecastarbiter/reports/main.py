@@ -95,17 +95,6 @@ def get_data_for_report(session, report):
     return data
 
 
-def data_dict_to_fxobs_data(data, forecast_observations):
-    """
-    Sorts the data dict into a new dict where the keys are the report's
-    ForecastObservation objects and the values are tuples of
-    (forecast values, observation values).
-    """
-    return {fxobs: (data[fxobs.forecast.forecast_id],
-                    data[fxobs.observation.observation_id])
-            for fxobs in forecast_observations}
-
-
 def create_metadata(report_request):
     """
     Create metadata for the raw report.
