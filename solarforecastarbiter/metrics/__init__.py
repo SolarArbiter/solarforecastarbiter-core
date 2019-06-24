@@ -105,4 +105,4 @@ def calculate_metrics(forecast_observation, fx_values, obs_values):
 
 
 def rmse(diff):
-    return np.sqrt((diff * diff).sum() / (len(diff) - 1))
+    return np.sqrt((diff * diff).mean())
