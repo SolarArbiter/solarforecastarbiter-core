@@ -235,12 +235,12 @@ def create_raw_report_from_data(report, data):
     # needs to be in json
     metrics_list = metrics.loop_forecasts_calculate_metrics(
         report, processed_fxobs)
-
     # can be ~50kb
     report_template = template.prereport(report, metadata, metrics_list)
 
     raw_report = datamodel.RawReport(
-        name=report.name, request=report, metadata=metadata,
+        name=report.name, report_id=report.report_id,
+        request=report, metadata=metadata,
         template=report_template, metrics=metrics_list,
         processed_forecasts_observations=tuple(processed_fxobs))
     return raw_report
@@ -254,6 +254,7 @@ def post_raw():
     # for each processed fxobs
     # on load, replace string with value from read_report_values
     pass
+
 
 def create_raw_report_from_metadata(access_token, report, base_url=None):
     """
@@ -275,9 +276,8 @@ def create_raw_report_from_metadata(access_token, report, base_url=None):
     session = APISession(access_token, base_url=base_url)
     data = get_data_for_report(session, report)
     raw_report = create_raw_report_from_data(report, data)
+    session.post_raw_report(raw_report)
     return raw_report
-    # session.post_report(metadata, prereport)
-    return metadata, prereport
 
 
 def prereport_to_report(access_token, report, metadata, prereport,

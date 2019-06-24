@@ -26,8 +26,10 @@ def apply_validation(report, data):
     qc_filters = [f.quality_flags for f in report.filters if
                   isinstance(f, datamodel.QualityFlagFilter)]
     for fx_or_ob, values in data.items():
+        # if empty?
         if isinstance(fx_or_ob, datamodel.Observation):
             _data_validated = values
+            # what if no filters? make sure values taken
             for flags in qc_filters:
                 validation_df = convert_mask_into_dataframe(
                     values['quality_flag'])

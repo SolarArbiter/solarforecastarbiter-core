@@ -593,11 +593,15 @@ class ProcessedForecastObservation(BaseModel):
     observation_values: Union[pd.Series, str]
 
 
-@dataclass(frozen=True)
+@dataclass()
 class RawReport(BaseModel):
     name: str
+    report_id: str
     request: ReportRequest
     metadata: ReportMetadata
     template: str
-    metrics: str  # MetricsResult
+    metrics: str  # later MetricsResult
     processed_forecasts_observations: Tuple[ProcessedForecastObservation]
+
+    def bundle(self):
+        """combine and compress"""

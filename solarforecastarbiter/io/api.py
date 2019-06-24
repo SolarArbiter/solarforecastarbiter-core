@@ -14,6 +14,7 @@ from solarforecastarbiter.io.utils import (
     observation_df_to_json_payload,
     forecast_object_to_json,
     adjust_timeseries_for_interval_label,
+    serialize_data, deserialize_data,
     HiddenToken)
 
 
@@ -388,3 +389,103 @@ class APISession(requests.Session):
         self.post(f'/forecasts/single/{forecast_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
+
+    def get_report(self, report_id):
+        """
+        Get the metadata from the API for the a given observation_id
+        in an Observation object.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation to retrieve
+
+        Returns
+        -------
+        datamodel.Observation
+        """
+        req = self.get(f'/reports/{report_id}')
+        rep_dict = req.json()
+        return self._process_report_dict(rep_dict)
+
+    def _process_report_dict(self, rep_dict):
+        req_dict = rep_dict['report_parameters']
+        req_dict['name'] = rep_dict['name']
+        req_dict['report_id'] = rep_dict['report_id']
+        req_dict['forecast_observations'] = tuple([
+            datamodel.ForecastObservation(self.get_forecast(o[0]),
+                                          self.get_observation(o[1]))
+            for o in req_dict['object_pairs']])
+        return datamodel.ReportRequest.from_dict(req_dict)
+
+    def list_reports(self):
+        """
+        List the observations a user has access to.
+
+        Returns
+        -------
+        list of datamodel.Observation
+        """
+        req = self.get('/reports')
+        rep_dicts = req.json()
+        if len(rep_dicts) == 0:
+            return []
+        out = []
+        for rep_dict in rep_dicts:
+            out.append(self._process_report_dict(rep_dict))
+        return out
+
+    def create_report(self, report_request):
+        report_dict = report_request.to_dict()
+        report_dict.pop('report_id')
+        name = report_dict.pop('name')
+        report_dict['filters'] = []
+        fxobs = report_dict.pop('forecast_observations')
+        report_dict['object_pairs'] = [
+            (_fo['forecast']['forecast_id'],
+             _fo['observation']['observation_id'])
+            for _fo in fxobs]
+        params = {'name': name,
+                  'report_parameters': report_dict}
+        print(report_dict)
+        req = self.post('/reports/', json=params,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return new_id
+        #return self.get_forecast(new_id)
+
+    def post_raw_report(self, raw_report):
+        posted_fxobs = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            fx_data = {
+                'object_id': fxobs.original.forecast.forecast_id,
+                'processed_values': serialize_data(fxobs.forecast_values)}
+            fx_post = self.post(
+                f'/reports/{raw_report.report_id}/values',
+                json=fx_data, headers={'Content-Type': 'application/json'})
+            obs_data = {
+                'object_id': fxobs.original.observation.observation_id,
+                'processed_values': serialize_data(fxobs.observation_values)}
+            obs_post = self.post(
+                f'/reports/{raw_report.report_id}/values',
+                json=obs_data, headers={'Content-Type': 'application/json'})
+            processed_fx_id = fx_post.text
+            processed_obs_id = obs_post.text
+            fxobs_dict = fxobs.to_dict()
+            fxobs_dict['forecast_values'] = processed_fx_id
+            fxobs_dict['observation_values'] = processed_obs_id
+            posted_fxobs.append(fxobs_dict)
+
+        # metrics not really meaningful right now as JSON
+        bundle = {'template': raw_report.template,
+                  'processed_forecasts_observations': posted_fxobs,
+                  'metadata': raw_report.metadata.to_dict(),
+                  'metrics': raw_report.metrics}
+        compressed_bundle = serialize_data(bundle)
+        self.post(f'/reports/{raw_report.report_id}/metrics',
+                  json={'metrics': {}, 'raw_report': compressed_bundle},
+                  headers={'Content-Type': 'application/json'})
+        self.update_report_status(raw_report.report_id, 'complete')
+
+    def update_report_status(self, report_id, status):
+        self.post(f'/reports/{report_id}/status/{status}')
