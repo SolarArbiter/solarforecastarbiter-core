@@ -448,7 +448,8 @@ class APISession(requests.Session):
         report_dict = report.to_dict()
         report_dict.pop('report_id')
         name = report_dict.pop('name')
-        report_dict.pop('raw_report')
+        for key in ('raw_report', '__version__', 'status'):
+            del report_dict[key]
         report_dict['filters'] = []
         fxobs = report_dict.pop('forecast_observations')
         report_dict['object_pairs'] = [
@@ -479,7 +480,7 @@ class APISession(requests.Session):
                 json=obs_data, headers={'Content-Type': 'application/json'})
             processed_fx_id = fx_post.text
             processed_obs_id = obs_post.text
-            new_fxobs = fxobs.replace(forcast_values=processed_fx_id,
+            new_fxobs = fxobs.replace(forecast_values=processed_fx_id,
                                       observation_values=processed_obs_id)
             posted_fxobs.append(new_fxobs)
         return tuple(posted_fxobs)
@@ -493,7 +494,11 @@ class APISession(requests.Session):
         out = []
         for fxobs in raw_report.processed_forecasts_observations:
             fx_vals = val_dict.get(fxobs.forecast_values, None)
+            if fx_vals is not None:
+                fx_vals = deserialize_data(fx_vals)
             obs_vals = val_dict.get(fxobs.observation_values, None)
+            if obs_vals is not None:
+                obs_vals = deserialize_data(obs_vals)
             new_fxobs = fxobs.replace(forecast_values=fx_vals,
                                       observation_values=obs_vals)
             out.append(new_fxobs)

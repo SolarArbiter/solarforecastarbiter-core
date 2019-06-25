@@ -195,9 +195,7 @@ def create_raw_report_from_data(report, data):
     report_template = template.prereport(report, metadata, metrics_list)
 
     raw_report = datamodel.RawReport(
-        name=report.name, report_id=report.report_id,
-        request=report, metadata=metadata,
-        template=report_template, metrics=metrics_list,
+        metadata=metadata, template=report_template, metrics=metrics_list,
         processed_forecasts_observations=tuple(processed_fxobs))
     return raw_report
 

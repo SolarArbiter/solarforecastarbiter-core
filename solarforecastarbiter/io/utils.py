@@ -236,7 +236,13 @@ def deserialize_data(data):
 
 
 def serialize_raw_report(raw):
-    return serialize_data(raw.to_dict())
+    bundle = {'metrics': raw.metrics,
+              'template': raw.template,
+              'metadata': raw.metadata.to_dict(),
+              'processed_forecasts_observations': [
+                  pfx.to_dict() for pfx in
+                  raw.processed_forecasts_observations]}
+    return serialize_data(bundle)
 
 
 def deserialize_raw_report(encoded_bundle, version=0):
