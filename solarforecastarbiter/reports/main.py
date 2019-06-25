@@ -57,8 +57,8 @@ import pandas as pd
 
 
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter import metrics, datamodel
-from solarforecastarbiter.reports import figures, template
+from solarforecastarbiter import datamodel
+from solarforecastarbiter.reports import figures, template, metrics
 
 
 def get_data_for_report(session, report):
