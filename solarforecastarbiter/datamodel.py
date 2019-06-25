@@ -3,11 +3,11 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-from dataclasses import dataclass, field, fields, MISSING, asdict
+from dataclasses import (dataclass, field, fields, MISSING, asdict,
+                         replace, is_dataclass)
 import datetime
 import itertools
-import json
-from typing import Tuple, Union
+from typing import Tuple, Union, NewType
 
 
 import pandas as pd
@@ -164,6 +164,9 @@ class BaseModel:
         """
         dict_ = asdict(self, dict_factory=_dict_factory)
         return dict_
+
+    def replace(self, **kwargs):
+        return replace(self, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -536,7 +539,36 @@ def __check_metrics__():
 
 
 @dataclass(frozen=True)
-class ReportRequest(BaseModel):
+class ReportMetadata(BaseModel):
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    now: pd.Timestamp
+    versions: tuple
+    validation_issues: tuple
+
+
+# need apply filtering + resampling to each forecast obs pair
+@dataclass(frozen=True, eq=False)
+class ProcessedForecastObservation(BaseModel):
+    original: ForecastObservation  # do this instead of subclass to compare objects later
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    forecast_values: Union[pd.Series, str, None]
+    observation_values: Union[pd.Series, str, None]
+
+
+@dataclass()
+class RawReport(BaseModel):
+    metadata: ReportMetadata
+    template: str
+    metrics: dict  # later MetricsResult
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
+
+
+@dataclass(frozen=True)
+class Report(BaseModel):
     """
     Class for keeping track of metadata associated with the request
     to generate a report.
@@ -563,6 +595,9 @@ class ReportRequest(BaseModel):
     metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
     report_id: str = ''
+    status: str = 'pending'
+    raw_report: Union[None, RawReport] = None
+    __version__: int = 0  # should add version to api
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
@@ -570,36 +605,3 @@ class ReportRequest(BaseModel):
             ((k.forecast, k.observation) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()
-
-
-@dataclass(frozen=True, eq=False)
-class ReportMetadata(BaseModel):
-    name: str
-    start: pd.Timestamp
-    end: pd.Timestamp
-    now: pd.Timestamp
-    versions: tuple
-    validation_issues: tuple
-
-
-# need apply filtering + resampling to each forecast obs pair
-@dataclass(frozen=True, eq=False)
-class ProcessedForecastObservation(BaseModel):
-    original: ForecastObservation  # do this instead of subclass to compare objects later
-    interval_value_type: str
-    interval_length: pd.Timedelta
-    interval_label: str
-    forecast_values: Union[pd.Series, str]
-    observation_values: Union[pd.Series, str]
-
-
-@dataclass()
-class RawReport(BaseModel):
-    name: str
-    report_id: str
-    request: ReportRequest
-    metadata: ReportMetadata
-    template: str
-    metrics: dict  # later MetricsResult
-    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
-    __version__: int = 0  # should add version to api

@@ -11,6 +11,9 @@ import pandas as pd
 import pyarrow as pa
 
 
+from solarforecastarbiter import datamodel
+
+
 def _dataframe_to_json(payload_df):
     payload_df.index.name = 'timestamp'
     json_vals = payload_df.tz_convert("UTC").reset_index().to_json(
@@ -218,7 +221,7 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     return data.loc[start:end]
 
 
-def serialize_data(values, how='json'):
+def serialize_data(values):
     serialized_buf = pa.serialize(values).to_buffer()
     compressed_bytes = zlib.compress(serialized_buf)
     encoded = base64.b64encode(compressed_bytes)
@@ -230,6 +233,15 @@ def deserialize_data(data):
     serialized = zlib.decompress(compressed)
     values = pa.deserialize(serialized)
     return values
+
+
+def serialize_raw_report(raw):
+    return serialize_data(raw.to_dict())
+
+
+def deserialize_raw_report(encoded_bundle, version=0):
+    bundle = deserialize_data(encoded_bundle)
+    return datamodel.RawReport.from_dict(bundle)
 
 
 class HiddenToken:
