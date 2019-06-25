@@ -71,6 +71,9 @@ def _dict_factory(inp):
 
 
 class BaseModel:
+    def _special_field_processing(model_field, val):
+        return val
+
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
         """
@@ -137,8 +140,15 @@ class BaseModel:
                         raise ValueError(
                             'tracking_type must be None, fixed, or '
                             'single_axis')
+                elif (
+                        is_dataclass(model_field.type) and
+                        isinstance(dict_[model_field.name], dict)
+                ):
+                    kwargs[model_field.name] = model_field.type.from_dict(
+                        dict_[model_field.name])
                 else:
-                    kwargs[model_field.name] = dict_[model_field.name]
+                    kwargs[model_field.name] = model._special_field_processing(
+                        model_field, dict_[model_field.name])
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -565,6 +575,13 @@ class RawReport(BaseModel):
     template: str
     metrics: dict  # later MetricsResult
     processed_forecasts_observations: Tuple[ProcessedForecastObservation]
+
+    def _special_field_processing(model_field, val):
+        if model_field.name == 'processed_forecasts_observations':
+            return tuple([ProcessedForecastObservation.from_dict(v)
+                          for v in val])
+        else:
+            return val
 
 
 @dataclass(frozen=True)

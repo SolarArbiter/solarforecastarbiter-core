@@ -420,11 +420,10 @@ class APISession(requests.Session):
         raw = resp.pop('raw_report')
         report = self._process_report_dict(resp)
         if raw is not None:
-            breakpoint()
             raw_report = deserialize_raw_report(raw)
             processed_fxobs = self._load_raw_report_processed_data(
-                report_id, raw_report)
-            report.replace(raw_report=raw_report.replace(
+                report_id, raw_report, resp['values'])
+            report = report.replace(raw_report=raw_report.replace(
                 processed_forecasts_observations=processed_fxobs))
         return report
 
@@ -485,13 +484,16 @@ class APISession(requests.Session):
             posted_fxobs.append(new_fxobs)
         return tuple(posted_fxobs)
 
-    def _load_raw_report_processed_data(self, report_id, raw_report):
-        val_req = self.get(f'/reports/{report_id}/values')
-        val_dict = {v['id']: v['processed_values'] for v in val_req.json()}
+    def _load_raw_report_processed_data(self, report_id, raw_report,
+                                        values=None):
+        if values is None:
+            val_req = self.get(f'/reports/{report_id}/values')
+            values = val_req.json()
+        val_dict = {v['id']: v['processed_values'] for v in values}
         out = []
         for fxobs in raw_report.processed_forecasts_observations:
             fx_vals = val_dict.get(fxobs.forecast_values, None)
-            obs_vals = val_dict(fxobs.observation_values, None)
+            obs_vals = val_dict.get(fxobs.observation_values, None)
             new_fxobs = fxobs.replace(forecast_values=fx_vals,
                                       observation_values=obs_vals)
             out.append(new_fxobs)
