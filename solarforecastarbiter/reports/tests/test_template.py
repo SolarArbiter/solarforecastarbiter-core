@@ -1,7 +1,7 @@
 
 from solarforecastarbiter.reports import template
 
-from solarforecastarbiter.reports.tests.test_reports_main import dummy_metrics
+#from solarforecastarbiter.reports.tests.test_reports_main import dummy_metrics
 
 
 def test_templates():

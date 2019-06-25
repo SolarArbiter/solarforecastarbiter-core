@@ -220,7 +220,7 @@ def create_raw_report_from_metadata(access_token, report, base_url=None):
     session = APISession(access_token, base_url=base_url)
     data = get_data_for_report(session, report)
     raw_report = create_raw_report_from_data(report, data)
-    session.post_raw_report(raw_report)
+    session.post_raw_report(report.report_id, raw_report)
     return raw_report
 
 

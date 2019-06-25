@@ -509,8 +509,8 @@ class APISession(requests.Session):
             report_id, raw_report)
         to_post = raw_report.replace(
             processed_forecasts_observations=posted_fxobs)
-        # metrics not really meaningful right now as JSON
         compressed_bundle = serialize_raw_report(to_post)
+        # metrics not really meaningful right now as JSON
         self.post(f'/reports/{report_id}/metrics',
                   json={'metrics': {}, 'raw_report': compressed_bundle},
                   headers={'Content-Type': 'application/json'})
