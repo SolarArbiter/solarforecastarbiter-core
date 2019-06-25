@@ -3,7 +3,6 @@ To be deleted and replaced by
 https://github.com/SolarArbiter/solarforecastarbiter-core/pull/102
 """
 from collections import defaultdict
-import datetime as dt
 import json
 
 import numpy as np
@@ -26,14 +25,12 @@ def apply_validation(report, data):
     qc_filters = [f.quality_flags for f in report.filters if
                   isinstance(f, datamodel.QualityFlagFilter)]
     for fx_or_ob, values in data.items():
-        # if empty?
         if isinstance(fx_or_ob, datamodel.Observation):
-            _data_validated = values
-            # what if no filters? make sure values taken
+            _data_validated = values['value']
             for flags in qc_filters:
                 validation_df = convert_mask_into_dataframe(
                     values['quality_flag'])
-                _data_validated = (_data_validated['value'].where(
+                _data_validated = (_data_validated.where(
                     ~validation_df[list(flags)].any(axis=1)))
             data_validated[fx_or_ob] = _data_validated
         else:
