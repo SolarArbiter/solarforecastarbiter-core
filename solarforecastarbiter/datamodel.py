@@ -125,21 +125,6 @@ class BaseModel:
                 elif model_field.type == datetime.time:
                     kwargs[model_field.name] = datetime.datetime.strptime(
                         dict_[model_field.name], '%H:%M').time()
-                elif model_field.name == 'modeling_parameters':
-                    mp_dict = dict_.pop('modeling_parameters', {})
-                    tracking_type = mp_dict.pop('tracking_type', None)
-                    if tracking_type == 'fixed':
-                        kwargs['modeling_parameters'] = (
-                            FixedTiltModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type == 'single_axis':
-                        kwargs['modeling_parameters'] = (
-                            SingleAxisModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type is not None:
-                        raise ValueError(
-                            'tracking_type must be None, fixed, or '
-                            'single_axis')
                 elif (
                         is_dataclass(model_field.type) and
                         isinstance(dict_[model_field.name], dict)
@@ -216,6 +201,29 @@ class Site(BaseModel):
     site_id: str = ''
     provider: str = ''
     extra_parameters: str = ''
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if 'modeling_parameters' in dict_:
+            mp_dict = dict_.get('modeling_parameters', {})
+            if not isinstance(mp_dict, PVModelingParameters):
+                tracking_type = mp_dict.pop('tracking_type', None)
+                if tracking_type == 'fixed':
+                    dict_['modeling_parameters'] = (
+                        FixedTiltModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type == 'single_axis':
+                    dict_['modeling_parameters'] = (
+                        SingleAxisModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type is not None:
+                    raise ValueError(
+                        'tracking_type must be None, fixed, or '
+                        'single_axis')
+        return super().from_dict(dict_, raise_on_extra)
 
 
 @dataclass(frozen=True)

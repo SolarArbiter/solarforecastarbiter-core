@@ -114,8 +114,6 @@ def test_from_dict_invalid_time_format(many_forecasts_text):
 def test_dict_roundtrip(pdid_params):
     expected, _, model = pdid_params
     dict_ = expected.to_dict()
-    if 'site' in dict_:
-        dict_['site'] = type(expected.site).from_dict(dict_['site'])
     out = model.from_dict(dict_)
     assert out == expected
 
