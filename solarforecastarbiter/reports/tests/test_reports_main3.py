@@ -29,7 +29,7 @@ quality_flag_filter = datamodel.QualityFlagFilter([
     'USER FLAGGED', 'NIGHTTIME', 'LIMITS EXCEEDED', 'STALE VALUES',
     'INTERPOLATED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'])
 
-report = datamodel.Report(
+report = datamodel.ReportRequest(
     name='NREL MIDC OASIS GHI Forecast Analysis',
     start=start,
     end=end,
@@ -38,21 +38,10 @@ report = datamodel.Report(
     filters=(quality_flag_filter, )
 )
 
-# create md file with metadata and metrics
-metadata, prereport = main.create_prereport_from_metadata(token, report)
-with open('bokeh_prereport.md', 'w') as f:
-    f.write(prereport)
-
-# convert md file to html using pandoc
-prereport_html = template.prereport_to_html(prereport)
-with open('bokeh_prereport.html', 'w') as f:
-    f.write(prereport_html)
-
-# get data for time series and scatter plots, render report with data
-fx_obs_cds = main.get_data_for_report_embed(session, report)
-body = template.add_figures_to_prereport(
-    fx_obs_cds, report, metadata, prereport_html)
-
+data = main.get_data_for_report(session, report)
+raw_report = main.create_raw_report_from_data(report, data)
+report_md = main.render_raw_report(raw_report)
+body = template.prereport_to_html(report_md)
 # add header. only needed for testing. dashboard will do this in production.
 full_report = template.full_html(body)
 with open('bokeh_report.html', 'w') as f:
