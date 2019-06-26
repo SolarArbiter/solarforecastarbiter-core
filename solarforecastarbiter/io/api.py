@@ -393,8 +393,8 @@ class APISession(requests.Session):
 
     def _process_report_dict(self, rep_dict):
         req_dict = rep_dict['report_parameters']
-        req_dict['name'] = rep_dict['name']
-        req_dict['report_id'] = rep_dict['report_id']
+        for key in ('name', 'report_id', 'status'):
+            req_dict[key] = rep_dict[key]
         req_dict['forecast_observations'] = tuple([
             datamodel.ForecastObservation(self.get_forecast(o[0]),
                                           self.get_observation(o[1]))
@@ -421,7 +421,7 @@ class APISession(requests.Session):
         report = self._process_report_dict(resp)
         if raw is not None:
             raw_report = deserialize_raw_report(raw)
-            processed_fxobs = self._load_raw_report_processed_data(
+            processed_fxobs = self.get_raw_report_processed_data(
                 report_id, raw_report, resp['values'])
             report = report.replace(raw_report=raw_report.replace(
                 processed_forecasts_observations=processed_fxobs))
@@ -463,7 +463,7 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_report(new_id)
 
-    def _post_raw_report_processed_data(self, report_id, raw_report):
+    def post_raw_report_processed_data(self, report_id, raw_report):
         posted_fxobs = []
         for fxobs in raw_report.processed_forecasts_observations:
             fx_data = {
@@ -485,8 +485,8 @@ class APISession(requests.Session):
             posted_fxobs.append(new_fxobs)
         return tuple(posted_fxobs)
 
-    def _load_raw_report_processed_data(self, report_id, raw_report,
-                                        values=None):
+    def get_raw_report_processed_data(self, report_id, raw_report,
+                                      values=None):
         if values is None:
             val_req = self.get(f'/reports/{report_id}/values')
             values = val_req.json()
@@ -505,7 +505,7 @@ class APISession(requests.Session):
         return out
 
     def post_raw_report(self, report_id, raw_report):
-        posted_fxobs = self._post_raw_report_processed_data(
+        posted_fxobs = self.post_raw_report_processed_data(
             report_id, raw_report)
         to_post = raw_report.replace(
             processed_forecasts_observations=posted_fxobs)
