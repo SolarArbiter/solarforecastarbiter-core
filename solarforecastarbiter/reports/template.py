@@ -1,15 +1,20 @@
 """
 Inserts metadata and figures into the report template.
 """
+import logging
 import subprocess
+
 
 from bokeh.embed import components
 from bokeh.layouts import gridplot
-
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
                     select_autoescape, Template)
 
+
 from solarforecastarbiter.reports import figures
+
+
+logger = logging.getLogger(__name__)
 
 
 def template_report(report, metadata, metrics):
@@ -130,7 +135,18 @@ def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
 
     ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end)
     scat_fig = figures.scatter(fx_obs_cds)
-    script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
+    try:
+        script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
+    except Exception:
+        logger.exception(
+            'Failed to make Bokeh items for timeseries and scatterplot')
+        script = ''
+        div = """
+::: warning
+Failed to make timeseries and scatter figure from stored data. Try
+generating report again.
+:::
+"""
 
     body = body_template.render(
         script_data=script,
