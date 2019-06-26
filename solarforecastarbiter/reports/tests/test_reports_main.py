@@ -57,7 +57,7 @@ def test_full_render(mock_data, report_objects):
     data = main.get_data_for_report(session, report)
     raw_report = main.create_raw_report_from_data(report, data)
     report_md = main.render_raw_report(raw_report)
-    body = template.prereport_to_html(report_md)
+    body = template.report_md_to_html(report_md)
     full_report = template.full_html(body)
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)

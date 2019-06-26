@@ -12,9 +12,9 @@ from jinja2 import (Environment, DebugUndefined, PackageLoader,
 from solarforecastarbiter.reports import figures
 
 
-def prereport(report, metadata, metrics):
+def template_report(report, metadata, metrics):
     """
-    Render the markdown prereport. Figures are left untemplated.
+    Render the markdown report template. Figures are left untemplated.
 
     Parameters
     ----------
@@ -26,7 +26,7 @@ def prereport(report, metadata, metrics):
 
     Returns
     -------
-    prereport : markdown
+    markdown
     """
     # By default, jinja removes undefined variables from the rendered string.
     # DebugUndefined leaves undefined variables in the string so that they
@@ -105,10 +105,10 @@ def _loop_over_metrics(report, metrics, kind):
 
 
 # not all args currently used, but expect they will eventually be used
-def add_figures_to_prereport(fx_obs_cds, metadata, prereport,
-                             html=True):
+def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
+                                   html=True):
     """
-    Add figures to the prereport, convert to html
+    Add figures to the report_template
 
     Parameters
     ----------
@@ -117,18 +117,16 @@ def add_figures_to_prereport(fx_obs_cds, metadata, prereport,
         pass to bokeh plotting objects.
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    prereport : str, markdown or html
-        The templated pre-report.
+    report_template : str, markdown
+        The templated report
     html : bool
         Indicates if the template will be rendered into html or pdf.
 
     Returns
     -------
-    body : str, markdown or html
-        The body of the full report in the same format
-        (markdown or html) as the prereport.
+    body : str, markdown
     """
-    body_template = Template(prereport)
+    body_template = Template(report_template)
 
     ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end)
     scat_fig = figures.scatter(fx_obs_cds)
@@ -141,21 +139,21 @@ def add_figures_to_prereport(fx_obs_cds, metadata, prereport,
     return body
 
 
-def prereport_to_html(prereport):
+def report_md_to_html(report_md):
     """
     Render markdown into simple html using pandoc.
 
     Parameters
     ----------
-    prereport : str, markdown
+    report_md : str, markdown
 
     Returns
     -------
-    prereport : str, html
+    str, html
     """
     try:
         out = subprocess.run(args=['pandoc', '--from', 'markdown+pipe_tables'],
-                             input=prereport.encode(), capture_output=True)
+                             input=report_md.encode(), capture_output=True)
     except (FileNotFoundError, subprocess.CalledProcessError) as e:
         raise OSError('Error converting prereport to html using pandoc') from e
     return out.stdout.decode()

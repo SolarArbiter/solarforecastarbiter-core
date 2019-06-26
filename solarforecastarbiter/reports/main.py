@@ -156,10 +156,7 @@ def get_validation_issues():
 
 def create_raw_report_from_data(report, data):
     """
-    Create a pre-report using data and report metadata.
-
-    The prereport is a markdown file with all elements rendered except
-    for bokeh plots.
+    Create a raw report using data and report metadata.
 
     Parameters
     ----------
@@ -171,10 +168,7 @@ def create_raw_report_from_data(report, data):
 
     Returns
     -------
-    metadata : str
-        prereport metadata in JSON format.
-    prereport : str
-        prereport in markdown format.
+    raw_report : datamodel.RawReport
     """
     # call function: metrics.align_observations_forecasts
     # call function: metrics.calculate_many
@@ -192,7 +186,7 @@ def create_raw_report_from_data(report, data):
     metrics_list = metrics.loop_forecasts_calculate_metrics(
         report, processed_fxobs)
     # can be ~50kb
-    report_template = template.prereport(report, metadata, metrics_list)
+    report_template = template.template_report(report, metadata, metrics_list)
 
     raw_report = datamodel.RawReport(
         metadata=metadata, template=report_template, metrics=metrics_list,
@@ -200,9 +194,9 @@ def create_raw_report_from_data(report, data):
     return raw_report
 
 
-def create_raw_report_from_metadata(access_token, report, base_url=None):
+def compute_report(access_token, report_id, base_url=None):
     """
-    Create a pre-report using data from API and report metadata.
+    Create a raw report using data from API.
 
     Typically called as a task.
 
@@ -210,23 +204,25 @@ def create_raw_report_from_metadata(access_token, report, base_url=None):
     ----------
     session : solarforecastarbiter.api.APISession
         API session for getting and posting data
-    report : solarforecastarbiter.datamodel.Report
-        Metadata describing report
-
-    Returns
-    -------
-    None
+    report_id : str
+        ID of the report to fetch from the API and generate the raw
+        report for
     """
     session = APISession(access_token, base_url=base_url)
-    data = get_data_for_report(session, report)
-    raw_report = create_raw_report_from_data(report, data)
-    session.post_raw_report(report.report_id, raw_report)
+    report = session.get_report(report_id)
+    try:
+        data = get_data_for_report(session, report)
+        raw_report = create_raw_report_from_data(report, data)
+        session.post_raw_report(report.report_id, raw_report)
+    except Exception:
+        session.update_report_status(report_id, 'failed')
+        raise
     return raw_report
 
 
 def render_raw_report(raw_report):
     """
-    Convert pre-report to full report.
+    Convert raw report to full report.
 
     Parameters
     ----------
@@ -234,23 +230,25 @@ def render_raw_report(raw_report):
         API session for getting and posting data
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    metadata : str, json
-        Describes the prereport
-    prereport : str, md
-        The templated pre-report.
 
     Returns
     -------
-    report : str, markdown
+    str, markdown
         The full report.
     """
     fx_obs_cds = [
         (pfxobs.original, figures.construct_fx_obs_cds(
             pfxobs.forecast_values, pfxobs.observation_values))
         for pfxobs in raw_report.processed_forecasts_observations]
-    report = template.add_figures_to_prereport(
+    report_md = template.add_figures_to_report_template(
         fx_obs_cds, raw_report.metadata, raw_report.template)
-    return report
+    return report_md
+
+
+def report_to_html_body(report):
+    report_md = render_raw_report(report.raw_report)
+    body = template.report_md_to_html(report_md)
+    return body
 
 
 def report_to_pdf(report):
