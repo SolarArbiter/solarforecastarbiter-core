@@ -19,7 +19,8 @@
 :::
 
 {{ '::: {.download}' }}
-Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or [pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }})
+{# Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }}) #}
+Download as [html]() or [pdf]() **TODO**
 :::
 
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
@@ -75,7 +76,7 @@ Controls to pan, zoom, and save the plot are shown on the right. Clicking on an 
 
 ### Data validation
 
-The Solar Forecast Arbiter's data validation toolkit identified the following issues with the unprocessed observation data:
+The Solar Forecast Arbiter's data validation toolkit identified the following **(EXAMPLE)** issues with the unprocessed observation data:
 
 {% for issue, points in validation_issues.items() %}
 * {{ issue }}: {{ points }} intervals
@@ -156,6 +157,6 @@ This report was created using open source software packages. The relevant packag
 ## Hash
 
 {# fix this #}
-The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a
+The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a **(EXAMPLE ONLY)**
 
 The signature can be verified using the Solar Forecast Arbiter [public key](solarforecastarbiter.org).
