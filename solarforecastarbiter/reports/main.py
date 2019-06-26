@@ -49,7 +49,6 @@ Considerations:
   to be able to create time series, scatter, etc. plots.
 """
 import pkg_resources
-from pkg_resources import DistributionNotFound
 import platform
 
 
@@ -130,7 +129,7 @@ def get_versions():
     for p in packages:
         try:
             v = pkg_resources.get_distribution(p).version
-        except DistributionNotFound:
+        except pkg_resources.DistributionNotFound:
             v = 'None'
         versions[p] = v
     versions['python'] = platform.python_version()
