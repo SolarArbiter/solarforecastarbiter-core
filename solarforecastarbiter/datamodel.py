@@ -564,6 +564,9 @@ def __check_metrics__():
 
 @dataclass(frozen=True)
 class ReportMetadata(BaseModel):
+    """
+    Hold additional metadata about the report
+    """
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
@@ -575,6 +578,10 @@ class ReportMetadata(BaseModel):
 # need apply filtering + resampling to each forecast obs pair
 @dataclass(frozen=True, eq=False)
 class ProcessedForecastObservation(BaseModel):
+    """
+    Hold the processed forecast and observation data with the resampling
+    parameters
+    """
     # do this instead of subclass to compare objects later
     original: ForecastObservation
     interval_value_type: str
@@ -584,8 +591,13 @@ class ProcessedForecastObservation(BaseModel):
     observation_values: Union[pd.Series, str, None]
 
 
-@dataclass()
+@dataclass(frozen=True, eq=False)
 class RawReport(BaseModel):
+    """
+    Class for holding the result of processing a report request including
+    the calculated metrics, some metadata, the markdown template, and
+    the processed forecast/observation data.
+    """
     metadata: ReportMetadata
     template: str
     metrics: dict  # later MetricsResult
@@ -619,14 +631,23 @@ class Report(BaseModel):
         Metrics to be computed in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
+    status : str
+        Status of the report
+    report_id : str
+        ID of the report in the API
+    raw_report : RawReport or None
+        Once computed, the raw report should be stored here
+    __version__ : str
+        Should be used to version reports to ensure even older
+        reports can be properly rendered
     """
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
     forecast_observations: Tuple[ForecastObservation]
-    status: str = 'pending'
     metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
+    status: str = 'pending'
     report_id: str = ''
     raw_report: Union[None, RawReport] = None
     __version__: int = 0  # should add version to api

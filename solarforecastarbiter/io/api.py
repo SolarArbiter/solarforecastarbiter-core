@@ -403,17 +403,17 @@ class APISession(requests.Session):
 
     def get_report(self, report_id):
         """
-        Get the metadata from the API for the a given observation_id
-        in an Observation object.
+        Get the metadata, and possible raw report if it has processed,
+        from the API for the given report_id in a Report object.
 
         Parameters
         ----------
-        observation_id : string
-            UUID of the observation to retrieve
+        report_id : string
+            UUID of the report to retrieve
 
         Returns
         -------
-        datamodel.Observation
+        datamodel.Report
         """
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
@@ -429,11 +429,13 @@ class APISession(requests.Session):
 
     def list_reports(self):
         """
-        List the observations a user has access to.
+        List the reports a user has access to.  Does not load the raw
+        report data, use :py:meth:`~.APISession.get_report`.
 
         Returns
         -------
-        list of datamodel.Observation
+        list of datamodel.Report
+
         """
         req = self.get('/reports')
         rep_dicts = req.json()
@@ -445,6 +447,19 @@ class APISession(requests.Session):
         return out
 
     def create_report(self, report):
+        """
+        Post the report request to the API. A completed report should post
+        the raw_report with :py:meth:`~.APISession.post_raw_report`.
+
+        Parameters
+        ----------
+        report : datamodel.Report
+
+        Returns
+        -------
+        datamodel.Report
+           As returned by the API
+        """
         report_dict = report.to_dict()
         report_dict.pop('report_id')
         name = report_dict.pop('name')
@@ -464,6 +479,24 @@ class APISession(requests.Session):
         return self.get_report(new_id)
 
     def post_raw_report_processed_data(self, report_id, raw_report):
+        """
+        Post the processed data that was used to make the report to the
+        API.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report to post values to
+        raw_report : datamodel.RawReport
+            The raw report object with processed_forecasts_observations
+
+        Returns
+        -------
+        tuple
+            of datamodel.ProcessedForecastObservation with `forecast_values`
+            and `observations_values` replaced with report value IDs for later
+            retrieval
+        """
         posted_fxobs = []
         for fxobs in raw_report.processed_forecasts_observations:
             fx_data = {
@@ -487,6 +520,27 @@ class APISession(requests.Session):
 
     def get_raw_report_processed_data(self, report_id, raw_report,
                                       values=None):
+        """
+        Load the processed forecast/observation data into the
+        datamodel.ProcessedForecastObservation objects of the raw_report.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report that values will be loaded from
+        raw_report : datamodel.RawReport
+            The raw report with processed_forecasts_observations to
+            be replaced
+        values : list or None
+            The report values dict as returned by the API. If None, fetch
+            the values from the API for the given report_id
+
+        Returns
+        -------
+        tuple
+           Of datamodel.ProcessedForecastObservation with values loaded into
+           `forecast_values` and `observation_values`
+        """
         if values is None:
             val_req = self.get(f'/reports/{report_id}/values')
             values = val_req.json()
@@ -502,9 +556,19 @@ class APISession(requests.Session):
             new_fxobs = fxobs.replace(forecast_values=fx_vals,
                                       observation_values=obs_vals)
             out.append(new_fxobs)
-        return out
+        return tuple(out)
 
     def post_raw_report(self, report_id, raw_report):
+        """
+        Update the report with the raw report and metrics
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        raw_report : datamodel.RawReport
+           The raw report object to add to the report
+        """
         posted_fxobs = self.post_raw_report_processed_data(
             report_id, raw_report)
         to_post = raw_report.replace(
@@ -517,4 +581,14 @@ class APISession(requests.Session):
         self.update_report_status(report_id, 'complete')
 
     def update_report_status(self, report_id, status):
+        """
+        Update the status of the report
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        status : str
+           New status of the report
+        """
         self.post(f'/reports/{report_id}/status/{status}')
