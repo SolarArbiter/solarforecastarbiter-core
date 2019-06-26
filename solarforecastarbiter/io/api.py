@@ -448,7 +448,7 @@ class APISession(requests.Session):
         report_dict = report.to_dict()
         report_dict.pop('report_id')
         name = report_dict.pop('name')
-        for key in ('raw_report', '__version__', 'status'):
+        for key in ('raw_report', '__version__'):
             del report_dict[key]
         report_dict['filters'] = []
         fxobs = report_dict.pop('forecast_observations')

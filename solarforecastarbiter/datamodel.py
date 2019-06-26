@@ -7,7 +7,7 @@ from dataclasses import (dataclass, field, fields, MISSING, asdict,
                          replace, is_dataclass)
 import datetime
 import itertools
-from typing import Tuple, Union, NewType
+from typing import Tuple, Union
 
 
 import pandas as pd
@@ -157,10 +157,16 @@ class BaseModel:
         API. This means some types (such as pandas.Timedelta and times) are
         converted to strings.
         """
+        # using the dict_factory recurses through all objects for special
+        # conversions
         dict_ = asdict(self, dict_factory=_dict_factory)
         return dict_
 
     def replace(self, **kwargs):
+        """
+        Convience wrapper for :py:func:`dataclasses.replace` to create a
+        new dataclasses from the old with the given keys replaced.
+        """
         return replace(self, **kwargs)
 
 
@@ -569,7 +575,8 @@ class ReportMetadata(BaseModel):
 # need apply filtering + resampling to each forecast obs pair
 @dataclass(frozen=True, eq=False)
 class ProcessedForecastObservation(BaseModel):
-    original: ForecastObservation  # do this instead of subclass to compare objects later
+    # do this instead of subclass to compare objects later
+    original: ForecastObservation
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
@@ -595,7 +602,7 @@ class RawReport(BaseModel):
 @dataclass(frozen=True)
 class Report(BaseModel):
     """
-    Class for keeping track of metadata associated with the request
+    Class for keeping track of metadata associated with a report.
     to generate a report.
 
     Parameters
@@ -620,7 +627,6 @@ class Report(BaseModel):
     metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
     report_id: str = ''
-    status: str = 'pending'
     raw_report: Union[None, RawReport] = None
     __version__: int = 0  # should add version to api
 

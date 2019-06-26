@@ -1,4 +1,4 @@
-from dataclasses import fields, MISSING
+from dataclasses import fields, MISSING, dataclass
 import json
 
 
@@ -10,7 +10,7 @@ from solarforecastarbiter import datamodel
 
 
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
-                        'forecast'])
+                        'forecast', 'forecastobservation'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast):
@@ -34,6 +34,15 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
         return (single_forecast, fx_dict, datamodel.Forecast)
+    elif request.param == 'forecastobservation':
+        fx_dict = json.loads(single_forecast_text)
+        fx_dict['site'] = single_site
+        obs_dict = json.loads(single_observation_text)
+        obs_dict['site'] = single_site
+        fxobs_dict = {'forecast': fx_dict, 'observation': obs_dict}
+        fxobs = datamodel.ForecastObservation(
+            single_forecast, single_observation)
+        return (fxobs, fxobs_dict, datamodel.ForecastObservation)
 
 
 @pytest.mark.parametrize('extra', [
@@ -116,6 +125,27 @@ def test_dict_roundtrip(pdid_params):
     dict_ = expected.to_dict()
     out = model.from_dict(dict_)
     assert out == expected
+
+
+def test_to_dict_recurse(single_forecast):
+    @dataclass
+    class Special(datamodel.BaseModel):
+        fx: datamodel.Forecast
+
+    spec = Special(single_forecast)
+    d_ = spec.to_dict()
+    assert isinstance(d_['fx']['run_length'], float)
+    assert isinstance(d_['fx']['issue_time_of_day'], str)
+    assert isinstance(d_['fx'], dict)
+    assert isinstance(d_['fx']['site'], dict)
+
+
+def test_replace(single_forecast):
+    run_length = single_forecast.run_length
+    new_fx = single_forecast.replace(run_length=pd.Timedelta('3d'))
+    assert new_fx.run_length != run_length
+    assert new_fx != single_forecast
+    assert new_fx.name == single_forecast.name
 
 
 def test_invalid_variable(single_site):

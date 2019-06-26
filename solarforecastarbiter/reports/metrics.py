@@ -3,10 +3,10 @@ To be deleted and replaced by
 https://github.com/SolarArbiter/solarforecastarbiter-core/pull/102
 """
 from collections import defaultdict
-import json
+
 
 import numpy as np
-import pandas as pd
+
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.validation.quality_mapping import \
@@ -95,16 +95,6 @@ def calculate_metrics(forecast_observation, fx_values, obs_values):
     metrics['hour']['rmse'] = _rmse
     metrics['hour']['mbe'] = diff.groupby(lambda x: x.hour).mean()
     return metrics
-
-
-# not ideal, but works for now
-class MetricsEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, (pd.Series, pd.DataFrame)):
-            return json.loads(o.to_json(date_format='iso',
-                                        date_unit='s',
-                                        double_precision=3))
-        return super().default(o)
 
 
 def rmse(diff):
