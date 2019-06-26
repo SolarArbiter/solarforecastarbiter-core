@@ -395,6 +395,7 @@ class APISession(requests.Session):
         req_dict = rep_dict['report_parameters']
         for key in ('name', 'report_id', 'status'):
             req_dict[key] = rep_dict[key]
+        req_dict['metrics'] = tuple(req_dict['metrics'])
         req_dict['forecast_observations'] = tuple([
             datamodel.ForecastObservation(self.get_forecast(o[0]),
                                           self.get_observation(o[1]))
@@ -463,7 +464,7 @@ class APISession(requests.Session):
         report_dict = report.to_dict()
         report_dict.pop('report_id')
         name = report_dict.pop('name')
-        for key in ('raw_report', '__version__'):
+        for key in ('raw_report', '__version__', 'status'):
             del report_dict[key]
         report_dict['filters'] = []
         fxobs = report_dict.pop('forecast_observations')
