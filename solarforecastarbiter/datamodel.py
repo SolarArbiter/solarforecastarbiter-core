@@ -71,7 +71,7 @@ def _dict_factory(inp):
 
 
 class BaseModel:
-    def _special_field_processing(model_field, val):
+    def _special_field_processing(self, model_field, val):
         return val
 
     @classmethod
@@ -133,7 +133,7 @@ class BaseModel:
                         dict_[model_field.name])
                 else:
                     kwargs[model_field.name] = model._special_field_processing(
-                        model_field, dict_[model_field.name])
+                        model, model_field, dict_[model_field.name])
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -603,10 +603,15 @@ class RawReport(BaseModel):
     metrics: dict  # later MetricsResult
     processed_forecasts_observations: Tuple[ProcessedForecastObservation]
 
-    def _special_field_processing(model_field, val):
+    def _special_field_processing(self, model_field, val):
         if model_field.name == 'processed_forecasts_observations':
-            return tuple([ProcessedForecastObservation.from_dict(v)
-                          for v in val])
+            out = []
+            for v in val:
+                if isinstance(v, dict):
+                    out.append(ProcessedForecastObservation.from_dict(v))
+                else:
+                    out.append(v)
+            return tuple(out)
         else:
             return val
 
