@@ -133,9 +133,15 @@ def _get_scatter_limits(fx_obs_cds):
     extremes = []
     for _, cds in fx_obs_cds:
         for kind in ('forecast', 'observation'):
-            extremes.append(cds.data[kind].min())
-            extremes.append(cds.data[kind].max())
-    return min(extremes), max(extremes)
+            extremes.append(np.nanmin(cds.data[kind]))
+            extremes.append(np.nanmax(cds.data[kind]))
+    min_ = min(extremes)
+    if min_ == np.nan:
+        min_ = -999
+    max_ = max(extremes)
+    if max_ == np.nan:
+        max_ = 999
+    return min_, max_
 
 
 def scatter(fx_obs_cds):
