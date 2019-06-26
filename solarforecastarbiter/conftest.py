@@ -815,3 +815,38 @@ def report_text():
     "values": [],
     "status": "pending"}
     """
+
+
+@pytest.fixture()
+def raw_report(report_objects):
+    report, obs, fx0, fx1 = report_objects
+    meta = datamodel.ReportMetadata(
+        name=report.name,
+        start=report.start,
+        end=report.end,
+        now=report.end,
+        versions=(),
+        validation_issues=()
+    )
+
+    def gen(with_series):
+        ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
+        fxobs0 = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastObservation(fx0, obs),
+            fx0.interval_value_type,
+            fx0.interval_length,
+            fx0.interval_label,
+            forecast_values=ser if with_series else fx0.forecast_id,
+            observation_values=ser if with_series else obs.observation_id
+        )
+        fxobs1 = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastObservation(fx1, obs),
+            fx1.interval_value_type,
+            fx1.interval_length,
+            fx1.interval_label,
+            forecast_values=ser if with_series else fx1.forecast_id,
+            observation_values=ser if with_series else obs.observation_id
+        )
+        raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
+        return raw
+    return gen

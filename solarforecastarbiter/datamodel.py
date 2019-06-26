@@ -576,7 +576,7 @@ class ReportMetadata(BaseModel):
 
 
 # need apply filtering + resampling to each forecast obs pair
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True)
 class ProcessedForecastObservation(BaseModel):
     """
     Hold the processed forecast and observation data with the resampling
@@ -591,7 +591,7 @@ class ProcessedForecastObservation(BaseModel):
     observation_values: Union[pd.Series, str, None]
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True)
 class RawReport(BaseModel):
     """
     Class for holding the result of processing a report request including
