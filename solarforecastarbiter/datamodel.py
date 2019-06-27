@@ -619,8 +619,12 @@ class RawReport(BaseModel):
 @dataclass(frozen=True)
 class Report(BaseModel):
     """
-    Class for keeping track of metadata associated with a report.
-    to generate a report.
+    Class for keeping track of report metadata and the raw report that
+    can later be rendered to HTML or PDF. Functions in
+    :py:mod:`~solarforecastarbiter.reports.main` take a Report object
+    with `raw_report` set to None, generate the report, and return
+    another Report object with `raw_report` set to a RawReport object
+    that can be rendered.
 
     Parameters
     ----------
