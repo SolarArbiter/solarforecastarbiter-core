@@ -215,9 +215,7 @@ def site_df_to_dicts(site_df):
     """
     site_list = []
     for i, row in site_df.iterrows():
-        attribution = row['attribution']
-        if attribution is None or pd.isna(attribution):
-            attribution = ''
+        row = row.fillna('')
         site = {
             'name': row['name'],
             'latitude': row['latitude'],
@@ -229,7 +227,7 @@ def site_df_to_dicts(site_df):
                 'network_api_id': row['network_api_id'],
                 'network_api_abbreviation': row['network_api_abbreviation'],
                 'observation_interval_length': row['interval_length'],
-                'attribution': attribution
+                'attribution': row['attribution']
             }
         }
         network_handler = NETWORKHANDLER_MAP.get(row['network'])
