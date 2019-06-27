@@ -122,6 +122,19 @@ def test_adjust_timeserise_for_interval_label_series(label, exp):
     pdt.assert_series_equal(exp, out)
 
 
+def test_serialize_roundtrip():
+    ser = utils.serialize_data(TEST_DATA)
+    out = utils.deserialize_data(ser)
+    pdt.assert_frame_equal(out, TEST_DATA)
+
+
+def test_raw_serialize_roundtrip(raw_report):
+    raw = raw_report(False)
+    ser = utils.serialize_raw_report(raw)
+    out = utils.deserialize_raw_report(ser)
+    assert raw == out
+
+
 def test_hidden_token():
     ht = utils.HiddenToken('THETOKEN')
     assert str(ht) != 'THETOKEN'

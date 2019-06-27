@@ -3,7 +3,15 @@
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
+import base64
+import zlib
+
+
 import pandas as pd
+import pyarrow as pa
+
+
+from solarforecastarbiter import datamodel
 
 
 def _dataframe_to_json(payload_df):
@@ -211,6 +219,35 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
                                                      end)
     data.sort_index(axis=0, inplace=True)
     return data.loc[start:end]
+
+
+def serialize_data(values):
+    serialized_buf = pa.serialize(values).to_buffer()
+    compressed_bytes = zlib.compress(serialized_buf)
+    encoded = base64.b64encode(compressed_bytes)
+    return encoded.decode('ascii')  # bytes to str
+
+
+def deserialize_data(data):
+    compressed = base64.b64decode(data)
+    serialized = zlib.decompress(compressed)
+    values = pa.deserialize(serialized)
+    return values
+
+
+def serialize_raw_report(raw):
+    bundle = {'metrics': raw.metrics,
+              'template': raw.template,
+              'metadata': raw.metadata.to_dict(),
+              'processed_forecasts_observations': [
+                  pfx.to_dict() for pfx in
+                  raw.processed_forecasts_observations]}
+    return serialize_data(bundle)
+
+
+def deserialize_raw_report(encoded_bundle, version=0):
+    bundle = deserialize_data(encoded_bundle)
+    return datamodel.RawReport.from_dict(bundle)
 
 
 class HiddenToken:

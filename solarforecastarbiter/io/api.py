@@ -14,6 +14,8 @@ from solarforecastarbiter.io.utils import (
     observation_df_to_json_payload,
     forecast_object_to_json,
     adjust_timeseries_for_interval_label,
+    serialize_data, deserialize_data,
+    serialize_raw_report, deserialize_raw_report,
     HiddenToken)
 
 
@@ -388,3 +390,206 @@ class APISession(requests.Session):
         self.post(f'/forecasts/single/{forecast_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
+
+    def _process_report_dict(self, rep_dict):
+        req_dict = rep_dict['report_parameters']
+        for key in ('name', 'report_id', 'status'):
+            req_dict[key] = rep_dict[key]
+        req_dict['metrics'] = tuple(req_dict['metrics'])
+        req_dict['forecast_observations'] = tuple([
+            datamodel.ForecastObservation(self.get_forecast(o[0]),
+                                          self.get_observation(o[1]))
+            for o in req_dict['object_pairs']])
+        return datamodel.Report.from_dict(req_dict)
+
+    def get_report(self, report_id):
+        """
+        Get the metadata, and possible raw report if it has processed,
+        from the API for the given report_id in a Report object.
+
+        Parameters
+        ----------
+        report_id : string
+            UUID of the report to retrieve
+
+        Returns
+        -------
+        datamodel.Report
+        """
+        req = self.get(f'/reports/{report_id}')
+        resp = req.json()
+        raw = resp.pop('raw_report')
+        report = self._process_report_dict(resp)
+        if raw is not None:
+            raw_report = deserialize_raw_report(raw)
+            processed_fxobs = self.get_raw_report_processed_data(
+                report_id, raw_report, resp['values'])
+            report = report.replace(raw_report=raw_report.replace(
+                processed_forecasts_observations=processed_fxobs))
+        return report
+
+    def list_reports(self):
+        """
+        List the reports a user has access to.  Does not load the raw
+        report data, use :py:meth:`~.APISession.get_report`.
+
+        Returns
+        -------
+        list of datamodel.Report
+
+        """
+        req = self.get('/reports')
+        rep_dicts = req.json()
+        if len(rep_dicts) == 0:
+            return []
+        out = []
+        for rep_dict in rep_dicts:
+            out.append(self._process_report_dict(rep_dict))
+        return out
+
+    def create_report(self, report):
+        """
+        Post the report request to the API. A completed report should post
+        the raw_report with :py:meth:`~.APISession.post_raw_report`.
+
+        Parameters
+        ----------
+        report : datamodel.Report
+
+        Returns
+        -------
+        datamodel.Report
+           As returned by the API
+        """
+        report_dict = report.to_dict()
+        report_dict.pop('report_id')
+        name = report_dict.pop('name')
+        for key in ('raw_report', '__version__', 'status'):
+            del report_dict[key]
+        report_dict['filters'] = []
+        fxobs = report_dict.pop('forecast_observations')
+        report_dict['object_pairs'] = [
+            (_fo['forecast']['forecast_id'],
+             _fo['observation']['observation_id'])
+            for _fo in fxobs]
+        params = {'name': name,
+                  'report_parameters': report_dict}
+        req = self.post('/reports/', json=params,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_report(new_id)
+
+    def post_raw_report_processed_data(self, report_id, raw_report):
+        """
+        Post the processed data that was used to make the report to the
+        API.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report to post values to
+        raw_report : datamodel.RawReport
+            The raw report object with processed_forecasts_observations
+
+        Returns
+        -------
+        tuple
+            of datamodel.ProcessedForecastObservation with `forecast_values`
+            and `observations_values` replaced with report value IDs for later
+            retrieval
+        """
+        posted_fxobs = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            fx_data = {
+                'object_id': fxobs.original.forecast.forecast_id,
+                'processed_values': serialize_data(fxobs.forecast_values)}
+            fx_post = self.post(
+                f'/reports/{report_id}/values',
+                json=fx_data, headers={'Content-Type': 'application/json'})
+            obs_data = {
+                'object_id': fxobs.original.observation.observation_id,
+                'processed_values': serialize_data(fxobs.observation_values)}
+            obs_post = self.post(
+                f'/reports/{report_id}/values',
+                json=obs_data, headers={'Content-Type': 'application/json'})
+            processed_fx_id = fx_post.text
+            processed_obs_id = obs_post.text
+            new_fxobs = fxobs.replace(forecast_values=processed_fx_id,
+                                      observation_values=processed_obs_id)
+            posted_fxobs.append(new_fxobs)
+        return tuple(posted_fxobs)
+
+    def get_raw_report_processed_data(self, report_id, raw_report,
+                                      values=None):
+        """
+        Load the processed forecast/observation data into the
+        datamodel.ProcessedForecastObservation objects of the raw_report.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report that values will be loaded from
+        raw_report : datamodel.RawReport
+            The raw report with processed_forecasts_observations to
+            be replaced
+        values : list or None
+            The report values dict as returned by the API. If None, fetch
+            the values from the API for the given report_id
+
+        Returns
+        -------
+        tuple
+           Of datamodel.ProcessedForecastObservation with values loaded into
+           `forecast_values` and `observation_values`
+        """
+        if values is None:
+            val_req = self.get(f'/reports/{report_id}/values')
+            values = val_req.json()
+        val_dict = {v['id']: v['processed_values'] for v in values}
+        out = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            fx_vals = val_dict.get(fxobs.forecast_values, None)
+            if fx_vals is not None:
+                fx_vals = deserialize_data(fx_vals)
+            obs_vals = val_dict.get(fxobs.observation_values, None)
+            if obs_vals is not None:
+                obs_vals = deserialize_data(obs_vals)
+            new_fxobs = fxobs.replace(forecast_values=fx_vals,
+                                      observation_values=obs_vals)
+            out.append(new_fxobs)
+        return tuple(out)
+
+    def post_raw_report(self, report_id, raw_report):
+        """
+        Update the report with the raw report and metrics
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        raw_report : datamodel.RawReport
+           The raw report object to add to the report
+        """
+        posted_fxobs = self.post_raw_report_processed_data(
+            report_id, raw_report)
+        to_post = raw_report.replace(
+            processed_forecasts_observations=posted_fxobs)
+        compressed_bundle = serialize_raw_report(to_post)
+        # metrics not really meaningful right now as JSON
+        self.post(f'/reports/{report_id}/metrics',
+                  json={'metrics': {}, 'raw_report': compressed_bundle},
+                  headers={'Content-Type': 'application/json'})
+        self.update_report_status(report_id, 'complete')
+
+    def update_report_status(self, report_id, status):
+        """
+        Update the status of the report
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        status : str
+           New status of the report
+        """
+        self.post(f'/reports/{report_id}/status/{status}')

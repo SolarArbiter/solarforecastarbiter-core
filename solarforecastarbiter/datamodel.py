@@ -3,11 +3,18 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-from dataclasses import dataclass, field, fields, MISSING, asdict
+from dataclasses import (dataclass, field, fields, MISSING, asdict,
+                         replace, is_dataclass)
 import datetime
+import itertools
+from typing import Tuple, Union
 
 
 import pandas as pd
+
+
+from solarforecastarbiter.validation.quality_mapping import \
+    DESCRIPTION_MASK_MAPPING
 
 
 ALLOWED_VARIABLES = {
@@ -47,7 +54,26 @@ CLOSED_MAPPING = {
 }
 
 
+def _dict_factory(inp):
+    dict_ = dict(inp)
+    for k, v in dict_.items():
+        if isinstance(v, datetime.time):
+            dict_[k] = v.strftime('%H:%M')
+        elif isinstance(v, datetime.datetime):
+            dict_[k] = v.isoformat()
+        elif isinstance(v, pd.Timedelta):
+            # convert to integer minutes
+            dict_[k] = v.total_seconds() // 60
+
+    if 'units' in dict_:
+        del dict_['units']
+    return dict_
+
+
 class BaseModel:
+    def _special_field_processing(self, model_field, val):
+        return val
+
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
         """
@@ -81,8 +107,8 @@ class BaseModel:
             For missing required fields or if raise_on_extra is True and
             input_dict contains extra keys.
         ValueError
-            If a pandas.Timedelta, datetime.time, or modeling_parameters
-            field cannot be parsed from the input_dict
+            If a pandas.Timedelta, pandas.Timestamp, datetime.time, or
+            modeling_parameters field cannot be parsed from the input_dict
         """
         dict_ = input_dict.copy()
         model_fields = fields(model)
@@ -93,26 +119,21 @@ class BaseModel:
                 if model_field.type == pd.Timedelta:
                     kwargs[model_field.name] = pd.Timedelta(
                         f'{dict_[model_field.name]}min')
+                elif model_field.type == pd.Timestamp:
+                    kwargs[model_field.name] = pd.Timestamp(
+                        dict_[model_field.name])
                 elif model_field.type == datetime.time:
                     kwargs[model_field.name] = datetime.datetime.strptime(
                         dict_[model_field.name], '%H:%M').time()
-                elif model_field.name == 'modeling_parameters':
-                    mp_dict = dict_.pop('modeling_parameters', {})
-                    tracking_type = mp_dict.pop('tracking_type', None)
-                    if tracking_type == 'fixed':
-                        kwargs['modeling_parameters'] = (
-                            FixedTiltModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type == 'single_axis':
-                        kwargs['modeling_parameters'] = (
-                            SingleAxisModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type is not None:
-                        raise ValueError(
-                            'tracking_type must be None, fixed, or '
-                            'single_axis')
+                elif (
+                        is_dataclass(model_field.type) and
+                        isinstance(dict_[model_field.name], dict)
+                ):
+                    kwargs[model_field.name] = model_field.type.from_dict(
+                        dict_[model_field.name])
                 else:
-                    kwargs[model_field.name] = dict_[model_field.name]
+                    kwargs[model_field.name] = model._special_field_processing(
+                        model, model_field, dict_[model_field.name])
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -136,17 +157,17 @@ class BaseModel:
         API. This means some types (such as pandas.Timedelta and times) are
         converted to strings.
         """
-        dict_ = asdict(self)
-        for k, v in dict_.items():
-            if isinstance(v, datetime.time):
-                dict_[k] = v.strftime('%H:%M')
-            elif isinstance(v, pd.Timedelta):
-                # convert to integer minutes
-                dict_[k] = v.total_seconds() // 60
-
-        if 'units' in dict_:
-            del dict_['units']
+        # using the dict_factory recurses through all objects for special
+        # conversions
+        dict_ = asdict(self, dict_factory=_dict_factory)
         return dict_
+
+    def replace(self, **kwargs):
+        """
+        Convience wrapper for :py:func:`dataclasses.replace` to create a
+        new dataclasses from the old with the given keys replaced.
+        """
+        return replace(self, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -186,6 +207,29 @@ class Site(BaseModel):
     site_id: str = ''
     provider: str = ''
     extra_parameters: str = ''
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if 'modeling_parameters' in dict_:
+            mp_dict = dict_.get('modeling_parameters', {})
+            if not isinstance(mp_dict, PVModelingParameters):
+                tracking_type = mp_dict.pop('tracking_type', None)
+                if tracking_type == 'fixed':
+                    dict_['modeling_parameters'] = (
+                        FixedTiltModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type == 'single_axis':
+                    dict_['modeling_parameters'] = (
+                        SingleAxisModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type is not None:
+                    raise ValueError(
+                        'tracking_type must be None, fixed, or '
+                        'single_axis')
+        return super().from_dict(dict_, raise_on_extra)
 
 
 @dataclass(frozen=True)
@@ -412,3 +456,214 @@ class Forecast(BaseModel):
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
+
+
+def __check_units__(*args):
+    ref_unit = args[0].units
+    if not all(arg.units == ref_unit for arg in args):
+        raise ValueError('All units must be identical.')
+
+
+def __check_interval_compatibility__(forecast, observation):
+    if observation.interval_length > forecast.interval_length:
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'forecast.interval_length.')
+    if ('instant' in forecast.interval_label and
+            'instant' not in observation.interval_label):
+        raise ValueError('Instantaneous forecasts cannot be evaluated against '
+                         'interval average observations.')
+
+
+@dataclass(frozen=True)
+class ForecastObservation(BaseModel):
+    """
+    Class for pairing Forecast and Observation objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    observation: Observation
+
+    def __post_init__(self):
+        __check_units__(self.forecast, self.observation)
+        __check_interval_compatibility__(self.forecast, self.observation)
+
+
+@dataclass(frozen=True)
+class BaseFilter(BaseModel):
+    """
+    Base class for filters to be applied in a report.
+    """
+    pass
+
+
+@dataclass(frozen=True)
+class QualityFlagFilter(BaseFilter):
+    """
+    Class representing quality flag filters to be applied in a report.
+
+    Parameters
+    ----------
+    quality_flags : Tuple of str
+        Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
+        These periods will be excluded from the analysis.
+    """
+    quality_flags: Tuple[str] = (
+        'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
+        'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
+    )
+
+    def __post_init__(self):
+        if not all(flag in DESCRIPTION_MASK_MAPPING
+                   for flag in self.quality_flags):
+            raise ValueError('Quality flags must be in '
+                             'BITMASK_DESCRIPTION_DICT')
+
+
+@dataclass(frozen=True)
+class TimeOfDayFilter(BaseFilter):
+    """
+    Class representing a time of day filter to be applied in a report.
+
+    Parameters
+    ----------
+    time_of_day_range : (datetime.time, datetime.time) tuple
+        Time of day range to calculate errors. Range is inclusive of
+        both endpoints. Do not use this to exclude nighttime; instead
+        set the corresponding quality_flag.
+    """
+    time_of_day_range: Tuple[datetime.time, datetime.time]
+
+
+@dataclass(frozen=True)
+class ValueFilter(BaseFilter):
+    """
+    Class representing an observation or forecast value filter to be
+    applied in a report.
+
+    Parameters
+    ----------
+    metadata : Observation or Forecast
+        Object to get values for.
+    value_range : (float, float) tuple
+        Value range to calculate errors. Range is inclusive
+        of both endpoints. Filters are applied before resampling.
+    """
+    metadata: Union[Observation, Forecast]
+    value_range: Tuple[float, float]
+
+
+def __check_metrics__():
+    # maybe belongs in the metrics package
+    # deterministic forecasts --> deterministic metrics
+    # probabilistic forecasts --> probabilistic metrics
+    # event forecasts --> event metrics
+    pass
+
+
+@dataclass(frozen=True)
+class ReportMetadata(BaseModel):
+    """
+    Hold additional metadata about the report
+    """
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    now: pd.Timestamp
+    versions: tuple
+    validation_issues: tuple
+
+
+# need apply filtering + resampling to each forecast obs pair
+@dataclass(frozen=True)
+class ProcessedForecastObservation(BaseModel):
+    """
+    Hold the processed forecast and observation data with the resampling
+    parameters
+    """
+    # do this instead of subclass to compare objects later
+    original: ForecastObservation
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    forecast_values: Union[pd.Series, str, None]
+    observation_values: Union[pd.Series, str, None]
+
+
+@dataclass(frozen=True)
+class RawReport(BaseModel):
+    """
+    Class for holding the result of processing a report request including
+    the calculated metrics, some metadata, the markdown template, and
+    the processed forecast/observation data.
+    """
+    metadata: ReportMetadata
+    template: str
+    metrics: dict  # later MetricsResult
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name == 'processed_forecasts_observations':
+            out = []
+            for v in val:
+                if isinstance(v, dict):
+                    out.append(ProcessedForecastObservation.from_dict(v))
+                else:
+                    out.append(v)
+            return tuple(out)
+        else:
+            return val
+
+
+@dataclass(frozen=True)
+class Report(BaseModel):
+    """
+    Class for keeping track of report metadata and the raw report that
+    can later be rendered to HTML or PDF. Functions in
+    :py:mod:`~solarforecastarbiter.reports.main` take a Report object
+    with `raw_report` set to None, generate the report, and return
+    another Report object with `raw_report` set to a RawReport object
+    that can be rendered.
+
+    Parameters
+    ----------
+    name : str
+        Name of the report.
+    start : pandas.Timestamp
+        Start time of the reporting period.
+    end : pandas.Timestamp
+        End time of the reporting period.
+    forecast_observations : Tuple of ForecastObservation
+        Paired Forecasts and Observations to be analyzed in the report.
+    metrics : Tuple of str
+        Metrics to be computed in the report.
+    filters : Tuple of Filters
+        Filters to be applied to the data in the report.
+    status : str
+        Status of the report
+    report_id : str
+        ID of the report in the API
+    raw_report : RawReport or None
+        Once computed, the raw report should be stored here
+    __version__ : str
+        Should be used to version reports to ensure even older
+        reports can be properly rendered
+    """
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    forecast_observations: Tuple[ForecastObservation]
+    metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
+    filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
+    status: str = 'pending'
+    report_id: str = ''
+    raw_report: Union[None, RawReport] = None
+    __version__: int = 0  # should add version to api
+
+    def __post_init__(self):
+        # ensure that all forecast and observation units are the same
+        __check_units__(*itertools.chain.from_iterable(
+            ((k.forecast, k.observation) for k in self.forecast_observations)))
+        # ensure the metrics can be applied to the forecasts and observations
+        __check_metrics__()

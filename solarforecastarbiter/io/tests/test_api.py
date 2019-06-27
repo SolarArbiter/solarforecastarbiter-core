@@ -309,6 +309,160 @@ def test_apisession_post_forecast_values(requests_mock, forecast_values):
     assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
 
 
+@pytest.fixture()
+def mock_request_fxobs(report_objects, mocker):
+    _, obs, fx0, fx1 = report_objects
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+
+    def returnone(fxid):
+        if fxid == "da2bc386-8712-11e9-a1c7-0a580a8200ae":
+            return fx0
+        else:
+            return fx1
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_forecast',
+                 side_effect=returnone)
+
+
+def test_apisession_get_report(requests_mock, report_text, report_objects,
+                               mock_request_fxobs):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports/',
+                               content=report_text)
+    out = session.get_report('')
+    # TODO: fix filters
+    expected = report_objects[0].replace(filters=[])
+    assert out == expected
+
+
+def test_apisession_get_report_with_raw(
+        requests_mock, report_text, report_objects, mock_request_fxobs,
+        raw_report, mocker):
+    raw = raw_report(False)
+    raw_txt = utils.serialize_raw_report(raw)
+    report = json.loads(report_text)
+    report['raw_report'] = raw_txt
+    report_text = json.dumps(report).encode()
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_raw_report_processed_data',
+        return_value=())
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports/',
+                               content=report_text)
+    out = session.get_report('')
+    # TODO: fix filters
+    expected = report_objects[0].replace(
+        filters=[],
+        raw_report=raw.replace(processed_forecasts_observations=()))
+    assert out == expected
+
+
+def test_apisession_list_reports(requests_mock, report_text, report_objects,
+                                 mock_request_fxobs):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports',
+                               content=b'['+report_text+b']')
+    out = session.list_reports()
+    # TODO: fix filters
+    expected = [report_objects[0].replace(filters=[])]
+    assert out == expected
+
+
+def test_apisession_list_reports_empty(requests_mock):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports',
+                               content=b'[]')
+    out = session.list_reports()
+    assert out == []
+
+
+def test_apisession_create_report(requests_mock, report_objects, mocker):
+    session = api.APISession('')
+    report = report_objects[0]
+    mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
+                 return_value=report)
+    expected = {
+        "name": "NREL MIDC OASIS GHI Forecast Analysis",
+        "report_parameters": {
+            "start": "2019-04-01T00:00:00-07:00",
+            "end": "2019-04-04T23:59:00-07:00",
+            "filters": [],
+            "metrics": ["mae", "rmse", "mbe"],
+            "object_pairs": [
+                ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
+                 "9f657636-7e49-11e9-b77f-0a580a8003e9"],
+                ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+                 "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+            ]
+        }}
+    session.create_report(report)
+    posted = mocked.last_request.json()
+    assert posted == expected
+
+
+def test_apisession_post_raw_report_processed_data(
+        requests_mock, raw_report, report_objects):
+    _, obs, fx0, fx1 = report_objects
+    session = api.APISession('')
+    ids = [fx0.forecast_id, obs.observation_id, fx1.forecast_id,
+           obs.observation_id]
+    mocked = requests_mock.register_uri(
+        'POST', re.compile(f'{session.base_url}/reports/.*/values'),
+        [{'text': id_} for id_ in ids])
+    inp = raw_report(True)
+    out = session.post_raw_report_processed_data('report_id', inp)
+    exp = raw_report(False)
+    assert out == exp.processed_forecasts_observations
+    history = mocked.request_history
+    for i, id_ in enumerate(ids):
+        assert id_ == history[i].json()['object_id']
+
+
+def test_apisession_get_raw_report_processed_data(
+        requests_mock, raw_report, report_objects):
+    _, obs, fx0, fx1 = report_objects
+    session = api.APISession('')
+    ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
+    val = utils.serialize_data(ser)
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/reports/.*/values'),
+        json=[{'id': id_, 'processed_values': val} for id_ in
+              (fx0.forecast_id, fx1.forecast_id, obs.observation_id)])
+    inp = raw_report(False)
+    out = session.get_raw_report_processed_data('', inp)
+    for fxo in out:
+        pdt.assert_series_equal(fxo.forecast_values, ser)
+        pdt.assert_series_equal(fxo.observation_values, ser)
+
+
+def test_apisession_post_raw_report(requests_mock, raw_report, mocker,
+                                    report_objects):
+    raw = raw_report(True)
+    _, obs, fx0, fx1 = report_objects
+    session = api.APISession('')
+    ids = [fx0.forecast_id, obs.observation_id, fx1.forecast_id,
+           obs.observation_id]
+    requests_mock.register_uri(
+        'POST', re.compile(f'{session.base_url}/reports/.*/values'),
+        [{'text': id_} for id_ in ids])
+    mocked = requests_mock.register_uri(
+        'POST', re.compile(f'{session.base_url}/reports/.*/metrics'))
+    status = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.update_report_status')
+    session.post_raw_report('', raw)
+    assert isinstance(mocked.last_request.json()['raw_report'], str)
+    assert status.called
+
+
+def test_apisession_update_report_status(requests_mock):
+    session = api.APISession('')
+    mocked = requests_mock.register_uri(
+        'POST', re.compile(f'{session.base_url}/reports/REPORT_ID/status/'))
+    session.update_report_status('REPORT_ID', 'complete')
+    assert mocked.last_request.url.split('/')[-1] == 'complete'
+
+
 @pytest.fixture(scope='session')
 def auth_token():
     try:
