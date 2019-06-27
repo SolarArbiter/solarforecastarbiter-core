@@ -232,5 +232,8 @@ def site_df_to_dicts(site_df):
                 'attribution': attribution
             }
         }
+        network_handler = NETWORKHANDLER_MAP.get(row['network'])
+        if hasattr(network_handler, 'adjust_site_parameters'):
+            site = network_handler.adjust_site_parameters(site)
         site_list.append(site)
     return site_list

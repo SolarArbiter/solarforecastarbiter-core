@@ -19,7 +19,26 @@ DOE_RTC_VARIABLE_MAP = {
     'AmbientTemp_weather': 'air_temperature',
     'WindSpeed': 'wind_speed',
     'RelativeHumidity': 'relative_humidity',
+    'PyranometerIrrad': 'poa_global',
+    'Sys1Wac': 'ac_power'
 }
+
+
+def adjust_site_parameters(site):
+    """Add the PV modeling parameters"""
+    out = site.copy()
+    modeling_params = {
+        'ac_capacity': 0.00324,  # no clipping
+        'dc_capacity': 0.00324,
+        'temperature_coefficient': -0.00420,
+        'dc_loss_factor': 0,
+        'ac_loss_factor': 0,
+        'surface_tilt': 35,
+        'surface_azimuth': 180,
+        'tracking_type': 'fixed'}
+    out['modeling_parameters'] = modeling_params
+    out['extra_parameters']['module'] = 'Suniva 270W'
+    return out
 
 
 def initialize_site_observations(api, site):
@@ -75,6 +94,9 @@ def update_observation_data(api, sites, observations, start, end):
             start.tz_convert(site.timezone), end.tz_convert(site.timezone))
         obs_df = obs_df.rename(columns=DOE_RTC_VARIABLE_MAP).tz_localize(
             site.timezone)
+        # W to MW
+        if 'ac_power' in obs_df:
+            obs_df['ac_power'] = obs_df['ac_power'] / 1e6
         data_in_range = obs_df[start:end]
         if data_in_range.empty:
             logger.warning(f'Data for site {site.name} contained no '
