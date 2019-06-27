@@ -222,7 +222,8 @@ def site_df_to_dicts(site_df):
                 'network': row['network'],
                 'network_api_id': row['network_api_id'],
                 'network_api_abbreviation': row['network_api_abbreviation'],
-                'observation_interval_length': row['interval_length']
+                'observation_interval_length': row['interval_length'],
+                'attribution': row.get('attribution', '')
             }
         }
         site_list.append(site)
