@@ -24,6 +24,7 @@ import logging
 from pkg_resources import resource_filename, Requirement
 
 
+import pandas as pd
 from requests.exceptions import HTTPError
 
 
@@ -203,7 +204,8 @@ def site_df_to_dicts(site_df):
     site_df: DataFrame
         Pandas Dataframe with the columns:
         interval_length, name, latitude, longitude, elevation,
-        timezone, network, network_api_id, network_api_abbreviation
+        timezone, network, network_api_id, network_api_abbreviation,
+        attribution
 
     Returns
     -------
@@ -212,6 +214,9 @@ def site_df_to_dicts(site_df):
     """
     site_list = []
     for i, row in site_df.iterrows():
+        attribution = row['attribution']
+        if attribution is None or pd.isna(attribution):
+            attribution = ''
         site = {
             'name': row['name'],
             'latitude': row['latitude'],
@@ -223,7 +228,7 @@ def site_df_to_dicts(site_df):
                 'network_api_id': row['network_api_id'],
                 'network_api_abbreviation': row['network_api_abbreviation'],
                 'observation_interval_length': row['interval_length'],
-                'attribution': row.get('attribution', '')
+                'attribution': attribution
             }
         }
         site_list.append(site)

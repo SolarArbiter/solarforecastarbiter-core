@@ -74,6 +74,7 @@ csv_dicts = [
          'network': 'UO SRML',
          'network_api_id': 94291.0,
          'network_api_abbreviation': 'ST',
+         'attribution': '',
          'observation_interval_length': 1}
      },
     {'name': 'UO Solar Awning Eugene OR',
@@ -85,6 +86,7 @@ csv_dicts = [
          'network': 'UO SRML',
          'network_api_id': 94255.0,
          'network_api_abbreviation': 'AW',
+         'attribution': '',
          'observation_interval_length': 1}
      }
 ]
