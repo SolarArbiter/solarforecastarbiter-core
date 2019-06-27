@@ -5,14 +5,14 @@ import os
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.io.fetch import sandia
+from solarforecastarbiter.io.fetch import rtc
 from solarforecastarbiter.io.reference_observations import common
 
 
 logger = logging.getLogger('reference_data')
 
 
-SANDIA_VARIABLE_MAP = {
+DOE_RTC_VARIABLE_MAP = {
     'GlobalIrrad': 'ghi',
     'DiffuseIrrad': 'dhi',
     'DirectIrrad': 'dni',
@@ -23,7 +23,8 @@ SANDIA_VARIABLE_MAP = {
 
 
 def initialize_site_observations(api, site):
-    """Creates an observaiton at the site for each variable in surfrad_variables.
+    """Creates an observaiton at the site for each variable in
+    DOE_RTC_VARIABLE_MAP
 
     Parameters
     ----------
@@ -32,19 +33,19 @@ def initialize_site_observations(api, site):
     site : datamodel.Site
         The site object for which to create Observations.
     """
-    for sfa_var in SANDIA_VARIABLE_MAP.values():
+    for sfa_var in DOE_RTC_VARIABLE_MAP.values():
         logger.info(f'Creating {sfa_var} at {site.name}')
         try:
             common.create_observation(
                 api, site, sfa_var)
         except HTTPError as e:
             logger.error(f'Could not create Observation for "{sfa_var}" '
-                         f'at SANDIA site {site.name}')
+                         f'at DOE RTC site {site.name}')
             logger.debug(f'Error: {e.response.text}')
 
 
 def update_observation_data(api, sites, observations, start, end):
-    """Post new observation data to a list of Surfrad Observations
+    """Post new observation data to a list of DOE RTC Observations
     from start to end.
 
     api : solarforecastarbiter.io.api.APISession
@@ -58,21 +59,21 @@ def update_observation_data(api, sites, observations, start, end):
     end : datetime
         The end of the period to request data for.
     """
-    sandia_api_key = os.getenv('SANDIA_API_KEY')
-    if sandia_api_key is None:
-        raise KeyError('"SANDIA_API_KEY" environment variable must be '
-                       'set to update SANDIA observation data.')
-    sandia_sites = common.filter_by_networks(sites, 'SANDIA')
-    for site in sandia_sites:
+    doe_rtc_api_key = os.getenv('DOE_RTC_API_KEY')
+    if doe_rtc_api_key is None:
+        raise KeyError('"DOE_RTC_API_KEY" environment variable must be '
+                       'set to update DOE RTC observation data.')
+    doe_rtc_sites = common.filter_by_networks(sites, 'DOE RTC')
+    for site in doe_rtc_sites:
         try:
             site_extra_params = common.decode_extra_parameters(site)
         except ValueError:
             continue
-        sandia_site_id = site_extra_params['network_api_id']
-        obs_df = sandia.fetch_sandia(
-            sandia_site_id, sandia_api_key,
+        doe_rtc_site_id = site_extra_params['network_api_id']
+        obs_df = rtc.fetch_doe_rtc(
+            doe_rtc_site_id, doe_rtc_api_key,
             start.tz_convert(site.timezone), end.tz_convert(site.timezone))
-        obs_df = obs_df.rename(columns=SANDIA_VARIABLE_MAP).tz_localize(
+        obs_df = obs_df.rename(columns=DOE_RTC_VARIABLE_MAP).tz_localize(
             site.timezone)
         data_in_range = obs_df[start:end]
         if data_in_range.empty:

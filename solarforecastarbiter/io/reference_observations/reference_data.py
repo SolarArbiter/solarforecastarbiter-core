@@ -35,7 +35,7 @@ from solarforecastarbiter.io.reference_observations import (
     crn,
     midc,
     srml,
-    sandia,
+    rtc,
     common
 )
 
@@ -47,12 +47,12 @@ NETWORKHANDLER_MAP = {
     'NOAA USCRN': crn,
     'UO SRML': srml,
     'NREL MIDC': midc,
-    'SANDIA': sandia,
+    'DOE RTC': rtc,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'SANDIA']
+                   'UO SRML', 'DOE RTC']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -81,7 +81,7 @@ NREL MIDC: National Renewable Energy Laboratory Measurement and Instrumentation 
 UO SRML: University of Oregon Solar Radiation Monitoring Laboratory
     http://solardat.uoregon.edu/
 
-SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
+DOE RTC: DOE Regional Test Centers for Solar Technologies
     https://pv-dashboard.sandia.gov/
 """  # noqa: E501
 

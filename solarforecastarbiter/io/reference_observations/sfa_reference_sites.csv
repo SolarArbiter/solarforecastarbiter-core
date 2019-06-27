@@ -70,10 +70,10 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1,University of Texas Panamerican Solar Radiation Lab,26.3059,-98.1716,45.4,UTPASRL,UTPA SRL,Etc/GMT+6,"Ramos, J.; Andreas, A.; (2011). University of Texas Panamerican (UTPA): Solar Radiation Lab (SRL); Edinburg, Texas (Data); NREL Report No. DA-5500-56514.http://dx.doi.org/10.5439/1052555",NREL MIDC
 1,Humboldt State University,40.876,-124.08,36.0,HSU,HSU SoRMS,Etc/GMT+8,"Andreas, A.; Wilcox, S.; (2007). Solar Radiation Monitoring Station (SoRMS): Humboldt State University, Arcata, California (Data); NREL Report No. DA-5500-56515. http://dx.doi.org/10.5439/1052559",NREL MIDC
 5,South Park Mountain Data,39.27278,-105.62472,2944,SPMD,SPMD,America/Denver,"McKenna, E.; Andreas, A.; (1997). South Park Mountain Data: South Park, Colorado (Data); NREL Report No. DA-5500-56521. http://dx.doi.org/10.5439/1052562"
-1,Albuquerque NM,35.05,-106.53,1657,Albuquerque,,America/Denver,,SANDIA
-1,Henderson NV,36.04,-114.92,538,Henderson,,America/Los_Angeles,,SANDIA
-1,Williston VT,44.5,-73.1,184,Williston,,America/New_York,,SANDIA
-1,Cocoa FL,28.4,-80.77,11,Cocoa,,America/New_York,,SANDIA
+1,Albuquerque NM,35.05,-106.53,1657,Albuquerque,,America/Denver,,DOE RTC
+1,Henderson NV,36.04,-114.92,538,Henderson,,America/Los_Angeles,,DOE RTC
+1,Williston VT,44.5,-73.1,184,Williston,,America/New_York,,DOE RTC
+1,Cocoa FL,28.4,-80.77,11,Cocoa,,America/New_York,,DOE RTC
 1,Albuquerque New Mexico,35.03796,-106.62211,1617,ABQ,abq,America/Denver,"B. B. Hicks, J. J. DeLuisi, D. R. Matt, (1996), The NOAA Integrated Surface Irradiance Study (ISIS).A New Surface Radiation Monitoring Program Bulletin of the American Meteorological Society Volume 77, Issue 12, December 1996 pp. 2857-2864.",NOAA SOLRAD
 1,Bismarck North Dakota,46.77179,-100.75955,503,BIS,bis,America/Chicago,"B. B. Hicks, J. J. DeLuisi, D. R. Matt, (1996), The NOAA Integrated Surface Irradiance Study (ISIS).A New Surface Radiation Monitoring Program Bulletin of the American Meteorological Society Volume 77, Issue 12, December 1996 pp. 2857-2864.",NOAA SOLRAD
 1,Hanford California,36.31357,-119.63163999999999,73,HNX,hnx,America/Los_Angeles,"B. B. Hicks, J. J. DeLuisi, D. R. Matt, (1996), The NOAA Integrated Surface Irradiance Study (ISIS).A New Surface Radiation Monitoring Program Bulletin of the American Meteorological Society Volume 77, Issue 12, December 1996 pp. 2857-2864.",NOAA SOLRAD
