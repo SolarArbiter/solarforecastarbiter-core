@@ -39,7 +39,8 @@ def mocked_get(url):
     ('plant_a', 'weather', start_date, end_date, 'bogus_key',
      'https://pv-dashboard.sandia.gov/api/v1.0/location/plant_a/data/weather/start/2019-01-22/end/2019-01-23/key/bogus_key'), # NOQA
 ])
-def test_request_doe_rtc(loc, data_type, start, end, api_key, expected, mocker):
+def test_request_doe_rtc(loc, data_type, start, end, api_key, expected,
+                         mocker):
     mock_get = mocker.patch(
         'solarforecastarbiter.io.fetch.rtc.requests.get',
         side_effect=mocked_get)
