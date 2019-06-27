@@ -67,6 +67,7 @@ Tool for initializing and updating SolarForecastArbiter reference observation da
 Supports importing sites from the following networks:
 
 NOAA (The National Oceanic and Atmospheric Administration)
+
     SURFRAD: Surface Radiation Budget Network
     https://www.esrl.noaa.gov/gmd/grad/surfrad/
 
@@ -77,13 +78,13 @@ NOAA (The National Oceanic and Atmospheric Administration)
     https://www.ncdc.noaa.gov/crn/
 
 NREL MIDC: National Renewable Energy Laboratory Measurement and Instrumentation Data Center
-    https://midcdmz.nrel.gov/
+https://midcdmz.nrel.gov/
 
 UO SRML: University of Oregon Solar Radiation Monitoring Laboratory
-    http://solardat.uoregon.edu/
+http://solardat.uoregon.edu/
 
 DOE RTC: DOE Regional Test Centers for Solar Technologies
-    https://pv-dashboard.sandia.gov/
+https://pv-dashboard.sandia.gov/
 """  # noqa: E501
 
 
