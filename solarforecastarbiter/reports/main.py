@@ -208,8 +208,8 @@ def compute_report(access_token, report_id, base_url=None):
         report for
     """
     session = APISession(access_token, base_url=base_url)
-    report = session.get_report(report_id)
     try:
+        report = session.get_report(report_id)
         data = get_data_for_report(session, report)
         raw_report = create_raw_report_from_data(report, data)
         session.post_raw_report(report.report_id, raw_report)
