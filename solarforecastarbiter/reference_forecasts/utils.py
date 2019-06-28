@@ -24,13 +24,21 @@ def get_issue_times(forecast, start_from=None):
         pandas.Timestamp objects with the issues times for the particular day
         including the first issue time for the next day.
     """
+    tzinfo = forecast.issue_time_of_day.tzinfo
     if start_from is None:
-        issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
+        issue = pd.Timestamp.combine(pd.Timestamp(0, tzinfo=tzinfo).date(),
                                      forecast.issue_time_of_day)
     else:
-        issue = pd.Timestamp.combine(start_from.date(),
-                                     forecast.issue_time_of_day).tz_localize(
-                                         start_from.tz)
+        if tzinfo is None:
+            issue = pd.Timestamp.combine(
+                start_from.date(), forecast.issue_time_of_day).tz_localize(
+                    start_from.tz)
+        else:
+            if start_from.tzinfo is not None:
+                start_from = start_from.tz_convert(tzinfo)
+            issue = pd.Timestamp.combine(
+                start_from.date(), forecast.issue_time_of_day)
+
     next_day = (issue + pd.Timedelta('1d')).floor('1d')
     # works even for midnight issue
     out = [issue]
@@ -44,8 +52,10 @@ def get_issue_times(forecast, start_from=None):
 
 def get_next_issue_time(forecast, run_time):
     """Determine the next issue time from a forecast and run time
-    """
+   """
     issue_times = get_issue_times(forecast, run_time)
+    if run_time.tzinfo is None:
+        run_time = run_time.tz_localize(issue_times[0].tzinfo)
     idx = np.searchsorted(issue_times, run_time)
     return issue_times[idx]
 

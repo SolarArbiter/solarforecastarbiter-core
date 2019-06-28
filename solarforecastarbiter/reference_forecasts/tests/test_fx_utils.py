@@ -4,6 +4,7 @@ import datetime as dt
 
 import pandas as pd
 import pytest
+import pytz
 
 
 from solarforecastarbiter.reference_forecasts import utils
@@ -27,6 +28,24 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
         lead_time_to_start=pd.Timedelta(lt))
     out = utils.get_issue_times(fx)
     assert out == expected
+
+
+@pytest.mark.parametrize('issue_time,startfrom,expected', [
+    (dt.time(6, 0, tzinfo=pytz.utc), None, [dt.time(6), dt.time(18), dt.time(6)]),
+    (dt.time(6, 0, tzinfo=pytz.timezone('MST')),
+     pd.Timestamp('20190102T0000Z'), # actually 1/1 in MST
+     [pd.Timestamp('20190101T0600-0700'), pd.Timestamp('20190101T1800-0700'),
+      pd.Timestamp('20190102T0600-0700')])
+])
+def test_issue_times_tz(single_forecast, issue_time, startfrom, expected):
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=issue_time,
+        run_length=pd.Timedelta('12h'),
+        lead_time_to_start=pd.Timedelta('0h'))
+    out = utils.get_issue_times(fx, startfrom)
+    assert out == expected
+
 
 
 @pytest.mark.parametrize('issuetime,rl,lt,start,expected', [
@@ -60,6 +79,30 @@ def test_get_next_issue_time(single_forecast, runtime, expected):
     fx = replace(
         single_forecast,
         issue_time_of_day=dt.time(5, 0),
+        run_length=pd.Timedelta('6h'),
+        lead_time_to_start=pd.Timedelta('1h'))
+    out = utils.get_next_issue_time(fx, runtime)
+    assert out == expected
+
+
+@pytest.mark.parametrize('tzinfo,runtime,expected', [
+    (pytz.utc, pd.Timestamp('20190501T1100Z'), pd.Timestamp('20190501T1100Z')),
+    (pytz.timezone('MST'), pd.Timestamp('20190501T1100Z'),
+     pd.Timestamp('20190501T0500-0700')),
+    (pytz.timezone('MST'), pd.Timestamp('20190501T1200Z'),
+     pd.Timestamp('20190501T0500-0700')),
+    (pytz.timezone('MST'), pd.Timestamp('20190501T1300Z'),
+     pd.Timestamp('20190501T1100-0700')),
+    (pytz.timezone('MST'), pd.Timestamp('20190501T0000Z'),
+     pd.Timestamp('20190430T1700-0700')),
+    (pytz.timezone('MST'), pd.Timestamp('20190501T1300'),
+     pd.Timestamp('20190501T1700-0700')),
+    (None, pd.Timestamp('20190501T1300'), pd.Timestamp('20190501T1700'))
+])
+def test_get_next_issue_time_tz(single_forecast, tzinfo, runtime, expected):
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=dt.time(5, 0, tzinfo=tzinfo),
         run_length=pd.Timedelta('6h'),
         lead_time_to_start=pd.Timedelta('1h'))
     out = utils.get_next_issue_time(fx, runtime)
