@@ -350,7 +350,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         else:
             site_abbreviation = site_extra_parameters[
                 "network_api_abbreviation"]
-            fx_name = f'{site_abbreviation} {template_forecast.name} {variable}'
+            fx_name = f'{site_abbreviation} {template_forecast.name} {variable}'  # NOQA
 
     # adjust issue_time_of_day to localtime for standard time, not DST
     issue_time_of_day = pd.Timestamp.combine(

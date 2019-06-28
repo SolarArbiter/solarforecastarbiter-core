@@ -24,7 +24,6 @@ import logging
 from pkg_resources import resource_filename, Requirement
 
 
-import pandas as pd
 from requests.exceptions import HTTPError
 
 
