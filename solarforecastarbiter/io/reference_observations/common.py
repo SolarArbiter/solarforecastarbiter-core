@@ -201,7 +201,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
                      f'{site.name}.')
         logger.debug(f'HTTP Error: {e.response.text}')
     else:
-        logger.info(f"{created.name} created successfully.")
+        logger.info(f"Observation {created.name} created successfully.")
         return created
 
 
@@ -368,7 +368,7 @@ def create_one_forecast(api, site, template_forecast, variable,
                      f'{site.name}.')
         logger.debug(f'HTTP Error: {e.response.text}')
     else:
-        logger.info(f"{created.name} created successfully.")
+        logger.info(f"Forecast {created.name} created successfully.")
         return created
 
 
