@@ -123,7 +123,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
 
     Parameters
     ----------
-    api : io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
@@ -212,7 +212,7 @@ def update_site_observations(api, fetch_func, site, observations,
 
     Prameters
     ---------
-    api : solarforecastarbiter.io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
 
     fetch_func : function
@@ -238,7 +238,7 @@ def post_observation_data(api, observation, data, start, end):
 
     Parameters
     ----------
-    api : solarforecastarbiter.io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     observation : solarforecastarbiter.datamodel.Observation
         Data model object corresponding to the Observation to update.
@@ -319,7 +319,7 @@ def create_one_forecast(api, site, template_forecast, variable,
 
     Parameters
     ----------
-    api : io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
@@ -385,7 +385,7 @@ def create_forecasts(api, site, variables):
 
     Parameters
     ----------
-    api : io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
