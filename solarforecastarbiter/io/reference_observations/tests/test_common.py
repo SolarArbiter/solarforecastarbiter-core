@@ -1,10 +1,14 @@
+import datetime as dt
+import json
+
+
 import numpy as np
 import pandas as pd
 import pytest
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.datamodel import Site, Observation
+from solarforecastarbiter.datamodel import Site, Observation, Forecast
 from solarforecastarbiter.io.reference_observations import common
 from solarforecastarbiter.io.reference_observations.tests.conftest import (
     expected_site,
@@ -285,3 +289,98 @@ def test_update_site_observations_no_data(
         mock_api, fetch, site_objects[1],
         observation_objects_param, start, end)
     mock_api.assert_not_called()
+
+
+@pytest.fixture()
+def template_fx(mock_api, mocker):
+    mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)
+    site = site_objects[1]
+    template = Forecast(
+        name='Test Template',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('1d'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('24h'),
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=Site('dummy', 0, 0, 0, 'MST'),
+        extra_parameters=json.dumps(
+            {'is_reference_forecast': True,
+             'model': 'gfs_quarter_deg_hourly_to_hourly_mean'
+             })
+        )
+    return mock_api, template, site
+
+
+def test_create_one_forecast(template_fx):
+    api, template, site = template_fx
+    fx = common.create_one_forecast(api, site, template, 'ac_power')
+    assert fx.name == 'site2 Test Template ac_power'
+    assert fx.variable == 'ac_power'
+    assert fx.site == site
+    assert fx.issue_time_of_day == dt.time(8)
+    ep = json.loads(fx.extra_parameters)
+    assert ep['is_reference_forecast']
+    assert ep['model'] == 'gfs_quarter_deg_hourly_to_hourly_mean'
+    assert 'piggyback_on' not in ep
+
+
+def test_create_one_forecast_long_name(template_fx):
+    api, template, site = template_fx
+    nn = ''.join(['n'] * 64)
+    fx = common.create_one_forecast(api, site, template.replace(name=nn),
+                                    'ac_power')
+    assert fx.name.startswith('abbrv')
+    assert fx.variable == 'ac_power'
+    assert fx.site == site
+    assert fx.issue_time_of_day == dt.time(8)
+    ep = json.loads(fx.extra_parameters)
+    assert ep['is_reference_forecast']
+    assert ep['model'] == 'gfs_quarter_deg_hourly_to_hourly_mean'
+    assert 'piggyback_on' not in ep
+
+
+def test_create_one_forecast_piggy(template_fx):
+    api, template, site = template_fx
+    fx = common.create_one_forecast(api, site, template, 'ac_power',
+                                    'other_fx')
+    assert fx.name == 'site2 Test Template ac_power'
+    assert fx.variable == 'ac_power'
+    assert fx.site == site
+    assert fx.issue_time_of_day == dt.time(8)
+    ep = json.loads(fx.extra_parameters)
+    assert ep['is_reference_forecast']
+    assert ep['model'] == 'gfs_quarter_deg_hourly_to_hourly_mean'
+    assert ep['piggyback_on'] == 'other_fx'
+
+
+def test_create_one_forecast_existing(template_fx, mocker):
+    api, template, site = template_fx
+    newfx = template.replace(name='site2 Test Template ac_power')
+    api.list_forecasts = mocker.MagicMock(return_value=[newfx])
+    fx = common.create_one_forecast(api, site, template, 'ac_power',
+                                    'other_fx')
+    assert fx == newfx
+
+
+@pytest.mark.parametrize('vars_,primary', [
+    (('ac_power', 'dni'), 'ac_power'),
+    (('ghi', 'dni'), 'ghi'),
+    (('dni', 'wind_speed', 'relative_humidity'), False)
+])
+def test_create_forecasts(template_fx, mocker, vars_, primary):
+    api, template, site = template_fx
+    templates = [template.replace(name='one'), template.replace(name='two')]
+    mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
+    fxs = common.create_forecasts(api, site, vars_)
+    assert len(fxs) == 4
+    if primary:
+        assert fxs[0].variable == primary
+        assert fxs[2].variable == primary
+    assert 'one' in fxs[0].name
+    assert 'one' in fxs[1].name
+    assert fxs[0].forecast_id in fxs[1].extra_parameters
+    assert 'two' in fxs[2].name
+    assert 'two' in fxs[3].name
+    assert fxs[2].forecast_id in fxs[3].extra_parameters

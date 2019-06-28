@@ -408,11 +408,15 @@ def create_forecasts(api, site, variables):
         # pick random var
         primary = vars_.pop()
 
+    created = []
     for template_fx in TEMPLATE_FORECASTS:
         logger.info('Creating forecasts based on %s at site %s',
                     template_fx.name, site.name)
         primary_fx = create_one_forecast(api, site, template_fx, primary)
+        created.append(primary_fx)
         piggyback_on = primary_fx.forecast_id
         for var in vars_:
-            create_one_forecast(api, site, template_fx, var,
-                                piggyback_on=piggyback_on)
+            created.append(
+                create_one_forecast(api, site, template_fx, var,
+                                    piggyback_on=piggyback_on))
+    return created
