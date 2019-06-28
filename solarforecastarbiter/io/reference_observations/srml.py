@@ -190,6 +190,20 @@ def initialize_site_observations(api, site):
                         f'{site.name}. Error: {e.response.text}')
 
 
+def initialize_site_forecasts(api, site):
+    """
+    Create a forecasts for each variable measured at the site
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    site : datamodel.Site
+        The site object for which to create Forecasts.
+    """
+    common.create_forecasts(api, site, srml_variable_map.values())
+
+
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of SRML Observations
     from start to end.

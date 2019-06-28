@@ -101,6 +101,20 @@ def initialize_site_observations(api, site):
         common.create_observation(api, site, variable)
 
 
+def initialize_site_forecasts(api, site):
+    """
+    Create a forecasts for each variable in surfrad_variables the site
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    site : datamodel.Site
+        The site object for which to create Forecasts.
+    """
+    common.create_forecasts(api, site, surfrad_variables)
+
+
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of Surfrad Observations
     from start to end.
