@@ -42,7 +42,7 @@ def adjust_site_parameters(site):
 
 
 def initialize_site_observations(api, site):
-    """Creates an observaiton at the site for each variable in
+    """Creates an observation at the site for each variable in
     DOE_RTC_VARIABLE_MAP
 
     Parameters
@@ -61,6 +61,20 @@ def initialize_site_observations(api, site):
             logger.error(f'Could not create Observation for "{sfa_var}" '
                          f'at DOE RTC site {site.name}')
             logger.debug(f'Error: {e.response.text}')
+
+
+def initialize_site_forecasts(api, site):
+    """
+    Create a forecasts for each variable in DOE_RTC_VARIABLE_MAP at each site
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    site : datamodel.Site
+        The site object for which to create Forecasts.
+    """
+    common.create_forecasts(api, site, DOE_RTC_VARIABLE_MAP.values())
 
 
 def update_observation_data(api, sites, observations, start, end):

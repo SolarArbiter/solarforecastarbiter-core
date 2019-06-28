@@ -4,10 +4,12 @@ import logging
 
 
 import pandas as pd
+import pytz
 from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.datamodel import Observation
+from solarforecastarbiter.io.reference_observations.default_forecasts import TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES  # NOQA
 
 
 logger = logging.getLogger('reference_data')
@@ -81,6 +83,11 @@ def check_network(networks, metadata):
 @lru_cache(maxsize=4)
 def existing_observations(api):
     return {obs.name: obs for obs in api.list_observations()}
+
+
+@lru_cache(maxsize=4)
+def existing_forecasts(api):
+    return {fx.name: fx for fx in api.list_forecasts()}
 
 
 @lru_cache(maxsize=4)
@@ -303,3 +310,119 @@ def site_name_no_network(site):
         return site.name[len(network) + 1:]
     else:
         return site.name
+
+
+def create_one_forecast(api, site, template_forecast, variable,
+                        piggyback_on=None):
+    """ Creates a new Observation for the variable and site. Kwargs can be
+    provided to overwrite the default arguments to the Observation constructor.
+    Kwarg options are documented in 'Other Parameters' below but users should
+    reference the SolarForecastArbiter API for valid Observation field values.
+
+    Parameters
+    ----------
+    api : io.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.site
+        A site object.
+    variable : string
+        Variable measured in the observation.
+    extra_params : dict, optional
+        If provided, this dict will be serialized as the 'extra_parameters'
+        field of the observation, otherwise the site's field is copied over.
+        Must contain the keys 'network_api_length', 'network_api_id', and
+        'observation_interval_length'.
+
+    Other Parameters
+    ----------------
+    name: string
+        Defaults to `<site.name> <variable>`
+    interval_label: string
+        Defaults to 'ending'
+    interval_value_type: string
+        Defaults to 'interval_mean'
+    uncertainty: float
+        Defaults to 0.
+
+    Returns
+    -------
+    created
+        The datamodel object of the newly created observation.
+
+    Raises
+    ------
+    KeyError
+        When the extra_parameters, either loaded from the site or provided
+        by the user is missing 'network_api_abbreviation'
+        or 'observation_interval_length'
+
+    """
+    extra_parameters = json.loads(template_forecast.extra_parameters)
+    if piggyback_on is not None:
+        extra_parameters['piggyback_on'] = piggyback_on
+    site_name = site_name_no_network(site)
+    fx_name = f'{site_name} {template_forecast.name} {variable}'
+    # Some site names are too long and exceed the API's limits,
+    # in those cases. Use the abbreviated version.
+    if len(fx_name) > 64:
+        try:
+            site_extra_parameters = decode_extra_parameters(site)
+        except ValueError:
+            fx_name = fx_name[:64]
+            logger.warning("Forecast name truncated to %s", fx_name)
+        else:
+            site_abbreviation = site_extra_parameters[
+                "network_api_abbreviation"]
+            fx_name = f'{site_abbreviation} {template_forecast.name} {variable}'
+
+    # adjust issue_time_of_day to localtime
+    issue_time_of_day = template_forecast.issue_time_of_day
+    if issue_time_of_day.tzinfo is None:
+        issue_time_of_day = issue_time_of_day.replace(
+            tzinfo=pytz.timezone(site.timezone))
+
+    forecast = template_forecast.replace(
+        name=fx_name, extra_parameters=json.dumps(extra_parameters),
+        site=site, variable=variable, issue_time_of_day=issue_time_of_day,
+    )
+    existing = existing_forecasts(api)
+    if forecast.name in existing:
+        logger.info('Forecast, %s, already exists', forecast.name)
+        return existing[forecast.name]
+
+    try:
+        created = api.create_forecast(forecast)
+    except HTTPError as e:
+        logger.error(f'Failed to create {variable} forecast at Site '
+                     f'{site.name}.')
+        logger.debug(f'HTTP Error: {e.response.text}')
+    else:
+        logger.info(f"{created.name} created successfully.")
+        return created
+
+
+def create_forecasts(api, site, variables):
+    vars_ = set(variables)
+    diff = vars_ - CURRENT_NWP_VARIABLES
+    if diff:
+        logger.warning('NWP forecasts for %s cannot currently be made',
+                       diff)
+    vars_ = vars_ & CURRENT_NWP_VARIABLES
+    if 'ac_power' in vars_:
+        primary = 'ac_power'
+        vars_.remove('ac_power')
+    elif 'ghi' in vars_:
+        primary = 'ghi'
+        vars_.remove('ghi')
+    else:
+        # pick random var
+        primary = vars_.pop()
+
+    for template_fx in TEMPLATE_FORECASTS:
+        logger.info('Creating forecasts based on %s at site %s',
+                    template_fx.name, site.name)
+        primary_fx = create_one_forecast(api, site, template_fx, primary)
+        piggyback_on = primary_fx.forecast_id
+        for var in vars_:
+            create_one_forecast(api, site, template_fx, var,
+                                piggyback_on=piggyback_on)

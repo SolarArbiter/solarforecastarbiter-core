@@ -136,6 +136,8 @@ def create_site(api, site):
         else:
             logger.info(f'Created Site {created.name} successfully.')
     network_handler.initialize_site_observations(api, created)
+    if hasattr(network_handler, 'initialize_site_forecasts'):
+        network_handler.initialize_site_forecasts(api, created)
     return created
 
 
