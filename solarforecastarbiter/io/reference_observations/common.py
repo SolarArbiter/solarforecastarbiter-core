@@ -341,9 +341,9 @@ def create_one_forecast(api, site, template_forecast, variable,
     fx_name = f'{site_name} {template_forecast.name} {variable}'
     # Some site names are too long and exceed the API's limits,
     # in those cases. Use the abbreviated version.
-    if len(fx_name) > 64:
+    if len(fx_name) > 63:
         suffix = f'{template_forecast.name} {variable}'
-        site_len = 64 - len(suffix)
+        site_len = 63 - len(suffix)
         fx_name = f'{site_name[:site_len]} {suffix}'
         logger.warning("Forecast name truncated to %s", fx_name)
 

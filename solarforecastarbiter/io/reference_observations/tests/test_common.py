@@ -331,7 +331,7 @@ def test_create_one_forecast_long_name(template_fx):
     nn = ''.join(['n'] * 64)
     fx = common.create_one_forecast(api, site.replace(name=nn), template,
                                     'ac_power')
-    assert fx.name == 'nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn Test Template ac_power'  # NOQA
+    assert fx.name == 'nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn Test Template ac_power'  # NOQA
     assert fx.variable == 'ac_power'
     assert fx.issue_time_of_day == dt.time(8)
     ep = json.loads(fx.extra_parameters)
