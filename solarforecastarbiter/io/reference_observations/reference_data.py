@@ -35,7 +35,7 @@ from solarforecastarbiter.io.reference_observations import (
     crn,
     midc,
     srml,
-    sandia,
+    rtc,
     common
 )
 
@@ -47,12 +47,12 @@ NETWORKHANDLER_MAP = {
     'NOAA USCRN': crn,
     'UO SRML': srml,
     'NREL MIDC': midc,
-    'SANDIA': sandia,
+    'DOE RTC': rtc,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'SANDIA']
+                   'UO SRML', 'DOE RTC']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -66,6 +66,7 @@ Tool for initializing and updating SolarForecastArbiter reference observation da
 Supports importing sites from the following networks:
 
 NOAA (The National Oceanic and Atmospheric Administration)
+
     SURFRAD: Surface Radiation Budget Network
     https://www.esrl.noaa.gov/gmd/grad/surfrad/
 
@@ -76,13 +77,13 @@ NOAA (The National Oceanic and Atmospheric Administration)
     https://www.ncdc.noaa.gov/crn/
 
 NREL MIDC: National Renewable Energy Laboratory Measurement and Instrumentation Data Center
-    https://midcdmz.nrel.gov/
+https://midcdmz.nrel.gov/
 
 UO SRML: University of Oregon Solar Radiation Monitoring Laboratory
-    http://solardat.uoregon.edu/
+http://solardat.uoregon.edu/
 
-SANDIA: Sandia National Laboratory Regional Test Centers for Solar Technologies
-    https://pv-dashboard.sandia.gov/
+DOE RTC: DOE Regional Test Centers for Solar Technologies
+https://pv-dashboard.sandia.gov/
 """  # noqa: E501
 
 
@@ -134,6 +135,7 @@ def create_site(api, site):
         else:
             logger.info(f'Created Site {created.name} successfully.')
     network_handler.initialize_site_observations(api, created)
+    network_handler.initialize_site_forecasts(api, created)
     return created
 
 
@@ -203,7 +205,8 @@ def site_df_to_dicts(site_df):
     site_df: DataFrame
         Pandas Dataframe with the columns:
         interval_length, name, latitude, longitude, elevation,
-        timezone, network, network_api_id, network_api_abbreviation
+        timezone, network, network_api_id, network_api_abbreviation,
+        attribution
 
     Returns
     -------
@@ -212,6 +215,7 @@ def site_df_to_dicts(site_df):
     """
     site_list = []
     for i, row in site_df.iterrows():
+        row = row.fillna('')
         site = {
             'name': row['name'],
             'latitude': row['latitude'],
@@ -222,8 +226,12 @@ def site_df_to_dicts(site_df):
                 'network': row['network'],
                 'network_api_id': row['network_api_id'],
                 'network_api_abbreviation': row['network_api_abbreviation'],
-                'observation_interval_length': row['interval_length']
+                'observation_interval_length': row['interval_length'],
+                'attribution': row['attribution']
             }
         }
+        network_handler = NETWORKHANDLER_MAP.get(row['network'])
+        if hasattr(network_handler, 'adjust_site_parameters'):
+            site = network_handler.adjust_site_parameters(site)
         site_list.append(site)
     return site_list

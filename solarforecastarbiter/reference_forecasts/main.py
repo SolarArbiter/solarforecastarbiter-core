@@ -339,8 +339,11 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
         issue_time = group.loc[run_for].next_issue_time
         if issue_time is None:
             issue_time = utils.get_next_issue_time(key_fx, run_time)
-
-        nwp_result = run_nwp(key_fx, model, run_time, issue_time)
+        try:
+            nwp_result = run_nwp(key_fx, model, run_time, issue_time)
+        except FileNotFoundError as e:
+            logger.error('Could not process group of %s, %s', run_for, str(e))
+            continue
         for fx_id, fx in group['forecast'].iteritems():
             fx_vals = getattr(nwp_result, fx.variable)
             if fx_vals is None:

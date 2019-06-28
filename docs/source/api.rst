@@ -189,14 +189,14 @@ NWP
    io.fetch.nwp.optimize_only
    io.fetch.nwp.check_wgrib2
 
-Sandia
+DOE RTC
 ------
 
 .. autosummary::
    :toctree: generated/
 
-   io.fetch.sandia.request_sandia_data
-   io.fetch.sandia.fetch_sandia
+   io.fetch.rtc.request_doe_rtc_data
+   io.fetch.rtc.fetch_doe_rtc
 
 Reference observations
 ----------------------
@@ -209,7 +209,7 @@ Reference observations
    io.reference_observations.midc_config
    io.reference_observations.midc
    io.reference_observations.reference_data
-   io.reference_observations.sandia
+   io.reference_observations.rtc
    io.reference_observations.solrad
    io.reference_observations.srml
    io.reference_observations.surfrad

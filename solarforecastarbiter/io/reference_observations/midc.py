@@ -35,6 +35,28 @@ def initialize_site_observations(api, site):
                                   extra_params=obs_extra_params)
 
 
+def initialize_site_forecasts(api, site):
+    """
+    Create a forecasts for each variable measured at the site
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    site : datamodel.Site
+        The site object for which to create Forecasts.
+    """
+    try:
+        extra_params = common.decode_extra_parameters(site)
+    except ValueError:
+        logger.warning('Cannot create reference observations at MIDC site '
+                       f'{site.name}, missing required parameters.')
+        return
+    site_api_id = extra_params['network_api_id']
+    common.create_forecasts(
+        api, site, midc_config.midc_var_map[site_api_id].keys())
+
+
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to all MIDC observations from
     start to end.
