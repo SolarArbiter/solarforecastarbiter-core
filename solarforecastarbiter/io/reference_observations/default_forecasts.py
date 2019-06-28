@@ -15,7 +15,8 @@ _DUMMY_SITE = Site('dummy', 0, 0, 0, 'UTC')
 CURRENT_NWP_VARIABLES = {'ac_power', 'ghi', 'dni', 'dhi', 'air_temperature',
                          'wind_speed'}
 
-
+# issue time of day is in local standard time and will be
+# adjusted to the appropriate UTC hour
 TEMPLATE_FORECASTS = [
     Forecast(
         name='Day Ahead GFS',
@@ -33,18 +34,18 @@ TEMPLATE_FORECASTS = [
              })
         ),
     Forecast(
-        name='Subhourly HRRR',
+        name='Hourly HRRR',
         issue_time_of_day=dt.time(5),
         lead_time_to_start=pd.Timedelta('1h'),
-        interval_length=pd.Timedelta('15min'),
+        interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('6h'),
-        interval_label='instant',
-        interval_value_type='instantaneous',
+        interval_label='ending',
+        interval_value_type='interval_mean',
         variable='ghi',
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
             {'is_reference_forecast': True,
-             'model': 'hrrr_subhourly_to_subhourly_instantaneous'
+             'model': 'hrrr_subhourly_to_hourly_mean'
              })
         ),
     Forecast(

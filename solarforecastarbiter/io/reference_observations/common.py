@@ -1,10 +1,10 @@
+import datetime as dt
 from functools import lru_cache
 import json
 import logging
 
 
 import pandas as pd
-import pytz
 from requests.exceptions import HTTPError
 
 
@@ -375,11 +375,10 @@ def create_one_forecast(api, site, template_forecast, variable,
                 "network_api_abbreviation"]
             fx_name = f'{site_abbreviation} {template_forecast.name} {variable}'
 
-    # adjust issue_time_of_day to localtime
-    issue_time_of_day = template_forecast.issue_time_of_day
-    if issue_time_of_day.tzinfo is None:
-        issue_time_of_day = issue_time_of_day.replace(
-            tzinfo=pytz.timezone(site.timezone))
+    # adjust issue_time_of_day to localtime for standard time, not DST
+    issue_time_of_day = pd.Timestamp.combine(
+        dt.date(2019, 2, 1), template_forecast.issue_time_of_day,
+        ).tz_localize(site.timezone).tz_convert('UTC').time()
 
     forecast = template_forecast.replace(
         name=fx_name, extra_parameters=json.dumps(extra_parameters),
