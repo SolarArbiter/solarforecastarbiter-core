@@ -29,8 +29,17 @@ def test_getapisession(mocker):
     assert mocked.called_with('TEST', 'url')
 
 
+@pytest.fixture()
+def mock_creates(mocker):
+    initobs = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.common.create_observation')  # NOQA
+    initfx = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.common.create_forecasts')  # NOQA
+    return initobs, initfx
+
+
 @pytest.mark.parametrize('site_dict,expected', site_object_pairs)
-def test_create_site(mock_api, site_dict, expected, mocker):
+def test_create_site(mock_api, site_dict, expected, mocker, mock_creates):
     mock_api.list_sites.return_value = {}
     mock_api.create_site.return_value = expected
     reference_data.create_site(mock_api, site_dict.copy())
@@ -38,7 +47,8 @@ def test_create_site(mock_api, site_dict, expected, mocker):
 
 
 @pytest.mark.parametrize('site_dict,expected', site_object_pairs)
-def test_create_site_exists(mock_api, site_dict, expected, mocker):
+def test_create_site_exists(mock_api, site_dict, expected, mocker,
+                            mock_creates):
     mock_api.create_site.return_value = expected
     reference_data.create_site(mock_api, site_dict.copy())
     mock_api.create_site.assert_not_called()
@@ -100,7 +110,7 @@ def test_site_df_to_dicts():
 
 
 def test_initialize_reference_metadata_objects(
-        log, mocker, mock_api, site_objects_param):
+        log, mocker, mock_api, site_objects_param, mock_creates):
     api = mocker.patch('solarforecastarbiter.io.reference_observations.'
                        'reference_data.get_apisession')
     mock_api.list_sites.return_value = {}
