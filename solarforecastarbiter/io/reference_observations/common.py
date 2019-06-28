@@ -342,15 +342,10 @@ def create_one_forecast(api, site, template_forecast, variable,
     # Some site names are too long and exceed the API's limits,
     # in those cases. Use the abbreviated version.
     if len(fx_name) > 64:
-        try:
-            site_extra_parameters = decode_extra_parameters(site)
-        except ValueError:
-            fx_name = fx_name[:64]
-            logger.warning("Forecast name truncated to %s", fx_name)
-        else:
-            site_abbreviation = site_extra_parameters[
-                "network_api_abbreviation"]
-            fx_name = f'{site_abbreviation} {template_forecast.name} {variable}'  # NOQA
+        suffix = f'{template_forecast.name} {variable}'
+        site_len = 64 - len(suffix)
+        fx_name = f'{site_name[:site_len]} {suffix}'
+        logger.warning("Forecast name truncated to %s", fx_name)
 
     # adjust issue_time_of_day to localtime for standard time, not DST
     issue_time_of_day = pd.Timestamp.combine(
