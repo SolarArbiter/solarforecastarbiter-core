@@ -314,10 +314,8 @@ def site_name_no_network(site):
 
 def create_one_forecast(api, site, template_forecast, variable,
                         piggyback_on=None):
-    """ Creates a new Observation for the variable and site. Kwargs can be
-    provided to overwrite the default arguments to the Observation constructor.
-    Kwarg options are documented in 'Other Parameters' below but users should
-    reference the SolarForecastArbiter API for valid Observation field values.
+    """Creates a new Forecast for the variable and site based on the
+    template forecast.
 
     Parameters
     ----------
@@ -325,37 +323,16 @@ def create_one_forecast(api, site, template_forecast, variable,
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
+    template_forecast : solarforecastarbiter.datamodel.Forecast
+        A Forecast object that will only have name, site, variable, and
+        issue_time_of_day replaced. New keys may be added to extra parameters.
     variable : string
-        Variable measured in the observation.
-    extra_params : dict, optional
-        If provided, this dict will be serialized as the 'extra_parameters'
-        field of the observation, otherwise the site's field is copied over.
-        Must contain the keys 'network_api_length', 'network_api_id', and
-        'observation_interval_length'.
-
-    Other Parameters
-    ----------------
-    name: string
-        Defaults to `<site.name> <variable>`
-    interval_label: string
-        Defaults to 'ending'
-    interval_value_type: string
-        Defaults to 'interval_mean'
-    uncertainty: float
-        Defaults to 0.
+        Variable measured in the forecast.
 
     Returns
     -------
     created
-        The datamodel object of the newly created observation.
-
-    Raises
-    ------
-    KeyError
-        When the extra_parameters, either loaded from the site or provided
-        by the user is missing 'network_api_abbreviation'
-        or 'observation_interval_length'
-
+        The datamodel object of the newly created forecast.
     """
     extra_parameters = json.loads(template_forecast.extra_parameters)
     if piggyback_on is not None:
@@ -401,6 +378,20 @@ def create_one_forecast(api, site, template_forecast, variable,
 
 
 def create_forecasts(api, site, variables):
+    """Create Forecast objects for each of variables, if NWP forecasts
+    can be made for that variable. Each of TEMPLATE_FORECASTS will be
+    updated with the appropriate parameters for each variable. Forecasts
+    will also be grouped together via 'piggyback_on'.
+
+    Parameters
+    ----------
+    api : io.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.site
+        A site object.
+    variables : list-like
+        List of variables to make a new forecast for each of TEMPLATE_FORECASTS
+    """
     vars_ = set(variables)
     diff = vars_ - CURRENT_NWP_VARIABLES
     if diff:
