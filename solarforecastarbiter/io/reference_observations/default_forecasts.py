@@ -34,7 +34,7 @@ TEMPLATE_FORECASTS = [
              })
         ),
     Forecast(
-        name='Hourly HRRR',
+        name='Intraday HRRR',
         issue_time_of_day=dt.time(5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
@@ -46,6 +46,21 @@ TEMPLATE_FORECASTS = [
         extra_parameters=json.dumps(
             {'is_reference_forecast': True,
              'model': 'hrrr_subhourly_to_hourly_mean'
+             })
+        ),
+    Forecast(
+        name='Intraday RAP',
+        issue_time_of_day=dt.time(5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('6h'),
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_forecast': True,
+             'model': 'rap_cloud_cover_to_hourly_mean'
              })
         ),
     Forecast(
