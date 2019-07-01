@@ -363,7 +363,10 @@ def create_one_forecast(api, site, template_forecast, variable,
         site=site, variable=variable, issue_time_of_day=issue_time_of_day,
     )
     existing = existing_forecasts(api)
-    if forecast.name in existing:
+    if (
+            forecast.name in existing and
+            existing[forecast.name].site == forecast.site
+    ):
         logger.info('Forecast, %s, already exists', forecast.name)
         return existing[forecast.name]
 
