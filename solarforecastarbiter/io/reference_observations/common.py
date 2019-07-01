@@ -397,10 +397,9 @@ def create_forecasts(api, site, variables):
         List of variables to make a new forecast for each of TEMPLATE_FORECASTS
     """
     if not is_in_nwp_domain(site):
-        logger.warning(
-            'Site %s is outside the domain of the current NWP forecasts',
-            site.name)
-        return []
+        raise ValueError(
+            f'Site {site.name} is outside the domain of the current NWP '
+            'forecasts')
     vars_ = set(variables)
     diff = vars_ - CURRENT_NWP_VARIABLES
     if diff:

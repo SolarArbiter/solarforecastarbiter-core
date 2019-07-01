@@ -372,7 +372,7 @@ def test_create_one_forecast_piggy(template_fx):
 
 def test_create_one_forecast_existing(template_fx, mocker):
     api, template, site = template_fx
-    newfx = template.replace(name='site2 Test Template ac_power')
+    newfx = template.replace(name='site2 Test Template ac_power', site=site)
     api.list_forecasts = mocker.MagicMock(return_value=[newfx])
     fx = common.create_one_forecast(api, site, template, 'ac_power',
                                     'other_fx')
@@ -407,7 +407,5 @@ def test_create_forecasts_outside(template_fx, mocker, log):
     site = site.replace(latitude=19, longitude=-159)
     templates = [template.replace(name='one'), template.replace(name='two')]
     mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
-    fxs = common.create_forecasts(api, site, vars_)
-    assert len(fxs) == 0
-    assert log.warning.called
-    assert 'outside' in log.warning.mock_calls[0][1][0]
+    with pytest.raises(ValueError):
+        common.create_forecasts(api, site, vars_)
