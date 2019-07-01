@@ -7,6 +7,16 @@ import pandas as pd
 
 
 from solarforecastarbiter.datamodel import Forecast, Site
+from solarforecastarbiter.io.fetch.nwp import DOMAIN
+
+
+def is_in_nwp_domain(site):
+    """
+    Checks the location of the site and returns True if it is within the
+    domain of the NWP forecasts.
+    """
+    return ((DOMAIN['leftlon'] <= site.longitude <= DOMAIN['rightlon']) and
+            (DOMAIN['bottomlat'] <= site.latitude <= DOMAIN['toplat']))
 
 
 _DUMMY_SITE = Site('dummy', 0, 0, 0, 'UTC')

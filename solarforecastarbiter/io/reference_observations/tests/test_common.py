@@ -294,7 +294,7 @@ def test_update_site_observations_no_data(
 @pytest.fixture()
 def template_fx(mock_api, mocker):
     mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)
-    site = site_objects[1]
+    site = site_objects[1].replace(latitude=32, longitude=-110)
     template = Forecast(
         name='Test Template',
         issue_time_of_day=dt.time(0),
@@ -399,3 +399,15 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     assert 'two' in fxs[2].name
     assert 'two' in fxs[3].name
     assert fxs[2].forecast_id in fxs[3].extra_parameters
+
+
+def test_create_forecasts_outside(template_fx, mocker, log):
+    vars_ = ('ac_power', 'dni')
+    api, template, site = template_fx
+    site = site.replace(latitude=19, longitude=-159)
+    templates = [template.replace(name='one'), template.replace(name='two')]
+    mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
+    fxs = common.create_forecasts(api, site, vars_)
+    assert len(fxs) == 0
+    assert log.warning.called
+    assert 'outside' in log.warning.mock_calls[0][1][0]

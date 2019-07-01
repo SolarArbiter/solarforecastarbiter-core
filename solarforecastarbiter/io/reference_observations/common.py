@@ -9,7 +9,8 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.datamodel import Observation
-from solarforecastarbiter.io.reference_observations.default_forecasts import TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES  # NOQA
+from solarforecastarbiter.io.reference_observations.default_forecasts import (  # NOQA
+    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain)
 
 
 logger = logging.getLogger('reference_data')
@@ -392,6 +393,11 @@ def create_forecasts(api, site, variables):
     variables : list-like
         List of variables to make a new forecast for each of TEMPLATE_FORECASTS
     """
+    if not is_in_nwp_domain(site):
+        logger.warning(
+            'Site %s is outside the domain of the current NWP forecasts',
+            site.name)
+        return []
     vars_ = set(variables)
     diff = vars_ - CURRENT_NWP_VARIABLES
     if diff:
