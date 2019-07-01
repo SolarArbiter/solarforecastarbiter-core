@@ -326,6 +326,22 @@ def test_create_one_forecast(template_fx):
     assert 'piggyback_on' not in ep
 
 
+@pytest.mark.parametrize('tz,expected', [
+    ('Etc/GMT+8', dt.time(1)),
+    ('MST', dt.time(0)),
+    ('Etc/GMT+5', dt.time(4))
+])
+def test_create_one_forecast_issue_time(template_fx, tz, expected):
+    api, template, site = template_fx
+    template = template.replace(run_length=pd.Timedelta('6h'),
+                                issue_time_of_day=dt.time(5),
+                                lead_time_to_start=pd.Timedelta('1h'),
+                                )
+    site = site.replace(timezone=tz)
+    fx = common.create_one_forecast(api, site, template, 'ac_power')
+    assert fx.issue_time_of_day == expected
+
+
 def test_create_one_forecast_long_name(template_fx):
     api, template, site = template_fx
     nn = ''.join(['n'] * 64)
