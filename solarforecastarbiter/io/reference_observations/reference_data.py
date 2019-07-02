@@ -135,7 +135,10 @@ def create_site(api, site):
         else:
             logger.info(f'Created Site {created.name} successfully.')
     network_handler.initialize_site_observations(api, created)
-    network_handler.initialize_site_forecasts(api, created)
+    try:
+        network_handler.initialize_site_forecasts(api, created)
+    except ValueError as e:
+        logger.error('Cannot create forecasts for %s: %s', site_name, e)
     return created
 
 

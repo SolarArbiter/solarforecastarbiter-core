@@ -9,7 +9,8 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.datamodel import Observation
-from solarforecastarbiter.io.reference_observations.default_forecasts import TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES  # NOQA
+from solarforecastarbiter.io.reference_observations.default_forecasts import (  # NOQA
+    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain)
 
 
 logger = logging.getLogger('reference_data')
@@ -348,16 +349,24 @@ def create_one_forecast(api, site, template_forecast, variable,
         logger.warning("Forecast name truncated to %s", fx_name)
 
     # adjust issue_time_of_day to localtime for standard time, not DST
-    issue_time_of_day = pd.Timestamp.combine(
+    issue_datetime = pd.Timestamp.combine(
         dt.date(2019, 2, 1), template_forecast.issue_time_of_day,
-        ).tz_localize(site.timezone).tz_convert('UTC').time()
+        ).tz_localize(site.timezone).tz_convert('UTC')
+    # make sure this is the first possible issue for the UTC day
+    orig_date = issue_datetime.floor('1d')
+    while issue_datetime - template_forecast.run_length >= orig_date:
+        issue_datetime -= template_forecast.run_length
+    issue_time_of_day = issue_datetime.time()
 
     forecast = template_forecast.replace(
         name=fx_name, extra_parameters=json.dumps(extra_parameters),
         site=site, variable=variable, issue_time_of_day=issue_time_of_day,
     )
     existing = existing_forecasts(api)
-    if forecast.name in existing:
+    if (
+            forecast.name in existing and
+            existing[forecast.name].site == forecast.site
+    ):
         logger.info('Forecast, %s, already exists', forecast.name)
         return existing[forecast.name]
 
@@ -387,6 +396,10 @@ def create_forecasts(api, site, variables):
     variables : list-like
         List of variables to make a new forecast for each of TEMPLATE_FORECASTS
     """
+    if not is_in_nwp_domain(site):
+        raise ValueError(
+            f'Site {site.name} is outside the domain of the current NWP '
+            'forecasts')
     vars_ = set(variables)
     diff = vars_ - CURRENT_NWP_VARIABLES
     if diff:

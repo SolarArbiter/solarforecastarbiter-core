@@ -294,7 +294,7 @@ def test_update_site_observations_no_data(
 @pytest.fixture()
 def template_fx(mock_api, mocker):
     mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)
-    site = site_objects[1]
+    site = site_objects[1].replace(latitude=32, longitude=-110)
     template = Forecast(
         name='Test Template',
         issue_time_of_day=dt.time(0),
@@ -324,6 +324,22 @@ def test_create_one_forecast(template_fx):
     assert ep['is_reference_forecast']
     assert ep['model'] == 'gfs_quarter_deg_hourly_to_hourly_mean'
     assert 'piggyback_on' not in ep
+
+
+@pytest.mark.parametrize('tz,expected', [
+    ('Etc/GMT+8', dt.time(1)),
+    ('MST', dt.time(0)),
+    ('Etc/GMT+5', dt.time(4))
+])
+def test_create_one_forecast_issue_time(template_fx, tz, expected):
+    api, template, site = template_fx
+    template = template.replace(run_length=pd.Timedelta('6h'),
+                                issue_time_of_day=dt.time(5),
+                                lead_time_to_start=pd.Timedelta('1h'),
+                                )
+    site = site.replace(timezone=tz)
+    fx = common.create_one_forecast(api, site, template, 'ac_power')
+    assert fx.issue_time_of_day == expected
 
 
 def test_create_one_forecast_long_name(template_fx):
@@ -356,7 +372,7 @@ def test_create_one_forecast_piggy(template_fx):
 
 def test_create_one_forecast_existing(template_fx, mocker):
     api, template, site = template_fx
-    newfx = template.replace(name='site2 Test Template ac_power')
+    newfx = template.replace(name='site2 Test Template ac_power', site=site)
     api.list_forecasts = mocker.MagicMock(return_value=[newfx])
     fx = common.create_one_forecast(api, site, template, 'ac_power',
                                     'other_fx')
@@ -383,3 +399,13 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     assert 'two' in fxs[2].name
     assert 'two' in fxs[3].name
     assert fxs[2].forecast_id in fxs[3].extra_parameters
+
+
+def test_create_forecasts_outside(template_fx, mocker, log):
+    vars_ = ('ac_power', 'dni')
+    api, template, site = template_fx
+    site = site.replace(latitude=19, longitude=-159)
+    templates = [template.replace(name='one'), template.replace(name='two')]
+    mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
+    with pytest.raises(ValueError):
+        common.create_forecasts(api, site, vars_)
