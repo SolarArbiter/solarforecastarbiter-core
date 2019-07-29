@@ -105,24 +105,43 @@ def test_cloud_cover_to_irradiance():
     ([0, 0, 0, 0, 0, 1/6], [0, 0, 0, 0, 0, 1.]),
     ([0, 0, 0, 0, 0, 1/6, 1, 1/2, 1/3, 1/4, 1/5, 1/6],
      [0, 0, 0, 0, 0, 1., 1., 0, 0, 0, 0, 0]),
+    ([65.0, 66.0, 44.0, 32.0, 30.0, 26.0],  # GH 144
+     [65.0, 67.0, 0.0, 0.0, 22.0, 6.0]),  # 4th element is -4 if no clipping
     ([1, 1/2], [1., 0]),
     ([0, 1/2], [0, 1.]),
     ([0, 1/2, 1, 1/2], [0, 1., 1., 0])
 ])
 def test_unmix_intervals(mixed, expected):
-    if len(mixed) in [2, 4]:
-        freq = '3h'
+    npts = len(mixed)
+    if npts in [2, 4]:
+        index = pd.date_range(start='20190101 03Z', freq='3h', periods=npts)
     else:
-        freq = '1h'
-    index = pd.date_range(start='20190101 01', freq=freq, periods=len(mixed))
+        index = pd.date_range(start='20190101 01Z', freq='1h', periods=npts)
     mixed_s = pd.Series(mixed, index=index)
     out = forecast.unmix_intervals(mixed_s)
     expected_s = pd.Series(expected, index=index)
     assert_series_equal(out, expected_s)
 
 
+@pytest.mark.parametrize('mixed,expected', [
+    ([1, 1/2, 1/3, 1/4, 1/5, 1/6], [1., 0, 0, 0, 0, 0]),
+    ([0, 0, 0, 0, 0, 1/6], [0, 0, 0, 0, 0, 1.])
+])
+def test_unmix_intervals_tz(mixed, expected):
+    index = pd.date_range(start='20190101 06-0700', freq='1h', periods=6)
+    mixed_s = pd.Series(mixed, index=index)
+    out = forecast.unmix_intervals(mixed_s)
+    expected_s = pd.Series(expected, index=index)
+    assert_series_equal(out, expected_s)
+    # should not work
+    index = pd.date_range(start='20190101 13-0700', freq='1h', periods=6)
+    with pytest.raises(ValueError):
+        mixed_s = pd.Series(mixed, index=index)
+        forecast.unmix_intervals(mixed_s)
+
+
 def test_unmix_intervals_invalidfreq():
-    index = pd.date_range(start='20190101 01', freq='2h', periods=3)
+    index = pd.date_range(start='20190101 01Z', freq='2h', periods=3)
     mixed_s = pd.Series([1, 1/3, 1/6], index=index)
     with pytest.raises(ValueError):
         forecast.unmix_intervals(mixed_s)

@@ -1,6 +1,7 @@
 """
 Functions for forecasting.
 """
+import datetime
 
 import pandas as pd
 import numpy as np
@@ -197,7 +198,7 @@ def slice_args(*args, start, end):
     return resampled_args
 
 
-def unmix_intervals(mixed):
+def unmix_intervals(mixed, lower=0, upper=100):
     """Convert mixed interval averages into pure interval averages.
 
     For example, the GFS 3 hour output contains the following data:
@@ -218,6 +219,12 @@ def unmix_intervals(mixed):
     ----------
     data : pd.Series
         The first time must be the first output of a cycle.
+    lower : None or float
+        Lower bound. Useful for handling numerical precision issues in
+        input data.
+    upper : None or float
+        Upper bound of output. Useful for handling numerical precision
+        issues in input data.
 
     Returns
     -------
@@ -229,8 +236,10 @@ def unmix_intervals(mixed):
         raise ValueError('multiple interval lengths detected. slice forecasts '
                          'into sections with unique interval lengths first.')
     interval = intervals[0]
+    start = mixed.index[0]
     mixed_vals = np.array(mixed)
     if interval == pd.Timedelta('1h'):
+        _check_start_time(start, interval)
         # mixed_1...mixed_6 are the values in the raw forecast file at
         # each hour of the mixed interval period. Let f1...f6 be unmixed,
         # true hourly average values. The relationship is:
@@ -263,6 +272,7 @@ def unmix_intervals(mixed):
         f6 = 6 * mixed_6 - 5 * mixed_5
         f = np.array([f1, f2, f3, f4, f5, f6])
     elif interval == pd.Timedelta('3h'):
+        _check_start_time(start, interval)
         # similar to above, but
         # mixed_3 = f_0_3
         # mixed_6 = (f_0_3 + f_3_6) / 2
@@ -273,4 +283,27 @@ def unmix_intervals(mixed):
         raise ValueError('mixed period must be 6 hours and data interval must '
                          'be 3 hours or 1 hour')
     unmixed = pd.Series(f.reshape(-1, order='F'), index=mixed.index)
+    unmixed = unmixed.clip(lower=0, upper=100)
     return unmixed
+
+
+def _check_start_time(start, interval):
+    """
+    start : pd.Timestamp
+        Must be timezone aware.
+    interval : pd.Timedelta
+        Time between data points.
+    """
+    # for this to work, the first value must belong to the
+    # first time of a mixed interval period. Assuming GFS data...
+    start_time = start.tz_convert('UTC').time()
+    allowed_times_interval = {
+        pd.Timedelta('1h'): (1, 7, 13, 19),
+        pd.Timedelta('3h'): (3, 9, 15, 21)
+    }
+    allowed_times = allowed_times_interval[interval]
+    if any(start_time == datetime.time(t) for t in allowed_times):
+        return
+    else:
+        raise ValueError(f'for {interval} mixed intervals, start time must '
+                         f'be one of {allowed_times}Z hours')
