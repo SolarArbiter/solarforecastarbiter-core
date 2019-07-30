@@ -234,10 +234,13 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 240 hours.
     """
-    cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, __model,
+    start_floored, end_ceil = _adjust_gfs_start_end(start, end)
+    cloud_cover_mixed, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start_floored, end_ceil, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
-    cloud_cover = forecast.unmix_intervals(cloud_cover)
+    cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
+    cloud_cover, air_temperature, wind_speed = forecast.slice_args(
+        cloud_cover, air_temperature, wind_speed, start=start, end=end)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed)
@@ -252,10 +255,13 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 120 hours.
     """
-    cloud_cover, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, __model,
+    start_floored, end_ceil = _adjust_gfs_start_end(start, end)
+    cloud_cover_mixed, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start_floored, end_ceil, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
-    cloud_cover = forecast.unmix_intervals(cloud_cover)
+    cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
+    cloud_cover, air_temperature, wind_speed = forecast.slice_args(
+        cloud_cover, air_temperature, wind_speed, start=start, end=end)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed)
@@ -270,25 +276,24 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
     output. GHI from NWP model cloud cover. DNI, DHI computed.
     Max forecast horizon 384 hours.
     """
-    start_floored = start.floor('6h') + pd.Timedelta('1h')
-    if start_floored > start:
-        start_floored -= pd.Timedelta('6h')
-    end_ceil = end.ceil('6h')
+    start_floored, end_ceil = _adjust_gfs_start_end(start, end)
     cloud_cover_mixed, air_temperature, wind_speed = load_forecast(
         latitude, longitude, init_time, start_floored, end_ceil, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
-    end_1h = init_time + pd.Timedelta('120hr')
-    end_3h = init_time + pd.Timedelta('240hr')
-    cloud_cover_1h_mixed = cloud_cover_mixed.loc[start_floored:end_1h]
-    cloud_cover_3h_mixed = cloud_cover_mixed.loc[end_1h+pd.Timedelta('3hr'):
-                                                 end_3h]
-    cloud_cover_12h = cloud_cover_mixed.loc[end_3h+pd.Timedelta('12hr'):end]
+    # unmix intervals for each kind of time resolution in forecast
     cloud_covers = []
-    if not cloud_cover_1h_mixed.empty:
+    end_1h = init_time + pd.Timedelta('120hr')
+    if start_floored < end_1h:
+        cloud_cover_1h_mixed = cloud_cover_mixed.loc[start_floored:end_1h]
         cloud_covers.append(forecast.unmix_intervals(cloud_cover_1h_mixed))
-    if not cloud_cover_3h_mixed.empty:
+    end_3h = init_time + pd.Timedelta('240hr')
+    if end_ceil > end_1h and start_floored < end_3h:
+        cloud_cover_3h_mixed = cloud_cover_mixed.loc[
+            end_1h+pd.Timedelta('3hr'):end_3h]
         cloud_covers.append(forecast.unmix_intervals(cloud_cover_3h_mixed))
-    if not cloud_cover_12h.empty:
+    if end_ceil > end_3h:
+        cloud_cover_12h = cloud_cover_mixed.loc[
+            end_3h+pd.Timedelta('12hr'):end]
         cloud_covers.append(cloud_cover_12h)
     cloud_cover = pd.concat(cloud_covers)
     cloud_cover, air_temperature, wind_speed = forecast.slice_args(
@@ -296,6 +301,18 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed)
+
+
+def _adjust_gfs_start_end(start, end):
+    """
+    Adjusts the GFS start and end times so that we always load a full
+    period of the mixed intervals average cycle.
+    """
+    start_floored = start.floor('6h') + pd.Timedelta('1h')
+    if start_floored > start:
+        start_floored -= pd.Timedelta('6h')
+    end_ceil = end.ceil('6h')
+    return start_floored, end_ceil
 
 
 def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,

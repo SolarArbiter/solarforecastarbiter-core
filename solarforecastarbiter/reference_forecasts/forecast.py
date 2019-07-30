@@ -193,7 +193,7 @@ def interpolate(arg, freq='15min', closed=None):
 
 
 def slice_args(*args, start, end):
-    resampled_args = [arg if arg is None else arg.iloc[start:end]
+    resampled_args = [arg if arg is None else arg.loc[start:end]
                       for arg in args]
     return resampled_args
 
