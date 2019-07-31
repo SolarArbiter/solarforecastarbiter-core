@@ -78,15 +78,22 @@ def test_models(model, end, end_strict):
     check_out(out, start, end, end_strict=end_strict)
 
 
-@pytest.mark.parametrize('start,end', [
-    ('20190515T0100Z', '20190520T0000Z'),
-    ('20190520T0300Z', '20190522T0000Z'),
-    ('20190525T1200Z', '20190531T0000Z'),
-    ('20190525T1200Z', '20190531T0000Z'),
+@pytest.mark.parametrize('latitude', [32.0, 32.25, 32.5])
+@pytest.mark.parametrize('longitude', [
+    -111.0, -110.75, -110.5, -110.25, -110.0])
+@pytest.mark.parametrize('start,end,init_time', [
+    ('20190515T0100Z', '20190520T0000Z', '20190515T0000Z'),
+    ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
+    ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
+    ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
+    ('20190715T0100Z', '20190720T0000Z', '20190715T0000Z'),
+    ('20190716T0800Z', '20190717T0700Z', '20190715T0000Z'),
 ])
-def test_gfs_quarter_deg_to_hourly_mean(start, end):
+def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
+                                        init_time):
     start = pd.Timestamp(start)
     end = pd.Timestamp(end)
+    init_time = pd.Timestamp(init_time)
     out = models.gfs_quarter_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
         load_forecast=LOAD_FORECAST)
@@ -122,3 +129,25 @@ def test_domain_limits(model):
 ])
 def test_get_nwp_model(model, exp):
     assert models.get_nwp_model(model) == exp
+
+
+@pytest.mark.parametrize('end,end_ceil', [
+    ('00Z', '00Z'), ('01Z', '06Z')
+])
+def test_adjust_gfs_start_end_end(end, end_ceil):
+    start = pd.Timestamp('20190101 00Z')
+    end = pd.Timestamp(f'20190101 {end}')
+    end_ceil = pd.Timestamp(f'20190101 {end_ceil}')
+    _, end_ceil_out = models._adjust_gfs_start_end(start, end)
+    assert end_ceil_out == end_ceil
+
+
+@pytest.mark.parametrize('start,start_floor', [
+    ('01Z', '01Z'), ('06Z', '01Z'), ('07Z', '07Z')
+])
+def test_adjust_gfs_start_end_start(start, start_floor):
+    end = pd.Timestamp('20190102 00Z')
+    start = pd.Timestamp(f'20190101 {start}')
+    start_floor = pd.Timestamp(f'20190101 {start_floor}')
+    start_floor_out, _ = models._adjust_gfs_start_end(start, end)
+    assert start_floor_out == start_floor
