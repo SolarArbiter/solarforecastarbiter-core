@@ -1,3 +1,5 @@
+import itertools
+
 import pandas as pd
 from pandas.util.testing import assert_series_equal
 
@@ -123,20 +125,41 @@ def test_unmix_intervals(mixed, expected):
     assert_series_equal(out, expected_s)
 
 
-@pytest.mark.parametrize('mixed,expected', [
-    ([1, 1/2, 1/3, 1/4, 1/5, 1/6], [1., 0, 0, 0, 0, 0]),
-    ([0, 0, 0, 0, 0, 1/6], [0, 0, 0, 0, 0, 1.])
-])
-def test_unmix_intervals_tz(mixed, expected):
-    index = pd.date_range(start='20190101 06-0700', freq='1h', periods=6)
-    mixed_s = pd.Series(mixed, index=index)
+# allowed times are 1, 7, 13, 19Z
+_1h_allowed_0700 = [0, 6, 12, 18]
+_1h_not_allowed_0700 = [x for x in range(0, 24) if x not in _1h_allowed_0700]
+# allowed times are 3, 9, 15, 21Z
+_3h_allowed_0700 = [2, 8, 14, 20]
+_3h_not_allowed_0700 = [x for x in range(0, 24) if x not in _3h_allowed_0700]
+
+
+@pytest.mark.parametrize('hr,freq', (
+    list(itertools.product(_1h_allowed_0700, ['1h'])) +
+    list(itertools.product(_3h_allowed_0700, ['3h']))
+))
+def test_unmix_intervals_tz(hr, freq):
+    periods = 6 if freq == '1h' else 2
+    # should work.
+    index = pd.date_range(
+        start=f'20190101 {hr:02}-0700', freq=freq, periods=periods)
+    # we only care to test tz functionality, not values
+    mixed_s = pd.Series([0] * len(index), index=index)
     out = forecast.unmix_intervals(mixed_s)
-    expected_s = pd.Series(expected, index=index)
+    expected_s = pd.Series([0] * len(index), index=index)
     assert_series_equal(out, expected_s)
-    # should not work
-    index = pd.date_range(start='20190101 13-0700', freq='1h', periods=6)
+
+
+@pytest.mark.parametrize('hr,freq', (
+    list(itertools.product(_1h_not_allowed_0700, ['1h'])) +
+    list(itertools.product(_3h_not_allowed_0700, ['3h']))
+))
+def test_unmix_intervals_tz_fail(hr, freq):
+    periods = 6 if freq == '1h' else 2
+    # should not work. 13-0700 is 20Z
+    index = pd.date_range(
+        start=f'20190101 {hr:02}-0700', freq=freq, periods=periods)
     with pytest.raises(ValueError):
-        mixed_s = pd.Series(mixed, index=index)
+        mixed_s = pd.Series([0] * len(index), index=index)
         forecast.unmix_intervals(mixed_s)
 
 
