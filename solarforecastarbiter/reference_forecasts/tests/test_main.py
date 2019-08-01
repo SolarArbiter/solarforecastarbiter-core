@@ -106,6 +106,7 @@ def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
     assert isinstance(out, pd.Series)
+    assert len(out) == 1
     assert main.persistence.persistence_scalar.call_count == 1
 
 
@@ -125,6 +126,7 @@ def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time, index=True)
     assert isinstance(out, pd.Series)
+    assert len(out) == 1
     assert main.persistence.persistence_scalar_index.call_count == 1
 
 
@@ -144,6 +146,7 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
     assert isinstance(out, pd.Series)
+    assert len(out) == 24
     assert main.persistence.persistence_interval.call_count == 1
 
 
