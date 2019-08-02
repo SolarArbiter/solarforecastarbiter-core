@@ -304,6 +304,9 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     #   avg{obs_{t_start}/clear_{t_start}...obs_{t_end}/clear_{t_end}}
     # clear_ref is calculated at high temporal resolution, so this is accurate
     # for any observation interval length
+    # apply clip to the clear sky index array before computing the average.
+    # this prevents outliers from distorting the mean, a common occurance
+    # near sunrise and sunset.
     pers_index = (obs / clear_ref_resampled).clip(lower=0, upper=2).mean()
 
     # average instantaneous clear forecasts over interval_length windows
