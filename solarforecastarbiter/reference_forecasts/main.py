@@ -80,7 +80,7 @@ def run_nwp(forecast, model, run_time, issue_time):
     """
     fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
     init_time = utils.get_init_time(run_time, fetch_metadata)
-    start, end = utils.get_forecast_start_end(forecast, issue_time)
+    start, end = utils.get_forecast_start_end(forecast, issue_time, True)
     site = forecast.site
     logger.info(
         'Calculating forecast for model %s starting at %s from %s to %s',
@@ -182,7 +182,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         If average observations are used to make instantaneous forecast.
     """
     forecast_start, forecast_end = utils.get_forecast_start_end(
-        forecast, issue_time)
+        forecast, issue_time, False)
     intraday = utils._is_intraday(forecast)
     if not intraday:
         # raise ValueError if not intraday and not midnight to midnight

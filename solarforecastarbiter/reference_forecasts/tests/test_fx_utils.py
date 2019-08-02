@@ -271,23 +271,32 @@ def forecast_hr_begin(site_metadata):
         interval_label='beginning')
 
 
-def test_get_forecast_start_end_time_same_as_issue_time(forecast_hr_begin):
+@pytest.mark.parametrize('adjust_for_interval_label', [True, False])
+def test_get_forecast_start_end_time_same_as_issue_time(
+        forecast_hr_begin, adjust_for_interval_label):
     # time is same as issue time of day
     issue_time = pd.Timestamp('20190422T0500')
     fx_start, fx_end = utils.get_forecast_start_end(
-        forecast_hr_begin, issue_time)
+        forecast_hr_begin, issue_time, adjust_for_interval_label)
     assert fx_start == pd.Timestamp('20190422T0600')
-    assert fx_end == pd.Timestamp('20190422T0700') - pd.Timedelta('1n')
+    fx_end_exp = pd.Timestamp('20190422T0700')
+    if adjust_for_interval_label:
+        fx_end_exp -= pd.Timedelta('1n')
+    assert fx_end == fx_end_exp
 
 
+@pytest.mark.parametrize('adjust_for_interval_label', [True, False])
 def test_get_forecast_start_end_time_same_as_issue_time_n_x_run(
-        forecast_hr_begin):
+        forecast_hr_begin, adjust_for_interval_label):
     # time is same as issue time of day + n * run_length
     issue_time = pd.Timestamp('20190422T1200')
     fx_start, fx_end = utils.get_forecast_start_end(
-        forecast_hr_begin, issue_time)
+        forecast_hr_begin, issue_time, adjust_for_interval_label)
     assert fx_start == pd.Timestamp('20190422T1300')
-    assert fx_end == pd.Timestamp('20190422T1400') - pd.Timedelta('1n')
+    fx_end_exp = pd.Timestamp('20190422T1400')
+    if adjust_for_interval_label:
+        fx_end_exp -= pd.Timedelta('1n')
+    assert fx_end == fx_end_exp
 
 
 def test_get_forecast_start_end_time_before_issue_time(forecast_hr_begin):
@@ -306,7 +315,9 @@ def test_get_forecast_start_end_time_invalid(forecast_hr_begin):
             forecast_hr_begin, issue_time)
 
 
-def test_get_forecast_start_end_time_instant(site_metadata):
+@pytest.mark.parametrize('adjust_for_interval_label', [True, False])
+def test_get_forecast_start_end_time_instant(
+        site_metadata, adjust_for_interval_label):
     # instant
     forecast = default_forecast(
         site_metadata,
@@ -316,6 +327,10 @@ def test_get_forecast_start_end_time_instant(site_metadata):
         run_length=pd.Timedelta('1h'),
         interval_label='instant')
     issue_time = pd.Timestamp('20190422T0500')
-    fx_start, fx_end = utils.get_forecast_start_end(forecast, issue_time)
+    fx_start, fx_end = utils.get_forecast_start_end(
+        forecast, issue_time, adjust_for_interval_label)
     assert fx_start == pd.Timestamp('20190422T0600')
-    assert fx_end == pd.Timestamp('20190422T0700') - pd.Timedelta('1n')
+    fx_end_exp = pd.Timestamp('20190422T0700')
+    if adjust_for_interval_label:
+        fx_end_exp -= pd.Timedelta('1n')
+    assert fx_end == fx_end_exp

@@ -90,8 +90,9 @@ def session(requests_mock, observation_values_text):
     return session
 
 
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
 def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
-                                mocker):
+                                interval_label, mocker):
     run_time = pd.Timestamp('20190101T1945Z')
     # intraday, index=False
     forecast = default_forecast(
@@ -100,17 +101,19 @@ def test_run_persistence_scalar(session, site_metadata, obs_5min_begin,
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
-        interval_label='beginning')
+        interval_label=interval_label)
     issue_time = pd.Timestamp('20190101T2300Z')
     mocker.spy(main.persistence, 'persistence_scalar')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
     assert isinstance(out, pd.Series)
+    assert len(out) == 1
     assert main.persistence.persistence_scalar.call_count == 1
 
 
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
 def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
-                                      mocker):
+                                      interval_label, mocker):
     run_time = pd.Timestamp('20190101T1945Z')
     forecast = default_forecast(
         site_metadata,
@@ -118,13 +121,14 @@ def test_run_persistence_scalar_index(session, site_metadata, obs_5min_begin,
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
-        interval_label='beginning')
+        interval_label=interval_label)
     issue_time = pd.Timestamp('20190101T2300Z')
     # intraday, index=True
     mocker.spy(main.persistence, 'persistence_scalar_index')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time, index=True)
     assert isinstance(out, pd.Series)
+    assert len(out) == 1
     assert main.persistence.persistence_scalar_index.call_count == 1
 
 
@@ -144,6 +148,7 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
     assert isinstance(out, pd.Series)
+    assert len(out) == 24
     assert main.persistence.persistence_interval.call_count == 1
 
 

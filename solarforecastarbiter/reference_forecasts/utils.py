@@ -60,7 +60,8 @@ def get_init_time(run_time, fetch_metadata):
     return init_time
 
 
-def get_forecast_start_end(forecast, issue_time):
+def get_forecast_start_end(forecast, issue_time,
+                           adjust_for_interval_label=False):
     """
     Get absolute forecast start from *forecast* object parameters and
     absolute *issue_time*.
@@ -69,6 +70,9 @@ def get_forecast_start_end(forecast, issue_time):
     ----------
     forecast : datamodel.Forecast
     issue_time : pd.Timestamp
+    adjust_for_interval_label : boolean
+        If True, adds or subtracts a nanosecond from the start or end
+        time based value of forecast.interval_label
 
     Returns
     -------
@@ -89,8 +93,11 @@ def get_forecast_start_end(forecast, issue_time):
              forecast.issue_time_of_day, forecast.run_length, issue_time))
     forecast_start = issue_time + forecast.lead_time_to_start
     forecast_end = forecast_start + forecast.run_length
-    return io_utils.adjust_start_end_for_interval_label(
-        forecast.interval_label, forecast_start, forecast_end, True)
+    if adjust_for_interval_label:
+        forecast_start, forecast_end = \
+            io_utils.adjust_start_end_for_interval_label(
+                forecast.interval_label, forecast_start, forecast_end, True)
+    return forecast_start, forecast_end
 
 
 def _is_intraday(forecast):
