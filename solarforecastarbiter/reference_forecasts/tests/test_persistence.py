@@ -294,6 +294,9 @@ def test_persistence_scalar_index_low_solar_elevation(
     interval_label = 'beginning'
     observation = default_observation(
         site_metadata, interval_length='5min', interval_label=interval_label)
+    observation_ac = default_observation(
+        powerplant_metadata, interval_length='5min',
+        interval_label=interval_label, variable='ac_power')
 
     # at ABQ Baseline, solar apparent zenith for these points is
     # 2019-05-13 12:00:00+00:00     91.62
@@ -333,5 +336,10 @@ def test_persistence_scalar_index_low_solar_elevation(
     fx = persistence.persistence_scalar_index(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
+    assert_series_equal(fx, expected, check_less_precise=1, check_names=False)
 
+    expected = pd.Series([0.2, 0.7, 1.2, 1.6, 2., 8.9], index=expected_index)
+    fx = persistence.persistence_scalar_index(
+        observation_ac, data_start, data_end, forecast_start, forecast_end,
+        interval_length, interval_label, load_data)
     assert_series_equal(fx, expected, check_less_precise=1, check_names=False)
