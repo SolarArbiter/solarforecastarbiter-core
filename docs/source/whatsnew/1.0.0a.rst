@@ -1,25 +1,16 @@
 .. _whatsnew_100a:
 
-v1.0.0 (June 28, 2019)
+1.0.0a (June 28, 2019)
 ----------------------
 
 This is the first 1.0 alpha release. The major features include:
 
-
-API Changes
-~~~~~~~~~~~
-
-
-Enhancements
-~~~~~~~~~~~~
-
-
-Bug fixes
-~~~~~~~~~
-
-
-Testing
-~~~~~~~
+* Data validation
+* Reference forecasts from NWP and persistence
+* Report generation
+* Data download functions for NOAA NWP models, ARM, and RTC
+* Data model
+* PV modeling functions
 
 
 Contributors
