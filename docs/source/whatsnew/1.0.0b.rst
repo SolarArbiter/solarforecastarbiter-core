@@ -1,0 +1,30 @@
+.. _whatsnew_100b:
+
+1.0.0b (expected September 30, 2019)
+------------------------------------
+
+This is the first 1.0 beta release.
+
+
+API Changes
+~~~~~~~~~~~
+
+
+Enhancements
+~~~~~~~~~~~~
+
+
+Bug fixes
+~~~~~~~~~
+
+
+Testing
+~~~~~~~
+
+
+Contributors
+~~~~~~~~~~~~
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`atlorenzo`)
