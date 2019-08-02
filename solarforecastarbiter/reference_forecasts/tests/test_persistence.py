@@ -286,3 +286,52 @@ def test_persistence_scalar_index_invalid_times_invalid_label(site_metadata):
             observation, data_start, data_end, forecast_start, forecast_end,
             interval_length, interval_label, load_data)
     assert "invalid interval_label" in str(excinfo.value)
+
+
+def test_persistence_scalar_index_low_solar_elevation(
+        site_metadata, powerplant_metadata):
+
+    interval_label = 'beginning'
+    observation = default_observation(
+        site_metadata, interval_length='5min', interval_label=interval_label)
+
+    # at ABQ Baseline, solar apparent zenith for these points is
+    # 2019-05-13 12:00:00+00:00     91.62
+    # 2019-05-13 12:05:00+00:00     90.09
+    # 2019-05-13 12:10:00+00:00     89.29
+    # 2019-05-13 12:15:00+00:00     88.45
+    # 2019-05-13 12:20:00+00:00     87.57
+    # 2019-05-13 12:25:00+00:00     86.66
+
+    tz = 'UTC'
+    data_start = pd.Timestamp('20190513 1200', tz=tz)
+    data_end = pd.Timestamp('20190513 1230', tz=tz)
+    index = pd.date_range(start=data_start, end=data_end,
+                          freq='5min', closed='left')
+
+    # clear sky 5 min avg (from 1 min avg) GHI is
+    # [0., 0.10932908, 1.29732454, 4.67585122, 10.86548521, 19.83487399]
+    # create data series that could produce obs / clear of
+    # 0/0, 1/0.1, -1/1.3, 5/5, 10/10, 20/20
+    # average without limits is (10 - 1 + 1 + 1 + 1) / 5 = 2.4
+    # average with element limits of [0, 2] = (2 + 0 + 1 + 1 + 1) / 5 = 1
+
+    data = pd.Series([0, 1, -1, 5, 10, 20.], index=index)
+    forecast_start = pd.Timestamp('20190513 1230', tz=tz)
+    forecast_end = pd.Timestamp('20190513 1300', tz=tz)
+    interval_length = pd.Timedelta('5min')
+    load_data = partial(load_data_base, data)
+
+    expected_index = pd.date_range(
+        start=forecast_start, end=forecast_end, freq='5min', closed='left')
+
+    # clear sky 5 min avg GHI is
+    # [31.2, 44.5, 59.4, 75.4, 92.4, 110.1]
+    expected_vals = [31.2, 44.5, 59.4, 75.4, 92.4, 110.1]
+    expected = pd.Series(expected_vals, index=expected_index)
+
+    fx = persistence.persistence_scalar_index(
+        observation, data_start, data_end, forecast_start, forecast_end,
+        interval_length, interval_label, load_data)
+
+    assert_series_equal(fx, expected, check_less_precise=1, check_names=False)
