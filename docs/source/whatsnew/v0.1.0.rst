@@ -1,9 +1,9 @@
-.. _whatsnew_010:
+.. _whatsnew_100a:
 
-v0.1.0 (exp. 31 March 2019)
----------------------------
+v1.0.0 (June 28, 2019)
+----------------------
 
-This is the first release. It is not feature-complete.
+This is the first 1.0 alpha release. The major features include:
 
 
 API Changes
