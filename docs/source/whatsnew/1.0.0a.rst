@@ -35,3 +35,7 @@ Contributors
 * Leland Boeman (:ghuser:`lboeman`)
 * Cliff Hansen (:ghuser:`cwhanse`)
 * Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
