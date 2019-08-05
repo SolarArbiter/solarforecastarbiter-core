@@ -24,7 +24,8 @@ Testing
 
 Contributors
 ~~~~~~~~~~~~
+
 * Will Holmgren (:ghuser:`wholmgren`)
 * Leland Boeman (:ghuser:`lboeman`)
 * Cliff Hansen (:ghuser:`cwhanse`)
-* Tony Lorenzo (:ghuser:`atlorenzo`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
