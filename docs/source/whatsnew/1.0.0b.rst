@@ -16,6 +16,13 @@ Enhancements
 
 Bug fixes
 ~~~~~~~~~
+* Fix whats new documentation (:issue:`143`)
+* Fix :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`
+  start, end time issue. (:issue:`147`)
+* Fix issue with negative GHI forecasts derived from GFS model due to
+  complications with unmixing interval averages. (:issue:`144`)
+* When computing reference forecast issue time of day, account for
+  *run_length* when adjusting UTC to local time zone. (:issue:`140`)
 
 
 Testing
