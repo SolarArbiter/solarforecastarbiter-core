@@ -23,6 +23,9 @@ Bug fixes
   complications with unmixing interval averages. (:issue:`144`)
 * When computing reference forecast issue time of day, account for
   *run_length* when adjusting UTC to local time zone. (:issue:`140`)
+* Add lower and upper limits to clearsky index calculations in
+  :py:func:`~solarforecastarbiter.reference_forecasts.persistence.persistence_scalar_index`
+  function. Reduces large errors near sunrise and sunset. (:issue:`107`)
 
 
 Testing
