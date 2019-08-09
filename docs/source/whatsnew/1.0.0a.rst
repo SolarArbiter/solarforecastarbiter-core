@@ -1,0 +1,41 @@
+.. _whatsnew_100a:
+
+1.0.0a (June 28, 2019)
+----------------------
+
+This is the first 1.0 alpha release.
+
+Features
+~~~~~~~~
+
+The major features include:
+
+* Data validation toolkit (:issue:`15`, :issue:`16`, :issue:`18`,
+  :issue:`21`, :issue:`22`, :issue:`25`, :issue:`71`, :issue:`72`,
+  :issue:`73`, :issue:`74`, :issue:`76`)
+* Reference forecasts from NOAA NWP models (:issue:`10`, :issue:`58`,
+  :issue:`90`, :issue:`96`, :issue:`104`)
+* Reference forecasts from persistence models (:issue:`53`)
+* Report generation (:issue:`87`)
+* Data download functions for NOAA NWP models (:issue:`56`), ARM, and
+  RTC (:issue:`8`, :issue:`42`)
+* Classes that implement the data model (:pull:`14`, :issue:`41`)
+* Python wrapper of the
+  `Solar Forecast Arbiter HTTP API <https://api.solarforecastarbiter.org/>`_
+  (:pull:`79`)
+* Standardized PV modeling functions (:pull:`48`)
+* Integrations for testing on Azure, documentation on readthedocs.org,
+  code analysis on LGTM, and linting. (:issue:`3`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
