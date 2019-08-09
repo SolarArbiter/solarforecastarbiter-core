@@ -190,7 +190,7 @@ NWP
    io.fetch.nwp.check_wgrib2
 
 DOE RTC
-------
+-------
 
 .. autosummary::
    :toctree: generated/

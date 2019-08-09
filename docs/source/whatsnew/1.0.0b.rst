@@ -1,0 +1,42 @@
+.. _whatsnew_100b:
+
+1.0.0b (expected September 30, 2019)
+------------------------------------
+
+This is the first 1.0 beta release.
+
+
+API Changes
+~~~~~~~~~~~
+
+
+Enhancements
+~~~~~~~~~~~~
+
+
+Bug fixes
+~~~~~~~~~
+* Fix whats new documentation (:issue:`143`)
+* Fix :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`
+  start, end time issue. (:issue:`147`)
+* Fix issue with negative GHI forecasts derived from GFS model due to
+  complications with unmixing interval averages. (:issue:`144`)
+* When computing reference forecast issue time of day, account for
+  *run_length* when adjusting UTC to local time zone. (:issue:`140`)
+
+
+Testing
+~~~~~~~
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
