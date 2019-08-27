@@ -26,7 +26,7 @@ Bug fixes
 * Add lower and upper limits to clearsky index calculations in
   :py:func:`~solarforecastarbiter.reference_forecasts.persistence.persistence_scalar_index`
   function. Reduces large errors near sunrise and sunset. (:issue:`107`)
-
+* Address numpy, pandas deprecations. (:pull:`156`)
 
 Testing
 ~~~~~~~

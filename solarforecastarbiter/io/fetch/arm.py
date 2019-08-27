@@ -4,7 +4,6 @@ here: https://adc.arm.gov/armlive/
 """
 import json
 import netCDF4
-import numpy as np
 import pandas as pd
 import requests
 
@@ -160,7 +159,7 @@ def extract_arm_variables(nc_file, variables):
         except IndexError:
             continue
     if var_data:
-        base_time = np.asscalar(nc_file['base_time'][0].data)
+        base_time = nc_file['base_time'][0].data.item()
         delta_time = nc_file['time'][:]
         times = pd.to_datetime(base_time + delta_time, unit='s', utc=True)
         return pd.DataFrame(index=times, data=var_data)

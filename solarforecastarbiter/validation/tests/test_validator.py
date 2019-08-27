@@ -192,8 +192,8 @@ def test_check_ghi_clearsky(mocker, location, times):
 
 
 def test_check_poa_clearsky(mocker, times):
-    dt = pd.DatetimeIndex(start=datetime(2019, 6, 15, 12, 0, 0),
-                          freq='15T', periods=5)
+    dt = pd.date_range(start=datetime(2019, 6, 15, 12, 0, 0),
+                       freq='15T', periods=5)
     poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
     poa_clearsky = pd.Series(index=dt, data=1000)
     result = validator.check_poa_clearsky(poa_global, poa_clearsky)
@@ -314,8 +314,8 @@ def test_detect_interpolation():
 @pytest.fixture
 def ghi_clipped():
     MST = pytz.timezone('Etc/GMT+7')
-    dt = pd.DatetimeIndex(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
-                          periods=60, freq='15T')
+    dt = pd.date_range(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
+                       periods=60, freq='15T')
     loc = pvlib.location.Location(latitude=35, longitude=-110, tz=MST)
     cs = loc.get_clearsky(dt)
     ghi = cs['ghi']
