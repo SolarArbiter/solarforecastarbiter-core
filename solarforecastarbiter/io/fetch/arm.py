@@ -4,7 +4,6 @@ here: https://adc.arm.gov/armlive/
 """
 import json
 import netCDF4
-import numpy as np
 import pandas as pd
 import requests
 
