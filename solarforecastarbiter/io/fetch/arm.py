@@ -45,8 +45,7 @@ def request_arm_file_list(user_id, api_key, datastream, start, end):
     Returns
     -------
     dict
-        The json response parsed into a dictionary.
-    """
+        The json response parsed into a dictionary. """
     params = {'user': f'{user_id}:{api_key}',
               'ds': datastream,
               'start': format_date(start),
@@ -160,7 +159,7 @@ def extract_arm_variables(nc_file, variables):
         except IndexError:
             continue
     if var_data:
-        base_time = np.asscalar(nc_file['base_time'][0].data)
+        base_time = nc_file['base_time'][0].data.item()
         delta_time = nc_file['time'][:]
         times = pd.to_datetime(base_time + delta_time, unit='s', utc=True)
         return pd.DataFrame(index=times, data=var_data)
