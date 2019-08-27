@@ -44,7 +44,8 @@ def request_arm_file_list(user_id, api_key, datastream, start, end):
     Returns
     -------
     dict
-        The json response parsed into a dictionary. """
+        The json response parsed into a dictionary.
+    """
     params = {'user': f'{user_id}:{api_key}',
               'ds': datastream,
               'start': format_date(start),
