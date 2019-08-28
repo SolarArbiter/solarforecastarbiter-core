@@ -150,8 +150,10 @@ Metrics for each hour of the day during the analysis period are displayed in tab
 
 This report was created using open source software packages. The relevant packages and their versions are listed below. Readers are encouraged to study the source code to understand exactly how the data was processed.
 
-{% for package, version in versions.items() %}
-    {{ package }}: {{ version }}
+| Package | Version |
+|:--------|:--------|
+{% for package, version in versions.items() -%}
+    | {{ package|e }} | {{ version|e }} |
 {% endfor %}
 
 ## Hash
