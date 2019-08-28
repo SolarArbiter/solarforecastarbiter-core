@@ -27,6 +27,8 @@ Bug fixes
   :py:func:`~solarforecastarbiter.reference_forecasts.persistence.persistence_scalar_index`
   function. Reduces large errors near sunrise and sunset. (:issue:`107`)
 * Address numpy, pandas deprecations. (:pull:`156`)
+* Remove TODO, EXAMPLE text from reports template in favor of GitHub
+  Issues. (:issue:`167`)
 
 Testing
 ~~~~~~~
