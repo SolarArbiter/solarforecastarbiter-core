@@ -25,7 +25,7 @@ def template_report(report, metadata, metrics):
     ----------
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
-    metadata : str, dict
+    metadata : solarforecastarbiter.datamodel.ReportMetadata
         Describes the pre-report
     metrics : tuple of dict
 
