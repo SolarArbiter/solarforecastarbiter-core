@@ -326,3 +326,7 @@ def report(verbose, user, password, base_url, report_file, output_file):
     full_report = template.full_html(body)
     with open(output_file, 'w') as f:
         f.write(full_report)
+
+
+if __name__ == "__main__":
+    cli()

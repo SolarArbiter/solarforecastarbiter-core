@@ -56,11 +56,15 @@ def resample_realign(report, data):
                 interval_length, label=label).mean()
             data_resampled[fxobs.observation] = resampled
         # no resampling allowed for forecasts for now
+        # convert tzs to site tz (GH 164)
+        tz = fxobs.forecast.site.timezone
+        forecast_values = data[fxobs.forecast].tz_convert(tz)
+        observation_values = data_resampled[fxobs.observation].tz_convert(tz)
         processed_fxobs = datamodel.ProcessedForecastObservation(
             original=fxobs, interval_value_type=interval_value_type,
             interval_length=interval_length, interval_label=interval_label,
-            forecast_values=data[fxobs.forecast],
-            observation_values=data_resampled[fxobs.observation])
+            forecast_values=forecast_values,
+            observation_values=observation_values)
         processed.append(processed_fxobs)
     return processed
 
