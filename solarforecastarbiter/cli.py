@@ -293,7 +293,9 @@ def referencenwp(verbose, user, password, base_url, run_time,
 @common_options
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
-def report(verbose, user, password, base_url, report_file):
+@click.argument(
+    'output-file', type=click.Path(resolve_path=True))
+def report(verbose, user, password, base_url, report_file, output_file):
     """
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
@@ -322,5 +324,5 @@ def report(verbose, user, password, base_url, report_file):
     report_md = reports.render_raw_report(raw_report)
     body = template.report_md_to_html(report_md)
     full_report = template.full_html(body)
-    with open('bokeh_report.html', 'w') as f:
+    with open(output_file, 'w') as f:
         f.write(full_report)
