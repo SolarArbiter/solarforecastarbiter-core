@@ -100,7 +100,7 @@ def create_metadata(report_request):
 
     Returns
     -------
-    metadata: dict
+    metadata: solarforecastarbiter.datamodel.ReportMetadata
     """
     versions = get_versions()
     validation_issues = get_validation_issues()

@@ -571,8 +571,8 @@ class ReportMetadata(BaseModel):
     start: pd.Timestamp
     end: pd.Timestamp
     now: pd.Timestamp
-    versions: tuple
-    validation_issues: tuple
+    versions: dict
+    validation_issues: dict
 
 
 # need apply filtering + resampling to each forecast obs pair

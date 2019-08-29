@@ -8,24 +8,14 @@
 {# fix this #}
 {% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
 
-{# jinja requires that we escape the markdown div specification #}
-{{ '::: {.metadata-table}' }}
-
-## Report metadata
-
-* Name: {{ name }}
-* Start: {{ start }}
-* End: {{ end }}
-:::
+This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
 {{ '::: {.download}' }}
 {# Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }}) #}
-Download as [html]() or [pdf]() **TODO**
+Download as [html]() or [pdf]()
 :::
 
-This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
-
-This report was generated at {{ now }}.
+Please see our GitHub repository for [known issues](https://github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports) with the reports or to create a new issue.
 
 Contents:
 
@@ -41,6 +31,17 @@ Contents:
 * [Versions](#versions)
 * [Hash](#hash)
 
+## Report metadata
+
+{# jinja requires that we escape the markdown div specification #}
+{{ '::: {.metadata-table}' }}
+
+* Name: {{ name }}
+* Start: {{ start }}
+* End: {{ end }}
+* Generated at: {{ now }}
+:::
+
 ## Data
 
 {# replace with warning if not all forecast/obs data is accessible #}
@@ -50,7 +51,7 @@ WARNING: One or more of the observation or forecast data has changed since this 
 :::
 {% endif %}
 
-This report covers the period from {{ start }} to {{ end }}.
+This report includes forecast and observation data available from {{ start }} to {{ end }}.
 
 ### Observations and forecasts
 
@@ -76,7 +77,7 @@ Controls to pan, zoom, and save the plot are shown on the right. Clicking on an 
 
 ### Data validation
 
-The Solar Forecast Arbiter's data validation toolkit identified the following **(EXAMPLE)** issues with the unprocessed observation data:
+The Solar Forecast Arbiter's data validation toolkit identified the following issues with the unprocessed observation data:
 
 {% for issue, points in validation_issues.items() %}
 * {{ issue }}: {{ points }} intervals
@@ -90,8 +91,7 @@ These intervals were removed from the raw time series before resampling and real
 {{ script_metrics | safe }}
 {{ '{%' }} endraw {{ '%}' }}
 
-Metrics are displayed in tables and figures below for one or more time periods. **(TODO)** Metrics may be downloaded
-in csv format.
+Metrics are displayed in tables and figures below for one or more time periods. Metrics may be downloaded in csv format.
 
 ### Total analysis period
 
@@ -150,13 +150,15 @@ Metrics for each hour of the day during the analysis period are displayed in tab
 
 This report was created using open source software packages. The relevant packages and their versions are listed below. Readers are encouraged to study the source code to understand exactly how the data was processed.
 
-{% for package, version in versions.items() %}
-    {{ package }}: {{ version }}
+| Package | Version |
+|:--------|:--------|
+{% for package, version in versions.items() -%}
+    | {{ package|e }} | {{ version|e }} |
 {% endfor %}
 
 ## Hash
 
 {# fix this #}
-The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a **(EXAMPLE ONLY)**
+The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a
 
 The signature can be verified using the Solar Forecast Arbiter [public key](solarforecastarbiter.org).
