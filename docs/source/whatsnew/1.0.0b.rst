@@ -12,7 +12,7 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-
+* Add command line interface option for reports. (:issue:`168`)
 
 Bug fixes
 ~~~~~~~~~
