@@ -223,6 +223,13 @@ def test_reference_nwp(cli_token, mocker):
 
 
 def test_report(cli_token, mocker):
+    mocker.patch('solarforecastarbiter.cli.APISession')
+    mocker.patch('solarforecastarbiter.cli.datamodel.ForecastObservation')
+    mocker.patch('solarforecastarbiter.cli.datamodel.Report')
+    mocker.patch('solarforecastarbiter.cli.reports')
+    mocker.patch('solarforecastarbiter.cli.template.report_md_to_html')
+    mocker.patch('solarforecastarbiter.cli.template.full_html',
+                 return_value='test')
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
         infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /
