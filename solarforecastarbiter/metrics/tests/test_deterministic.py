@@ -1,6 +1,35 @@
+import pytest
 import numpy as np
+import pandas as pd
 from solarforecastarbiter.metrics import deterministic
 
+
+@pytest.fixture()
+def test_df():
+    n = 100
+    t = np.linspace(0, 8 * np.pi, n)
+    ts = pd.date_range("2017-01-01 00:00:00", freq="1h", periods=n)
+    return pd.DataFrame(index=ts, data={
+        "true": np.sin(t),
+        "perfect": np.sin(t),
+        "overpredict": np.sin(t) + 0.1,
+        "underpredict": np.sin(t) - 0.1,
+    })
+
+def test_mae(test_df):
+    assert deterministic.mean_absolute(test_df["true"], test_df["perfect"]) == 0.0
+    assert deterministic.mean_absolute(test_df["true"], test_df["overpredict"]) > 0.0
+    assert deterministic.mean_absolute(test_df["true"], test_df["underpredict"]) > 0.0
+
+def test_mbe(test_df):
+    assert deterministic.mean_bias(test_df["true"], test_df["perfect"]) == 0.0
+    assert deterministic.mean_bias(test_df["true"], test_df["overpredict"]) > 0.0
+    assert deterministic.mean_bias(test_df["true"], test_df["underpredict"]) < 0.0
+
+def test_rmse(test_df):
+    assert deterministic.root_mean_square(test_df["true"], test_df["perfect"]) == 0.0
+    assert deterministic.root_mean_square(test_df["true"], test_df["overpredict"]) > 0.0
+    assert deterministic.root_mean_square(test_df["true"], test_df["underpredict"]) > 0.0
 
 def test_deterministic_metrics():
 
