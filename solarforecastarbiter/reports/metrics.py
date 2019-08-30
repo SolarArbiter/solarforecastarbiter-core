@@ -13,9 +13,9 @@ from solarforecastarbiter.validation.quality_mapping import \
     convert_mask_into_dataframe
 
 
-def validate_resample_align(report, data):
+def validate_resample_align(report, metadata, data):
     data_validated = apply_validation(report, data)
-    processed_fxobs = resample_realign(report, data_validated)
+    processed_fxobs = resample_realign(report, metadata, data_validated)
     return processed_fxobs
 
 
@@ -40,7 +40,7 @@ def apply_validation(report, data):
     return data_validated
 
 
-def resample_realign(report, data):
+def resample_realign(report, metadata, data):
     """Probably apply validation and other filters before this"""
     processed = []
     data_resampled = {}
@@ -56,8 +56,8 @@ def resample_realign(report, data):
                 interval_length, label=label).mean()
             data_resampled[fxobs.observation] = resampled
         # no resampling allowed for forecasts for now
-        # convert tzs to site tz (GH 164)
-        tz = fxobs.forecast.site.timezone
+        # convert tzs (GH 164)
+        tz = metadata.timezone
         forecast_values = data[fxobs.forecast].tz_convert(tz)
         observation_values = data_resampled[fxobs.observation].tz_convert(tz)
         processed_fxobs = datamodel.ProcessedForecastObservation(
