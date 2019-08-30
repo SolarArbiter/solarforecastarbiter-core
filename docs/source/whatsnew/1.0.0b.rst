@@ -29,6 +29,7 @@ Bug fixes
 * Address numpy, pandas deprecations. (:pull:`156`)
 * Remove TODO, EXAMPLE text from reports template in favor of GitHub
   Issues. (:issue:`167`)
+* Account for timezone in metrics/report generation. (:issue:`164`)
 
 Testing
 ~~~~~~~

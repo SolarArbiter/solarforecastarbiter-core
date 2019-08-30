@@ -85,7 +85,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
         cds is a Bokeh ColumnDataSource with columns
         timestamp, observation, forecast.
     start : pandas.Timestamp
-        Report start time.
+        Report start time
     end : pandas.Timestamp
         Report end time
     timezone : str
