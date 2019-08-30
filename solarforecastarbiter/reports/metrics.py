@@ -6,8 +6,10 @@ from collections import defaultdict
 
 
 import numpy as np
+import pandas as pd
 
 
+from solarforecastarbiter.metrics import deterministic
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.validation.quality_mapping import \
     convert_mask_into_dataframe
@@ -77,25 +79,41 @@ def loop_forecasts_calculate_metrics(report, processed_fxobs):
 def calculate_metrics(forecast_observation, fx_values, obs_values):
     metrics = defaultdict(dict)
     metrics['name'] = forecast_observation.forecast.name
-    diff = fx_values - obs_values
-    metrics['total']['mae'] = diff.abs().mean()
-    _rmse = diff.aggregate(rmse)
-    metrics['total']['rmse'] = _rmse
-    metrics['total']['mbe'] = diff.mean()
-    metrics['day']['mae'] = diff.abs().groupby(lambda x: x.date).mean()
-    _rmse = diff.groupby(lambda x: x.date).aggregate(rmse)
-    metrics['day']['rmse'] = _rmse
-    metrics['day']['mbe'] = diff.groupby(lambda x: x.date).mean()
-    metrics['month']['mae'] = diff.abs().groupby(lambda x: x.month).mean()
-    _rmse = diff.groupby(lambda x: x.month).aggregate(rmse)
-    metrics['month']['rmse'] = _rmse
-    metrics['month']['mbe'] = diff.groupby(lambda x: x.month).mean()
-    metrics['hour']['mae'] = diff.abs().groupby(lambda x: x.hour).mean()
-    _rmse = diff.groupby(lambda x: x.hour).aggregate(rmse)
-    metrics['hour']['rmse'] = _rmse
-    metrics['hour']['mbe'] = diff.groupby(lambda x: x.hour).mean()
+    df = pd.concat([obs_values, fx_values], axis=1)
+    df.columns = ["obs_values", "fx_values"]
+
+    metrics["total"]["mae"] = deterministic.mean_absolute(df.obs_values, df.fx_values)
+    metrics["total"]["mbe"] = deterministic.mean_bias(df.obs_values, df.fx_values)
+    metrics["total"]["rmse"] = deterministic.root_mean_square(df.obs_values, df.fx_values)
+
+    # monthly metrics
+    mae, mbe, rmse = [], [], []
+    for _, group in df.groupby(df.index.month):
+        mae.append(deterministic.mean_absolute(df.obs_values, df.fx_values))
+        mbe.append(deterministic.mean_bias(df.obs_values, df.fx_values))
+        rmse.append(deterministic.root_mean_square(df.obs_values, df.fx_values))
+    metrics["month"]["mae"] = mae
+    metrics["month"]["mbe"] = mbe
+    metrics["month"]["rmse"] = rmse
+
+    # daily metrics
+    mae, mbe, rmse = [], [], []
+    for _, group in df.groupby(df.index.date):
+        mae.append(deterministic.mean_absolute(df.obs_values, df.fx_values))
+        mbe.append(deterministic.mean_bias(df.obs_values, df.fx_values))
+        rmse.append(deterministic.root_mean_square(df.obs_values, df.fx_values))
+    metrics["day"]["mae"] = mae
+    metrics["day"]["mbe"] = mbe
+    metrics["day"]["rmse"] = rmse
+
+    # hourly metrics
+    mae, mbe, rmse = [], [], []
+    for _, group in df.groupby(df.index.hour):
+        mae.append(deterministic.mean_absolute(df.obs_values, df.fx_values))
+        mbe.append(deterministic.mean_bias(df.obs_values, df.fx_values))
+        rmse.append(deterministic.root_mean_square(df.obs_values, df.fx_values))
+    metrics["hour"]["mae"] = mae
+    metrics["hour"]["mbe"] = mbe
+    metrics["hour"]["rmse"] = rmse
+
     return metrics
-
-
-def rmse(diff):
-    return np.sqrt((diff * diff).mean())
