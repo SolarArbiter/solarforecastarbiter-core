@@ -109,12 +109,32 @@ def test_adjust_timeseries_for_interval_label(label, exp, start, end):
     pdt.assert_frame_equal(exp, out)
 
 
+def test_adjust_timeseries_for_interval_label_no_tz():
+    test_data = TEST_DATA.tz_localize(None)
+    label = None
+    start = pd.Timestamp('2019-01-24T00:00Z')
+    end = pd.Timestamp('2019-01-24T00:04Z')
+    with pytest.raises(ValueError):
+        utils.adjust_timeseries_for_interval_label(
+            test_data, label, start, end)
+
+
+def test_adjust_timeseries_for_interval_label_no_tz_empty():
+    test_data = pd.DataFrame()
+    label = None
+    start = pd.Timestamp('2019-01-24T00:00Z')
+    end = pd.Timestamp('2019-01-24T00:04Z')
+    out = utils.adjust_timeseries_for_interval_label(
+            test_data, label, start, end)
+    pdt.assert_frame_equal(test_data, out)
+
+
 @pytest.mark.parametrize('label,exp', [
     ('instant', TEST_DATA['value']),
     ('ending', TEST_DATA['value'].iloc[1:]),
     ('beginning', TEST_DATA['value'].iloc[:-1])
 ])
-def test_adjust_timeserise_for_interval_label_series(label, exp):
+def test_adjust_timeseries_for_interval_label_series(label, exp):
     start = pd.Timestamp('2019-01-24T00:00Z')
     end = pd.Timestamp('2019-01-24T00:04Z')
     out = utils.adjust_timeseries_for_interval_label(

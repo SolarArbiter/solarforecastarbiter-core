@@ -589,6 +589,7 @@ def test_real_apisession_get_observation_values(real_session):
 
 
 def test_real_apisession_get_observation_values_tz(real_session):
+    # use different tzs to confirm that it works
     start = pd.Timestamp('2019-04-14T22:00:00-0200')
     end = pd.Timestamp('2019-04-15T05:00:00-0700')
     obs = real_session.get_observation_values(
@@ -597,6 +598,7 @@ def test_real_apisession_get_observation_values_tz(real_session):
     assert isinstance(obs, pd.DataFrame)
     assert set(obs.columns) == set(['value', 'quality_flag'])
     assert len(obs.index) > 0
+    end = end.tz_convert(start.tzinfo)
     pdt.assert_frame_equal(obs.loc[start:end], obs)
 
 
@@ -612,6 +614,7 @@ def test_real_apisession_get_forecast_values(real_session):
 
 
 def test_real_apisession_get_forecast_values_tz(real_session):
+    # use different tzs to confirm that it works
     start = pd.Timestamp('2019-04-14T20:00:00-0400')
     end = pd.Timestamp('2019-04-15T13:00:00+0100')
     fx = real_session.get_forecast_values(
@@ -619,6 +622,7 @@ def test_real_apisession_get_forecast_values_tz(real_session):
         start, end)
     assert isinstance(fx, pd.Series)
     assert len(fx) > 0
+    end = end.tz_convert(start.tzinfo)
     pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
