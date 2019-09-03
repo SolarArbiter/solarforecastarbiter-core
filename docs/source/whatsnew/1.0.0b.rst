@@ -36,7 +36,7 @@ Bug fixes
 * Bigger metrics graphics to avoid (but not yet totally prevent) label overlap.
   (:issue:`163`)
 * Handle empty observation or forecast in current report metrics calc
-  (:issue:`148`)
+  (:pull:`178`)
 
 Testing
 ~~~~~~~
