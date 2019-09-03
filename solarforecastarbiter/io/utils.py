@@ -217,7 +217,9 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     """
     start, end = adjust_start_end_for_interval_label(interval_label, start,
                                                      end)
-    data.sort_index(axis=0, inplace=True)
+    data = data.sort_index(axis=0)
+    start = start.tz_convert(data.index.tzinfo)
+    end = end.tz_convert(data.index.tzinfo)
     return data.loc[start:end]
 
 

@@ -30,6 +30,9 @@ Bug fixes
 * Remove TODO, EXAMPLE text from reports template in favor of GitHub
   Issues. (:issue:`167`)
 * Account for timezone in metrics/report generation. (:issue:`164`)
+* Account for different timezones in
+  :py:func:`solarforecastarbiter.io.utils.adjust_timeseries_for_interval_label`
+  with pandas >= 0.25.1. (:issue:`173`)
 
 Testing
 ~~~~~~~
