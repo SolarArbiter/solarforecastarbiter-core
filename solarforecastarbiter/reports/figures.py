@@ -405,7 +405,7 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * (len(field) - 1)
+    width = name_width + metric_width * len(field)
     data_table = DataTable(source=cds, columns=columns, width=width,
                            height=150, index_position=None, fit_columns=False)
     return data_table
