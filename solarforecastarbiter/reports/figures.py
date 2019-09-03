@@ -276,7 +276,7 @@ def bar(cds, metric):
     """
     x_range = cds.data['forecast']
     # TODO: add units to title
-    fig = figure(x_range=x_range, width=400, height=200, title=metric.upper())
+    fig = figure(x_range=x_range, width=800, height=200, title=metric.upper())
     fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
              line_color='white',
              fill_color=factor_cmap('forecast', PALETTE, factors=x_range))
@@ -396,7 +396,7 @@ def metrics_table(cds):
     """
     formatter = NumberFormatter(format="0.000")
     # construct list of columns. make sure that forecast name is first
-    name_width = 200
+    name_width = 300
     metric_width = 60
     columns = [TableColumn(field='forecast', title='Forecast',
                            width=name_width)]
@@ -405,9 +405,9 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * (len(field) - 1)
+    width = name_width + metric_width * len(field)
     data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=100, index_position=None, fit_columns=False)
+                           height=150, index_position=None, fit_columns=False)
     return data_table
 
 
