@@ -6,6 +6,7 @@ from collections import defaultdict
 
 
 import numpy as np
+import pandas as pd
 
 
 from solarforecastarbiter import datamodel
@@ -81,7 +82,12 @@ def loop_forecasts_calculate_metrics(report, processed_fxobs):
 def calculate_metrics(forecast_observation, fx_values, obs_values):
     metrics = defaultdict(dict)
     metrics['name'] = forecast_observation.forecast.name
-    diff = fx_values - obs_values
+    if fx_values.empty:
+        diff = pd.Series(index=obs_values.index)
+    elif obs_values.empty:
+        diff = pd.Series(index=fx_values.index)
+    else:
+        diff = fx_values - obs_values
     metrics['total']['mae'] = diff.abs().mean()
     _rmse = diff.aggregate(rmse)
     metrics['total']['rmse'] = _rmse

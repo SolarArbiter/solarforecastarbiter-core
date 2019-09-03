@@ -35,6 +35,8 @@ Bug fixes
   with pandas >= 0.25.1. (:issue:`173`)
 * Bigger metrics graphics to avoid (but not yet totally prevent) label overlap.
   (:issue:`163`)
+* Handle empty observation or forecast in current report metrics calc
+  (:pull:`178`)
 
 Testing
 ~~~~~~~
