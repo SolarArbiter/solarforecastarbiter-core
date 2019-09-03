@@ -196,7 +196,7 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     Parameters
     ----------
     data : pandas.Series or pandas.DataFrame
-       The data with a DatetimeIndex
+       The data with a localized DatetimeIndex
     interval_label : str or None
        The interval label for the the object the data represents
     start : pandas.Timestamp
@@ -213,11 +213,17 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     Raises
     ------
     ValueError
-       If an invalid interval_label is given
+       If an invalid interval_label is given or data is not localized.
     """
     start, end = adjust_start_end_for_interval_label(interval_label, start,
                                                      end)
     data = data.sort_index(axis=0)
+    # pandas >= 0.25.1 requires start, end to have same tzinfo.
+    # unexpected behavior when data is not localized, so prevent that
+    if data.empty:
+        return data
+    if data.index.tzinfo is None:
+        raise ValueError('data must be localized')
     start = start.tz_convert(data.index.tzinfo)
     end = end.tz_convert(data.index.tzinfo)
     return data.loc[start:end]
