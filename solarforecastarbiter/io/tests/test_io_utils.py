@@ -1,3 +1,4 @@
+from contextlib import nullcontext as does_not_raise
 import json
 import pandas as pd
 import pandas.testing as pdt
@@ -109,12 +110,28 @@ def test_adjust_timeseries_for_interval_label(label, exp, start, end):
     pdt.assert_frame_equal(exp, out)
 
 
+@pytest.mark.parametrize('exp,start,end,raise_exp', [
+    (TEST_DATA.iloc[1:-1].tz_localize(None), pd.Timestamp('20190124T0001Z'),
+     pd.Timestamp('20190124T0003Z'), does_not_raise()),
+    (TEST_DATA.iloc[1:].tz_localize(None), pd.Timestamp('20190124T0001Z'),
+     pd.Timestamp('20190124T0004-0001'), does_not_raise())
+])
+def test_adjust_timeseries_for_interval_label_no_tz(exp, start, end,
+                                                    raise_exp):
+    test_data = TEST_DATA.tz_localize(None)
+    label = None
+    with raise_exp:
+        out = utils.adjust_timeseries_for_interval_label(
+            test_data, label, start, end)
+    pdt.assert_frame_equal(exp, out)
+
+
 @pytest.mark.parametrize('label,exp', [
     ('instant', TEST_DATA['value']),
     ('ending', TEST_DATA['value'].iloc[1:]),
     ('beginning', TEST_DATA['value'].iloc[:-1])
 ])
-def test_adjust_timeserise_for_interval_label_series(label, exp):
+def test_adjust_timeseries_for_interval_label_series(label, exp):
     start = pd.Timestamp('2019-01-24T00:00Z')
     end = pd.Timestamp('2019-01-24T00:04Z')
     out = utils.adjust_timeseries_for_interval_label(
