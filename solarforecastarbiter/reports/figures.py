@@ -41,8 +41,12 @@ def construct_fx_obs_cds(fx_values, obs_values):
     -------
     cds : bokeh.models.ColumnDataSource
         Keys are 'observation', 'forecast', and 'timestamp'.
+        tz-aware input times are converted to tz-naive times in the
+        input time zone.
     """
     data = pd.DataFrame({'observation': obs_values, 'forecast': fx_values})
+    # drop tz info from localized times. GH164
+    data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
     cds = ColumnDataSource(data)
     return cds
@@ -70,7 +74,7 @@ def _obs_color(interval_length):
     return obs_color
 
 
-def timeseries(fx_obs_cds, start, end):
+def timeseries(fx_obs_cds, start, end, timezone='UTC'):
     """
     Timeseries plot of one or more forecasts and observations.
 
@@ -84,6 +88,8 @@ def timeseries(fx_obs_cds, start, end):
         Report start time
     end : pandas.Timestamp
         Report end time
+    timezone : str
+        Timezone consistent with the data in the obs_fx_cds.
 
     Returns
     -------
@@ -124,7 +130,7 @@ def timeseries(fx_obs_cds, start, end):
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    fig.xaxis.axis_label = 'Time (UTC)'
+    fig.xaxis.axis_label = f'Time ({timezone})'
     fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable)
     return fig
 

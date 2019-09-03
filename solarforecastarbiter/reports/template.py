@@ -133,7 +133,8 @@ def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
     """
     body_template = Template(report_template)
 
-    ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end)
+    ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end,
+                                timezone=metadata.timezone)
     scat_fig = figures.scatter(fx_obs_cds)
     try:
         script, div = components(gridplot((ts_fig, scat_fig), ncols=1))

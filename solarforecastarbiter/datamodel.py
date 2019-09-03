@@ -571,6 +571,7 @@ class ReportMetadata(BaseModel):
     start: pd.Timestamp
     end: pd.Timestamp
     now: pd.Timestamp
+    timezone: str
     versions: dict
     validation_issues: dict
 

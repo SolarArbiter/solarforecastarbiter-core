@@ -104,10 +104,12 @@ def create_metadata(report_request):
     """
     versions = get_versions()
     validation_issues = get_validation_issues()
+    timezone = infer_timezone(report_request)
     metadata = datamodel.ReportMetadata(
         name=report_request.name, start=report_request.start,
         end=report_request.end, now=pd.Timestamp.utcnow(),
-        versions=versions, validation_issues=validation_issues)
+        timezone=timezone, versions=versions,
+        validation_issues=validation_issues)
     return metadata
 
 
@@ -153,6 +155,12 @@ def get_validation_issues():
     return test
 
 
+def infer_timezone(report_request):
+    # maybe not ideal when comparing across sites. might need explicit
+    # tz options ('infer' or spec IANA tz) in report interface.
+    return report_request.forecast_observations[0].observation.site.timezone
+
+
 def create_raw_report_from_data(report, data):
     """
     Create a raw report using data and report metadata.
@@ -179,7 +187,7 @@ def create_raw_report_from_data(report, data):
 
     metadata = create_metadata(report)
 
-    processed_fxobs = metrics.validate_resample_align(report, data)
+    processed_fxobs = metrics.validate_resample_align(report, metadata, data)
 
     # needs to be in json
     metrics_list = metrics.loop_forecasts_calculate_metrics(
@@ -225,10 +233,7 @@ def render_raw_report(raw_report):
 
     Parameters
     ----------
-    session : solarforecastarbiter.api.APISession
-        API session for getting and posting data
-    report : solarforecastarbiter.datamodel.Report
-        Metadata describing report
+    raw_report : solarforecastarbiter.datamodel.RawReport
 
     Returns
     -------

@@ -826,7 +826,8 @@ def raw_report(report_objects):
         end=report.end,
         now=report.end,
         versions=(),
-        validation_issues=()
+        validation_issues=(),
+        timezone=obs.site.timezone
     )
 
     def gen(with_series):
