@@ -33,6 +33,8 @@ Bug fixes
 * Account for different timezones in
   :py:func:`solarforecastarbiter.io.utils.adjust_timeseries_for_interval_label`
   with pandas >= 0.25.1. (:issue:`173`)
+* Bigger metrics graphics to avoid (but not yet totally prevent) label overlap.
+  (:issue:`163`)
 
 Testing
 ~~~~~~~
