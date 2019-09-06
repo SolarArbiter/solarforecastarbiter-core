@@ -4,6 +4,8 @@
 and vice versa.
 """
 import base64
+from functools import wraps
+from inspect import signature
 import zlib
 
 
@@ -268,3 +270,21 @@ class HiddenToken:
 
     def __repr__(self):
         return '****ACCESS*TOKEN****'
+
+
+def ensure_timestamps(f):
+    @wraps(f)
+    def decorator(*args, **kwargs):
+        sig = signature(f)
+        inds = {k: None for k in ('start', 'end')}
+        for i, k in enumerate(sig.parameters.keys()):
+            if k in inds:
+                inds[k] = i
+        nargs = list(args)
+        for k, ind in inds.items():
+            if k in kwargs:
+                kwargs[k] = pd.Timestamp(kwargs[k])
+            elif ind is not None:
+                nargs[ind] = pd.Timestamp(args[ind])
+        return f(*nargs, **kwargs)
+    return decorator

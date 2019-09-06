@@ -16,7 +16,7 @@ from solarforecastarbiter.io.utils import (
     adjust_timeseries_for_interval_label,
     serialize_data, deserialize_data,
     serialize_raw_report, deserialize_raw_report,
-    HiddenToken)
+    HiddenToken, ensure_timestamps)
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
@@ -292,6 +292,7 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
+    @ensure_timestamps
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
         """
@@ -315,6 +316,11 @@ class APISession(requests.Session):
         -------
         pandas.DataFrame
             With a datetime index and (value, quality_flag) columns
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
         """
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start': start, 'end': end})
@@ -322,6 +328,7 @@ class APISession(requests.Session):
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
+    @ensure_timestamps
     def get_forecast_values(self, forecast_id, start, end,
                             interval_label=None):
         """
@@ -344,6 +351,11 @@ class APISession(requests.Session):
         -------
         pandas.Series
            With the forecast values and a datetime index
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
         """
         req = self.get(f'/forecasts/single/{forecast_id}/values',
                        params={'start': start, 'end': end})

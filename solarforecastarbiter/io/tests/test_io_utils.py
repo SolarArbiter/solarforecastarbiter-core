@@ -1,3 +1,4 @@
+from functools import partial
 import json
 import pandas as pd
 import pandas.testing as pdt
@@ -159,3 +160,66 @@ def test_hidden_token():
     ht = utils.HiddenToken('THETOKEN')
     assert str(ht) != 'THETOKEN'
     assert ht.token == 'THETOKEN'
+
+
+@pytest.fixture(params=[0, 1, 2, 3])
+def start_end(request):
+    if request.param == 0:
+        return (pd.Timestamp('2019-01-01T12:00:00Z'),
+                pd.Timestamp('2019-01-12T17:47:22-0700'))
+    elif request.param == 1:
+        return ('2019-01-01T12:00:00Z',
+                pd.Timestamp('2019-01-12T17:47:22-0700'))
+    elif request.param == 2:
+        return ('2019-01-01T12:00:00Z',
+                '2019-01-12T17:47:22-0700')
+    elif request.param == 3:
+        return (pd.Timestamp('2019-01-01T12:00:00Z'),
+                '2019-01-12T17:47:22-0700')
+
+
+@pytest.fixture(params=[0, 1, 2, 3, 4])
+def tfunc(request, start_end):
+    start, end = start_end
+    if request.param == 0:
+        def f(start, end): return start, end
+        return partial(f, start, end)
+    elif request.param == 1:
+        def f(start, end): return start, end
+        return partial(f, start=start, end=end)
+    elif request.param == 2:
+        def f(start, *, end): return start, end
+        return partial(f, start, end=end)
+    elif request.param == 3:
+        def f(te, start, more=None, *, end): return start, end
+        return partial(f, '', start, end=end)
+    elif request.param == 4:
+        def f(te, startitat, end, more=None, start=None): return start, end
+        return partial(f, '', 'now', start=start, end=end)
+
+
+def test_ensure_timestamps_partials(tfunc):
+    dec_f = utils.ensure_timestamps(tfunc.func)
+    s, e = dec_f(*tfunc.args, **tfunc.keywords)
+    assert s == pd.Timestamp('2019-01-01T12:00:00Z')
+    assert e == pd.Timestamp('2019-01-12T17:47:22-0700')
+
+
+def test_ensure_timestamps_normal(start_end):
+    @utils.ensure_timestamps
+    def f(other, start, end, x=None):
+        """cool docstring"""
+        return start, end
+    s, e = start_end
+    start, end = f('', s, e)
+    assert f.__doc__ == 'cool docstring'
+    assert start == pd.Timestamp('2019-01-01T12:00:00Z')
+    assert end == pd.Timestamp('2019-01-12T17:47:22-0700')
+
+
+def test_ensure_timestamps_err():
+    @utils.ensure_timestamps
+    def f(other, start, end, x=None):
+        return start, end
+    with pytest.raises(ValueError):
+        start, end = f('', '2019-09-01T12:00Z', 'blah')
