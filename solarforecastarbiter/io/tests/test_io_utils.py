@@ -199,14 +199,14 @@ def tfunc(request, start_end):
 
 
 def test_ensure_timestamps_partials(tfunc):
-    dec_f = utils.ensure_timestamps(tfunc.func)
+    dec_f = utils.ensure_timestamps('start', 'end')(tfunc.func)
     s, e = dec_f(*tfunc.args, **tfunc.keywords)
     assert s == pd.Timestamp('2019-01-01T12:00:00Z')
     assert e == pd.Timestamp('2019-01-12T17:47:22-0700')
 
 
 def test_ensure_timestamps_normal(start_end):
-    @utils.ensure_timestamps
+    @utils.ensure_timestamps('start', 'end')
     def f(other, start, end, x=None):
         """cool docstring"""
         return start, end
@@ -217,8 +217,20 @@ def test_ensure_timestamps_normal(start_end):
     assert end == pd.Timestamp('2019-01-12T17:47:22-0700')
 
 
+def test_ensure_timestamps_other_args():
+    @utils.ensure_timestamps('x')
+    def f(other, start, end, x=None):
+        """cool docstring"""
+        return start, end, x
+    start, end, x = f('', 'a', 'end', '2019-01-01T12:00:00Z')
+    assert f.__doc__ == 'cool docstring'
+    assert x == pd.Timestamp('2019-01-01T12:00:00Z')
+    assert start == 'a'
+    assert end == 'end'
+
+
 def test_ensure_timestamps_err():
-    @utils.ensure_timestamps
+    @utils.ensure_timestamps('start', 'end', 'x')
     def f(other, start, end, x=None):  # pragma: no cover
         return start, end
     with pytest.raises(ValueError):

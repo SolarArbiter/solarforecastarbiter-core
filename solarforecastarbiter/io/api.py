@@ -292,7 +292,7 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
-    @ensure_timestamps
+    @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
         """
@@ -328,7 +328,7 @@ class APISession(requests.Session):
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
-    @ensure_timestamps
+    @ensure_timestamps('start', 'end')
     def get_forecast_values(self, forecast_id, start, end,
                             interval_label=None):
         """

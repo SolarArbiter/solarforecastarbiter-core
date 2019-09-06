@@ -272,19 +272,44 @@ class HiddenToken:
         return '****ACCESS*TOKEN****'
 
 
-def ensure_timestamps(f):
-    @wraps(f)
-    def decorator(*args, **kwargs):
-        sig = signature(f)
-        inds = {k: None for k in ('start', 'end')}
-        for i, k in enumerate(sig.parameters.keys()):
-            if k in inds:
-                inds[k] = i
-        nargs = list(args)
-        for k, ind in inds.items():
-            if k in kwargs:
-                kwargs[k] = pd.Timestamp(kwargs[k])
-            elif ind is not None:
-                nargs[ind] = pd.Timestamp(args[ind])
-        return f(*nargs, **kwargs)
+def ensure_timestamps(*time_args):
+    """
+    Decorator that converts the specified time arguments of the wrapped
+    function to pandas.Timestamp objects
+
+    Parameters
+    ----------
+    strings
+       Function arguments to convert to pandas.Timestamp before
+       executing function
+
+    Raises
+    ------
+    ValueError
+        If any of time_args cannot be converted to pandas.Timestamp
+
+    Examples
+    --------
+    >>> @ensure_timestamps('start', 'end')
+    ... def get_values(start, end, other_arg):
+    ... --do stuff with start, end assumed to be pandas.Timestamps
+
+    >>> get_values('2019-01-01T00:00Z', dt.datetime(2019, 1, 2, 12), 'other')
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            sig = signature(f)
+            inds = {k: None for k in time_args}
+            for i, k in enumerate(sig.parameters.keys()):
+                if k in inds:
+                    inds[k] = i
+            nargs = list(args)
+            for k, ind in inds.items():
+                if k in kwargs:
+                    kwargs[k] = pd.Timestamp(kwargs[k])
+                elif ind is not None:
+                    nargs[ind] = pd.Timestamp(args[ind])
+            return f(*nargs, **kwargs)
+        return wrapper
     return decorator
