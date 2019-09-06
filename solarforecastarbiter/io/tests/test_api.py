@@ -211,14 +211,24 @@ def test_apisession_list_forecasts_empty(requests_mock):
     assert fx_list == []
 
 
-def test_apisession_get_observation_values(requests_mock, observation_values,
-                                           observation_values_text):
+@pytest.fixture(params=[0, 1])
+def obs_start_end(request):
+    if request.param == 0:
+        return (pd.Timestamp('2019-01-01T12:00:00-0700'),
+                pd.Timestamp('2019-01-01T12:25:00-0700'))
+    else:
+        return ('2019-01-01T12:00:00-0700',
+                '2019-01-01T12:25:00-0700')
+
+
+def test_apisession_get_observation_values(
+        requests_mock, observation_values, observation_values_text,
+        obs_start_end):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
     out = session.get_observation_values(
-        'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
-        pd.Timestamp('2019-01-01T12:25:00-0700'))
+        'obsid', *obs_start_end)
     pdt.assert_frame_equal(out, observation_values)
 
 
@@ -229,13 +239,12 @@ def test_apisession_get_observation_values(requests_mock, observation_values,
 ])
 def test_apisession_get_observation_values_interval_label(
         requests_mock, observation_values, observation_values_text,
-        label, theslice):
+        label, theslice, obs_start_end):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
     out = session.get_observation_values(
-        'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
-        pd.Timestamp('2019-01-01T12:25:00-0700'), label)
+        'obsid', obs_start_end[0], obs_start_end[1], label)
     pdt.assert_frame_equal(out, observation_values.iloc[theslice])
 
 
@@ -255,14 +264,23 @@ def test_apisession_get_observation_values_empty(requests_mock, empty_df):
     pdt.assert_frame_equal(out, empty_df)
 
 
+@pytest.fixture(params=[0, 1])
+def fx_start_end(request):
+    if request.param == 0:
+        return (pd.Timestamp('2019-01-01T06:00:00-0700'),
+                pd.Timestamp('2019-01-01T11:00:00-0700'))
+    else:
+        return ('2019-01-01T06:00:00-0700',
+                '2019-01-01T11:00:00-0700')
+
+
 def test_apisession_get_forecast_values(requests_mock, forecast_values,
-                                        forecast_values_text):
+                                        forecast_values_text, fx_start_end):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     requests_mock.register_uri('GET', matcher, content=forecast_values_text)
     out = session.get_forecast_values(
-        'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
-        pd.Timestamp('2019-01-01T11:00:00-0700'))
+        'fxid', *fx_start_end)
     pdt.assert_series_equal(out, forecast_values)
 
 
@@ -272,13 +290,13 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
     ('ending', slice(1, 10))
 ])
 def test_apisession_get_forecast_values_interval_label(
-        requests_mock, forecast_values, forecast_values_text, label, theslice):
+        requests_mock, forecast_values, forecast_values_text, label, theslice,
+        fx_start_end):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     requests_mock.register_uri('GET', matcher, content=forecast_values_text)
     out = session.get_forecast_values(
-        'fxid', pd.Timestamp('2019-01-01T06:00:00-0700'),
-        pd.Timestamp('2019-01-01T11:00:00-0700'), label)
+        'fxid', fx_start_end[0], fx_start_end[1], label)
     pdt.assert_series_equal(out, forecast_values.iloc[theslice])
 
 

@@ -31,12 +31,16 @@ Bug fixes
   Issues. (:issue:`167`)
 * Account for timezone in metrics/report generation. (:issue:`164`)
 * Account for different timezones in
-  :py:func:`solarforecastarbiter.io.utils.adjust_timeseries_for_interval_label`
+  :py:func:`~solarforecastarbiter.io.utils.adjust_timeseries_for_interval_label`
   with pandas >= 0.25.1. (:issue:`173`)
 * Bigger metrics graphics to avoid (but not yet totally prevent) label overlap.
   (:issue:`163`)
 * Handle empty observation or forecast in current report metrics calc
   (:pull:`178`)
+* Accept string or timelike objects to
+  :py:func:`~solarforecastarbiter.io.api.APISession.get_forecast_values` and
+  :py:func:`~solarforecastarbiter.io.api.APISession.get_observation_values`
+  (:issue:`180`)
 
 Testing
 ~~~~~~~
