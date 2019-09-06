@@ -219,7 +219,7 @@ def test_ensure_timestamps_normal(start_end):
 
 def test_ensure_timestamps_err():
     @utils.ensure_timestamps
-    def f(other, start, end, x=None):
+    def f(other, start, end, x=None):  # pragma: no cover
         return start, end
     with pytest.raises(ValueError):
         start, end = f('', '2019-09-01T12:00Z', 'blah')
