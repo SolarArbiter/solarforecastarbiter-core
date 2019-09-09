@@ -41,6 +41,14 @@ Bug fixes
   :py:func:`~solarforecastarbiter.io.api.APISession.get_forecast_values` and
   :py:func:`~solarforecastarbiter.io.api.APISession.get_observation_values`
   (:issue:`180`)
+* Fix return/assignment of None in
+  `~solarforecastarbiter.validation.tasks.daily_single_observation_validation`
+  and
+  `~solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`.
+  (:issue:`182`)
+* Fix failure to pass user-specified limits to
+  `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
+  (:issue:`182`)
 
 Testing
 ~~~~~~~

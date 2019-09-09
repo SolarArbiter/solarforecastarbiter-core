@@ -230,19 +230,19 @@ def check_irradiance_limits_QCRad(solar_zenith, dni_extra, ghi=None, dhi=None,
 
     if ghi is not None:
         ghi_limit_flag = check_ghi_limits_QCRad(ghi, solar_zenith, dni_extra,
-                                                limits=None)
+                                                limits=limits)
     else:
         ghi_limit_flag = None
 
     if dhi is not None:
         dhi_limit_flag = check_dhi_limits_QCRad(dhi, solar_zenith, dni_extra,
-                                                limits=None)
+                                                limits=limits)
     else:
         dhi_limit_flag = None
 
     if dni is not None:
         dni_limit_flag = check_dni_limits_QCRad(dni, solar_zenith, dni_extra,
-                                                limits=None)
+                                                limits=limits)
     else:
         dni_limit_flag = None
 
