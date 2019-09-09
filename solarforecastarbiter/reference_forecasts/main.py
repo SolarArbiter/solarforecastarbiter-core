@@ -319,7 +319,7 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
         to determine the issue_time of the forecast.
     forecast_df : pandas.DataFrame
         Dataframe of the forecast objects as procduced by
-        :py:func:`solarforecastarbiter.reference_forecasts.main.find_reference_nwp_forecasts``.
+        :py:func:`solarforecastarbiter.reference_forecasts.main.find_reference_nwp_forecasts`.
     """  # NOQA
     for run_for, group in forecast_df.groupby('piggyback_on'):
         logger.info('Computing forecasts for group %s', run_for)
@@ -384,4 +384,4 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     if execute_for.empty:
         logger.info('No forecasts to be made at %s', run_time)
         return
-    return process_nwp_forecast_groups(session, run_time, execute_for)
+    process_nwp_forecast_groups(session, run_time, execute_for)
