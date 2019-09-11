@@ -51,8 +51,13 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.doctest'
 ]
+
+doctest_global_setup = '''
+import pandas as pd
+'''
 
 napoleon_use_rtype = False  # group rtype on same line together with return
 

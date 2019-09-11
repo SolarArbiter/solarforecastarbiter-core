@@ -251,6 +251,21 @@ Class for communicating with the Solar Forecast Arbiter API.
    io.api.APISession.post_observation_values
    io.api.APISession.post_forecast_values
 
+Utils
+-----
+
+Utility functions for data IO.
+
+.. autosummary::
+   :toctree: generated/
+
+   io.utils.observation_df_to_json_payload
+   io.utils.forecast_object_to_json
+   io.utils.json_payload_to_observation_df
+   io.utils.json_payload_to_forecast_series
+   io.utils.adjust_start_end_for_interval_label
+   io.utils.adjust_timeseries_for_interval_label
+   io.utils.ensure_timestamps
 
 Metrics
 =======

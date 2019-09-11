@@ -116,12 +116,15 @@ def cloud_cover_to_irradiance(latitude, longitude, elevation, cloud_cover,
     return ghi, dni, dhi
 
 
-def resample_args(*args, freq='1h'):
+def resample_args(*args, freq='1h', label=None):
     """Resample all positional arguments, allowing for None.
 
     Parameters
     ----------
     *args : list of pd.Series or None
+    freq : str
+    label : None or str
+        Sets pandas resample's label and closed kwargs.
 
     Returns
     -------
@@ -132,16 +135,19 @@ def resample_args(*args, freq='1h'):
         if arg is None:
             return None
         else:
-            return arg.resample(freq).mean()
+            return arg.resample(freq, label=label, closed=label).mean()
     return list(map(f, args))
 
 
-def resample(arg, freq='1h', closed=None):
+def resample(arg, freq='1h', label=None):
     """Resamples an argument, allowing for None. Use with map.
 
     Parameters
     ----------
     arg : pd.Series or None
+    freq : str
+    label : str
+        Sets pandas resample's label and closed kwargs.
 
     Returns
     -------
@@ -150,7 +156,7 @@ def resample(arg, freq='1h', closed=None):
     if arg is None:
         return None
     else:
-        return arg.resample(freq, closed=closed).mean()
+        return arg.resample(freq, label=label, closed=label).mean()
 
 
 def interpolate_args(*args, freq='15min'):
@@ -173,8 +179,10 @@ def interpolate_args(*args, freq='15min'):
     return resampled_args
 
 
-def interpolate(arg, freq='15min', closed=None):
-    """Interpolates an argument, allowing for None. Use with map.
+def interpolate(arg, freq='15min', label=None):
+    """Resamples and interpolates an argument, allowing for None.
+
+    Use with map.
 
     Parameters
     ----------
@@ -189,10 +197,17 @@ def interpolate(arg, freq='15min', closed=None):
     if arg is None:
         return None
     else:
-        return arg.resample(freq, closed=closed).interpolate()
+        return arg.resample(freq, label=label, closed=label).interpolate()
 
 
-def slice_args(*args, start, end):
+def slice_arg(arg, start=None, end=None):
+    if arg is None:
+        return None
+    else:
+        return arg.loc[start:end]
+
+
+def slice_args(*args, start=None, end=None):
     resampled_args = [arg if arg is None else arg.loc[start:end]
                       for arg in args]
     return resampled_args

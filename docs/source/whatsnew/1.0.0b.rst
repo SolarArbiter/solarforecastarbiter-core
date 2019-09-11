@@ -8,7 +8,8 @@ This is the first 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
-
+* Add required argument interval_label to all model functions in
+  :py:mod:`solarforecastarbiter.reference_forecasts.models`. (:issue:`185`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -49,6 +50,9 @@ Bug fixes
 * Fix failure to pass user-specified limits to
   `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
   (:issue:`182`)
+* NWP reference forecasts now account for interval label. This also fixes
+  errors when computing forecasts with ``interval_label='ending'``.
+  (:issue:`185`)
 
 Testing
 ~~~~~~~

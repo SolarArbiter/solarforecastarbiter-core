@@ -52,20 +52,20 @@ def persistence_scalar(observation, data_start, data_end, forecast_start,
     observation : datamodel.Observation
     data_start : pd.Timestamp
         Observation data start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        observation.interval_label is *beginning* or *instant*.
     data_end : pd.Timestamp
         Observation data end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instantaneous*.
+        observation.interval_label is *ending* or *instant*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instant*.
     forecast_end : pd.Timestamp
         Forecast end. Forecast is inclusive of this instant if
-        interval_label is *ending* or *instantaneous*.
+        interval_label is *ending* or *instant*.
     interval_length : pd.Timedelta
         Forecast interval length
     interval_label : str
-        instantaneous, beginning, or ending
+        instant, beginning, or ending
     load_data : function
         A function that loads the observation data. Must have the
         signature load_data(observation, data_start, data_end) and
@@ -129,17 +129,17 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     observation : datamodel.Observation
     data_start : pd.Timestamp
         Observation data start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        observation.interval_label is *beginning* or *instant*.
     data_end : pd.Timestamp
         Observation data end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instantaneous*.
+        observation.interval_label is *ending* or *instant*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instant*.
     interval_length : pd.Timedelta
         Forecast interval length
     interval_label : str
-        instantaneous, beginning, or ending
+        instant, beginning, or ending
     load_data : function
         A function that loads the observation data. Must have the
         signature load_data(observation, data_start, data_end) and
@@ -209,20 +209,20 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     observation : datamodel.Observation
     data_start : pd.Timestamp
         Observation data start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instantaneous*.
+        observation.interval_label is *beginning* or *instant*.
     data_end : pd.Timestamp
         Observation data end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instantaneous*.
+        observation.interval_label is *ending* or *instant*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
-        interval_label is *beginning* or *instantaneous*.
+        interval_label is *beginning* or *instant*.
     forecast_end : pd.Timestamp
         Forecast end. Forecast is inclusive of this instant if
-        interval_label is *ending* or *instantaneous*.
+        interval_label is *ending* or *instant*.
     interval_length : pd.Timedelta
         Forecast interval length
     interval_label : str
-        instantaneous, beginning, or ending
+        instant, beginning, or ending
     load_data : function
         A function that loads the observation data. Must have the
         signature load_data(observation, data_start, data_end) and
@@ -350,7 +350,7 @@ def _check_intervals_times(interval_label, data_start, data_end,
             pass
         else:
             raise ValueError('For observations with interval_label '
-                             'instantaneous, data_start OR data_end '
+                             'instant, data_start OR data_end '
                              'must be must be divisible by interval_length.' +
                              strvals)
     elif interval_label in ['ending', 'beginning']:

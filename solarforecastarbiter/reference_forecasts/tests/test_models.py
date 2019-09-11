@@ -74,8 +74,10 @@ def check_out(out, start, end, end_strict=True):
 def test_models(model, end, end_strict):
     out = model(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=end_strict)
+        'beginning', load_forecast=LOAD_FORECAST)
+    # account for beginning interval label
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('1h')
+    check_out(out, start, end_fx_expected, end_strict=end_strict)
 
 
 @pytest.mark.parametrize('latitude', [32.0, 32.25, 32.5])
@@ -96,8 +98,10 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
     init_time = pd.Timestamp(init_time)
     out = models.gfs_quarter_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=True)
+        'beginning', load_forecast=LOAD_FORECAST)
+    # account for beginning interval label
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('1h')
+    check_out(out, start, end_fx_expected, end_strict=True)
 
 
 @pytest.mark.parametrize('model', [
