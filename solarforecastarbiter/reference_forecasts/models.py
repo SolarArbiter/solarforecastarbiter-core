@@ -384,10 +384,6 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
         latitude, longitude, init_time, start_floored, end_ceil, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
-    start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
-                                                             start, end)
-    cloud_cover, air_temperature, wind_speed = forecast.slice_args(
-        cloud_cover, air_temperature, wind_speed, start=start_adj, end=end_adj)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed, start, end, interval_label)
@@ -426,10 +422,6 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
         latitude, longitude, init_time, start_floored, end_ceil, __model,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
-    start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
-                                                             start, end)
-    cloud_cover, air_temperature, wind_speed = forecast.slice_args(
-        cloud_cover, air_temperature, wind_speed, start=start_adj, end=end_adj)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed, start, end, interval_label)
@@ -482,10 +474,6 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
             end_3h+pd.Timedelta('12hr'):end]
         cloud_covers.append(cloud_cover_12h)
     cloud_cover = pd.concat(cloud_covers)
-    start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
-                                                             start, end)
-    cloud_cover, air_temperature, wind_speed = forecast.slice_args(
-        cloud_cover, air_temperature, wind_speed, start=start_adj, end=end_adj)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
                                        wind_speed, start, end, interval_label)

@@ -76,7 +76,7 @@ def test_models(model, end, end_strict):
         latitude, longitude, elevation, init_time, start, end,
         'beginning', load_forecast=LOAD_FORECAST)
     # account for beginning interval label
-    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('1h')
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
     check_out(out, start, end_fx_expected, end_strict=end_strict)
 
 
@@ -100,7 +100,7 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
         latitude, longitude, elevation, init_time, start, end,
         'beginning', load_forecast=LOAD_FORECAST)
     # account for beginning interval label
-    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('1h')
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
     check_out(out, start, end_fx_expected, end_strict=True)
 
 
