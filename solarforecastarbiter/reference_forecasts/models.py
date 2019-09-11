@@ -164,12 +164,14 @@ def hrrr_subhourly_to_subhourly_instantaneous(latitude, longitude, elevation,
     start : pd.Timestamp
         Forecast start. Forecast is inclusive of this point.
     end : pd.Timestamp
-        Forecast end. Forecast is inclusive of this point.
+        Forecast end. Forecast is exclusive of this point.
     interval_label : str
         Must be instant
     """
+    start_adj, end_adj = adjust_start_end_for_interval_label(
+        interval_label, start, end, limit_instant=True)
     ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, __model)
+        latitude, longitude, init_time, start_adj, end_adj, __model)
     # resampler takes 15 min instantaneous in, retuns 15 min instantaneous out
     # still want to call resample, rather than pass through lambda x: x
     # so that DatetimeIndex has well-defined freq attribute
@@ -253,7 +255,7 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
     start : pd.Timestamp
         Forecast start. Forecast is inclusive of this point.
     end : pd.Timestamp
-        Forecast end. Forecast is inclusive of this point.
+        Forecast end. Forecast is exclusive of this point.
     interval_label : str
         Must be instant
     """
@@ -511,12 +513,14 @@ def nam_12km_hourly_to_hourly_instantaneous(latitude, longitude, elevation,
     start : pd.Timestamp
         Forecast start. Forecast is inclusive of this point.
     end : pd.Timestamp
-        Forecast end. Forecast is inclusive of this point.
+        Forecast end. Forecast is exclusive of this point.
     interval_label : str
         Must be instant
     """
+    start_adj, end_adj = adjust_start_end_for_interval_label(
+        interval_label, start, end, limit_instant=True)
     ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, __model,
+        latitude, longitude, init_time, start_adj, end_adj, __model,
         variables=('ghi', 'air_temperature', 'wind_speed'))
     dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
         latitude, longitude, elevation, ghi)
