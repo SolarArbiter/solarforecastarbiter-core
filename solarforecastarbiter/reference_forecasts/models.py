@@ -313,7 +313,8 @@ def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
         slicer(interpolator(v)) for v in
         (ghi, dni, dhi, air_temperature, wind_speed)
     ]
-    resampler = partial(forecast.resample, freq='1h')
+    label = datamodel.CLOSED_MAPPING[interval_label]
+    resampler = partial(forecast.resample, freq='1h', label=label)
     return (ghi, dni, dhi, air_temperature, wind_speed,
             resampler, solar_pos_calculator)
 

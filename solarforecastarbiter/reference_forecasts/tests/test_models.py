@@ -66,6 +66,7 @@ def check_out(out, start, end, end_strict=True):
     models.hrrr_subhourly_to_hourly_mean,
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.rap_cloud_cover_to_hourly_mean,
+    # models.rap_ghi_to_hourly_mean  # not available
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
