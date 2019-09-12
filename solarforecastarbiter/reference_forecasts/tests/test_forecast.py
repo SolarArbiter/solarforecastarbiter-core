@@ -17,17 +17,6 @@ def assert_none_or_series(out, expected):
             assert_series_equal(o, e)
 
 
-def test_resample_args():
-    index = pd.date_range(start='20190101', freq='15min', periods=5)
-    args = [
-        None, pd.Series([1, 0, 0, 0, 2], index=index)
-    ]
-    idx_exp = pd.date_range(start='20190101', freq='1h', periods=2)
-    expected = [None, pd.Series([0.25, 2.], index=idx_exp)]
-    out = forecast.resample_args(*args)
-    assert_none_or_series(out, expected)
-
-
 def test_resample():
     index = pd.date_range(start='20190101', freq='15min', periods=5)
     arg = pd.Series([1, 0, 0, 0, 2], index=index)
@@ -38,18 +27,16 @@ def test_resample():
     assert forecast.resample(None) is None
 
 
-def test_interpolate():
+def test_resample_interpolate_slice():
     index = pd.date_range(start='20190101', freq='15min', periods=2)
     arg = pd.Series([0, 1.5], index=index)
-    out = forecast.interpolate(arg)
+    out = forecast.resample_interpolate_slice(arg)
     assert_series_equal(out, arg)
 
     idx_exp = pd.date_range(start='20190101', freq='5min', periods=4)
     expected = pd.Series([0., 0.5, 1., 1.5], index=idx_exp)
-    out = forecast.interpolate(arg, freq='5min')
+    out = forecast.resample_interpolate_slice(arg, freq='5min')
     assert_series_equal(out, expected)
-
-    assert forecast.interpolate(None) is None
 
 
 def test_cloud_cover_to_ghi_linear():

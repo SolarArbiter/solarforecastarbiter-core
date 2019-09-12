@@ -111,18 +111,15 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     # and wind are interpolated because model output represents
     # instantaneous values.
     freq = '5min'
-    cloud_cover = cloud_cover.resample(freq).bfill()
-    interpolator = partial(forecast.interpolate, freq=freq)
-    air_temperature, wind_speed = [
-        interpolator(v) for v in (air_temperature, wind_speed)
-    ]
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    slicer = partial(forecast.slice_arg, start=start_adj, end=end_adj)
-    cloud_cover, air_temperature, wind_speed = [
-        slicer(v) for v in (cloud_cover, air_temperature, wind_speed)
+    cloud_cover = cloud_cover.resample(freq).bfill().loc[start_adj:end_adj]
+    resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
+                                          freq='5min', start=start_adj,
+                                          end=end_adj)
+    air_temperature, wind_speed = [
+        resample_interpolate_slicer(v) for v in (air_temperature, wind_speed)
     ]
-
     solar_position = pvmodel.calculate_solar_position(
         latitude, longitude, elevation, cloud_cover.index)
     ghi, dni, dhi = forecast.cloud_cover_to_irradiance(
@@ -226,10 +223,11 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     # output.
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    slicer = partial(forecast.slice_arg, start=start_adj, end=end_adj)
-    interpolator = partial(forecast.interpolate, freq='5min')
+    resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
+                                          freq='5min', start=start_adj,
+                                          end=end_adj)
     ghi, dni, dhi, air_temperature, wind_speed = [
-        slicer(interpolator(v)) for v in
+        resample_interpolate_slicer(v) for v in
         (ghi, dni, dhi, air_temperature, wind_speed)
     ]
     # weather (and optionally power) will eventually be resampled

@@ -116,31 +116,10 @@ def cloud_cover_to_irradiance(latitude, longitude, elevation, cloud_cover,
     return ghi, dni, dhi
 
 
-def resample_args(*args, freq='1h', label=None):
-    """Resample all positional arguments, allowing for None.
-
-    Parameters
-    ----------
-    *args : list of pd.Series or None
-    freq : str
-    label : None or str
-        Sets pandas resample's label and closed kwargs.
-
-    Returns
-    -------
-    list of pd.Series or None
-    """
-    # this one uses map for fun
-    def f(arg):
-        if arg is None:
-            return None
-        else:
-            return arg.resample(freq, label=label, closed=label).mean()
-    return list(map(f, args))
-
-
 def resample(arg, freq='1h', label=None):
     """Resamples an argument, allowing for None. Use with map.
+    Useful for applying resample to unknown model output (e.g. AC power
+    is None if no plant metadata is provided).
 
     Parameters
     ----------
@@ -159,52 +138,13 @@ def resample(arg, freq='1h', label=None):
         return arg.resample(freq, label=label, closed=label).mean()
 
 
-def interpolate_args(*args, freq='15min'):
-    """Interpolate all positional arguments, allowing for None.
-
-    Parameters
-    ----------
-    *args : list of pd.Series or None
-
-    Returns
-    -------
-    list of pd.Series or None
+def resample_interpolate_slice(arg, freq='5min', label=None,
+                               start=None, end=None):
+    """Resample data to shorter intervals (create NaNs), interpolate
+    (fill NaNs), then slice output from start to end.
     """
-    # could add how kwarg to resample_args and lookup method with
-    # getattr but this seems much more clear
-    # this one uses a list comprehension for different fun
-    resampled_args = [
-        arg if arg is None else arg.resample(freq).interpolate()
-        for arg in args]
-    return resampled_args
-
-
-def interpolate(arg, freq='15min', label=None):
-    """Resamples and interpolates an argument, allowing for None.
-
-    Use with map.
-
-    Parameters
-    ----------
-    arg : pd.Series or None
-
-    Returns
-    -------
-    pd.Series or None
-    """
-    # could add how kwarg to resample and lookup method with
-    # getattr but this seems much more clear
-    if arg is None:
-        return None
-    else:
-        return arg.resample(freq, label=label, closed=label).interpolate()
-
-
-def slice_arg(arg, start=None, end=None):
-    if arg is None:
-        return None
-    else:
-        return arg.loc[start:end]
+    return arg.resample(
+        freq, label=label, closed=label).interpolate().loc[start:end]
 
 
 def unmix_intervals(mixed, lower=0, upper=100):
