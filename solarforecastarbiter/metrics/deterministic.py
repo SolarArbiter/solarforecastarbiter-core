@@ -161,7 +161,9 @@ def pearson_correlation_coeff(y_true, y_pred):
 
     x1 = y_pred - np.mean(y_pred)
     x2 = y_true - np.mean(y_true)
-    return np.sum(x1 * x2) / (np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2)))
+    return np.sum(x1 * x2) / (
+        np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2))
+    )
 
 
 def coeff_determination(y_true, y_pred):
