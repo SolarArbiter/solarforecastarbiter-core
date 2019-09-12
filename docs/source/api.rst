@@ -118,7 +118,6 @@ NWP models
    reference_forecasts.models.hrrr_subhourly_to_subhourly_instantaneous
    reference_forecasts.models.hrrr_subhourly_to_hourly_mean
    reference_forecasts.models.rap_ghi_to_instantaneous
-   reference_forecasts.models.rap_ghi_to_hourly_mean
    reference_forecasts.models.rap_cloud_cover_to_hourly_mean
    reference_forecasts.models.gfs_quarter_deg_3hour_to_hourly_mean
    reference_forecasts.models.gfs_quarter_deg_hourly_to_hourly_mean

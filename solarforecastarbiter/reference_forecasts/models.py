@@ -278,54 +278,6 @@ def rap_ghi_to_instantaneous(latitude, longitude, elevation,
             resampler, solar_pos_calculator)
 
 
-def rap_ghi_to_hourly_mean(latitude, longitude, elevation,
-                           init_time, start, end, interval_label,
-                           load_forecast=load_forecast,
-                           *, __model='rap'):
-    """
-    Take hourly RAP instantantaneous irradiance and convert it to hourly
-    average forecasts.
-    GHI directly from NWP model. DNI, DHI computed.
-    Max forecast horizon 21 or 39 (3Z, 9Z, 15Z, 21Z) hours.
-
-    Parameters
-    ----------
-    latitude : float
-    longitude : float
-    elevation : float
-    init_time : pd.Timestamp
-        Full datetime of a model initialization
-    start : pd.Timestamp
-        Forecast start. Forecast is inclusive of this instant if
-        interval_label is *beginning* and exclusive of this instant if
-        interval_label is *ending*.
-    end : pd.Timestamp
-        Forecast end. Forecast is exclusive of this instant if
-        interval_label is *beginning* and inclusive of this instant if
-        interval_label is *ending*.
-    interval_label : str
-        Must be *beginning* or *ending*
-    """
-    # ghi dni and dhi not in RAP output available from g2sub service
-    ghi, air_temperature, wind_speed = load_forecast(
-        latitude, longitude, init_time, start, end, __model,
-        variables=('ghi', 'air_temperature', 'wind_speed'))
-    dni, dhi, solar_pos_calculator = _ghi_to_dni_dhi(
-        latitude, longitude, elevation, ghi)
-    start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
-                                                             start, end)
-    slicer = partial(forecast.slice_arg, start=start_adj, end=end_adj)
-    interpolator = partial(forecast.interpolate, freq='5min')
-    ghi, dni, dhi, air_temperature, wind_speed = [
-        slicer(interpolator(v)) for v in
-        (ghi, dni, dhi, air_temperature, wind_speed)
-    ]
-    label = datamodel.CLOSED_MAPPING[interval_label]
-    resampler = partial(forecast.resample, freq='1h', label=label)
-    return (ghi, dni, dhi, air_temperature, wind_speed,
-            resampler, solar_pos_calculator)
-
-
 def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
                                    init_time, start, end, interval_label,
                                    load_forecast=load_forecast,

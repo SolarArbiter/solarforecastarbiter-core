@@ -29,7 +29,6 @@ LOAD_FORECAST = partial(nwp.load_forecast, base_path=BASE_PATH)
 @pytest.mark.parametrize('model', [
     pytest.param(models.gfs_quarter_deg_3hour_to_hourly_mean,
                  marks=pytest.mark.xfail(reason='gfs_3h not available')),
-    pytest.param(models.rap_ghi_to_hourly_mean, marks=xfail_g2sub),
     pytest.param(models.rap_ghi_to_instantaneous, marks=xfail_g2sub)
 ])
 def test_default_load_forecast_failures(model):
@@ -66,7 +65,6 @@ def check_out(out, start, end, end_strict=True):
     models.hrrr_subhourly_to_hourly_mean,
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.rap_cloud_cover_to_hourly_mean,
-    # models.rap_ghi_to_hourly_mean  # not available
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
@@ -147,7 +145,6 @@ def test_domain_limits(model):
     (models.nam_12km_cloud_cover_to_hourly_mean, 'nam_12km'),
     (models.nam_12km_hourly_to_hourly_instantaneous, 'nam_12km'),
     (models.rap_cloud_cover_to_hourly_mean, 'rap'),
-    (models.rap_ghi_to_hourly_mean, 'rap'),
     (models.rap_ghi_to_instantaneous, 'rap')
 ])
 def test_get_nwp_model(model, exp):
