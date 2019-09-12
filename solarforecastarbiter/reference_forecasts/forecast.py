@@ -207,12 +207,6 @@ def slice_arg(arg, start=None, end=None):
         return arg.loc[start:end]
 
 
-def slice_args(*args, start=None, end=None):
-    resampled_args = [arg if arg is None else arg.loc[start:end]
-                      for arg in args]
-    return resampled_args
-
-
 def unmix_intervals(mixed, lower=0, upper=100):
     """Convert mixed interval averages into pure interval averages.
 

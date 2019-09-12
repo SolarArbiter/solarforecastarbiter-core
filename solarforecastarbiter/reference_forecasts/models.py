@@ -102,27 +102,34 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     interval_label : str
         beginning, ending, or instant
     """
-    # Interpolate cloud cover, temp, and wind to higher temporal resolution
+    # Resample cloud cover, temp, and wind to higher temporal resolution
     # because solar position and PV power calculations assume instantaneous
     # inputs. Why 5 minutes? It's a round number that produces order 10 data
     # points per hour, so it's reasonable for hour average calculations.
+    # Cloud cover is filled backwards because model output represents
+    # average over the previous hour (at least for GFS). Air temperature
+    # and wind are interpolated because model output represents
+    # instantaneous values.
     freq = '5min'
-    label = datamodel.CLOSED_MAPPING[interval_label]
     cloud_cover = cloud_cover.resample(freq).bfill()
     interpolator = partial(forecast.interpolate, freq=freq)
-    air_temperature, wind_speed = list(
-        map(interpolator, (air_temperature, wind_speed)))
+    air_temperature, wind_speed = [
+        interpolator(v) for v in (air_temperature, wind_speed)
+    ]
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
     slicer = partial(forecast.slice_arg, start=start_adj, end=end_adj)
     cloud_cover, air_temperature, wind_speed = [
         slicer(v) for v in (cloud_cover, air_temperature, wind_speed)
     ]
+
     solar_position = pvmodel.calculate_solar_position(
         latitude, longitude, elevation, cloud_cover.index)
     ghi, dni, dhi = forecast.cloud_cover_to_irradiance(
         latitude, longitude, elevation, cloud_cover,
         solar_position['apparent_zenith'], solar_position['zenith'])
+
+    label = datamodel.CLOSED_MAPPING[interval_label]
     resampler = partial(forecast.resample, freq='1h', label=label)
 
     def solar_pos_calculator(): return solar_position
