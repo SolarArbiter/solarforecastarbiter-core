@@ -8,7 +8,7 @@ This is the first 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
-* Add deterministic forecast performance metrics
+* Add deterministic forecast performance metrics (:pull:`171`)
 
 
 Enhancements
