@@ -255,10 +255,20 @@ Class for communicating with the Solar Forecast Arbiter API.
 Metrics
 =======
 
+Functions to compute forecast performance metrics.
+
 .. autosummary::
    :toctree: generated/
 
-   metrics
+   metrics.deterministic.mean_absolute
+   metrics.deterministic.mean_bias
+   metrics.deterministic.root_mean_square
+   metrics.deterministic.normalized_root_mean_square
+   metrics.deterministic.centered_root_mean_square
+   metrics.deterministic.mean_absolute_percentage
+   metrics.deterministic.forecast_skill
+   metrics.deterministic.pearson_correlation_coeff
+   metrics.deterministic.coeff_determination
 
 
 Reports
