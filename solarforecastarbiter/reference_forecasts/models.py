@@ -115,7 +115,7 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
                                                              start, end)
     cloud_cover = cloud_cover.resample(freq).bfill().loc[start_adj:end_adj]
     resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
-                                          freq='5min', start=start_adj,
+                                          freq=freq, start=start_adj,
                                           end=end_adj)
     air_temperature, wind_speed = [
         resample_interpolate_slicer(v) for v in (air_temperature, wind_speed)

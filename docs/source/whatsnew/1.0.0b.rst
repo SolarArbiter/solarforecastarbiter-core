@@ -10,6 +10,9 @@ API Changes
 ~~~~~~~~~~~
 * Add required argument interval_label to all model functions in
   :py:mod:`solarforecastarbiter.reference_forecasts.models`. (:issue:`185`)
+* Changed
+  :py:func:`~solarforecastarbiter.reference_forecasts.forecast.resample`
+  keyward argument `closed` to `label`. (:pull:`186`)
 
 Enhancements
 ~~~~~~~~~~~~
