@@ -14,6 +14,8 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Add command line interface option for reports. (:issue:`168`)
+* Add classes to :py:mod:`~solarforecastarbiter.datamodel` to support
+  probabilistic forecasts. (:issue:`47`)
 
 Bug fixes
 ~~~~~~~~~

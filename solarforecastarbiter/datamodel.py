@@ -458,6 +458,24 @@ class Forecast(BaseModel):
     __post_init__ = __set_units__
 
 
+def ProbabilisticForecast(Forecast):
+    """
+    Extends Forecast dataclass to include probabilistic forecast
+    attributes.
+    """
+    axis: str
+    constant_value: float
+
+
+def ProbabilisticForecastGroup(Forecast):
+    """
+    Tracks a group of ProbabilisticForecast objects that together
+    describe several points of the same probability distribution.
+    """
+    axis: str
+    constant_values: Tuple[ProbabilisticForecast]
+
+
 def __check_units__(*args):
     ref_unit = args[0].units
     if not all(arg.units == ref_unit for arg in args):
