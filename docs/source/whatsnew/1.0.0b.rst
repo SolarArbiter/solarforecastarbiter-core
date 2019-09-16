@@ -13,6 +13,8 @@ API Changes
 * Changed
   :py:func:`~solarforecastarbiter.reference_forecasts.forecast.resample`
   keyward argument `closed` to `label`. (:pull:`186`)
+* Add deterministic forecast performance metrics (:pull:`171`)
+
 
 Enhancements
 ~~~~~~~~~~~~
