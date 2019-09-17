@@ -62,8 +62,8 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 | Observations | | | | | Forecasts | | | | |
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
-{% for fx_ob in fx_obs -%}
-[{{ fx_ob.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.observation.observation_id|safe }}) | {{ fx_ob.observation.interval_label | safe}} | {{ (fx_ob.observation.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.observation.interval_label|safe }} | {{ (fx_ob.observation.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.forecast_id|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min
+{% for fx_ob in proc_fx_obs -%}
+[{{ fx_ob.original.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.original.observation.observation_id|safe }}) | {{ fx_ob.original.observation.interval_label | safe}} | {{ (fx_ob.original.observation.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.forecast.forecast_id|safe }}) | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.forecast.interval_label|safe }} | {{ (fx_ob.forecast.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.

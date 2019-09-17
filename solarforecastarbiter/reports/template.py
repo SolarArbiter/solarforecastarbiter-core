@@ -53,7 +53,7 @@ def template_report(report, metadata, metrics):
         start=metadata.start.strftime(strftime),
         end=metadata.end.strftime(strftime),
         now=metadata.now.strftime(strftime),
-        fx_obs=report.forecast_observations,
+        proc_fx_obs=report.raw_report.processed_forecasts_observations,
         validation_issues=metadata.validation_issues,
         versions=metadata.versions,
         script_metrics=script_metrics,
