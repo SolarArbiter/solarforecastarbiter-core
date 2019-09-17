@@ -9,6 +9,9 @@ This is the first 1.0 beta release.
 API Changes
 ~~~~~~~~~~~
 * Add deterministic forecast performance metrics (:pull:`171`)
+* Add `processed_forecast_observations` argument to
+  :py:func:`~solarforecastarbiter.reports.template.template_report`.
+  (:issue:`184`)
 
 
 Enhancements
@@ -50,6 +53,7 @@ Bug fixes
 * Fix failure to pass user-specified limits to
   `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
   (:issue:`182`)
+* Fix resampled/aligned observation/forecast labels in report. (:issue:`184`)
 
 Testing
 ~~~~~~~

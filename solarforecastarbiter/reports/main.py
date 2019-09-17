@@ -188,16 +188,18 @@ def create_raw_report_from_data(report, data):
     metadata = create_metadata(report)
 
     processed_fxobs = metrics.validate_resample_align(report, metadata, data)
+    processed_fxobs = tuple(processed_fxobs)
 
     # needs to be in json
     metrics_list = metrics.loop_forecasts_calculate_metrics(
         report, processed_fxobs)
     # can be ~50kb
-    report_template = template.template_report(report, metadata, metrics_list)
+    report_template = template.template_report(report, metadata, metrics_list,
+                                               processed_fxobs)
 
     raw_report = datamodel.RawReport(
         metadata=metadata, template=report_template, metrics=metrics_list,
-        processed_forecasts_observations=tuple(processed_fxobs))
+        processed_forecasts_observations=processed_fxobs)
     return raw_report
 
 
