@@ -466,6 +466,9 @@ def ProbabilisticForecastConstantValue(Forecast):
     axis: str
     constant_value: float
 
+    def __post_init__(self):
+        __check_axis__(self.axis)
+
 
 def ProbabilisticForecast(Forecast):
     """
@@ -475,6 +478,20 @@ def ProbabilisticForecast(Forecast):
     """
     axis: str
     constant_values: Tuple[ProbabilisticForecastConstantValue]
+
+    def __post_init__(self):
+        __check_axis__(self.axis)
+        __check_axis_consistency__(self.axis, self.constant_values)
+
+
+def __check_axis__(axis):
+    if axis not in ('x', 'y'):
+        raise ValueError('Axis must be x or y')
+
+
+def __check_axis_consistency__(axis, constant_values):
+    if not all(arg.axis == axis for arg in constant_values):
+        raise ValueError('All axis attributes must be identical')
 
 
 def __check_units__(*args):
