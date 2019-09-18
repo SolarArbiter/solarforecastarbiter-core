@@ -458,7 +458,8 @@ class Forecast(BaseModel):
     __post_init__ = __set_units__
 
 
-def ProbabilisticForecastConstantValue(Forecast):
+@dataclass(frozen=True)
+class ProbabilisticForecastConstantValue(Forecast):
     """
     Extends Forecast dataclass to include probabilistic forecast
     attributes.
@@ -470,7 +471,8 @@ def ProbabilisticForecastConstantValue(Forecast):
         __check_axis__(self.axis)
 
 
-def ProbabilisticForecast(Forecast):
+@dataclass(frozen=True)
+class ProbabilisticForecast(Forecast):
     """
     Tracks a group of ProbabilisticForecastConstantValue objects that
     together describe 1 or more points of the same probability
