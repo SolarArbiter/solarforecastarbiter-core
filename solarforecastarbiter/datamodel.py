@@ -398,7 +398,30 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
-class Forecast(BaseModel):
+class _ForecastBase:
+    name: str
+    issue_time_of_day: datetime.time
+    lead_time_to_start: pd.Timedelta
+    interval_length: pd.Timedelta
+    run_length: pd.Timedelta
+    interval_label: str
+    interval_value_type: str
+    variable: str
+    site: Site
+    units: str = field(init=False)
+    __post_init__ = __set_units__
+
+
+@dataclass(frozen=True)
+class _ForecastDefaultsBase:
+    forecast_id: str = ''
+    extra_parameters: str = ''
+
+
+# Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
+# to avoid problems with inheritance in ProbabilisticForecasts
+@dataclass(frozen=True)
+class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     """
     A class to hold metadata for Forecast objects.
 
@@ -443,23 +466,19 @@ class Forecast(BaseModel):
     --------
     Site
     """
-    name: str
-    issue_time_of_day: datetime.time
-    lead_time_to_start: pd.Timedelta
-    interval_length: pd.Timedelta
-    run_length: pd.Timedelta
-    interval_label: str
-    interval_value_type: str
-    variable: str
-    site: Site
-    forecast_id: str = ''
-    extra_parameters: str = ''
-    units: str = field(init=False)
-    __post_init__ = __set_units__
+    def __post_init__(self):
+        super().__post_init__()
 
 
 @dataclass(frozen=True)
-class ProbabilisticForecastConstantValue(Forecast):
+class _ProbabilisticForecastConstantValueBase:
+    axis: str
+    constant_value: float
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecastConstantValue(
+        Forecast, _ProbabilisticForecastConstantValueBase):
     """
     Extends Forecast dataclass to include probabilistic forecast
     attributes.
@@ -468,20 +487,26 @@ class ProbabilisticForecastConstantValue(Forecast):
     constant_value: float
 
     def __post_init__(self):
+        super().__post_init__()
         __check_axis__(self.axis)
 
 
 @dataclass(frozen=True)
-class ProbabilisticForecast(Forecast):
+class _ProbabilisticForecastBase:
+    axis: str
+    constant_values: Tuple[ProbabilisticForecastConstantValue]
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecast(
+        Forecast, _ProbabilisticForecastBase):
     """
     Tracks a group of ProbabilisticForecastConstantValue objects that
     together describe 1 or more points of the same probability
     distribution.
     """
-    axis: str
-    constant_values: Tuple[ProbabilisticForecastConstantValue]
-
     def __post_init__(self):
+        super().__post_init__()
         __check_axis__(self.axis)
         __check_axis_consistency__(self.axis, self.constant_values)
 
