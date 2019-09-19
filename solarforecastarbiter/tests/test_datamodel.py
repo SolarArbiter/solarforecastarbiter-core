@@ -10,10 +10,15 @@ from solarforecastarbiter import datamodel
 
 
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
-                        'forecast', 'forecastobservation'])
+                        'forecast', 'forecastobservation',
+                        'probabilisticforecastconstantvalue',
+                        'probabilisticforecast'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
-                single_forecast_text, single_forecast):
+                single_forecast_text, single_forecast,
+                prob_forecast_constant_value,
+                prob_forecast_constant_value_text,
+                prob_forecasts, prob_forecast_text):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -34,6 +39,16 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
         return (single_forecast, fx_dict, datamodel.Forecast)
+    elif request.param == 'probabilisticforecastconstantvalue':
+        fx_dict = json.loads(prob_forecast_constant_value_text)
+        fx_dict['site'] = single_site
+        return (prob_forecast_constant_value, fx_dict,
+                datamodel.ProbabilisticForecastConstantValue)
+    elif request.param == 'probabilisticforecast':
+        fx_dict = json.loads(prob_forecast_text)
+        fx_dict['site'] = single_site
+        fx_dict['constant_values'] = (prob_forecast_constant_value, )
+        return (prob_forecasts, fx_dict, datamodel.ProbabilisticForecast)
     elif request.param == 'forecastobservation':
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
