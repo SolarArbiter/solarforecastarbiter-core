@@ -736,7 +736,9 @@ def prob_forecast_constant_value_text():
   "provider": "Organization 1",
   "run_length": 1440,
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
-  "variable": "ghi"
+  "variable": "ghi",
+  "axis": "x",
+  "constant_value": 0
 }
 """
 
@@ -762,7 +764,9 @@ def prob_forecast_text():
     "provider": "Organization 1",
     "run_length": 1440,
     "site_id": "123e4567-e89b-12d3-a456-426655440001",
-    "variable": "ghi"
+    "variable": "ghi",
+    "axis": "x",
+    "constant_value": 0
   },
   {
     "_links": {
@@ -781,7 +785,9 @@ def prob_forecast_text():
     "provider": "Organization 1",
     "run_length": 60,
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
-    "variable": "ac_power"
+    "variable": "ac_power",
+    "axis": "x",
+    "constant_value": 1
   }
 ]
 """  # NOQA
@@ -801,7 +807,9 @@ def _prob_forecast_constant_value_from_dict(single_site, get_site):
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
-            extra_parameters=fx_dict.get('extra_parameters', ''))
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_value=fx_dict['constant_value'])
     return f
 
 
