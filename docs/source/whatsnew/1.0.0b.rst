@@ -17,6 +17,15 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Add command line interface option for reports. (:issue:`168`)
+* Add classes
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
+  and
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast`
+  to :py:mod:`~solarforecastarbiter.datamodel` to support
+  probabilistic forecasts. (:issue:`47`)
+* Datamodel classes `.from_dict` constructors will now accept nested dicts.
+  For example, a dict describing an Observation may now specify its site as a
+  dict that describes a Site, rather than a Site object. (:issue:`125`)
 
 Bug fixes
 ~~~~~~~~~

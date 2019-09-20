@@ -131,6 +131,28 @@ class BaseModel:
                 ):
                     kwargs[model_field.name] = model_field.type.from_dict(
                         dict_[model_field.name])
+                elif (
+                    hasattr(model_field.type, '__origin__') and
+                    model_field.type.__origin__ is tuple and
+                    is_dataclass(model_field.type.__args__[0])
+                ):
+                    out = []
+                    for arg in dict_[model_field.name]:
+                        if is_dataclass(arg):
+                            out.append(arg)
+                        elif isinstance(arg, dict):
+                            out.append(
+                                model_field.type.__args__[0].from_dict(
+                                    arg)
+                            )
+                        else:
+                            raise TypeError(
+                                f'Invalid type of argument for '
+                                f'{model_field.name}, '
+                                f'must be dict or '
+                                f'{model_field.type.__args__[0]}'
+                            )
+                    kwargs[model_field.name] = tuple(out)
                 else:
                     kwargs[model_field.name] = model._special_field_processing(
                         model, model_field, dict_[model_field.name])
@@ -398,7 +420,30 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
-class Forecast(BaseModel):
+class _ForecastBase:
+    name: str
+    issue_time_of_day: datetime.time
+    lead_time_to_start: pd.Timedelta
+    interval_length: pd.Timedelta
+    run_length: pd.Timedelta
+    interval_label: str
+    interval_value_type: str
+    variable: str
+    site: Site
+    units: str = field(init=False)
+    __post_init__ = __set_units__
+
+
+@dataclass(frozen=True)
+class _ForecastDefaultsBase:
+    forecast_id: str = ''
+    extra_parameters: str = ''
+
+
+# Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
+# to avoid problems with inheritance in ProbabilisticForecasts
+@dataclass(frozen=True)
+class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     """
     A class to hold metadata for Forecast objects.
 
@@ -443,19 +488,150 @@ class Forecast(BaseModel):
     --------
     Site
     """
-    name: str
-    issue_time_of_day: datetime.time
-    lead_time_to_start: pd.Timedelta
-    interval_length: pd.Timedelta
-    run_length: pd.Timedelta
-    interval_label: str
-    interval_value_type: str
-    variable: str
-    site: Site
-    forecast_id: str = ''
-    extra_parameters: str = ''
-    units: str = field(init=False)
-    __post_init__ = __set_units__
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@dataclass(frozen=True)
+class _ProbabilisticForecastConstantValueBase:
+    axis: str
+    constant_value: float
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecastConstantValue(
+        Forecast, _ProbabilisticForecastConstantValueBase):
+    """
+    Extends Forecast dataclass to include probabilistic forecast
+    attributes.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_value : float
+        The variable value or percentile.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecast
+    """
+    def __post_init__(self):
+        super().__post_init__()
+        __check_axis__(self.axis)
+
+
+@dataclass(frozen=True)
+class _ProbabilisticForecastBase:
+    axis: str
+    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecast(
+        Forecast, _ProbabilisticForecastBase):
+    """
+    Tracks a group of ProbabilisticForecastConstantValue objects that
+    together describe 1 or more points of the same probability
+    distribution.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_values : tuple of ProbabilisticForecastConstantValue
+        The variable values or percentiles.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecastConstantValue
+    """
+    def __post_init__(self):
+        super().__post_init__()
+        __check_axis__(self.axis)
+        __check_axis_consistency__(self.axis, self.constant_values)
+
+
+def __check_axis__(axis):
+    if axis not in ('x', 'y'):
+        raise ValueError('Axis must be x or y')
+
+
+def __check_axis_consistency__(axis, constant_values):
+    if not all(arg.axis == axis for arg in constant_values):
+        raise ValueError('All axis attributes must be identical')
 
 
 def __check_units__(*args):
@@ -509,7 +685,7 @@ class QualityFlagFilter(BaseFilter):
         Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
         These periods will be excluded from the analysis.
     """
-    quality_flags: Tuple[str] = (
+    quality_flags: Tuple[str, ...] = (
         'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
         'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
     )
@@ -602,19 +778,7 @@ class RawReport(BaseModel):
     metadata: ReportMetadata
     template: str
     metrics: dict  # later MetricsResult
-    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
-
-    def _special_field_processing(self, model_field, val):
-        if model_field.name == 'processed_forecasts_observations':
-            out = []
-            for v in val:
-                if isinstance(v, dict):
-                    out.append(ProcessedForecastObservation.from_dict(v))
-                else:
-                    out.append(v)
-            return tuple(out)
-        else:
-            return val
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
 
 
 @dataclass(frozen=True)
@@ -654,9 +818,9 @@ class Report(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    forecast_observations: Tuple[ForecastObservation]
-    metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
-    filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
+    forecast_observations: Tuple[ForecastObservation, ...]
+    metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    filters: Tuple[BaseFilter, ...] = field(default_factory=QualityFlagFilter)
     status: str = 'pending'
     report_id: str = ''
     raw_report: Union[None, RawReport] = None

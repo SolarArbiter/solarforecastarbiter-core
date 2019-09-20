@@ -39,6 +39,14 @@ The Observation and Forecast:
    datamodel.Observation
    datamodel.Forecast
 
+Probabilistic forecasts:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ProbabilisticForecast
+   datamodel.ProbabilisticForecastConstantValue
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 

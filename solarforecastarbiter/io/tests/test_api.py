@@ -349,7 +349,7 @@ def test_apisession_get_report(requests_mock, report_text, report_objects,
                                content=report_text)
     out = session.get_report('')
     # TODO: fix filters
-    expected = report_objects[0].replace(filters=[])
+    expected = report_objects[0].replace(filters=())
     assert out == expected
 
 
@@ -370,7 +370,7 @@ def test_apisession_get_report_with_raw(
     out = session.get_report('')
     # TODO: fix filters
     expected = report_objects[0].replace(
-        filters=[],
+        filters=(),
         raw_report=raw.replace(processed_forecasts_observations=()))
     assert out == expected
 
@@ -382,7 +382,7 @@ def test_apisession_list_reports(requests_mock, report_text, report_objects,
                                content=b'['+report_text+b']')
     out = session.list_reports()
     # TODO: fix filters
-    expected = [report_objects[0].replace(filters=[])]
+    expected = [report_objects[0].replace(filters=())]
     assert out == expected
 
 
