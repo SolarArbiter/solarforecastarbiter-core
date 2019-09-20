@@ -494,7 +494,7 @@ class ProbabilisticForecastConstantValue(
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
-    constant_values: Tuple[ProbabilisticForecastConstantValue]
+    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
 
 
 @dataclass(frozen=True)
@@ -572,7 +572,7 @@ class QualityFlagFilter(BaseFilter):
         Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
         These periods will be excluded from the analysis.
     """
-    quality_flags: Tuple[str] = (
+    quality_flags: Tuple[str, ...] = (
         'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
         'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
     )
@@ -665,7 +665,6 @@ class RawReport(BaseModel):
     metadata: ReportMetadata
     template: str
     metrics: dict  # later MetricsResult
-    processed_forecasts_observations: Tuple[ProcessedForecastObservation]
 
     def _special_field_processing(self, model_field, val):
         if model_field.name == 'processed_forecasts_observations':
@@ -678,6 +677,7 @@ class RawReport(BaseModel):
             return tuple(out)
         else:
             return val
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
 
 
 @dataclass(frozen=True)
@@ -717,9 +717,9 @@ class Report(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    forecast_observations: Tuple[ForecastObservation]
-    metrics: Tuple[str] = ('mae', 'mbe', 'rmse')
-    filters: Tuple[BaseFilter] = field(default_factory=QualityFlagFilter)
+    forecast_observations: Tuple[ForecastObservation, ...]
+    metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    filters: Tuple[BaseFilter, ...] = field(default_factory=QualityFlagFilter)
     status: str = 'pending'
     report_id: str = ''
     raw_report: Union[None, RawReport] = None
