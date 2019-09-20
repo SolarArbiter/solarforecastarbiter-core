@@ -617,6 +617,30 @@ def many_observations(many_observations_text, _observation_from_dict):
 
 
 @pytest.fixture()
+def single_observation_text_with_site_text(site_text):
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+  },
+  "created_at": "2019-03-01T12:01:48+00:00",
+  "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "modified_at": "2019-03-01T12:01:48+00:00",
+  "name": "DNI Instrument 2",
+  "observation_id": "9ce9715c-bd91-47b7-989f-50bb558f1eb9",
+  "provider": "Organization 1",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "uncertainty": 0.1,
+  "variable": "dni",
+  "site": """ + site_text + b"""
+}
+"""  # NOQA
+
+
+@pytest.fixture()
 def single_forecast_text():
     return b"""
 {

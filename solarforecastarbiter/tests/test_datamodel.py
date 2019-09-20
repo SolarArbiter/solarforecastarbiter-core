@@ -222,3 +222,12 @@ def test_process_site_dict(_sites):
     site_dict, expected, model = _sites
     out = model.from_dict(site_dict)
     assert out == expected
+
+
+def test_process_nested_objects(single_observation_text_with_site_text,
+                                single_site, single_observation):
+    obs_dict = json.loads(single_observation_text_with_site_text)
+    obs = datamodel.Observation.from_dict(obs_dict)
+    assert obs == single_observation
+    assert obs.site == single_site
+    assert obs.site == single_observation.site
