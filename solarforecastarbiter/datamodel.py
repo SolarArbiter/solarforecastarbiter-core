@@ -131,6 +131,26 @@ class BaseModel:
                 ):
                     kwargs[model_field.name] = model_field.type.from_dict(
                         dict_[model_field.name])
+                elif (
+                    hasattr(model_field.type, '__origin__') and
+                    model_field.type.__origin__ is tuple and
+                    is_dataclass(model_field.type.__args__[0])
+                ):
+                    out = []
+                    for arg in dict_[model_field.name]:
+                        if is_dataclass(arg):
+                            out.append(arg)
+                        elif isinstance(arg, dict):
+                            out.append(
+                                model_field.type.__args__[0].from_dict(
+                                    arg)
+                            )
+                        else:
+                            raise TypeError(
+                                f'Invalid type of argument for {model_field.name},'
+                                f' must be dict or {model_field.type.__args__[0]}'
+                            )
+                    kwargs[model_field.name] = tuple(out)
                 else:
                     kwargs[model_field.name] = model._special_field_processing(
                         model, model_field, dict_[model_field.name])
@@ -483,9 +503,6 @@ class ProbabilisticForecastConstantValue(
     Extends Forecast dataclass to include probabilistic forecast
     attributes.
     """
-    axis: str
-    constant_value: float
-
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
@@ -665,18 +682,6 @@ class RawReport(BaseModel):
     metadata: ReportMetadata
     template: str
     metrics: dict  # later MetricsResult
-
-    def _special_field_processing(self, model_field, val):
-        if model_field.name == 'processed_forecasts_observations':
-            out = []
-            for v in val:
-                if isinstance(v, dict):
-                    out.append(ProcessedForecastObservation.from_dict(v))
-                else:
-                    out.append(v)
-            return tuple(out)
-        else:
-            return val
     processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
 
 

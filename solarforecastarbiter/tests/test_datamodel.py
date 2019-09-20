@@ -135,6 +135,40 @@ def test_from_dict_invalid_time_format(many_forecasts_text):
         datamodel.Forecast.from_dict(obj_dict)
 
 
+def test_from_dict_invalid_constant_values(prob_forecast_text, single_site):
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = ('not a tuple of cv', 1)
+    with pytest.raises(TypeError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
+def test_from_dict_invalid_axis(prob_forecast_text, single_site,
+                                prob_forecast_constant_value):
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = (prob_forecast_constant_value,)
+    fx_dict['axis'] = 'z'
+    with pytest.raises(ValueError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
+def test_from_dict_inconsistent_axis(prob_forecast_text, single_site,
+                                     prob_forecast_constant_value_text,
+                                     prob_forecast_constant_value):
+    cv_dict = json.loads(prob_forecast_constant_value_text)
+    cv_dict['site'] = single_site
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = (prob_forecast_constant_value, cv_dict)
+    fx_dict['axis'] = 'x'
+    # check multiple constant values
+    datamodel.ProbabilisticForecast.from_dict(fx_dict)
+    cv_dict['axis'] = 'y'
+    with pytest.raises(ValueError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
 def test_dict_roundtrip(pdid_params):
     expected, _, model = pdid_params
     dict_ = expected.to_dict()
