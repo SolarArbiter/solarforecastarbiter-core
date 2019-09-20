@@ -329,7 +329,7 @@ class APISession(requests.Session):
 
         Returns
         -------
-        datamodel.Forecast
+        datamodel.ProbabilisticForecastConstantValue
         """
         # add /metadata after
         # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
