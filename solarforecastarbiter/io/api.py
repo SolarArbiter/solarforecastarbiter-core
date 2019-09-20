@@ -292,6 +292,53 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
+    def list_probabilistic_forecasts(self):
+        """
+        List all ProbabilisticForecasts a user has access to.
+
+        Returns
+        -------
+        list of datamodel.ProbabilisticForecast
+        """
+        req = self.get('/forecasts/cdf/')
+        fx_dicts = req.json()
+        if len(fx_dicts) == 0:
+            return []
+        sites = {site.site_id: site for site in self.list_sites()}
+        out = []
+        for fx_dict in fx_dicts:
+            site = sites.get(fx_dict['site_id'])
+            fx_dict['site'] = site
+            cvs = []
+            for constant_value_dict in fx_dict['constant_values']:
+                cvs.append(self.get_probabilistic_forecast_constant_value(
+                    constant_value_dict['forecast_id']))
+            fx_dict['constant_values'] = cvs
+            out.append(datamodel.ProbabilisticForecast.from_dict(fx_dict))
+        return out
+
+    def get_probabilistic_forecast_constant_value(self, forecast_id):
+        """
+        Get ProbabilisticForecastConstantValue metadata from the API for
+        the given forecast_id.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to get metadata for
+
+        Returns
+        -------
+        datamodel.Forecast
+        """
+        # add /metadata after
+        # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}')
+        fx_dict = req.json()
+        site = self.get_site(fx_dict['site_id'])
+        fx_dict['site'] = site
+        return datamodel.ProbabilisticForecastConstantValue.from_dict(fx_dict)
+
     @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
