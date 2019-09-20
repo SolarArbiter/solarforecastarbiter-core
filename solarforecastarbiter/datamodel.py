@@ -147,8 +147,10 @@ class BaseModel:
                             )
                         else:
                             raise TypeError(
-                                f'Invalid type of argument for {model_field.name},'
-                                f' must be dict or {model_field.type.__args__[0]}'
+                                f'Invalid type of argument for '
+                                f'{model_field.name}, '
+                                f'must be dict or '
+                                f'{model_field.type.__args__[0]}'
                             )
                     kwargs[model_field.name] = tuple(out)
                 else:
