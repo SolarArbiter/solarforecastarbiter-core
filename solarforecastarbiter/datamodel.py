@@ -504,6 +504,53 @@ class ProbabilisticForecastConstantValue(
     """
     Extends Forecast dataclass to include probabilistic forecast
     attributes.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_value : float
+        The variable value or percentile.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecast
     """
     def __post_init__(self):
         super().__post_init__()
@@ -523,6 +570,53 @@ class ProbabilisticForecast(
     Tracks a group of ProbabilisticForecastConstantValue objects that
     together describe 1 or more points of the same probability
     distribution.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_values : tuple of ProbabilisticForecastConstantValue
+        The variable values or percentiles.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecastConstantValue
     """
     def __post_init__(self):
         super().__post_init__()
