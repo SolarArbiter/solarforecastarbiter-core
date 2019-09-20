@@ -762,7 +762,7 @@ def prob_forecast_text():
     "name": "DA GHI",
     "provider": "Organization 1",
     "run_length": 1440,
-    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
     "variable": "ghi",
     "axis": "x",
     "constant_values": [
@@ -777,7 +777,7 @@ def prob_forecast_text():
 
 
 @pytest.fixture()
-def _prob_forecast_constant_value_from_dict(single_site, get_site):
+def _prob_forecast_constant_value_from_dict(get_site):
     def f(fx_dict):
         return datamodel.ProbabilisticForecastConstantValue(
             name=fx_dict['name'], variable=fx_dict['variable'],
@@ -797,8 +797,7 @@ def _prob_forecast_constant_value_from_dict(single_site, get_site):
 
 
 @pytest.fixture()
-def _prob_forecast_from_dict(single_site, get_site,
-                             prob_forecast_constant_value):
+def _prob_forecast_from_dict(get_site, prob_forecast_constant_value):
     def f(fx_dict):
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
