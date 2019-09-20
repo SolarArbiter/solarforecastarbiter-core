@@ -618,7 +618,7 @@ def many_observations(many_observations_text, _observation_from_dict):
 
 @pytest.fixture()
 def single_observation_text_with_site_text(site_text):
-    return b"""
+    return (b"""
 {
   "_links": {
     "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
@@ -635,9 +635,10 @@ def single_observation_text_with_site_text(site_text):
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
   "uncertainty": 0.1,
   "variable": "dni",
-  "site": """ + site_text + b"""
+  "site": """  # NOQA
+  + site_text + b"""
 }
-"""  # NOQA
+""")
 
 
 @pytest.fixture()
