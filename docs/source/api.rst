@@ -255,7 +255,7 @@ Class for communicating with the Solar Forecast Arbiter API.
    io.api.APISession.list_forecasts
    io.api.APISession.create_forecast
    io.api.APISession.list_probabilistic_forecasts
-   io.api.APISession.get_probabilistic_forecast_constant_values
+   io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_observation_values
    io.api.APISession.get_forecast_values
    io.api.APISession.post_observation_values
