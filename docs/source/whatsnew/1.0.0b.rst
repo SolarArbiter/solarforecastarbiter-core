@@ -26,6 +26,7 @@ Enhancements
 * Datamodel classes `.from_dict` constructors will now accept nested dicts.
   For example, a dict describing an Observation may now specify its site as a
   dict that describes a Site, rather than a Site object. (:issue:`125`)
+* Documentation page for command line interface. (:issue:`169`)
 
 Bug fixes
 ~~~~~~~~~
