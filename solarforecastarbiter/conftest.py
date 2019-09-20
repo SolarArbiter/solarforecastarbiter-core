@@ -802,6 +802,68 @@ def prob_forecast_text():
 
 
 @pytest.fixture()
+def many_prob_forecasts_text():
+    return b"""
+[
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    },
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    }
+]
+"""  # NOQA
+
+
+@pytest.fixture()
 def _prob_forecast_constant_value_from_dict(get_site):
     def f(fx_dict):
         return datamodel.ProbabilisticForecastConstantValue(
@@ -851,6 +913,12 @@ def prob_forecast_constant_value(prob_forecast_constant_value_text,
 @pytest.fixture()
 def prob_forecasts(prob_forecast_text, _prob_forecast_from_dict):
     return _prob_forecast_from_dict(json.loads(prob_forecast_text))
+
+
+@pytest.fixture()
+def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
+    return [_prob_forecast_from_dict(fx) for fx
+            in json.loads(many_prob_forecasts_text)]
 
 
 @pytest.fixture(scope='module')

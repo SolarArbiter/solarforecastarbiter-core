@@ -211,6 +211,37 @@ def test_apisession_list_forecasts_empty(requests_mock):
     assert fx_list == []
 
 
+def test_apisession_get_prob_forecast(requests_mock, prob_forecasts,
+                                      prob_forecast_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/.*')
+    requests_mock.register_uri('GET', matcher, content=prob_forecast_text)
+    fx = session.get_probabilistic_forecast('')
+    assert fx == prob_forecasts
+
+
+def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
+                                        many_prob_forecasts_text,
+                                        mock_list_sites):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=many_prob_forecasts_text)
+    fx_list = session.list_probabilistic_forecasts()
+    assert fx_list == many_prob_forecasts
+
+
+def test_apisession_get_prob_forecast_constant_value(
+        requests_mock, prob_forecast_constant_value,
+        prob_forecast_constant_value_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value('')
+    assert fx == prob_forecast_constant_value
+
+
 @pytest.fixture(params=[0, 1])
 def obs_start_end(request):
     if request.param == 0:
