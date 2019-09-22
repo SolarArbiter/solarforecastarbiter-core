@@ -323,6 +323,16 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
     pdt.assert_series_equal(out, forecast_values)
 
 
+def test_apisession_get_prob_forecast_constant_value_values(
+        requests_mock, forecast_values, forecast_values_text, fx_start_end):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*/values')
+    requests_mock.register_uri('GET', matcher, content=forecast_values_text)
+    out = session.get_probabilistic_forecast_constant_value_values(
+        'fxid', *fx_start_end)
+    pdt.assert_series_equal(out, forecast_values)
+
+
 @pytest.mark.parametrize('label,theslice', [
     (None, slice(0, 10)),
     ('beginning', slice(0, -1)),
@@ -363,6 +373,16 @@ def test_apisession_post_forecast_values(requests_mock, forecast_values):
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     mocked = requests_mock.register_uri('POST', matcher)
     session.post_forecast_values('fxid', forecast_values)
+    assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
+
+
+def test_apisession_post_prob_forecast_constant_value_values(
+        requests_mock, forecast_values):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*/values')
+    mocked = requests_mock.register_uri('POST', matcher)
+    session.post_probabilistic_forecast_constant_value_values(
+        'fxid', forecast_values)
     assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
 
 
