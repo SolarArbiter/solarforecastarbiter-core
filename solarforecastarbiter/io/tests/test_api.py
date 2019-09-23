@@ -848,9 +848,9 @@ def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
         index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
                                name='timestamp'))
     real_session.post_probabilistic_forecast_constant_value_values(
-        'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
+        '633f9b2a-50bb-11e9-8647-d663bd873d93', test_ser)
     fx = real_session.get_probabilistic_forecast_constant_value_values(
-        'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        '633f9b2a-50bb-11e9-8647-d663bd873d93',
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
     pdt.assert_series_equal(fx, test_ser)

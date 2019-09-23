@@ -312,7 +312,7 @@ class APISession(requests.Session):
             cvs = []
             for constant_value_dict in fx_dict['constant_values']:
                 cvs.append(self.get_probabilistic_forecast_constant_value(
-                    constant_value_dict['forecast_id']))
+                    constant_value_dict['forecast_id'], site=site))
             fx_dict['constant_values'] = cvs
             out.append(datamodel.ProbabilisticForecast.from_dict(fx_dict))
         return out
@@ -362,6 +362,12 @@ class APISession(requests.Session):
         Returns
         -------
         datamodel.ProbabilisticForecastConstantValue
+
+        Raises
+        ------
+        ValueError
+            If provided site.site_id does not match database record of
+            forecast object's linked site_id.
         """
         # add /metadata after
         # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
