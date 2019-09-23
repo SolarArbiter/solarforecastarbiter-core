@@ -234,7 +234,7 @@ def test_process_nested_objects(single_observation_text_with_site_text,
 
 
 def test_report_defaults(report_objects):
-    report, _ = report_objects
+    report, *_ = report_objects
     report_defaults = datamodel.Report(
         name=report.name,
         start=report.start,
