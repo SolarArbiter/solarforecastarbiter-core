@@ -239,6 +239,14 @@ def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
     assert fx_list == many_prob_forecasts
 
 
+def test_apisession_list_prob_forecasts_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/$')
+    requests_mock.register_uri('GET', matcher, content=b'[]')
+    fx_list = session.list_probabilistic_forecasts()
+    assert fx_list == []
+
+
 def test_apisession_get_prob_forecast_constant_value(
         requests_mock, prob_forecast_constant_value,
         prob_forecast_constant_value_text, mock_get_site):
@@ -248,6 +256,27 @@ def test_apisession_get_prob_forecast_constant_value(
         'GET', matcher, content=prob_forecast_constant_value_text)
     fx = session.get_probabilistic_forecast_constant_value('')
     assert fx == prob_forecast_constant_value
+
+
+def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
+                                         prob_forecast_text, mock_get_site,
+                                         prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri('POST', matcher,
+                               text=prob_forecasts.forecast_id)
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/cdf/{prob_forecasts.forecast_id}$')
+    requests_mock.register_uri('GET', matcher, content=prob_forecast_text)
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    forecast_dict = prob_forecasts.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(prob_forecasts).from_dict(forecast_dict)
+    new_forecast = session.create_probabilistic_forecast(ss)
+    assert new_forecast == prob_forecasts
 
 
 @pytest.fixture(params=[0, 1])

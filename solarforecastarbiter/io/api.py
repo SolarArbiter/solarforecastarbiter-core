@@ -381,13 +381,19 @@ class APISession(requests.Session):
         datamodel.ProbabilisticForecast
             With the appropriate parameters such as forecast_id set by the API
         """
-        raise NotImplementedError
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
         site = fx_dict.pop('site')
         fx_dict['site_id'] = site['site_id']
+        # fx_dict['constant_values'] is tuple of dict representations of
+        # all ProbabilisticForecastConstantValue objects in the
+        # ProbabilisticForecast. We need to extract just the numeric
+        # values from these dicts and put them into a list for the API.
+        constant_values_fxs = fx_dict.pop('constant_values')
+        constant_values = [fx['constant_value'] for fx in constant_values_fxs]
+        fx_dict['constant_values'] = constant_values
         fx_json = json.dumps(fx_dict)
-        req = self.post('/forecasts/single/', data=fx_json,
+        req = self.post('/forecasts/cdf/', data=fx_json,
                         headers={'Content-Type': 'application/json'})
         new_id = req.text
         return self.get_probabilistic_forecast(new_id)
