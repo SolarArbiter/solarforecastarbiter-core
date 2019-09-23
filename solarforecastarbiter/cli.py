@@ -317,7 +317,7 @@ def report(verbose, user, password, base_url, report_file, output_file):
         end=pd.Timestamp(params['end']),
         forecast_observations=fx_obs,
         metrics=params['metrics'],
-        filters=[datamodel.QualityFlagFilter]
+        # filters=[datamodel.QualityFlagFilter]
     )
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)

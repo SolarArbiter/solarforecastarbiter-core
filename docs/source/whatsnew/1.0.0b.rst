@@ -64,6 +64,10 @@ Bug fixes
   `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
   (:issue:`182`)
 * Fix resampled/aligned observation/forecast labels in report. (:issue:`184`)
+* Make :py:class:`~solarforecastarbiter.datamodel.Report` default ``filter``
+  attribute a tuple
+  ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
+  instead of a single ``QualityFlagFilter``. (:issue:`166`)
 
 Testing
 ~~~~~~~
