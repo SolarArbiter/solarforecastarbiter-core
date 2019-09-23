@@ -231,3 +231,15 @@ def test_process_nested_objects(single_observation_text_with_site_text,
     assert obs == single_observation
     assert obs.site == single_site
     assert obs.site == single_observation.site
+
+
+def test_report_defaults(report_objects):
+    report, *_ = report_objects
+    report_defaults = datamodel.Report(
+        name=report.name,
+        start=report.start,
+        end=report.end,
+        forecast_observations=report.forecast_observations,
+        report_id=report.report_id
+    )
+    assert isinstance(report_defaults.filters, tuple)
