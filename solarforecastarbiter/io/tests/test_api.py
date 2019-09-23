@@ -211,6 +211,99 @@ def test_apisession_list_forecasts_empty(requests_mock):
     assert fx_list == []
 
 
+def test_apisession_get_prob_forecast(requests_mock, prob_forecasts,
+                                      prob_forecast_text, mock_get_site,
+                                      prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/[\w-]*$')
+    requests_mock.register_uri('GET', matcher, content=prob_forecast_text)
+    fx = session.get_probabilistic_forecast('')
+    assert fx == prob_forecasts
+
+
+def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
+                                        many_prob_forecasts_text,
+                                        mock_list_sites, mock_get_site,
+                                        prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri(
+        'GET', matcher, content=many_prob_forecasts_text)
+    fx_list = session.list_probabilistic_forecasts()
+    assert fx_list == many_prob_forecasts
+
+
+def test_apisession_list_prob_forecasts_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/$')
+    requests_mock.register_uri('GET', matcher, content=b'[]')
+    fx_list = session.list_probabilistic_forecasts()
+    assert fx_list == []
+
+
+def test_apisession_get_prob_forecast_constant_value(
+        requests_mock, prob_forecast_constant_value,
+        prob_forecast_constant_value_text, mock_get_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value('')
+    assert fx == prob_forecast_constant_value
+
+
+def test_apisession_get_prob_forecast_constant_value_site(
+        requests_mock, prob_forecast_constant_value,
+        prob_forecast_constant_value_text, single_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value(
+        '', site=single_site)
+    assert fx == prob_forecast_constant_value
+
+
+def test_apisession_get_prob_forecast_constant_value_site_error(
+        requests_mock, prob_forecast_constant_value_text, single_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    site_dict = single_site.to_dict()
+    site_dict['site_id'] = 'nope'
+    site = datamodel.Site.from_dict(site_dict)
+    with pytest.raises(ValueError):
+        session.get_probabilistic_forecast_constant_value('', site=site)
+
+
+def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
+                                         prob_forecast_text, mock_get_site,
+                                         prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri('POST', matcher,
+                               text=prob_forecasts.forecast_id)
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/cdf/{prob_forecasts.forecast_id}$')
+    requests_mock.register_uri('GET', matcher, content=prob_forecast_text)
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    forecast_dict = prob_forecasts.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(prob_forecasts).from_dict(forecast_dict)
+    new_forecast = session.create_probabilistic_forecast(ss)
+    assert new_forecast == prob_forecasts
+
+
 @pytest.fixture(params=[0, 1])
 def obs_start_end(request):
     if request.param == 0:
@@ -284,6 +377,16 @@ def test_apisession_get_forecast_values(requests_mock, forecast_values,
     pdt.assert_series_equal(out, forecast_values)
 
 
+def test_apisession_get_prob_forecast_constant_value_values(
+        requests_mock, forecast_values, forecast_values_text, fx_start_end):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*/values')
+    requests_mock.register_uri('GET', matcher, content=forecast_values_text)
+    out = session.get_probabilistic_forecast_constant_value_values(
+        'fxid', *fx_start_end)
+    pdt.assert_series_equal(out, forecast_values)
+
+
 @pytest.mark.parametrize('label,theslice', [
     (None, slice(0, 10)),
     ('beginning', slice(0, -1)),
@@ -324,6 +427,16 @@ def test_apisession_post_forecast_values(requests_mock, forecast_values):
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*/values')
     mocked = requests_mock.register_uri('POST', matcher)
     session.post_forecast_values('fxid', forecast_values)
+    assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
+
+
+def test_apisession_post_prob_forecast_constant_value_values(
+        requests_mock, forecast_values):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*/values')
+    mocked = requests_mock.register_uri('POST', matcher)
+    session.post_probabilistic_forecast_constant_value_values(
+        'fxid', forecast_values)
     assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
 
 
@@ -594,6 +707,49 @@ def test_real_apisession_create_forecast_invalid(
     assert 'Must be one of' in str(e.value)
 
 
+def test_real_apisession_get_prob_forecast(real_session):
+    fx = real_session.get_probabilistic_forecast(
+        'ef51e87c-50b9-11e9-8647-d663bd873d93')
+    assert isinstance(fx, datamodel.ProbabilisticForecast)
+
+
+def test_real_apisession_list_prob_forecasts(real_session):
+    fxs = real_session.list_probabilistic_forecasts()
+    assert isinstance(fxs, list)
+    assert isinstance(fxs[0], datamodel.ProbabilisticForecast)
+
+
+def test_real_apisession_create_prob_forecast(
+        prob_forecast_text, prob_forecasts, prob_forecast_constant_value,
+        real_session):
+    forecastd = json.loads(prob_forecast_text)
+    forecastd['name'] = f'Test create forecast {randint(0, 100)}'
+    forecastd['site'] = prob_forecasts.site
+    fx_prob_cv_d = prob_forecast_constant_value.to_dict()
+    fx_prob_cv_d['name'] = forecastd['name']
+    del fx_prob_cv_d['forecast_id']
+    forecastd['constant_values'] = (
+        datamodel.ProbabilisticForecastConstantValue.from_dict(fx_prob_cv_d), )
+    forecast = datamodel.ProbabilisticForecast.from_dict(forecastd)
+    new_forecast = real_session.create_probabilistic_forecast(forecast)
+    real_session.delete(f'/forecasts/cdf/{new_forecast.forecast_id}')
+    test_attrs = ('name', 'site', 'variable', 'interval_label',
+                  'interval_length', 'lead_time_to_start', 'run_length',
+                  'extra_parameters')
+    for attr in test_attrs:
+        assert getattr(new_forecast, attr) == getattr(forecast, attr)
+    for new_cv, cv in zip(new_forecast.constant_values,
+                          forecast.constant_values):
+        for attr in test_attrs:
+            assert getattr(new_cv, attr) == getattr(cv, attr)
+
+
+def test_real_apisession_get_prob_forecast_constant_value(real_session):
+    fx = real_session.get_probabilistic_forecast_constant_value(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93')
+    assert isinstance(fx, datamodel.ProbabilisticForecastConstantValue)
+
+
 def test_real_apisession_get_observation_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')
@@ -644,6 +800,19 @@ def test_real_apisession_get_forecast_values_tz(real_session):
     pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
+def test_real_apisession_get_prob_forecast_values_tz(real_session):
+    # use different tzs to confirm that it works
+    start = pd.Timestamp('2019-04-14T20:00:00-0400')
+    end = pd.Timestamp('2019-04-15T13:00:00+0100')
+    fx = real_session.get_probabilistic_forecast_constant_value_values(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93',
+        start, end)
+    assert isinstance(fx, pd.Series)
+    assert len(fx) > 0
+    end = end.tz_convert(start.tzinfo)
+    pdt.assert_series_equal(fx.loc[start:end], fx)
+
+
 def test_real_apisession_post_observation_values(real_session):
     test_df = pd.DataFrame(
         {'value': [np.random.random()], 'quality_flag': [0]},
@@ -668,6 +837,20 @@ def test_real_apisession_post_forecast_values(real_session):
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
     fx = real_session.get_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-14T00:01:00Z'))
+    pdt.assert_series_equal(fx, test_ser)
+
+
+def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
+    test_ser = pd.Series(
+        [np.random.random()], name='value',
+        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
+                               name='timestamp'))
+    real_session.post_probabilistic_forecast_constant_value_values(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93', test_ser)
+    fx = real_session.get_probabilistic_forecast_constant_value_values(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93',
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
     pdt.assert_series_equal(fx, test_ser)

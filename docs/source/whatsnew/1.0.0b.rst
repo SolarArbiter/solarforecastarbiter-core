@@ -27,6 +27,11 @@ Enhancements
   For example, a dict describing an Observation may now specify its site as a
   dict that describes a Site, rather than a Site object. (:issue:`125`)
 * Documentation page for command line interface. (:issue:`169`)
+* Add methods to :py:class:`~solarforecastarbiter.io.api.APISession` to
+  support getting and posting data with
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
+  and
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
 
 Bug fixes
 ~~~~~~~~~
