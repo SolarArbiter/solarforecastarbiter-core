@@ -707,6 +707,49 @@ def test_real_apisession_create_forecast_invalid(
     assert 'Must be one of' in str(e.value)
 
 
+def test_real_apisession_get_prob_forecast(real_session):
+    fx = real_session.get_probabilistic_forecast(
+        'ef51e87c-50b9-11e9-8647-d663bd873d93')
+    assert isinstance(fx, datamodel.ProbabilisticForecast)
+
+
+def test_real_apisession_list_prob_forecasts(real_session):
+    fxs = real_session.list_probabilistic_forecasts()
+    assert isinstance(fxs, list)
+    assert isinstance(fxs[0], datamodel.ProbabilisticForecast)
+
+
+def test_real_apisession_create_prob_forecast(
+        prob_forecast_text, prob_forecasts, prob_forecast_constant_value,
+        real_session):
+    forecastd = json.loads(prob_forecast_text)
+    forecastd['name'] = f'Test create forecast {randint(0, 100)}'
+    forecastd['site'] = prob_forecasts.site
+    fx_prob_cv_d = prob_forecast_constant_value.to_dict()
+    fx_prob_cv_d['name'] = forecastd['name']
+    del fx_prob_cv_d['forecast_id']
+    forecastd['constant_values'] = (
+        datamodel.ProbabilisticForecastConstantValue.from_dict(fx_prob_cv_d), )
+    forecast = datamodel.ProbabilisticForecast.from_dict(forecastd)
+    new_forecast = real_session.create_probabilistic_forecast(forecast)
+    real_session.delete(f'/forecasts/cdf/{new_forecast.forecast_id}')
+    test_attrs = ('name', 'site', 'variable', 'interval_label',
+                  'interval_length', 'lead_time_to_start', 'run_length',
+                  'extra_parameters')
+    for attr in test_attrs:
+        assert getattr(new_forecast, attr) == getattr(forecast, attr)
+    for new_cv, cv in zip(new_forecast.constant_values,
+                          forecast.constant_values):
+        for attr in test_attrs:
+            assert getattr(new_cv, attr) == getattr(cv, attr)
+
+
+def test_real_apisession_get_prob_forecast_constant_value(real_session):
+    fx = real_session.get_probabilistic_forecast_constant_value(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93')
+    assert isinstance(fx, datamodel.ProbabilisticForecastConstantValue)
+
+
 def test_real_apisession_get_observation_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')
@@ -757,6 +800,19 @@ def test_real_apisession_get_forecast_values_tz(real_session):
     pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
+def test_real_apisession_get_prob_forecast_values_tz(real_session):
+    # use different tzs to confirm that it works
+    start = pd.Timestamp('2019-04-14T20:00:00-0400')
+    end = pd.Timestamp('2019-04-15T13:00:00+0100')
+    fx = real_session.get_probabilistic_forecast_constant_value_values(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93',
+        start, end)
+    assert isinstance(fx, pd.Series)
+    assert len(fx) > 0
+    end = end.tz_convert(start.tzinfo)
+    pdt.assert_series_equal(fx.loc[start:end], fx)
+
+
 def test_real_apisession_post_observation_values(real_session):
     test_df = pd.DataFrame(
         {'value': [np.random.random()], 'quality_flag': [0]},
@@ -780,6 +836,20 @@ def test_real_apisession_post_forecast_values(real_session):
     real_session.post_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
     fx = real_session.get_forecast_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-14T00:01:00Z'))
+    pdt.assert_series_equal(fx, test_ser)
+
+
+def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
+    test_ser = pd.Series(
+        [np.random.random()], name='value',
+        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
+                               name='timestamp'))
+    real_session.post_probabilistic_forecast_constant_value_values(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
+    fx = real_session.get_probabilistic_forecast_constant_value_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
