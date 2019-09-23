@@ -258,6 +258,31 @@ def test_apisession_get_prob_forecast_constant_value(
     assert fx == prob_forecast_constant_value
 
 
+def test_apisession_get_prob_forecast_constant_value_site(
+        requests_mock, prob_forecast_constant_value,
+        prob_forecast_constant_value_text, single_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value(
+        '', site=single_site)
+    assert fx == prob_forecast_constant_value
+
+
+def test_apisession_get_prob_forecast_constant_value_site_error(
+        requests_mock, prob_forecast_constant_value_text, single_site):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    site_dict = single_site.to_dict()
+    site_dict['site_id'] = 'nope'
+    site = datamodel.Site.from_dict(site_dict)
+    with pytest.raises(ValueError):
+        session.get_probabilistic_forecast_constant_value('', site=site)
+
+
 def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
                                          prob_forecast_text, mock_get_site,
                                          prob_forecast_constant_value_text):

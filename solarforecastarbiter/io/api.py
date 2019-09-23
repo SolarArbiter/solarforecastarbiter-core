@@ -340,11 +340,12 @@ class APISession(requests.Session):
         cvs = []
         for constant_value_dict in fx_dict['constant_values']:
             cvs.append(self.get_probabilistic_forecast_constant_value(
-                constant_value_dict['forecast_id']))
+                constant_value_dict['forecast_id'], site=site))
         fx_dict['constant_values'] = cvs
         return datamodel.ProbabilisticForecast.from_dict(fx_dict)
 
-    def get_probabilistic_forecast_constant_value(self, forecast_id):
+    def get_probabilistic_forecast_constant_value(self, forecast_id,
+                                                  site=None):
         """
         Get ProbabilisticForecastConstantValue metadata from the API for
         the given forecast_id.
@@ -353,6 +354,10 @@ class APISession(requests.Session):
         ----------
         forecast_id : string
             UUID of the forecast to get metadata for
+        site : datamodel.Site or None
+            If provided, the object will be attached to the returned
+            value (faster). If None, object will be created from site
+            metadata obtained from the database (slower).
 
         Returns
         -------
@@ -362,7 +367,13 @@ class APISession(requests.Session):
         # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
         req = self.get(f'/forecasts/cdf/single/{forecast_id}')
         fx_dict = req.json()
-        site = self.get_site(fx_dict['site_id'])
+        site_id = fx_dict['site_id']
+        if site is None:
+            site = self.get_site(site_id)
+        elif site.site_id != site_id:
+            raise ValueError('Supplied site.site_id does not match site_id'
+                             f'from database. site.site_id: {site.site_id} '
+                             f'database site_id: {site_id}')
         fx_dict['site'] = site
         return datamodel.ProbabilisticForecastConstantValue.from_dict(fx_dict)
 
