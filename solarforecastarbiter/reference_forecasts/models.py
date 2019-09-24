@@ -346,7 +346,15 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
 
     Returns
     -------
+    The columns of the DataFrames correspond to the GEFS members.
 
+    ghi : pd.DataFrame
+    dni : pd.DataFrame
+    dhi : pd.DataFrame
+    air_temperature : pd.DataFrame
+    wind_speed : pd.DataFrame
+    resampler : function
+    solar_position_calculator : function
     """
     start_floored, end_ceil = _adjust_gfs_start_end(start, end)
 
@@ -365,14 +373,32 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     # load and process control forecast, then load and process
     # permutations. for efficiency, use control's solar position
     # weather_fx is tuple of ghi, dni, dhi, air_temperature, wind_speed
-    *weather_fx, resampler, sol_pos_calc = _load_gefs_member('gefs_c00', None)
+    ghi, dni, dhi, air_temperature, wind_speed, resampler, sol_pos_calc = \
+        _load_gefs_member('gefs_c00', None)
     solar_position = sol_pos_calc()
-    weather_fx_ens = [weather_fx]
+    ghi_ens = {'c00': ghi}
+    dni_ens = {'c00': dni}
+    dhi_ens = {'c00': dhi}
+    air_temperature_ens = {'c00': air_temperature}
+    wind_speed_ens = {'c00': wind_speed}
     for member in range(1, 21):
-        *weather_fx, _, _ = _load_gefs_member(f'gefs_p{member:02d}',
-                                              solar_position)
-        weather_fx_ens.append(weather_fx)
-    return weather_fx_ens, resampler, sol_pos_calc
+        key = f'p{member:02d}'
+        ghi, dni, dhi, air_temperature, wind_speed, _, _ = \
+            _load_gefs_member(f'gefs_{key}', solar_position)
+        ghi_ens[key] = ghi
+        dni_ens[key] = dni
+        dhi_ens[key] = dhi
+        air_temperature_ens[key] = air_temperature
+        wind_speed_ens[key] = wind_speed
+
+    ghi_ens = pd.DataFrame(ghi_ens)
+    dni_ens = pd.DataFrame(dni_ens)
+    dhi_ens = pd.DataFrame(dhi_ens)
+    air_temperature_ens = pd.DataFrame(air_temperature_ens)
+    wind_speed_ens = pd.DataFrame(wind_speed_ens)
+
+    return (ghi_ens, dni_ens, dhi_ens, air_temperature_ens, wind_speed_ens,
+            resampler, sol_pos_calc)
 
 
 def _unmix_various_gefs_intervals(init_time, start_floored, end_ceil,
