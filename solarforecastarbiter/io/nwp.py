@@ -71,6 +71,7 @@ def load_forecast(
             * 'gfs_0p25'
             * 'rap'
             * 'nam_12km'
+            * 'gefs_p[01-20].nc', 'gefs_c00', 'gefs_avg', or 'gefs_spr'
 
     variables : list of str
         The variables to load.
@@ -90,7 +91,12 @@ def load_forecast(
     ValueError : Raised if the requested variable is not found.
     """
     base_path = base_path if base_path is not None else BASE_PATH
-    filepath = (Path(base_path) / model /
+    if 'gefs' in model:
+        # account for slightly different file layout for gefs
+        model_path = 'gefs'
+    else:
+        model_path = model
+    filepath = (Path(base_path) / model_path /
                 init_time.strftime('%Y/%m/%d/%H') / (model + '.nc'))
     if not filepath.is_file():
         raise FileNotFoundError(f'{filepath} does not exist')
