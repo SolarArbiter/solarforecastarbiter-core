@@ -353,7 +353,8 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     dhi : pd.DataFrame
     air_temperature : pd.DataFrame
     wind_speed : pd.DataFrame
-    resampler : function
+    resample_sort : function
+        Resamples, then sorts the above DataFrames
     solar_position_calculator : function
     """
     start_floored, end_ceil = _adjust_gfs_start_end(start, end)
@@ -398,8 +399,13 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     air_temperature_ens = pd.DataFrame(air_temperature_ens)
     wind_speed_ens = pd.DataFrame(wind_speed_ens)
 
+    def resample_sort(fx):
+        resampled = resampler(fx)
+        sorted_ = forecast.sort_gefs_frame(resampled)
+        return sorted_
+
     return (ghi_ens, dni_ens, dhi_ens, air_temperature_ens, wind_speed_ens,
-            resampler, sol_pos_calc)
+            resample_sort, sol_pos_calc)
 
 
 def _unmix_various_gefs_intervals(init_time, start_floored, end_ceil,
