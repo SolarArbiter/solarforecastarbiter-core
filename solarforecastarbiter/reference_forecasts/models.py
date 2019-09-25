@@ -371,8 +371,9 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
             wind_speed, solar_position=solar_position)
 
     # load and process control forecast, then load and process
-    # permutations. for efficiency, use control's solar position
-    # weather_fx is tuple of ghi, dni, dhi, air_temperature, wind_speed
+    # permutations. for efficiency, use control's solar position.
+    # accumulate results in dicts so they can be easily converted to
+    # DataFrames.
     ghi, dni, dhi, air_temperature, wind_speed, resampler, sol_pos_calc = \
         _load_gefs_member('gefs_c00', None)
     solar_position = sol_pos_calc()

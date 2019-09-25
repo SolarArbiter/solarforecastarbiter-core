@@ -105,6 +105,98 @@ def run_nwp(forecast, model, run_time, issue_time):
     return nwpoutput(*resampled)
 
 
+def run_probabilistic_nwp(forecast, model, run_time, issue_time):
+    """
+    Calculate benchmark irradiance and power forecasts for a
+    ProbabilisticForecast.
+
+    Forecasts may be run operationally or retrospectively. For
+    operational forecasts, *run_time* is typically set to now. For
+    retrospective forecasts, *run_time* is the time by which the
+    forecast should be run so that it could have been be delivered for
+    the *issue_time*. Forecasts will only use data with timestamps
+    before *run_time*.
+
+    Parameters
+    ----------
+    forecast : datamodel.ProbabilisticForecast
+        The metadata of the desired forecast.
+    model : function
+        NWP model loading and processing function.
+        See :py:mod:`solarforecastarbiter.reference_forecasts.models`
+        for options.
+    run_time : pd.Timestamp
+        Run time of the forecast.
+    issue_time : pd.Timestamp
+        Issue time of the forecast run.
+
+    Returns
+    -------
+    ghi : pd.DataFrame
+    dni : pd.DataFrame
+    dhi : pd.DataFrame
+    air_temperature : pd.DataFrame
+    wind_speed : pd.DataFrame
+    ac_power : pd.DataFrame
+
+    Examples
+    --------
+    The following code would return hourly average forecasts derived
+    from the GEFS model.
+
+    >>> from solarforecastarbiter import datamodel
+    >>> from solarforecastarbiter.reference_forecasts import models
+    >>> init_time = pd.Timestamp('20190328T1200Z')
+    >>> start = pd.Timestamp('20190328T1300Z')  # typical available time
+    >>> end = pd.Timestamp('20190329T1300Z')  # 24 hour forecast
+    >>> modeling_parameters = datamodel.FixedTiltModelingParameters(
+    ...     ac_capacity=10, dc_capacity=15,
+    ...     temperature_coefficient=-0.004, dc_loss_factor=0,
+    ...     ac_loss_factor=0)
+    >>> power_plant = datamodel.SolarPowerPlant(
+    ...     name='Test plant', latitude=32.2, longitude=-110.9,
+    ...     elevation=715, timezone='America/Phoenix',
+    ...     modeling_parameters = modeling_parameters)
+    >>> ghi, dni, dhi, temp_air, wind_speed, ac_power = run(
+    ...     power_plant, models.gefs_half_deg_to_hourly,
+    ...     init_time, start, end)
+    """
+    fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
+    init_time = utils.get_init_time(run_time, fetch_metadata)
+    start, end = utils.get_forecast_start_end(forecast, issue_time, True)
+    site = forecast.site
+    logger.info(
+        'Calculating forecast for model %s starting at %s from %s to %s',
+        model, init_time, start, end)
+    *forecasts, resampler, solar_position_calculator = model(
+        site.latitude, site.longitude, site.elevation,
+        init_time, start, end)
+
+    if isinstance(site, datamodel.SolarPowerPlant):
+        solar_position = solar_position_calculator()
+        # must iterate over columns because pvmodel.irradiance_to_power
+        # does not broadcast properly. pvlib.irradiance.haydavies
+        # operation (AI = dni_ens / dni_extra) is the known culprit,
+        # though there may be more.
+        ac_power = {}
+        for col in forecasts[0].columns:
+            member_fx = [fx.get(col) for fx in forecasts]
+            member_ac_power = pvmodel.irradiance_to_power(
+                site.modeling_parameters, solar_position['apparent_zenith'],
+                solar_position['azimuth'], *member_fx)
+            ac_power[col] = member_ac_power
+        ac_power = pd.DataFrame(ac_power)
+    else:
+        ac_power = None
+
+    # resample data after power calculation
+    resampled = list(map(resampler, (*forecasts, ac_power)))
+    nwpoutput = namedtuple(
+        'NWPOutput', ['ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed',
+                      'ac_power'])
+    return nwpoutput(*resampled)
+
+
 def run_persistence(session, observation, forecast, run_time, issue_time,
                     index=False):
     """
