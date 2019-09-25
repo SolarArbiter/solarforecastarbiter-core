@@ -112,7 +112,6 @@ High-level functions for NWP and persistence forecasts.
    :toctree: generated/
 
    reference_forecasts.main.run_nwp
-   reference_forecasts.main.run_probabilistic_nwp
    reference_forecasts.main.run_persistence
    reference_forecasts.main.find_reference_nwp_forecasts
    reference_forecasts.main.process_nwp_forecast_groups

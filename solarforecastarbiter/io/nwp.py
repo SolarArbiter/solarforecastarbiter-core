@@ -71,7 +71,8 @@ def load_forecast(
             * 'gfs_0p25'
             * 'rap'
             * 'nam_12km'
-            * 'gefs_p[01-20].nc', 'gefs_c00', 'gefs_avg', or 'gefs_spr'
+            * 'gefs_p{num}' where num is '01' to '20', 'gefs_c00',
+              'gefs_avg', or 'gefs_spr'
 
     variables : list of str
         The variables to load.

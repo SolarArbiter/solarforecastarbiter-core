@@ -370,7 +370,7 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
         cloud_cover_mixed, air_temperature, wind_speed = load_forecast(
             latitude, longitude, init_time, start_floored, end_ceil, member,
             variables=('cloud_cover', 'air_temperature', 'wind_speed'))
-        cloud_cover = _unmix_various_gfs_intervals(
+        cloud_cover = _unmix_various_gefs_intervals(
             init_time, start_floored, end_ceil, cloud_cover_mixed)
         cloud_cover, air_temperature, wind_speed = forecast.slice_args(
             cloud_cover, air_temperature, wind_speed, start=start, end=end)

@@ -21,7 +21,6 @@ Arbiter. It uses data types defined in
 
    main
    main.run_nwp
-   main.run_probabilistic_nwp
    main.run_persistence
 
 
