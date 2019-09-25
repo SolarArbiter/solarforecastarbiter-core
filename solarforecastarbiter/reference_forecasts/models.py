@@ -356,6 +356,13 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     resample_sort : function
         Resamples, then sorts the above DataFrames
     solar_position_calculator : function
+
+    Notes
+    -----
+    Returned values are sorted from smallest to largest at each time.
+    Each variable is sorted independently. This describes a
+    ProbabilisticForecast with ``axis='x'`` and
+    ``constant_values=[0, 5, ...95, 100].
     """
     start_floored, end_ceil = _adjust_gfs_start_end(start, end)
 
