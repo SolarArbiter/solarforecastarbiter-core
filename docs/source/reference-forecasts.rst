@@ -21,6 +21,7 @@ Arbiter. It uses data types defined in
 
    main
    main.run_nwp
+   main.run_probabilistic_nwp
    main.run_persistence
 
 
@@ -52,13 +53,17 @@ function is specific to:
    models.gfs_quarter_deg_to_hourly_mean
    models.nam_12km_hourly_to_hourly_instantaneous
    models.nam_12km_cloud_cover_to_hourly_mean
+   models.gefs_half_deg_to_hourly_mean
 
 All of the above functions return weather forecast data, a *resampler*
 function, and a solar position calculation function. The weather
 forecast data may be supplied to a PV model and then resampled using the
 *resampler* function. This workflow allows for seperation of weather
 data processing and PV modeling while preserving the ability to use more
-accurate, shorter time interval inputs to the PV model. Finally, these
+accurate, shorter time interval inputs to the PV model. In the case of
+probabilistic forecasts, the *resampler* function also may define how
+an ensemble of deterministic forecasts should be translated to a
+probabilistic forecast. Finally, these
 functions return a solar position calculation function (rather than the
 actual solar position) to simplify the API while maintaining reasonable
 performance. (Solar position is only sometimes needed within the model
@@ -82,6 +87,7 @@ found in :py:mod:`~solarforecastarbiter.reference_forecasts.forecast`.
    forecast.resample
    forecast.interpolate
    forecast.unmix_intervals
+   reference_forecasts.forecast.sort_gefs_frame
 
 
 Persistence
