@@ -81,13 +81,17 @@ def get_nwp_model(func):
 def _resample_using_cloud_cover(latitude, longitude, elevation,
                                 cloud_cover, air_temperature, wind_speed,
                                 start, end, interval_label,
-                                solar_position=None):
+                                fill_method, solar_position=None):
     """
     Calculate all irradiance components from cloud cover.
 
     Cloud cover from GFS is an interval average with ending label.
     Air temperature and wind speed are instantaneous values.
     Intervals are 1, 3, or 6 hours in length.
+
+    Cloud cover, air temperature, and wind speed from RAP and NAM are
+    instantaneous.
+
     To accurately convert from cloud cover to irradiance, we need to
     interpolate this data to subhourly resolution because solar position
     and PV power calculations assume instantaneous inputs at each time.
@@ -102,22 +106,39 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     wind_speed : pd.Series
     interval_label : str
         beginning, ending, or instant
+    fill_method : str
+        'bfill' (recommended for GFS), 'interpolate' (recommended for
+        NAM/RAP), or any other method of pd.Series.
     solar_position : pd.DataFrame or None
         Provide a DataFrame to avoid unnecessary recomputation for e.g.
         GEFS members. If None, solar position is computed.
+
+    Returns
+    -------
+    ghi : pd.Series
+    dni : pd.Series
+    dhi : pd.Series
+    air_temperature : pd.Series
+    wind_speed : pd.Series
+    resampler : function
+    sol_pos_calculator : function
+        When called, immediatedly returns pre-computed solar position.
     """
     # Resample cloud cover, temp, and wind to higher temporal resolution
     # because solar position and PV power calculations assume instantaneous
     # inputs. Why 5 minutes? It's a round number that produces order 10 data
     # points per hour, so it's reasonable for hour average calculations.
-    # Cloud cover is filled backwards because model output represents
-    # average over the previous hour (at least for GFS). Air temperature
+    # Cloud cover should be filled backwards for GFS because model output
+    # represents average over the previous hour and interpolated for RAP and
+    # NAM because model outputs represent instantaneous values. Air temperature
     # and wind are interpolated because model output represents
     # instantaneous values.
     freq = '5min'
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    cloud_cover = cloud_cover.resample(freq).bfill().loc[start_adj:end_adj]
+    cloud_cover = cloud_cover.resample(freq)
+    cloud_cover = getattr(cloud_cover, fill_method)()
+    cloud_cover = cloud_cover.loc[start_adj:end_adj]
     resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
                                           freq=freq, start=start_adj,
                                           end=end_adj)
@@ -314,7 +335,8 @@ def rap_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
-                                       wind_speed, start, end, interval_label)
+                                       wind_speed, start, end, interval_label,
+                                       'interpolate')
 
 
 def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
@@ -351,7 +373,8 @@ def gfs_quarter_deg_3hour_to_hourly_mean(latitude, longitude, elevation,
     cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
-                                       wind_speed, start, end, interval_label)
+                                       wind_speed, start, end, interval_label,
+                                       'bfill')
 
 
 def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
@@ -389,7 +412,8 @@ def gfs_quarter_deg_hourly_to_hourly_mean(latitude, longitude, elevation,
     cloud_cover = forecast.unmix_intervals(cloud_cover_mixed)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
-                                       wind_speed, start, end, interval_label)
+                                       wind_speed, start, end, interval_label,
+                                       'bfill')
 
 
 def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
@@ -427,7 +451,8 @@ def gfs_quarter_deg_to_hourly_mean(latitude, longitude, elevation,
         init_time, start_floored, end_ceil, cloud_cover_mixed)
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
-                                       wind_speed, start, end, interval_label)
+                                       wind_speed, start, end, interval_label,
+                                       'bfill')
 
 
 def _adjust_gfs_start_end(start, end):
@@ -469,13 +494,31 @@ def _unmix_various_gfs_intervals(init_time, start_floored, end_ceil,
 
 
 def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
-                                 init_time, start, end,
+                                 init_time, start, end, interval_label,
                                  load_forecast=load_forecast,
                                  *, __model='gefs'):
     """
     Hourly average forecasts derived from GEFS 3, 6, and
     12 hr frequency output. GHI from NWP model cloud cover. DNI, DHI
     computed. Max forecast horizon 384 hours.
+
+    Parameters
+    ----------
+    latitude : float
+    longitude : float
+    elevation : float
+    init_time : pd.Timestamp
+        Full datetime of a model initialization
+    start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* and exclusive of this instant if
+        interval_label is *ending*.
+    end : pd.Timestamp
+        Forecast end. Forecast is exclusive of this instant if
+        interval_label is *beginning* and inclusive of this instant if
+        interval_label is *ending*.
+    interval_label : str
+        Must be *beginning* or *ending*
 
     Returns
     -------
@@ -505,11 +548,10 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
             variables=('cloud_cover', 'air_temperature', 'wind_speed'))
         cloud_cover = _unmix_various_gefs_intervals(
             init_time, start_floored, end_ceil, cloud_cover_mixed)
-        cloud_cover, air_temperature, wind_speed = forecast.slice_args(
-            cloud_cover, air_temperature, wind_speed, start=start, end=end)
         return _resample_using_cloud_cover(
             latitude, longitude, elevation, cloud_cover, air_temperature,
-            wind_speed, solar_position=solar_position)
+            wind_speed, start, end, interval_label, 'bfill',
+            solar_position=solar_position)
 
     # load and process control forecast, then load and process
     # permutations. for efficiency, use control's solar position.
@@ -637,4 +679,5 @@ def nam_12km_cloud_cover_to_hourly_mean(latitude, longitude, elevation,
         variables=('cloud_cover', 'air_temperature', 'wind_speed'))
     return _resample_using_cloud_cover(latitude, longitude, elevation,
                                        cloud_cover, air_temperature,
-                                       wind_speed, start, end, interval_label)
+                                       wind_speed, start, end, interval_label,
+                                       'interpolate')

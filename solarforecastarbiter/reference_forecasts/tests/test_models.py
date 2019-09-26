@@ -65,8 +65,7 @@ def check_out(out, start, end, end_strict=True):
     models.hrrr_subhourly_to_hourly_mean,
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.rap_cloud_cover_to_hourly_mean,
-    pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
-        reason='needs better interval handling for fx_start < init_time + 3h'))
+    models.gefs_half_deg_to_hourly_mean
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
@@ -122,8 +121,6 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
     check_out(out, start, end_fx_expected, end_strict=True)
 
 
-@pytest.mark.xfail(
-    reason='needs better interval handling for fx_start < init_time + 3h')
 @pytest.mark.parametrize('start,end,init_time', [
     ('20190515T0100Z', '20190520T0000Z', '20190515T0000Z'),
     ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
@@ -136,8 +133,9 @@ def test_gefs_half_deg_to_hourly_mean(start, end, init_time):
     init_time = pd.Timestamp(init_time)
     out = models.gefs_half_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=True)
+        'beginning', load_forecast=LOAD_FORECAST)
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
+    check_out(out, start, end_fx_expected, end_strict=True)
 
 
 @pytest.mark.parametrize('model', [

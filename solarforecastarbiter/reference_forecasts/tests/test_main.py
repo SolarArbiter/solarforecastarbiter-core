@@ -28,8 +28,7 @@ BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
-    pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
-        reason='needs better interval handling for fx_start < init_time + 3h'))
+    models.gefs_half_deg_to_hourly_mean
 ])
 def test_run_nwp(model, site_powerplant_site_type, mocker):
     """ to later patch the return value of load forecast, do something like
