@@ -417,13 +417,11 @@ def daily_single_observation_validation(access_token, observation_id, start,
     session = APISession(access_token, base_url=base_url)
     observation = session.get_observation(observation_id)
     try:
-        out = _daily_validation(session, observation, start, end, base_url)
+        _daily_validation(session, observation, start, end, base_url)
     except IndexError:
         logger.warning(
             'Daily validation for %s failed: not enough values',
             observation.name)
-    else:
-        return out
 
 
 def daily_observation_validation(access_token, start, end, base_url=None):

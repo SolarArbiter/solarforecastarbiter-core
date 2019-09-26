@@ -1,6 +1,7 @@
 import asyncio
 from functools import partial
 import logging
+from pathlib import Path
 import tempfile
 
 
@@ -204,3 +205,36 @@ def test_fetchnwp_netcdfonly_nogrib(mocker):
     with tempfile.TemporaryDirectory() as tmpdir:
         res = runner.invoke(cli.fetchnwp, ['--netcdf-only', tmpdir, 'rap'])
     assert res.exit_code == 1
+
+
+def test_reference_nwp(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.make_latest_nwp_forecasts')  # NOQA
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = runner.invoke(cli.referencenwp,
+                            ['-u user', '-p pass', '--run-time=20190501T1200Z',
+                             '--issue-time-buffer=2h',
+                             tmpdir])
+        assert cli.nwp.BASE_PATH == tmpdir
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
+                              pd.Timedelta('2h'), mocker.ANY)
+
+
+def test_report(cli_token, mocker):
+    mocker.patch('solarforecastarbiter.cli.APISession')
+    mocker.patch('solarforecastarbiter.cli.datamodel.ForecastObservation')
+    mocker.patch('solarforecastarbiter.cli.datamodel.Report')
+    mocker.patch('solarforecastarbiter.cli.reports')
+    mocker.patch('solarforecastarbiter.cli.template.report_md_to_html')
+    mocker.patch('solarforecastarbiter.cli.template.full_html',
+                 return_value='test')
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /
+                  'report_metadata.json')
+        outfile = tmpdir + '/test_out.html'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', str(infile), outfile])
+    assert res.exit_code == 0

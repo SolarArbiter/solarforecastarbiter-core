@@ -1,3 +1,4 @@
+import datetime as dt
 from functools import lru_cache
 import json
 import logging
@@ -8,6 +9,8 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.datamodel import Observation
+from solarforecastarbiter.io.reference_observations.default_forecasts import (  # NOQA
+    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain)
 
 
 logger = logging.getLogger('reference_data')
@@ -84,6 +87,11 @@ def existing_observations(api):
 
 
 @lru_cache(maxsize=4)
+def existing_forecasts(api):
+    return {fx.name: fx for fx in api.list_forecasts()}
+
+
+@lru_cache(maxsize=4)
 def existing_sites(api):
     return {site.name: site for site in api.list_sites()}
 
@@ -116,7 +124,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
 
     Parameters
     ----------
-    api : io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An APISession with a valid JWT for accessing the Reference Data user.
     site : solarforecastarbiter.datamodel.site
         A site object.
@@ -194,7 +202,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
                      f'{site.name}.')
         logger.debug(f'HTTP Error: {e.response.text}')
     else:
-        logger.info(f"{created.name} created successfully.")
+        logger.info(f"Observation {created.name} created successfully.")
         return created
 
 
@@ -205,7 +213,7 @@ def update_site_observations(api, fetch_func, site, observations,
 
     Prameters
     ---------
-    api : solarforecastarbiter.io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
 
     fetch_func : function
@@ -231,7 +239,7 @@ def post_observation_data(api, observation, data, start, end):
 
     Parameters
     ----------
-    api : solarforecastarbiter.io.APISession
+    api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     observation : solarforecastarbiter.datamodel.Observation
         Data model object corresponding to the Observation to update.
@@ -303,3 +311,120 @@ def site_name_no_network(site):
         return site.name[len(network) + 1:]
     else:
         return site.name
+
+
+def create_one_forecast(api, site, template_forecast, variable,
+                        piggyback_on=None):
+    """Creates a new Forecast for the variable and site based on the
+    template forecast.
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.site
+        A site object.
+    template_forecast : solarforecastarbiter.datamodel.Forecast
+        A Forecast object that will only have name, site, variable, and
+        issue_time_of_day replaced. New keys may be added to extra parameters.
+    variable : string
+        Variable measured in the forecast.
+
+    Returns
+    -------
+    created
+        The datamodel object of the newly created forecast.
+    """
+    extra_parameters = json.loads(template_forecast.extra_parameters)
+    if piggyback_on is not None:
+        extra_parameters['piggyback_on'] = piggyback_on
+    site_name = site_name_no_network(site)
+    fx_name = f'{site_name} {template_forecast.name} {variable}'
+    # Some site names are too long and exceed the API's limits,
+    # in those cases. Use the abbreviated version.
+    if len(fx_name) > 63:
+        suffix = f'{template_forecast.name} {variable}'
+        site_len = 63 - len(suffix)
+        fx_name = f'{site_name[:site_len]} {suffix}'
+        logger.warning("Forecast name truncated to %s", fx_name)
+
+    # adjust issue_time_of_day to localtime for standard time, not DST
+    issue_datetime = pd.Timestamp.combine(
+        dt.date(2019, 2, 1), template_forecast.issue_time_of_day,
+        ).tz_localize(site.timezone).tz_convert('UTC')
+    # make sure this is the first possible issue for the UTC day
+    orig_date = issue_datetime.floor('1d')
+    while issue_datetime - template_forecast.run_length >= orig_date:
+        issue_datetime -= template_forecast.run_length
+    issue_time_of_day = issue_datetime.time()
+
+    forecast = template_forecast.replace(
+        name=fx_name, extra_parameters=json.dumps(extra_parameters),
+        site=site, variable=variable, issue_time_of_day=issue_time_of_day,
+    )
+    existing = existing_forecasts(api)
+    if (
+            forecast.name in existing and
+            existing[forecast.name].site == forecast.site
+    ):
+        logger.info('Forecast, %s, already exists', forecast.name)
+        return existing[forecast.name]
+
+    try:
+        created = api.create_forecast(forecast)
+    except HTTPError as e:
+        logger.error(f'Failed to create {variable} forecast at Site '
+                     f'{site.name}.')
+        logger.debug(f'HTTP Error: {e.response.text}')
+    else:
+        logger.info(f"Forecast {created.name} created successfully.")
+        return created
+
+
+def create_forecasts(api, site, variables):
+    """Create Forecast objects for each of variables, if NWP forecasts
+    can be made for that variable. Each of TEMPLATE_FORECASTS will be
+    updated with the appropriate parameters for each variable. Forecasts
+    will also be grouped together via 'piggyback_on'.
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.site
+        A site object.
+    variables : list-like
+        List of variables to make a new forecast for each of TEMPLATE_FORECASTS
+    """
+    if not is_in_nwp_domain(site):
+        raise ValueError(
+            f'Site {site.name} is outside the domain of the current NWP '
+            'forecasts')
+    vars_ = set(variables)
+    diff = vars_ - CURRENT_NWP_VARIABLES
+    if diff:
+        logger.warning('NWP forecasts for %s cannot currently be made',
+                       diff)
+    vars_ = vars_ & CURRENT_NWP_VARIABLES
+    if 'ac_power' in vars_:
+        primary = 'ac_power'
+        vars_.remove('ac_power')
+    elif 'ghi' in vars_:
+        primary = 'ghi'
+        vars_.remove('ghi')
+    else:
+        # pick random var
+        primary = vars_.pop()
+
+    created = []
+    for template_fx in TEMPLATE_FORECASTS:
+        logger.info('Creating forecasts based on %s at site %s',
+                    template_fx.name, site.name)
+        primary_fx = create_one_forecast(api, site, template_fx, primary)
+        created.append(primary_fx)
+        piggyback_on = primary_fx.forecast_id
+        for var in vars_:
+            created.append(
+                create_one_forecast(api, site, template_fx, var,
+                                    piggyback_on=piggyback_on))
+    return created

@@ -63,7 +63,7 @@ DOMAIN = {'subregion': '',
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'file': 'gfs.t{init_hr:02d}z.pgrb2.0p25.f{valid_hr:03d}',
-                'dir': '/gfs.{init_dt}',
+                'dir': '/gfs.{init_date}/{init_hr}',
                 'lev_2_m_above_ground': 'on',
                 'lev_10_m_above_ground': 'on',
                 'lev_entire_atmosphere': 'on',
@@ -240,13 +240,15 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
     Call get_func and retry if the request fails
 
-    Params
-    ------
+    Parameters
+    ----------
     get_func : function
         Function that performs an aiohttp call to be retried
     retries : int
         Number of retries before raising the error
-    *args, **kwargs
+    *args
+        Passed to get_func
+    **kwargs
         Passed to get_func
 
     Returns

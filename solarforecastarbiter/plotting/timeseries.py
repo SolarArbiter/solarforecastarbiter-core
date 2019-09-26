@@ -239,7 +239,7 @@ def to_components(f):
 
 
 @to_components
-def generate_forecast_figure(forecast, data):
+def generate_forecast_figure(forecast, data, limit=None):
     """
     Creates a bokeh timeseries figure for forcast data
 
@@ -250,6 +250,11 @@ def generate_forecast_figure(forecast, data):
 
     data : pandas.Series
         The forecast data with a datetime index to be plotted
+
+    limit : pandas.Timedelta or None
+        The time limit from the last datapoint to plot. If None, all
+        data is plotted.
+
 
     Returns
     -------
@@ -264,7 +269,7 @@ def generate_forecast_figure(forecast, data):
     logger.info('Starting forecast figure generation...')
     if len(data.index) == 0:
         return None
-    data = plot_utils.align_index(data, forecast.interval_length)
+    data = plot_utils.align_index(data, forecast.interval_length, limit)
     cds = ColumnDataSource(data.reset_index())
     fig = make_basic_timeseries(cds, forecast.name, forecast.variable,
                                 forecast.interval_label, PLOT_WIDTH)
@@ -274,7 +279,7 @@ def generate_forecast_figure(forecast, data):
 
 
 @to_components
-def generate_observation_figure(observation, data):
+def generate_observation_figure(observation, data, limit=pd.Timedelta('3d')):
     """
     Creates a bokeh figure from API responses for an observation
 
@@ -286,6 +291,10 @@ def generate_observation_figure(observation, data):
     data : pandas.DataFrame
         The observation data to be plotted with datetime index
         and ('value', 'quality_flag') columns
+
+    limit : pandas.Timedelta or None
+        The time limit from the last datapoint to plot. If None, all
+        data is plotted.
 
     Returns
     -------
@@ -300,8 +309,7 @@ def generate_observation_figure(observation, data):
     logger.info('Starting observation forecast generation...')
     if len(data.index) == 0:
         return None
-    data = plot_utils.align_index(data, observation.interval_length,
-                                  pd.Timedelta('3d'))
+    data = plot_utils.align_index(data, observation.interval_length, limit)
     quality_flag = data.pop('quality_flag').dropna().astype(int)
     bool_flags = quality_mapping.convert_mask_into_dataframe(quality_flag)
     active_flags = quality_mapping.convert_flag_frame_to_strings(bool_flags)

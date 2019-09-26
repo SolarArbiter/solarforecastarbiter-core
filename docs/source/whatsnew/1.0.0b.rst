@@ -1,0 +1,95 @@
+.. _whatsnew_100b:
+
+1.0.0b (expected September 30, 2019)
+------------------------------------
+
+This is the first 1.0 beta release.
+
+
+API Changes
+~~~~~~~~~~~
+* Add deterministic forecast performance metrics (:pull:`171`)
+* Add `processed_forecast_observations` argument to
+  :py:func:`~solarforecastarbiter.reports.template.template_report`.
+  (:issue:`184`)
+
+
+Enhancements
+~~~~~~~~~~~~
+* Add command line interface option for reports. (:issue:`168`)
+* Add classes
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
+  and
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast`
+  to :py:mod:`~solarforecastarbiter.datamodel` to support
+  probabilistic forecasts. (:issue:`47`)
+* Datamodel classes `.from_dict` constructors will now accept nested dicts.
+  For example, a dict describing an Observation may now specify its site as a
+  dict that describes a Site, rather than a Site object. (:issue:`125`)
+* Documentation page for command line interface. (:issue:`169`)
+* Add methods to :py:class:`~solarforecastarbiter.io.api.APISession` to
+  support getting and posting data with
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
+  and
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
+* Add probabilistic forecasts from NWP (GEFS) capability with two functions:
+    * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
+    * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
+  (:issue:`54`)
+
+Bug fixes
+~~~~~~~~~
+* Fix whats new documentation (:issue:`143`)
+* Fix :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`
+  start, end time issue. (:issue:`147`)
+* Fix issue with negative GHI forecasts derived from GFS model due to
+  complications with unmixing interval averages. (:issue:`144`)
+* When computing reference forecast issue time of day, account for
+  *run_length* when adjusting UTC to local time zone. (:issue:`140`)
+* Add lower and upper limits to clearsky index calculations in
+  :py:func:`~solarforecastarbiter.reference_forecasts.persistence.persistence_scalar_index`
+  function. Reduces large errors near sunrise and sunset. (:issue:`107`)
+* Address numpy, pandas deprecations. (:pull:`156`)
+* Remove TODO, EXAMPLE text from reports template in favor of GitHub
+  Issues. (:issue:`167`)
+* Account for timezone in metrics/report generation. (:issue:`164`)
+* Account for different timezones in
+  :py:func:`~solarforecastarbiter.io.utils.adjust_timeseries_for_interval_label`
+  with pandas >= 0.25.1. (:issue:`173`)
+* Bigger metrics graphics to avoid (but not yet totally prevent) label overlap.
+  (:issue:`163`)
+* Handle empty observation or forecast in current report metrics calc
+  (:pull:`178`)
+* Accept string or timelike objects to
+  :py:func:`~solarforecastarbiter.io.api.APISession.get_forecast_values` and
+  :py:func:`~solarforecastarbiter.io.api.APISession.get_observation_values`
+  (:issue:`180`)
+* Fix return/assignment of None in
+  `~solarforecastarbiter.validation.tasks.daily_single_observation_validation`
+  and
+  `~solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`.
+  (:issue:`182`)
+* Fix failure to pass user-specified limits to
+  `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
+  (:issue:`182`)
+* Fix resampled/aligned observation/forecast labels in report. (:issue:`184`)
+* Make :py:class:`~solarforecastarbiter.datamodel.Report` default ``filter``
+  attribute a tuple
+  ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
+  instead of a single ``QualityFlagFilter``. (:issue:`166`)
+
+Testing
+~~~~~~~
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

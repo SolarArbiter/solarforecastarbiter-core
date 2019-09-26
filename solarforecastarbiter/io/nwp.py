@@ -1,9 +1,18 @@
 from pathlib import Path
 
+
 import numpy as np
 import xarray as xr
 
+
 BASE_PATH = ''
+
+
+def set_base_path(new_path):
+    global BASE_PATH
+    if new_path is not None:
+        BASE_PATH = new_path
+
 
 CF_MAPPING = {
     't2m': 'air_temperature',
@@ -15,10 +24,30 @@ CF_MAPPING = {
 }
 
 
+def _load_pnt(ds, latitude, longitude, limit):
+    lats = ds.latitude.values
+    lons = ds.longitude.values
+    if lats.ndim == 1:
+        # ds uses lat and lon as primary coordinates. We still want to use
+        # tunnel_fast to determine distance so that we can check that
+        # the query point is not too far out of the domain.
+        # tunnel_fast requires 2D grid
+        lons, lats = np.meshgrid(lons, lats)
+    iy_min, ix_min = tunnel_fast(lats, lons, latitude, longitude,
+                                 limit=limit)
+    # could avoid this if statement if we only use positional indexing
+    # like ds[iy_min, ix_min] but this seems safer
+    if ds.latitude.ndim == 1:
+        pnt = ds.isel(latitude=iy_min, longitude=ix_min)
+    else:
+        pnt = ds.isel(y=iy_min, x=ix_min)
+    return pnt
+
+
 def load_forecast(
         latitude, longitude, init_time, start, end, model,
         variables=('ghi', 'dni', 'dhi', 'air_temperature', 'wind_speed'),
-        base_path=BASE_PATH):
+        base_path=None):
     """Load NWP model data.
 
     Parameters
@@ -42,6 +71,8 @@ def load_forecast(
             * 'gfs_0p25'
             * 'rap'
             * 'nam_12km'
+            * 'gefs_p{num}' where num is '01' to '20', 'gefs_c00',
+              'gefs_avg', or 'gefs_spr'
 
     variables : list of str
         The variables to load.
@@ -60,30 +91,21 @@ def load_forecast(
     ------
     ValueError : Raised if the requested variable is not found.
     """
-
-    filepath = (Path(base_path) / model /
+    base_path = base_path if base_path is not None else BASE_PATH
+    if 'gefs' in model:
+        # account for slightly different file layout for gefs
+        model_path = 'gefs'
+    else:
+        model_path = model
+    filepath = (Path(base_path) / model_path /
                 init_time.strftime('%Y/%m/%d/%H') / (model + '.nc'))
-
+    if not filepath.is_file():
+        raise FileNotFoundError(f'{filepath} does not exist')
     mapping_subset = {k: v for k, v in CF_MAPPING.items() if v in variables}
 
     limit = 500  # maximum distance from point to closest grid point
     with xr.open_dataset(filepath) as ds:
-        lats = ds.latitude.values
-        lons = ds.longitude.values
-        if lats.ndim == 1:
-            # ds uses lat and lon as primary coordinates. We still want to use
-            # tunnel_fast to determine distance so that we can check that
-            # the query point is not too far out of the domain.
-            # tunnel_fast requires 2D grid
-            lats, lons = np.meshgrid(lats, lons)
-        iy_min, ix_min = tunnel_fast(lats, lons, latitude, longitude,
-                                     limit=limit)
-        # could avoid this if statement if we only use positional indexing
-        # like ds[iy_min, ix_min] but this seems safer
-        if ds.latitude.ndim == 1:
-            pnt = ds.isel(latitude=iy_min, longitude=ix_min)
-        else:
-            pnt = ds.isel(y=iy_min, x=ix_min)
+        pnt = _load_pnt(ds, latitude, longitude, limit)
         pnt = pnt.sel(time=slice(start, end))
         pnt = pnt.rename(mapping_subset)
         pnt['air_temperature'] -= 273.15  # convert Kelvin to deg C

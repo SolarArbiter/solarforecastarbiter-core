@@ -200,7 +200,9 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     where :math:`t_f` is a forecast time, and the overline represents
     the average of all observations or clear sky values that occur
     between :math:`t_{start}` = *data_start* and
-    :math:`t_{end}` = *data_end*.
+    :math:`t_{end}` = *data_end*. All :math:`GHI_{t}/GHI_{{clear}_t}`
+    ratios are restricted to the range [0, 2] before the average is
+    computed.
 
     Parameters
     ----------
@@ -302,7 +304,10 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     #   avg{obs_{t_start}/clear_{t_start}...obs_{t_end}/clear_{t_end}}
     # clear_ref is calculated at high temporal resolution, so this is accurate
     # for any observation interval length
-    pers_index = (obs / clear_ref_resampled).mean()
+    # apply clip to the clear sky index array before computing the average.
+    # this prevents outliers from distorting the mean, a common occurance
+    # near sunrise and sunset.
+    pers_index = (obs / clear_ref_resampled).clip(lower=0, upper=2).mean()
 
     # average instantaneous clear forecasts over interval_length windows
     # resample operation should be safe due to

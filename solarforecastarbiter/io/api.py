@@ -8,11 +8,15 @@ from urllib3 import Retry
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.io.utils import (json_payload_to_observation_df,
-                                           json_payload_to_forecast_series,
-                                           observation_df_to_json_payload,
-                                           forecast_object_to_json,
-                                           HiddenToken)
+from solarforecastarbiter.io.utils import (
+    json_payload_to_observation_df,
+    json_payload_to_forecast_series,
+    observation_df_to_json_payload,
+    forecast_object_to_json,
+    adjust_timeseries_for_interval_label,
+    serialize_data, deserialize_data,
+    serialize_raw_report, deserialize_raw_report,
+    HiddenToken, ensure_timestamps)
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
@@ -90,7 +94,12 @@ class APISession(requests.Session):
             kwargs['timeout'] = self.default_timeout
 
         result = super().request(method, url, *args, **kwargs)
-        result.raise_for_status()
+        if result.status_code >= 400:
+            raise requests.exceptions.HTTPError(
+                f'{result.status_code} API Request Error: {result.reason} for '
+                f'url: {result.url} and text: {result.text}',
+                response=result)
+
         return result
 
     def _process_site_dict(self, site_dict):
@@ -283,7 +292,132 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
-    def get_observation_values(self, observation_id, start, end):
+    def list_probabilistic_forecasts(self):
+        """
+        List all ProbabilisticForecasts a user has access to.
+
+        Returns
+        -------
+        list of datamodel.ProbabilisticForecast
+        """
+        req = self.get('/forecasts/cdf/')
+        fx_dicts = req.json()
+        if len(fx_dicts) == 0:
+            return []
+        sites = {site.site_id: site for site in self.list_sites()}
+        out = []
+        for fx_dict in fx_dicts:
+            site = sites.get(fx_dict['site_id'])
+            fx_dict['site'] = site
+            cvs = []
+            for constant_value_dict in fx_dict['constant_values']:
+                cvs.append(self.get_probabilistic_forecast_constant_value(
+                    constant_value_dict['forecast_id'], site=site))
+            fx_dict['constant_values'] = cvs
+            out.append(datamodel.ProbabilisticForecast.from_dict(fx_dict))
+        return out
+
+    def get_probabilistic_forecast(self, forecast_id):
+        """
+        Get ProbabilisticForecast metadata from the API for the given
+        forecast_id.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to get metadata for
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecast
+        """
+        # add /metadata after
+        # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
+        req = self.get(f'/forecasts/cdf/{forecast_id}')
+        fx_dict = req.json()
+        site = self.get_site(fx_dict['site_id'])
+        fx_dict['site'] = site
+        cvs = []
+        for constant_value_dict in fx_dict['constant_values']:
+            cvs.append(self.get_probabilistic_forecast_constant_value(
+                constant_value_dict['forecast_id'], site=site))
+        fx_dict['constant_values'] = cvs
+        return datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+    def get_probabilistic_forecast_constant_value(self, forecast_id,
+                                                  site=None):
+        """
+        Get ProbabilisticForecastConstantValue metadata from the API for
+        the given forecast_id.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to get metadata for
+        site : datamodel.Site or None
+            If provided, the object will be attached to the returned
+            value (faster). If None, object will be created from site
+            metadata obtained from the database (slower).
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecastConstantValue
+
+        Raises
+        ------
+        ValueError
+            If provided site.site_id does not match database record of
+            forecast object's linked site_id.
+        """
+        # add /metadata after
+        # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}')
+        fx_dict = req.json()
+        site_id = fx_dict['site_id']
+        if site is None:
+            site = self.get_site(site_id)
+        elif site.site_id != site_id:
+            raise ValueError('Supplied site.site_id does not match site_id'
+                             f'from database. site.site_id: {site.site_id} '
+                             f'database site_id: {site_id}')
+        fx_dict['site'] = site
+        return datamodel.ProbabilisticForecastConstantValue.from_dict(fx_dict)
+
+    def create_probabilistic_forecast(self, forecast):
+        """
+        Create a new forecast in the API with the given
+        ProbabilisticForecast model
+
+        Parameters
+        ----------
+        forecast : datamodel.ProbabilisticForecast
+            Probabilistic forecast to create in the API
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecast
+            With the appropriate parameters such as forecast_id set by the API
+        """
+        fx_dict = forecast.to_dict()
+        fx_dict.pop('forecast_id')
+        site = fx_dict.pop('site')
+        fx_dict['site_id'] = site['site_id']
+        # fx_dict['constant_values'] is tuple of dict representations of
+        # all ProbabilisticForecastConstantValue objects in the
+        # ProbabilisticForecast. We need to extract just the numeric
+        # values from these dicts and put them into a list for the API.
+        constant_values_fxs = fx_dict.pop('constant_values')
+        constant_values = [fx['constant_value'] for fx in constant_values_fxs]
+        fx_dict['constant_values'] = constant_values
+        fx_json = json.dumps(fx_dict)
+        req = self.post('/forecasts/cdf/', data=fx_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_probabilistic_forecast(new_id)
+
+    @ensure_timestamps('start', 'end')
+    def get_observation_values(self, observation_id, start, end,
+                               interval_label=None):
         """
         Get observation values from start to end for observation_id from the
         API
@@ -296,17 +430,30 @@ class APISession(requests.Session):
             Start time in interval to retrieve values for
         end : timelike object
             End time of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
 
         Returns
         -------
         pandas.DataFrame
             With a datetime index and (value, quality_flag) columns
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
         """
         req = self.get(f'/observations/{observation_id}/values',
                        params={'start': start, 'end': end})
-        return json_payload_to_observation_df(req.json())
+        out = json_payload_to_observation_df(req.json())
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
 
-    def get_forecast_values(self, forecast_id, start, end):
+    @ensure_timestamps('start', 'end')
+    def get_forecast_values(self, forecast_id, start, end,
+                            interval_label=None):
         """
         Get forecast values from start to end for forecast_id
 
@@ -318,15 +465,61 @@ class APISession(requests.Session):
             Start of the interval to retrieve values for
         end : timelike object
             End of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
 
         Returns
         -------
         pandas.Series
            With the forecast values and a datetime index
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
         """
         req = self.get(f'/forecasts/single/{forecast_id}/values',
                        params={'start': start, 'end': end})
-        return json_payload_to_forecast_series(req.json())
+        out = json_payload_to_forecast_series(req.json())
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
+
+    @ensure_timestamps('start', 'end')
+    def get_probabilistic_forecast_constant_value_values(
+            self, forecast_id, start, end, interval_label=None):
+        """
+        Get forecast values from start to end for forecast_id
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object
+        start : timelike object
+            Start of the interval to retrieve values for
+        end : timelike object
+            End of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.Series
+           With the forecast values and a datetime index
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}/values',
+                       params={'start': start, 'end': end})
+        out = json_payload_to_forecast_series(req.json())
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
 
     def post_observation_values(self, observation_id, observation_df,
                                 params=None):
@@ -367,3 +560,225 @@ class APISession(requests.Session):
         self.post(f'/forecasts/single/{forecast_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
+
+    def post_probabilistic_forecast_constant_value_values(self, forecast_id,
+                                                          forecast_series):
+        """
+        Upload the given forecast values to the appropriate forecast_id of the
+        API
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to upload values to
+        forecast_obj : pandas.Series
+            Pandas series with a datetime index that contains the values to
+            upload to the API
+        """
+        json_vals = forecast_object_to_json(forecast_series)
+        self.post(f'/forecasts/cdf/single/{forecast_id}/values',
+                  data=json_vals,
+                  headers={'Content-Type': 'application/json'})
+
+    def _process_report_dict(self, rep_dict):
+        req_dict = rep_dict['report_parameters']
+        for key in ('name', 'report_id', 'status'):
+            req_dict[key] = rep_dict[key]
+        req_dict['metrics'] = tuple(req_dict['metrics'])
+        req_dict['forecast_observations'] = tuple([
+            datamodel.ForecastObservation(self.get_forecast(o[0]),
+                                          self.get_observation(o[1]))
+            for o in req_dict['object_pairs']])
+        return datamodel.Report.from_dict(req_dict)
+
+    def get_report(self, report_id):
+        """
+        Get the metadata, and possible raw report if it has processed,
+        from the API for the given report_id in a Report object.
+
+        Parameters
+        ----------
+        report_id : string
+            UUID of the report to retrieve
+
+        Returns
+        -------
+        datamodel.Report
+        """
+        req = self.get(f'/reports/{report_id}')
+        resp = req.json()
+        raw = resp.pop('raw_report')
+        report = self._process_report_dict(resp)
+        if raw is not None:
+            raw_report = deserialize_raw_report(raw)
+            processed_fxobs = self.get_raw_report_processed_data(
+                report_id, raw_report, resp['values'])
+            report = report.replace(raw_report=raw_report.replace(
+                processed_forecasts_observations=processed_fxobs))
+        return report
+
+    def list_reports(self):
+        """
+        List the reports a user has access to.  Does not load the raw
+        report data, use :py:meth:`~.APISession.get_report`.
+
+        Returns
+        -------
+        list of datamodel.Report
+
+        """
+        req = self.get('/reports')
+        rep_dicts = req.json()
+        if len(rep_dicts) == 0:
+            return []
+        out = []
+        for rep_dict in rep_dicts:
+            out.append(self._process_report_dict(rep_dict))
+        return out
+
+    def create_report(self, report):
+        """
+        Post the report request to the API. A completed report should post
+        the raw_report with :py:meth:`~.APISession.post_raw_report`.
+
+        Parameters
+        ----------
+        report : datamodel.Report
+
+        Returns
+        -------
+        datamodel.Report
+           As returned by the API
+        """
+        report_dict = report.to_dict()
+        report_dict.pop('report_id')
+        name = report_dict.pop('name')
+        for key in ('raw_report', '__version__', 'status'):
+            del report_dict[key]
+        report_dict['filters'] = []
+        fxobs = report_dict.pop('forecast_observations')
+        report_dict['object_pairs'] = [
+            (_fo['forecast']['forecast_id'],
+             _fo['observation']['observation_id'])
+            for _fo in fxobs]
+        params = {'name': name,
+                  'report_parameters': report_dict}
+        req = self.post('/reports/', json=params,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_report(new_id)
+
+    def post_raw_report_processed_data(self, report_id, raw_report):
+        """
+        Post the processed data that was used to make the report to the
+        API.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report to post values to
+        raw_report : datamodel.RawReport
+            The raw report object with processed_forecasts_observations
+
+        Returns
+        -------
+        tuple
+            of datamodel.ProcessedForecastObservation with `forecast_values`
+            and `observations_values` replaced with report value IDs for later
+            retrieval
+        """
+        posted_fxobs = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            fx_data = {
+                'object_id': fxobs.original.forecast.forecast_id,
+                'processed_values': serialize_data(fxobs.forecast_values)}
+            fx_post = self.post(
+                f'/reports/{report_id}/values',
+                json=fx_data, headers={'Content-Type': 'application/json'})
+            obs_data = {
+                'object_id': fxobs.original.observation.observation_id,
+                'processed_values': serialize_data(fxobs.observation_values)}
+            obs_post = self.post(
+                f'/reports/{report_id}/values',
+                json=obs_data, headers={'Content-Type': 'application/json'})
+            processed_fx_id = fx_post.text
+            processed_obs_id = obs_post.text
+            new_fxobs = fxobs.replace(forecast_values=processed_fx_id,
+                                      observation_values=processed_obs_id)
+            posted_fxobs.append(new_fxobs)
+        return tuple(posted_fxobs)
+
+    def get_raw_report_processed_data(self, report_id, raw_report,
+                                      values=None):
+        """
+        Load the processed forecast/observation data into the
+        datamodel.ProcessedForecastObservation objects of the raw_report.
+
+        Parameters
+        ----------
+        report_id : str
+            ID of the report that values will be loaded from
+        raw_report : datamodel.RawReport
+            The raw report with processed_forecasts_observations to
+            be replaced
+        values : list or None
+            The report values dict as returned by the API. If None, fetch
+            the values from the API for the given report_id
+
+        Returns
+        -------
+        tuple
+           Of datamodel.ProcessedForecastObservation with values loaded into
+           `forecast_values` and `observation_values`
+        """
+        if values is None:
+            val_req = self.get(f'/reports/{report_id}/values')
+            values = val_req.json()
+        val_dict = {v['id']: v['processed_values'] for v in values}
+        out = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            fx_vals = val_dict.get(fxobs.forecast_values, None)
+            if fx_vals is not None:
+                fx_vals = deserialize_data(fx_vals)
+            obs_vals = val_dict.get(fxobs.observation_values, None)
+            if obs_vals is not None:
+                obs_vals = deserialize_data(obs_vals)
+            new_fxobs = fxobs.replace(forecast_values=fx_vals,
+                                      observation_values=obs_vals)
+            out.append(new_fxobs)
+        return tuple(out)
+
+    def post_raw_report(self, report_id, raw_report):
+        """
+        Update the report with the raw report and metrics
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        raw_report : datamodel.RawReport
+           The raw report object to add to the report
+        """
+        posted_fxobs = self.post_raw_report_processed_data(
+            report_id, raw_report)
+        to_post = raw_report.replace(
+            processed_forecasts_observations=posted_fxobs)
+        compressed_bundle = serialize_raw_report(to_post)
+        # metrics not really meaningful right now as JSON
+        self.post(f'/reports/{report_id}/metrics',
+                  json={'metrics': {}, 'raw_report': compressed_bundle},
+                  headers={'Content-Type': 'application/json'})
+        self.update_report_status(report_id, 'complete')
+
+    def update_report_status(self, report_id, status):
+        """
+        Update the status of the report
+
+        Parameters
+        ----------
+        report_id : str
+           ID of the report to update
+        status : str
+           New status of the report
+        """
+        self.post(f'/reports/{report_id}/status/{status}')

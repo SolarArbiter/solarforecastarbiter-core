@@ -617,6 +617,31 @@ def many_observations(many_observations_text, _observation_from_dict):
 
 
 @pytest.fixture()
+def single_observation_text_with_site_text(site_text):
+    return (b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+  },
+  "created_at": "2019-03-01T12:01:48+00:00",
+  "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "modified_at": "2019-03-01T12:01:48+00:00",
+  "name": "DNI Instrument 2",
+  "observation_id": "9ce9715c-bd91-47b7-989f-50bb558f1eb9",
+  "provider": "Organization 1",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "uncertainty": 0.1,
+  "variable": "dni",
+  "site": """  # NOQA
+  + site_text + b"""
+}
+""")
+
+
+@pytest.fixture()
 def single_forecast_text():
     return b"""
 {
@@ -714,3 +739,320 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
+
+
+@pytest.fixture()
+def prob_forecast_constant_value_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "variable": "ghi",
+  "axis": "x",
+  "constant_value": 0
+}
+"""
+
+
+@pytest.fixture()
+def prob_forecast_text():
+    return b"""
+{
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "DA GHI",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "variable": "ghi",
+    "axis": "x",
+    "constant_values": [
+        {
+            "_links": {},
+            "constant_value": 0,
+            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def many_prob_forecasts_text():
+    return b"""
+[
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    },
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    }
+]
+"""  # NOQA
+
+
+@pytest.fixture()
+def _prob_forecast_constant_value_from_dict(get_site):
+    def f(fx_dict):
+        return datamodel.ProbabilisticForecastConstantValue(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict['site_id']),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_value=fx_dict['constant_value'])
+    return f
+
+
+@pytest.fixture()
+def _prob_forecast_from_dict(get_site, prob_forecast_constant_value):
+    def f(fx_dict):
+        return datamodel.ProbabilisticForecast(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict['site_id']),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_values=(prob_forecast_constant_value, ))
+    return f
+
+
+@pytest.fixture()
+def prob_forecast_constant_value(prob_forecast_constant_value_text,
+                                 _prob_forecast_constant_value_from_dict):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(prob_forecast_constant_value_text))
+
+
+@pytest.fixture()
+def prob_forecasts(prob_forecast_text, _prob_forecast_from_dict):
+    return _prob_forecast_from_dict(json.loads(prob_forecast_text))
+
+
+@pytest.fixture()
+def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
+    return [_prob_forecast_from_dict(fx) for fx
+            in json.loads(many_prob_forecasts_text)]
+
+
+@pytest.fixture(scope='module')
+def report_objects():
+    tz = 'America/Phoenix'
+    start = pd.Timestamp('20190401 0000', tz=tz)
+    end = pd.Timestamp('20190404 2359', tz=tz)
+    site = datamodel.Site(
+        name="NREL MIDC University of Arizona OASIS",
+        latitude=32.22969,
+        longitude=-110.95534,
+        elevation=786.0,
+        timezone="Etc/GMT+7",
+        site_id="9f61b880-7e49-11e9-9624-0a580a8003e9",
+        provider="Reference",
+        extra_parameters='{"network": "NREL MIDC", "network_api_id": "UAT", "network_api_abbreviation": "UA OASIS", "observation_interval_length": 1}',  # NOQA
+    )
+    observation = datamodel.Observation(
+        name="University of Arizona OASIS ghi",
+        variable="ghi",
+        interval_value_type="interval_mean",
+        interval_length=pd.Timedelta("0 days 00:01:00"),
+        interval_label="ending",
+        site=site,
+        uncertainty=0.0,
+        observation_id="9f657636-7e49-11e9-b77f-0a580a8003e9",
+        extra_parameters='{"network": "NREL MIDC", "network_api_id": "UAT", "network_api_abbreviation": "UA OASIS", "observation_interval_length": 1, "network_data_label": "Global Horiz (platform) [W/m^2]"}',  # NOQA
+    )
+    forecast_0 = datamodel.Forecast(
+        name="0 Day GFS GHI",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi", site=site,
+        forecast_id="da2bc386-8712-11e9-a1c7-0a580a8200ae",
+        extra_parameters='{"model": "gfs_quarter_deg_to_hourly_mean"}',
+    )
+    forecast_1 = datamodel.Forecast(
+        name="Day Ahead GFS GHI",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("1 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+        extra_parameters='{"model": "gfs_quarter_deg_to_hourly_mean"}',
+    )
+    fxobs0 = datamodel.ForecastObservation(forecast_0, observation)
+    fxobs1 = datamodel.ForecastObservation(forecast_1, observation)
+    quality_flag_filter = datamodel.QualityFlagFilter(
+        [
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES",
+            "INCONSISTENT IRRADIANCE COMPONENTS",
+        ]
+    )
+    report = datamodel.Report(
+        name="NREL MIDC OASIS GHI Forecast Analysis",
+        start=start,
+        end=end,
+        forecast_observations=(fxobs0, fxobs1),
+        metrics=("mae", "rmse", "mbe"),
+        report_id="56c67770-9832-11e9-a535-f4939feddd82",
+        filters=(quality_flag_filter,)
+    )
+    return report, observation, forecast_0, forecast_1
+
+
+@pytest.fixture()
+def report_text():
+    return b"""
+    {"created_at": "2019-06-26T16:49:18+00:00",
+    "metrics": null,
+    "modified_at": "2019-06-26T16:49:18+00:00",
+    "name": "NREL MIDC OASIS GHI Forecast Analysis",
+    "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+    "report_parameters": {
+        "start": "2019-04-01T00:00:00-07:00",
+        "end": "2019-04-04T23:59:00-07:00",
+        "filters": [],
+        "metrics": ["mae", "rmse", "mbe"],
+        "object_pairs": [
+            ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
+             "9f657636-7e49-11e9-b77f-0a580a8003e9"],
+            ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+             "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+        ]
+    },
+    "raw_report": null,
+    "values": [],
+    "status": "pending"}
+    """
+
+
+@pytest.fixture()
+def raw_report(report_objects):
+    report, obs, fx0, fx1 = report_objects
+    meta = datamodel.ReportMetadata(
+        name=report.name,
+        start=report.start,
+        end=report.end,
+        now=report.end,
+        versions=(),
+        validation_issues=(),
+        timezone=obs.site.timezone
+    )
+
+    def gen(with_series):
+        ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
+        fxobs0 = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastObservation(fx0, obs),
+            fx0.interval_value_type,
+            fx0.interval_length,
+            fx0.interval_label,
+            forecast_values=ser if with_series else fx0.forecast_id,
+            observation_values=ser if with_series else obs.observation_id
+        )
+        fxobs1 = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastObservation(fx1, obs),
+            fx1.interval_value_type,
+            fx1.interval_length,
+            fx1.interval_label,
+            forecast_values=ser if with_series else fx1.forecast_id,
+            observation_values=ser if with_series else obs.observation_id
+        )
+        raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
+        return raw
+    return gen

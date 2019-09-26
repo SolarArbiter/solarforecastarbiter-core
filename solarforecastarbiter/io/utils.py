@@ -3,7 +3,17 @@
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
+import base64
+from functools import wraps
+from inspect import signature
+import zlib
+
+
 import pandas as pd
+import pyarrow as pa
+
+
+from solarforecastarbiter import datamodel
 
 
 def _dataframe_to_json(payload_df):
@@ -135,6 +145,121 @@ def json_payload_to_forecast_series(json_payload):
     return df['value']
 
 
+def adjust_start_end_for_interval_label(interval_label, start, end,
+                                        limit_instant=False):
+    """
+    Adjusts the start and end times depending on the interval_label.
+
+    Parameters
+    ----------
+    interval_label : str or None
+       The interval label for the the object the data represents
+    start : pandas.Timestamp
+       Start time to restrict data to
+    end : pandas.Timestamp
+       End time to restrict data to
+    limit_instant : boolean
+       If true, an interval label of 'instant' will remove a nanosecond
+       from end to ensure forecasts do not overlap. If False, instant
+       returns start, end unmodified
+
+    Returns
+    -------
+    start, end
+       Return the adjusted start and end
+
+    Raises
+    ------
+    ValueError
+       If an invalid interval_label is given
+    """
+
+    if (
+            interval_label is not None and
+            interval_label not in ('instant', 'beginning', 'ending')
+    ):
+        raise ValueError('Invalid interval_label')
+
+    if (
+            interval_label == 'beginning' or
+            (interval_label == 'instant' and limit_instant)
+    ):
+        end -= pd.Timedelta(1, unit='nano')
+    elif interval_label == 'ending':
+        start += pd.Timedelta(1, unit='nano')
+    return start, end
+
+
+def adjust_timeseries_for_interval_label(data, interval_label, start, end):
+    """
+    Adjusts the index of the data depending on the interval_label, start,
+    and end. Will always return the data located between start, end.
+
+    Parameters
+    ----------
+    data : pandas.Series or pandas.DataFrame
+       The data with a localized DatetimeIndex
+    interval_label : str or None
+       The interval label for the the object the data represents
+    start : pandas.Timestamp
+       Start time to restrict data to
+    end : pandas.Timestamp
+       End time to restrict data to
+
+    Returns
+    -------
+    pandas.Series or pandas.DataFrame
+       Return data between start and end, in/excluding the endpoints
+       depending on interval_label
+
+    Raises
+    ------
+    ValueError
+       If an invalid interval_label is given or data is not localized.
+    """
+    start, end = adjust_start_end_for_interval_label(interval_label, start,
+                                                     end)
+    data = data.sort_index(axis=0)
+    # pandas >= 0.25.1 requires start, end to have same tzinfo.
+    # unexpected behavior when data is not localized, so prevent that
+    if data.empty:
+        return data
+    if data.index.tzinfo is None:
+        raise ValueError('data must be localized')
+    start = start.tz_convert(data.index.tzinfo)
+    end = end.tz_convert(data.index.tzinfo)
+    return data.loc[start:end]
+
+
+def serialize_data(values):
+    serialized_buf = pa.serialize(values).to_buffer()
+    compressed_bytes = zlib.compress(serialized_buf)
+    encoded = base64.b64encode(compressed_bytes)
+    return encoded.decode('ascii')  # bytes to str
+
+
+def deserialize_data(data):
+    compressed = base64.b64decode(data)
+    serialized = zlib.decompress(compressed)
+    values = pa.deserialize(serialized)
+    return values
+
+
+def serialize_raw_report(raw):
+    bundle = {'metrics': raw.metrics,
+              'template': raw.template,
+              'metadata': raw.metadata.to_dict(),
+              'processed_forecasts_observations': [
+                  pfx.to_dict() for pfx in
+                  raw.processed_forecasts_observations]}
+    return serialize_data(bundle)
+
+
+def deserialize_raw_report(encoded_bundle, version=0):
+    bundle = deserialize_data(encoded_bundle)
+    return datamodel.RawReport.from_dict(bundle)
+
+
 class HiddenToken:
     """
     Obscure the representation of the input string `token` to avoid saving
@@ -145,3 +270,46 @@ class HiddenToken:
 
     def __repr__(self):
         return '****ACCESS*TOKEN****'
+
+
+def ensure_timestamps(*time_args):
+    """
+    Decorator that converts the specified time arguments of the wrapped
+    function to pandas.Timestamp objects
+
+    Parameters
+    ----------
+    strings
+       Function arguments to convert to pandas.Timestamp before
+       executing function
+
+    Raises
+    ------
+    ValueError
+        If any of time_args cannot be converted to pandas.Timestamp
+
+    Examples
+    --------
+    >>> @ensure_timestamps('start', 'end')
+    ... def get_values(start, end, other_arg):
+    ... --do stuff with start, end assumed to be pandas.Timestamps
+
+    >>> get_values('2019-01-01T00:00Z', dt.datetime(2019, 1, 2, 12), 'other')
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            sig = signature(f)
+            inds = {k: None for k in time_args}
+            for i, k in enumerate(sig.parameters.keys()):
+                if k in inds:
+                    inds[k] = i
+            nargs = list(args)
+            for k, ind in inds.items():
+                if k in kwargs:
+                    kwargs[k] = pd.Timestamp(kwargs[k])
+                elif ind is not None:
+                    nargs[ind] = pd.Timestamp(args[ind])
+            return f(*nargs, **kwargs)
+        return wrapper
+    return decorator

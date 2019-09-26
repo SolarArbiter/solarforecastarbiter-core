@@ -3,11 +3,18 @@
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
 """
-from dataclasses import dataclass, field, fields, MISSING, asdict
+from dataclasses import (dataclass, field, fields, MISSING, asdict,
+                         replace, is_dataclass)
 import datetime
+import itertools
+from typing import Tuple, Union
 
 
 import pandas as pd
+
+
+from solarforecastarbiter.validation.quality_mapping import \
+    DESCRIPTION_MASK_MAPPING
 
 
 ALLOWED_VARIABLES = {
@@ -42,44 +49,68 @@ COMMON_NAMES = {
 
 CLOSED_MAPPING = {
     'instant': None,
-    'instantaneous': None,
     'beginning': 'left',
     'ending': 'right'
 }
 
 
+def _dict_factory(inp):
+    dict_ = dict(inp)
+    for k, v in dict_.items():
+        if isinstance(v, datetime.time):
+            dict_[k] = v.strftime('%H:%M')
+        elif isinstance(v, datetime.datetime):
+            dict_[k] = v.isoformat()
+        elif isinstance(v, pd.Timedelta):
+            # convert to integer minutes
+            dict_[k] = v.total_seconds() // 60
+
+    if 'units' in dict_:
+        del dict_['units']
+    return dict_
+
+
 class BaseModel:
+    def _special_field_processing(self, model_field, val):
+        return val
+
     @classmethod
-    def from_dict(model, dict_, raise_on_extra=False):
+    def from_dict(model, input_dict, raise_on_extra=False):
         """
-        Construct a dataclass from the given dict, matching keys with the class
-        fields. A KeyError is raised for any missing values. If raise_on_extra
-        is True, an errors is raised if keys of the dict are also not fields of
-        the dataclass. For pandas.Timedelta model fields, it is assumed dict_
-        contains a number representing minutes. For datetime.time model fields,
-        dict_ values are assumed to be strings in the %H:%M format. If a
-        modeling_parameters field is present, the modeling_parameters key
-        from dict_ is automatically parsed into the appropriate
+        Construct a dataclass from the given dict, matching keys with
+        the class fields. A KeyError is raised for any missing values.
+        If raise_on_extra is True, an errors is raised if keys of the
+        dict are also not fields of the dataclass. For pandas.Timedelta
+        model fields, it is assumed input_dict contains a number
+        representing minutes. For datetime.time model fields, input_dict
+        values are assumed to be strings in the %H:%M format. If a
+        modeling_parameters field is present, the modeling_parameters
+        key from input_dict is automatically parsed into the appropriate
         PVModelingParameters subclass based on tracking_type.
 
         Parameters
         ----------
-        dict_ : dict
+        input_dict : dict
             The dict to process into dataclass fields
         raise_on_extra : boolean, default False
-            If True, raise an exception on extra keys in dict_ that are not
-            dataclass fields.
+            If True, raise an exception on extra keys in input_dict that
+            are not dataclass fields.
+
+        Returns
+        -------
+        model : subclass of BaseModel
+            Instance of the desired model.
 
         Raises
         ------
         KeyError
-            For missing required fields or if raise_on_extra is True and dict_
-            contains extra keys.
+            For missing required fields or if raise_on_extra is True and
+            input_dict contains extra keys.
         ValueError
-            If a pandas.Timedelta, datetime.time, or modeling_parameters field
-            cannot be parsed from the dict_
+            If a pandas.Timedelta, pandas.Timestamp, datetime.time, or
+            modeling_parameters field cannot be parsed from the input_dict
         """
-        dict_ = dict_.copy()
+        dict_ = input_dict.copy()
         model_fields = fields(model)
         kwargs = {}
         errors = []
@@ -88,26 +119,43 @@ class BaseModel:
                 if model_field.type == pd.Timedelta:
                     kwargs[model_field.name] = pd.Timedelta(
                         f'{dict_[model_field.name]}min')
+                elif model_field.type == pd.Timestamp:
+                    kwargs[model_field.name] = pd.Timestamp(
+                        dict_[model_field.name])
                 elif model_field.type == datetime.time:
                     kwargs[model_field.name] = datetime.datetime.strptime(
                         dict_[model_field.name], '%H:%M').time()
-                elif model_field.name == 'modeling_parameters':
-                    mp_dict = dict_.pop('modeling_parameters', {})
-                    tracking_type = mp_dict.pop('tracking_type', None)
-                    if tracking_type == 'fixed':
-                        kwargs['modeling_parameters'] = (
-                            FixedTiltModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type == 'single_axis':
-                        kwargs['modeling_parameters'] = (
-                            SingleAxisModelingParameters.from_dict(
-                                mp_dict))
-                    elif tracking_type is not None:
-                        raise ValueError(
-                            'tracking_type must be None, fixed, or '
-                            'single_axis')
+                elif (
+                        is_dataclass(model_field.type) and
+                        isinstance(dict_[model_field.name], dict)
+                ):
+                    kwargs[model_field.name] = model_field.type.from_dict(
+                        dict_[model_field.name])
+                elif (
+                    hasattr(model_field.type, '__origin__') and
+                    model_field.type.__origin__ is tuple and
+                    is_dataclass(model_field.type.__args__[0])
+                ):
+                    out = []
+                    for arg in dict_[model_field.name]:
+                        if is_dataclass(arg):
+                            out.append(arg)
+                        elif isinstance(arg, dict):
+                            out.append(
+                                model_field.type.__args__[0].from_dict(
+                                    arg)
+                            )
+                        else:
+                            raise TypeError(
+                                f'Invalid type of argument for '
+                                f'{model_field.name}, '
+                                f'must be dict or '
+                                f'{model_field.type.__args__[0]}'
+                            )
+                    kwargs[model_field.name] = tuple(out)
                 else:
-                    kwargs[model_field.name] = dict_[model_field.name]
+                    kwargs[model_field.name] = model._special_field_processing(
+                        model, model_field, dict_[model_field.name])
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -131,17 +179,17 @@ class BaseModel:
         API. This means some types (such as pandas.Timedelta and times) are
         converted to strings.
         """
-        dict_ = asdict(self)
-        for k, v in dict_.items():
-            if isinstance(v, datetime.time):
-                dict_[k] = v.strftime('%H:%M')
-            elif isinstance(v, pd.Timedelta):
-                # convert to integer minutes
-                dict_[k] = v.total_seconds() // 60
-
-        if 'units' in dict_:
-            del dict_['units']
+        # using the dict_factory recurses through all objects for special
+        # conversions
+        dict_ = asdict(self, dict_factory=_dict_factory)
         return dict_
+
+    def replace(self, **kwargs):
+        """
+        Convience wrapper for :py:func:`dataclasses.replace` to create a
+        new dataclasses from the old with the given keys replaced.
+        """
+        return replace(self, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -181,6 +229,29 @@ class Site(BaseModel):
     site_id: str = ''
     provider: str = ''
     extra_parameters: str = ''
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if 'modeling_parameters' in dict_:
+            mp_dict = dict_.get('modeling_parameters', {})
+            if not isinstance(mp_dict, PVModelingParameters):
+                tracking_type = mp_dict.pop('tracking_type', None)
+                if tracking_type == 'fixed':
+                    dict_['modeling_parameters'] = (
+                        FixedTiltModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type == 'single_axis':
+                    dict_['modeling_parameters'] = (
+                        SingleAxisModelingParameters.from_dict(
+                            mp_dict))
+                    return SolarPowerPlant.from_dict(dict_, raise_on_extra)
+                elif tracking_type is not None:
+                    raise ValueError(
+                        'tracking_type must be None, fixed, or '
+                        'single_axis')
+        return super().from_dict(dict_, raise_on_extra)
 
 
 @dataclass(frozen=True)
@@ -349,7 +420,30 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
-class Forecast(BaseModel):
+class _ForecastBase:
+    name: str
+    issue_time_of_day: datetime.time
+    lead_time_to_start: pd.Timedelta
+    interval_length: pd.Timedelta
+    run_length: pd.Timedelta
+    interval_label: str
+    interval_value_type: str
+    variable: str
+    site: Site
+    units: str = field(init=False)
+    __post_init__ = __set_units__
+
+
+@dataclass(frozen=True)
+class _ForecastDefaultsBase:
+    forecast_id: str = ''
+    extra_parameters: str = ''
+
+
+# Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
+# to avoid problems with inheritance in ProbabilisticForecasts
+@dataclass(frozen=True)
+class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     """
     A class to hold metadata for Forecast objects.
 
@@ -394,16 +488,348 @@ class Forecast(BaseModel):
     --------
     Site
     """
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@dataclass(frozen=True)
+class _ProbabilisticForecastConstantValueBase:
+    axis: str
+    constant_value: float
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecastConstantValue(
+        Forecast, _ProbabilisticForecastConstantValueBase):
+    """
+    Extends Forecast dataclass to include probabilistic forecast
+    attributes.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_value : float
+        The variable value or percentile.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecast
+    """
+    def __post_init__(self):
+        super().__post_init__()
+        __check_axis__(self.axis)
+
+
+@dataclass(frozen=True)
+class _ProbabilisticForecastBase:
+    axis: str
+    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
+
+
+@dataclass(frozen=True)
+class ProbabilisticForecast(
+        Forecast, _ProbabilisticForecastBase):
+    """
+    Tracks a group of ProbabilisticForecastConstantValue objects that
+    together describe 1 or more points of the same probability
+    distribution.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site
+        The predefined site that the forecast is for, e.g. Power Plant X
+        or Aggregate Y.
+    axis : str
+        The axis on which the constant values of the CDF is specified.
+        The axis can be either *x* (constant variable values) or *y*
+        (constant percentiles).
+    constant_values : tuple of ProbabilisticForecastConstantValue
+        The variable values or percentiles.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    ProbabilisticForecastConstantValue
+    """
+    def __post_init__(self):
+        super().__post_init__()
+        __check_axis__(self.axis)
+        __check_axis_consistency__(self.axis, self.constant_values)
+
+
+def __check_axis__(axis):
+    if axis not in ('x', 'y'):
+        raise ValueError('Axis must be x or y')
+
+
+def __check_axis_consistency__(axis, constant_values):
+    if not all(arg.axis == axis for arg in constant_values):
+        raise ValueError('All axis attributes must be identical')
+
+
+def __check_units__(*args):
+    ref_unit = args[0].units
+    if not all(arg.units == ref_unit for arg in args):
+        raise ValueError('All units must be identical.')
+
+
+def __check_interval_compatibility__(forecast, observation):
+    if observation.interval_length > forecast.interval_length:
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'forecast.interval_length.')
+    if ('instant' in forecast.interval_label and
+            'instant' not in observation.interval_label):
+        raise ValueError('Instantaneous forecasts cannot be evaluated against '
+                         'interval average observations.')
+
+
+@dataclass(frozen=True)
+class ForecastObservation(BaseModel):
+    """
+    Class for pairing Forecast and Observation objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    observation: Observation
+
+    def __post_init__(self):
+        __check_units__(self.forecast, self.observation)
+        __check_interval_compatibility__(self.forecast, self.observation)
+
+
+@dataclass(frozen=True)
+class BaseFilter(BaseModel):
+    """
+    Base class for filters to be applied in a report.
+    """
+    pass
+
+
+@dataclass(frozen=True)
+class QualityFlagFilter(BaseFilter):
+    """
+    Class representing quality flag filters to be applied in a report.
+
+    Parameters
+    ----------
+    quality_flags : Tuple of str
+        Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
+        These periods will be excluded from the analysis.
+    """
+    quality_flags: Tuple[str, ...] = (
+        'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
+        'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
+    )
+
+    def __post_init__(self):
+        if not all(flag in DESCRIPTION_MASK_MAPPING
+                   for flag in self.quality_flags):
+            raise ValueError('Quality flags must be in '
+                             'BITMASK_DESCRIPTION_DICT')
+
+
+@dataclass(frozen=True)
+class TimeOfDayFilter(BaseFilter):
+    """
+    Class representing a time of day filter to be applied in a report.
+
+    Parameters
+    ----------
+    time_of_day_range : (datetime.time, datetime.time) tuple
+        Time of day range to calculate errors. Range is inclusive of
+        both endpoints. Do not use this to exclude nighttime; instead
+        set the corresponding quality_flag.
+    """
+    time_of_day_range: Tuple[datetime.time, datetime.time]
+
+
+@dataclass(frozen=True)
+class ValueFilter(BaseFilter):
+    """
+    Class representing an observation or forecast value filter to be
+    applied in a report.
+
+    Parameters
+    ----------
+    metadata : Observation or Forecast
+        Object to get values for.
+    value_range : (float, float) tuple
+        Value range to calculate errors. Range is inclusive
+        of both endpoints. Filters are applied before resampling.
+    """
+    metadata: Union[Observation, Forecast]
+    value_range: Tuple[float, float]
+
+
+def __check_metrics__():
+    # maybe belongs in the metrics package
+    # deterministic forecasts --> deterministic metrics
+    # probabilistic forecasts --> probabilistic metrics
+    # event forecasts --> event metrics
+    pass
+
+
+@dataclass(frozen=True)
+class ReportMetadata(BaseModel):
+    """
+    Hold additional metadata about the report
+    """
     name: str
-    issue_time_of_day: datetime.time
-    lead_time_to_start: pd.Timedelta
-    interval_length: pd.Timedelta
-    run_length: pd.Timedelta
-    interval_label: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    now: pd.Timestamp
+    timezone: str
+    versions: dict
+    validation_issues: dict
+
+
+# need apply filtering + resampling to each forecast obs pair
+@dataclass(frozen=True)
+class ProcessedForecastObservation(BaseModel):
+    """
+    Hold the processed forecast and observation data with the resampling
+    parameters
+    """
+    # do this instead of subclass to compare objects later
+    original: ForecastObservation
     interval_value_type: str
-    variable: str
-    site: Site
-    forecast_id: str = ''
-    extra_parameters: str = ''
-    units: str = field(init=False)
-    __post_init__ = __set_units__
+    interval_length: pd.Timedelta
+    interval_label: str
+    forecast_values: Union[pd.Series, str, None]
+    observation_values: Union[pd.Series, str, None]
+
+
+@dataclass(frozen=True)
+class RawReport(BaseModel):
+    """
+    Class for holding the result of processing a report request including
+    the calculated metrics, some metadata, the markdown template, and
+    the processed forecast/observation data.
+    """
+    metadata: ReportMetadata
+    template: str
+    metrics: dict  # later MetricsResult
+    processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
+
+
+@dataclass(frozen=True)
+class Report(BaseModel):
+    """
+    Class for keeping track of report metadata and the raw report that
+    can later be rendered to HTML or PDF. Functions in
+    :py:mod:`~solarforecastarbiter.reports.main` take a Report object
+    with `raw_report` set to None, generate the report, and return
+    another Report object with `raw_report` set to a RawReport object
+    that can be rendered.
+
+    Parameters
+    ----------
+    name : str
+        Name of the report.
+    start : pandas.Timestamp
+        Start time of the reporting period.
+    end : pandas.Timestamp
+        End time of the reporting period.
+    forecast_observations : Tuple of ForecastObservation
+        Paired Forecasts and Observations to be analyzed in the report.
+    metrics : Tuple of str
+        Metrics to be computed in the report.
+    filters : Tuple of Filters
+        Filters to be applied to the data in the report.
+    status : str
+        Status of the report
+    report_id : str
+        ID of the report in the API
+    raw_report : RawReport or None
+        Once computed, the raw report should be stored here
+    __version__ : str
+        Should be used to version reports to ensure even older
+        reports can be properly rendered
+    """
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    forecast_observations: Tuple[ForecastObservation, ...]
+    metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    filters: Tuple[BaseFilter, ...] = field(
+        default_factory=lambda: (QualityFlagFilter(), ))
+    status: str = 'pending'
+    report_id: str = ''
+    raw_report: Union[None, RawReport] = None
+    __version__: int = 0  # should add version to api
+
+    def __post_init__(self):
+        # ensure that all forecast and observation units are the same
+        __check_units__(*itertools.chain.from_iterable(
+            ((k.forecast, k.observation) for k in self.forecast_observations)))
+        # ensure the metrics can be applied to the forecasts and observations
+        __check_metrics__()

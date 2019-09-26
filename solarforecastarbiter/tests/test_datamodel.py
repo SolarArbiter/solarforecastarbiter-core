@@ -1,4 +1,4 @@
-from dataclasses import fields, MISSING
+from dataclasses import fields, MISSING, dataclass
 import json
 
 
@@ -10,10 +10,15 @@ from solarforecastarbiter import datamodel
 
 
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
-                        'forecast'])
+                        'forecast', 'forecastobservation',
+                        'probabilisticforecastconstantvalue',
+                        'probabilisticforecast'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
-                single_forecast_text, single_forecast):
+                single_forecast_text, single_forecast,
+                prob_forecast_constant_value,
+                prob_forecast_constant_value_text,
+                prob_forecasts, prob_forecast_text):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -34,6 +39,25 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
         return (single_forecast, fx_dict, datamodel.Forecast)
+    elif request.param == 'probabilisticforecastconstantvalue':
+        fx_dict = json.loads(prob_forecast_constant_value_text)
+        fx_dict['site'] = single_site
+        return (prob_forecast_constant_value, fx_dict,
+                datamodel.ProbabilisticForecastConstantValue)
+    elif request.param == 'probabilisticforecast':
+        fx_dict = json.loads(prob_forecast_text)
+        fx_dict['site'] = single_site
+        fx_dict['constant_values'] = (prob_forecast_constant_value, )
+        return (prob_forecasts, fx_dict, datamodel.ProbabilisticForecast)
+    elif request.param == 'forecastobservation':
+        fx_dict = json.loads(single_forecast_text)
+        fx_dict['site'] = single_site
+        obs_dict = json.loads(single_observation_text)
+        obs_dict['site'] = single_site
+        fxobs_dict = {'forecast': fx_dict, 'observation': obs_dict}
+        fxobs = datamodel.ForecastObservation(
+            single_forecast, single_observation)
+        return (fxobs, fxobs_dict, datamodel.ForecastObservation)
 
 
 @pytest.mark.parametrize('extra', [
@@ -111,13 +135,66 @@ def test_from_dict_invalid_time_format(many_forecasts_text):
         datamodel.Forecast.from_dict(obj_dict)
 
 
+def test_from_dict_invalid_constant_values(prob_forecast_text, single_site):
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = ('not a tuple of cv', 1)
+    with pytest.raises(TypeError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
+def test_from_dict_invalid_axis(prob_forecast_text, single_site,
+                                prob_forecast_constant_value):
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = (prob_forecast_constant_value,)
+    fx_dict['axis'] = 'z'
+    with pytest.raises(ValueError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
+def test_from_dict_inconsistent_axis(prob_forecast_text, single_site,
+                                     prob_forecast_constant_value_text,
+                                     prob_forecast_constant_value):
+    cv_dict = json.loads(prob_forecast_constant_value_text)
+    cv_dict['site'] = single_site
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = (prob_forecast_constant_value, cv_dict)
+    fx_dict['axis'] = 'x'
+    # check multiple constant values
+    datamodel.ProbabilisticForecast.from_dict(fx_dict)
+    cv_dict['axis'] = 'y'
+    with pytest.raises(ValueError):
+        datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+
 def test_dict_roundtrip(pdid_params):
     expected, _, model = pdid_params
     dict_ = expected.to_dict()
-    if 'site' in dict_:
-        dict_['site'] = type(expected.site).from_dict(dict_['site'])
     out = model.from_dict(dict_)
     assert out == expected
+
+
+def test_to_dict_recurse(single_forecast):
+    @dataclass
+    class Special(datamodel.BaseModel):
+        fx: datamodel.Forecast
+
+    spec = Special(single_forecast)
+    d_ = spec.to_dict()
+    assert isinstance(d_['fx']['run_length'], float)
+    assert isinstance(d_['fx']['issue_time_of_day'], str)
+    assert isinstance(d_['fx'], dict)
+    assert isinstance(d_['fx']['site'], dict)
+
+
+def test_replace(single_forecast):
+    run_length = single_forecast.run_length
+    new_fx = single_forecast.replace(run_length=pd.Timedelta('3d'))
+    assert new_fx.run_length != run_length
+    assert new_fx != single_forecast
+    assert new_fx.name == single_forecast.name
 
 
 def test_invalid_variable(single_site):
@@ -145,3 +222,24 @@ def test_process_site_dict(_sites):
     site_dict, expected, model = _sites
     out = model.from_dict(site_dict)
     assert out == expected
+
+
+def test_process_nested_objects(single_observation_text_with_site_text,
+                                single_site, single_observation):
+    obs_dict = json.loads(single_observation_text_with_site_text)
+    obs = datamodel.Observation.from_dict(obs_dict)
+    assert obs == single_observation
+    assert obs.site == single_site
+    assert obs.site == single_observation.site
+
+
+def test_report_defaults(report_objects):
+    report, *_ = report_objects
+    report_defaults = datamodel.Report(
+        name=report.name,
+        start=report.start,
+        end=report.end,
+        forecast_observations=report.forecast_observations,
+        report_id=report.report_id
+    )
+    assert isinstance(report_defaults.filters, tuple)
