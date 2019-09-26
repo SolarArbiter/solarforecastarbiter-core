@@ -49,13 +49,13 @@ def check_out(out, start, end, end_strict=True):
             assert o.index[-1] <= end
     # check irradiance limits
     for o in out[0:3]:
-        assert (o >= 0).all() and (o < 1300).all()
+        assert (o >= 0).all().all() and (o < 1300).all().all()
     # check temperature limits
-    assert (out[3] > -40).all() and (out[3] < 60).all()
+    assert (out[3] > -40).all().all() and (out[3] < 60).all().all()
     # check wind speed limits
-    assert (out[4] >= 0).all() and (out[4] < 60).all()
+    assert (out[4] >= 0).all().all() and (out[4] < 60).all().all()
     # check resampling function
-    assert isinstance(out[5], partial)
+    assert isinstance(out[5], (types.FunctionType, partial))
     assert isinstance(out[6], (types.FunctionType, partial))
 
 
@@ -68,7 +68,7 @@ def check_out(out, start, end, end_strict=True):
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
     pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
-        reason='needs better interval handling for fx_start < init_time'))
+        reason='needs better interval handling for fx_start < init_time + 3h'))
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
@@ -87,7 +87,6 @@ def test_models(model, end, end_strict):
     ('20190515T0100Z', '20190520T0000Z', '20190515T0000Z'),
     ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
     ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
-    ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
     ('20190715T0100Z', '20190720T0000Z', '20190715T0000Z'),
     ('20190716T0800Z', '20190717T0700Z', '20190715T0000Z'),
 ])
@@ -97,6 +96,24 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
     end = pd.Timestamp(end)
     init_time = pd.Timestamp(init_time)
     out = models.gfs_quarter_deg_to_hourly_mean(
+        latitude, longitude, elevation, init_time, start, end,
+        load_forecast=LOAD_FORECAST)
+    check_out(out, start, end, end_strict=True)
+
+
+@pytest.mark.xfail(
+    reason='needs better interval handling for fx_start < init_time + 3h')
+@pytest.mark.parametrize('start,end,init_time', [
+    ('20190515T0100Z', '20190520T0000Z', '20190515T0000Z'),
+    ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
+    ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
+    ('20190515T0300Z', '20190531T0000Z', '20190515T0000Z'),
+])
+def test_gefs_half_deg_to_hourly_mean(start, end, init_time):
+    start = pd.Timestamp(start)
+    end = pd.Timestamp(end)
+    init_time = pd.Timestamp(init_time)
+    out = models.gefs_half_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
         load_forecast=LOAD_FORECAST)
     check_out(out, start, end, end_strict=True)
