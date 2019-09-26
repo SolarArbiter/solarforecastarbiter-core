@@ -57,8 +57,8 @@ def run_nwp(forecast, model, run_time, issue_time):
     wind_speed : pd.Series or pd.DataFrame
     ac_power : pd.Series or pd.DataFrame
 
-    pd.Series are returned for deterministic forecasts, pd.DataFrames
-    are returned for probabilisic forecasts.
+    Series are returned for deterministic forecasts, DataFrames are
+    returned for probabilisic forecasts.
 
     Examples
     --------

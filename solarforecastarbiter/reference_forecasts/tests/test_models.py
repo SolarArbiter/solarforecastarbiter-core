@@ -41,7 +41,7 @@ def test_default_load_forecast_failures(model):
 def check_out(out, start, end, end_strict=True):
     # check times
     for o in out[0:5]:
-        assert isinstance(o, pd.Series)
+        assert isinstance(o, (pd.Series, pd.DataFrame))
         assert o.index[0] == start
         if end_strict:
             assert o.index[-1] == end
@@ -67,6 +67,8 @@ def check_out(out, start, end, end_strict=True):
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
+    pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
+        reason='needs better interval handling for fx_start < init_time'))
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
@@ -105,7 +107,9 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
     'hrrr_subhourly',
     'gfs_0p25',
     'rap',
-    'nam_12km'
+    'nam_12km',
+    'gefs_c00',
+    'gefs_p01'
 ])
 def test_domain_limits(model):
     # test file has longitudes ranging from -110.50 to -110.35
@@ -125,7 +129,8 @@ def test_domain_limits(model):
     (models.nam_12km_hourly_to_hourly_instantaneous, 'nam_12km'),
     (models.rap_cloud_cover_to_hourly_mean, 'rap'),
     (models.rap_ghi_to_hourly_mean, 'rap'),
-    (models.rap_ghi_to_instantaneous, 'rap')
+    (models.rap_ghi_to_instantaneous, 'rap'),
+    (models.gefs_half_deg_to_hourly_mean, 'gefs')
 ])
 def test_get_nwp_model(model, exp):
     assert models.get_nwp_model(model) == exp
