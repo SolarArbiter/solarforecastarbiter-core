@@ -617,6 +617,31 @@ def many_observations(many_observations_text, _observation_from_dict):
 
 
 @pytest.fixture()
+def single_observation_text_with_site_text(site_text):
+    return (b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+  },
+  "created_at": "2019-03-01T12:01:48+00:00",
+  "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "modified_at": "2019-03-01T12:01:48+00:00",
+  "name": "DNI Instrument 2",
+  "observation_id": "9ce9715c-bd91-47b7-989f-50bb558f1eb9",
+  "provider": "Organization 1",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "uncertainty": 0.1,
+  "variable": "dni",
+  "site": """  # NOQA
+  + site_text + b"""
+}
+""")
+
+
+@pytest.fixture()
 def single_forecast_text():
     return b"""
 {
@@ -714,6 +739,186 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
+
+
+@pytest.fixture()
+def prob_forecast_constant_value_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "variable": "ghi",
+  "axis": "x",
+  "constant_value": 0
+}
+"""
+
+
+@pytest.fixture()
+def prob_forecast_text():
+    return b"""
+{
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "DA GHI",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "variable": "ghi",
+    "axis": "x",
+    "constant_values": [
+        {
+            "_links": {},
+            "constant_value": 0,
+            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def many_prob_forecasts_text():
+    return b"""
+[
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    },
+    {
+        "_links": {
+        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+        },
+        "created_at": "2019-03-01T11:55:37+00:00",
+        "extra_parameters": "",
+        "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-01T11:55:37+00:00",
+        "name": "DA GHI",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    }
+]
+"""  # NOQA
+
+
+@pytest.fixture()
+def _prob_forecast_constant_value_from_dict(get_site):
+    def f(fx_dict):
+        return datamodel.ProbabilisticForecastConstantValue(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict['site_id']),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_value=fx_dict['constant_value'])
+    return f
+
+
+@pytest.fixture()
+def _prob_forecast_from_dict(get_site, prob_forecast_constant_value):
+    def f(fx_dict):
+        return datamodel.ProbabilisticForecast(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict['site_id']),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_values=(prob_forecast_constant_value, ))
+    return f
+
+
+@pytest.fixture()
+def prob_forecast_constant_value(prob_forecast_constant_value_text,
+                                 _prob_forecast_constant_value_from_dict):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(prob_forecast_constant_value_text))
+
+
+@pytest.fixture()
+def prob_forecasts(prob_forecast_text, _prob_forecast_from_dict):
+    return _prob_forecast_from_dict(json.loads(prob_forecast_text))
+
+
+@pytest.fixture()
+def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
+    return [_prob_forecast_from_dict(fx) for fx
+            in json.loads(many_prob_forecasts_text)]
 
 
 @pytest.fixture(scope='module')

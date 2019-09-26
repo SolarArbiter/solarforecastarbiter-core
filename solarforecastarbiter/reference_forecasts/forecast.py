@@ -256,3 +256,13 @@ def _check_start_time(start, interval):
     else:
         raise ValueError(f'for {interval} mixed intervals, start time must '
                          f'be one of {allowed_times}Z hours')
+
+
+def sort_gefs_frame(frame):
+    """Sort a DataFrame from a GEFS forecast. Column 0 is the smallest
+    value at each time. Column 20 is the largest value at each time.
+    """
+    if frame is None:
+        return frame
+    else:
+        return pd.DataFrame(np.sort(frame), index=frame.index)

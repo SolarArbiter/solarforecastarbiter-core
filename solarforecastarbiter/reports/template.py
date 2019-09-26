@@ -17,7 +17,8 @@ from solarforecastarbiter.reports import figures
 logger = logging.getLogger(__name__)
 
 
-def template_report(report, metadata, metrics):
+def template_report(report, metadata, metrics,
+                    processed_forecasts_observations):
     """
     Render the markdown report template. Figures are left untemplated.
 
@@ -28,11 +29,12 @@ def template_report(report, metadata, metrics):
     metadata : solarforecastarbiter.datamodel.ReportMetadata
         Describes the pre-report
     metrics : tuple of dict
+    processed_forecasts_observations : tuple of solarforecastarbiter.datamodel.ProcessedForecastObservation
 
     Returns
     -------
     markdown
-    """
+    """  # noqa
     # By default, jinja removes undefined variables from the rendered string.
     # DebugUndefined leaves undefined variables in the string so that they
     # can be used in the full report template process.
@@ -53,7 +55,7 @@ def template_report(report, metadata, metrics):
         start=metadata.start.strftime(strftime),
         end=metadata.end.strftime(strftime),
         now=metadata.now.strftime(strftime),
-        fx_obs=report.forecast_observations,
+        proc_fx_obs=processed_forecasts_observations,
         validation_issues=metadata.validation_issues,
         versions=metadata.versions,
         script_metrics=script_metrics,

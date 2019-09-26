@@ -292,6 +292,129 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
+    def list_probabilistic_forecasts(self):
+        """
+        List all ProbabilisticForecasts a user has access to.
+
+        Returns
+        -------
+        list of datamodel.ProbabilisticForecast
+        """
+        req = self.get('/forecasts/cdf/')
+        fx_dicts = req.json()
+        if len(fx_dicts) == 0:
+            return []
+        sites = {site.site_id: site for site in self.list_sites()}
+        out = []
+        for fx_dict in fx_dicts:
+            site = sites.get(fx_dict['site_id'])
+            fx_dict['site'] = site
+            cvs = []
+            for constant_value_dict in fx_dict['constant_values']:
+                cvs.append(self.get_probabilistic_forecast_constant_value(
+                    constant_value_dict['forecast_id'], site=site))
+            fx_dict['constant_values'] = cvs
+            out.append(datamodel.ProbabilisticForecast.from_dict(fx_dict))
+        return out
+
+    def get_probabilistic_forecast(self, forecast_id):
+        """
+        Get ProbabilisticForecast metadata from the API for the given
+        forecast_id.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to get metadata for
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecast
+        """
+        # add /metadata after
+        # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
+        req = self.get(f'/forecasts/cdf/{forecast_id}')
+        fx_dict = req.json()
+        site = self.get_site(fx_dict['site_id'])
+        fx_dict['site'] = site
+        cvs = []
+        for constant_value_dict in fx_dict['constant_values']:
+            cvs.append(self.get_probabilistic_forecast_constant_value(
+                constant_value_dict['forecast_id'], site=site))
+        fx_dict['constant_values'] = cvs
+        return datamodel.ProbabilisticForecast.from_dict(fx_dict)
+
+    def get_probabilistic_forecast_constant_value(self, forecast_id,
+                                                  site=None):
+        """
+        Get ProbabilisticForecastConstantValue metadata from the API for
+        the given forecast_id.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to get metadata for
+        site : datamodel.Site or None
+            If provided, the object will be attached to the returned
+            value (faster). If None, object will be created from site
+            metadata obtained from the database (slower).
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecastConstantValue
+
+        Raises
+        ------
+        ValueError
+            If provided site.site_id does not match database record of
+            forecast object's linked site_id.
+        """
+        # add /metadata after
+        # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}')
+        fx_dict = req.json()
+        site_id = fx_dict['site_id']
+        if site is None:
+            site = self.get_site(site_id)
+        elif site.site_id != site_id:
+            raise ValueError('Supplied site.site_id does not match site_id'
+                             f'from database. site.site_id: {site.site_id} '
+                             f'database site_id: {site_id}')
+        fx_dict['site'] = site
+        return datamodel.ProbabilisticForecastConstantValue.from_dict(fx_dict)
+
+    def create_probabilistic_forecast(self, forecast):
+        """
+        Create a new forecast in the API with the given
+        ProbabilisticForecast model
+
+        Parameters
+        ----------
+        forecast : datamodel.ProbabilisticForecast
+            Probabilistic forecast to create in the API
+
+        Returns
+        -------
+        datamodel.ProbabilisticForecast
+            With the appropriate parameters such as forecast_id set by the API
+        """
+        fx_dict = forecast.to_dict()
+        fx_dict.pop('forecast_id')
+        site = fx_dict.pop('site')
+        fx_dict['site_id'] = site['site_id']
+        # fx_dict['constant_values'] is tuple of dict representations of
+        # all ProbabilisticForecastConstantValue objects in the
+        # ProbabilisticForecast. We need to extract just the numeric
+        # values from these dicts and put them into a list for the API.
+        constant_values_fxs = fx_dict.pop('constant_values')
+        constant_values = [fx['constant_value'] for fx in constant_values_fxs]
+        fx_dict['constant_values'] = constant_values
+        fx_json = json.dumps(fx_dict)
+        req = self.post('/forecasts/cdf/', data=fx_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_probabilistic_forecast(new_id)
+
     @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
@@ -363,6 +486,41 @@ class APISession(requests.Session):
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
+    @ensure_timestamps('start', 'end')
+    def get_probabilistic_forecast_constant_value_values(
+            self, forecast_id, start, end, interval_label=None):
+        """
+        Get forecast values from start to end for forecast_id
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object
+        start : timelike object
+            Start of the interval to retrieve values for
+        end : timelike object
+            End of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.Series
+           With the forecast values and a datetime index
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}/values',
+                       params={'start': start, 'end': end})
+        out = json_payload_to_forecast_series(req.json())
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
+
     def post_observation_values(self, observation_id, observation_df,
                                 params=None):
         """
@@ -400,6 +558,25 @@ class APISession(requests.Session):
         """
         json_vals = forecast_object_to_json(forecast_series)
         self.post(f'/forecasts/single/{forecast_id}/values',
+                  data=json_vals,
+                  headers={'Content-Type': 'application/json'})
+
+    def post_probabilistic_forecast_constant_value_values(self, forecast_id,
+                                                          forecast_series):
+        """
+        Upload the given forecast values to the appropriate forecast_id of the
+        API
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast to upload values to
+        forecast_obj : pandas.Series
+            Pandas series with a datetime index that contains the values to
+            upload to the API
+        """
+        json_vals = forecast_object_to_json(forecast_series)
+        self.post(f'/forecasts/cdf/single/{forecast_id}/values',
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
 
