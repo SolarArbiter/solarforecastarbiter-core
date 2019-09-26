@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
+from pvlib.clearsky import detect_clearsky as _detect_clearsky
 
 
 from solarforecastarbiter.validation.quality_mapping import mask_flags
@@ -660,3 +661,37 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
         flags = flags | _label_clipping(temp, window=window,
                                         frac=fraction_in_window)
     return flags
+
+
+def detect_clearsky(ghi, ghi_clearsky):
+    """ Identifies times when GHI is consistent with clear sky conditions.
+
+    Uses the function pvlib.clearsky.detect_clearsky. Assumes ghi data with
+    regular (constant) time intervals which must be 15 minutes or less.
+
+    Parameters
+    ----------
+    ghi : Series
+        Global horizontal irradiance in W/m^2
+
+    ghi_clearsky : Series
+         Global horizontal irradiance in W/m^2 under clear sky conditions
+
+    Returns
+    -------
+    flags : Series
+        True when clear sky conditions are indicated.
+    """
+    # determine window length in minutes, 10 x time interval
+    delta = ghi.index.to_series(keep_tz=True).diff()
+    delta_minutes = delta[1] / np.timedelta64(1, '60s')
+    if delta_minutes <= 15:
+        window_length = np.minimum(10*delta_minutes, 60.0)
+        scale_factor = window_length / 10
+        flags = _detect_clearsky(ghi, ghi_clearsky, ghi.index, window_length,
+                                 lower_line_length=-5*scale_factor,
+                                 upper_line_length=10*scale_factor,
+                                 slope_dev=8*scale_factor)
+        return flags
+    else:
+        return None
