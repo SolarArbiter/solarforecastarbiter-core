@@ -313,4 +313,7 @@ def sort_gefs_frame(frame):
     """Sort a DataFrame from a GEFS forecast. Column 0 is the smallest
     value at each time. Column 20 is the largest value at each time.
     """
-    return pd.DataFrame(np.sort(frame), index=frame.index)
+    if frame is None:
+        return frame
+    else:
+        return pd.DataFrame(np.sort(frame), index=frame.index)
