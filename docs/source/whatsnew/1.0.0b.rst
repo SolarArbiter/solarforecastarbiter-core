@@ -32,6 +32,10 @@ Enhancements
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
   and
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
+* Add probabilistic forecasts from NWP (GEFS) capability with two functions:
+    * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
+    * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
+  (:issue:`54`)
 
 Bug fixes
 ~~~~~~~~~

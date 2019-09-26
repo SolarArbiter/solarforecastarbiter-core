@@ -134,6 +134,14 @@ NWP models
    reference_forecasts.models.nam_12km_hourly_to_hourly_instantaneous
    reference_forecasts.models.nam_12km_cloud_cover_to_hourly_mean
 
+Probabilistic NWP models
+------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   reference_forecasts.models.gefs_half_deg_to_hourly_mean
+
 Forecast processing
 -------------------
 
@@ -148,6 +156,7 @@ Functions that process forecast data.
    reference_forecasts.forecast.resample
    reference_forecasts.forecast.interpolate
    reference_forecasts.forecast.unmix_intervals
+   reference_forecasts.forecast.sort_gefs_frame
 
 Persistence
 -----------
