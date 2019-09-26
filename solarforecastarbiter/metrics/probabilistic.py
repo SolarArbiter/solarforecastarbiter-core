@@ -35,8 +35,19 @@ def brier_score(f, o):
     return np.mean((f - o) ** 2)
 
 
-def brier_skill_score():
+def brier_skill_score(fx, obs, ref):
     """Brier Skill Score (BSS).
+
+        BSS = 1 - BS_f / BS_ref
+
+    where BS_f is the evaluated forecast and BS_ref is a reference forecast.
+
+    Parameters
+    ----------
+    fx: (n,) array_like
+    obs: (n,) array_like
+    ref: (n,) array_like
+        Reference forecast.
 
     Returns
     -------
@@ -44,7 +55,9 @@ def brier_skill_score():
         The Brier Skill Score [-].
 
     """
-    return None
+    bs_f = brier_score(fx, obs)
+    bs_ref = brier_score(ref, obs)
+    return 1.0 - bs_f / bs_ref
 
 
 def reliability():
