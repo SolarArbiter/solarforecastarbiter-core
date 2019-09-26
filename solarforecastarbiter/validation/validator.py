@@ -681,6 +681,9 @@ def detect_clearsky(ghi, ghi_clearsky):
     -------
     flags : Series
         True when clear sky conditions are indicated.
+
+    Raises ValueError if time intervals are greater than 15m
+
     """
     # determine window length in minutes, 10 x time interval
     delta = ghi.index.to_series(keep_tz=True).diff()
@@ -694,4 +697,5 @@ def detect_clearsky(ghi, ghi_clearsky):
                                  slope_dev=8*scale_factor)
         return flags
     else:
-        return None
+        raise ValueError('detect_clearsky requires regular time intervals of'
+                         ' 15m or less')

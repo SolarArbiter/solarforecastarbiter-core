@@ -312,19 +312,23 @@ def test_detect_interpolation():
 
 
 @pytest.fixture
-def ghi_clipped():
+def ghi_clearsky():
     MST = pytz.timezone('Etc/GMT+7')
     dt = pd.date_range(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
                        periods=60, freq='15T')
     loc = pvlib.location.Location(latitude=35, longitude=-110, tz=MST)
     cs = loc.get_clearsky(dt)
-    ghi = cs['ghi']
-    ghi_clipped = ghi.copy()
-    ghi_clipped = np.minimum(ghi, 800)
-    ghi_clipped.iloc[12:17] = np.minimum(ghi, 300)
-    ghi_clipped.iloc[18:20] = np.minimum(ghi, 300)
+    return cs['ghi']
+
+
+@pytest.fixture
+def ghi_clipped(ghi_clearsky):
+    ghi_clipped = ghi_clearsky.copy()
+    ghi_clipped = np.minimum(ghi_clearsky, 800)
+    ghi_clipped.iloc[12:17] = np.minimum(ghi_clearsky, 300)
+    ghi_clipped.iloc[18:20] = np.minimum(ghi_clearsky, 300)
     ghi_clipped.iloc[26:28] *= 0.5
-    ghi_clipped.iloc[36:] = np.minimum(ghi, 400)
+    ghi_clipped.iloc[36:] = np.minimum(ghi_clearsky, 400)
     return ghi_clipped
 
 
@@ -343,3 +347,15 @@ def test_detect_clipping(ghi_clipped):
                                       fraction_in_window=0.75, rtol=5e-3,
                                       levels=4)
     assert_series_equal(flags, expected)
+
+
+def test_detect_clearsky(ghi_clearsky):
+    flags = validator.detect_clearsky(ghi_clearsky, ghi_clearsky)
+    # first 7 and last 6 values are judged not clear due to night (ghi=0)
+    # and rapid change in ghi with sunrise and sunset
+    assert all(flags[7:-6])
+    assert not flags[0:7].any() and not flags[-6:].any()
+    ghi_cloud = ghi_clearsky.copy()
+    ghi_cloud[12:15] *= 0.5
+    flags = validator.detect_clearsky(ghi_cloud, ghi_clearsky)
+    assert all(flags[7:12]) and all(flags[15:-6])
