@@ -13,9 +13,18 @@ __all__ = [
 ]
 
 
-def brier_score():
+def brier_score(f, o):
     """Brier Score (BS).
 
+        BS = 1/n * \sum_{i=1}^n (f_i - o_i)^2
+
+    Parameters
+    ----------
+    f : (n,) array_like
+        Forecasted probability of the event (between 0 and 1) for n samples.
+    o : (n,) array_like
+        Actual outcome of the event (0=did not happen, 1=did happen) for n
+        samples.
 
     Returns
     -------
@@ -23,7 +32,7 @@ def brier_score():
         The Brier Score.
 
     """
-    return None
+    return np.mean((f - o) ** 2)
 
 
 def brier_skill_score():
@@ -59,5 +68,21 @@ def sharpness():
 
 
 def crps():
-    """Continuous Ranked Probability Score (CRPS)."""
+    """Continuous Ranked Probability Score (CRPS).
+
+    Parameters
+    ----------
+    F : (n, m) array_like
+        Predicted CDF.
+    O : (n, m) array_like
+        Cumulative-probability step function.
+    q : (m,) array_like
+        The quantiles.
+
+    Returns
+    -------
+    CRPS : float
+        The CRPS value for the given forecasts.
+
+    """
     return None
