@@ -153,7 +153,7 @@ Functions that process forecast data.
    reference_forecasts.forecast.cloud_cover_to_irradiance_ghi_clear
    reference_forecasts.forecast.cloud_cover_to_irradiance
    reference_forecasts.forecast.resample
-   reference_forecasts.forecast.interpolate
+   reference_forecasts.forecast.reindex_fill_slice
    reference_forecasts.forecast.unmix_intervals
    reference_forecasts.forecast.sort_gefs_frame
 

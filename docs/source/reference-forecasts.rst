@@ -45,7 +45,6 @@ function is specific to:
    models.hrrr_subhourly_to_subhourly_instantaneous
    models.hrrr_subhourly_to_hourly_mean
    models.rap_ghi_to_instantaneous
-   models.rap_ghi_to_hourly_mean
    models.rap_cloud_cover_to_hourly_mean
    models.gfs_quarter_deg_3hour_to_hourly_mean
    models.gfs_quarter_deg_hourly_to_hourly_mean
@@ -84,9 +83,9 @@ found in :py:mod:`~solarforecastarbiter.reference_forecasts.forecast`.
    forecast.cloud_cover_to_irradiance_ghi_clear
    forecast.cloud_cover_to_irradiance
    forecast.resample
-   forecast.interpolate
+   forecast.reindex_fill_slice
    forecast.unmix_intervals
-   reference_forecasts.forecast.sort_gefs_frame
+   forecast.sort_gefs_frame
 
 
 Persistence
