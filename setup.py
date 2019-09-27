@@ -47,6 +47,7 @@ setup(
         'xarray',
         'tables',
         'pvlib',
+        'scipy',
         'bokeh',
         'pyarrow'
     ],

@@ -349,13 +349,13 @@ def test_detect_clipping(ghi_clipped):
     assert_series_equal(flags, expected)
 
 
-def test_detect_clearsky(ghi_clearsky):
-    flags = validator.detect_clearsky(ghi_clearsky, ghi_clearsky)
+def test_detect_clearsky_ghi(ghi_clearsky):
+    flags = validator.detect_clearsky_ghi(ghi_clearsky, ghi_clearsky)
     # first 7 and last 6 values are judged not clear due to night (ghi=0)
     # and rapid change in ghi with sunrise and sunset
     assert all(flags[7:-6])
     assert not flags[0:7].any() and not flags[-6:].any()
     ghi_cloud = ghi_clearsky.copy()
     ghi_cloud[12:15] *= 0.5
-    flags = validator.detect_clearsky(ghi_cloud, ghi_clearsky)
+    flags = validator.detect_clearsky_ghi(ghi_cloud, ghi_clearsky)
     assert all(flags[7:12]) and all(flags[15:-6])

@@ -663,7 +663,7 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
     return flags
 
 
-def detect_clearsky(ghi, ghi_clearsky):
+def detect_clearsky_ghi(ghi, ghi_clearsky):
     """ Identifies times when GHI is consistent with clear sky conditions.
 
     Uses the function pvlib.clearsky.detect_clearsky. Assumes ghi data with
@@ -682,8 +682,29 @@ def detect_clearsky(ghi, ghi_clearsky):
     flags : Series
         True when clear sky conditions are indicated.
 
-    Raises ValueError if time intervals are greater than 15m
+    Raises
+    ------
+    ValueError if time intervals are greater than 15m
 
+    Notes
+    -----
+    Clear-sky conditions are inferred when each of six criteria are met; see
+    `pvlib.clearsky.detect_clearsky` for references and details. Threshold
+    values for each criterion were originally developed for ten minute windows
+    containing one-minute data [1]. As indicated in [2], the algorithm also
+    works for longer windows and data at different intervals, if threshold
+    criteria are roughly scaled to the window length. Here, the threshold
+    values are based on [1] with the scaling indicated in [2].
+
+    References
+    ----------
+    [1] Reno, M.J. and C.W. Hansen, "Identification of periods of clear
+    sky irradiance in time series of GHI measurements" Renewable Energy,
+    v90, p. 520-531, 2016.
+
+    [2] B. H. Ellis, M. Deceglie and A. Jain, "Automatic Detection of 
+    Clear-Sky Periods From Irradiance Data," in IEEE Journal of Photovoltaics,
+    vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
     """
     # determine window length in minutes, 10 x time interval
     delta = ghi.index.to_series(keep_tz=True).diff()
