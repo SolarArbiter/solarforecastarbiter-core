@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 def run_nwp(forecast, model, run_time, issue_time):
     """
-    Calculate benchmark irradiance and power forecasts for a Forecast.
+    Calculate benchmark irradiance and power forecasts for a Forecast or
+    ProbabilisticForecast.
 
     Forecasts may be run operationally or retrospectively. For
     operational forecasts, *run_time* is typically set to now. For
@@ -36,7 +37,7 @@ def run_nwp(forecast, model, run_time, issue_time):
 
     Parameters
     ----------
-    forecast : datamodel.Forecast
+    forecast : datamodel.Forecast or datamodel.ProbabilisticForecast
         The metadata of the desired forecast.
     model : function
         NWP model loading and processing function.
@@ -49,12 +50,15 @@ def run_nwp(forecast, model, run_time, issue_time):
 
     Returns
     -------
-    ghi : pd.Series
-    dni : pd.Series
-    dhi : pd.Series
-    air_temperature : pd.Series
-    wind_speed : pd.Series
-    ac_power : pd.Series
+    ghi : pd.Series or pd.DataFrame
+    dni : pd.Series or pd.DataFrame
+    dhi : pd.Series or pd.DataFrame
+    air_temperature : pd.Series or pd.DataFrame
+    wind_speed : pd.Series or pd.DataFrame
+    ac_power : pd.Series or pd.DataFrame
+
+    Series are returned for deterministic forecasts, DataFrames are
+    returned for probabilisic forecasts.
 
     Examples
     --------
@@ -91,9 +95,26 @@ def run_nwp(forecast, model, run_time, issue_time):
 
     if isinstance(site, datamodel.SolarPowerPlant):
         solar_position = solar_position_calculator()
-        ac_power = pvmodel.irradiance_to_power(
-            site.modeling_parameters, solar_position['apparent_zenith'],
-            solar_position['azimuth'], *forecasts)
+        if isinstance(forecasts[0], pd.DataFrame):
+            # must iterate over columns because pvmodel.irradiance_to_power
+            # calls operations that do not properly broadcast Series along
+            # a DataFrame time index. pvlib.irradiance.haydavies operation
+            # (AI = dni_ens / dni_extra) is the known culprit, though there
+            # may be more.
+            ac_power = {}
+            for col in forecasts[0].columns:
+                member_fx = [fx.get(col) for fx in forecasts]
+                member_ac_power = pvmodel.irradiance_to_power(
+                    site.modeling_parameters,
+                    solar_position['apparent_zenith'],
+                    solar_position['azimuth'],
+                    *member_fx)
+                ac_power[col] = member_ac_power
+            ac_power = pd.DataFrame(ac_power)
+        else:
+            ac_power = pvmodel.irradiance_to_power(
+                site.modeling_parameters, solar_position['apparent_zenith'],
+                solar_position['azimuth'], *forecasts)
     else:
         ac_power = None
 

@@ -134,6 +134,14 @@ NWP models
    reference_forecasts.models.nam_12km_hourly_to_hourly_instantaneous
    reference_forecasts.models.nam_12km_cloud_cover_to_hourly_mean
 
+Probabilistic NWP models
+------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   reference_forecasts.models.gefs_half_deg_to_hourly_mean
+
 Forecast processing
 -------------------
 
@@ -148,6 +156,7 @@ Functions that process forecast data.
    reference_forecasts.forecast.resample
    reference_forecasts.forecast.interpolate
    reference_forecasts.forecast.unmix_intervals
+   reference_forecasts.forecast.sort_gefs_frame
 
 Persistence
 -----------
@@ -245,19 +254,49 @@ Class for communicating with the Solar Forecast Arbiter API.
 
    io.api.APISession
    io.api.APISession.request
+
+Sites
+
+.. autosummary::
+   :toctree: generated/
+
    io.api.APISession.get_site
    io.api.APISession.list_sites
    io.api.APISession.create_site
+
+Observations
+
+.. autosummary::
+   :toctree: generated/
+
    io.api.APISession.get_observation
    io.api.APISession.list_observations
    io.api.APISession.create_observation
+   io.api.APISession.get_observation_values
+   io.api.APISession.post_observation_values
+
+Forecasts
+
+.. autosummary::
+   :toctree: generated/
+
    io.api.APISession.get_forecast
    io.api.APISession.list_forecasts
    io.api.APISession.create_forecast
-   io.api.APISession.get_observation_values
    io.api.APISession.get_forecast_values
-   io.api.APISession.post_observation_values
    io.api.APISession.post_forecast_values
+
+Probabilistic Forecasts
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.get_probabilistic_forecast
+   io.api.APISession.list_probabilistic_forecasts
+   io.api.APISession.create_probabilistic_forecast
+   io.api.APISession.get_probabilistic_forecast_constant_value
+   io.api.APISession.get_probabilistic_forecast_constant_value_values
+   io.api.APISession.post_probabilistic_forecast_constant_value_values
 
 
 Metrics

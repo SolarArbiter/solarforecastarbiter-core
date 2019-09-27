@@ -26,6 +26,16 @@ Enhancements
 * Datamodel classes `.from_dict` constructors will now accept nested dicts.
   For example, a dict describing an Observation may now specify its site as a
   dict that describes a Site, rather than a Site object. (:issue:`125`)
+* Documentation page for command line interface. (:issue:`169`)
+* Add methods to :py:class:`~solarforecastarbiter.io.api.APISession` to
+  support getting and posting data with
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
+  and
+  :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
+* Add probabilistic forecasts from NWP (GEFS) capability with two functions:
+    * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
+    * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
+  (:issue:`54`)
 
 Bug fixes
 ~~~~~~~~~
@@ -64,6 +74,10 @@ Bug fixes
   (:issue:`182`)
 * Fix resampled/aligned observation/forecast labels in report. (:issue:`184`)
 * Fix limits for temperature and wind data validation. (:issue:`139`)
+* Make :py:class:`~solarforecastarbiter.datamodel.Report` default ``filter``
+  attribute a tuple
+  ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
+  instead of a single ``QualityFlagFilter``. (:issue:`166`)
 
 Testing
 ~~~~~~~

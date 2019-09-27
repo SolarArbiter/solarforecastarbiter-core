@@ -28,6 +28,8 @@ BASE_PATH = Path(nwp.__file__).resolve().parents[0] / 'tests/data'
     models.nam_12km_cloud_cover_to_hourly_mean,
     models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
+    pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
+        reason='needs better interval handling for fx_start < init_time + 3h'))
 ])
 def test_run_nwp(model, site_powerplant_site_type, mocker):
     """ to later patch the return value of load forecast, do something like
@@ -56,7 +58,7 @@ def test_run_nwp(model, site_powerplant_site_type, mocker):
         else:
             ser = getattr(out, var)
             assert len(ser) >= 6
-            assert isinstance(ser, pd.Series)
+            assert isinstance(ser, (pd.Series, pd.DataFrame))
             assert ser.index[0] == pd.Timestamp('20190515T1200Z')
             assert ser.index[-1] < pd.Timestamp('20190515T1800Z')
 
