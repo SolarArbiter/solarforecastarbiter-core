@@ -138,12 +138,12 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     freq = '5min'
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    cloud_cover = forecast.resample_fill_slice(
+    cloud_cover = forecast.reindex_fill_slice(
         cloud_cover, freq=freq, start=start, end=end,
         start_slice=start_adj, end_slice=end_adj,
         fill_method=fill_method)
     resample_fill_slicer = partial(
-        forecast.resample_fill_slice, freq=freq, start=start, end=end,
+        forecast.reindex_fill_slice, freq=freq, start=start, end=end,
         start_slice=start_adj, end_slice=end_adj, fill_method='interpolate')
     air_temperature, wind_speed = [
         resample_fill_slicer(v) for v in (air_temperature, wind_speed)
@@ -252,9 +252,9 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     # output.
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    resample_interpolate_slicer = partial(forecast.resample_fill_slice,
-                                          freq='5min', start=start_adj,
-                                          end=end_adj)
+    resample_interpolate_slicer = partial(forecast.reindex_fill_slice,
+                                          freq='5min', start_slice=start_adj,
+                                          end_slice=end_adj)
     ghi, dni, dhi, air_temperature, wind_speed = [
         resample_interpolate_slicer(v) for v in
         (ghi, dni, dhi, air_temperature, wind_speed)

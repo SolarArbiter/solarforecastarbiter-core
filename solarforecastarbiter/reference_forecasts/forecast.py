@@ -138,13 +138,13 @@ def resample(arg, freq='1h', label=None):
         return arg.resample(freq, label=label, closed=label).mean()
 
 
-def resample_fill_slice(arg, freq='5min', label=None,
-                        start=None, end=None,
-                        start_slice=None, end_slice=None,
-                        fill_method='interpolate'):
-    """Resample data to shorter intervals (create NaNs), bfill or
-    interpolate NaNs, bfill remaining NaNs, then slice output from start
-    to end.
+def reindex_fill_slice(arg, freq='5min', label=None, start=None, end=None,
+                       start_slice=None, end_slice=None,
+                       fill_method='interpolate'):
+    """Reindex data to shorter intervals (create NaNs) from `start` to
+    `end`, fill NaNs in gaps using `fill_method`, fill NaNs before first
+    valid time using bfill, fill NaNs after last valid time using ffill,
+    then slice output from `start_slice` to `end_slice`.
     """
     if start is None:
         start_reindex = arg.index[0]
@@ -158,7 +158,7 @@ def resample_fill_slice(arg, freq='5min', label=None,
                           closed=label)
     reindexed = arg.reindex(index)
     filled = getattr(reindexed, fill_method)()
-    sliced = filled.loc[start_slice:end_slice].bfill()
+    sliced = filled.loc[start_slice:end_slice].bfill().ffill()
     return sliced
 
 
