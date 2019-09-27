@@ -17,17 +17,6 @@ def assert_none_or_series(out, expected):
             assert_series_equal(o, e)
 
 
-def test_resample_args():
-    index = pd.date_range(start='20190101', freq='15min', periods=5)
-    args = [
-        None, pd.Series([1, 0, 0, 0, 2], index=index)
-    ]
-    idx_exp = pd.date_range(start='20190101', freq='1h', periods=2)
-    expected = [None, pd.Series([0.25, 2.], index=idx_exp)]
-    out = forecast.resample_args(*args)
-    assert_none_or_series(out, expected)
-
-
 def test_resample():
     index = pd.date_range(start='20190101', freq='15min', periods=5)
     arg = pd.Series([1, 0, 0, 0, 2], index=index)
@@ -38,18 +27,68 @@ def test_resample():
     assert forecast.resample(None) is None
 
 
-def test_interpolate():
-    index = pd.date_range(start='20190101', freq='15min', periods=2)
-    arg = pd.Series([0, 1.5], index=index)
-    out = forecast.interpolate(arg)
-    assert_series_equal(out, arg)
+@pytest.fixture
+def rfs_series():
+    return pd.Series([1, 2],
+                     index=pd.DatetimeIndex(['20190101 01', '20190101 02']))
 
-    idx_exp = pd.date_range(start='20190101', freq='5min', periods=4)
-    expected = pd.Series([0., 0.5, 1., 1.5], index=idx_exp)
-    out = forecast.interpolate(arg, freq='5min')
-    assert_series_equal(out, expected)
 
-    assert forecast.interpolate(None) is None
+@pytest.mark.parametrize(
+    'start,end,start_slice,end_slice,fill_method,exp_val,exp_idx', [
+        (None, None, None, None, 'interpolate', [1, 1.5, 2],
+         ['20190101 01', '20190101 0130', '20190101 02']),
+        ('20190101', '20190101 0230', None, None, 'interpolate',
+         [1, 1, 1, 1.5, 2, 2],
+         ['20190101', '20190101 0030', '20190101 01', '20190101 0130',
+          '20190101 02', '20190101 0230']),
+        ('20190101', '20190101 02', '20190101 0030', '20190101 0130', 'bfill',
+         [1., 1, 2], ['20190101 0030', '20190101 01', '20190101 0130'])
+    ]
+)
+def test_reindex_fill_slice(rfs_series, start, end, start_slice, end_slice,
+                            fill_method, exp_val, exp_idx):
+    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx))
+    out = forecast.reindex_fill_slice(
+        rfs_series, freq='30min', start=start, end=end,
+        start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
+    assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_some_nan():
+    rfs_series = pd.Series([1, 2, None, 4], index=pd.DatetimeIndex([
+        '20190101 01', '20190101 02', '20190101 03', '20190101 04',
+    ]))
+    start, end, start_slice, end_slice, fill_method = \
+        None, None, None, None, 'interpolate'
+    exp_val = [1, 1.5, 2, 2.5, 3, 3.5, 4]
+    exp_idx = [
+        '20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
+        '20190101 03', '20190101 0330', '20190101 04']
+    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx))
+    out = forecast.reindex_fill_slice(
+        rfs_series, freq='30min', start=start, end=end,
+        start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
+    assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_all_nan():
+    arg = pd.Series([None]*3, index=pd.DatetimeIndex(
+        ['20190101 01', '20190101 02', '20190101 03']))
+    out = forecast.reindex_fill_slice(arg, freq='30min')
+    exp = pd.Series([None]*5, index=pd.DatetimeIndex(
+        ['20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
+         '20190101 03']))
+    assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_empty():
+    out = forecast.reindex_fill_slice(pd.Series(), freq='30min')
+    assert_series_equal(out, pd.Series())
+
+
+def test_reindex_fill_slice_none():
+    out = forecast.reindex_fill_slice(None, freq='30min')
+    assert out is None
 
 
 def test_cloud_cover_to_ghi_linear():

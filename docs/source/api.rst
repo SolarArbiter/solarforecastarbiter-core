@@ -126,7 +126,6 @@ NWP models
    reference_forecasts.models.hrrr_subhourly_to_subhourly_instantaneous
    reference_forecasts.models.hrrr_subhourly_to_hourly_mean
    reference_forecasts.models.rap_ghi_to_instantaneous
-   reference_forecasts.models.rap_ghi_to_hourly_mean
    reference_forecasts.models.rap_cloud_cover_to_hourly_mean
    reference_forecasts.models.gfs_quarter_deg_3hour_to_hourly_mean
    reference_forecasts.models.gfs_quarter_deg_hourly_to_hourly_mean
@@ -154,7 +153,7 @@ Functions that process forecast data.
    reference_forecasts.forecast.cloud_cover_to_irradiance_ghi_clear
    reference_forecasts.forecast.cloud_cover_to_irradiance
    reference_forecasts.forecast.resample
-   reference_forecasts.forecast.interpolate
+   reference_forecasts.forecast.reindex_fill_slice
    reference_forecasts.forecast.unmix_intervals
    reference_forecasts.forecast.sort_gefs_frame
 
@@ -287,6 +286,7 @@ Forecasts
    io.api.APISession.post_forecast_values
 
 Probabilistic Forecasts
+-----------------------
 
 .. autosummary::
    :toctree: generated/
@@ -297,6 +297,22 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
+
+Utils
+-----
+
+Utility functions for data IO.
+
+.. autosummary::
+   :toctree: generated/
+
+   io.utils.observation_df_to_json_payload
+   io.utils.forecast_object_to_json
+   io.utils.json_payload_to_observation_df
+   io.utils.json_payload_to_forecast_series
+   io.utils.adjust_start_end_for_interval_label
+   io.utils.adjust_timeseries_for_interval_label
+   io.utils.ensure_timestamps
 
 
 Metrics

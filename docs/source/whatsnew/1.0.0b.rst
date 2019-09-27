@@ -8,10 +8,17 @@ This is the first 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
+* Add required argument interval_label to all model functions in
+  :py:mod:`solarforecastarbiter.reference_forecasts.models`. (:issue:`185`)
+* Changed
+  :py:func:`~solarforecastarbiter.reference_forecasts.forecast.resample`
+  keyward argument `closed` to `label`. (:pull:`186`)
 * Add deterministic forecast performance metrics (:pull:`171`)
 * Add `processed_forecast_observations` argument to
   :py:func:`~solarforecastarbiter.reports.template.template_report`.
   (:issue:`184`)
+* Removed :py:func:`~reference_forecasts.models.rap_ghi_to_hourly_mean`
+  because subhourly RAP GHI data is not available. (:pull:`186`)
 
 
 Enhancements
@@ -32,10 +39,10 @@ Enhancements
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
   and
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
-* Add probabilistic forecasts from NWP (GEFS) capability with two functions:
+* Add probabilistic forecasts from NWP (GEFS) capability with two functions (:issue:`54`):
     * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
     * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
-  (:issue:`54`)
+
 
 Bug fixes
 ~~~~~~~~~
@@ -72,6 +79,9 @@ Bug fixes
 * Fix failure to pass user-specified limits to
   `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
   (:issue:`182`)
+* NWP reference forecasts now account for interval label. This also fixes
+  errors when computing forecasts with ``interval_label='ending'``.
+  (:issue:`185`)
 * Fix resampled/aligned observation/forecast labels in report. (:issue:`184`)
 * Fix limits for temperature and wind data validation. (:issue:`139`)
 * Make :py:class:`~solarforecastarbiter.datamodel.Report` default ``filter``
