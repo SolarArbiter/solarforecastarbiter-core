@@ -702,7 +702,7 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     sky irradiance in time series of GHI measurements" Renewable Energy,
     v90, p. 520-531, 2016.
 
-    [2] B. H. Ellis, M. Deceglie and A. Jain, "Automatic Detection of 
+    [2] B. H. Ellis, M. Deceglie and A. Jain, "Automatic Detection of
     Clear-Sky Periods From Irradiance Data," in IEEE Journal of Photovoltaics,
     vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
     """

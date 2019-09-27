@@ -359,3 +359,6 @@ def test_detect_clearsky_ghi(ghi_clearsky):
     ghi_cloud[12:15] *= 0.5
     flags = validator.detect_clearsky_ghi(ghi_cloud, ghi_clearsky)
     assert all(flags[7:12]) and all(flags[15:-6])
+    with pytest.raises(ValueError):
+        flags = validator.detect_clearsky_ghi(ghi_clearsky[::4],
+                                              ghi_clearsky[::4])
