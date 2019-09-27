@@ -27,20 +27,20 @@ def test_resample():
     assert forecast.resample(None) is None
 
 
-def test_resample_interpolate_slice():
+def test_resample_fill_slice():
     index = pd.date_range(start='20190101', freq='15min', periods=2)
     arg = pd.Series([0, 1.5], index=index)
-    out = forecast.resample_interpolate_slice(arg, freq='15min')
+    out = forecast.resample_fill_slice(arg, freq='15min')
     assert_series_equal(out, arg)
 
     idx_exp = pd.date_range(start='20190101', freq='5min', periods=4)
     expected = pd.Series([0., 0.5, 1., 1.5], index=idx_exp)
-    out = forecast.resample_interpolate_slice(arg, freq='5min')
+    out = forecast.resample_fill_slice(arg, freq='5min')
     assert_series_equal(out, expected)
 
     idx_exp = pd.date_range(start='20190101 0005', freq='5min', periods=2)
     expected = pd.Series([0.5, 1.], index=idx_exp)
-    out = forecast.resample_interpolate_slice(
+    out = forecast.resample_fill_slice(
         arg, freq='5min', start='20190101 0005', end='20190101 0010')
     assert_series_equal(out, expected)
 

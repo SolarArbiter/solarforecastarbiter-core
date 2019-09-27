@@ -104,6 +104,8 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     cloud_cover : pd.Series
     air_temperature : pd.Series
     wind_speed : pd.Series
+    start : pd.Timestamp
+    end : pd.Timestamp
     interval_label : str
         beginning, ending, or instant
     fill_method : str
@@ -136,14 +138,15 @@ def _resample_using_cloud_cover(latitude, longitude, elevation,
     freq = '5min'
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    cloud_cover = cloud_cover.resample(freq)
-    cloud_cover = getattr(cloud_cover, fill_method)()
-    cloud_cover = cloud_cover.loc[start_adj:end_adj]
-    resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
-                                          freq=freq, start=start_adj,
-                                          end=end_adj)
+    cloud_cover = forecast.resample_fill_slice(
+        cloud_cover, freq=freq, start=start, end=end,
+        start_slice=start_adj, end_slice=end_adj,
+        fill_method=fill_method)
+    resample_fill_slicer = partial(
+        forecast.resample_fill_slice, freq=freq, start=start, end=end,
+        start_slice=start_adj, end_slice=end_adj, fill_method='interpolate')
     air_temperature, wind_speed = [
-        resample_interpolate_slicer(v) for v in (air_temperature, wind_speed)
+        resample_fill_slicer(v) for v in (air_temperature, wind_speed)
     ]
     if solar_position is None:
         solar_position = pvmodel.calculate_solar_position(
@@ -249,7 +252,7 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     # output.
     start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
                                                              start, end)
-    resample_interpolate_slicer = partial(forecast.resample_interpolate_slice,
+    resample_interpolate_slicer = partial(forecast.resample_fill_slice,
                                           freq='5min', start=start_adj,
                                           end=end_adj)
     ghi, dni, dhi, air_temperature, wind_speed = [

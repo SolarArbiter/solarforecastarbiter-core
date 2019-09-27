@@ -138,13 +138,28 @@ def resample(arg, freq='1h', label=None):
         return arg.resample(freq, label=label, closed=label).mean()
 
 
-def resample_interpolate_slice(arg, freq='5min', label=None,
-                               start=None, end=None):
-    """Resample data to shorter intervals (create NaNs), interpolate
-    (fill NaNs), then slice output from start to end.
+def resample_fill_slice(arg, freq='5min', label=None,
+                        start=None, end=None,
+                        start_slice=None, end_slice=None,
+                        fill_method='interpolate'):
+    """Resample data to shorter intervals (create NaNs), bfill or
+    interpolate NaNs, bfill remaining NaNs, then slice output from start
+    to end.
     """
-    return arg.resample(
-        freq, label=label, closed=label).interpolate().loc[start:end]
+    if start is None:
+        start_reindex = arg.index[0]
+    else:
+        start_reindex = min(pd.Timestamp(start), arg.index[0])
+    if end is None:
+        end_reindex = arg.index[-1]
+    else:
+        end_reindex = max(pd.Timestamp(end), arg.index[-1])
+    index = pd.date_range(start=start_reindex, end=end_reindex, freq=freq,
+                          closed=label)
+    reindexed = arg.reindex(index)
+    filled = getattr(reindexed, fill_method)()
+    sliced = filled.loc[start_slice:end_slice].bfill()
+    return sliced
 
 
 def unmix_intervals(mixed, lower=0, upper=100):
