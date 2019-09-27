@@ -146,6 +146,8 @@ def reindex_fill_slice(arg, freq='5min', label=None, start=None, end=None,
     valid time using bfill, fill NaNs after last valid time using ffill,
     then slice output from `start_slice` to `end_slice`.
     """
+    if arg is None or arg.empty:
+        return arg
     if start is None:
         start_reindex = arg.index[0]
     else:

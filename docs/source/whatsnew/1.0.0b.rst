@@ -17,6 +17,8 @@ API Changes
 * Add `processed_forecast_observations` argument to
   :py:func:`~solarforecastarbiter.reports.template.template_report`.
   (:issue:`184`)
+* Removed :py:func:`~reference_forecasts.models.rap_ghi_to_hourly_mean`
+  because subhourly RAP GHI data is not available. (:pull:`186`)
 
 
 Enhancements

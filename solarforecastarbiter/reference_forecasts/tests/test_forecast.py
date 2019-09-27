@@ -29,8 +29,8 @@ def test_resample():
 
 @pytest.fixture
 def rfs_series():
-    return pd.Series(
-        [1, 2], index=pd.DatetimeIndex(['20190101 01', '20190101 02']))
+    return pd.Series([1, 2],
+                     index=pd.DatetimeIndex(['20190101 01', '20190101 02']))
 
 
 @pytest.mark.parametrize(
@@ -52,6 +52,43 @@ def test_reindex_fill_slice(rfs_series, start, end, start_slice, end_slice,
         rfs_series, freq='30min', start=start, end=end,
         start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
     assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_some_nan():
+    rfs_series = pd.Series([1, 2, None, 4], index=pd.DatetimeIndex([
+        '20190101 01', '20190101 02', '20190101 03', '20190101 04',
+    ]))
+    start, end, start_slice, end_slice, fill_method = \
+        None, None, None, None, 'interpolate'
+    exp_val = [1, 1.5, 2, 2.5, 3, 3.5, 4]
+    exp_idx = [
+        '20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
+        '20190101 03', '20190101 0330', '20190101 04']
+    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx))
+    out = forecast.reindex_fill_slice(
+        rfs_series, freq='30min', start=start, end=end,
+        start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
+    assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_all_nan():
+    arg = pd.Series([None]*3, index=pd.DatetimeIndex(
+        ['20190101 01', '20190101 02', '20190101 03']))
+    out = forecast.reindex_fill_slice(arg, freq='30min')
+    exp = pd.Series([None]*5, index=pd.DatetimeIndex(
+        ['20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
+         '20190101 03']))
+    assert_series_equal(out, exp)
+
+
+def test_reindex_fill_slice_empty():
+    out = forecast.reindex_fill_slice(pd.Series(), freq='30min')
+    assert_series_equal(out, pd.Series())
+
+
+def test_reindex_fill_slice_none():
+    out = forecast.reindex_fill_slice(None, freq='30min')
+    assert out is None
 
 
 def test_cloud_cover_to_ghi_linear():
