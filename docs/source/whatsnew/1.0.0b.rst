@@ -36,9 +36,9 @@ Enhancements
     * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
     * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
   (:issue:`54`)
-* Add method to detect clear-sky periods using GHI data, for time intervals
-  up to 15 minutes. (:issue:`19`)
-    * :py:func:`~solarforecastarbiter.validation.validator.detect_clearsky_ghi`
+* Add method :py:func:`~solarforecastarbiter.validation.validator.detect_clearsky_ghi`
+  to detect clear-sky periods using GHI data, for time intervals up to 15
+  minutes. (:issue:`19`)
 
 
 Bug fixes
