@@ -116,32 +116,17 @@ def cloud_cover_to_irradiance(latitude, longitude, elevation, cloud_cover,
     return ghi, dni, dhi
 
 
-def resample_args(*args, freq='1h'):
-    """Resample all positional arguments, allowing for None.
-
-    Parameters
-    ----------
-    *args : list of pd.Series or None
-
-    Returns
-    -------
-    list of pd.Series or None
-    """
-    # this one uses map for fun
-    def f(arg):
-        if arg is None:
-            return None
-        else:
-            return arg.resample(freq).mean()
-    return list(map(f, args))
-
-
-def resample(arg, freq='1h', closed=None):
+def resample(arg, freq='1h', label=None):
     """Resamples an argument, allowing for None. Use with map.
+    Useful for applying resample to unknown model output (e.g. AC power
+    is None if no plant metadata is provided).
 
     Parameters
     ----------
     arg : pd.Series or None
+    freq : str
+    label : str
+        Sets pandas resample's label and closed kwargs.
 
     Returns
     -------
@@ -150,52 +135,33 @@ def resample(arg, freq='1h', closed=None):
     if arg is None:
         return None
     else:
-        return arg.resample(freq, closed=closed).mean()
+        return arg.resample(freq, label=label, closed=label).mean()
 
 
-def interpolate_args(*args, freq='15min'):
-    """Interpolate all positional arguments, allowing for None.
-
-    Parameters
-    ----------
-    *args : list of pd.Series or None
-
-    Returns
-    -------
-    list of pd.Series or None
+def reindex_fill_slice(arg, freq='5min', label=None, start=None, end=None,
+                       start_slice=None, end_slice=None,
+                       fill_method='interpolate'):
+    """Reindex data to shorter intervals (create NaNs) from `start` to
+    `end`, fill NaNs in gaps using `fill_method`, fill NaNs before first
+    valid time using bfill, fill NaNs after last valid time using ffill,
+    then slice output from `start_slice` to `end_slice`.
     """
-    # could add how kwarg to resample_args and lookup method with
-    # getattr but this seems much more clear
-    # this one uses a list comprehension for different fun
-    resampled_args = [
-        arg if arg is None else arg.resample(freq).interpolate()
-        for arg in args]
-    return resampled_args
-
-
-def interpolate(arg, freq='15min', closed=None):
-    """Interpolates an argument, allowing for None. Use with map.
-
-    Parameters
-    ----------
-    arg : pd.Series or None
-
-    Returns
-    -------
-    pd.Series or None
-    """
-    # could add how kwarg to resample and lookup method with
-    # getattr but this seems much more clear
-    if arg is None:
-        return None
+    if arg is None or arg.empty:
+        return arg
+    if start is None:
+        start_reindex = arg.index[0]
     else:
-        return arg.resample(freq, closed=closed).interpolate()
-
-
-def slice_args(*args, start, end):
-    resampled_args = [arg if arg is None else arg.loc[start:end]
-                      for arg in args]
-    return resampled_args
+        start_reindex = min(pd.Timestamp(start), arg.index[0])
+    if end is None:
+        end_reindex = arg.index[-1]
+    else:
+        end_reindex = max(pd.Timestamp(end), arg.index[-1])
+    index = pd.date_range(start=start_reindex, end=end_reindex, freq=freq,
+                          closed=label)
+    reindexed = arg.reindex(index)
+    filled = getattr(reindexed, fill_method)()
+    sliced = filled.loc[start_slice:end_slice].bfill().ffill()
+    return sliced
 
 
 def unmix_intervals(mixed, lower=0, upper=100):

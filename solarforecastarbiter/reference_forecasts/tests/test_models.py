@@ -29,7 +29,6 @@ LOAD_FORECAST = partial(nwp.load_forecast, base_path=BASE_PATH)
 @pytest.mark.parametrize('model', [
     pytest.param(models.gfs_quarter_deg_3hour_to_hourly_mean,
                  marks=pytest.mark.xfail(reason='gfs_3h not available')),
-    pytest.param(models.rap_ghi_to_hourly_mean, marks=xfail_g2sub),
     pytest.param(models.rap_ghi_to_instantaneous, marks=xfail_g2sub)
 ])
 def test_default_load_forecast_failures(model):
@@ -59,25 +58,40 @@ def check_out(out, start, end, end_strict=True):
     assert isinstance(out[6], (types.FunctionType, partial))
 
 
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
 @pytest.mark.parametrize('model', [
     models.gfs_quarter_deg_hourly_to_hourly_mean,
     models.gfs_quarter_deg_to_hourly_mean,
     models.hrrr_subhourly_to_hourly_mean,
-    models.hrrr_subhourly_to_subhourly_instantaneous,
     models.nam_12km_cloud_cover_to_hourly_mean,
-    models.nam_12km_hourly_to_hourly_instantaneous,
     models.rap_cloud_cover_to_hourly_mean,
-    pytest.param(models.gefs_half_deg_to_hourly_mean, marks=pytest.mark.xfail(
-        reason='needs better interval handling for fx_start < init_time + 3h'))
+    models.gefs_half_deg_to_hourly_mean
 ])
 @pytest.mark.parametrize('end,end_strict', [
     (end_short, True), (end_long, False)
 ])
-def test_models(model, end, end_strict):
+def test_mean_models(model, end, end_strict, interval_label):
     out = model(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=end_strict)
+        interval_label, load_forecast=LOAD_FORECAST)
+    if interval_label == 'beginning':
+        start_fx_expected = start
+        end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
+    elif interval_label == 'ending':
+        start_fx_expected = pd.Timestamp(start) + pd.Timedelta('5min')
+        end_fx_expected = end
+    check_out(out, start_fx_expected, end_fx_expected, end_strict=end_strict)
+
+
+@pytest.mark.parametrize('model, end_fx_expected', [
+    (models.nam_12km_hourly_to_hourly_instantaneous, '20190515T1100Z'),
+    (models.hrrr_subhourly_to_subhourly_instantaneous, '20190515T1145Z')
+])
+def test_instant_models(model, end_fx_expected):
+    out = model(
+        latitude, longitude, elevation, init_time, start, end_short,
+        'instant', load_forecast=LOAD_FORECAST)
+    check_out(out, start, pd.Timestamp(end_fx_expected), end_strict=True)
 
 
 @pytest.mark.parametrize('latitude', [32.0, 32.25, 32.5])
@@ -92,17 +106,21 @@ def test_models(model, end, end_strict):
 ])
 def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
                                         init_time):
+    # Separate test because date ranges are tricky due to GFS output
+    # switching from hourly to 3 hourly to 12 hourly.
+    # Also ensures that all data is valid at all times (unmixing cloud
+    # cover once caused a problem due to rounding beyond our control).
     start = pd.Timestamp(start)
     end = pd.Timestamp(end)
     init_time = pd.Timestamp(init_time)
     out = models.gfs_quarter_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=True)
+        'beginning', load_forecast=LOAD_FORECAST)
+    # account for beginning interval label
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
+    check_out(out, start, end_fx_expected, end_strict=True)
 
 
-@pytest.mark.xfail(
-    reason='needs better interval handling for fx_start < init_time + 3h')
 @pytest.mark.parametrize('start,end,init_time', [
     ('20190515T0100Z', '20190520T0000Z', '20190515T0000Z'),
     ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
@@ -115,8 +133,9 @@ def test_gefs_half_deg_to_hourly_mean(start, end, init_time):
     init_time = pd.Timestamp(init_time)
     out = models.gefs_half_deg_to_hourly_mean(
         latitude, longitude, elevation, init_time, start, end,
-        load_forecast=LOAD_FORECAST)
-    check_out(out, start, end, end_strict=True)
+        'beginning', load_forecast=LOAD_FORECAST)
+    end_fx_expected = pd.Timestamp(end) - pd.Timedelta('5min')
+    check_out(out, start, end_fx_expected, end_strict=True)
 
 
 @pytest.mark.parametrize('model', [
@@ -145,7 +164,6 @@ def test_domain_limits(model):
     (models.nam_12km_cloud_cover_to_hourly_mean, 'nam_12km'),
     (models.nam_12km_hourly_to_hourly_instantaneous, 'nam_12km'),
     (models.rap_cloud_cover_to_hourly_mean, 'rap'),
-    (models.rap_ghi_to_hourly_mean, 'rap'),
     (models.rap_ghi_to_instantaneous, 'rap'),
     (models.gefs_half_deg_to_hourly_mean, 'gefs')
 ])

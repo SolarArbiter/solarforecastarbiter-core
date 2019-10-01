@@ -65,33 +65,53 @@ def run_nwp(forecast, model, run_time, issue_time):
     The following code would return hourly average forecasts derived
     from the subhourly HRRR model.
 
-    >>> from solarforecastarbiter import datamodel
-    >>> from solarforecastarbiter.reference_forecasts import models
-    >>> init_time = pd.Timestamp('20190328T1200Z')
-    >>> start = pd.Timestamp('20190328T1300Z')  # typical available time
-    >>> end = pd.Timestamp('20190329T1300Z')  # 24 hour forecast
+    .. testsetup::
+
+       import datetime
+       from solarforecastarbiter import datamodel
+       from solarforecastarbiter.reference_forecasts import models
+       from solarforecastarbiter.reference_forecasts.main import *
+
+    >>> run_time = pd.Timestamp('20190515T0200Z')
+    >>> issue_time = pd.Timestamp('20190515T0000Z')
     >>> modeling_parameters = datamodel.FixedTiltModelingParameters(
+    ...     surface_tilt=30, surface_azimuth=180,
     ...     ac_capacity=10, dc_capacity=15,
     ...     temperature_coefficient=-0.004, dc_loss_factor=0,
     ...     ac_loss_factor=0)
     >>> power_plant = datamodel.SolarPowerPlant(
     ...     name='Test plant', latitude=32.2, longitude=-110.9,
     ...     elevation=715, timezone='America/Phoenix',
-    ...     modeling_parameters = modeling_parameters)
-    >>> ghi, dni, dhi, temp_air, wind_speed, ac_power = run(
-    ...     power_plant, models.hrrr_subhourly_to_hourly_mean,
-    ...     init_time, start, end)
+    ...     modeling_parameters=modeling_parameters)
+    >>> forecast = datamodel.Forecast(
+    ...     name='Test plant fx',
+    ...     site=power_plant,
+    ...     variable='ac_power',
+    ...     interval_label='ending',
+    ...     interval_value_type='mean',
+    ...     interval_length='1h',
+    ...     issue_time_of_day=datetime.time(hour=0),
+    ...     run_length=pd.Timedelta('24h'),
+    ...     lead_time_to_start=pd.Timedelta('0h'))
+    >>> ghi, dni, dhi, temp_air, wind_speed, ac_power = run_nwp(
+    ...     forecast, models.hrrr_subhourly_to_hourly_mean,
+    ...     run_time, issue_time)
     """
     fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
+    # absolute date and time for model run most recently available
+    # as of run_time
     init_time = utils.get_init_time(run_time, fetch_metadata)
-    start, end = utils.get_forecast_start_end(forecast, issue_time, True)
+    # absolute start and end times. interval_label still controls
+    # inclusive/exclusive
+    start, end = utils.get_forecast_start_end(forecast, issue_time)
     site = forecast.site
     logger.info(
         'Calculating forecast for model %s starting at %s from %s to %s',
         model, init_time, start, end)
+    # model will account for interval_label
     *forecasts, resampler, solar_position_calculator = model(
         site.latitude, site.longitude, site.elevation,
-        init_time, start, end)
+        init_time, start, end, forecast.interval_label)
 
     if isinstance(site, datamodel.SolarPowerPlant):
         solar_position = solar_position_calculator()

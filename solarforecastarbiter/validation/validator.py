@@ -332,14 +332,14 @@ def check_irradiance_consistency_QCRad(ghi, solar_zenith, dni_extra, dhi, dni,
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
+def check_temperature_limits(temp_air, temp_limits=(-35., 50.)):
     """ Checks for extreme temperatures.
 
     Parameters
     ----------
     temp_air : Series
         Air temperature in Celsius
-    temp_limits : tuple, default (-10, 50)
+    temp_limits : tuple, default (-35, 50)
         (lower bound, upper bound) for temperature.
 
     Returns
@@ -354,14 +354,14 @@ def check_temperature_limits(temp_air, temp_limits=(-10., 50.)):
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_wind_limits(wind_speed, wind_limits=(0., 60.)):
+def check_wind_limits(wind_speed, wind_limits=(0., 50.)):
     """ Checks for extreme wind speeds.
 
     Parameters
     ----------
     wind_speed : Series
-        Wind speed m/s
-    wind_limits : tuple, default (0, 60)
+        Wind speed in m/s
+    wind_limits : tuple, default (0, 50)
         (lower bound, upper bound) for wind speed.
 
     Returns

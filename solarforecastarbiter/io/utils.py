@@ -42,7 +42,14 @@ def observation_df_to_json_payload(
     -------
     string
         SolarForecastArbiter API JSON payload for posting to the observation
-        endpoint. An object in the following format:
+        endpoint. See Notes section for example.
+
+    Notes
+    -----
+    Function returns an object in the following format:
+
+    .. code::
+
         {
           'values': [
             {
@@ -172,7 +179,38 @@ def adjust_start_end_for_interval_label(interval_label, start, end,
     ------
     ValueError
        If an invalid interval_label is given
-    """
+
+    Examples
+    --------
+    .. testsetup::
+
+       from solarforecastarbiter.io.utils import *
+
+    Define input start/end:
+
+    >>> start = pd.Timestamp('20190101 1200Z')
+    >>> end = pd.Timestamp('20190101 1300Z')
+
+    Beginning:
+
+    >>> adjust_start_end_for_interval_label('beginning', start, end)
+    (Timestamp('2019-01-01 12:00:00+0000', tz='UTC'), Timestamp('2019-01-01 12:59:59.999999999+0000', tz='UTC'))
+
+    Ending:
+
+    >>> adjust_start_end_for_interval_label('ending', start, end)
+    (Timestamp('2019-01-01 12:00:00.000000001+0000', tz='UTC'), Timestamp('2019-01-01 13:00:00+0000', tz='UTC'))
+
+    Instantaneous:
+
+    >>> adjust_start_end_for_interval_label('instant', start, end)
+    (Timestamp('2019-01-01 12:00:00+0000', tz='UTC'), Timestamp('2019-01-01 13:00:00+0000', tz='UTC'))
+
+    >>> adjust_start_end_for_interval_label('instant', start, end,
+    ...                                     limit_instant=True)
+    (Timestamp('2019-01-01 12:00:00+0000', tz='UTC'), Timestamp('2019-01-01 12:59:59.999999999+0000', tz='UTC'))
+
+    """ # NOQA
 
     if (
             interval_label is not None and
@@ -290,11 +328,19 @@ def ensure_timestamps(*time_args):
 
     Examples
     --------
+    .. testsetup::
+
+       import datetime as dt
+       from solarforecastarbiter.io.utils import *
+
     >>> @ensure_timestamps('start', 'end')
     ... def get_values(start, end, other_arg):
-    ... --do stuff with start, end assumed to be pandas.Timestamps
+    ...     # do stuff with start, end assumed to be pandas.Timestamps
+    ...     if isinstance(start, pd.Timestamp):
+    ...         return True
 
     >>> get_values('2019-01-01T00:00Z', dt.datetime(2019, 1, 2, 12), 'other')
+    True
     """
     def decorator(f):
         @wraps(f)

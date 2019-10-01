@@ -103,13 +103,13 @@ def test_check_irradiance_consistency_QCRad(irradiance_QCRad):
 
 @pytest.fixture
 def weather():
-    output = pd.DataFrame(columns=['temp_air', 'wind_speed',
+    output = pd.DataFrame(columns=['air_temperature', 'wind_speed',
                                    'relative_humidity',
                                    'extreme_temp_flag', 'extreme_wind_flag',
                                    'extreme_rh_flag'],
-                          data=np.array([[-20, -5, -5, 0, 0, 0],
+                          data=np.array([[-40, -5, -5, 0, 0, 0],
                                          [10, 10, 50, 1, 1, 1],
-                                         [140, 75, 105, 0, 0, 0]]))
+                                         [140, 55, 105, 0, 0, 0]]))
     dtypes = ['float64', 'float64', 'float64', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
         output[col] = output[col].astype(typ)
@@ -119,7 +119,7 @@ def weather():
 def test_check_temperature_limits(weather):
     expected = weather
     result_expected = expected['extreme_temp_flag']
-    result = validator.check_temperature_limits(expected['temp_air'])
+    result = validator.check_temperature_limits(expected['air_temperature'])
     assert_series_equal(result, result_expected)
 
 
