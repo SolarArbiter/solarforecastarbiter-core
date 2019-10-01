@@ -706,7 +706,7 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     Clear-Sky Periods From Irradiance Data," in IEEE Journal of Photovoltaics,
     vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
     """
-    # determine window length in minutes, 10 x time interval
+    # determine window length in minutes, 10 x interval for intervals <= 15m
     delta = ghi.index.to_series(keep_tz=True).diff()
     delta_minutes = delta[1] / np.timedelta64(1, '60s')
     if delta_minutes <= 15:
