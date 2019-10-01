@@ -32,8 +32,18 @@ def test_brier_skill_score_scalar(fx, obs, ref, value):
 
 
 @pytest.mark.parametrize("fx,obs,ref,value", [
-    (np.array([1.0, 1.0]), np.array([0, 0]), np.array([1.0, 1.0]), 1.0 - 1.0 / 1.0),
-    (np.array([1.0, 1.0]), np.array([0, 0]), np.array([0.5, 0.5]), 1.0 - 1.0 / 0.25),
+    (
+        np.array([1.0, 1.0]),
+        np.array([0, 0]),
+        np.array([1.0, 1.0]),
+        1.0 - 1.0 / 1.0
+    ),
+    (
+        np.array([1.0, 1.0]),
+        np.array([0, 0]),
+        np.array([0.5, 0.5]),
+        1.0 - 1.0 / 0.25
+    ),
 ])
 def test_brier_skill_score_vector(fx, obs, ref, value):
     assert prob.brier_skill_score(fx, obs, ref) == value

@@ -16,7 +16,7 @@ __all__ = [
 def brier_score(fx, obs):
     """Brier Score (BS).
 
-        BS = 1/n * \sum_{i=1}^n (fx_i - obs_i)^2
+        BS = 1/n * sum_{i=1}^n (fx_i - obs_i)^2
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ def uncertainty():
 def sharpness(fx_lower, fx_upper):
     """Sharpness (SH).
 
-        SH = 1/n * \sum_{i=1}^n (f_{u,i} - f_{l,i})
+        SH = 1/n * sum_{i=1}^n (f_{u,i} - f_{l,i})
 
     Parameters
     ----------
