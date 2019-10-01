@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from pvlib.tools import cosd
 from pvlib.irradiance import clearsky_index
+from pvlib.clearsky import detect_clearsky as _detect_clearsky
 
 
 from solarforecastarbiter.validation.quality_mapping import mask_flags
@@ -660,3 +661,62 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
         flags = flags | _label_clipping(temp, window=window,
                                         frac=fraction_in_window)
     return flags
+
+
+def detect_clearsky_ghi(ghi, ghi_clearsky):
+    """ Identifies times when GHI is consistent with clear sky conditions.
+
+    Uses the function pvlib.clearsky.detect_clearsky. Assumes ghi data with
+    regular (constant) time intervals which must be 15 minutes or less.
+
+    Parameters
+    ----------
+    ghi : Series
+        Global horizontal irradiance in W/m^2
+
+    ghi_clearsky : Series
+         Global horizontal irradiance in W/m^2 under clear sky conditions
+
+    Returns
+    -------
+    flags : Series
+        True when clear sky conditions are indicated.
+
+    Raises
+    ------
+    ValueError if time intervals are greater than 15m
+
+    Notes
+    -----
+    Clear-sky conditions are inferred when each of six criteria are met; see
+    `pvlib.clearsky.detect_clearsky` for references and details. Threshold
+    values for each criterion were originally developed for ten minute windows
+    containing one-minute data [1]. As indicated in [2], the algorithm also
+    works for longer windows and data at different intervals, if threshold
+    criteria are roughly scaled to the window length. Here, the threshold
+    values are based on [1] with the scaling indicated in [2].
+
+    References
+    ----------
+    [1] Reno, M.J. and C.W. Hansen, "Identification of periods of clear
+    sky irradiance in time series of GHI measurements" Renewable Energy,
+    v90, p. 520-531, 2016.
+
+    [2] B. H. Ellis, M. Deceglie and A. Jain, "Automatic Detection of
+    Clear-Sky Periods From Irradiance Data," in IEEE Journal of Photovoltaics,
+    vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
+    """
+    # determine window length in minutes, 10 x interval for intervals <= 15m
+    delta = ghi.index.to_series(keep_tz=True).diff()
+    delta_minutes = delta[1] / np.timedelta64(1, '60s')
+    if delta_minutes <= 15:
+        window_length = np.minimum(10*delta_minutes, 60.0)
+        scale_factor = window_length / 10
+        flags = _detect_clearsky(ghi, ghi_clearsky, ghi.index, window_length,
+                                 lower_line_length=-5*scale_factor,
+                                 upper_line_length=10*scale_factor,
+                                 slope_dev=8*scale_factor)
+        return flags
+    else:
+        raise ValueError('detect_clearsky requires regular time intervals of'
+                         ' 15m or less')

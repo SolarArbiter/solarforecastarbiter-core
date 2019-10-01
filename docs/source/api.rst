@@ -370,6 +370,7 @@ Functions to perform validation.
    validation.validator.detect_interpolation
    validation.validator.detect_levels
    validation.validator.detect_clipping
+   validation.validator.detect_clearsky_ghi
 
 
 Tasks
