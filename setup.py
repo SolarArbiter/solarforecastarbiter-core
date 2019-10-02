@@ -11,8 +11,11 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 
 EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
-             'asynctest'],
+             'asynctest', 'requests-mock'],
     'fetch': ['aiohttp'],
+    'log': ['sentry-sdk'],
+    'cli': ['click'],
+    'plotting': ['bokeh']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -43,11 +46,20 @@ setup(
         'requests',
         'xarray',
         'tables',
-        'pvlib'
+        'pvlib',
+        'scipy',
+        'bokeh',
+        'pyarrow'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,
         'Source': 'https://github.com/solararbiter/solarforecastarbiter-core'
+    },
+    entry_points={
+        'console_scripts': [
+            'solararbiter=solarforecastarbiter.cli:cli'
+        ]
     }
+
 )

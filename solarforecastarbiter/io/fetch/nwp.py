@@ -28,15 +28,12 @@ https://www.nco.ncep.noaa.gov/pmb/nwprod/prodstat/
 This script uses features of asyncio that are likely not available in Windows.
 """
 import asyncio
-import argparse
-from functools import partial
 from itertools import chain
 import logging
 import os
 from pathlib import Path
 import re
 import shutil
-import signal
 import stat
 import subprocess
 import sys
@@ -49,8 +46,7 @@ import xarray as xr
 
 
 from solarforecastarbiter.io.fetch import (
-    handle_exception, basic_logging_config, make_session,
-    run_in_executor, start_cluster, abort_all_on_exception)
+    make_session, run_in_executor, abort_all_on_exception)
 
 
 logger = logging.getLogger(__name__)
@@ -67,7 +63,7 @@ DOMAIN = {'subregion': '',
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'file': 'gfs.t{init_hr:02d}z.pgrb2.0p25.f{valid_hr:03d}',
-                'dir': '/gfs.{init_dt}',
+                'dir': '/gfs.{init_date}/{init_hr}',
                 'lev_2_m_above_ground': 'on',
                 'lev_10_m_above_ground': 'on',
                 'lev_entire_atmosphere': 'on',
@@ -244,13 +240,15 @@ async def get_with_retries(get_func, *args, retries=5, **kwargs):
     """
     Call get_func and retry if the request fails
 
-    Params
-    ------
+    Parameters
+    ----------
     get_func : function
         Function that performs an aiohttp call to be retried
     retries : int
         Number of retries before raising the error
-    *args, **kwargs
+    *args
+        Passed to get_func
+    **kwargs
         Passed to get_func
 
     Returns
@@ -370,6 +368,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
     simple_model = _simple_model(model)
     first_file_modified_at = None
     for next_params in possible_params:
+        logger.debug('Checking if file is available for %s', next_params)
         filename = get_filename(modelpath, init_time, next_params)
         if filename.exists():
             yield next_params
@@ -380,6 +379,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
         while True:
             # is the next file ready?
             try:
+                logger.debug('Calling HEAD %s', next_model_url)
                 async with session.head(
                         next_model_url, raise_for_status=True) as r:
                     if first_file_modified_at is None:
@@ -388,6 +388,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         logger.debug('First file was available at %s %s',
                                      first_file_modified_at,
                                      model.get('member', ''))
+                logger.debug('HEAD returned %s', next_model_url)
             except aiohttp.ClientResponseError as e:
                 if e.status == 404:  # Not found
                     logger.debug(
@@ -661,6 +662,7 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
             gribdir = modelpath
         async for params in files_to_retrieve(session, model, gribdir,
                                               inittime):
+            logger.debug('Processing parameters %s', params)
             fetch_tasks.add(asyncio.create_task(
                 fetch_grib_files(session, params, gribdir, inittime,
                                  chunksize)))
@@ -675,6 +677,10 @@ async def _run_loop(session, model, modelpath, chunksize, once, use_tmp):
                 raise
         if use_tmp:
             _tmpdir.cleanup()
+        else:
+            # remove grib files
+            for f in files:
+                f.unlink()
         if once:
             break
         else:
@@ -722,70 +728,3 @@ def check_wgrib2():
     if shutil.which('wgrib2') is None:
         logger.error('wgrib2 was not found in PATH and is required')
         sys.exit(1)
-
-
-def main():
-    sys.excepthook = handle_exception
-    basic_logging_config()
-    check_wgrib2()
-
-    argparser = argparse.ArgumentParser(
-        description=('Retrieve weather forecasts with variables relevant to '
-                     'solar power from the NCEP NOMADS server. The utility '
-                     'function  wgrib2 is required to convert these forecasts '
-                     'into netCDF format.'))
-    argparser.add_argument('-v', '--verbose', action='count')
-    argparser.add_argument('--chunksize', default=128,
-                           help='Size of a chunk (in KB) to save at one time')
-    argparser.add_argument('--once', action='store_true',
-                           help='Only get one forecast initialization time')
-    argparser.add_argument('--use-tmp', action='store_true',
-                           help='Save grib files to /tmp')
-    argparser.add_argument(
-        '--netcdf-only', action='store_true',
-        help='Only convert files at save_directory to netcdf')
-    argparser.add_argument('--workers', type=int, default=1,
-                           help='Number of worker processes')
-    argparser.add_argument('save_directory',
-                           help='Directory to save data in')
-    argparser.add_argument(
-        'model', choices=list(model_map.keys()),
-        help='The model to get data for')
-    args = argparser.parse_args()
-
-    if args.verbose == 1:
-        logging.getLogger().setLevel(logging.INFO)
-    elif args.verbose and args.verbose > 1:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    start_cluster(args.workers, 4)
-    basepath = Path(args.save_directory).resolve()
-    if args.netcdf_only:
-        path_to_files = basepath
-        if (
-                not path_to_files.is_dir() or
-                len(list(path_to_files.glob('*.grib2'))) == 0
-        ):
-            logger.error('%s is not a valid directory with grib files',
-                         path_to_files)
-            sys.exit(1)
-        fut = asyncio.ensure_future(optimize_only(path_to_files, args.model))
-    else:
-        fut = asyncio.ensure_future(run(basepath, args.model, args.chunksize,
-                                        args.once, args.use_tmp))
-
-    loop = asyncio.get_event_loop()
-
-    def bail(ecode):
-        fut.cancel()
-        sys.exit(ecode)
-
-    loop.add_signal_handler(signal.SIGUSR1, partial(bail, 1))
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, partial(bail, 0))
-
-    loop.run_until_complete(fut)
-
-
-if __name__ == '__main__':
-    main()

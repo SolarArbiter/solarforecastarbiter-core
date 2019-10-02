@@ -7,7 +7,7 @@ Created on Wed Feb 27 15:12:14 2019
 
 import numpy as np
 import pandas as pd
-from pandas.util.testing import assert_frame_equal, assert_series_equal
+from pandas.util.testing import assert_series_equal
 from datetime import datetime
 import pytz
 import pytest
@@ -20,9 +20,8 @@ from pvlib.location import Location
 def irradiance_QCRad():
     output = pd.DataFrame(
         columns=['ghi', 'dhi', 'dni', 'solar_zenith', 'dni_extra',
-                 'ghi_physical_limit_flag', 'dhi_physical_limit_flag',
-                 'dni_physical_limit_flag', 'consistent_components',
-                 'diffuse_ratio_limit'],
+                 'ghi_limit_flag', 'dhi_limit_flag', 'dni_limit_flag',
+                 'consistent_components', 'diffuse_ratio_limit'],
         data=np.array([[-100, 100, 100, 30, 1370, 0, 1, 1, 0, 0],
                        [100, -100, 100, 30, 1370, 1, 0, 1, 0, 0],
                        [100, 100, -100, 30, 1370, 1, 1, 0, 0, 1],
@@ -35,7 +34,8 @@ def irradiance_QCRad():
                        [1000, 300, 1200, 0, 1370, 1, 1, 1, 0, 1],
                        [500, 600, 100, 60, 1370, 1, 1, 1, 0, 0],
                        [500, 600, 400, 80, 1370, 0, 0, 1, 0, 0],
-                       [500, 500, 300, 80, 1370, 0, 0, 1, 1, 1]]))
+                       [500, 500, 300, 80, 1370, 0, 0, 1, 1, 1],
+                       [0, 0, 0, 93, 1370, 1, 1, 1, 0, 0]]))
     dtypes = ['float64', 'float64', 'float64', 'float64', 'float64',
               'bool', 'bool', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
@@ -43,64 +43,74 @@ def irradiance_QCRad():
     return output
 
 
+def test_check_ghi_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    ghi_out_expected = expected['ghi_limit_flag']
+    ghi_out = validator.check_ghi_limits_QCRad(expected['ghi'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(ghi_out, ghi_out_expected)
+
+
+def test_check_dhi_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    dhi_out_expected = expected['dhi_limit_flag']
+    dhi_out = validator.check_dhi_limits_QCRad(expected['dhi'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(dhi_out, dhi_out_expected)
+
+
+def test_check_dni_limits_QCRad(irradiance_QCRad):
+    expected = irradiance_QCRad
+    dni_out_expected = expected['dni_limit_flag']
+    dni_out = validator.check_dni_limits_QCRad(expected['dni'],
+                                               expected['solar_zenith'],
+                                               expected['dni_extra'])
+    assert_series_equal(dni_out, dni_out_expected)
+
+
 def test_check_irradiance_limits_QCRad(irradiance_QCRad):
     expected = irradiance_QCRad
-    ghi_in = expected[['ghi', 'solar_zenith', 'dni_extra']]
-    ghi_out_expected = expected[['ghi_physical_limit_flag']]
-    ghi_out = validator.check_irradiance_limits_QCRad(ghi_in)
-    assert_frame_equal(ghi_out, ghi_out_expected)
+    ghi_out_expected = expected['ghi_limit_flag']
+    ghi_out, dhi_out, dni_out = validator.check_irradiance_limits_QCRad(
+        expected['solar_zenith'], expected['dni_extra'], ghi=expected['ghi'])
+    assert_series_equal(ghi_out, ghi_out_expected)
+    assert dhi_out is None
+    assert dni_out is None
 
-    dhi_in = expected[['ghi', 'solar_zenith', 'dni_extra', 'dhi']]
-    dhi_out_expected = expected[['ghi_physical_limit_flag',
-                                 'dhi_physical_limit_flag']]
-    dhi_out = validator.check_irradiance_limits_QCRad(dhi_in, test_dhi=True)
-    assert_frame_equal(dhi_out, dhi_out_expected)
+    dhi_out_expected = expected['dhi_limit_flag']
+    ghi_out, dhi_out, dni_out = validator.check_irradiance_limits_QCRad(
+        expected['solar_zenith'], expected['dni_extra'], ghi=expected['ghi'],
+        dhi=expected['dhi'])
+    assert_series_equal(dhi_out, dhi_out_expected)
 
-    dni_in = expected[['ghi', 'solar_zenith', 'dni_extra', 'dni']]
-    dni_out_expected = expected[['ghi_physical_limit_flag',
-                                 'dni_physical_limit_flag']]
-    dni_out = validator.check_irradiance_limits_QCRad(dni_in, test_dni=True)
-    assert_frame_equal(dni_out, dni_out_expected)
-
-
-def test_check_irradiance_limits_QCRad_fail(irradiance_QCRad):
-    expected = irradiance_QCRad
-    with pytest.raises(KeyError):
-        validator.check_irradiance_limits_QCRad(expected['ghi'])
-    with pytest.raises(KeyError):
-        validator.check_irradiance_limits_QCRad(
-            expected[['dni_extra', 'solar_zenith']])
-    with pytest.raises(KeyError):
-        validator.check_irradiance_limits_QCRad(
-            expected[['ghi', 'dni_extra', 'solar_zenith']], test_dni=True)
-    with pytest.raises(KeyError):
-        validator.check_irradiance_limits_QCRad(
-            expected[['ghi', 'dni_extra', 'solar_zenith']], test_dhi=True)
+    dni_out_expected = expected['dni_limit_flag']
+    ghi_out, dhi_out, dni_out = validator.check_irradiance_limits_QCRad(
+        expected['solar_zenith'], expected['dni_extra'],
+        dni=expected['dni'])
+    assert_series_equal(dni_out, dni_out_expected)
 
 
 def test_check_irradiance_consistency_QCRad(irradiance_QCRad):
     expected = irradiance_QCRad
-    components = expected[['ghi', 'solar_zenith', 'dni_extra', 'dni', 'dhi']]
-    result_expected = expected[['consistent_components',
-                                'diffuse_ratio_limit']]
-    result = validator.check_irradiance_consistency_QCRad(components)
-    assert_frame_equal(result, result_expected)
-
-
-def test_check_irradiance_consistency_QCRad_fail(irradiance_QCRad):
-    expected = irradiance_QCRad
-    with pytest.raises(KeyError):
-        validator.check_irradiance_consistency_QCRad(expected['ghi'])
+    cons_comp, diffuse = validator.check_irradiance_consistency_QCRad(
+        expected['ghi'], expected['solar_zenith'], expected['dni_extra'],
+        expected['dhi'], expected['dni'])
+    assert_series_equal(cons_comp, expected['consistent_components'])
+    assert_series_equal(diffuse, expected['diffuse_ratio_limit'])
 
 
 @pytest.fixture
 def weather():
-    output = pd.DataFrame(columns=['temp_air', 'wind_speed',
-                                   'extreme_temp_flag', 'extreme_wind_flag'],
-                          data=np.array([[-20, -5, 0, 0],
-                                         [10, 10, 1, 1],
-                                         [140, 75, 0, 0]]))
-    dtypes = ['float64', 'float64', 'bool', 'bool']
+    output = pd.DataFrame(columns=['air_temperature', 'wind_speed',
+                                   'relative_humidity',
+                                   'extreme_temp_flag', 'extreme_wind_flag',
+                                   'extreme_rh_flag'],
+                          data=np.array([[-40, -5, -5, 0, 0, 0],
+                                         [10, 10, 50, 1, 1, 1],
+                                         [140, 55, 105, 0, 0, 0]]))
+    dtypes = ['float64', 'float64', 'float64', 'bool', 'bool', 'bool']
     for (col, typ) in zip(output.columns, dtypes):
         output[col] = output[col].astype(typ)
     return output
@@ -108,30 +118,25 @@ def weather():
 
 def test_check_temperature_limits(weather):
     expected = weather
-    data = expected[['temp_air', 'wind_speed']]
-    result_expected = expected[['extreme_temp_flag']]
-    result = validator.check_temperature_limits(data)
-    assert_frame_equal(result, result_expected)
-
-
-def test_check_temperature_limits_fail(weather):
-    expected = weather
-    with pytest.raises(KeyError):
-        validator.check_temperature_limits(expected[['wind_speed']])
+    result_expected = expected['extreme_temp_flag']
+    result = validator.check_temperature_limits(expected['air_temperature'])
+    assert_series_equal(result, result_expected)
 
 
 def test_check_wind_limits(weather):
     expected = weather
-    data = expected[['temp_air', 'wind_speed']]
-    result_expected = expected[['extreme_wind_flag']]
-    result = validator.check_wind_limits(data)
-    assert_frame_equal(result, result_expected)
+    result_expected = expected['extreme_wind_flag']
+    result = validator.check_wind_limits(expected['wind_speed'])
+    assert_series_equal(result, result_expected)
 
 
-def test_check_wind_limits_fail(weather):
+def test_check_rh_limits(weather):
     expected = weather
-    with pytest.raises(KeyError):
-        validator.check_wind_limits(expected[['temp_air']])
+    data = expected['relative_humidity']
+    result_expected = expected['extreme_rh_flag']
+    result = validator.check_rh_limits(data)
+    result.name = 'extreme_rh_flag'
+    assert_series_equal(result, result_expected)
 
 
 def test_check_limits():
@@ -173,70 +178,58 @@ def times():
                          freq='10T')
 
 
-def test_get_solarposition(mocker, location, times):
-    m = mocker.spy(pvlib.solarposition, 'get_solarposition')
-    validator.get_solarposition(location, times)
-    validator.get_solarposition(location, times, pressure=100000)
-    validator.get_solarposition(location, times, method='ephemeris')
-    assert m.call_count == 3
-
-
-def test_get_clearsky(mocker, location, times):
-    m = mocker.spy(pvlib.clearsky, 'ineichen')
-    validator.get_clearsky(location, times)
-    assert m.call_count == 1
-    m = mocker.spy(pvlib.clearsky, 'haurwitz')
-    validator.get_clearsky(location, times, model='haurwitz')
-    assert m.call_count == 1
-
-
 def test_check_ghi_clearsky(mocker, location, times):
     clearsky = location.get_clearsky(times)
     # modify to create test conditions
-    irrad = clearsky.copy()
-    irrad.iloc[0] *= 0.5
-    irrad.iloc[-1] *= 2.0
+    ghi = clearsky['ghi'].copy()
+    ghi.iloc[0] *= 0.5
+    ghi.iloc[-1] *= 2.0
     clear_times = np.tile(True, len(times))
     clear_times[-1] = False
-    expected = pd.DataFrame(index=times, data=clear_times,
-                            columns=['ghi_clearsky'])
-    result = validator.check_ghi_clearsky(irrad, clearsky=clearsky)
-    assert_frame_equal(result, expected)
-    with pytest.raises(ValueError):
-        validator.check_ghi_clearsky(irrad)
-    result = validator.check_ghi_clearsky(irrad, location=location)
-    assert_frame_equal(result, expected)
+    expected = pd.Series(index=times, data=clear_times)
+    result = validator.check_ghi_clearsky(ghi, clearsky['ghi'])
+    assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night(location):
+def test_check_poa_clearsky(mocker, times):
+    dt = pd.date_range(start=datetime(2019, 6, 15, 12, 0, 0),
+                       freq='15T', periods=5)
+    poa_global = pd.Series(index=dt, data=[800, 1000, 1200, -200, np.nan])
+    poa_clearsky = pd.Series(index=dt, data=1000)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky)
+    expected = pd.Series(index=dt, data=[True, True, False, True, False])
+    assert_series_equal(result, expected)
+    result = validator.check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.2)
+    expected = pd.Series(index=dt, data=[True, True, True, True, False])
+    assert_series_equal(result, expected)
+
+
+def test_check_irradiance_day_night():
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
              datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
-    expected = pd.DataFrame(index=times, columns=['daytime'],
-                            data=[True, False])
-    solar_position = pd.DataFrame(index=times, columns=['zenith'],
-                                  data=[11.8, 114.3])
-    result = validator.check_irradiance_day_night(
-        times, solar_position=solar_position)
-    assert_frame_equal(result, expected)
-    result = validator.check_irradiance_day_night(times, location=location)
-    assert_frame_equal(result, expected)
-    with pytest.raises(ValueError):
-        validator.check_irradiance_day_night(times)
+    expected = pd.Series(data=[True, False], index=times)
+    solar_zenith = pd.Series(data=[11.8, 114.3], index=times)
+    result = validator.check_irradiance_day_night(solar_zenith)
+    assert_series_equal(result, expected)
 
 
 def test_check_timestamp_spacing(times):
-    assert validator.check_timestamp_spacing(times)
-    assert validator.check_timestamp_spacing(pd.DatetimeIndex([times[0]]))
-    assert validator.check_timestamp_spacing(times[[0, 2]])
-    assert not validator.check_timestamp_spacing(times[[0, 2, 3]])
-    MST = pytz.timezone('MST')
-    times2 = pd.DatetimeIndex([datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 0, 57, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 13, tzinfo=MST),
-                               datetime(2018, 6, 15, 12, 2, 46, tzinfo=MST)])
-    assert validator.check_timestamp_spacing(times2, freq='1T')
-    assert not validator.check_timestamp_spacing(times2, freq='5S')
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, times.freq),
+        pd.Series(True, index=times))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0]], times.freq),
+        pd.Series(True, index=[times[0]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times[[0, 2, 3]], times.freq),
+        pd.Series([True, False, True], index=times[[0, 2, 3]]))
+
+    assert_series_equal(
+        validator.check_timestamp_spacing(times, '30min'),
+        pd.Series([True] + [False] * (len(times) - 1), index=times))
 
 
 def test_detect_stale_values():
@@ -316,3 +309,59 @@ def test_detect_interpolation():
                                         True]))
     with pytest.raises(ValueError):
         validator.detect_interpolation(x, window=2)
+
+
+@pytest.fixture
+def ghi_clearsky():
+    MST = pytz.timezone('Etc/GMT+7')
+    dt = pd.date_range(start=datetime(2019, 4, 3, 5, 0, 0, tzinfo=MST),
+                       periods=60, freq='15T')
+    loc = pvlib.location.Location(latitude=35, longitude=-110, tz=MST)
+    cs = loc.get_clearsky(dt)
+    return cs['ghi']
+
+
+@pytest.fixture
+def ghi_clipped(ghi_clearsky):
+    ghi_clipped = ghi_clearsky.copy()
+    ghi_clipped = np.minimum(ghi_clearsky, 800)
+    ghi_clipped.iloc[12:17] = np.minimum(ghi_clearsky, 300)
+    ghi_clipped.iloc[18:20] = np.minimum(ghi_clearsky, 300)
+    ghi_clipped.iloc[26:28] *= 0.5
+    ghi_clipped.iloc[36:] = np.minimum(ghi_clearsky, 400)
+    return ghi_clipped
+
+
+def test_detect_clipping(ghi_clipped):
+    placeholder = pd.Series(index=ghi_clipped.index, data=False)
+    expected = placeholder.copy()
+    # for window=4 and fraction_in_window=0.75
+    expected.iloc[3:6] = True
+    expected.iloc[14:17] = True
+    expected.iloc[18:20] = True
+    expected.iloc[25] = True
+    expected.iloc[30:36] = True
+    expected.iloc[38:46] = True
+    expected.iloc[56:60] = True
+    flags = validator.detect_clipping(ghi_clipped, window=4,
+                                      fraction_in_window=0.75, rtol=5e-3,
+                                      levels=4)
+    assert_series_equal(flags, expected)
+
+
+def test_detect_clearsky_ghi(ghi_clearsky):
+    flags = validator.detect_clearsky_ghi(ghi_clearsky, ghi_clearsky)
+    # first 7 and last 6 values are judged not clear due to night (ghi=0)
+    # and rapid change in ghi with sunrise and sunset
+    assert all(flags[7:-6])
+    assert not flags[0:7].any() and not flags[-6:].any()
+    ghi_cloud = ghi_clearsky.copy()
+    ghi_cloud[12:15] *= 0.5
+    flags = validator.detect_clearsky_ghi(ghi_cloud, ghi_clearsky)
+    assert all(flags[7:12]) and all(flags[15:-6])
+
+
+def test_detect_clearsky_ghi_error(ghi_clearsky):
+    with pytest.raises(ValueError):
+        validator.detect_clearsky_ghi(ghi_clearsky[::4],
+                                      ghi_clearsky[::4])

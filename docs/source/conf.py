@@ -51,8 +51,15 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
-    'numpydoc'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.doctest'
 ]
+
+doctest_global_setup = '''
+import pandas as pd
+'''
+
+napoleon_use_rtype = False  # group rtype on same line together with return
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -191,12 +198,18 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 
 # extlinks alias
-extlinks = {'issue': ('https://github.com/solararbiter/solarforecastarbiter-core/issues/%s',
-                      'GH'),
-            'wiki': ('https://github.com/solararbiter/solarforecastarbiter-core/wiki/%s',
-                     'wiki '),
-            'doi': ('http://dx.doi.org/%s', 'DOI: '),
-            'ghuser': ('https://github.com/%s', '@')}
+extlinks = {
+    'issue': (
+        'https://github.com/solararbiter/solarforecastarbiter-core/issues/%s',
+        'GH'),
+    'pull': (
+        'https://github.com/solararbiter/solarforecastarbiter-core/pull/%s',
+        'GH'),
+    'wiki': (
+        'https://github.com/solararbiter/solarforecastarbiter-core/wiki/%s',
+        'wiki '),
+    'doi': ('http://dx.doi.org/%s', 'DOI: '),
+    'ghuser': ('https://github.com/%s', '@')}
 
 # -- Options for intersphinx extension ---------------------------------------
 

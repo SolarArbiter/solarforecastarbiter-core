@@ -4,7 +4,6 @@ from functools import partial, wraps
 import logging
 import multiprocessing as mp
 import signal
-import sys
 import threading
 
 
@@ -39,22 +38,10 @@ async def run_in_executor(func, *args, **kwargs):
 
 def make_session():
     """Make an aiohttp session"""
-    conn = aiohttp.TCPConnector(limit_per_host=5)
-    s = aiohttp.ClientSession(read_timeout=60, conn_timeout=60, connector=conn)
+    conn = aiohttp.TCPConnector(limit_per_host=20)
+    timeout = aiohttp.ClientTimeout(total=60, connect=10, sock_read=30)
+    s = aiohttp.ClientSession(connector=conn, timeout=timeout)
     return s
-
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-    logging.error("Uncaught exception",
-                  exc_info=(exc_type, exc_value, exc_traceback))
-
-
-def basic_logging_config():
-    logging.basicConfig(level=logging.WARNING,
-                        format='%(asctime)s %(levelname)s %(message)s')
 
 
 def abort_all_on_exception(f):

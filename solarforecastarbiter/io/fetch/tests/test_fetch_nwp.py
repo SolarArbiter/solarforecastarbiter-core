@@ -47,9 +47,9 @@ async def test_get_with_retries_fails(mock_sleep):
     more before ... 201900 nam.20190410
     """, ['20190409', '20190410'], nwp.NAM_CONUS),
     ("""
-    gfs.2019040912 other things
+    gfs.20190409 other things
     more before ... 201900 nam.20190410
-    """, ['2019040912'], nwp.GFS_0P25_1HR),
+    """, ['20190409'], nwp.GFS_0P25_1HR),
 ])
 async def test_get_available_dirs(mocker, page, expected, model):
     get = mocker.patch('solarforecastarbiter.io.fetch.nwp.get_with_retries',
