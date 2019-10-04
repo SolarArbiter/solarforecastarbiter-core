@@ -39,10 +39,11 @@ Enhancements
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecastConstantValue`
   and
   :py:class:`~solarforecastarbiter.datamodel.ProbabilisticForecast` classes.
+
 * Add probabilistic forecasts from NWP (GEFS) capability with two functions (:issue:`54`):
-    * :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
-    * :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
-  (:issue:`54`)
+  :py:func:`~solarforecastarbiter.reference_forecasts.models.gefs_half_deg_to_hourly_mean`,
+  :py:func:`~solarforecastarbiter.reference_forecasts.forecast.sort_gefs_frame`
+
 * Add method :py:func:`~solarforecastarbiter.validation.validator.detect_clearsky_ghi`
   to detect clear-sky periods using GHI data, for time intervals up to 15
   minutes. (:issue:`19`)
@@ -75,12 +76,12 @@ Bug fixes
   :py:func:`~solarforecastarbiter.io.api.APISession.get_observation_values`
   (:issue:`180`)
 * Fix return/assignment of None in
-  `~solarforecastarbiter.validation.tasks.daily_single_observation_validation`
+  :py:func:`~solarforecastarbiter.validation.tasks.daily_single_observation_validation`
   and
-  `~solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`.
+  :py:func:`~solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`.
   (:issue:`182`)
 * Fix failure to pass user-specified limits to
-  `~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
+  :py:func:`~solarforecastarbiter.validation.validator.check_irradiance_limits_QCRad`.
   (:issue:`182`)
 * NWP reference forecasts now account for interval label. This also fixes
   errors when computing forecasts with ``interval_label='ending'``.
@@ -89,8 +90,8 @@ Bug fixes
 * Fix limits for temperature and wind data validation. (:issue:`139`)
 * Make :py:class:`~solarforecastarbiter.datamodel.Report` default ``filter``
   attribute a tuple
-  ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
-  instead of a single ``QualityFlagFilter``. (:issue:`166`)
+  ``(QualityFlagFilter, )``
+  instead of a single :py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`. (:issue:`166`)
 * Fix bug in monthly, daily, hourly metrics calculation introduced by
   :pull:`171`. (:issue:`207`)
 * Fix inefficient data loading for reports. (:issue:`208`)
