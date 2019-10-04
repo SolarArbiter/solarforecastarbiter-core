@@ -244,7 +244,7 @@ def post_observation_data(api, observation, data, start, end):
     observation : solarforecastarbiter.datamodel.Observation
         Data model object corresponding to the Observation to update.
     data : pandas.DataFrame
-        Dataframe of values to post containing a column labelled with
+        Dataframe of values to post containing a column labeled with
         the Observation's variable.
     start : datetime-like
         The beginning of the period to update.
@@ -277,8 +277,15 @@ def post_observation_data(api, observation, data, start, end):
     var_df['quality_flag'] = 0
     # remove all future values, some files have forward filled nightly data
     var_df = var_df[start:min(end, pd.Timestamp.now(tz='UTC'))]
-    # Drop NaNs and skip post if empty.
-    var_df = var_df.dropna()
+    # we assume any reference data is given at the proper intervals
+    # and already averaged if appropriate
+    # so just reindex the data to put nans where required
+    new_index = pd.date_range(start=var_df.index[0], end=var_df.index[-1],
+                              freq=observation.interval_length)
+    var_df = var_df.reindex(new_index)
+    # set quality flag for any nans
+    var_df['quality_flag'] = var_df['quality_flag'].fillna(1)
+    # skip post id data is empty
     if var_df.empty:
         logger.warning(
             f'{observation.name} data empty from '
