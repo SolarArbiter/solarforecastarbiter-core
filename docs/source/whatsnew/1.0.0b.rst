@@ -1,7 +1,7 @@
 .. _whatsnew_100b:
 
-1.0.0b (expected September 30, 2019)
-------------------------------------
+1.0.0b (October 4, 2019)
+------------------------
 
 This is the first 1.0 beta release.
 
@@ -94,9 +94,6 @@ Bug fixes
 * Fix bug in monthly, daily, hourly metrics calculation introduced by
   :pull:`171`. (:issue:`207`)
 * Fix inefficient data loading for reports. (:issue:`208`)
-
-Testing
-~~~~~~~
 
 
 Contributors
