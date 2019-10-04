@@ -94,6 +94,9 @@ Bug fixes
 * Fix bug in monthly, daily, hourly metrics calculation introduced by
   :pull:`171`. (:issue:`207`)
 * Fix inefficient data loading for reports. (:issue:`208`)
+* Fix documentation of *window* setting in
+  :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`.
+  (:issue:`203`)
 
 Testing
 ~~~~~~~
