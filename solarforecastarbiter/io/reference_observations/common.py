@@ -291,7 +291,7 @@ def post_observation_data(api, observation, data, start, end):
                                     observation.variable)
     try:
         var_df = _prepare_data_to_post(data, variable, observation,
-                                      start, end)
+                                       start, end)
     except KeyError:
         logger.error(f'{variable} could not be found in the data file '
                      f'from {data.index[0]} to {data.index[-1]}'
