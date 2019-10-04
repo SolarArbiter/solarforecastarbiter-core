@@ -91,6 +91,8 @@ Bug fixes
   attribute a tuple
   ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
   instead of a single ``QualityFlagFilter``. (:issue:`166`)
+* Reindex reference observation data to include NaNs when posting
+  when appropriate (:issue:`216`)
 
 Testing
 ~~~~~~~
