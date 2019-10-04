@@ -91,8 +91,15 @@ Bug fixes
   attribute a tuple
   ``(:py:class:`~solarforecastarbiter.datamodel.QualityFlagFilter`, )``
   instead of a single ``QualityFlagFilter``. (:issue:`166`)
+* Fix bug in monthly, daily, hourly metrics calculation introduced by
+  :pull:`171`. (:issue:`207`)
+* Fix inefficient data loading for reports. (:issue:`208`)
+* Fix documentation of *window* setting in
+  :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`.
+  (:issue:`203`)
 * Reindex reference observation data to include NaNs when posting
   when appropriate (:issue:`216`)
+
 
 Testing
 ~~~~~~~
