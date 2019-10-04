@@ -224,6 +224,90 @@ def test_create_observation_with_kwargs(
     mock_api.create_observation.assert_called_with(expected)
 
 
+@pytest.mark.parametrize('inp,expected', [
+    # nan kept
+    (pd.DataFrame({'ghi': [0, 1, 4.0, None, 5, 6]}, dtype='float',
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6)),
+     pd.DataFrame({'value': [0, 1, 4.0, None, 5, 6],
+                   'quality_flag': [0, 0, 0, 1, 0, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+    # nan filled in center
+    (pd.DataFrame({'ghi': [0, 1, 4.0, 5, 6]}, dtype='float',
+                  index=pd.DatetimeIndex(
+                      ['2019-10-04T1200Z', '2019-10-04T1201Z',
+                       '2019-10-04T1202Z', '2019-10-04T1204Z',
+                       '2019-10-04T1205Z'])),
+     pd.DataFrame({'value': [0, 1, 4.0, None, 5, 6],
+                   'quality_flag': [0, 0, 0, 1, 0, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+    # new freq
+    (pd.DataFrame({'ghi': [0, 1]}, dtype='float',
+                  index=pd.DatetimeIndex(
+                      ['2019-10-04T1200Z', '2019-10-04T1205Z'])),
+     pd.DataFrame({'value': [0, None, None, None, None, 1.0],
+                   'quality_flag': [0, 1, 1, 1, 1, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+
+    # nans not extended to start end
+    (pd.DataFrame({'ghi': [0, 1]}, dtype='float',
+                  index=pd.DatetimeIndex(
+                      ['2019-10-04T1201Z', '2019-10-04T1202Z'])),
+     pd.DataFrame({'value': [0.0, 1.0],
+                   'quality_flag': [0, 0]},
+                  index=pd.DatetimeIndex(
+                      ['2019-10-04T1201Z', '2019-10-04T1202Z']))),
+])
+def test_prepare_data_to_post(inp, expected):
+    start = pd.Timestamp('2019-10-04T1200Z')
+    end = pd.Timestamp('2019-10-04T1205Z')
+    variable = 'ghi'
+    out = common._prepare_data_to_post(inp, variable, test_kwarg_observation,
+                                       start, end)
+    pd.testing.assert_frame_equal(out, expected)
+
+
+def test_prepare_data_to_post_offset():
+    # offset data is kept as is. If this is a problem we'll need to
+    # probably resample the reference data to the appropriate index
+    start = pd.Timestamp('2019-10-04T1200Z')
+    end = pd.Timestamp('2019-10-04T1215Z')
+    variable = 'ghi'
+    inp = pd.DataFrame({'ghi': [0, 1, 4.0]},
+                       index=pd.date_range('2019-10-04T1201Z', freq='5min',
+                                           periods=3))
+    expected = pd.DataFrame(
+        {'value': [0, 1, 4.0], 'quality_flag': [0, 0, 0]},
+        index=pd.date_range('2019-10-04T1201Z', freq='5min',
+                            periods=3))
+    out = common._prepare_data_to_post(
+        inp, variable, observation_with_extra_params, start, end)
+    pd.testing.assert_frame_equal(out, expected)
+
+
+def test_prepare_data_to_post_empty():
+    inp = pd.DataFrame(
+        {'ghi': [0.0]}, index=pd.DatetimeIndex(['2019-01-01 00:00Z']))
+    start = pd.Timestamp('2019-10-04T1200Z')
+    end = pd.Timestamp('2019-10-04T1205Z')
+    variable = 'ghi'
+    out = common._prepare_data_to_post(inp, variable, test_kwarg_observation,
+                                       start, end)
+    assert out.empty
+
+
+def test_prepare_data_to_post_no_var():
+    start = pd.Timestamp('2109-10-04T1200Z')
+    end = pd.Timestamp('2109-10-04T1300Z')
+    data = pd.DataFrame({'notavar': [0, 1]})
+    with pytest.raises(KeyError):
+        common._prepare_data_to_post(data, 'GHI 7', test_kwarg_observation,
+                                     start, end)
+
+
 def test_post_observation_data_no_data(mock_api, log, start, end,):
     common.post_observation_data(
         mock_api, test_kwarg_observation,
@@ -263,7 +347,8 @@ def test_post_observation_data_all_nans(
     nan_data['ghi'] = np.NaN
     ret = common.post_observation_data(mock_api, site_test_observation,
                                        nan_data, start, end)
-    log.warning.assert_called()
+    # post the nans
+    log.warning.assert_not_called()
     assert ret is None
 
 
@@ -277,7 +362,9 @@ def test_update_site_observations(
     args, _ = mock_api.post_observation_values.call_args
     assert args[0] == ''
     pd.testing.assert_frame_equal(
-        args[1], fake_ghi_data.rename(columns={'ghi': 'value'})[start:end])
+        args[1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[start:end].resample(
+                args[1].index.freq).first())
 
 
 def test_update_site_observations_no_data(

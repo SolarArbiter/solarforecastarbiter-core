@@ -97,6 +97,9 @@ Bug fixes
 * Fix documentation of *window* setting in
   :py:func:`~solarforecastarbiter.reference_forecasts.main.run_persistence`.
   (:issue:`203`)
+* Reindex reference observation data to include NaNs when posting
+  when appropriate (:issue:`216`)
+
 
 Testing
 ~~~~~~~
