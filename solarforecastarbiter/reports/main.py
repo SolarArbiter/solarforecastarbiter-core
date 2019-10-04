@@ -216,6 +216,10 @@ def compute_report(access_token, report_id, base_url=None):
     report_id : str
         ID of the report to fetch from the API and generate the raw
         report for
+
+    Returns
+    -------
+    raw_report : datamodel.RawReport
     """
     session = APISession(access_token, base_url=base_url)
     try:
