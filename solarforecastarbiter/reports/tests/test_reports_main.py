@@ -33,11 +33,14 @@ def mock_data(mocker, _test_data):
     def get_data(id_, start, end):
         return _test_data[id_].loc[start:end]
 
-    mocker.patch('solarforecastarbiter.io.api.APISession.get_forecast_values',
-                 side_effect=get_data)
-    mocker.patch(
+    get_forecast_values = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_forecast_values',
+        side_effect=get_data)
+    get_observation_values = mocker.patch(
         'solarforecastarbiter.io.api.APISession.get_observation_values',
         side_effect=get_data)
+
+    return get_forecast_values, get_observation_values
 
 
 def test_get_data(mock_data, report_objects):
@@ -47,6 +50,9 @@ def test_get_data(mock_data, report_objects):
     assert isinstance(data[observation], pd.DataFrame)
     assert isinstance(data[forecast_0], pd.Series)
     assert isinstance(data[forecast_1], pd.Series)
+    get_forecast_values, get_observation_values = mock_data
+    assert get_forecast_values.call_count == 2
+    assert get_observation_values.call_count == 1
 
 
 @pytest.mark.skipif(shutil.which('pandoc') is None,
