@@ -234,6 +234,27 @@ def update_site_observations(api, fetch_func, site, observations,
         post_observation_data(api, obs, data_in_range, start, end)
 
 
+def _prepare_data_to_post(data, variable, observation, start, end):
+    data = data[[variable]]
+    data = data.rename(columns={variable: 'value'})
+    # remove all future values, some files have forward filled nightly data
+    data = data[start:min(end, pd.Timestamp.now(tz='UTC'))]
+    # we assume any reference data is given at the proper intervals
+    # and already averaged if appropriate
+    # so just reindex the data to put nans where required
+    if data.empty:
+        return data
+    # we don't extend the new index to start, end, since reference
+    # data has some lag time from the end it was requested from
+    # and it isn't necessary to keep the nans between uploads in db
+    new_index = pd.date_range(start=data.index[0], end=data.index[-1],
+                              freq=observation.interval_length)
+    data = data.reindex(new_index)
+    # set quality flags
+    data['quality_flag'] = data['value'].isna().astype(int)
+    return data
+
+
 def post_observation_data(api, observation, data, start, end):
     """Posts data to an observation between start and end.
 
@@ -267,25 +288,15 @@ def post_observation_data(api, observation, data, start, end):
     variable = extra_parameters.get('network_data_label',
                                     observation.variable)
     try:
-        var_df = data[[variable]]
+        var_df = _prepare_data_to_post(data, variable, observation,
+                                      start, end)
     except KeyError:
         logger.error(f'{variable} could not be found in the data file '
                      f'from {data.index[0]} to {data.index[-1]}'
                      f'for Observation {observation.name}')
         return
-    var_df = var_df.rename(columns={variable: 'value'})
-    var_df['quality_flag'] = 0
-    # remove all future values, some files have forward filled nightly data
-    var_df = var_df[start:min(end, pd.Timestamp.now(tz='UTC'))]
-    # we assume any reference data is given at the proper intervals
-    # and already averaged if appropriate
-    # so just reindex the data to put nans where required
-    new_index = pd.date_range(start=var_df.index[0], end=var_df.index[-1],
-                              freq=observation.interval_length)
-    var_df = var_df.reindex(new_index)
-    # set quality flag for any nans
-    var_df['quality_flag'] = var_df['quality_flag'].fillna(1)
-    # skip post id data is empty
+
+    # skip post id data is empty, if there are nans, should still post
     if var_df.empty:
         logger.warning(
             f'{observation.name} data empty from '
