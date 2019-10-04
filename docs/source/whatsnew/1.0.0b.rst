@@ -93,6 +93,7 @@ Bug fixes
   instead of a single ``QualityFlagFilter``. (:issue:`166`)
 * Fix bug in monthly, daily, hourly metrics calculation introduced by
   :pull:`171`. (:issue:`207`)
+* Fix inefficient data loading for reports. (:issue:`208`)
 
 Testing
 ~~~~~~~
