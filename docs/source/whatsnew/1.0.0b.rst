@@ -1,7 +1,7 @@
 .. _whatsnew_100b:
 
-1.0.0b (expected September 30, 2019)
-------------------------------------
+1.0.0b (October 4, 2019)
+------------------------
 
 This is the first 1.0 beta release.
 
@@ -100,9 +100,6 @@ Bug fixes
 * Reindex reference observation data to include NaNs when posting
   when appropriate (:issue:`216`)
 
-
-Testing
-~~~~~~~
 
 
 Contributors
