@@ -235,7 +235,7 @@ def update_site_observations(api, fetch_func, site, observations,
 
 
 def _prepare_data_to_post(data, variable, observation, start, end):
-    """Maniuplate the data including reindexing to observation.interval_label
+    """Manipulate the data including reindexing to observation.interval_label
     to prepare for posting"""
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
