@@ -243,6 +243,15 @@ def test_create_observation_with_kwargs(
                    'quality_flag': [0, 0, 0, 1, 0, 0]},
                   index=pd.date_range('2019-10-04T1200Z', freq='1min',
                                       periods=6))),
+    # new freq
+    (pd.DataFrame({'ghi': [0, 1]}, dtype='float',
+                  index=pd.DatetimeIndex(
+                      ['2019-10-04T1200Z', '2019-10-04T1205Z'])),
+     pd.DataFrame({'value': [0, None, None, None, None, 1.0],
+                   'quality_flag': [0, 1, 1, 1, 1, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+
     # nans not extended to start end
     (pd.DataFrame({'ghi': [0, 1]}, dtype='float',
                   index=pd.DatetimeIndex(
