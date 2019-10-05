@@ -921,6 +921,17 @@ def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
             in json.loads(many_prob_forecasts_text)]
 
 
+@pytest.fixture()
+def single_forecast_observation(single_forecast, single_observation):
+    return datamodel.ForecastObservation(single_forecast, single_observation)
+
+
+@pytest.fixture()
+def many_forecast_observation(many_forecasts, many_observations):
+    cart_prod = itertools.product(many_forecasts, many_observations)
+    return [datamodel.ForecastObservation(c) for c in cart_prod]
+
+
 @pytest.fixture(scope='module')
 def report_objects():
     tz = 'America/Phoenix'
