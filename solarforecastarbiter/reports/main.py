@@ -57,7 +57,8 @@ import pandas as pd
 
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports import figures, template, metrics
+from solarforecastarbiter import metrics
+from solarforecastarbiter.reports import figures, template
 
 
 def get_data_for_report(session, report):
@@ -155,6 +156,36 @@ def get_validation_issues():
     return test
 
 
+def validate_resample_align(report, metadata, data):
+    """
+    Validate the data and resample.
+
+    Parameters
+    ----------
+    report : solarforecastarbiter.datamodel.Report
+    metadata : solarforecastarbiter.datamodel.ReportMetadata
+    data : dict
+        Keys are Forecast and Observation uuids, values are
+        the corresponding data.
+
+    Returns
+    -------
+    list
+        List of solarforecastarbiter.datamodel.ProcessedForecastObservation
+
+    Todo
+    ----
+    * Move to metrics.preprocessing? Since it calls report and metadata I have
+    left it here but it can easily be changed.
+    """
+    data_validated = metrics.preprocessing.apply_validation(data,
+        report.filters)
+    processed_fxobs = [metrics.preprocessing.resample_and_align(
+                            fxobs, data_validated, metadata.timezone)
+                        for fxobs in report.forecast_observations]
+    return processed_fxobs
+
+
 def infer_timezone(report_request):
     # maybe not ideal when comparing across sites. might need explicit
     # tz options ('infer' or spec IANA tz) in report interface.
@@ -187,12 +218,13 @@ def create_raw_report_from_data(report, data):
 
     metadata = create_metadata(report)
 
-    processed_fxobs = metrics.validate_resample_align(report, metadata, data)
-    processed_fxobs = tuple(processed_fxobs)
+    # Validate and resample
+    processed_fxobs = validate_resample_align(report, metadata, data)
 
-    # needs to be in json
-    metrics_list = metrics.loop_forecasts_calculate_metrics(
-        report, processed_fxobs)
+    # Calculate metrics
+    metrics_list = metrics.calculator.calculate_metrics_for_processed_pairs(
+        processed_fxobs)
+
     # can be ~50kb
     report_template = template.template_report(report, metadata, metrics_list,
                                                processed_fxobs)

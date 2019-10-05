@@ -101,9 +101,6 @@ def test_resample_and_align(site_metadata, interval_label,
                                   expected_dt,
                                   check_categorical=False)
 
-# def test_resample_and_align_errors(single_forecast_observation):
-#     data_missing_forecast
-
 
 @pytest.mark.parametrize('fx0', [
     pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
