@@ -2,7 +2,6 @@
 Provides preprocessing steps to be performed on the timeseries data.
 """
 
-import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel
@@ -30,7 +29,7 @@ def apply_validation(data, qfilter, handle_func):
 
     # List of flags from filter
     if not isinstance(qfilter, datamodel.QualityFlagFilter):
-        return TypeError(f"{filters} not a QualityFlagFilter")
+        return TypeError(f"{qfilter} not a QualityFlagFilter")
     filters = qfilter.quality_flags
 
     # Apply handling function to quality flags

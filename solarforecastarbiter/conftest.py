@@ -3,6 +3,7 @@ The current set of fixtures are primarily meant as examples of
 what metadata, observations, and forecasts might look like
 in terms of dataclass and pandas objects.
 """
+import itertools
 import datetime as dt
 import json
 

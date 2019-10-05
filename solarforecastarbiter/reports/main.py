@@ -179,10 +179,10 @@ def validate_resample_align(report, metadata, data):
     left it here but it can easily be changed.
     """
     data_validated = metrics.preprocessing.apply_validation(data,
-        report.filters)
+                                                            report.filters)
     processed_fxobs = [metrics.preprocessing.resample_and_align(
                             fxobs, data_validated, metadata.timezone)
-                        for fxobs in report.forecast_observations]
+                       for fxobs in report.forecast_observations]
     return processed_fxobs
 
 

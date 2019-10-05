@@ -9,7 +9,6 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import deterministic
 
 

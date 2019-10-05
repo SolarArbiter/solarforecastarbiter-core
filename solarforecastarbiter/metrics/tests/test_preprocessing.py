@@ -1,4 +1,3 @@
-import copy
 import time
 import datetime
 import numpy as np
@@ -6,7 +5,6 @@ import pandas as pd
 import pytest
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports import template, main
 from solarforecastarbiter.metrics import preprocessing
 
 THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
@@ -15,42 +13,23 @@ THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
                             tz='MST',
                             name='timestamp')
 
-THREE_HOUR_SERIES = pd.Series(np.arange(1.,4.,1.), index=THREE_HOURS,
+THREE_HOUR_SERIES = pd.Series(np.arange(1., 4., 1.), index=THREE_HOURS,
                               name='value')
 
 THIRTEEN_10MIN = pd.date_range(start='2019-03-31T12:00:00',
-                                periods=13,
-                                freq='10min',
-                                tz='MST',
-                                name='timestamp')
+                               periods=13,
+                               freq='10min',
+                               tz='MST',
+                               name='timestamp')
 
-THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0.,13.,1.)/6)+1,
-                                   index=THIRTEEN_10MIN)
+THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0., 13., 1.)/6)+1,
+                                  index=THIRTEEN_10MIN)
 
 # Bitwise-flag integers (only test validated and versioned data)
 CL_UF = int(0b10010)  # Cloudy and User Flagged (18)
-CSE_NT = int(0b1000010010) # Clearsky exceeded, nighttime, and version 0 (530)
-CSE = int(0b1000000010) # Clearsky exceeded and version 0 (514)
-OK = int(0b10) # OK version 0 (2)
-
-
-
-# @pytest.fixture
-# def observation_dataframe():
-#     df_index = copy.deepcopy(ONE_DAY)
-#     df = pd.DataFrame(
-#         data={'value': np.arange(df_index.size).astype(float),
-#               'quality_flag': np.zeros(df_index.size).astype(int)},
-#         index=df_index)
-#     return df
-#
-#
-# @pytest.fixture
-# def forecast_series():
-#     series_index = copy.deepcopy(ONE_DAY)
-#     series = pd.Series(data=np.arange(series_index.size).astype(float),
-#                        index=series_index)
-#     return series
+CSE_NT = int(0b1000010010)  # Clearsky exceeded, nighttime, and version 0 (530)
+CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
+OK = int(0b10)  # OK version 0 (2)
 
 
 @pytest.mark.parametrize('interval_label', ['beginning', 'instant', 'ending'])
@@ -115,19 +94,19 @@ def test_resample_and_align(site_metadata, interval_label,
                  columns=['value', 'quality_flag']),
     pd.DataFrame({'value': [1., 2., 3.],
                   'quality_flag': [OK, OK, OK]},
-                  index=THREE_HOURS),
+                 index=THREE_HOURS),
     pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                  columns=['value', 'quality_flag']),
     pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [CL_UF, CL_UF , CL_UF]},
-                  index=THREE_HOURS),
+                  'quality_flag': [CL_UF, CL_UF, CL_UF]},
+                 index=THREE_HOURS),
     pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                  columns=['value', 'quality_flag']),
     pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [CSE_NT, CSE , OK]},
-                  index=THREE_HOURS),
+                  'quality_flag': [CSE_NT, CSE, OK]},
+                 index=THREE_HOURS),
 ])
-@pytest.mark.parametrize('handle_func',[preprocessing.exclude])
+@pytest.mark.parametrize('handle_func', [preprocessing.exclude])
 def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
     report, obs_model, fx0_model, fx1_model = report_objects
     data = {
@@ -140,11 +119,11 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
                                             handle_func)
 
     # Check length and timestamps of observation
-    assert len(obs[obs.quality_flag.isin([OK, CSE])]) \
-                == len(result[obs_model])
+    assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
+        len(result[obs_model])
     if not result[obs_model].empty:
         assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-                    result[obs_model].index)
+            result[obs_model].index)
 
 
 @pytest.mark.parametrize('values,qflags,expectation', [
