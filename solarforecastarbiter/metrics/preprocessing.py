@@ -56,12 +56,73 @@ def apply_validation(data, qfilter, handle_func):
     return validated_data
 
 
-def resample():
-    pass
+def resample_and_align(fx_obs, data, tz):
+    """
+    Resample to the forecast and observation using the the larger interval
+    length  and align them to overlap.
 
+    Parameters
+    ----------
+    fx_obs : :class:`solarforecastarbiter.datamodel.ForecastObservation`
+        Pair of forecast and observation.
+    data : dict
+        Dictionary that must include the timeseries of the pair.
+    tz : str
+        Timezone to witch processed data will be converted.
 
-def realign():
-    pass
+    Returns
+    -------
+    :class:`solarforecastarbiter.datamodel.ProcessedForecastObservation`
+
+    Todo
+    ----
+      * Add ability to set use smaller interval length
+      * Add other resampling functions (besides mean like first, last, median)
+    """
+    fx = fx_obs.forecast
+    obs = fx_obs.observation
+
+    # Check that the forecast and observation models exist in the data
+    assert fx in data.keys(), f"Forecast not found in data."
+    assert obs in data.keys(), f"Observation not found in data."
+
+    # Get minimum and maximum datetimes???
+    # min_dt = max(fx_data.index.min(), obs_data.index.min())
+    # max_dt = min(fx_data.index.max(), obs_data.index.max())
+
+    # Determine larger interval length
+    if fx.interval_length >= obs.interval_length:
+        inherit = fx
+        downsample = obs
+    else:
+        inherit = obs
+        downsample = fx
+
+    # Resample
+    label = datamodel.CLOSED_MAPPING[inherit.interval_label]
+    down_resampled = data[downsample].resample(inherit.interval_length,
+                                               label=label).mean()
+    inherit_resampled = data[inherit].resample(inherit.interval_length,
+                                               label=label).mean()
+
+    # Determine series with timezone conversion
+    if isinstance(inherit, datamodel.Forecast):
+        forecast_values = inherit_resampled.tz_convert(tz)
+        observation_values = down_resampled.tz_convert(tz)
+    else:
+        observation_values = inherit_resampled.tz_convert(tz)
+        forecast_values = down_resampled.tz_convert(tz)
+
+    # Create ProcessedForecastObservation
+    processed_fx_obs = datamodel.ProcessedForecastObservation(
+        original=fx_obs,
+        interval_value_type=inherit.interval_value_type,
+        interval_length=inherit.interval_length,
+        interval_label=inherit.interval_label,
+        forecast_values=forecast_values,
+        observation_values=observation_values)
+
+    return processed_fx_obs
 
 
 def exclude(values, quality_flags=None):

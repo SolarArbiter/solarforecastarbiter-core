@@ -1,9 +1,11 @@
 import copy
+import time
+import datetime
 import numpy as np
 import pandas as pd
 import pytest
 
-from solarforecastarbiter.io import api
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import template, main
 from solarforecastarbiter.metrics import preprocessing
 
@@ -50,6 +52,59 @@ OK = int(0b10) # OK version 0 (2)
 #                        index=series_index)
 #     return series
 
+
+@pytest.mark.parametrize('interval_label', ['beginning', 'instant', 'ending'])
+@pytest.mark.parametrize('fx_series,obs_series,expected_dt', [
+    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS),
+    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS),
+    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN)
+])
+def test_resample_and_align(site_metadata, interval_label,
+                            fx_series, obs_series, expected_dt):
+    # Create the ForecastObservation to match interval_lengths of data
+    observation = datamodel.Observation(
+        site=site_metadata, name='dummy obs', variable='ghi',
+        interval_value_type='instantaneous', uncertainty=1,
+        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_label=interval_label
+    )
+    forecast = datamodel.Forecast(
+        site=site_metadata, name='dummy fx', variable='ghi',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_label=interval_label,
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h')
+    )
+    fx_obs = datamodel.ForecastObservation(forecast=forecast,
+                                           observation=observation)
+
+    # Use local tz
+    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+
+    data = {
+        fx_obs.forecast: fx_series,
+        fx_obs.observation: obs_series
+    }
+    result = preprocessing.resample_and_align(fx_obs, data, local_tz)
+
+    # Update expected datetimeindex
+    expected_dt = expected_dt.tz_convert(local_tz)
+    if interval_label == 'ending':
+        expected_dt += pd.Timedelta(expected_dt.freq)
+
+    pd.testing.assert_index_equal(result.forecast_values.index,
+                                  result.observation_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(result.observation_values.index,
+                                  expected_dt,
+                                  check_categorical=False)
+
+# def test_resample_and_align_errors(single_forecast_observation):
+#     data_missing_forecast
+
+
 @pytest.mark.parametrize('fx0', [
     pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
     THREE_HOUR_SERIES
@@ -83,7 +138,9 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
         fx0_model: fx0,
         fx1_model: fx1
     }
-    result = preprocessing.apply_validation(data, report.filters[0], handle_func)
+    result = preprocessing.apply_validation(data,
+                                            report.filters[0],
+                                            handle_func)
 
     # Check length and timestamps of observation
     assert len(obs[obs.quality_flag.isin([OK, CSE])]) \
@@ -119,5 +176,4 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
 ])
 def test_exclude(values, qflags, expectation):
     result = preprocessing.exclude(values, qflags)
-    print(result)
-    assert result.equals(expectation)
+    pd.testing.assert_series_equal(result, expectation, check_names=False)
