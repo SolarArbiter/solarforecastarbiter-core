@@ -1,7 +1,6 @@
 import pandas as pd
 import pandas.testing as pdt
 import pytest
-from uuid import uuid1
 
 
 from solarforecastarbiter import utils
@@ -121,6 +120,48 @@ def test_compute_aggregate_deleted_but_removed_before(aggobs, ids):
         {'value': pd.Series([2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 3.0, 3.0, 3.0],
                             index=nindex),
          'quality_flag':  pd.Series([0]*10, index=nindex)}))
+
+
+def test_compute_aggregate_mean(aggobs, ids):
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:3]}
+    agg = utils.compute_aggregate(data, '1h', 'ending',
+                                  'UTC', 'mean', aggobs[:-2])
+    pdt.assert_frame_equal(agg, pd.DataFrame(
+        {'value': pd.Series([1.0] * 10, index=nindex),
+         'quality_flag':  pd.Series([0]*10, index=nindex)})
+        )
+
+
+def test_compute_aggregate_no_overlap(ids):
+    data = {ids[0]: pd.DataFrame(
+        {'value': [1, 2, 3], 'quality_flag': [2, 10, 338]},
+        index=pd.DatetimeIndex([
+            '20191002T0100Z', '20191002T0130Z', '20191002T0230Z'])),
+            ids[1]: pd.DataFrame(
+        {'value': [3, 2, 1], 'quality_flag': [9, 880, 10]},
+        index=pd.DatetimeIndex([
+            '20191002T0200Z', '20191002T0230Z', '20191002T0300Z']))}
+    aggobs = [_make_aggobs(ids[0]),
+              _make_aggobs(ids[1], pd.Timestamp('20191002T0200Z'))]
+    agg = utils.compute_aggregate(data, '30min', 'ending',
+                                  'UTC', 'median', aggobs)
+    expected = pd.DataFrame(
+        {'value': [1.0, 2.0, None, 2.5, None],
+         'quality_flag': [2, 10, 9, 338 | 880, 10]},
+        index=pd.DatetimeIndex([
+            '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
+            '20191002T0230Z', '20191002T0300Z']))
+    pdt.assert_frame_equal(agg, expected)
+
+
+def test_compute_aggregate_bad_cols():
+    data = {'a': pd.DataFrame([0], index=pd.DatetimeIndex(
+        ['20191001T1200Z']))}
+    with pytest.raises(KeyError):
+        utils.compute_aggregate(data, '1h', 'ending', 'UTC',
+                                'mean', [_make_aggobs('a')])
 
 
 def test__observation_valid(aggobs):
@@ -246,25 +287,15 @@ def test__make_aggregate_index_tz():
     pdt.assert_index_equal(out, expected)
 
 
-def test__make_aggregate_index_wonky():
+def test__make_aggregate_index_invalid_length():
     length = '33min'
     label = 'beginning'
     test_data = {
         0: pd.DataFrame(range(6), index=pd.date_range(
             '20190101T0158Z', freq='7min', periods=6))  # end 32
         }
-    expected = pd.DatetimeIndex(['20190101T0139Z', '20190101T0212Z'])
-    out = utils._make_aggregate_index(test_data, length, label, 'UTC')
-    pdt.assert_index_equal(out, expected)
-
-    # and next day, 33 continues to add from beginning of year
-    test_data = {
-        0: pd.DataFrame(range(6), index=pd.date_range(
-            '20190102T0158Z', freq='7min', periods=6))  # end 32
-        }
-    expected = pd.DatetimeIndex(['20190102T0151Z', '20190102T0224Z'])
-    out = utils._make_aggregate_index(test_data, length, label, 'UTC')
-    pdt.assert_index_equal(out, expected)
+    with pytest.raises(ValueError):
+        utils._make_aggregate_index(test_data, length, label, 'UTC')
 
 
 def test__make_aggregate_index_instant():
@@ -290,5 +321,5 @@ def test__make_aggregate_index_localization(start, end):
         0: pd.DataFrame(range(1), index=pd.DatetimeIndex([start])),
         1: pd.DataFrame(range(1), index=pd.DatetimeIndex([end])),
         }
-    with pytest.raises(TypeError) as e:
+    with pytest.raises(TypeError):
         utils._make_aggregate_index(test_data, length, label, 'UTC')

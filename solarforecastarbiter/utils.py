@@ -13,9 +13,6 @@ def _observation_valid(index, obs_id, aggregate_observations):
     Indicates where the observation data is valid. For now,
     effective_from and effective_until are inclusive, so data missing
     at those times is marked as missing in the aggregate.
-
-    Other option is to use aggregate interval_label to determine
-    which side should be open/closed.
     """
     nindex = pd.DatetimeIndex([], tz=index.tz)
     for aggobs in aggregate_observations:
@@ -49,6 +46,12 @@ def _make_aggregate_index(data, interval_length, interval_label,
         start = min(start, min(df.index))
         end = max(end, max(df.index))
     # adjust start, end to nearest interval
+    # hard to understand what this interval should be for
+    # odd (e.g. 52min) intervals, so required that interval
+    # is a divisor of one day
+    if 86400 % pd.Timedelta(interval_length).total_seconds() != 0:
+        raise ValueError(
+            'interval_length must be a divisor of one day')
     if interval_label == 'ending':
         start = start.ceil(interval_length)
         end = end.ceil(interval_length)
@@ -68,17 +71,54 @@ def _make_aggregate_index(data, interval_length, interval_label,
 def compute_aggregate(data, interval_length, interval_label,
                       timezone, agg_func, aggregate_observations):
     """
-    Perform the aggregation. Nans remain.
-    First, resample possibly ignoring nans.
-    Then aggregate and keep nans.
-    Assumptions: data is interval_mean or instantaneous
-    interval_length <= agg interval_length
-
+    Computes an aggregate quantity according to agg_func of the data.
+    This function assumes the data has an interval_label of
+    interval_mean or instantaneous and that the data interva_length
+    is less than or equal to the aggregate interval_length.
+    NaNs in the output are the result of missing data from an
+    underyling observation of the aggregate.
 
     Parameters
     ----------
     data : dict of pandas.DataFrames
-       keys are observation_id and df With values, quality_flag columns.
+       With keys 'observation_id' corresponding to observation in
+       aggregate_observations. DataFrames must have 'value' and 'quality_flag'
+       columns.
+    interval_length : str or pandas.Timedelta
+       The time between timesteps in the aggregate result.
+    interval_label : str
+       Whether the timestamps represent the beginning or ending of the interval
+    timezone : str
+       The IANA timezone for the output index
+    agg_func : str
+       The aggregation function (e.g 'sum', 'mean', 'min') to create the
+       aggregate
+    aggregate_observations : tuple of dicts
+       Each dict should have 'observation_id', 'effective_from',
+       'effective_until', and 'observation_deleted_at' fields.
+
+    Returns
+    -------
+    pandas.DataFrame
+       With a DatetimeIndex that adheres to interval_length and interval_label,
+       and columns 'value, for the aggregated value according to agg_func,
+       and 'quality_flag', the bitwise or of all flags in the aggregate for
+       the interval. A value of NaN means that data from one or more
+       observations was missing in that interval.
+
+    Raises
+    ------
+    TypeError
+        If the data cannot be converted to timezone
+    KeyError
+        - If data is missing a key for an observation in aggregate_obsevations
+        - If any DataFrames in data do not have 'value' or 'quality_flag'
+          columns
+    ValueError
+        - when interval_length is not a divisor of one day
+        - when an observation has been deleted but the data is
+          required for the aggregate
+        - when interval_label is not beginning or ending
     """
     new_index = _make_aggregate_index(
         data, interval_length, interval_label, timezone)
@@ -102,7 +142,7 @@ def compute_aggregate(data, interval_length, interval_label,
     closed = datamodel.CLOSED_MAPPING[interval_label]
     for obs_id, df in data.items():
         resampled = df.resample(interval_length, closed=closed, label=closed)
-        new_val = resampled.value.mean().reindex(new_index)
+        new_val = resampled['value'].mean().reindex(new_index)
         # data is missing when the resampled value is NaN and the data
         # should be valid according to effective_from/until
         valid = valid_mask[obs_id]
@@ -111,7 +151,7 @@ def compute_aggregate(data, interval_length, interval_label,
             warnings.warn('Values missing for one or more observations')
             data_missing[missing] = True
         value[obs_id] = new_val[valid]
-        qf[obs_id] = resampled.quality_flag.apply(np.bitwise_or.reduce)
+        qf[obs_id] = resampled['quality_flag'].apply(np.bitwise_or.reduce)
     final_value = pd.DataFrame(value).reindex(new_index).aggregate(
         agg_func, axis=1)
     final_value[data_missing] = np.nan
