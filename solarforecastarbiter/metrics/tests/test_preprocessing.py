@@ -7,6 +7,7 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
 
+
 THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
                             periods=3,
                             freq='60min',

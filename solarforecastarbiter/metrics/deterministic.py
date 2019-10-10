@@ -2,18 +2,6 @@
 
 import numpy as np
 
-__all__ = [
-    "mean_absolute",
-    "mean_bias",
-    "root_mean_square",
-    "mean_absolute_percentage",
-    "normalized_root_mean_square",
-    "forecast_skill",
-    "pearson_correlation_coeff",
-    "coeff_determination",
-    "centered_root_mean_square",
-]
-
 
 def mean_absolute(y_true, y_pred):
     """Mean absolute error (MAE).
@@ -209,3 +197,25 @@ def centered_root_mean_square(y_true, y_pred):
     return np.sqrt(np.mean(
         ((y_pred - np.mean(y_pred)) - (y_true - np.mean(y_true))) ** 2
     ))
+
+
+# Add new metrics to this map to map shorthand to function
+_MAP = {
+    'mae': mean_absolute,
+    'mbe': mean_bias,
+    'rmse': root_mean_square,
+    'mape': mean_absolute_percentage,
+    'nrmse': normalized_root_mean_square,
+    's': forecast_skill,
+    'r': pearson_correlation_coeff,
+    'r^2': coeff_determination,
+    'crmse': centered_root_mean_square
+}
+
+__all__ = [str(m) for m in _MAP]
+
+# Functions that require a reference forecast
+_REQ_REF_FX = ['s']
+
+# Functions that require normalized factor
+_REQ_NORM = ['nrmse']
