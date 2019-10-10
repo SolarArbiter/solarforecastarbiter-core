@@ -72,8 +72,8 @@ def compute_aggregate(data, interval_length, interval_label,
                       timezone, agg_func, aggregate_observations):
     """
     Computes an aggregate quantity according to agg_func of the data.
-    This function assumes the data has an interval_label of
-    interval_mean or instantaneous and that the data interva_length
+    This function assumes the data has an interval_value_type of
+    interval_mean or instantaneous and that the data interval_length
     is less than or equal to the aggregate interval_length.
     NaNs in the output are the result of missing data from an
     underyling observation of the aggregate.
@@ -81,44 +81,46 @@ def compute_aggregate(data, interval_length, interval_label,
     Parameters
     ----------
     data : dict of pandas.DataFrames
-       With keys 'observation_id' corresponding to observation in
-       aggregate_observations. DataFrames must have 'value' and 'quality_flag'
-       columns.
+        With keys 'observation_id' corresponding to observation in
+        aggregate_observations. DataFrames must have 'value' and 'quality_flag'
+        columns.
     interval_length : str or pandas.Timedelta
-       The time between timesteps in the aggregate result.
+        The time between timesteps in the aggregate result.
     interval_label : str
-       Whether the timestamps represent the beginning or ending of the interval
+        Whether the timestamps in the aggregated output represent the beginning
+        or ending of the interval
     timezone : str
-       The IANA timezone for the output index
+        The IANA timezone for the output index
     agg_func : str
-       The aggregation function (e.g 'sum', 'mean', 'min') to create the
-       aggregate
+        The aggregation function (e.g 'sum', 'mean', 'min') to create the
+        aggregate
     aggregate_observations : tuple of dicts
-       Each dict should have 'observation_id', 'effective_from',
-       'effective_until', and 'observation_deleted_at' fields.
+        Each dict should have 'observation_id' (string),
+        'effective_from' (timestamp), 'effective_until' (timestamp or None),
+        and 'observation_deleted_at' (timestamp or None) fields.
 
     Returns
     -------
     pandas.DataFrame
-       With a DatetimeIndex that adheres to interval_length and interval_label,
-       and columns 'value, for the aggregated value according to agg_func,
-       and 'quality_flag', the bitwise or of all flags in the aggregate for
-       the interval. A value of NaN means that data from one or more
-       observations was missing in that interval.
+        - Index is a DatetimeIndex that adheres to interval_length and
+          interval_label
+        - Columns are 'value', for the aggregated value according to agg_func,
+          and 'quality_flag', the bitwise or of all flags in the aggregate for
+          the interval.
+        - A 'value' of NaN means that data from one or more
+          observations was missing in that interval.
 
     Raises
     ------
-    TypeError
-        If the data cannot be converted to timezone
     KeyError
         - If data is missing a key for an observation in aggregate_obsevations
         - If any DataFrames in data do not have 'value' or 'quality_flag'
           columns
     ValueError
-        - when interval_length is not a divisor of one day
-        - when an observation has been deleted but the data is
+        - If interval_length is not a divisor of one day
+        - If an observation has been deleted but the data is
           required for the aggregate
-        - when interval_label is not beginning or ending
+        - If interval_label is not beginning or ending
     """
     new_index = _make_aggregate_index(
         data, interval_length, interval_label, timezone)
@@ -126,35 +128,35 @@ def compute_aggregate(data, interval_length, interval_label,
     valid_mask = {obs_id: _observation_valid(
         new_index, obs_id, aggregate_observations) for obs_id in unique_ids}
 
-    missing_from_data = {
+    missing_from_data_dict = {
         ao['observation_id'] for ao in aggregate_observations
         if ao['observation_deleted_at'] is None
         } - set(data.keys())
 
-    if missing_from_data:
+    if missing_from_data_dict:
         raise KeyError(
             'Cannot aggregate data with missing keys '
-            f'{", ".join(missing_from_data)}')
+            f'{", ".join(missing_from_data_dict)}')
 
-    data_missing = pd.Series(False, index=new_index)
+    value_is_missing = pd.Series(False, index=new_index)
     value = {}
     qf = {}
     closed = datamodel.CLOSED_MAPPING[interval_label]
     for obs_id, df in data.items():
-        resampled = df.resample(interval_length, closed=closed, label=closed)
-        new_val = resampled['value'].mean().reindex(new_index)
+        resampler = df.resample(interval_length, closed=closed, label=closed)
+        new_val = resampler['value'].mean().reindex(new_index)
         # data is missing when the resampled value is NaN and the data
         # should be valid according to effective_from/until
         valid = valid_mask[obs_id]
         missing = new_val.isna() & valid
         if missing.any():
             warnings.warn('Values missing for one or more observations')
-            data_missing[missing] = True
+            value_is_missing[missing] = True
         value[obs_id] = new_val[valid]
-        qf[obs_id] = resampled['quality_flag'].apply(np.bitwise_or.reduce)
+        qf[obs_id] = resampler['quality_flag'].apply(np.bitwise_or.reduce)
     final_value = pd.DataFrame(value).reindex(new_index).aggregate(
         agg_func, axis=1)
-    final_value[data_missing] = np.nan
+    final_value[value_is_missing] = np.nan
     # have to fill in nans and convert to int to do bitwise_or
     # only works with pandas >= 0.25.0
     final_qf = pd.DataFrame(qf).reindex(new_index).fillna(0).astype(
