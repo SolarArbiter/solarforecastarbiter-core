@@ -60,51 +60,42 @@ def calculate_metrics(forecast_observation, fx_values, obs_values):
         )
 
         # monthly metrics
-        mae, mbe, rmse = [], [], []
-        for _, group in df.groupby(df.index.month):
-            mae.append(
-                deterministic.mean_absolute(df.obs_values, df.fx_values)
-            )
-            mbe.append(
-                deterministic.mean_bias(df.obs_values, df.fx_values)
-            )
-            rmse.append(
-                deterministic.root_mean_square(df.obs_values, df.fx_values)
-            )
-        metrics["month"]["mae"] = mae
-        metrics["month"]["mbe"] = mbe
-        metrics["month"]["rmse"] = rmse
+        mae, mbe, rmse = {}, {}, {}
+        for idx, group in df.groupby(df.index.month):
+            mae[idx] = deterministic.mean_absolute(
+                group.obs_values, group.fx_values)
+            mbe[idx] = deterministic.mean_bias(
+                group.obs_values, group.fx_values)
+            rmse[idx] = deterministic.root_mean_square(
+                group.obs_values, group.fx_values)
+        metrics["month"]["mae"] = pd.Series(mae)
+        metrics["month"]["mbe"] = pd.Series(mbe)
+        metrics["month"]["rmse"] = pd.Series(rmse)
 
         # daily metrics
-        mae, mbe, rmse = [], [], []
-        for _, group in df.groupby(df.index.date):
-            mae.append(
-                deterministic.mean_absolute(df.obs_values, df.fx_values)
-            )
-            mbe.append(
-                deterministic.mean_bias(df.obs_values, df.fx_values)
-            )
-            rmse.append(
-                deterministic.root_mean_square(df.obs_values, df.fx_values)
-            )
-        metrics["day"]["mae"] = mae
-        metrics["day"]["mbe"] = mbe
-        metrics["day"]["rmse"] = rmse
+        mae, mbe, rmse = {}, {}, {}
+        for idx, group in df.groupby(df.index.date):
+            mae[idx] = deterministic.mean_absolute(
+                group.obs_values, group.fx_values)
+            mbe[idx] = deterministic.mean_bias(
+                group.obs_values, group.fx_values)
+            rmse[idx] = deterministic.root_mean_square(
+                group.obs_values, group.fx_values)
+        metrics["day"]["mae"] = pd.Series(mae)
+        metrics["day"]["mbe"] = pd.Series(mbe)
+        metrics["day"]["rmse"] = pd.Series(rmse)
 
         # hourly metrics
-        mae, mbe, rmse = [], [], []
-        for _, group in df.groupby(df.index.hour):
-            mae.append(
-                deterministic.mean_absolute(df.obs_values, df.fx_values)
-            )
-            mbe.append(
-                deterministic.mean_bias(df.obs_values, df.fx_values)
-            )
-            rmse.append(
-                deterministic.root_mean_square(df.obs_values, df.fx_values)
-            )
-        metrics["hour"]["mae"] = mae
-        metrics["hour"]["mbe"] = mbe
-        metrics["hour"]["rmse"] = rmse
+        mae, mbe, rmse = {}, {}, {}
+        for idx, group in df.groupby(df.index.hour):
+            mae[idx] = deterministic.mean_absolute(
+                group.obs_values, group.fx_values)
+            mbe[idx] = deterministic.mean_bias(
+                group.obs_values, group.fx_values)
+            rmse[idx] = deterministic.root_mean_square(
+                group.obs_values, group.fx_values)
+        metrics["hour"]["mae"] = pd.Series(mae)
+        metrics["hour"]["mbe"] = pd.Series(mbe)
+        metrics["hour"]["rmse"] = pd.Series(rmse)
 
     return metrics

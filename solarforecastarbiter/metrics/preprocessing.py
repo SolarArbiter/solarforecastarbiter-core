@@ -94,7 +94,7 @@ def resample_and_align(fx_obs, data, tz):
     #                                  closed=closed).mean()
 
     # Determine series with timezone conversion
-    forecast_values = fx.tz_convert(tz)
+    forecast_values = data[fx].tz_convert(tz)
     observation_values = obs_resampled.tz_convert(tz)
 
     # Create ProcessedForecastObservation

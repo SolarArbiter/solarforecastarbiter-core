@@ -86,10 +86,10 @@ def get_data_for_report(session, report):
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
         observation_id = fxobs.observation.observation_id
-        if forecast_id not in data:
+        if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
                 forecast_id, report.start, report.end)
-        if observation_id not in data:
+        if fxobs.observation not in data:
             data[fxobs.observation] = session.get_observation_values(
                 observation_id, report.start, report.end)
     return data
