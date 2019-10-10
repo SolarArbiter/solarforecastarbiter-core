@@ -80,10 +80,6 @@ def resample_and_align(fx_obs, data, tz):
     fx = fx_obs.forecast
     obs = fx_obs.observation
 
-    # Check that the forecast and observation models exist in the data
-    assert fx in data.keys(), f"Forecast not found in data."
-    assert obs in data.keys(), f"Observation not found in data."
-
     # Get minimum and maximum datetimes???
     # min_dt = max(fx_data.index.min(), obs_data.index.min())
     # max_dt = min(fx_data.index.max(), obs_data.index.max())
@@ -93,12 +89,12 @@ def resample_and_align(fx_obs, data, tz):
     obs_resampled = data[obs].resample(fx.interval_length,
                                        label=closed,
                                        closed=closed).mean()
-    fx_resampled = data[fx].resample(fx.interval_length,
-                                     label=closed,
-                                     closed=closed).mean()
+    # fx_resampled = data[fx].resample(fx.interval_length,
+    #                                  label=closed,
+    #                                  closed=closed).mean()
 
     # Determine series with timezone conversion
-    forecast_values = fx_resampled.tz_convert(tz)
+    forecast_values = fx.tz_convert(tz)
     observation_values = obs_resampled.tz_convert(tz)
 
     # Create ProcessedForecastObservation
