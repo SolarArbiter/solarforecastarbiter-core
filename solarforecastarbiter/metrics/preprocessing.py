@@ -88,37 +88,25 @@ def resample_and_align(fx_obs, data, tz):
     # min_dt = max(fx_data.index.min(), obs_data.index.min())
     # max_dt = min(fx_data.index.max(), obs_data.index.max())
 
-    # Determine larger interval length
-    if fx.interval_length >= obs.interval_length:
-        inherit = fx
-        downsample = obs
-    else:
-        inherit = obs
-        downsample = fx
-
     # Resample
-    closed = datamodel.CLOSED_MAPPING[inherit.interval_label]
-    down_resampled = data[downsample].resample(inherit.interval_length,
-                                               label=closed,
-                                               closed=closed).mean()
-    inherit_resampled = data[inherit].resample(inherit.interval_length,
-                                               label=closed,
-                                               closed=closed).mean()
+    closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+    obs_resampled = data[obs].resample(fx.interval_length,
+                                       label=closed,
+                                       closed=closed).mean()
+    fx_resampled = data[fx].resample(fx.interval_length,
+                                     label=closed,
+                                     closed=closed).mean()
 
     # Determine series with timezone conversion
-    if isinstance(inherit, datamodel.Forecast):
-        forecast_values = inherit_resampled.tz_convert(tz)
-        observation_values = down_resampled.tz_convert(tz)
-    else:
-        observation_values = inherit_resampled.tz_convert(tz)
-        forecast_values = down_resampled.tz_convert(tz)
+    forecast_values = fx_resampled.tz_convert(tz)
+    observation_values = obs_resampled.tz_convert(tz)
 
     # Create ProcessedForecastObservation
     processed_fx_obs = datamodel.ProcessedForecastObservation(
         original=fx_obs,
-        interval_value_type=inherit.interval_value_type,
-        interval_length=inherit.interval_length,
-        interval_label=inherit.interval_label,
+        interval_value_type=fx.interval_value_type,
+        interval_length=fx.interval_length,
+        interval_label=fx.interval_label,
         forecast_values=forecast_values,
         observation_values=observation_values)
 

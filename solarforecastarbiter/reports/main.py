@@ -172,11 +172,6 @@ def validate_resample_align(report, metadata, data):
     -------
     list
         List of solarforecastarbiter.datamodel.ProcessedForecastObservation
-
-    Todo
-    ----
-    * Move to metrics.preprocessing? Since it calls report and metadata I have
-    left it here but it can easily be changed.
     """
     data_validated = metrics.preprocessing.apply_validation(data,
                                                             report.filters)
