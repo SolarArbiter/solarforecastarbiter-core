@@ -318,7 +318,26 @@ Utility functions for data IO.
 Metrics
 =======
 
-Functions to compute forecast performance metrics.
+Entry points for calculating metrics for
+:py:class:`~solarforecastarbiter.datamodel.Forecast` and
+:py:class:`~solarforecastarbiter.datamodel.Observation`:
+
+.. autosummary::
+   :toctree: generated/
+
+   metrics.calculator.calculate_metrics_for_processed_pairs
+   metrics.calculator.calculate_metrics
+
+Functions for preparing the timeseries data before calculating metrics:
+
+.. autosummary::
+   :toctree: generated/
+
+   metrics.preprocessing.apply_validation
+   metrics.preprocessing.resample_and_align
+   metrics.preprocessing.exclude
+
+Functions to compute forecast deterministic performance metrics:
 
 .. autosummary::
    :toctree: generated/
@@ -376,7 +395,7 @@ Functions to perform validation.
 Tasks
 -----
 
-Perform a sequence of valdiation steps. Used by the API to initiate valdiation.
+Perform a sequence of validation steps. Used by the API to initiate validation.
 
 .. autosummary::
    :toctree: generated/

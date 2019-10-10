@@ -19,6 +19,8 @@ def apply_validation(data, qfilter, handle_func):
         Pandas DataFrame of observation and forecast values.
     handle_func : function
         Function that handles how `quality_flags` will be used.
+        See :func:`solarforecastarbiter.metrics.preprocessing.exclude` as as
+        example.
 
     Returns
     -------
