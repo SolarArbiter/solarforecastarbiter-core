@@ -178,7 +178,8 @@ def validate_resample_align(report, metadata, data):
     * Support different apply_validation fillin functions.
     """
     data_validated = preprocessing.apply_validation(data,
-        report.filters[0], preprocessing.exclude)
+                                                    report.filters[0],
+                                                    preprocessing.exclude)
     processed_fxobs = [preprocessing.resample_and_align(
                             fxobs, data_validated, metadata.timezone)
                        for fxobs in report.forecast_observations]
