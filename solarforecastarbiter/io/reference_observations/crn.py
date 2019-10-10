@@ -104,7 +104,7 @@ def initialize_site_forecasts(api, site):
 
 def update_observation_data(api, sites, observations, start, end):
     """ Post new observation data to all reference observations at each
-    USCRN site betweem start amd emd.
+    USCRN site between start and end.
 
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.

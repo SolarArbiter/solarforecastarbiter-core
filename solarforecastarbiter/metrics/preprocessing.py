@@ -14,12 +14,13 @@ def apply_validation(data, qfilter, handle_func):
 
     Parameters
     ----------
-    qfilter : list of
-        :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
+    qfilter : :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
     data : :class:`pd.DataFrame`
-        Pandas DataFrame of observations and forecasts.
+        Pandas DataFrame of observation and forecast values.
     handle_func : function
         Function that handles how `quality_flags` will be used.
+        See :func:`solarforecastarbiter.metrics.preprocessing.exclude` as as
+        example.
 
     Returns
     -------
@@ -29,7 +30,7 @@ def apply_validation(data, qfilter, handle_func):
 
     # List of flags from filter
     if not isinstance(qfilter, datamodel.QualityFlagFilter):
-        return TypeError(f"{qfilter} not a QualityFlagFilter")
+        raise TypeError(f"{qfilter} not a QualityFlagFilter")
     filters = qfilter.quality_flags
 
     # Apply handling function to quality flags
@@ -46,7 +47,7 @@ def apply_validation(data, qfilter, handle_func):
                 values['quality_flag'])
             validation_df = validation_df[filters]
             validated_data[model] = handle_func(values.value,
-                                                validation_df.any(axis=1))
+                                                validation_df)
         elif isinstance(model, datamodel.Forecast):
             validated_data[model] = values
         else:
@@ -57,15 +58,16 @@ def apply_validation(data, qfilter, handle_func):
 
 def resample_and_align(fx_obs, data, tz):
     """
-    Resample to the forecast and observation using the the larger interval
-    length  and align them to overlap.
+    Resample the observation to the forecast interval length and align to
+    remove overlap.
 
     Parameters
     ----------
     fx_obs : :class:`solarforecastarbiter.datamodel.ForecastObservation`
         Pair of forecast and observation.
     data : dict
-        Dictionary that must include the timeseries of the pair.
+        Dictionary that must include the timeseries of the pair and already
+        be validated.
     tz : str
         Timezone to witch processed data will be converted.
 
@@ -75,49 +77,27 @@ def resample_and_align(fx_obs, data, tz):
 
     Todo
     ----
-      * Add ability to set use smaller interval length
       * Add other resampling functions (besides mean like first, last, median)
     """
     fx = fx_obs.forecast
     obs = fx_obs.observation
 
-    # Check that the forecast and observation models exist in the data
-    assert fx in data.keys(), f"Forecast not found in data."
-    assert obs in data.keys(), f"Observation not found in data."
-
-    # Get minimum and maximum datetimes???
-    # min_dt = max(fx_data.index.min(), obs_data.index.min())
-    # max_dt = min(fx_data.index.max(), obs_data.index.max())
-
-    # Determine larger interval length
-    if fx.interval_length >= obs.interval_length:
-        inherit = fx
-        downsample = obs
-    else:
-        inherit = obs
-        downsample = fx
-
-    # Resample
-    label = datamodel.CLOSED_MAPPING[inherit.interval_label]
-    down_resampled = data[downsample].resample(inherit.interval_length,
-                                               label=label).mean()
-    inherit_resampled = data[inherit].resample(inherit.interval_length,
-                                               label=label).mean()
+    # Resample observation
+    closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+    obs_resampled = data[obs].resample(fx.interval_length,
+                                       label=closed,
+                                       closed=closed).mean()
 
     # Determine series with timezone conversion
-    if isinstance(inherit, datamodel.Forecast):
-        forecast_values = inherit_resampled.tz_convert(tz)
-        observation_values = down_resampled.tz_convert(tz)
-    else:
-        observation_values = inherit_resampled.tz_convert(tz)
-        forecast_values = down_resampled.tz_convert(tz)
+    forecast_values = data[fx].tz_convert(tz)
+    observation_values = obs_resampled.tz_convert(tz)
 
     # Create ProcessedForecastObservation
     processed_fx_obs = datamodel.ProcessedForecastObservation(
         original=fx_obs,
-        interval_value_type=inherit.interval_value_type,
-        interval_length=inherit.interval_length,
-        interval_label=inherit.interval_label,
+        interval_value_type=fx.interval_value_type,
+        interval_length=fx.interval_length,
+        interval_label=fx.interval_label,
         forecast_values=forecast_values,
         observation_values=observation_values)
 
@@ -134,21 +114,21 @@ def exclude(values, quality_flags=None):
     ----------
     values : :class:`pd.Series`
         Timeseries values.
-    quality_flags : :class:`pd.Series`
-        Timeseries quality flag [0,1], default None.
+    quality_flags : :class:`pd.DataFrame`
+        Timeseries of quality flags. Default is None.
 
     Returns
     -------
     :class:`pd.Series` :
         Timeseries of values excluding non-quality values.
     """
-
     # Missing values
     bad_idx = values.isna()
 
     # Handle quality flags
     if quality_flags is not None:
-        bad_quality_idx = (quality_flags != 0)
+        consolidated_flag = quality_flags.any(axis=1)
+        bad_quality_idx = (consolidated_flag != 0)
         bad_idx = bad_idx | bad_quality_idx
 
     print(bad_idx)

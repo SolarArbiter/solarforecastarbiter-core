@@ -42,7 +42,7 @@ setup(
     install_requires=[
         'netCDF4',
         'numpy',
-        'pandas',
+        'pandas>=0.25.0',
         'requests',
         'xarray',
         'tables',

@@ -57,7 +57,7 @@ import pandas as pd
 
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
-from solarforecastarbiter import metrics
+from solarforecastarbiter.metrics import preprocessing, calculator
 from solarforecastarbiter.reports import figures, template
 
 
@@ -86,10 +86,10 @@ def get_data_for_report(session, report):
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
         observation_id = fxobs.observation.observation_id
-        if forecast_id not in data:
+        if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
                 forecast_id, report.start, report.end)
-        if observation_id not in data:
+        if fxobs.observation not in data:
             data[fxobs.observation] = session.get_observation_values(
                 observation_id, report.start, report.end)
     return data
@@ -175,12 +175,12 @@ def validate_resample_align(report, metadata, data):
 
     Todo
     ----
-    * Move to metrics.preprocessing? Since it calls report and metadata I have
-    left it here but it can easily be changed.
+    * Support different apply_validation fillin functions.
     """
-    data_validated = metrics.preprocessing.apply_validation(data,
-                                                            report.filters)
-    processed_fxobs = [metrics.preprocessing.resample_and_align(
+    data_validated = preprocessing.apply_validation(data,
+                                                    report.filters[0],
+                                                    preprocessing.exclude)
+    processed_fxobs = [preprocessing.resample_and_align(
                             fxobs, data_validated, metadata.timezone)
                        for fxobs in report.forecast_observations]
     return processed_fxobs
@@ -222,7 +222,7 @@ def create_raw_report_from_data(report, data):
     processed_fxobs = validate_resample_align(report, metadata, data)
 
     # Calculate metrics
-    metrics_list = metrics.calculator.calculate_metrics_for_processed_pairs(
+    metrics_list = calculator.calculate_metrics_for_processed_pairs(
         processed_fxobs)
 
     # can be ~50kb

@@ -1,0 +1,36 @@
+.. _whatsnew_100b2:
+
+1.0.0b2 (???)
+------------------------
+
+This is the second 1.0 beta release.
+
+
+API Changes
+~~~~~~~~~~~
+* Add metrics preprocessing functions
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.apply_validation`,
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.resample_and_align`, and
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.exclude`. (:pull:`221`)
+* Moved temporary functions from report to metrics calculator. (:pull:`221`)
+
+Enhancements
+~~~~~~~~~~~~
+* Add function to compute an aggregate timeseries (:pull:`223`)
+
+
+Bug fixes
+~~~~~~~~~
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
