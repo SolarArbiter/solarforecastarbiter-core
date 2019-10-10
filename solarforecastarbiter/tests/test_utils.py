@@ -68,6 +68,13 @@ def test_compute_aggregate_missing_from_data(aggobs, ids):
                                 'UTC', 'sum', aggobs)
 
 
+def test_compute_aggregate_empty_data(aggobs, ids):
+    data = {}
+    with pytest.raises(KeyError):
+        utils.compute_aggregate(data, '1h', 'ending',
+                                'UTC', 'sum', aggobs[:2])
+
+
 def test_compute_aggregate_missing_data(aggobs, ids):
     data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
                               index=nindex)
