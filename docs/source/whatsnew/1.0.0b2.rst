@@ -1,6 +1,6 @@
-.. _whatsnew_100b1:
+.. _whatsnew_100b2:
 
-1.0.0b1 (???)
+1.0.0b2 (???)
 ------------------------
 
 This is the second 1.0 beta release.
