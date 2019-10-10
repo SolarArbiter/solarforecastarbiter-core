@@ -6,7 +6,11 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import calculator, deterministic
 
 
-def create_processed_fx_obs(single_forecast_observation, fx_values, obs_values):
+_LARGE = 8760
+
+
+def create_processed_fx_obs(single_forecast_observation,
+                            fx_values, obs_values):
     interval_length = pd.Timedelta(fx_values.index.freq)
     assert fx_values.index.equals(obs_values.index)
     # Build ProcessedForecastObservation
@@ -21,8 +25,6 @@ def create_processed_fx_obs(single_forecast_observation, fx_values, obs_values):
     )
     return proc_fx_obs
 
-
-_LARGE = 8760
 
 @pytest.mark.parametrize('fx_values,obs_values,ref_fx_values', [
     (pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
@@ -84,17 +86,17 @@ def test_calculate_deterministic_metrics(single_forecast_observation,
         # Checks
         # categories
         assert sorted(metric_results.keys()) == sorted(categories)
-        for cat,val_cat in metric_results.items():
+        for cat, val_cat in metric_results.items():
             if cat == 'total':
                 assert sorted(val_cat.keys()) == sorted(metrics)
             else:
                 # category groups
-                for cat_group,val_group in val_cat.items():
+                for cat_group, val_group in val_cat.items():
                     if len(fx_values) != 0:
                         assert sorted(val_group.keys()) == sorted(metrics)
 
                         # metrics
-                        for metric,val_metric in val_group.items():
+                        for metric, val_metric in val_group.items():
                             assert np.isfinite(val_metric)
 
                         # has expected groupings

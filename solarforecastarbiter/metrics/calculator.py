@@ -11,7 +11,6 @@ Todo
 """
 from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel
@@ -116,7 +115,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # Check data is processed pair
     assert isinstance(processed_fx_obs,
                       datamodel.ProcessedForecastObservation), \
-                      "Must be a ProcessedForecastObservation"
+        "Must be a ProcessedForecastObservation"
 
     calc_metrics = defaultdict(dict)
     fx = processed_fx_obs.forecast_values
@@ -140,7 +139,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
             for metric_ in metrics:
                 r = _apply_deterministic_metric_func(metric_, fx, obs,
-                    ref_fx=ref_fx, normalizer=normalizer)
+                                                     ref_fx=ref_fx,
+                                                     normalizer=normalizer)
                 calc_metrics[category][metric_] = r
 
         else:
@@ -155,7 +155,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
                 for metric_ in metrics:
                     r = _apply_deterministic_metric_func(metric_, fx, obs,
-                        ref_fx=ref_fx, normalizer=normalizer)
+                                                         ref_fx=ref_fx,
+                                                         normalizer=normalizer)
                     calc_metrics[category][name][metric_] = r
 
     return calc_metrics
