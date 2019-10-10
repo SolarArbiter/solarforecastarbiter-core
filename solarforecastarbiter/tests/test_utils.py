@@ -156,6 +156,29 @@ def test_compute_aggregate_no_overlap(ids):
     pdt.assert_frame_equal(agg, expected)
 
 
+def test_compute_aggregate_missing_before_effective(ids):
+    data = {ids[0]: pd.DataFrame(
+        {'value': [1, 2, 3, 0, 0], 'quality_flag': [2, 10, 338, 0, 0]},
+        index=pd.DatetimeIndex([
+            '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
+            '20191002T0230Z', '20191002T0300Z'])),
+            ids[1]: pd.DataFrame(
+        {'value': [None, 2.0, 1.0], 'quality_flag': [0, 880, 10]},
+        index=pd.DatetimeIndex([
+            '20191002T0200Z', '20191002T0230Z', '20191002T0300Z']))}
+    aggobs = [_make_aggobs(ids[0]),
+              _make_aggobs(ids[1], pd.Timestamp('20191002T0201Z'))]
+    agg = utils.compute_aggregate(data, '30min', 'ending',
+                                  'UTC', 'max', aggobs)
+    expected = pd.DataFrame(
+        {'value': [1.0, 2.0, 3.0, 2.0, 1.0],
+         'quality_flag': [2, 10, 338, 880, 10]},
+        index=pd.DatetimeIndex([
+            '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
+            '20191002T0230Z', '20191002T0300Z']))
+    pdt.assert_frame_equal(agg, expected)
+
+
 def test_compute_aggregate_bad_cols():
     data = {'a': pd.DataFrame([0], index=pd.DatetimeIndex(
         ['20191001T1200Z']))}
