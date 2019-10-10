@@ -16,7 +16,7 @@ def apply_validation(data, qfilter, handle_func):
     ----------
     qfilter : :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
     data : :class:`pd.DataFrame`
-        Pandas DataFrame of observations and forecasts.
+        Pandas DataFrame of observation and forecast values.
     handle_func : function
         Function that handles how `quality_flags` will be used.
 
@@ -28,7 +28,7 @@ def apply_validation(data, qfilter, handle_func):
 
     # List of flags from filter
     if not isinstance(qfilter, datamodel.QualityFlagFilter):
-        return TypeError(f"{qfilter} not a QualityFlagFilter")
+        raise TypeError(f"{qfilter} not a QualityFlagFilter")
     filters = qfilter.quality_flags
 
     # Apply handling function to quality flags
@@ -56,15 +56,16 @@ def apply_validation(data, qfilter, handle_func):
 
 def resample_and_align(fx_obs, data, tz):
     """
-    Resample to the forecast and observation using the the larger interval
-    length  and align them to overlap.
+    Resample the observation to the forecast interval length and align to
+    remove overlap.
 
     Parameters
     ----------
     fx_obs : :class:`solarforecastarbiter.datamodel.ForecastObservation`
         Pair of forecast and observation.
     data : dict
-        Dictionary that must include the timeseries of the pair.
+        Dictionary that must include the timeseries of the pair and already
+        be validated.
     tz : str
         Timezone to witch processed data will be converted.
 
@@ -74,7 +75,6 @@ def resample_and_align(fx_obs, data, tz):
 
     Todo
     ----
-      * Add ability to set use smaller interval length
       * Add other resampling functions (besides mean like first, last, median)
     """
     fx = fx_obs.forecast
