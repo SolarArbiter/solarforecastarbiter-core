@@ -156,6 +156,7 @@ def compute_aggregate(data, interval_length, interval_label,
         agg_func, axis=1)
     final_value[data_missing] = np.nan
     # have to fill in nans and convert to int to do bitwise_or
+    # only works with pandas >= 0.25.0
     final_qf = pd.DataFrame(qf).reindex(new_index).fillna(0).astype(
         int).aggregate(np.bitwise_or.reduce, axis=1)
     out = pd.DataFrame({'value': final_value, 'quality_flag': final_qf})
