@@ -80,18 +80,11 @@ def resample_and_align(fx_obs, data, tz):
     fx = fx_obs.forecast
     obs = fx_obs.observation
 
-    # Get minimum and maximum datetimes???
-    # min_dt = max(fx_data.index.min(), obs_data.index.min())
-    # max_dt = min(fx_data.index.max(), obs_data.index.max())
-
-    # Resample
+    # Resample observation
     closed = datamodel.CLOSED_MAPPING[fx.interval_label]
     obs_resampled = data[obs].resample(fx.interval_length,
                                        label=closed,
                                        closed=closed).mean()
-    # fx_resampled = data[fx].resample(fx.interval_length,
-    #                                  label=closed,
-    #                                  closed=closed).mean()
 
     # Determine series with timezone conversion
     forecast_values = data[fx].tz_convert(tz)
