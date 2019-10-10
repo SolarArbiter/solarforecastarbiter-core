@@ -16,7 +16,7 @@ __all__ = [
 def brier_score(fx, obs):
     """Brier Score (BS).
 
-        BS = 1/n * sum_{i=1}^n (fx_i - obs_i)^2
+        BS = 1/n * sum_{t=1}^n (fx_t - obs_t)^2
 
     Parameters
     ----------
@@ -64,42 +64,58 @@ def brier_skill_score(fx, obs, ref):
 
 
 def reliability(fx, obs):
-    """Reliability (REL).
+    """Reliability (REL) of the forecast.
 
     Parameters
     ----------
-    fx :
-    obs :
+    fx: (n,) array_like
+        Forecasted probability of the event (between 0 and 1) for n samples.
+    obs: (n,) array_like
+        Actual outcome of the event (0=did not happen, 1=did happen) for n
+        samples.
 
     Returns
     -------
     REL : float
-        The reliability (REL=0 means the forecast is perfectly reliable).
+        The reliability of the forecast, where a perfectly reliable forecast
+        has REL = 0.
 
     """
     return None
 
 
-def resolution():
-    """Resolution (RES).
+def resolution(fx, obs):
+    """Resolution (RES) of the forecast.
 
     Parameters
     ----------
+    fx: (n,) array_like
+        Forecasted probability of the event (between 0 and 1) for n samples.
+    obs: (n,) array_like
+        Actual outcome of the event (0=did not happen, 1=did happen) for n
+        samples.
 
     Returns
     -------
     RES : float
-        The resolution (higher values are better).
+        The resolution of the forecast, where higher values are better.
 
     """
     return None
 
 
-def uncertainty():
-    """Uncertainty (UNC).
+def uncertainty(obs):
+    """Uncertainty (UNC) of the forecast.
+
+        UNC = base_rate * (1 - base_rate)
+
+    where base_rate = 1/n * sum_{t=1}^n obs_t
 
     Parameters
     ----------
+    obs: (n,) array_like
+        Actual outcome of the event (0=did not happen, 1=did happen) for n
+        samples.
 
     Returns
     -------
@@ -108,7 +124,8 @@ def uncertainty():
         only rarely).
 
     """
-    return None
+    base_rate = np.mean(obs)
+    return base_rate * (1.0 - base_rate)
 
 
 def sharpness(fx_lower, fx_upper):

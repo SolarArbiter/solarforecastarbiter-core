@@ -101,3 +101,17 @@ def test_sharpness_vector(fx_lower, fx_upper, value):
 def test_sharpness_series(fx_lower, fx_upper, value):
     sh = prob.sharpness(fx_lower, fx_upper)
     assert pytest.approx(sh) == value
+
+
+@pytest.mark.parametrize("obs,value", [
+    (0, 0.0),
+    (1, 0.0),
+    ([0, 0], 0.0),
+    ([1, 1], 0.0),
+    ([0, 1], 0.25),
+    (pd.Series([0, 0]), 0.0),
+    (pd.Series([1, 1]), 0.0),
+    (pd.Series([0, 1]), 0.25),
+])
+def test_unc(obs, value):
+    assert prob.uncertainty(obs) == value
