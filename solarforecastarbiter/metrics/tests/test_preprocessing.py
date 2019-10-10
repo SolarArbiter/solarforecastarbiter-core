@@ -69,10 +69,8 @@ def test_resample_and_align(site_metadata, interval_label,
     }
     result = preprocessing.resample_and_align(fx_obs, data, local_tz)
 
-    # Update expected datetimeindex
+    # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
-    if interval_label == 'ending':
-        expected_dt += pd.Timedelta(expected_dt.freq)
 
     pd.testing.assert_index_equal(result.forecast_values.index,
                                   result.observation_values.index,

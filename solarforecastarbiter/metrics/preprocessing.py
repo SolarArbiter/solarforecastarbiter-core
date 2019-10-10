@@ -97,11 +97,13 @@ def resample_and_align(fx_obs, data, tz):
         downsample = fx
 
     # Resample
-    label = datamodel.CLOSED_MAPPING[inherit.interval_label]
+    closed = datamodel.CLOSED_MAPPING[inherit.interval_label]
     down_resampled = data[downsample].resample(inherit.interval_length,
-                                               label=label).mean()
+                                               label=closed,
+                                               closed=closed).mean()
     inherit_resampled = data[inherit].resample(inherit.interval_length,
-                                               label=label).mean()
+                                               label=closed,
+                                               closed=closed).mean()
 
     # Determine series with timezone conversion
     if isinstance(inherit, datamodel.Forecast):
