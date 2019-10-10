@@ -7,6 +7,7 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
 
+
 THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
                             periods=3,
                             freq='60min',
@@ -129,25 +130,25 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
 @pytest.mark.parametrize('values,qflags,expectation', [
     (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
     (THREE_HOUR_SERIES,
-        pd.Series([0, 0, 0], index=THREE_HOURS),
+        pd.DataFrame({1: [0, 0, 0]}, index=THREE_HOURS),
         THREE_HOUR_SERIES),
     (THREE_HOUR_SERIES,
-        pd.Series([0, 1, 0], index=THREE_HOURS),
+        pd.DataFrame({1: [0, 1, 0]}, index=THREE_HOURS),
         THREE_HOUR_SERIES[[True, False, True]]),
     (THREE_HOUR_SERIES,
-        pd.Series([1, 1, 0], index=THREE_HOURS),
+        pd.DataFrame({1: [1, 1, 0], 2: [0, 1, 0]}, index=THREE_HOURS),
         THREE_HOUR_SERIES[[False, False, True]]),
     (THREE_HOUR_SERIES,
-        pd.Series([1, 1, 1], index=THREE_HOURS),
+        pd.DataFrame({1: [1, 1, 1], 2: [1, 1, 1]}, index=THREE_HOURS),
         THREE_HOUR_SERIES[[False, False, False]]),
     (pd.Series([np.NaN, np.NaN, np.NaN], index=THREE_HOURS),
         None,
         THREE_HOUR_SERIES[[False, False, False]]),
     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.Series([0, 0, 0], index=THREE_HOURS),
+        pd.DataFrame({1: [0, 0, 0], 2: [0, 0, 0]}, index=THREE_HOURS),
         THREE_HOUR_SERIES[[True, False, True]]),
     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.Series([1, 1, 0], index=THREE_HOURS),
+        pd.DataFrame({1: [1, 1, 0], 2: [1, 0, 0]}, index=THREE_HOURS),
         THREE_HOUR_SERIES[[False, False, True]])
 ])
 def test_exclude(values, qflags, expectation):

@@ -14,8 +14,7 @@ def apply_validation(data, qfilter, handle_func):
 
     Parameters
     ----------
-    qfilter : list of
-        :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
+    qfilter : :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
     data : :class:`pd.DataFrame`
         Pandas DataFrame of observations and forecasts.
     handle_func : function
@@ -46,7 +45,7 @@ def apply_validation(data, qfilter, handle_func):
                 values['quality_flag'])
             validation_df = validation_df[filters]
             validated_data[model] = handle_func(values.value,
-                                                validation_df.any(axis=1))
+                                                validation_df)
         elif isinstance(model, datamodel.Forecast):
             validated_data[model] = values
         else:
@@ -134,21 +133,21 @@ def exclude(values, quality_flags=None):
     ----------
     values : :class:`pd.Series`
         Timeseries values.
-    quality_flags : :class:`pd.Series`
-        Timeseries quality flag [0,1], default None.
+    quality_flags : :class:`pd.DataFrame`
+        Timeseries of quality flags. Default is None.
 
     Returns
     -------
     :class:`pd.Series` :
         Timeseries of values excluding non-quality values.
     """
-
     # Missing values
     bad_idx = values.isna()
 
     # Handle quality flags
     if quality_flags is not None:
-        bad_quality_idx = (quality_flags != 0)
+        consolidated_flag = quality_flags.any(axis=1)
+        bad_quality_idx = (consolidated_flag != 0)
         bad_idx = bad_idx | bad_quality_idx
 
     print(bad_idx)
