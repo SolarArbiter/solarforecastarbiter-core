@@ -1,7 +1,7 @@
 .. _whatsnew_100b1:
 
 1.0.0b1 (October 4, 2019)
-------------------------
+-------------------------
 
 This is the first 1.0 beta release.
 
