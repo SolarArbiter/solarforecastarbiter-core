@@ -13,18 +13,67 @@ __all__ = [
 ]
 
 
-def brier_score(fx, obs):
-    """Brier Score (BS).
-
-        BS = 1/n * sum_{t=1}^n (fx_t - obs_t)^2
+def _transform(fx, obs, kind="actuals", x=[25, 50, 75, 100]):
+    """Transform data to standard form for metrics.
 
     Parameters
     ----------
-    fx : (n,) array_like
-        Forecasted probability of the event (between 0 and 1) for n samples.
-    obs : (n,) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for n
-        samples.
+    fx : (m, n) array_like
+        The forecasts for m samples and n categories, where either a) the
+        categories are fixed percentiles and the values are predicted actuals
+        or b) the categories are fixed actuals and the values are percentiles.
+    obs : (m,) array_like
+        The observed actuals for m samples, in units of flux (e.g. W/m^2),
+        power (e.g. kW) or energy (e.g. kWh).
+    kind : str {"actuals", "percentiles"}
+        The type of forecast values provided:
+        - "actuals": predictions of the actuals (in units of flux, power or
+          energy) for n categories of percentiles
+        - "percentiles": predictions of the percentiles [%] for n categories of
+          actuals
+    x : (n,) array_like
+        The grid corresponding to the forecast categories (columns). If
+        `kind="actuals"`, then `x` is a list of percentiles [%]. If
+        `kind="percentiles"`, then `x` is a list of actuals (units of flux,
+        power or energy). In both cases, the grid is assumed to be non-negative
+        and monotonically increasing.
+
+    Returns
+    -------
+    F : (m, n) array_like
+    O : (m, n) array_like
+
+    Examples
+    --------
+    >>> # predict percentiles for a grid of MW values
+    >>> kind = "percentiles"
+    >>> x = np.array([25, 50, 75])          # percentiles [%]
+    >>> obs = np.array([0.11, 0.25, 0.30])  # actuals [MW]
+    >>> fx = np.array([                     # predict actuals [MW]
+    ...     [0.02, 0.06, 0.13],
+    ...     [0.09, 0.16, 0.28],
+    ...     [0.14, 0.19, 0.35],
+    ... ])
+    >>> F, O = _transform(fx, obs, kind=kind, x=x)
+    >>> print(O)
+    array([])
+    >>> print(F)
+    array([])
+
+    """
+    return None
+
+
+def brier_score(fx, obs):
+    """Brier Score (BS).
+
+    Parameters
+    ----------
+    F : (m, n) array_like
+        Forecasted probability [-] for m samples and n categories.
+    O : (m, n) array_like
+        Actual outcome of the event (0=did not happen, 1=did happen) for m
+        samples and n categories.
 
     Returns
     -------
@@ -32,7 +81,11 @@ def brier_score(fx, obs):
         The Brier Score.
 
     """
-    return np.mean((fx - obs) ** 2)
+
+    if F.size == 2 and O.size == 2:
+        return np.mean(np.sum(F - O, axis=-1) ** 2)
+    else:
+        return np.mean(F - O ** 2)
 
 
 def brier_skill_score(fx, obs, ref):
