@@ -147,17 +147,19 @@ def sharpness(fx_lower, fx_upper):
     return np.mean(fx_upper - fx_lower)
 
 
-def crps():
+def crps(F, O, q):
     """Continuous Ranked Probability Score (CRPS).
+
+        CRPS = 1/n * sum_{i=1}^n (int |F_i(x) - O_i(x)| dx)
 
     Parameters
     ----------
-    F : (n, m) array_like
-        Predicted CDF.
-    O : (n, m) array_like
-        Cumulative-probability step function.
-    q : (m,) array_like
-        The quantiles.
+    F : (m, n) array_like
+        Predicted CDF for m samples and n bins.
+    O : (m, n) array_like
+        Cumulative-probability step function for m samples and n bins.
+    q : (n,) array_like
+        The n bins.
 
     Returns
     -------
@@ -165,4 +167,5 @@ def crps():
         The CRPS value for the given forecasts.
 
     """
-    return None
+
+    return np.mean(np.trapz(np.abs(F - O), x=q))

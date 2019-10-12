@@ -115,3 +115,45 @@ def test_sharpness_series(fx_lower, fx_upper, value):
 ])
 def test_unc(obs, value):
     assert prob.uncertainty(obs) == value
+
+
+@pytest.mark.parametrize("F,O,q,value", [
+    (
+        np.array([[0.0, 1.0], [0.0, 1.0]]),  # predicted CDF [-]
+        np.array([[0, 0], [0, 0]]),          # observed CDF [-] (binary)
+        np.array([0, 1]),                    # actuals [MW] = grid
+        (0.5 + 0.5) / 2,
+    ),
+    (
+        np.array([[0.0, 1.0], [0.0, 1.0]]),
+        np.array([[0, 1], [0, 1]]),
+        np.array([0, 1]),
+        (0.0 + 0.0) / 2,
+    ),
+    (
+        np.array([[0.0, 0.2], [0.0, 0.2]]),
+        np.array([[0, 1], [0, 1]]),
+        np.array([0, 1]),
+        (0.4 + 0.4) / 2,
+    ),
+    (
+        np.array([[0.0, 1.0], [0.0, 0.4]]),
+        np.array([[0, 1], [0, 1]]),
+        np.array([0, 1]),
+        (0.0 + 0.3) / 2,
+    ),
+    (
+        np.array([[0.0, 0.5, 1.0], [0.0, 0.5, 1.0]]),
+        np.array([[0, 1, 1], [0, 1, 1]]),
+        np.array([0, 1, 2]),
+        (0.5 + 0.5) / 2,
+    ),
+    (
+        np.array([[0.0, 0.2, 0.4], [0.0, 0.5, 1.0]]),
+        np.array([[0, 1, 1], [0, 1, 1]]),
+        np.array([0, 1, 2]),
+        ((0.4 + 0.7) + 0.5) / 2,
+    ),
+])
+def test_crps(F, O, q, value):
+    assert prob.crps(F, O, q) == value
