@@ -45,9 +45,9 @@ def _transform(fx, obs, kind="actuals", x=[25, 50, 75, 100]):
 
     Examples
     --------
-    >>> # predict percentiles for a grid of MW values
-    >>> kind = "percentiles"
-    >>> x = np.array([25, 50, 75])          # percentiles [%]
+    >>> # predict actuals for a grid of probability values
+    >>> kind = "actuals"
+    >>> x = np.array([25, 50, 75])          # grid: percentiles [%]
     >>> obs = np.array([0.11, 0.25, 0.30])  # actuals [MW]
     >>> fx = np.array([                     # predict actuals [MW]
     ...     [0.02, 0.06, 0.13],
@@ -60,8 +60,51 @@ def _transform(fx, obs, kind="actuals", x=[25, 50, 75, 100]):
     >>> print(F)
     array([])
 
+    >>> # predict probabilities for a grid of actuals
+    >>> kind = "percentiles"
+    >>> x = np.array([10, 20, 30])   # grid: actuals [MW]
+    >>> obs = np.array([8, 13, 21])  # actuals [MW]
+    >>> fx = np.array([              # predict percentiles [%]
+    ...     [33, 61, 98],  # Pr(x < 10), Pr(x < 20), Pr(x < 30)
+    ...     [],
+    ...     [],
+    ... ])
+    >>> F, O = _transform(fx, obs, kind=kind, x=x)
+
     """
-    return None
+
+    m, n = fx.shape
+
+    if kind == "percentiles":  # predict percentiles for grid of actuals
+        # binary event CDF [-]:
+        # - if actual < category: 1, else: 0
+        #
+        # example:
+        # - observed: 12 MW
+        # - category: < 20 MW
+        # - output: 1 (since 12 MW < 20 MW is true)
+        X = np.tile(x, [m, 1])    # grid: (n,) => (m, n)
+        A = np.tile(obs, [1, n])  # observed: (m,) => (m, n)
+        O = np.zeros([m, n])
+        O[A < X] = 1
+
+        # predicted percentiles [-] (CDF)
+        F = fx / 100.0
+
+        return F, O
+    elif kind == "actuals":  # predict actuals for a grid of percentiles
+        # binary event CDF [-]:
+        A = np.tiles(obs, [1, n])   # observed: (m,) => (m, n)
+        X = np.copy(fx)             # predicted: (m, n)
+        O = np.zeros([m, n])
+        O[A < X] = 1
+
+        # predicted percentiles [-] (CDF)
+        F = np.tile(x / 100.0, [m, 1])
+
+        return F, O
+    else:
+        raise NameError
 
 
 def brier_score(fx, obs):
