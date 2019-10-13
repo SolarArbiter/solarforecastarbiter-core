@@ -19,13 +19,12 @@ def calculate_metrics_for_processed_pairs(processed_fxobs):
     Parameters
     ----------
     processed_fxobs : list
-        List of solarforecastarbiter.datamodel.ForecastObservation
+        List of solarforecastarbiter.datamodel.ProcessedForecastObservation.
 
     Returns
     -------
     dict
         Multi-level dictionary of metrics by category.
-
     """
     calc_metrics = []
     for fxobs_ in processed_fxobs:

@@ -14,17 +14,20 @@ def apply_validation(data, qfilter, handle_func):
 
     Parameters
     ----------
-    qfilter : :class:`solarforecastarbiter.datamodel.QualityFlagFilter`
-    data : :class:`pd.DataFrame`
-        Pandas DataFrame of observation and forecast values.
+    data : dict
+        Keys are Observation and Forecast models and values are
+        the timeseries data as pandas.Series.
+    qfilter : solarforecastarbiter.datamodel.QualityFlagFilter
     handle_func : function
         Function that handles how `quality_flags` will be used.
-        See :func:`solarforecastarbiter.metrics.preprocessing.exclude` as as
+        See solarforecastarbiter.metrics.preprocessing.exclude as an
         example.
 
     Returns
     -------
-    pd.DataFrame
+    dict :
+        Keys are Observation and Forecast models and values
+        the validated timeseries data as pandas.Series.
     """
     validated_data = {}
 
@@ -36,18 +39,16 @@ def apply_validation(data, qfilter, handle_func):
     # Apply handling function to quality flags
     for model, values in data.items():
 
-        # Skip if empty
-        if isinstance(values, pd.DataFrame) and values.empty:
-            validated_data[model] = values.value
-            continue
-
         # Apply only to Observations
         if isinstance(model, datamodel.Observation):
-            validation_df = quality_mapping.convert_mask_into_dataframe(
-                values['quality_flag'])
-            validation_df = validation_df[filters]
-            validated_data[model] = handle_func(values.value,
-                                                validation_df)
+            if values.empty:
+                validated_data[model] = values.value
+            else:
+                validation_df = quality_mapping.convert_mask_into_dataframe(
+                    values['quality_flag'])
+                validation_df = validation_df[filters]
+                validated_data[model] = handle_func(values.value,
+                                                    validation_df)
         elif isinstance(model, datamodel.Forecast):
             validated_data[model] = values
         else:
@@ -63,17 +64,17 @@ def resample_and_align(fx_obs, data, tz):
 
     Parameters
     ----------
-    fx_obs : :class:`solarforecastarbiter.datamodel.ForecastObservation`
+    fx_obs : solarforecastarbiter.datamodel.ForecastObservation
         Pair of forecast and observation.
     data : dict
-        Dictionary that must include the timeseries of the pair and already
-        be validated.
+        Keys are Observation and Forecast models and values
+        the validated timeseries data as pandas.Series.
     tz : str
         Timezone to witch processed data will be converted.
 
     Returns
     -------
-    :class:`solarforecastarbiter.datamodel.ProcessedForecastObservation`
+    solarforecastarbiter.datamodel.ProcessedForecastObservation
 
     Todo
     ----
@@ -88,9 +89,13 @@ def resample_and_align(fx_obs, data, tz):
                                        label=closed,
                                        closed=closed).mean()
 
+    # Align
+    fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'left')
+    # fx_aligned, obs_aligned = data[fx], obs_resampled
+
     # Determine series with timezone conversion
-    forecast_values = data[fx].tz_convert(tz)
-    observation_values = obs_resampled.tz_convert(tz)
+    forecast_values = fx_aligned.tz_convert(tz)
+    observation_values = obs_aligned.tz_convert(tz)
 
     # Create ProcessedForecastObservation
     processed_fx_obs = datamodel.ProcessedForecastObservation(
@@ -107,19 +112,19 @@ def resample_and_align(fx_obs, data, tz):
 def exclude(values, quality_flags=None):
     """
     Return a timeseries with all questionable values removed.
-    All NaN values will be removed first and then iff quality_flag is set
+    All NaN values will be removed first and then iff `quality_flag` is set
     (not 0) the corresponding values will also be removed.
 
     Parameters
     ----------
-    values : :class:`pd.Series`
+    values : pandas.Series
         Timeseries values.
-    quality_flags : :class:`pd.DataFrame`
+    quality_flags : pandas.DataFrame
         Timeseries of quality flags. Default is None.
 
     Returns
     -------
-    :class:`pd.Series` :
+    pandas.Series :
         Timeseries of values excluding non-quality values.
     """
     # Missing values
@@ -131,5 +136,4 @@ def exclude(values, quality_flags=None):
         bad_quality_idx = (consolidated_flag != 0)
         bad_idx = bad_idx | bad_quality_idx
 
-    print(bad_idx)
     return values[~bad_idx]

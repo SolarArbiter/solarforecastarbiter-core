@@ -27,7 +27,7 @@ THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0., 13., 1.)/6)+1,
                                   index=THIRTEEN_10MIN)
 
 # Bitwise-flag integers (only test validated and versioned data)
-CL_UF = int(0b10010)  # Cloudy and User Flagged (18)
+NT_UF = int(0b10011)  # Nighttime, User Flagged and version 0 (19)
 CSE_NT = int(0b1000010010)  # Clearsky exceeded, nighttime, and version 0 (530)
 CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
 OK = int(0b10)  # OK version 0 (2)
@@ -97,7 +97,7 @@ def test_resample_and_align(site_metadata, interval_label,
     pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                  columns=['value', 'quality_flag']),
     pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [CL_UF, CL_UF, CL_UF]},
+                  'quality_flag': [NT_UF, NT_UF, NT_UF]},
                  index=THREE_HOURS),
     pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                  columns=['value', 'quality_flag']),
@@ -123,6 +123,10 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
     if not result[obs_model].empty:
         assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
             result[obs_model].index)
+    if not fx0.empty:
+        assert result[fx0_model].equals(fx0)
+    if not fx1.empty:
+        assert result[fx1_model].equals(fx1)
 
 
 @pytest.mark.parametrize('values,qflags,expectation', [
