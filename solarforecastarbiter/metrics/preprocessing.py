@@ -46,7 +46,7 @@ def apply_validation(data, qfilter, handle_func):
             else:
                 validation_df = quality_mapping.convert_mask_into_dataframe(
                     values['quality_flag'])
-                validation_df = validation_df[filters]
+                validation_df = validation_df[list(filters)]
                 validated_data[model] = handle_func(values.value,
                                                     validation_df)
         elif isinstance(model, datamodel.Forecast):
