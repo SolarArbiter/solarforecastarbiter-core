@@ -2,7 +2,6 @@
 Provides preprocessing steps to be performed on the timeseries data.
 """
 
-import pandas as pd
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.validation import quality_mapping
@@ -89,9 +88,10 @@ def resample_and_align(fx_obs, data, tz):
                                        label=closed,
                                        closed=closed).mean()
 
-    # Align
+    # Align (forecast is unchanged)
+    # Remove non-corresponding observations and
+    # fill with missing observations with NaN
     fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'left')
-    # fx_aligned, obs_aligned = data[fx], obs_resampled
 
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)

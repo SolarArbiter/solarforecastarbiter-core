@@ -248,7 +248,7 @@ def construct_metrics_series(metrics, kind):
     # this seems the most straightforward to me
     for m in metrics:
         for col in m[kind]:
-            for i,v in m[kind][col].items():
+            for i, v in m[kind][col].items():
                 forecasts.append(m['name'])
                 m_types.append(col)
                 m_indexes.append(i)
