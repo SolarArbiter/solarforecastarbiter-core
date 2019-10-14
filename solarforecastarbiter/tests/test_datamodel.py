@@ -254,7 +254,7 @@ def test_report_defaults(report_objects):
 @pytest.mark.parametrize('key,val', [
     ('interval_length', pd.Timedelta('2h')),
     ('interval_value_type', 'interval_max'),
-    ('variable', 'dni')
+    ('variable', 'ghi')
 ])
 def test_aggregate_invalid(single_observation, key, val):
     obsd = single_observation.to_dict()
@@ -264,7 +264,7 @@ def test_aggregate_invalid(single_observation, key, val):
         obs, pd.Timestamp.utcnow())
     with pytest.raises(ValueError):
         datamodel.Aggregate(
-            'test', 'testd', 'ghi', 'mean', pd.Timedelta('1h'),
+            'test', 'testd', 'dni', 'mean', pd.Timedelta('1h'),
             'ending', 'America/Denver',
             observations=(aggobs,)
         )

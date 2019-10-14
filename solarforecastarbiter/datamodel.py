@@ -874,7 +874,7 @@ class AggregateObservation(BaseModel):
                 return val
             else:
                 return pd.Timestamp(val)
-        else:
+        else:  # pragma: no cover
             return val
 
 
