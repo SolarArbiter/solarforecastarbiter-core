@@ -90,7 +90,7 @@ def resample_and_align(fx_obs, data, tz):
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
-    # fill with missing observations with NaN
+    # fill missing observations with NaN
     fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'left')
 
     # Determine series with timezone conversion
