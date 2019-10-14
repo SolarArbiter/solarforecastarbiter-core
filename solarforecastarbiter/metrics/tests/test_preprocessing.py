@@ -129,6 +129,35 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
         assert result[fx1_model].equals(fx1)
 
 
+def test_apply_validation_errors(report_objects):
+    report, obs_model, fx0_model, fx1_model = report_objects
+    obs = pd.DataFrame({'value': [1., 2., 3.],
+                        'quality_flag': [OK, OK, OK]},
+                        index=THREE_HOURS)
+    fx0 = THREE_HOUR_SERIES
+    fx1 = THREE_HOUR_SERIES
+    data_ok = {
+        obs_model: obs,
+        fx0_model: fx0,
+        fx1_model: fx1
+    }
+    # Pass a none QualityFlagFilter
+    with pytest.raises(TypeError):
+        preprocessing.apply_validation(data_ok,
+                                       THREE_HOUR_SERIES,
+                                       preprocessing.exclude)
+    data_bad = {
+        obs_model: obs,
+        'NotAForecast': fx0,
+        fx1_model: fx1
+    }
+    # Pass a none Forecast
+    with pytest.raises(TypeError):
+        preprocessing.apply_validation(data_bad,
+                                       THREE_HOUR_SERIES,
+                                       preprocessing.exclude)
+
+
 @pytest.mark.parametrize('values,qflags,expectation', [
     (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
     (THREE_HOUR_SERIES,
