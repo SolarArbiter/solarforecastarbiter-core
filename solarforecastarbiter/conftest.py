@@ -587,6 +587,23 @@ def many_observations_text():
     "site_id": "d2018f1d-82b1-422a-8ec4-4e8b3fe92a4a",
     "uncertainty": 0.1,
     "variable": "ghi"
+  },
+  {
+    "_links": {
+      "site": "http://localhost:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T12:01:39",
+    "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "modified_at": "2019-03-01T12:01:39",
+    "name": "GHI Instrument 1",
+    "observation_id": "123e4567-e89b-12d3-a456-426655440000",
+    "provider": "Organization 1",
+    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "uncertainty": 0.1,
+    "variable": "ghi"
   }
 ]"""  # NOQA
 
@@ -1068,3 +1085,82 @@ def raw_report(report_objects):
         raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
         return raw
     return gen
+
+
+@pytest.fixture()
+def aggregate_text():
+    return b"""
+{
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "aggregate_type": "mean",
+  "created_at": "2019-09-24T12:00:00",
+  "description": "ghi agg",
+  "extra_parameters": "extra",
+  "interval_label": "ending",
+  "interval_length": 60,
+  "interval_value_type": "interval_mean",
+  "modified_at": "2019-09-24T12:00:00",
+  "name": "Test Aggregate ghi",
+  "observations": [
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/123e4567-e89b-12d3-a456-426655440000/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00",
+      "effective_from": "2019-01-01T00:00:00",
+      "effective_until": "2020-01-01T00:00:00",
+      "observation_deleted_at": null,
+      "observation_id": "123e4567-e89b-12d3-a456-426655440000"
+    },
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/e0da0dea-9482-4073-84de-f1b12c304d23/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00",
+      "effective_from": "2019-01-01T00:00:00",
+      "effective_until": null,
+      "observation_deleted_at": null,
+      "observation_id": "e0da0dea-9482-4073-84de-f1b12c304d23"
+    },
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00",
+      "effective_from": "2019-01-01T00:00:00",
+      "effective_until": null,
+      "observation_deleted_at": null,
+      "observation_id": "b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2"
+    }
+  ],
+  "provider": "Organization 1",
+  "timezone": "America/Denver",
+  "variable": "ghi"
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def aggregate_observations(aggregate_text, many_observations):
+    obsd = {o.observation_id: o for o in many_observations}
+    aggd = json.loads(aggregate_text)
+    aggobs = tuple([datamodel.AggregateObservation(
+        observation=obsd[o['observation_id']],
+        effective_from=o['effective_from'],
+        effective_until=o['effective_until'],
+        observation_deleted_at=o['observation_deleted_at'])
+                    for o in aggd['observations']])
+    return aggobs
+
+
+@pytest.fixture()
+def aggregate(aggregate_text, aggregate_observations):
+    aggd = json.loads(aggregate_text)
+    return datamodel.Aggregate(
+        name=aggd['name'], description=aggd['description'],
+        variable=aggd['variable'], aggregate_type=aggd['aggregate_type'],
+        interval_length=pd.Timedelta(f"{aggd['interval_length']}min"),
+        interval_label=aggd['interval_label'],
+        timezone=aggd['timezone'], aggregate_id=aggd['aggregate_id'],
+        provider=aggd['provider'], extra_parameters=aggd['extra_parameters'],
+        observations=aggregate_observations)

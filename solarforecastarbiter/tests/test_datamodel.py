@@ -12,13 +12,15 @@ from solarforecastarbiter import datamodel
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
                         'probabilisticforecastconstantvalue',
-                        'probabilisticforecast'])
+                        'probabilisticforecast', 'aggregate'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
                 prob_forecast_constant_value,
                 prob_forecast_constant_value_text,
-                prob_forecasts, prob_forecast_text):
+                prob_forecasts, prob_forecast_text,
+                aggregate, aggregate_observations,
+                aggregate_text):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -58,6 +60,10 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fxobs = datamodel.ForecastObservation(
             single_forecast, single_observation)
         return (fxobs, fxobs_dict, datamodel.ForecastObservation)
+    elif request.param == 'aggregate':
+        agg_dict = json.loads(aggregate_text)
+        agg_dict['observations'] = aggregate_observations
+        return (aggregate, agg_dict, datamodel.Aggregate)
 
 
 @pytest.mark.parametrize('extra', [
@@ -243,3 +249,22 @@ def test_report_defaults(report_objects):
         report_id=report.report_id
     )
     assert isinstance(report_defaults.filters, tuple)
+
+
+@pytest.mark.parametrize('key,val', [
+    ('interval_length', pd.Timedelta('2h')),
+    ('interval_value_type', 'interval_max'),
+    ('variable', 'dni')
+])
+def test_aggregate_invalid(single_observation, key, val):
+    obsd = single_observation.to_dict()
+    obsd[key] = val
+    obs = datamodel.Observation.from_dict(obsd)
+    aggobs = datamodel.AggregateObservation(
+        obs, pd.Timestamp.utcnow())
+    with pytest.raises(ValueError):
+        datamodel.Aggregate(
+            'test', 'testd', 'ghi', 'mean', pd.Timedelta('1h'),
+            'ending', 'America/Denver',
+            observations=(aggobs,)
+        )
