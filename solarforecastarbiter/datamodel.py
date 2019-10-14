@@ -868,6 +868,15 @@ class AggregateObservation(BaseModel):
     effective_until: Union[pd.Timestamp, None] = None
     observation_deleted_at: Union[pd.Timestamp, None] = None
 
+    def _special_field_processing(self, model_field, val):
+        if model_field.name in ('effective_until', 'observation_deleted_at'):
+            if val is None:
+                return val
+            else:
+                return pd.Timestamp(val)
+        else:
+            return val
+
 
 def __check_variable__(variable, *args):
     if not all(arg.variable == variable for arg in args):

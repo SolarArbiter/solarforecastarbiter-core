@@ -1144,11 +1144,18 @@ def aggregate_text():
 def aggregate_observations(aggregate_text, many_observations):
     obsd = {o.observation_id: o for o in many_observations}
     aggd = json.loads(aggregate_text)
+
+    def _tstamp(val):
+        if val is None:
+            return val
+        else:
+            return pd.Timestamp(val)
+
     aggobs = tuple([datamodel.AggregateObservation(
         observation=obsd[o['observation_id']],
-        effective_from=o['effective_from'],
-        effective_until=o['effective_until'],
-        observation_deleted_at=o['observation_deleted_at'])
+        effective_from=_tstamp(o['effective_from']),
+        effective_until=_tstamp(o['effective_until']),
+        observation_deleted_at=_tstamp(o['observation_deleted_at']))
                     for o in aggd['observations']])
     return aggobs
 
