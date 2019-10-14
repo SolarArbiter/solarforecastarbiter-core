@@ -314,14 +314,16 @@ def obs_start_end(request):
                 '2019-01-01T12:25:00-0700')
 
 
-def test_apisession_get_observation_values(
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values(
         requests_mock, observation_values, observation_values_text,
-        obs_start_end):
+        obs_start_end, func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
-    out = session.get_observation_values(
-        'obsid', *obs_start_end)
+    out = getattr(session, func)('obsid', *obs_start_end)
     pdt.assert_frame_equal(out, observation_values)
 
 
@@ -330,13 +332,16 @@ def test_apisession_get_observation_values(
     ('beginning', slice(0, -1)),
     ('ending', slice(1, 10))
 ])
-def test_apisession_get_observation_values_interval_label(
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values_interval_label(
         requests_mock, observation_values, observation_values_text,
-        label, theslice, obs_start_end):
+        label, theslice, obs_start_end, func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
-    out = session.get_observation_values(
+    out = getattr(session, func)(
         'obsid', obs_start_end[0], obs_start_end[1], label)
     pdt.assert_frame_equal(out, observation_values.iloc[theslice])
 
@@ -347,11 +352,15 @@ def empty_df():
                         index=pd.DatetimeIndex([], name='timestamp'))
 
 
-def test_apisession_get_observation_values_empty(requests_mock, empty_df):
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values_empty(requests_mock, empty_df,
+                                             func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
-    out = session.get_observation_values(
+    out = getattr(session, func)(
         'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
         pd.Timestamp('2019-01-01T12:25:00-0700'))
     pdt.assert_frame_equal(out, empty_df)
@@ -592,6 +601,75 @@ def test_apisession_update_report_status(requests_mock):
         'POST', re.compile(f'{session.base_url}/reports/REPORT_ID/status/'))
     session.update_report_status('REPORT_ID', 'complete')
     assert mocked.last_request.url.split('/')[-1] == 'complete'
+
+
+@pytest.fixture()
+def mockobs(many_observations, mocker):
+    def _getobs(cls, observation_id):
+        for obs in many_observations:
+            if observation_id == obs.observation_id:
+                return obs
+
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation',
+        new=_getobs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.list_observations',
+        return_value=many_observations)
+
+
+def test_apisession_get_aggregate(requests_mock, aggregate_text, aggregate,
+                                  mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/.*/metadata'),
+        content=aggregate_text)
+    agg = session.get_aggregate('')
+    assert agg == aggregate
+
+
+def test_apisession_list_aggregates(requests_mock, aggregate_text, aggregate,
+                                    mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/'),
+        content=b'[' + aggregate_text + b']')
+    aggs = session.list_aggregates()
+    assert aggs[0] == aggregate
+
+
+def test_apisession_list_aggregates_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/aggregates/.*')
+    requests_mock.register_uri('GET', matcher, content=b"[]")
+    obs_list = session.list_aggregates()
+    assert obs_list == []
+
+
+def test_apisession_create_aggregate(requests_mock, aggregate, aggregate_text,
+                                     mockobs):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/aggregates/.*')
+
+    def callback(request, context):
+        ad = json.loads(aggregate_text)
+        for key in ('provider', 'aggregate_id', 'created_at',
+                    'modified_at'):
+            del ad[key]
+        for o in ad['observations']:
+            del o['_links']
+            del o['created_at']
+        assert ad == request.json()
+        return aggregate.aggregate_id
+
+    requests_mock.register_uri('POST', matcher,
+                               text=callback)
+    requests_mock.register_uri('GET', matcher, content=aggregate_text)
+    aggregate_dict = aggregate.to_dict()
+    del aggregate_dict['aggregate_id']
+    ss = datamodel.Aggregate.from_dict(aggregate_dict)
+    new_aggregate = session.create_aggregate(ss)
+    assert new_aggregate == aggregate
 
 
 @pytest.fixture(scope='session')
@@ -854,3 +932,39 @@ def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
     pdt.assert_series_equal(fx, test_ser)
+
+
+@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
+def test_real_apisession_get_aggregate(real_session):
+    agg = real_session.get_aggregate('458ffc27-df0b-11e9-b622-62adb5fd6af0')
+    assert isinstance(agg, datamodel.Aggregate)
+
+
+@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
+def test_real_apisession_list_aggregates(real_session):
+    aggs = real_session.list_aggregates()
+    assert {a.aggregate_id for a in aggs} == {
+        '458ffc27-df0b-11e9-b622-62adb5fd6af0',
+        'd3d1e8e5-df1b-11e9-b622-62adb5fd6af0'}
+
+
+@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
+def test_real_apisession_create_aggregate(real_session, aggregate):
+    new_agg = real_session.create_aggregate(aggregate)
+    for attr in ('name', 'descxription', 'variable', 'aggregate_type',
+                 'interval_length', 'interval_label', 'timezone',
+                 'obaservations'):
+        assert getattr(new_agg, attr) == getattr(aggregate, attr)
+
+
+@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
+def test_real_apisession_get_aggregate_values(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
+    agg = real_session.get_aggregate_values(
+        '458ffc27-df0b-11e9-b622-62adb5fd6af0',
+        start, end)
+    assert isinstance(agg, pd.DataFrame)
+    assert set(agg.columns) == set(['value', 'quality_flag'])
+    assert len(agg.index) > 0
+    pdt.assert_frame_equal(agg.loc[start:end], agg)

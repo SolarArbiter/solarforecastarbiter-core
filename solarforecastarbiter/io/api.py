@@ -782,3 +782,107 @@ class APISession(requests.Session):
            New status of the report
         """
         self.post(f'/reports/{report_id}/status/{status}')
+
+    def get_aggregate(self, aggregate_id):
+        """
+        Get Aggregate metadata from the API for the given aggregate_id
+
+        Parameters
+        ----------
+        aggregate_id : string
+            UUID of the aggregate to get metadata for
+
+        Returns
+        -------
+        datamodel.Aggregate
+        """
+        req = self.get(f'/aggregates/{aggregate_id}/metadata')
+        agg_dict = req.json()
+        for o in agg_dict['observations']:
+            o['observation'] = self.get_observation(o['observation_id'])
+        return datamodel.Aggregate.from_dict(agg_dict)
+
+    def list_aggregates(self):
+        """
+        List all Aggregates a user has access to.
+
+        Returns
+        -------
+        list of datamodel.Aggregate
+        """
+        req = self.get('/aggregates/')
+        agg_dicts = req.json()
+        if len(agg_dicts) == 0:
+            return []
+        observations = {obs.observation_id: obs
+                        for obs in self.list_observations()}
+        out = []
+        for agg_dict in agg_dicts:
+            for o in agg_dict['observations']:
+                o['observation'] = observations[o['observation_id']]
+            out.append(datamodel.Aggregate.from_dict(agg_dict))
+        return out
+
+    def create_aggregate(self, aggregate):
+        """
+        Create a new aggregate in the API with the given Aggregate model
+
+        Parameters
+        ----------
+        aggregate : datamodel.Aggregate
+            Aggregate to create in the API
+
+        Returns
+        -------
+        datamodel.Aggregate
+            With the appropriate parameters such as aggregate_id set by the API
+        """
+        agg_dict = aggregate.to_dict()
+        agg_dict.pop('aggregate_id')
+        agg_dict.pop('provider')
+        obs = agg_dict.pop('observations')
+        for o in obs:
+            o['observation_id'] = o['observation']['observation_id']
+            del o['observation']
+        agg_dict['observations'] = obs
+        agg_json = json.dumps(agg_dict)
+        req = self.post('/aggregates/', data=agg_json,
+                        headers={'Content-Type': 'application/json'})
+        new_id = req.text
+        return self.get_aggregate(new_id)
+
+    @ensure_timestamps('start', 'end')
+    def get_aggregate_values(self, aggregate_id, start, end,
+                             interval_label=None):
+        """
+        Get aggregate values from start to end for aggregate_id from the
+        API
+
+        Parameters
+        ----------
+        aggregate_id : string
+            UUID of the aggregate object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.DataFrame
+            With a datetime index and (value, quality_flag) columns
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """
+        req = self.get(f'/aggregates/{aggregate_id}/values',
+                       params={'start': start, 'end': end})
+        out = json_payload_to_observation_df(req.json())
+        return adjust_timeseries_for_interval_label(
+            out, interval_label, start, end)
