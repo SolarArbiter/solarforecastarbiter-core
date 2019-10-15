@@ -154,7 +154,7 @@ def test_apply_validation_errors(report_objects):
     # Pass a none Forecast
     with pytest.raises(TypeError):
         preprocessing.apply_validation(data_bad,
-                                       THREE_HOUR_SERIES,
+                                       report.filters[0],
                                        preprocessing.exclude)
 
 
