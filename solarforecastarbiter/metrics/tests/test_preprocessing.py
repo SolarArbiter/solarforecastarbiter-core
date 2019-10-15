@@ -133,7 +133,7 @@ def test_apply_validation_errors(report_objects):
     report, obs_model, fx0_model, fx1_model = report_objects
     obs = pd.DataFrame({'value': [1., 2., 3.],
                         'quality_flag': [OK, OK, OK]},
-                        index=THREE_HOURS)
+                       index=THREE_HOURS)
     fx0 = THREE_HOUR_SERIES
     fx1 = THREE_HOUR_SERIES
     data_ok = {
