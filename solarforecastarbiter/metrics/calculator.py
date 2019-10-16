@@ -46,7 +46,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
     Returns
     -------
     dict
-<<<<<<< HEAD
         List of pd.DataFrame/dict with the results.
         Keys are ProcessedForecastObservation and values are pd.DataFrame?
 
@@ -78,11 +77,11 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     metric functions. """
     metric_func = deterministic._MAP[metric]
     if metric in deterministic._REQ_REF_FX:
-        return metric_func(fx, obs, kwargs['ref_fx'])
+        return metric_func(obs, fx, kwargs['ref_fx'])
     elif metric in deterministic._REQ_NORM:
-        return metric_func(fx, obs, kwargs['normalizer'])
+        return metric_func(obs, fx, kwargs['normalizer'])
     else:
-        return metric_func(fx, obs)
+        return metric_func(obs, fx)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
@@ -118,9 +117,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         4. Value
     """
     # Check data is processed pair
-    assert isinstance(processed_fx_obs,
-                      datamodel.ProcessedForecastObservation), \
-        "Must be a ProcessedForecastObservation"
+    # assert isinstance(processed_fx_obs,
+    #                   datamodel.ProcessedForecastObservation), \
+    #     "Must be a ProcessedForecastObservation"
 
     calc_metrics = defaultdict(dict)
     fx = processed_fx_obs.forecast_values
@@ -129,10 +128,10 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # Check reference forecast is from processed pair, if needed
     ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
-        assert isinstance(ref_fx_obs,
-                          datamodel.ProcessedForecastObservation),\
-                          "Reference forecast must be a " \
-                          "ProcessedForecastObservation"
+        # assert isinstance(ref_fx_obs,
+        #                   datamodel.ProcessedForecastObservation),\
+        #                   "Reference forecast must be a " \
+        #                   "ProcessedForecastObservation"
         ref_fx = ref_fx_obs.forecast_values
 
     # Calculate metrics
