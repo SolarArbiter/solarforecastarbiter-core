@@ -23,20 +23,20 @@ AVAILABLE_CATEGORIES = [
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair, normalier):
+                      ref_pair=None, normalizer=1.0):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
     Parameters
     ----------
-    processed_fx_obs :
-        List of `solarforecastarbiter.datamodel.ProcessedForecastObservation`
+    processed_pairs :
+        List of solarforecastarbiter.datamodel.ProcessedForecastObservation.
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
-        List of metrics to be computed
+        List of metrics to be computed.
     ref_fx_obs :
-        `solarforecastarbiter.datamodel.ProcessedForecastObservation`
+        solarforecastarbiter.datamodel.ProcessedForecastObservation`
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
     normalizer : float
@@ -46,6 +46,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
     Returns
     -------
     dict
+<<<<<<< HEAD
         List of pd.DataFrame/dict with the results.
         Keys are ProcessedForecastObservation and values are pd.DataFrame?
 
@@ -62,7 +63,11 @@ def calculate_metrics(processed_pairs, categories, metrics,
 
         # Deterministic
         if isinstance(fxobs, datamodel.ProcessedForecastObservation):
-            metrics_ = calculate_deterministic_metrics(fxobs)
+            metrics_ = calculate_deterministic_metrics(fxobs,
+                                                       categoires,
+                                                       metrics,
+                                                       ref_fx_obs=ref_pair,
+                                                       normalizer=normalizer)
             calc_metrics[fxobs] = metrics_
 
     return calc_metrics
@@ -81,7 +86,7 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None, normalizer=1.):
+                                    ref_fx_obs=None, normalizer=1.0):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
@@ -89,13 +94,13 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     Parameters
     ----------
     processed_fx_obs :
-        `solarforecastarbiter.datamodel.ProcessedForecastObservation`
+        solarforecastarbiter.datamodel.ProcessedForecastObservation
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
-        List of metrics to be computed
+        List of metrics to be computed.
     ref_fx_obs :
-        `solarforecastarbiter.datamodel.ProcessedForecastObservation`
+        solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
     normalizer : float

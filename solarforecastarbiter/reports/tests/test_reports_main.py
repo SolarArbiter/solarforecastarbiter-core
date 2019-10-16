@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
 
@@ -67,3 +68,18 @@ def test_full_render(mock_data, report_objects):
     full_report = template.full_html(body)
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)
+
+
+def test_validate_resample_align(mock_data, report_objects):
+    report, observation, forecast_0, forecast_1 = report_objects
+    meta = main.create_metadata(report)
+    session = api.APISession('nope')
+    data = main.get_data_for_report(session, report)
+    processed_fxobs_list = main.validate_resample_align(report, meta, data)
+    assert len(processed_fxobs_list) == len(report.forecast_observations)
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)

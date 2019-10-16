@@ -241,15 +241,21 @@ def construct_metrics_series(metrics, kind):
     pandas.Series
     """
     forecasts = []
-    metric_values = []
+    m_types = []
+    m_indexes = []
+    m_values = []
+    # There is probably a more clever way to do this but
+    # this seems the most straightforward to me
     for m in metrics:
-        df = pd.DataFrame(m[kind])
-        metric_values.append(df.unstack())
-        forecasts.append(m['name'])
-    metric_values = np.concatenate(metric_values)
-    index = pd.MultiIndex.from_product((forecasts, df.columns, df.index),
-                                       names=['forecast', 'metric', kind])
-    metrics_series = pd.Series(metric_values, index=index)
+        for col in m[kind]:
+            for i, v in m[kind][col].items():
+                forecasts.append(m['name'])
+                m_types.append(col)
+                m_indexes.append(i)
+                m_values.append(v)
+    index = pd.MultiIndex.from_arrays([forecasts, m_types, m_indexes],
+                                      names=['forecast', 'metric', kind])
+    metrics_series = pd.Series(m_values, index=index)
     metrics_series = metrics_series.reorder_levels(
         ('metric', 'forecast', kind))
     return metrics_series
