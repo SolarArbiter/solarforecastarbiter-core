@@ -5,7 +5,7 @@ import itertools
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import (calculator, preprocessing,
+from solarforecastarbiter.metrics import (calculator,
                                           deterministic)
 
 
@@ -87,7 +87,7 @@ def _all_length_combinations(alist):
 
 @pytest.mark.parametrize('categories', [
     [],
-    *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES,1)),
+    *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES, 1)),
     calculator.AVAILABLE_CATEGORIES[0:1],
     calculator.AVAILABLE_CATEGORIES[0:2],
     calculator.AVAILABLE_CATEGORIES[1:],
@@ -95,7 +95,7 @@ def _all_length_combinations(alist):
 ])
 @pytest.mark.parametrize('metrics', [
     [],
-    *list(itertools.combinations(deterministic._MAP.keys(),1)),
+    *list(itertools.combinations(deterministic._MAP.keys(), 1)),
     deterministic.__all__[0:1],
     deterministic.__all__[0:2],
     deterministic.__all__[1:],
@@ -131,11 +131,11 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
         kws['normalizer'] = normalizer
 
     # Check if reference forecast is required
-    if (ref_values is None and
-       any(m in deterministic._REQ_REF_FX for m in metrics)):
-            with pytest.raises(AttributeError):
-                calculator.calculate_deterministic_metrics(
-                    pair, categories, metrics, **kws)
+    if (ref_values is None and any(m in deterministic._REQ_REF_FX
+                                   for m in metrics)):
+        with pytest.raises(AttributeError):
+            calculator.calculate_deterministic_metrics(
+                pair, categories, metrics, **kws)
     else:
         result = calculator.calculate_deterministic_metrics(
             pair, categories, metrics, **kws)
@@ -143,7 +143,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
         # Check results
         assert isinstance(result, dict)
         if (len(metrics) == 0 or len(categories) == 0 or
-            len(pair.forecast_values) == 0):
+                len(pair.forecast_values) == 0):
             # Empty results
             assert len(result) == 0
         else:
