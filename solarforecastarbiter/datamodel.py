@@ -803,6 +803,8 @@ class Report(BaseModel):
         Paired Forecasts and Observations to be analyzed in the report.
     metrics : Tuple of str
         Metrics to be computed in the report.
+    categories : Tuple of str
+        Categories to compute and organize metrics over in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
     status : str
@@ -820,6 +822,7 @@ class Report(BaseModel):
     end: pd.Timestamp
     forecast_observations: Tuple[ForecastObservation, ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    categories: Tuple[str, ...] = ('total')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'

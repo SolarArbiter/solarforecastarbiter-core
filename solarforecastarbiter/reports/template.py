@@ -76,22 +76,13 @@ def _metrics_script_divs(report, metrics):
     script, (data_table_div, *figures_bar_divs) = components((data_table,
                                                               *figures_bar))
 
-    script_month, figures_bar_month_divs = _loop_over_metrics(report, metrics,
-                                                              'month')
-
-    script_day, figures_bar_day_divs = _loop_over_metrics(report, metrics,
-                                                          'day')
-
-    script_hour, figures_bar_hour_divs = _loop_over_metrics(report, metrics,
-                                                            'hour')
-
-    script_metrics = script + script_month + script_day + script_hour
-
-    figures_dict = dict(
-        figures_bar=figures_bar_divs,
-        figures_bar_month=figures_bar_month_divs,
-        figures_bar_day=figures_bar_day_divs,
-        figures_bar_hour=figures_bar_hour_divs)
+    script_metrics = ''
+    figures_dict = {}
+    for category in report.categories:
+        script_cat, figures_bar_cat = _loop_over_metrics(report, metrics,
+                                                         category)
+        script_metrics += script_cat
+        figures_dict[category] = figures_bar_cat
 
     return script_metrics, data_table_div, figures_dict
 

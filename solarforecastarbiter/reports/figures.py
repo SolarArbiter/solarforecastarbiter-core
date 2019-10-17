@@ -248,11 +248,17 @@ def construct_metrics_series(metrics, kind):
     # this seems the most straightforward to me
     for m in metrics:
         for col in m[kind]:
-            for i, v in m[kind][col].items():
+            if kind == 'total':
                 forecasts.append(m['name'])
                 m_types.append(col)
-                m_indexes.append(i)
-                m_values.append(v)
+                m_indexes.append('')
+                m_values.append(m[kind][col])
+            else:
+                for i, v in m[kind][col].items():
+                    forecasts.append(m['name'])
+                    m_types.append(i)
+                    m_indexes.append(col)
+                    m_values.append(v)
     index = pd.MultiIndex.from_arrays([forecasts, m_types, m_indexes],
                                       names=['forecast', 'metric', kind])
     metrics_series = pd.Series(m_values, index=index)

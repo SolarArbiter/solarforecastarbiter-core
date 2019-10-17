@@ -45,9 +45,9 @@ def calculate_metrics(processed_pairs, categories, metrics,
 
     Returns
     -------
-    dict
-        List of pd.DataFrame/dict with the results.
-        Keys are ForecastObservation and values are pd.DataFrame?
+    list
+        List of dict with the metric results and a key with original forecast
+        name for identification.
 
     Todo
     ----
@@ -56,7 +56,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
     * Support probabilistic metrics and forecasts
     * Support event metrics and forecasts
     """
-    calc_metrics = {}
+    calc_metrics = []
 
     for proc_fxobs in processed_pairs:
 
@@ -67,8 +67,8 @@ def calculate_metrics(processed_pairs, categories, metrics,
                                                        metrics,
                                                        ref_fx_obs=ref_pair,
                                                        normalizer=normalizer)
-
-            calc_metrics[proc_fxobs.original] = metrics_
+            metrics_['name'] = proc_fxobs.original.forecast.name
+            calc_metrics.append(metrics_)
 
     return calc_metrics
 

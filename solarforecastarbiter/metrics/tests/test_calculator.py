@@ -60,7 +60,7 @@ def test_calculate_metrics(categories, metrics,
                                               ref_pair=ref_fx_obs,
                                               normalizer=1.0)
 
-    assert isinstance(all_result, dict)
+    assert isinstance(all_result, list)
     assert len(all_result) == len(proc_fx_obs)
 
     # 1 value no options
@@ -73,7 +73,7 @@ def test_calculate_metrics(categories, metrics,
     one_result = calculator.calculate_metrics([proc_fx_obs[0]],
                                               categories, metrics)
 
-    assert isinstance(one_result, dict)
+    assert isinstance(one_result, list)
     assert len(one_result) == 1
 
 
