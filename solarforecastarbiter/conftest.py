@@ -714,6 +714,52 @@ def many_forecasts_text():
 
 
 @pytest.fixture()
+def many_ghi_forecasts_text():
+    return b"""
+[
+  {
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "DA GHI",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "variable": "ghi"
+  },
+  {
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T11:55:38+00:00",
+    "extra_parameters": "",
+    "forecast_id": "f8dd49fa-23e2-48a0-862b-ba0af6dec276",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "12:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:38+00:00",
+    "name": "HA GHI",
+    "provider": "Organization 1",
+    "run_length": 60,
+    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "variable": "ghi"
+  }
+]
+"""  # NOQA
+
+
+@pytest.fixture()
 def _forecast_from_dict(single_site, get_site):
     def f(fx_dict):
         return datamodel.Forecast(
@@ -740,6 +786,12 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
+
+
+@pytest.fixture()
+def many_ghi_forecasts(many_ghi_forecasts_text, _forecast_from_dict):
+    return [_forecast_from_dict(fx) for fx
+            in json.loads(many_ghi_forecasts_text)]
 
 
 @pytest.fixture()
@@ -928,9 +980,9 @@ def single_forecast_observation(single_forecast, single_observation):
 
 
 @pytest.fixture()
-def many_forecast_observation(many_forecasts, many_observations):
-    cart_prod = itertools.product(many_forecasts, many_observations)
-    return [datamodel.ForecastObservation(c) for c in cart_prod]
+def many_forecast_observation(many_ghi_forecasts, many_observations):
+    cart_prod = itertools.product(many_ghi_forecasts, many_observations)
+    return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
 @pytest.fixture(scope='module')

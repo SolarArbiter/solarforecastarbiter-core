@@ -47,7 +47,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
     -------
     dict
         List of pd.DataFrame/dict with the results.
-        Keys are ProcessedForecastObservation and values are pd.DataFrame?
+        Keys are ForecastObservation and values are pd.DataFrame?
 
     Todo
     ----
@@ -58,16 +58,17 @@ def calculate_metrics(processed_pairs, categories, metrics,
     """
     calc_metrics = {}
 
-    for fxobs in processed_pairs:
+    for proc_fxobs in processed_pairs:
 
         # Deterministic
-        if isinstance(fxobs, datamodel.ProcessedForecastObservation):
-            metrics_ = calculate_deterministic_metrics(fxobs,
-                                                       categoires,
+        if isinstance(proc_fxobs, datamodel.ProcessedForecastObservation):
+            metrics_ = calculate_deterministic_metrics(proc_fxobs,
+                                                       categories,
                                                        metrics,
                                                        ref_fx_obs=ref_pair,
                                                        normalizer=normalizer)
-            calc_metrics[fxobs] = metrics_
+
+            calc_metrics[proc_fxobs.original] = metrics_
 
     return calc_metrics
 

@@ -35,42 +35,47 @@ def create_datetime_index():
     return _create_datetime_index
 
 
-@pytest.mark.parametrize('fx,obs,expect_timestamps', [
-    (pd.Series(index=pd.DatetimeIndex([])),
-     pd.Series(index=pd.DatetimeIndex([])),
-     np.nan),
-    (pd.Series(index=pd.DatetimeIndex([])),
-     pd.Series([1.0, 1.0], index=pd.date_range(
-         start='20190801', periods=2, freq='1h', tz='MST', name='timestamp')),
-     np.nan),
-    (pd.Series([1.0, 1.0], index=pd.date_range(
-        start='20190801', periods=2, freq='1h', tz='UTC', name='timestamp')),
-     pd.Series(index=pd.DatetimeIndex([])),
-     np.nan),
-    (pd.Series([1.0, 1.0], index=pd.date_range(
-        start='20190801', periods=2, freq='1h', tz='MST')),
-     pd.Series([1.0, 1.0], index=pd.date_range(
-         start='20190801', periods=2, freq='1h', tz='UTC')),
-     pd.Series())
+@pytest.mark.parametrize('categories,metrics', [
+    ([], []),
+    (calculator.AVAILABLE_CATEGORIES, deterministic.__all__)
 ])
-def test_calculate_metrics(report_objects, fx, obs, expect_timestamps):
-    report, obs_model, fx0_model, fx1_model = report_objects
-    metrics = report.metrics
-    for fxobs, filter in zip(report.forecast_observations, report.filters):
-        pass
-        # TODO ProcessedForecastObservation creation
-        # out = calculator.calculate_metrics(fxobs,
-        #                                    filter,
-        #                                    metrics)
-        # assert isinstance(out, dict)
-        # assert isinstance(out["total"], dict)
-        # assert isinstance(out["total"]["mae"], float)
-        # for group in ('month', 'day', 'hour'):
-        #     assert isinstance(out[group], dict)
-        #     if isinstance(expect, pd.Series):
-        #         assert isinstance(out[group]["mae"], pd.Series)
-        #     else:
-        #         assert np.isnan(out[group]["mae"])
+def test_calculate_metrics(categories, metrics,
+                           create_processed_fxobs,
+                           many_forecast_observation):
+    proc_fx_obs = []
+    for fx_obs in many_forecast_observation:
+        proc_fx_obs.append(
+            create_processed_fxobs(fx_obs,
+                                   np.random.randn(10),
+                                   np.random.randn(10))
+        )
+
+    ref_fx_obs = create_processed_fxobs(many_forecast_observation[0],
+                                        np.random.randn(10),
+                                        np.random.randn(10))
+
+    # All
+    all_result = calculator.calculate_metrics(proc_fx_obs,
+                                              categories, metrics,
+                                              ref_pair=ref_fx_obs,
+                                              normalizer=1.0)
+
+    assert isinstance(all_result, dict)
+    assert len(all_result) == len(proc_fx_obs)
+
+    # 1 value no options
+    if len(metrics) > 0:
+        with pytest.raises(AttributeError):
+            calculator.calculate_metrics([proc_fx_obs[0]],
+                                         categories, metrics)
+        # drop metrics requiring reference forecast
+        list(map(metrics.remove, deterministic._REQ_REF_FX))
+    one_result = calculator.calculate_metrics([proc_fx_obs[0]],
+                                              categories, metrics)
+
+    assert isinstance(one_result, dict)
+    assert len(one_result) == 1
+
 
 def _all_length_combinations(alist):
     """Produce all combinations of a list from one up to length of the list
@@ -81,7 +86,7 @@ def _all_length_combinations(alist):
 
 
 @pytest.mark.parametrize('categories', [
-    '',
+    [],
     *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES,1)),
     calculator.AVAILABLE_CATEGORIES[0:1],
     calculator.AVAILABLE_CATEGORIES[0:2],
@@ -89,12 +94,12 @@ def _all_length_combinations(alist):
     calculator.AVAILABLE_CATEGORIES
 ])
 @pytest.mark.parametrize('metrics', [
-    '',
+    [],
     *list(itertools.combinations(deterministic._MAP.keys(),1)),
-    list(deterministic._MAP.keys())[0:1],
-    list(deterministic._MAP.keys())[0:2],
-    list(deterministic._MAP.keys())[1:],
-    list(deterministic._MAP.keys())
+    deterministic.__all__[0:1],
+    deterministic.__all__[0:2],
+    deterministic.__all__[1:],
+    deterministic.__all__
 ])
 @pytest.mark.parametrize('values,ref_values,normalizer', [
     ((np.random.randn(0), np.random.randn(0)),
