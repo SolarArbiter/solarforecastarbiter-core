@@ -214,7 +214,14 @@ def centered_root_mean_square(y_true, y_pred):
     ))
 
 
-def kolmogorov_smirnov_integral():
+def _estimate_cdf(z, bins=100):
+    hist, bin_edges = np.histogram(z, bins=bins, density=True)
+    x = bin_edges[1:]
+    y = np.cumsum(hist * np.diff(bin_edges))
+    return x, y
+
+
+def kolmogorov_smirnov_integral(y_true, y_pred):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
     Parameters
@@ -230,9 +237,36 @@ def kolmogorov_smirnov_integral():
         The KSI between the true and predicted values.
 
     """
-    return None
 
-def over():
+    # empirical CDF
+    x_o, y_o = _estimate_cdf(y_true)
+    x_f, y_f = _estimate_cdf(y_pred)
+
+    print("Before:")
+    print(x_o[:5])
+    print(x_f[:5])
+    print(y_o[:5])
+    print(y_f[:5])
+
+    # interpolate CDFs to same grid
+    xmin = min(x_o.min(), x_f.min())
+    xmax = max(x_o.max(), x_f.max())
+    x = np.linspace(xmin, xmax, 100)
+    y_o = np.interp(x, x_o, y_o)
+    y_f = np.interp(x, x_f, y_f)
+
+    print("After:")
+    print(x[:5])
+    print(y_o[:5])
+    print(y_f[:5])
+
+    # KSI
+    D = np.abs(y_o - y_f)
+    ksi = np.trapz(D, x=x)
+    return ksi
+
+
+def over(y_true, y_pred):
     """OVER metric.
 
     Parameters
@@ -248,10 +282,16 @@ def over():
         The OVER metric between the true and predicted values.
 
     """
+
+    # critical limit (V_c) = 1.63 / sqrt(N) if N >= 35
+    # where N = number of samples
+
+    Vc = 1.63 / np.sqrt(len(y_true))
+
     return None
 
 
-def combined_performance_index():
+def combined_performance_index(y_true, y_pred):
     """Combined Performance Index (CPI) metric.
 
     Parameters
@@ -267,4 +307,6 @@ def combined_performance_index():
         The CPI between the true and predicted values.
 
     """
+    ksi = kolmogorov_smirnov_integral(y_true, y_pred)
+
     return None
