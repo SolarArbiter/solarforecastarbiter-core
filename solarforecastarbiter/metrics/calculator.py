@@ -115,12 +115,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         2. Metric name (e.g., 'mae', 'rmse')
         3. Category group (e.g, 0, 1, 2 ..., 11 for month)
         4. Value
+        If no forecast data is found an empty dictionary is returned.
     """
-    # Check data is processed pair
-    # assert isinstance(processed_fx_obs,
-    #                   datamodel.ProcessedForecastObservation), \
-    #     "Must be a ProcessedForecastObservation"
-
     calc_metrics = defaultdict(dict)
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values
@@ -128,25 +124,23 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # Check reference forecast is from processed pair, if needed
     ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
-        # assert isinstance(ref_fx_obs,
-        #                   datamodel.ProcessedForecastObservation),\
-        #                   "Reference forecast must be a " \
-        #                   "ProcessedForecastObservation"
         ref_fx = ref_fx_obs.forecast_values
+
+    # No forecast data
+    if fx.empty:
+        return calc_metrics
 
     # Calculate metrics
     for category in set(categories):
         calc_metrics[category] = {}
 
-        # total
+        # total (special category)
         if category == 'total':
-
             for metric_ in metrics:
                 r = _apply_deterministic_metric_func(metric_, fx, obs,
                                                      ref_fx=ref_fx,
                                                      normalizer=normalizer)
                 calc_metrics[category][metric_] = r
-
         else:
             # dataframe for grouping
             df = pd.concat({'forecast': fx,

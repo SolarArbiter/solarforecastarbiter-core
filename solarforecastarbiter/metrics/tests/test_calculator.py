@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+import itertools
 
 
 from solarforecastarbiter import datamodel
@@ -8,12 +9,22 @@ from solarforecastarbiter.metrics import (calculator, preprocessing,
                                           deterministic)
 
 
-# @pytest.fixture()
-# def create_forecast_model():
-#     def _create_forecast_model(fx_series, obs_frame):
-#         return = datamodel.ProcessedForecastObservation(
-#
-#         )
+@pytest.fixture()
+def create_processed_fxobs(create_datetime_index):
+    def _create_processed_fxobs(fxobs, fx_values, obs_values):
+        return datamodel.ProcessedForecastObservation(
+            fxobs,
+            fxobs.forecast.interval_value_type,
+            fxobs.forecast.interval_length,
+            fxobs.forecast.interval_label,
+            forecast_values=pd.Series(
+                fx_values, index=create_datetime_index(len(fx_values))),
+            observation_values=pd.Series(
+                obs_values, index=create_datetime_index(len(obs_values)))
+        )
+
+    return _create_processed_fxobs
+
 
 @pytest.fixture()
 def create_datetime_index():
@@ -61,10 +72,68 @@ def test_calculate_metrics(report_objects, fx, obs, expect_timestamps):
         #     else:
         #         assert np.isnan(out[group]["mae"])
 
+def _all_length_combinations(alist):
+    """Produce all combinations of a list from one up to length of the list
+    as 1-dimension generator."""
+    full_lists = [itertools.combinations(calculator.AVAILABLE_CATEGORIES, i)
+                  for i in range(1, len(alist))]
+    return list(itertools.chain(*full_lists))
 
-# def test_calculate_deterministic_metrics(proc_pair, categories, metrics,
-#                                          ref_pair, normalizer):
-#     pass
+
+@pytest.mark.parametrize('categories', [
+    '',
+    *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES,1)),
+    calculator.AVAILABLE_CATEGORIES[0:1],
+    calculator.AVAILABLE_CATEGORIES[0:2],
+    calculator.AVAILABLE_CATEGORIES[1:],
+    calculator.AVAILABLE_CATEGORIES
+])
+@pytest.mark.parametrize('metrics', [
+    '',
+    *list(itertools.combinations(deterministic._MAP.keys(),1)),
+    list(deterministic._MAP.keys())[0:1],
+    list(deterministic._MAP.keys())[0:2],
+    list(deterministic._MAP.keys())[1:],
+    list(deterministic._MAP.keys())
+])
+@pytest.mark.parametrize('values,ref_values,normalizer', [
+    ((np.random.randn(0), np.random.randn(0)),
+     (np.random.randn(0), np.random.randn(0)),
+     1.0),
+    ((np.random.randn(10), np.random.randn(10)),
+     (np.random.randn(10), np.random.randn(10)),
+     1.0),
+    ((np.random.randn(10), np.random.randn(10)),
+     (np.random.randn(10), np.random.randn(10)),
+     None),
+    ((np.random.randn(10), np.random.randn(10)),
+     None,
+     None),
+])
+def test_calculate_deterministic_metrics(values, categories, metrics,
+                                         ref_values, normalizer,
+                                         single_forecast_observation,
+                                         create_processed_fxobs):
+    pair = create_processed_fxobs(single_forecast_observation, *values)
+
+    kws = {}
+
+    if ref_values is not None:
+        kws['ref_fx_obs'] = create_processed_fxobs(single_forecast_observation,
+                                                   *ref_values)
+
+    if normalizer is not None:
+        kws['normalizer'] = normalizer
+
+    # Check if reference forecast is required
+    if (ref_values is None and
+       any(m in deterministic._REQ_REF_FX for m in metrics)):
+            with pytest.raises(AttributeError):
+                calculator.calculate_deterministic_metrics(
+                    pair, categories, metrics, **kws)
+    else:
+        result = calculator.calculate_deterministic_metrics(
+            pair, categories, metrics, **kws)
 
 
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
