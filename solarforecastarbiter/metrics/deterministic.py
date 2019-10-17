@@ -12,6 +12,9 @@ __all__ = [
     "pearson_correlation_coeff",
     "coeff_determination",
     "centered_root_mean_square",
+    "kolmogorov_smirnov_integral",
+    "over",
+    "combined_performance_index",
 ]
 
 
@@ -209,3 +212,59 @@ def centered_root_mean_square(y_true, y_pred):
     return np.sqrt(np.mean(
         ((y_pred - np.mean(y_pred)) - (y_true - np.mean(y_true))) ** 2
     ))
+
+
+def kolmogorov_smirnov_integral():
+    """Kolmogorov-Smirnov Test Integral (KSI).
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    ksi : float
+        The KSI between the true and predicted values.
+
+    """
+    return None
+
+def over():
+    """OVER metric.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    over : float
+        The OVER metric between the true and predicted values.
+
+    """
+    return None
+
+
+def combined_performance_index():
+    """Combined Performance Index (CPI) metric.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    cpi : float
+        The CPI between the true and predicted values.
+
+    """
+    return None
