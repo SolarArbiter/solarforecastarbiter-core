@@ -135,6 +135,51 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
         result = calculator.calculate_deterministic_metrics(
             pair, categories, metrics, **kws)
 
+        # Check results
+        assert isinstance(result, dict)
+        if (len(metrics) == 0 or len(categories) == 0 or
+            len(pair.forecast_values) == 0):
+            # Empty results
+            assert len(result) == 0
+        else:
+            assert sorted(result.keys()) == sorted(categories)
+            for cat, val_cat in result.items():
+                if cat == 'total':
+                    assert sorted(val_cat.keys()) == sorted(metrics)
+                    # metrics
+                    for metric, val_metric in val_cat.items():
+                        assert np.isfinite(val_metric)
+                else:
+                    # category groups
+                    for cat_group, metric_group in val_cat.items():
+                        assert sorted(metric_group.keys()) == sorted(metrics)
+
+                        # metrics
+                        for metric, val_metric in metric_group.items():
+                            assert np.isfinite(val_metric)
+
+                        fx_values = pair.forecast_values
+                        # has expected groupings
+                        if cat == 'month':
+                            grps = fx_values.groupby(
+                                fx_values.index.month).groups
+                        elif cat == 'hour':
+                            grps = fx_values.groupby(
+                                fx_values.index.hour).groups
+                        elif cat == 'year':
+                            grps = fx_values.groupby(
+                                fx_values.index.year).groups
+                        elif cat == 'day':
+                            grps = fx_values.groupby(
+                                fx_values.index.day).groups
+                        elif cat == 'date':
+                            grps = fx_values.groupby(
+                                fx_values.index.date).groups
+                        elif cat == 'weekday':
+                            grps = fx_values.groupby(
+                                fx_values.index.weekday).groups
+                        assert sorted(grps) == sorted(val_cat.keys())
+
 
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
     ('mae', [], [], None, None, np.NaN),

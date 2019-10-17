@@ -126,8 +126,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     if any(m in deterministic._REQ_REF_FX for m in metrics):
         ref_fx = ref_fx_obs.forecast_values
 
-    # No forecast data
-    if fx.empty:
+    # No forecast data or metrics
+    if fx.empty or len(metrics) == 0:
         return calc_metrics
 
     # Calculate metrics
