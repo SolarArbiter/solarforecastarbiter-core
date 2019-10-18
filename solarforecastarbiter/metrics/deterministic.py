@@ -234,9 +234,9 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
 
     Notes
     -----
-        The calculation of the empirical CDF uses a right endpoint rule (the
-        default of the statsmodels ECDF function). For example, if the data is
-        [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
+    The calculation of the empirical CDF uses a right endpoint rule (the
+    default of the statsmodels ECDF function). For example, if the data is
+    [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
 
     """
 
@@ -278,9 +278,9 @@ def over(y_true, y_pred):
 
     Notes
     -----
-        The calculation of the empirical CDF uses a right endpoint rule (the
-        default of the statsmodels ECDF function). For example, if the data is
-        [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
+    The calculation of the empirical CDF uses a right endpoint rule (the
+    default of the statsmodels ECDF function). For example, if the data is
+    [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
 
     """
 
