@@ -238,7 +238,7 @@ def _estimate_cdf(z, bins=100):
     return x, y
 
 
-def kolmogorov_smirnov_integral(y_true, y_pred):
+def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
     Parameters
@@ -247,6 +247,8 @@ def kolmogorov_smirnov_integral(y_true, y_pred):
         True values.
     y_pred : array-like
         Predicted values.
+    normed : bool, optional
+        If True, return the normalized KSI [%].
 
     Returns
     -------
@@ -269,7 +271,13 @@ def kolmogorov_smirnov_integral(y_true, y_pred):
     # compute metric
     D = np.abs(y_o - y_f)
     ksi = np.trapz(D, x=x)
-    return ksi
+
+    if normed:
+        Vc = 1.63 / np.sqrt(len(y_true))
+        a_critical = Vc * (x.max() - x.min())
+        return ksi / a_critical * 100.0
+    else:
+        return ksi
 
 
 def over(y_true, y_pred):
