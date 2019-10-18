@@ -1,6 +1,7 @@
 """Deterministic forecast error metrics."""
 
 import numpy as np
+from statsmodels.distributions.empirical_distribution import ECDF
 
 __all__ = [
     "mean_absolute",
@@ -214,43 +215,6 @@ def centered_root_mean_square(y_true, y_pred):
     ))
 
 
-def estimate_cdf(x):
-    """Empirical CDF.
-
-    Given n samples (x = {x_1, x_2, ..., x_n}, the empirical CDF is:
-
-        hat{F}(t) = 1/n * sum_{i=1}^n I_{x_i <= t}
-
-    where I_{x_i <= t} is the indicator function (returns 1 if x_i <= t,
-    otherwise returns 0).
-
-
-    Parameters
-    ----------
-    x : (m,) array_like
-        Input data.
-
-    Returns
-    -------
-    t : (n,) array_like
-        The bin edges of the CDF (closed on the right).
-    F : (n,) array_like
-        The CDF (i.e. y = F(x)).
-
-    """
-
-    t = np.unique(x)
-    nt = len(t)
-    nx = len(x)
-
-    # vectorized ECDF
-    X = np.tile(x, [nt, 1]).T   # 2D array (nx, nt)
-    F = np.zeros_like(X)
-    F[X <= t] = 1.0    # broadcast indicator function
-    F = np.count_nonzero(F, axis=0) / nx
-    return t, F
-
-
 def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
@@ -271,15 +235,13 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     """
 
     # empirical CDF
-    x_o, y_o = estimate_cdf(y_true)
-    x_f, y_f = estimate_cdf(y_pred)
+    ecdf_obs = ECDF(y_true)
+    ecdf_fx = ECDF(y_pred)
 
-    # interpolate CDFs to same grid
-    xmin = min(x_o.min(), x_f.min())
-    xmax = max(x_o.max(), x_f.max())
-    x = np.linspace(xmin, xmax, 100)
-    y_o = np.interp(x, x_o, y_o)
-    y_f = np.interp(x, x_f, y_f)
+    # evaluate CDFs on forecast range
+    x = np.linspace(np.min(y_pred), np.max(y_pred), 100)
+    y_o = ecdf_obs(x)
+    y_f = ecdf_fx(x)
 
     # compute metric
     D = np.abs(y_o - y_f)
@@ -311,15 +273,13 @@ def over(y_true, y_pred):
     """
 
     # empirical CDF
-    x_o, y_o = estimate_cdf(y_true)
-    x_f, y_f = estimate_cdf(y_pred)
+    ecdf_obs = ECDF(y_true)
+    ecdf_fx = ECDF(y_pred)
 
-    # interpolate CDFs to same grid
-    xmin = min(x_o.min(), x_f.min())
-    xmax = max(x_o.max(), x_f.max())
-    x = np.linspace(xmin, xmax, 100)
-    y_o = np.interp(x, x_o, y_o)
-    y_f = np.interp(x, x_f, y_f)
+    # evaluate CDFs on forecast range
+    x = np.linspace(np.min(y_pred), np.max(y_pred), 100)
+    y_o = ecdf_obs(x)
+    y_f = ecdf_fx(x)
 
     # compute metric
     D = np.abs(y_o - y_f)
