@@ -98,7 +98,9 @@ def test_ksi(y_true, y_pred, value):
     ([1, 2], [1, 2], 0.0),
 ])
 def test_ksi_norm(y_true, y_pred, value):
-    ksi = deterministic.kolmogorov_smirnov_integral(y_true, y_pred, normed=True)
+    ksi = deterministic.kolmogorov_smirnov_integral(
+        y_true, y_pred, normed=True
+    )
     assert ksi == value
 
 
