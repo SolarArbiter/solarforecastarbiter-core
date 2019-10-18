@@ -227,8 +227,8 @@ def create_raw_report_from_data(report, data):
 
     # Calculate metrics
     metrics_list = calculator.calculate_metrics(processed_fxobs,
-                                                report.categories,
-                                                report.metrics)
+                                                list(report.categories),
+                                                list(report.metrics))
 
     # can be ~50kb
     report_template = template.template_report(report, metadata,
