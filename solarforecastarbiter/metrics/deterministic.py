@@ -215,6 +215,23 @@ def centered_root_mean_square(y_true, y_pred):
 
 
 def _estimate_cdf(z, bins=100):
+    """Estimate empirical CDF
+
+    Parameters
+    ----------
+    z : (m,) array_like
+        Input data.
+    bins : int, optional
+        Number of bins (n) for the histogram.
+
+    Returns
+    -------
+    x : (n,) array_like
+        The bin edges of the CDF.
+    y : (n,) array_like
+        The CDF (i.e. y = F(x)).
+
+    """
     hist, bin_edges = np.histogram(z, bins=bins, density=True)
     x = bin_edges[1:]
     y = np.cumsum(hist * np.diff(bin_edges))
@@ -242,12 +259,6 @@ def kolmogorov_smirnov_integral(y_true, y_pred):
     x_o, y_o = _estimate_cdf(y_true)
     x_f, y_f = _estimate_cdf(y_pred)
 
-    print("Before:")
-    print(x_o[:5])
-    print(x_f[:5])
-    print(y_o[:5])
-    print(y_f[:5])
-
     # interpolate CDFs to same grid
     xmin = min(x_o.min(), x_f.min())
     xmax = max(x_o.max(), x_f.max())
@@ -255,12 +266,7 @@ def kolmogorov_smirnov_integral(y_true, y_pred):
     y_o = np.interp(x, x_o, y_o)
     y_f = np.interp(x, x_f, y_f)
 
-    print("After:")
-    print(x[:5])
-    print(y_o[:5])
-    print(y_f[:5])
-
-    # KSI
+    # compute metric
     D = np.abs(y_o - y_f)
     ksi = np.trapz(D, x=x)
     return ksi
@@ -283,12 +289,24 @@ def over(y_true, y_pred):
 
     """
 
-    # critical limit (V_c) = 1.63 / sqrt(N) if N >= 35
-    # where N = number of samples
+    # empirical CDF
+    x_o, y_o = _estimate_cdf(y_true)
+    x_f, y_f = _estimate_cdf(y_pred)
 
+    # interpolate CDFs to same grid
+    xmin = min(x_o.min(), x_f.min())
+    xmax = max(x_o.max(), x_f.max())
+    x = np.linspace(xmin, xmax, 100)
+    y_o = np.interp(x, x_o, y_o)
+    y_f = np.interp(x, x_f, y_f)
+
+    # compute metric
+    D = np.abs(y_o - y_f)
     Vc = 1.63 / np.sqrt(len(y_true))
-
-    return None
+    Dstar = D - Vc
+    Dstar[D <= Vc] = 0.0
+    over = np.trapz(Dstar, x=x)
+    return over
 
 
 def combined_performance_index(y_true, y_pred):
@@ -308,5 +326,7 @@ def combined_performance_index(y_true, y_pred):
 
     """
     ksi = kolmogorov_smirnov_integral(y_true, y_pred)
-
-    return None
+    ov = over(y_true, y_pred)
+    rmse = root_mean_square(y_true, y_pred)
+    cpi = 1 / 4 * (ksi + ov + 2 * rmse)
+    return cpi

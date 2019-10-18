@@ -82,3 +82,30 @@ def test_r2(y_true, y_pred, value):
 def test_crmse(y_true, y_pred, value):
     crmse = deterministic.centered_root_mean_square(y_true, y_pred)
     assert crmse == value
+
+
+@pytest.mark.parametrize("y_true,y_pred,value", [
+    ([0, 1], [0, 1], 0.0),
+    ([1, 2], [1, 2], 0.0),
+])
+def test_ksi(y_true, y_pred, value):
+    ksi = deterministic.kolmogorov_smirnov_integral(y_true, y_pred)
+    assert ksi == value
+
+
+@pytest.mark.parametrize("y_true,y_pred,value", [
+    ([0, 1], [0, 1], 0.0),
+    ([1, 2], [1, 2], 0.0),
+])
+def test_over(y_true, y_pred, value):
+    ov = deterministic.over(y_true, y_pred)
+    assert ov == value
+
+
+@pytest.mark.parametrize("y_true,y_pred,value", [
+    (np.array([0, 1]), np.array([0, 1]), 0.0),
+    (np.array([1, 2]), np.array([1, 2]), 0.0),
+])
+def test_cpi(y_true, y_pred, value):
+    cpi = deterministic.combined_performance_index(y_true, y_pred)
+    assert cpi == value
