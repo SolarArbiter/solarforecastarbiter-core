@@ -245,7 +245,7 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     ecdf_fx = ECDF(y_pred)
 
     # evaluate CDFs
-    x = np.sort(np.concatenate((y_true, y_pred)))
+    x = np.unique(np.concatenate((y_true, y_pred)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
@@ -289,7 +289,7 @@ def over(y_true, y_pred):
     ecdf_fx = ECDF(y_pred)
 
     # evaluate CDFs
-    x = np.sort(np.concatenate((y_true, y_pred)))
+    x = np.unique(np.concatenate((y_true, y_pred)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
