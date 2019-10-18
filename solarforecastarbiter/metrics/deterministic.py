@@ -251,7 +251,7 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
 
     # compute metric
     D = np.abs(y_o - y_f)
-    ksi = np.trapz(D, x=x)
+    ksi = np.sum(D[:-1] * np.diff(x))
 
     if normed:
         Vc = 1.63 / np.sqrt(len(y_true))

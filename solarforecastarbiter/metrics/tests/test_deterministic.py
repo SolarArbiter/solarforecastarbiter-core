@@ -88,7 +88,7 @@ def test_crmse(y_true, y_pred, value):
     ([0, 1], [0, 1], 0.0),
     ([1, 2], [1, 2], 0.0),
     ([0, 1], [0, 2], 0.5),
-    ([0, 1, 2], [0, 0, 2], 1.0 / 6.0),
+    ([0, 1, 2], [0, 0, 2], 1.0 / 3.0),
 ])
 def test_ksi(y_true, y_pred, value):
     ksi = deterministic.kolmogorov_smirnov_integral(y_true, y_pred)
