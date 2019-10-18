@@ -120,3 +120,11 @@ def test_over(y_true, y_pred, value):
 def test_cpi(y_true, y_pred, value):
     cpi = deterministic.combined_performance_index(y_true, y_pred)
     assert cpi == value
+
+@pytest.mark.parametrize("x,bins,ecdf", [
+    ([0, 1, 2, 3], [0, 1, 2, 3], [0.25, 0.50, 0.75, 1.00]),
+])
+def test_ecdf(x, bins, ecdf):
+    t, F = deterministic.estimate_cdf(x)
+    assert (t == bins).all()
+    assert (F == ecdf).all()

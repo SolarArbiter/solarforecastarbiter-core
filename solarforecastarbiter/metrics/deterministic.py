@@ -214,28 +214,41 @@ def centered_root_mean_square(y_true, y_pred):
     ))
 
 
-def _estimate_cdf(z, bins=100):
-    """Estimate empirical CDF
+def estimate_cdf(x):
+    """Empirical CDF.
+
+    Given n samples (x = {x_1, x_2, ..., x_n}, the empirical CDF is:
+
+        hat{F}(t) = 1/n * sum_{i=1}^n I_{x_i <= t}
+
+    where I_{x_i <= t} is the indicator function (returns 1 if x_i <= t,
+    otherwise returns 0).
+
 
     Parameters
     ----------
-    z : (m,) array_like
+    x : (m,) array_like
         Input data.
-    bins : int, optional
-        Number of bins (n) for the histogram.
 
     Returns
     -------
-    x : (n,) array_like
-        The bin edges of the CDF.
-    y : (n,) array_like
+    t : (n,) array_like
+        The bin edges of the CDF (closed on the right).
+    F : (n,) array_like
         The CDF (i.e. y = F(x)).
 
     """
-    hist, bin_edges = np.histogram(z, bins=bins, density=True)
-    x = bin_edges[1:]
-    y = np.cumsum(hist * np.diff(bin_edges))
-    return x, y
+
+    t = np.unique(x)
+    nt = len(t)
+    nx = len(x)
+
+    # vectorized ECDF
+    X = np.tile(x, [nt, 1]).T   # 2D array (nx, nt)
+    F = np.zeros_like(X)
+    F[X <= t] = 1.0    # broadcast indicator function
+    F = np.count_nonzero(F, axis=0) / nx
+    return t, F
 
 
 def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
@@ -258,8 +271,8 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     """
 
     # empirical CDF
-    x_o, y_o = _estimate_cdf(y_true)
-    x_f, y_f = _estimate_cdf(y_pred)
+    x_o, y_o = estimate_cdf(y_true)
+    x_f, y_f = estimate_cdf(y_pred)
 
     # interpolate CDFs to same grid
     xmin = min(x_o.min(), x_f.min())
@@ -298,8 +311,8 @@ def over(y_true, y_pred):
     """
 
     # empirical CDF
-    x_o, y_o = _estimate_cdf(y_true)
-    x_f, y_f = _estimate_cdf(y_pred)
+    x_o, y_o = estimate_cdf(y_true)
+    x_f, y_f = estimate_cdf(y_pred)
 
     # interpolate CDFs to same grid
     xmin = min(x_o.min(), x_f.min())
