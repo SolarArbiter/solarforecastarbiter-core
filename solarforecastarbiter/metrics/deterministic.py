@@ -238,8 +238,8 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     ecdf_obs = ECDF(y_true)
     ecdf_fx = ECDF(y_pred)
 
-    # evaluate CDFs on forecast range
-    x = np.linspace(np.min(y_pred), np.max(y_pred), 100)
+    # evaluate CDFs
+    x = np.sort(np.concatenate((y_true, y_pred)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
@@ -276,8 +276,8 @@ def over(y_true, y_pred):
     ecdf_obs = ECDF(y_true)
     ecdf_fx = ECDF(y_pred)
 
-    # evaluate CDFs on forecast range
-    x = np.linspace(np.min(y_pred), np.max(y_pred), 100)
+    # evaluate CDFs
+    x = np.sort(np.concatenate((y_true, y_pred)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
