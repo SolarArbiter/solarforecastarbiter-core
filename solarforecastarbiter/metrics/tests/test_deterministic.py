@@ -109,6 +109,7 @@ def test_ksi_norm(y_true, y_pred, value):
 @pytest.mark.parametrize("y_true,y_pred,value", [
     ([0, 1], [0, 1], 0.0),
     ([1, 2], [1, 2], 0.0),
+    ([0, 1, 2, 3, 4], [0, 0, 0, 0, 0], 0.8 - 1.63 / np.sqrt(5)),
 ])
 def test_over(y_true, y_pred, value):
     ov = deterministic.over(y_true, y_pred)
