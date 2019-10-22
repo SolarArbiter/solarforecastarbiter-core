@@ -298,7 +298,7 @@ def over(y_true, y_pred):
     Vc = 1.63 / np.sqrt(len(y_true))
     Dstar = D - Vc
     Dstar[D <= Vc] = 0.0
-    over = np.trapz(Dstar, x=x)
+    over = np.sum(Dstar[:-1] * np.diff(x))
     return over
 
 
