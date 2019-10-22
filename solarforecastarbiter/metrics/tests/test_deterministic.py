@@ -118,7 +118,12 @@ def test_over(y_true, y_pred, value):
 @pytest.mark.parametrize("y_true,y_pred,value", [
     (np.array([0, 1]), np.array([0, 1]), 0.0),
     (np.array([1, 2]), np.array([1, 2]), 0.0),
+    (
+        np.array([0, 1, 2]),
+        np.array([0, 0, 2]),
+        1/4 * (1/3 + 0 + 2 * np.sqrt(1/3))
+    ),
 ])
 def test_cpi(y_true, y_pred, value):
     cpi = deterministic.combined_performance_index(y_true, y_pred)
-    assert cpi == value
+    assert pytest.approx(cpi) == value
