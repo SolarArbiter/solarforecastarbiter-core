@@ -153,7 +153,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 calc_metrics[category][name] = {}
 
                 for metric_ in metrics:
-                    r = _apply_deterministic_metric_func(metric_, fx, obs,
+                    r = _apply_deterministic_metric_func(metric_,
+                                                         group.forecast,
+                                                         group.observation,
                                                          ref_fx=ref_fx,
                                                          normalizer=normalizer)
                     calc_metrics[category][name][metric_] = r

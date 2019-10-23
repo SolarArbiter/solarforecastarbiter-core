@@ -24,10 +24,27 @@ Contents:
   * [Observations and forecasts](#observations-and-forecasts)
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
-  * [Total analysis period](#total-analysis-period)
-  * [Monthly](#monthly)
-  * [Daily](#daily)
-  * [Hourly](#hourly)
+  {% if 'total' in figures.keys() %}
+  * [Total period analysis](#total-period-analysis)
+  {% endif %}
+  {% if 'month' in figures.keys() %}
+  * [Monthly analysis](#monthly-analysis)
+  {% endif %}
+  {% if 'day' in figures.keys() %}
+  * [Daily analysis](#daily-analysis)
+  {% endif %}
+  {% if 'hour' in figures.keys() %}
+  * [Hourly analysis](#hourly-analysis)
+  {% endif %}
+  {% if 'date' in figures.keys() %}
+  * [Date analysis](#date-analysis)
+  {% endif %}
+  {% if 'year' in figures.keys() %}
+  * [Date analysis](#yearly-analysis)
+  {% endif %}
+  {% if 'weekday' in figures.keys() %}
+  * [Date analysis](#weekday-analysis)
+  {% endif %}
 * [Versions](#versions)
 * [Hash](#hash)
 
@@ -93,58 +110,15 @@ These intervals were removed from the raw time series before resampling and real
 
 Metrics are displayed in tables and figures below for one or more time periods. Metrics may be downloaded in csv format.
 
-### Total analysis period
-
-Metrics for the total analysis period are displayed in tables and figures below.
-
 {{ tables | safe }}
 
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar %}
-    {{ figure | safe }}
+{# Loop through each metric as keys in figures_bar by calling the markdown #}
+
+{#{ figures | safe }#}
+
+{% for category in figures.keys() %}
+  {% include 'metrics_' + category + '.md' %}
 {% endfor %}
-:::
-
-### Monthly
-
-{# consider putting these in a jinja for loop. will also/alternatively need if statements in case the monthly/daily/hourly metrics were not part of the report specification #}
-
-Metrics for each month of the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_month %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
-
-### Daily
-
-Metrics for each day of the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_day %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
-
-### Hourly
-
-Metrics for each hour of the day during the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_hour %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
 
 ## Versions
 

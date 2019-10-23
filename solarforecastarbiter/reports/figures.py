@@ -251,7 +251,7 @@ def construct_metrics_series(metrics, kind):
             if kind == 'total':
                 forecasts.append(m['name'])
                 m_types.append(col)
-                m_indexes.append('')
+                m_indexes.append(0)
                 m_values.append(m[kind][col])
             else:
                 for i, v in m[kind][col].items():
