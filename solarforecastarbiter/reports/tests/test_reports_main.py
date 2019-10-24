@@ -9,7 +9,7 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
-
+from solarforecastarbiter.metrics import calculator
 
 @pytest.fixture(scope='module')
 def _test_data(report_objects):
@@ -80,7 +80,7 @@ def test_all_categories_render(mock_data, report_objects):
         end=report.end,
         forecast_observations=report.forecast_observations,
         metrics=("mae", "rmse", "mbe"),
-        categories=["total", "day", 'hour'],
+        categories=calculator.AVAILABLE_CATEGORIES,
         report_id=report.report_id,
         filters=report.filters
     )
