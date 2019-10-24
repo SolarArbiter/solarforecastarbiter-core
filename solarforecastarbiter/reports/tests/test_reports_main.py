@@ -9,7 +9,7 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
-from solarforecastarbiter.metrics import calculator
+
 
 @pytest.fixture(scope='module')
 def _test_data(report_objects):
