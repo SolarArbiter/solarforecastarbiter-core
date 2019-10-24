@@ -34,7 +34,9 @@ def create_datetime_index():
 
     return _create_datetime_index
 
-
+# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
+# don't handle single values well
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('categories,metrics', [
     ([], []),
     (calculator.AVAILABLE_CATEGORIES, deterministic.__all__)
@@ -46,13 +48,13 @@ def test_calculate_metrics(categories, metrics,
     for fx_obs in many_forecast_observation:
         proc_fx_obs.append(
             create_processed_fxobs(fx_obs,
-                                   np.random.randn(10),
-                                   np.random.randn(10))
+                                   np.random.randn(10)+10,
+                                   np.random.randn(10)+10)
         )
 
     ref_fx_obs = create_processed_fxobs(many_forecast_observation[0],
-                                        np.random.randn(10),
-                                        np.random.randn(10))
+                                        np.random.randn(10)+10,
+                                        np.random.randn(10)+10)
 
     # All
     all_result = calculator.calculate_metrics(proc_fx_obs,
@@ -85,6 +87,9 @@ def _all_length_combinations(alist):
     return list(itertools.chain(*full_lists))
 
 
+# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
+# don't handle single values well
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('categories', [
     [],
     *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES, 1)),
@@ -105,13 +110,13 @@ def _all_length_combinations(alist):
     ((np.random.randn(0), np.random.randn(0)),
      (np.random.randn(0), np.random.randn(0)),
      1.0),
-    ((np.random.randn(10), np.random.randn(10)),
-     (np.random.randn(10), np.random.randn(10)),
+    ((np.random.randn(10)+10, np.random.randn(10)+10),
+     (np.random.randn(10)+10, np.random.randn(10)+10),
      1.0),
-    ((np.random.randn(10), np.random.randn(10)),
-     (np.random.randn(10), np.random.randn(10)),
+    ((np.random.randn(10)+10, np.random.randn(10)+10),
+     (np.random.randn(10)+10, np.random.randn(10)+10),
      None),
-    ((np.random.randn(10), np.random.randn(10)),
+    ((np.random.randn(10)+10, np.random.randn(10)+10),
      None,
      None),
 ])
@@ -153,7 +158,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                     assert sorted(val_cat.keys()) == sorted(metrics)
                     # metrics
                     for metric, val_metric in val_cat.items():
-                        assert np.isfinite(val_metric)
+                        assert isinstance(val_metric, float)
                 else:
                     # category groups
                     for cat_group, metric_group in val_cat.items():
@@ -161,7 +166,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
 
                         # metrics
                         for metric, val_metric in metric_group.items():
-                            assert np.isfinite(val_metric)
+                            assert isinstance(val_metric, float)
 
                         fx_values = pair.forecast_values
                         # has expected groupings
