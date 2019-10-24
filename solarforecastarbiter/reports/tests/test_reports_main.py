@@ -11,6 +11,7 @@ from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
 from solarforecastarbiter.metrics import calculator
 
+
 @pytest.fixture(scope='module')
 def _test_data(report_objects):
     _, observation, forecast_0, forecast_1 = report_objects
