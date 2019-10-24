@@ -2,8 +2,10 @@
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 import textwrap
+import calendar
 
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import (ColumnDataSource, HoverTool,
+                          DatetimeTickFormatter)
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -333,23 +335,47 @@ def bar_subdivisions(cds, kind, metric):
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
     fig_kwargs = dict(tools=tools)
     figs = []
-    if kind == 'day':
-        fig_kwargs['x_axis_type'] = 'datetime'
-        width = 0.8 * pd.Timedelta('1day')
-    else:
-        width = 0.8
+    label_override = None
 
+    width = 0.8
+
+    # specific category/kind settings
+    if kind == 'day':
+        fig_kwargs['x_axis_label'] = 'Day of the month'
+    elif kind == 'month':
+        fig_kwargs['x_axis_label'] = 'Month of the year'
+        label_override = [calendar.month_abbr[m] for m in cds.data[kind]]
+    elif kind == 'hour':
+        fig_kwargs['x_axis_label'] = 'Hour of the day'
+    elif kind == 'date':
+        fig_kwargs['x_axis_label'] = 'Date'
+        fig_kwargs['x_axis_type'] = 'datetime'
+        width = width * pd.Timedelta(days=1)
+    elif kind == 'year':
+        fig_kwargs['x_axis_label'] = 'Year'
+    elif kind == 'weekday':
+        fig_kwargs['x_axis_label'] = 'Day of the week'
+        label_override = [calendar.day_abbr[d] for d in cds.data[kind]]
+
+    # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
     y_max = max(d.max() for k, d in cds.data.items() if k != kind)
     pad_factor = 1.03
     y_max, y_min = pad_factor * y_max, pad_factor * y_min
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
+
+        # Create figure
         title = field + ' ' + metric.upper()
-        fig = figure(width=800, height=200, title=title, **fig_kwargs)
+        fig = figure(width=800, height=200, title=title,
+                     **fig_kwargs)
+
         fig.vbar(x=kind, top=field, width=width, source=cds,
                  line_color='white', fill_color=next(palette))
+
+        # axes parameters
         fig.xgrid.grid_line_color = None
+        fig.xaxis.minor_tick_line_color = None
         fig.y_range.start = y_min
         fig.y_range.end = y_max
         if metric in START_AT_ZER0:
@@ -364,14 +390,23 @@ def bar_subdivisions(cds, kind, metric):
         if num == 0:
             # add x_range to plots to link panning
             fig_kwargs['x_range'] = fig.x_range
-        if kind == 'day':
+
+        # Hover tool and use datetime format in special cases
+        if kind == 'date':
+            formatter = DatetimeTickFormatter(days='%Y-%m-%d')
+            fig.xaxis.formatter = formatter
             tooltips = [
                 (kind, f'@{kind}{{%F}}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),
             ]
-            formatters = {kind: 'datetime'}
-            hover_kwargs = dict(tooltips=tooltips, formatters=formatters)
+            hover_kwargs = dict(tooltips=tooltips,
+                                formatters={kind: 'datetime'})
         else:
+            # Set x-axis labels as "categorical"
+            fig.xaxis.ticker = cds.data[kind]
+            if label_override:
+                fig.xaxis.major_label_overrides = dict(zip(cds.data[kind].tolist(),
+                                                           label_override))
             tooltips = [
                 (kind, f'@{kind}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),
@@ -379,7 +414,9 @@ def bar_subdivisions(cds, kind, metric):
             hover_kwargs = dict(tooltips=tooltips)
         hover = HoverTool(mode='vline', **hover_kwargs)
         fig.add_tools(hover)
+
         figs.append(fig)
+
     return figs
 
 

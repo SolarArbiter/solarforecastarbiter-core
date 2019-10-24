@@ -31,19 +31,19 @@ Contents:
   * [Monthly analysis](#monthly-analysis)
   {% endif %}
   {% if 'day' in figures.keys() %}
-  * [Daily analysis](#daily-analysis)
+  * [Day of month analysis](#daily-analysis)
   {% endif %}
   {% if 'hour' in figures.keys() %}
-  * [Hourly analysis](#hourly-analysis)
+  * [Hour of day analysis](#hourly-analysis)
   {% endif %}
   {% if 'date' in figures.keys() %}
   * [Date analysis](#date-analysis)
   {% endif %}
   {% if 'year' in figures.keys() %}
-  * [Date analysis](#yearly-analysis)
+  * [Yearly analysis](#yearly-analysis)
   {% endif %}
   {% if 'weekday' in figures.keys() %}
-  * [Date analysis](#weekday-analysis)
+  * [Day of week analysis](#weekday-analysis)
   {% endif %}
 * [Versions](#versions)
 * [Hash](#hash)
