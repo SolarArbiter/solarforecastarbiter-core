@@ -1054,7 +1054,7 @@ def report_objects():
         end=end,
         forecast_observations=(fxobs0, fxobs1),
         metrics=("mae", "rmse", "mbe"),
-        categories=("total", "day", 'hour'),
+        categories=["total", "day", 'hour'],
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter,)
     )
@@ -1074,7 +1074,7 @@ def report_text():
         "end": "2019-04-04T23:59:00-07:00",
         "filters": [],
         "metrics": ["mae", "rmse", "mbe"],
-        "categories": ["total", "day", "hour"]
+        "categories": ["total", "day", "hour"],
         "object_pairs": [
             ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
              "9f657636-7e49-11e9-b77f-0a580a8003e9"],
