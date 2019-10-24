@@ -79,14 +79,6 @@ def test_calculate_metrics(categories, metrics,
     assert len(one_result) == 1
 
 
-def _all_length_combinations(alist):
-    """Produce all combinations of a list from one up to length of the list
-    as 1-dimension generator."""
-    full_lists = [itertools.combinations(calculator.AVAILABLE_CATEGORIES, i)
-                  for i in range(1, len(alist))]
-    return list(itertools.chain(*full_lists))
-
-
 # Suppress RuntimeWarnings b/c in some metrics will divide by zero or
 # don't handle single values well
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
