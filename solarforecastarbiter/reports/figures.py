@@ -405,8 +405,8 @@ def bar_subdivisions(cds, kind, metric):
             # Set x-axis labels as "categorical"
             fig.xaxis.ticker = cds.data[kind]
             if label_override:
-                fig.xaxis.major_label_overrides = dict(zip(cds.data[kind].tolist(),
-                                                           label_override))
+                fig.xaxis.major_label_overrides = dict(
+                    zip(cds.data[kind].tolist(), label_override))
             tooltips = [
                 (kind, f'@{kind}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),
