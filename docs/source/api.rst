@@ -325,8 +325,8 @@ Entry points for calculating metrics for
 .. autosummary::
    :toctree: generated/
 
-   metrics.calculator.calculate_metrics_for_processed_pairs
    metrics.calculator.calculate_metrics
+   metrics.calculator.calculate_deterministic_metrics
 
 Functions for preparing the timeseries data before calculating metrics:
 
