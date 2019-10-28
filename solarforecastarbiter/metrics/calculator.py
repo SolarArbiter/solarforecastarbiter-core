@@ -30,13 +30,13 @@ def calculate_metrics(processed_pairs, categories, metrics,
     Parameters
     ----------
     processed_pairs :
-        List of solarforecastarbiter.datamodel.ProcessedForecastObservation.
+        List of solarforecastarbiter.datamodel.ProcessedForecastObservation
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
     ref_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation`
+        solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
     normalizer : float
@@ -62,6 +62,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
 
         # Deterministic
         if isinstance(proc_fxobs, datamodel.ProcessedForecastObservation):
+            # TODO: add ProbabilisticForecast check and test
             metrics_ = calculate_deterministic_metrics(proc_fxobs,
                                                        categories,
                                                        metrics,
@@ -112,11 +113,14 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     pd.DataFrame or dict:
         Contains all the computed metrics by categories.
         Structure is:
-        1. Category type as tuple (e.g., ('total'), ('month', 'hour'))
-        2. Metric name (e.g., 'mae', 'rmse')
-        3. Category group (e.g, 0, 1, 2 ..., 11 for month)
-        4. Value
+
+          1. Category type as tuple (e.g., ('total'), ('month', 'hour'))
+          2. Metric name (e.g., 'mae', 'rmse')
+          3. Category group (e.g, 0, 1, 2 ..., 11 for month)g1
+          4. Value
+
         If no forecast data is found an empty dictionary is returned.
+
     """
     calc_metrics = defaultdict(dict)
     fx = processed_fx_obs.forecast_values
@@ -131,6 +135,11 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     if fx.empty or obs.empty or len(metrics) == 0:
         return calc_metrics
 
+    # Dataframe for grouping
+    df = pd.concat({'forecast': fx,
+                    'observation': obs,
+                    'reference': ref_fx}, axis=1)
+
     # Calculate metrics
     for category in set(categories):
         calc_metrics[category] = {}
@@ -138,26 +147,19 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         # total (special category)
         if category == 'total':
             for metric_ in metrics:
-                r = _apply_deterministic_metric_func(metric_, fx, obs,
-                                                     ref_fx=ref_fx,
-                                                     normalizer=normalizer)
-                calc_metrics[category][metric_] = r
+                res = _apply_deterministic_metric_func(
+                    metric_, fx, obs, ref_fx=ref_fx, normalizer=normalizer)
+                calc_metrics[category][metric_] = res
         else:
-            # dataframe for grouping
-            df = pd.concat({'forecast': fx,
-                            'observation': obs,
-                            'reference': ref_fx}, axis=1)
             index_category = getattr(df.index, category)
 
             for name, group in df.groupby(index_category):
                 calc_metrics[category][name] = {}
 
                 for metric_ in metrics:
-                    r = _apply_deterministic_metric_func(metric_,
-                                                         group.forecast,
-                                                         group.observation,
-                                                         ref_fx=ref_fx,
-                                                         normalizer=normalizer)
-                    calc_metrics[category][name][metric_] = r
+                    res = _apply_deterministic_metric_func(
+                        metric_, group.forecast, group.observation,
+                        ref_fx=ref_fx, normalizer=normalizer)
+                    calc_metrics[category][name][metric_] = res
 
     return calc_metrics

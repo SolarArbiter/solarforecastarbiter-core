@@ -9,6 +9,9 @@ from solarforecastarbiter.metrics import (calculator,
                                           deterministic)
 
 
+DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
+
+
 @pytest.fixture()
 def create_processed_fxobs(create_datetime_index):
     def _create_processed_fxobs(fxobs, fx_values, obs_values):
@@ -39,7 +42,7 @@ def create_datetime_index():
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('categories,metrics', [
     ([], []),
-    (calculator.AVAILABLE_CATEGORIES, deterministic.__all__)
+    (calculator.AVAILABLE_CATEGORIES, DETERMINISTIC_METRICS)
 ])
 def test_calculate_metrics(categories, metrics,
                            create_processed_fxobs,
@@ -92,11 +95,11 @@ def test_calculate_metrics(categories, metrics,
 ])
 @pytest.mark.parametrize('metrics', [
     [],
-    *list(itertools.combinations(deterministic._MAP.keys(), 1)),
-    deterministic.__all__[0:1],
-    deterministic.__all__[0:2],
-    deterministic.__all__[1:],
-    deterministic.__all__
+    *list(itertools.combinations(DETERMINISTIC_METRICS, 1)),
+    DETERMINISTIC_METRICS[0:1],
+    DETERMINISTIC_METRICS[0:2],
+    DETERMINISTIC_METRICS[1:],
+    DETERMINISTIC_METRICS
 ])
 @pytest.mark.parametrize('values,ref_values,normalizer', [
     ((np.random.randn(0), np.random.randn(0)),

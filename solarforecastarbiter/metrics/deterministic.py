@@ -212,7 +212,7 @@ _MAP = {
     'crmse': centered_root_mean_square
 }
 
-__all__ = [str(m) for m in _MAP]
+__all__ = [m.__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
 _REQ_REF_FX = ['s']

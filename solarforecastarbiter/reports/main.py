@@ -22,7 +22,7 @@ Steps:
       The metrics will aloso be JSON with keys like:
         * metrics
             * total
-            * categry A
+            * category A
                 * metric 1
                 * metric 2
             * category B

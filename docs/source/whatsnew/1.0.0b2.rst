@@ -21,8 +21,9 @@ Enhancements
 ~~~~~~~~~~~~
 * Made improvements the figures in reports to include categories:
   total, year, month, date, weekday, day, hour (:pull:`224`)
-* Dictionary of metric results from metrics.calculator now has
-  category-metric-category-value structure (:pull:`224`)
+* Dictionary of metric results from metrics.calculator now has structure with
+  levels of  1) category type 2) metric 3) category group, 4) value
+  (:pull:`224`)
 * Add function to compute an aggregate timeseries (:pull:`223`)
 
 
