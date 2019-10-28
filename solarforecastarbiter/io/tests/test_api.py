@@ -652,21 +652,27 @@ def test_apisession_create_aggregate(requests_mock, aggregate, aggregate_text,
     matcher = re.compile(f'{session.base_url}/aggregates/.*')
 
     def callback(request, context):
-        ad = json.loads(aggregate_text)
-        for key in ('provider', 'aggregate_id', 'created_at',
-                    'modified_at'):
-            del ad[key]
-        for o in ad['observations']:
-            del o['_links']
-            del o['created_at']
-        assert ad == request.json()
-        return aggregate.aggregate_id
+        if request.url.endswith('aggregates/'):
+            ad = json.loads(aggregate_text)
+            for key in ('provider', 'aggregate_id', 'created_at',
+                        'modified_at', 'observations', 'interval_value_type'):
+                del ad[key]
+            assert ad == request.json()
+            return aggregate.aggregate_id
+        else:
+            rj = request.json()
+            assert 'observations' in rj
+            assert 'observation_id' in rj['observations'][0]
+            assert (
+                'effective_from' in rj['observations'][0]
+                or 'effective_until' in rj['observations'][0])
 
     requests_mock.register_uri('POST', matcher,
                                text=callback)
     requests_mock.register_uri('GET', matcher, content=aggregate_text)
     aggregate_dict = aggregate.to_dict()
     del aggregate_dict['aggregate_id']
+    del aggregate_dict['interval_value_type']
     ss = datamodel.Aggregate.from_dict(aggregate_dict)
     new_aggregate = session.create_aggregate(ss)
     assert new_aggregate == aggregate
@@ -948,6 +954,7 @@ def test_real_apisession_list_aggregates(real_session):
 
 def test_real_apisession_create_aggregate(real_session, aggregate):
     new_agg = real_session.create_aggregate(aggregate)
+    real_session.delete(f'/aggregates/{new_agg.aggregate_id}')
     for attr in ('name', 'description', 'variable', 'aggregate_type',
                  'interval_length', 'interval_label', 'timezone'):
         assert getattr(new_agg, attr) == getattr(aggregate, attr)

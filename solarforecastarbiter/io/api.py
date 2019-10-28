@@ -819,7 +819,7 @@ class APISession(requests.Session):
         out = []
         for agg_dict in agg_dicts:
             for o in agg_dict['observations']:
-                o['observation'] = observations[o['observation_id']]
+                o['observation'] = observations.get(o['observation_id'])
             out.append(datamodel.Aggregate.from_dict(agg_dict))
         return out
 

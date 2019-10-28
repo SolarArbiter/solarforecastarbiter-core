@@ -879,16 +879,16 @@ class AggregateObservation(BaseModel):
 
 
 def __check_variable__(variable, *args):
-    if not all(arg.variable == variable for arg in args):
+    if not all(arg.variable == variable for arg in args if arg is not None):
         raise ValueError('All variables must be identical.')
 
 
 def __check_aggregate_interval_compatibility__(interval, *args):
-    if any(arg.interval_length > interval for arg in args):
+    if any(arg.interval_length > interval for arg in args if arg is not None):
         raise ValueError('observation.interval_length cannot be greater than '
                          'aggregate.interval_length.')
     if any(arg.interval_value_type not in ('interval_mean', 'instantaneous')
-           for arg in args):
+           for arg in args if arg is not None):
         raise ValueError('Only observations with interval_value_type of '
                          'interval_mean or instantaneous are acceptable')
 
