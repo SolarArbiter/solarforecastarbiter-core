@@ -1093,22 +1093,22 @@ def aggregate_text():
 {
   "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
   "aggregate_type": "mean",
-  "created_at": "2019-09-24T12:00:00",
+  "created_at": "2019-09-24T12:00:00+00:00",
   "description": "ghi agg",
   "extra_parameters": "extra",
   "interval_label": "ending",
   "interval_length": 60,
   "interval_value_type": "interval_mean",
-  "modified_at": "2019-09-24T12:00:00",
+  "modified_at": "2019-09-24T12:00:00+00:00",
   "name": "Test Aggregate ghi",
   "observations": [
     {
       "_links": {
         "observation": "http://localhost:5000/observations/123e4567-e89b-12d3-a456-426655440000/metadata"
       },
-      "created_at": "2019-09-25T00:00:00",
-      "effective_from": "2019-01-01T00:00:00",
-      "effective_until": "2020-01-01T00:00:00",
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
+      "effective_until": "2020-01-01T00:00:00+00:00",
       "observation_deleted_at": null,
       "observation_id": "123e4567-e89b-12d3-a456-426655440000"
     },
@@ -1116,8 +1116,8 @@ def aggregate_text():
       "_links": {
         "observation": "http://localhost:5000/observations/e0da0dea-9482-4073-84de-f1b12c304d23/metadata"
       },
-      "created_at": "2019-09-25T00:00:00",
-      "effective_from": "2019-01-01T00:00:00",
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
       "effective_until": null,
       "observation_deleted_at": null,
       "observation_id": "e0da0dea-9482-4073-84de-f1b12c304d23"
@@ -1126,8 +1126,8 @@ def aggregate_text():
       "_links": {
         "observation": "http://localhost:5000/observations/b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2/metadata"
       },
-      "created_at": "2019-09-25T00:00:00",
-      "effective_from": "2019-01-01T00:00:00",
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
       "effective_until": null,
       "observation_deleted_at": null,
       "observation_id": "b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2"

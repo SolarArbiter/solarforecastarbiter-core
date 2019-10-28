@@ -934,13 +934,11 @@ def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
     pdt.assert_series_equal(fx, test_ser)
 
 
-@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
 def test_real_apisession_get_aggregate(real_session):
     agg = real_session.get_aggregate('458ffc27-df0b-11e9-b622-62adb5fd6af0')
     assert isinstance(agg, datamodel.Aggregate)
 
 
-@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
 def test_real_apisession_list_aggregates(real_session):
     aggs = real_session.list_aggregates()
     assert {a.aggregate_id for a in aggs} == {
@@ -948,16 +946,21 @@ def test_real_apisession_list_aggregates(real_session):
         'd3d1e8e5-df1b-11e9-b622-62adb5fd6af0'}
 
 
-@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
 def test_real_apisession_create_aggregate(real_session, aggregate):
     new_agg = real_session.create_aggregate(aggregate)
-    for attr in ('name', 'descxription', 'variable', 'aggregate_type',
-                 'interval_length', 'interval_label', 'timezone',
-                 'obaservations'):
+    for attr in ('name', 'description', 'variable', 'aggregate_type',
+                 'interval_length', 'interval_label', 'timezone'):
         assert getattr(new_agg, attr) == getattr(aggregate, attr)
+    for i, obs in enumerate(new_agg.observations):
+        assert (
+            aggregate.observations[i].observation.observation_id ==
+            obs.observation.observation_id)
+        for attr in ('effective_from', 'effective_until',
+                     'observation_deleted_at'):
+            assert getattr(aggregate.observations[i], attr) == (
+                getattr(obs, attr))
 
 
-@pytest.mark.xfail(raises=requests.exceptions.HTTPError, strict=True)
 def test_real_apisession_get_aggregate_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')

@@ -840,15 +840,25 @@ class APISession(requests.Session):
         agg_dict = aggregate.to_dict()
         agg_dict.pop('aggregate_id')
         agg_dict.pop('provider')
-        obs = agg_dict.pop('observations')
-        for o in obs:
-            o['observation_id'] = o['observation']['observation_id']
-            del o['observation']
-        agg_dict['observations'] = obs
+        agg_dict.pop('interval_value_type')
+        observations = []
+        for obs in agg_dict.pop('observations'):
+            if obs['effective_from'] is not None:
+                observations.append(
+                    {'observation_id': obs['observation']['observation_id'],
+                     'effective_from': obs['effective_from']})
+            if obs['effective_until'] is not None:
+                observations.append(
+                    {'observation_id': obs['observation']['observation_id'],
+                     'effective_until': obs['effective_until']})
+
         agg_json = json.dumps(agg_dict)
         req = self.post('/aggregates/', data=agg_json,
                         headers={'Content-Type': 'application/json'})
         new_id = req.text
+        obs_json = json.dumps({'observations': observations})
+        self.post(f'/aggregates/{new_id}/metadata', data=obs_json,
+                  headers={'Content-Type': 'application/json'})
         return self.get_aggregate(new_id)
 
     @ensure_timestamps('start', 'end')
