@@ -947,9 +947,10 @@ def test_real_apisession_get_aggregate(real_session):
 
 def test_real_apisession_list_aggregates(real_session):
     aggs = real_session.list_aggregates()
-    assert {a.aggregate_id for a in aggs} == {
-        '458ffc27-df0b-11e9-b622-62adb5fd6af0',
-        'd3d1e8e5-df1b-11e9-b622-62adb5fd6af0'}
+    assert isinstance(aggs, list)
+    assert isinstance(aggs[0], datamodel.Aggregate)
+    assert s'458ffc27-df0b-11e9-b622-62adb5fd6af0' in {
+        a.aggregate_id for a in aggs}
 
 
 def test_real_apisession_create_aggregate(real_session, aggregate):
