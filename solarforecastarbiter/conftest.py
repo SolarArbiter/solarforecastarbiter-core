@@ -1254,43 +1254,34 @@ def aggregate_prob_forecast_text():
     "site_id": null,
     "variable": "ghi",
     "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
-    "axis": "y",
+    "axis": "x",
     "constant_values": [
-      {
-        "_links": {
-          "values": "http://localhost:5000/forecasts/cdf/single/733f9396-50bb-11e9-8647-d663bd873d93/values"
-        },
-        "constant_value": 10.0,
-        "forecast_id": "733f9396-50bb-11e9-8647-d663bd873d93"
-      },
-      {
-        "_links": {
-          "values": "http://localhost:5000/forecasts/cdf/single/733f9864-50bb-11e9-8647-d663bd873d93/values"
-        },
-        "constant_value": 20.0,
-        "forecast_id": "733f9864-50bb-11e9-8647-d663bd873d93"
-      },
-      {
-        "_links": {
-          "values": "http://localhost:5000/forecasts/cdf/single/733f9b2a-50bb-11e9-8647-d663bd873d93/values"
-        },
-        "constant_value": 50.0,
-        "forecast_id": "733f9b2a-50bb-11e9-8647-d663bd873d93"
-      },
-      {
-        "_links": {
-          "values": "http://localhost:5000/forecasts/cdf/single/733f9d96-50bb-11e9-8647-d663bd873d93/values"
-        },
-        "constant_value": 80.0,
-        "forecast_id": "733f9d96-50bb-11e9-8647-d663bd873d93"
-      },
-      {
-        "_links": {
-          "values": "http://localhost:5000/forecasts/cdf/single/733fa548-50bb-11e9-8647-d663bd873d93/values"
-        },
-        "constant_value": 100.0,
-        "forecast_id": "733fa548-50bb-11e9-8647-d663bd873d93"
-      }
-    ],
+        {
+            "_links": {},
+            "constant_value": 0,
+            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
 }
 """  # NOQA
+
+
+@pytest.fixture()
+def aggregate_prob_forecast(prob_forecast_constant_value,
+                            aggregate_prob_forecast_text,
+                            aggregate):
+    fx_dict = json.loads(aggregate_prob_forecast_text)
+    return datamodel.ProbabilisticForecast(
+        name=fx_dict['name'], variable=fx_dict['variable'],
+        interval_value_type=fx_dict['interval_value_type'],
+        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+        interval_label=fx_dict['interval_label'],
+        aggregate=aggregate,
+        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                  int(fx_dict['issue_time_of_day'][3:])),
+        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+        forecast_id=fx_dict.get('forecast_id', ''),
+        extra_parameters=fx_dict.get('extra_parameters', ''),
+        axis=fx_dict['axis'],
+        constant_values=(prob_forecast_constant_value, ))

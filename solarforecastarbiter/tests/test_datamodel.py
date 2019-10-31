@@ -14,7 +14,7 @@ from solarforecastarbiter import datamodel
                         'forecast', 'forecastobservation',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
-                        'aggregateforecast'])
+                        'aggregateforecast', 'aggregateprobforecast'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
@@ -23,7 +23,8 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 prob_forecasts, prob_forecast_text,
                 aggregate, aggregate_observations,
                 aggregate_text, aggregate_forecast_text,
-                aggregateforecast):
+                aggregateforecast, aggregate_prob_forecast,
+                aggregate_prob_forecast_text):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -71,6 +72,12 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         aggfx_dict = json.loads(aggregate_forecast_text)
         aggfx_dict['aggregate'] = aggregate.to_dict()
         return (aggregateforecast, aggfx_dict, datamodel.Forecast)
+    elif request.param == 'aggregateprobforecast':
+        fx_dict = json.loads(aggregate_prob_forecast_text)
+        fx_dict['aggregate'] = aggregate.to_dict()
+        fx_dict['constant_values'] = (prob_forecast_constant_value, )
+        return (aggregate_prob_forecast, fx_dict,
+                datamodel.ProbabilisticForecast)
 
 
 @pytest.mark.parametrize('extra', [
