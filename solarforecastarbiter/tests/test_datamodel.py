@@ -23,7 +23,8 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 aggregate, aggregate_observations,
                 aggregate_text, aggregate_forecast_text,
                 aggregateforecast, aggregate_prob_forecast,
-                aggregate_prob_forecast_text):
+                aggregate_prob_forecast_text,
+                agg_prob_forecast_constant_value):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -74,7 +75,7 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
     elif request.param == 'aggregateprobforecast':
         fx_dict = json.loads(aggregate_prob_forecast_text)
         fx_dict['aggregate'] = aggregate.to_dict()
-        fx_dict['constant_values'] = (prob_forecast_constant_value, )
+        fx_dict['constant_values'] = (agg_prob_forecast_constant_value, )
         return (aggregate_prob_forecast, fx_dict,
                 datamodel.ProbabilisticForecast)
 
