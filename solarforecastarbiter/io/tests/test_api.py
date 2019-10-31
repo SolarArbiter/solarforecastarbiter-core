@@ -83,7 +83,7 @@ def mock_get_observation(requests_mock, many_observations_text,
                          mock_get_site):
     def get_observation_from_text(request, context):
         obs_id = request.url.split('/')[-2]
-        if obs_id == '':
+        if obs_id == '':  # pragma: no cover
             return many_observations_text
         else:
             obs = json.loads(many_observations_text)
