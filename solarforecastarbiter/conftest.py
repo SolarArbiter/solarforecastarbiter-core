@@ -922,20 +922,50 @@ def many_prob_forecasts_text():
                 "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
             }
         ]
+    },
+    {
+        "_links": {
+          "site": null,
+          "aggregate": "http://127.0.0.1:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+        },
+        "created_at": "2019-03-02T14:55:38+00:00",
+        "extra_parameters": "",
+        "forecast_id": "f6b620ca-f743-11e9-a34f-f4939feddd82",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-02T14:55:38+00:00",
+        "name": "GHI Aggregate CDF FX",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": null,
+        "variable": "ghi",
+        "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
     }
 ]
 """  # NOQA
 
 
 @pytest.fixture()
-def _prob_forecast_constant_value_from_dict(get_site):
+def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
     def f(fx_dict):
         return datamodel.ProbabilisticForecastConstantValue(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
@@ -948,14 +978,16 @@ def _prob_forecast_constant_value_from_dict(get_site):
 
 
 @pytest.fixture()
-def _prob_forecast_from_dict(get_site, prob_forecast_constant_value):
+def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
+                             get_aggregate):
     def f(fx_dict):
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
@@ -1291,7 +1323,7 @@ def aggregate_prob_forecast_text():
         {
             "_links": {},
             "constant_value": 0,
-            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            "forecast_id": "12c20780-76ae-4b11-bef1-7a75bdc784e3"
         }
     ]
 }
@@ -1299,21 +1331,59 @@ def aggregate_prob_forecast_text():
 
 
 @pytest.fixture()
-def aggregate_prob_forecast(prob_forecast_constant_value,
-                            aggregate_prob_forecast_text,
+def agg_prob_forecast_constant_value_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "12c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "site_id": null,
+  "variable": "ghi",
+  "axis": "x",
+  "constant_value": 0
+}
+"""
+
+
+@pytest.fixture()
+def agg_prob_forecast_constant_value(_prob_forecast_constant_value_from_dict,
+                                     agg_prob_forecast_constant_value_text):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(agg_prob_forecast_constant_value_text))
+
+
+@pytest.fixture()
+def aggregate_prob_forecast(aggregate_prob_forecast_text,
+                            agg_prob_forecast_constant_value,
                             aggregate):
     fx_dict = json.loads(aggregate_prob_forecast_text)
+    fx_dict['constant_values'] = agg_prob_forecast_constant_value
     return datamodel.ProbabilisticForecast(
-        name=fx_dict['name'], variable=fx_dict['variable'],
-        interval_value_type=fx_dict['interval_value_type'],
-        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
-        interval_label=fx_dict['interval_label'],
-        aggregate=aggregate,
-        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
-                                  int(fx_dict['issue_time_of_day'][3:])),
-        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
-        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
-        forecast_id=fx_dict.get('forecast_id', ''),
-        extra_parameters=fx_dict.get('extra_parameters', ''),
-        axis=fx_dict['axis'],
-        constant_values=(prob_forecast_constant_value, ))
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=None,
+            aggregate=aggregate,
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_values=(agg_prob_forecast_constant_value, ))

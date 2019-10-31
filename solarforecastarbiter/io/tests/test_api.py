@@ -79,7 +79,8 @@ def mock_get_site(requests_mock, site_text, many_sites_text):
 
 
 @pytest.fixture()
-def mock_get_observation(requests_mock, many_observations_text):
+def mock_get_observation(requests_mock, many_observations_text,
+                         mock_get_site):
     def get_observation_from_text(request, context):
         obs_id = request.url.split('/')[-2]
         if obs_id == '':
@@ -229,6 +230,22 @@ def test_apisession_create_forecast(requests_mock, single_forecast,
     assert new_forecast == single_forecast
 
 
+def test_apisession_create_forecast_agg(
+        requests_mock, aggregate, aggregateforecast,
+        aggregate_forecast_text, mock_get_agg):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*')
+    requests_mock.register_uri('POST', matcher,
+                               text=aggregateforecast.forecast_id)
+    requests_mock.register_uri('GET', matcher, content=aggregate_forecast_text)
+    forecast_dict = aggregateforecast.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(aggregateforecast).from_dict(forecast_dict)
+    new_forecast = session.create_forecast(ss)
+    assert new_forecast == aggregateforecast
+
+
 def test_apisession_list_forecasts_empty(requests_mock):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
@@ -253,7 +270,8 @@ def test_apisession_get_prob_forecast(requests_mock, prob_forecasts,
 def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
                                         many_prob_forecasts_text,
                                         mock_list_sites, mock_get_site,
-                                        prob_forecast_constant_value_text):
+                                        prob_forecast_constant_value_text,
+                                        mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
     requests_mock.register_uri(
@@ -296,6 +314,31 @@ def test_apisession_get_prob_forecast_constant_value_site(
     assert fx == prob_forecast_constant_value
 
 
+def test_apisession_get_agg_prob_forecast_constant_value(
+        requests_mock, agg_prob_forecast_constant_value,
+        agg_prob_forecast_constant_value_text, mock_get_agg,
+        aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value('')
+    assert fx == agg_prob_forecast_constant_value
+
+
+def test_apisession_get_agg_prob_forecast_constant_value_agg(
+        requests_mock, agg_prob_forecast_constant_value,
+        agg_prob_forecast_constant_value_text, mock_get_agg,
+        aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value(
+        '', aggregate=aggregate)
+    assert fx == agg_prob_forecast_constant_value
+
+
 def test_apisession_get_prob_forecast_constant_value_site_error(
         requests_mock, prob_forecast_constant_value_text, single_site):
     session = api.APISession('')
@@ -307,6 +350,20 @@ def test_apisession_get_prob_forecast_constant_value_site_error(
     site = datamodel.Site.from_dict(site_dict)
     with pytest.raises(ValueError):
         session.get_probabilistic_forecast_constant_value('', site=site)
+
+
+def test_apisession_get_prob_forecast_constant_value_agg_error(
+        requests_mock, agg_prob_forecast_constant_value_text, aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    agg_dict = aggregate.to_dict()
+    agg_dict['aggregate_id'] = 'nope'
+    agg = datamodel.Aggregate.from_dict(agg_dict)
+    with pytest.raises(ValueError):
+        session.get_probabilistic_forecast_constant_value(
+            '', aggregate=agg)
 
 
 def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
@@ -328,6 +385,29 @@ def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
     ss = type(prob_forecasts).from_dict(forecast_dict)
     new_forecast = session.create_probabilistic_forecast(ss)
     assert new_forecast == prob_forecasts
+
+
+def test_apisession_create_prob_forecast_agg(
+        requests_mock, aggregate_prob_forecast,
+        aggregate_prob_forecast_text, mock_get_agg,
+        agg_prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri('POST', matcher,
+                               text=aggregate_prob_forecast.forecast_id)
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/cdf/{aggregate_prob_forecast.forecast_id}$')  # NOQA
+    requests_mock.register_uri(
+        'GET', matcher, content=aggregate_prob_forecast_text)
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    forecast_dict = aggregate_prob_forecast.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(aggregate_prob_forecast).from_dict(forecast_dict)
+    new_forecast = session.create_probabilistic_forecast(ss)
+    assert new_forecast == aggregate_prob_forecast
 
 
 @pytest.fixture(params=[0, 1])

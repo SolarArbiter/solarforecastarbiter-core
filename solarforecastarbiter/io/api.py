@@ -285,14 +285,13 @@ class APISession(requests.Session):
         -------
         datamodel.Forecast
             With the appropriate parameters such as forecast_id set by the API
+
         """
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
-        if site is None and agg is None:
-            raise ValueError('Both site and aggregate are None')
-        elif site is None and agg is not None:
+        if site is None and agg is not None:
             fx_dict['aggregate_id'] = agg['aggregate_id']
         else:
             fx_dict['site_id'] = site['site_id']
@@ -430,9 +429,7 @@ class APISession(requests.Session):
         fx_dict.pop('forecast_id')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
-        if site is None and agg is None:
-            raise ValueError('Both site and aggregate are None')
-        elif site is None and agg is not None:
+        if site is None and agg is not None:
             fx_dict['aggregate_id'] = agg['aggregate_id']
         else:
             fx_dict['site_id'] = site['site_id']
