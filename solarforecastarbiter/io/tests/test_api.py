@@ -79,6 +79,12 @@ def mock_get_site(requests_mock, site_text, many_sites_text):
 
 
 @pytest.fixture()
+def mock_get_agg(requests_mock, aggregate_text):
+    matcher = re.compile(f'https://api.solarforecastarbiter.org/aggregates/.*')
+    requests_mock.register_uri('GET', matcher, content=aggregate_text)
+
+
+@pytest.fixture()
 def mock_list_sites(mocker, many_sites):
     mocker.patch('solarforecastarbiter.io.api.APISession.list_sites',
                  return_value=many_sites)
@@ -180,7 +186,8 @@ def test_apisession_get_forecast(requests_mock, single_forecast,
 
 
 def test_apisession_list_forecasts(requests_mock, many_forecasts,
-                                   many_forecasts_text, mock_list_sites):
+                                   many_forecasts_text, mock_get_site,
+                                   mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
@@ -189,7 +196,8 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
 
 
 def test_apisession_create_forecast(requests_mock, single_forecast,
-                                    single_forecast_text, mock_get_site):
+                                    single_forecast_text, mock_get_site,
+                                    mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*')
     requests_mock.register_uri('POST', matcher,
@@ -949,7 +957,7 @@ def test_real_apisession_list_aggregates(real_session):
     aggs = real_session.list_aggregates()
     assert isinstance(aggs, list)
     assert isinstance(aggs[0], datamodel.Aggregate)
-    assert s'458ffc27-df0b-11e9-b622-62adb5fd6af0' in {
+    assert '458ffc27-df0b-11e9-b622-62adb5fd6af0' in {
         a.aggregate_id for a in aggs}
 
 

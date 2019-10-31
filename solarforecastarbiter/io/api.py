@@ -230,6 +230,14 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_observation(new_id)
 
+    def _process_fx(self, fx_dict):
+        if fx_dict['site_id'] is not None:
+            fx_dict['site'] = self.get_site(fx_dict['site_id'])
+        elif fx_dict['aggregate_id'] is not None:
+            fx_dict['aggregate'] = self.get_aggregate(
+                fx_dict['aggregate_id'])
+        return datamodel.Forecast.from_dict(fx_dict)
+
     def get_forecast(self, forecast_id):
         """
         Get Forecast metadata from the API for the given forecast_id
@@ -245,9 +253,7 @@ class APISession(requests.Session):
         """
         req = self.get(f'/forecasts/single/{forecast_id}/metadata')
         fx_dict = req.json()
-        site = self.get_site(fx_dict['site_id'])
-        fx_dict['site'] = site
-        return datamodel.Forecast.from_dict(fx_dict)
+        return self._process_fx(fx_dict)
 
     def list_forecasts(self):
         """
@@ -261,11 +267,9 @@ class APISession(requests.Session):
         fx_dicts = req.json()
         if len(fx_dicts) == 0:
             return []
-        sites = {site.site_id: site for site in self.list_sites()}
         out = []
         for fx_dict in fx_dicts:
-            fx_dict['site'] = sites.get(fx_dict['site_id'])
-            out.append(datamodel.Forecast.from_dict(fx_dict))
+            out.append(self._process_fx(fx_dict))
         return out
 
     def create_forecast(self, forecast):
@@ -285,12 +289,35 @@ class APISession(requests.Session):
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
         site = fx_dict.pop('site')
-        fx_dict['site_id'] = site['site_id']
+        agg = fx_dict.pop('aggregate')
+        if site is None and agg is None:
+            raise ValueError('Both site and aggregate are None')
+        elif site is None and agg is not None:
+            fx_dict['aggregate_id'] = agg['aggregate_id']
+        else:
+            fx_dict['site_id'] = site['site_id']
         fx_json = json.dumps(fx_dict)
         req = self.post('/forecasts/single/', data=fx_json,
                         headers={'Content-Type': 'application/json'})
         new_id = req.text
         return self.get_forecast(new_id)
+
+    def _process_prob_forecast(self, fx_dict):
+        site = None
+        agg = None
+        if fx_dict['site_id'] is not None:
+            site = self.get_site(fx_dict['site_id'])
+            fx_dict['site'] = site
+        elif fx_dict['aggregate_id'] is not None:
+            agg = self.get_aggregate(fx_dict['aggregate_id'])
+            fx_dict['aggregate'] = agg
+        cvs = []
+        for constant_value_dict in fx_dict['constant_values']:
+            cvs.append(self.get_probabilistic_forecast_constant_value(
+                constant_value_dict['forecast_id'], site=site,
+                aggregate=agg))
+        fx_dict['constant_values'] = cvs
+        return datamodel.ProbabilisticForecast.from_dict(fx_dict)
 
     def list_probabilistic_forecasts(self):
         """
@@ -304,17 +331,9 @@ class APISession(requests.Session):
         fx_dicts = req.json()
         if len(fx_dicts) == 0:
             return []
-        sites = {site.site_id: site for site in self.list_sites()}
         out = []
         for fx_dict in fx_dicts:
-            site = sites.get(fx_dict['site_id'])
-            fx_dict['site'] = site
-            cvs = []
-            for constant_value_dict in fx_dict['constant_values']:
-                cvs.append(self.get_probabilistic_forecast_constant_value(
-                    constant_value_dict['forecast_id'], site=site))
-            fx_dict['constant_values'] = cvs
-            out.append(datamodel.ProbabilisticForecast.from_dict(fx_dict))
+            out.append(self._process_prob_forecast(fx_dict))
         return out
 
     def get_probabilistic_forecast(self, forecast_id):
@@ -335,17 +354,10 @@ class APISession(requests.Session):
         # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
         req = self.get(f'/forecasts/cdf/{forecast_id}')
         fx_dict = req.json()
-        site = self.get_site(fx_dict['site_id'])
-        fx_dict['site'] = site
-        cvs = []
-        for constant_value_dict in fx_dict['constant_values']:
-            cvs.append(self.get_probabilistic_forecast_constant_value(
-                constant_value_dict['forecast_id'], site=site))
-        fx_dict['constant_values'] = cvs
-        return datamodel.ProbabilisticForecast.from_dict(fx_dict)
+        return self._process_prob_forecast(fx_dict)
 
     def get_probabilistic_forecast_constant_value(self, forecast_id,
-                                                  site=None):
+                                                  site=None, aggregate=None):
         """
         Get ProbabilisticForecastConstantValue metadata from the API for
         the given forecast_id.
@@ -358,6 +370,9 @@ class APISession(requests.Session):
             If provided, the object will be attached to the returned
             value (faster). If None, object will be created from site
             metadata obtained from the database (slower).
+        aggregate : datamodel.Aggregate or None
+            If provided and the forecast is of an aggregate, the object
+            will be attached to the return value.
 
         Returns
         -------
@@ -373,14 +388,27 @@ class APISession(requests.Session):
         # https://github.com/SolarArbiter/solarforecastarbiter-api/issues/158
         req = self.get(f'/forecasts/cdf/single/{forecast_id}')
         fx_dict = req.json()
+
+        agg_id = fx_dict['aggregate_id']
         site_id = fx_dict['site_id']
-        if site is None:
-            site = self.get_site(site_id)
-        elif site.site_id != site_id:
-            raise ValueError('Supplied site.site_id does not match site_id'
-                             f'from database. site.site_id: {site.site_id} '
-                             f'database site_id: {site_id}')
-        fx_dict['site'] = site
+        if site_id is not None:
+            if site is None:
+                site = self.get_site(site_id)
+            elif site.site_id != site_id:
+                raise ValueError('Supplied site.site_id does not match site_id'
+                                 f'from database. site.site_id: {site.site_id}'
+                                 f' database site_id: {site_id}')
+            fx_dict['site'] = site
+        elif agg_id is not None:
+            if aggregate is None:
+                aggregate = self.get_aggregate(agg_id)
+            elif aggregate.aggregate_id != agg_id:
+                raise ValueError(
+                    'Supplied aggregate.aggregate_id does not match '
+                    'aggregate from database. aggregate.aggregate_id: '
+                    f'{aggregate.aggregate_id}'
+                    f' database aggregate_id: {agg_id}')
+            fx_dict['aggregate'] = aggregate
         return datamodel.ProbabilisticForecastConstantValue.from_dict(fx_dict)
 
     def create_probabilistic_forecast(self, forecast):
@@ -401,7 +429,14 @@ class APISession(requests.Session):
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
         site = fx_dict.pop('site')
-        fx_dict['site_id'] = site['site_id']
+        agg = fx_dict.pop('aggregate')
+        if site is None and agg is None:
+            raise ValueError('Both site and aggregate are None')
+        elif site is None and agg is not None:
+            fx_dict['aggregate_id'] = agg['aggregate_id']
+        else:
+            fx_dict['site_id'] = site['site_id']
+
         # fx_dict['constant_values'] is tuple of dict representations of
         # all ProbabilisticForecastConstantValue objects in the
         # ProbabilisticForecast. We need to extract just the numeric
