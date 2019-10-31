@@ -1,6 +1,5 @@
 from dataclasses import fields, MISSING, dataclass
 import json
-from typing import Union
 
 
 import pandas as pd
