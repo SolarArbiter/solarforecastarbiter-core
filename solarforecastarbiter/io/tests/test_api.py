@@ -79,7 +79,25 @@ def mock_get_site(requests_mock, site_text, many_sites_text):
 
 
 @pytest.fixture()
-def mock_get_agg(requests_mock, aggregate_text):
+def mock_get_observation(requests_mock, many_observations_text):
+    def get_observation_from_text(request, context):
+        obs_id = request.url.split('/')[-2]
+        if obs_id == '':
+            return many_observations_text
+        else:
+            obs = json.loads(many_observations_text)
+            for ob in obs:
+                if ob['observation_id'] == obs_id:
+                    return json.dumps(ob).encode('utf-8')
+
+    matcher = re.compile(
+        'https://api.solarforecastarbiter.org/observations/.*/metadata')
+    requests_mock.register_uri(
+        'GET', matcher, content=get_observation_from_text)
+
+
+@pytest.fixture()
+def mock_get_agg(requests_mock, aggregate_text, mock_get_observation):
     matcher = re.compile(f'https://api.solarforecastarbiter.org/aggregates/.*')
     requests_mock.register_uri('GET', matcher, content=aggregate_text)
 

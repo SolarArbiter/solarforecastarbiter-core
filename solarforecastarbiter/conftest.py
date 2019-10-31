@@ -351,7 +351,17 @@ def get_site(many_sites):
     site_dict = {site.site_id: site for site in many_sites}
 
     def get(site_id):
-        return site_dict[site_id]
+        return site_dict.get(site_id, None)
+    return get
+
+
+@pytest.fixture()
+def get_aggregate(aggregate):
+    def get(agg_id):
+        if agg_id is None:
+            return None
+        else:
+            return aggregate
     return get
 
 
@@ -731,20 +741,42 @@ def many_forecasts_text():
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
     "aggregate_id": null,
     "variable": "ac_power"
+  },
+  {
+    "_links": {
+      "site": null,
+      "aggregate": "http://localhost:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+    },
+    "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "GHI Aggregate FX",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": null,
+    "variable": "ghi"
   }
 ]
 """  # NOQA
 
 
 @pytest.fixture()
-def _forecast_from_dict(single_site, get_site):
+def _forecast_from_dict(single_site, get_site, get_aggregate):
     def f(fx_dict):
         return datamodel.Forecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
