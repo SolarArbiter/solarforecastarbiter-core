@@ -420,6 +420,130 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
+class AggregateObservation(BaseModel):
+    """
+    Class for keeping track of Observations in Aggregates
+    and when they are added and removed from the Aggregate
+
+    Parameters
+    ----------
+    observation : Observation
+        The Observation object that is part of the Aggregate
+    effective_from : pandas.Timestamp
+        The effective datetime of when the Observation should be
+        included in the Aggregate
+    effective_until : pandas.Timestamp
+        The effective datetime of when the Observation should be
+        excluded from the Aggregate
+    observation_deleted_at : pandas.Timestamp
+        The datetime that the Observation was deleted from the
+        Arbiter. This indicates that the Observation should be
+        removed from the Aggregate, and without the data
+        from this Observation, the Aggregate is invalid before
+        this time.
+
+    See Also
+    --------
+    Observation
+    Aggregate
+    """
+    observation: Observation
+    effective_from: pd.Timestamp
+    effective_until: Union[pd.Timestamp, None] = None
+    observation_deleted_at: Union[pd.Timestamp, None] = None
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name in ('effective_until', 'observation_deleted_at'):
+            if val is None:
+                return val
+            else:
+                return pd.Timestamp(val)
+        else:  # pragma: no cover
+            return val
+
+
+def __check_variable__(variable, *args):
+    if not all(arg.variable == variable for arg in args if arg is not None):
+        raise ValueError('All variables must be identical.')
+
+
+def __check_aggregate_interval_compatibility__(interval, *args):
+    if any(arg.interval_length > interval for arg in args if arg is not None):
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'aggregate.interval_length.')
+    if any(arg.interval_value_type not in ('interval_mean', 'instantaneous')
+           for arg in args if arg is not None):
+        raise ValueError('Only observations with interval_value_type of '
+                         'interval_mean or instantaneous are acceptable')
+
+
+@dataclass(frozen=True)
+class Aggregate(BaseModel):
+    """
+    Class for keeping track of Aggregate metadata.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Aggregate, e.g. Utility X Solar PV
+    description : str
+        A description of what the aggregate is.
+    variable : str
+        Variable name, e.g. power, GHI. Each allowed variable has an
+        associated pre-defined unit. All observations that make up the
+        Aggregate must also have this variable.
+    aggregate_type : str
+        The aggregation function that will be applied to observations.
+        Generally, this will be 'sum' although one might be interested,
+        for example, in the 'mean' irradiance of some observations.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour. This must be >= any observations that will make up the
+        Aggregate.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average.
+    timezone : str
+        IANA timezone of the Aggregate, e.g. Etc/GMT+8
+    aggregate_id : str, optional
+        UUID of the Aggregate in the API
+    provider : str, optional
+        Provider of the Aggregate information.
+    extra_parameters : str, optional
+        Any extra parameters for the Aggregate.
+    observations : tuple of AggregateObservation
+        The Observations that contribute to the Aggregate
+
+    See Also
+    --------
+    Observation
+    """
+    name: str
+    description: str
+    variable: str
+    aggregate_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    timezone: str
+    observations: Tuple[AggregateObservation, ...]
+    aggregate_id: str = ''
+    provider: str = ''
+    extra_parameters: str = ''
+    units: str = field(init=False)
+    interval_value_type: str = field(default='interval_mean')
+
+    def __post_init__(self):
+        __set_units__(self)
+        __check_variable__(
+            self.variable,
+            *(ao.observation for ao in self.observations))
+        __check_aggregate_interval_compatibility__(
+            self.interval_length,
+            *(ao.observation for ao in self.observations))
+        object.__setattr__(self, 'interval_value_type', 'interval_mean')
+
+
+@dataclass(frozen=True)
 class _ForecastBase:
     name: str
     issue_time_of_day: datetime.time
@@ -429,15 +553,22 @@ class _ForecastBase:
     interval_label: str
     interval_value_type: str
     variable: str
-    site: Site
-    units: str = field(init=False)
-    __post_init__ = __set_units__
 
 
 @dataclass(frozen=True)
 class _ForecastDefaultsBase:
+    site: Union[Site, None] = None
+    aggregate: Union[Aggregate, None] = None
     forecast_id: str = ''
     extra_parameters: str = ''
+    units: str = field(init=False)
+
+
+def __site_or_agg__(cls):
+    if cls.site is not None and cls.aggregate is not None:
+        raise KeyError('Only provide one of "site" or "aggregate" to Forecast')
+    elif cls.site is None and cls.aggregate is None:
+        raise KeyError('Must provide one of site or aggregate to Forecast')
 
 
 # Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
@@ -489,7 +620,22 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     Site
     """
     def __post_init__(self):
-        super().__post_init__()
+        __set_units__(self)
+        __site_or_agg__(self)
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name == 'site':
+            if isinstance(val, dict):
+                return Site.from_dict(val)
+            else:
+                return val
+        elif model_field.name == 'aggregate':
+            if isinstance(val, dict):
+                return Aggregate.from_dict(val)
+            else:
+                return val
+        else:
+            return val
 
 
 @dataclass(frozen=True)
@@ -833,127 +979,3 @@ class Report(BaseModel):
             ((k.forecast, k.observation) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()
-
-
-@dataclass(frozen=True)
-class AggregateObservation(BaseModel):
-    """
-    Class for keeping track of Observations in Aggregates
-    and when they are added and removed from the Aggregate
-
-    Parameters
-    ----------
-    observation : Observation
-        The Observation object that is part of the Aggregate
-    effective_from : pandas.Timestamp
-        The effective datetime of when the Observation should be
-        included in the Aggregate
-    effective_until : pandas.Timestamp
-        The effective datetime of when the Observation should be
-        excluded from the Aggregate
-    observation_deleted_at : pandas.Timestamp
-        The datetime that the Observation was deleted from the
-        Arbiter. This indicates that the Observation should be
-        removed from the Aggregate, and without the data
-        from this Observation, the Aggregate is invalid before
-        this time.
-
-    See Also
-    --------
-    Observation
-    Aggregate
-    """
-    observation: Observation
-    effective_from: pd.Timestamp
-    effective_until: Union[pd.Timestamp, None] = None
-    observation_deleted_at: Union[pd.Timestamp, None] = None
-
-    def _special_field_processing(self, model_field, val):
-        if model_field.name in ('effective_until', 'observation_deleted_at'):
-            if val is None:
-                return val
-            else:
-                return pd.Timestamp(val)
-        else:  # pragma: no cover
-            return val
-
-
-def __check_variable__(variable, *args):
-    if not all(arg.variable == variable for arg in args if arg is not None):
-        raise ValueError('All variables must be identical.')
-
-
-def __check_aggregate_interval_compatibility__(interval, *args):
-    if any(arg.interval_length > interval for arg in args if arg is not None):
-        raise ValueError('observation.interval_length cannot be greater than '
-                         'aggregate.interval_length.')
-    if any(arg.interval_value_type not in ('interval_mean', 'instantaneous')
-           for arg in args if arg is not None):
-        raise ValueError('Only observations with interval_value_type of '
-                         'interval_mean or instantaneous are acceptable')
-
-
-@dataclass(frozen=True)
-class Aggregate(BaseModel):
-    """
-    Class for keeping track of Aggregate metadata.
-
-    Parameters
-    ----------
-    name : str
-        Name of the Aggregate, e.g. Utility X Solar PV
-    description : str
-        A description of what the aggregate is.
-    variable : str
-        Variable name, e.g. power, GHI. Each allowed variable has an
-        associated pre-defined unit. All observations that make up the
-        Aggregate must also have this variable.
-    aggregate_type : str
-        The aggregation function that will be applied to observations.
-        Generally, this will be 'sum' although one might be interested,
-        for example, in the 'mean' irradiance of some observations.
-    interval_length : pandas.Timedelta
-        The length of time between consecutive data points, e.g. 5 minutes,
-        1 hour. This must be >= any observations that will make up the
-        Aggregate.
-    interval_label : str
-        Indicates if a time labels the beginning or the ending of an interval
-        average.
-    timezone : str
-        IANA timezone of the Aggregate, e.g. Etc/GMT+8
-    aggregate_id : str, optional
-        UUID of the Aggregate in the API
-    provider : str, optional
-        Provider of the Aggregate information.
-    extra_parameters : str, optional
-        Any extra parameters for the Aggregate.
-    observations : tuple of AggregateObservation
-        The Observations that contribute to the Aggregate
-
-    See Also
-    --------
-    Observation
-    """
-    name: str
-    description: str
-    variable: str
-    aggregate_type: str
-    interval_length: pd.Timedelta
-    interval_label: str
-    timezone: str
-    observations: Tuple[AggregateObservation, ...]
-    aggregate_id: str = ''
-    provider: str = ''
-    extra_parameters: str = ''
-    units: str = field(init=False)
-    interval_value_type: str = field(default='interval_mean')
-
-    def __post_init__(self):
-        __set_units__(self)
-        __check_variable__(
-            self.variable,
-            *(ao.observation for ao in self.observations))
-        __check_aggregate_interval_compatibility__(
-            self.interval_length,
-            *(ao.observation for ao in self.observations))
-        object.__setattr__(self, 'interval_value_type', 'interval_mean')

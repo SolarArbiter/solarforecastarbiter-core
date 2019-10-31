@@ -1,5 +1,6 @@
 from dataclasses import fields, MISSING, dataclass
 import json
+from typing import Union
 
 
 import pandas as pd
@@ -12,7 +13,8 @@ from solarforecastarbiter import datamodel
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
                         'probabilisticforecastconstantvalue',
-                        'probabilisticforecast', 'aggregate'])
+                        'probabilisticforecast', 'aggregate',
+                        'aggregateforecast'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
@@ -20,7 +22,8 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 prob_forecast_constant_value_text,
                 prob_forecasts, prob_forecast_text,
                 aggregate, aggregate_observations,
-                aggregate_text):
+                aggregate_text, aggregate_forecast_text,
+                aggregateforecast):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -64,6 +67,10 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         agg_dict = json.loads(aggregate_text)
         agg_dict['observations'] = aggregate_observations
         return (aggregate, agg_dict, datamodel.Aggregate)
+    elif request.param == 'aggregateforecast':
+        aggfx_dict = json.loads(aggregate_forecast_text)
+        aggfx_dict['aggregate'] = aggregate.to_dict()
+        return (aggregateforecast, aggfx_dict, datamodel.Forecast)
 
 
 @pytest.mark.parametrize('extra', [
@@ -268,3 +275,10 @@ def test_aggregate_invalid(single_observation, key, val):
             'ending', 'America/Denver',
             observations=(aggobs,)
         )
+
+
+def test_forecast_invalid(single_forecast, single_site, aggregate):
+    with pytest.raises(KeyError):
+        single_forecast.replace(site=None, aggregate=None)
+    with pytest.raises(KeyError):
+        single_forecast.replace(site=single_site, aggregate=aggregate)

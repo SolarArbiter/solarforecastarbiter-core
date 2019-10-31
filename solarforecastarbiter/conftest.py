@@ -664,7 +664,8 @@ def single_forecast_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
   },
   "created_at": "2019-03-01T11:55:37+00:00",
   "extra_parameters": "",
@@ -679,6 +680,7 @@ def single_forecast_text():
   "provider": "Organization 1",
   "run_length": 1440,
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
   "variable": "ghi"
 }
 """
@@ -690,7 +692,8 @@ def many_forecasts_text():
 [
   {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:37+00:00",
     "extra_parameters": "",
@@ -705,11 +708,13 @@ def many_forecasts_text():
     "provider": "Organization 1",
     "run_length": 1440,
     "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "aggregate_id": null,
     "variable": "ghi"
   },
   {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:38+00:00",
     "extra_parameters": "",
@@ -724,6 +729,7 @@ def many_forecasts_text():
     "provider": "Organization 1",
     "run_length": 60,
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
     "variable": "ac_power"
   }
 ]
@@ -764,7 +770,8 @@ def prob_forecast_constant_value_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
   },
   "created_at": "2019-03-01T11:55:37+00:00",
   "extra_parameters": "",
@@ -779,6 +786,7 @@ def prob_forecast_constant_value_text():
   "provider": "Organization 1",
   "run_length": 1440,
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
   "variable": "ghi",
   "axis": "x",
   "constant_value": 0
@@ -791,7 +799,8 @@ def prob_forecast_text():
     return b"""
 {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:37+00:00",
     "extra_parameters": "",
@@ -806,6 +815,7 @@ def prob_forecast_text():
     "provider": "Organization 1",
     "run_length": 1440,
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
     "variable": "ghi",
     "axis": "x",
     "constant_values": [
@@ -825,7 +835,8 @@ def many_prob_forecasts_text():
 [
     {
         "_links": {
-        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+          "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+          "aggregate": null
         },
         "created_at": "2019-03-01T11:55:37+00:00",
         "extra_parameters": "",
@@ -840,6 +851,7 @@ def many_prob_forecasts_text():
         "provider": "Organization 1",
         "run_length": 1440,
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "aggregate_id": null,
         "variable": "ghi",
         "axis": "x",
         "constant_values": [
@@ -852,7 +864,8 @@ def many_prob_forecasts_text():
     },
     {
         "_links": {
-        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+          "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+          "aggregate": null
         },
         "created_at": "2019-03-01T11:55:37+00:00",
         "extra_parameters": "",
@@ -867,6 +880,7 @@ def many_prob_forecasts_text():
         "provider": "Organization 1",
         "run_length": 1440,
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "aggregate_id": null,
         "variable": "ghi",
         "axis": "x",
         "constant_values": [
@@ -1171,3 +1185,112 @@ def aggregate(aggregate_text, aggregate_observations):
         timezone=aggd['timezone'], aggregate_id=aggd['aggregate_id'],
         provider=aggd['provider'], extra_parameters=aggd['extra_parameters'],
         observations=aggregate_observations)
+
+
+@pytest.fixture()
+def aggregate_forecast_text():
+    return b"""
+{
+  "_links": {
+    "site": null,
+    "aggregate": "http://localhost:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+  },
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "GHI Aggregate FX",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": null,
+  "variable": "ghi"
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def aggregateforecast(aggregate_forecast_text, aggregate):
+    fx_dict = json.loads(aggregate_forecast_text)
+    return datamodel.Forecast(
+        name=fx_dict['name'], variable=fx_dict['variable'],
+        interval_value_type=fx_dict['interval_value_type'],
+        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+        interval_label=fx_dict['interval_label'],
+        aggregate=aggregate,
+        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                  int(fx_dict['issue_time_of_day'][3:])),
+        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+        forecast_id=fx_dict.get('forecast_id', ''),
+        extra_parameters=fx_dict.get('extra_parameters', ''))
+
+
+@pytest.fixture()
+def aggregate_prob_forecast_text():
+    return b"""
+{
+    "_links": {
+      "site": null,
+      "aggregate": "http://127.0.0.1:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+    },
+    "created_at": "2019-03-02T14:55:38+00:00",
+    "extra_parameters": "",
+    "forecast_id": "f6b620ca-f743-11e9-a34f-f4939feddd82",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-02T14:55:38+00:00",
+    "name": "GHI Aggregate CDF FX",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": null,
+    "variable": "ghi",
+    "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+    "axis": "y",
+    "constant_values": [
+      {
+        "_links": {
+          "values": "http://localhost:5000/forecasts/cdf/single/733f9396-50bb-11e9-8647-d663bd873d93/values"
+        },
+        "constant_value": 10.0,
+        "forecast_id": "733f9396-50bb-11e9-8647-d663bd873d93"
+      },
+      {
+        "_links": {
+          "values": "http://localhost:5000/forecasts/cdf/single/733f9864-50bb-11e9-8647-d663bd873d93/values"
+        },
+        "constant_value": 20.0,
+        "forecast_id": "733f9864-50bb-11e9-8647-d663bd873d93"
+      },
+      {
+        "_links": {
+          "values": "http://localhost:5000/forecasts/cdf/single/733f9b2a-50bb-11e9-8647-d663bd873d93/values"
+        },
+        "constant_value": 50.0,
+        "forecast_id": "733f9b2a-50bb-11e9-8647-d663bd873d93"
+      },
+      {
+        "_links": {
+          "values": "http://localhost:5000/forecasts/cdf/single/733f9d96-50bb-11e9-8647-d663bd873d93/values"
+        },
+        "constant_value": 80.0,
+        "forecast_id": "733f9d96-50bb-11e9-8647-d663bd873d93"
+      },
+      {
+        "_links": {
+          "values": "http://localhost:5000/forecasts/cdf/single/733fa548-50bb-11e9-8647-d663bd873d93/values"
+        },
+        "constant_value": 100.0,
+        "forecast_id": "733fa548-50bb-11e9-8647-d663bd873d93"
+      }
+    ],
+}
+"""  # NOQA
