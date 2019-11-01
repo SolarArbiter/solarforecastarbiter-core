@@ -773,8 +773,7 @@ def test_apisession_create_aggregate(requests_mock, aggregate, aggregate_text,
                 'effective_from' in rj['observations'][0]
                 or 'effective_until' in rj['observations'][0])
 
-    requests_mock.register_uri('POST', matcher,
-                               text=callback)
+    requests_mock.register_uri('POST', matcher, text=callback)
     requests_mock.register_uri('GET', matcher, content=aggregate_text)
     aggregate_dict = aggregate.to_dict()
     del aggregate_dict['aggregate_id']

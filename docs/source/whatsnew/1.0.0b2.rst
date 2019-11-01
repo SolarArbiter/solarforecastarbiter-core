@@ -17,7 +17,6 @@ API Changes
   either a Site or an Aggregate, and add corresponding Aggregate
   methods to the APISession (:pull:`235`)
 
-======= end
 
 Enhancements
 ~~~~~~~~~~~~

@@ -867,7 +867,7 @@ class APISession(requests.Session):
         Returns
         -------
         datamodel.Aggregate
-            With the appropriate parameters such as aggregate_id set by the API
+            With the parameters aggregate_id and provider set by the API.
         """
         agg_dict = aggregate.to_dict()
         agg_dict.pop('aggregate_id')
@@ -909,7 +909,7 @@ class APISession(requests.Session):
         end : timelike object
             End time of the interval
         interval_label : str or None
-            If beginning, ending, adjust the data to return only data that is
+            If beginning or ending, return only data that is
             valid between start and end. If None, return any data
             between start and end inclusive of the endpoints.
 
