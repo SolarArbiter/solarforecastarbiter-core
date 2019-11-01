@@ -1,6 +1,7 @@
 """Deterministic forecast error metrics."""
 
 import numpy as np
+from statsmodels.distributions.empirical_distribution import ECDF
 
 __all__ = [
     "mean_absolute",
@@ -12,6 +13,9 @@ __all__ = [
     "pearson_correlation_coeff",
     "coeff_determination",
     "centered_root_mean_square",
+    "kolmogorov_smirnov_integral",
+    "over",
+    "combined_performance_index",
 ]
 
 
@@ -209,3 +213,113 @@ def centered_root_mean_square(y_true, y_pred):
     return np.sqrt(np.mean(
         ((y_pred - np.mean(y_pred)) - (y_true - np.mean(y_true))) ** 2
     ))
+
+
+def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
+    """Kolmogorov-Smirnov Test Integral (KSI).
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+    normed : bool, optional
+        If True, return the normalized KSI [%].
+
+    Returns
+    -------
+    ksi : float
+        The KSI between the true and predicted values.
+
+    Notes
+    -----
+    The calculation of the empirical CDF uses a right endpoint rule (the
+    default of the statsmodels ECDF function). For example, if the data is
+    [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
+
+    """
+
+    # empirical CDF
+    ecdf_obs = ECDF(y_true)
+    ecdf_fx = ECDF(y_pred)
+
+    # evaluate CDFs
+    x = np.unique(np.concatenate((y_true, y_pred)))
+    y_o = ecdf_obs(x)
+    y_f = ecdf_fx(x)
+
+    # compute metric
+    D = np.abs(y_o - y_f)
+    ksi = np.sum(D[:-1] * np.diff(x))
+
+    if normed:
+        Vc = 1.63 / np.sqrt(len(y_true))
+        a_critical = Vc * (x.max() - x.min())
+        return ksi / a_critical * 100.0
+    else:
+        return ksi
+
+
+def over(y_true, y_pred):
+    """OVER metric.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    over : float
+        The OVER metric between the true and predicted values.
+
+    Notes
+    -----
+    The calculation of the empirical CDF uses a right endpoint rule (the
+    default of the statsmodels ECDF function). For example, if the data is
+    [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
+
+    """
+
+    # empirical CDF
+    ecdf_obs = ECDF(y_true)
+    ecdf_fx = ECDF(y_pred)
+
+    # evaluate CDFs
+    x = np.unique(np.concatenate((y_true, y_pred)))
+    y_o = ecdf_obs(x)
+    y_f = ecdf_fx(x)
+
+    # compute metric
+    D = np.abs(y_o - y_f)
+    Vc = 1.63 / np.sqrt(len(y_true))
+    Dstar = D - Vc
+    Dstar[D <= Vc] = 0.0
+    over = np.sum(Dstar[:-1] * np.diff(x))
+    return over
+
+
+def combined_performance_index(y_true, y_pred):
+    """Combined Performance Index (CPI) metric.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    cpi : float
+        The CPI between the true and predicted values.
+
+    """
+    ksi = kolmogorov_smirnov_integral(y_true, y_pred)
+    ov = over(y_true, y_pred)
+    rmse = root_mean_square(y_true, y_pred)
+    cpi = 1 / 4 * (ksi + ov + 2 * rmse)
+    return cpi

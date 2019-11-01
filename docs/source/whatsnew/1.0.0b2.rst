@@ -12,6 +12,10 @@ API Changes
   :py:mod:`solarforecastarbiter.metrics.preprocessing.apply_validation`,
   :py:mod:`solarforecastarbiter.metrics.preprocessing.resample_and_align`, and
   :py:mod:`solarforecastarbiter.metrics.preprocessing.exclude`. (:pull:`221`)
+* Add additional metrics for deterministic forecasts
+  :py:mod:`solarforecastarbiter.metrics.deterministic.kolmogorov_smirnov_integral`,
+  :py:mod:`solarforecastarbiter.metrics.deterministic.over`, and
+  :py:mod:`solarforecastarbiter.metrics.deterministic.combined_performance_index`. (:pull:`230`)
 * Moved temporary functions from report to metrics calculator. (:pull:`221`)
 * Add Aggregate to the datamodel, allow forecasts to reference
   either a Site or an Aggregate, and add corresponding Aggregate
