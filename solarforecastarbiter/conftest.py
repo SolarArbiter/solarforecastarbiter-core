@@ -351,7 +351,17 @@ def get_site(many_sites):
     site_dict = {site.site_id: site for site in many_sites}
 
     def get(site_id):
-        return site_dict[site_id]
+        return site_dict.get(site_id, None)
+    return get
+
+
+@pytest.fixture()
+def get_aggregate(aggregate):
+    def get(agg_id):
+        if agg_id is None:
+            return None
+        else:
+            return aggregate
     return get
 
 
@@ -587,6 +597,23 @@ def many_observations_text():
     "site_id": "d2018f1d-82b1-422a-8ec4-4e8b3fe92a4a",
     "uncertainty": 0.1,
     "variable": "ghi"
+  },
+  {
+    "_links": {
+      "site": "http://localhost:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+    },
+    "created_at": "2019-03-01T12:01:39",
+    "extra_parameters": "{\\"instrument\\": \\"Ascension Technology Rotating Shadowband Pyranometer\\", \\"network\\": \\"UO SRML\\"}",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "modified_at": "2019-03-01T12:01:39",
+    "name": "GHI Instrument 1",
+    "observation_id": "123e4567-e89b-12d3-a456-426655440000",
+    "provider": "Organization 1",
+    "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "uncertainty": 0.1,
+    "variable": "ghi"
   }
 ]"""  # NOQA
 
@@ -647,7 +674,8 @@ def single_forecast_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
   },
   "created_at": "2019-03-01T11:55:37+00:00",
   "extra_parameters": "",
@@ -662,6 +690,7 @@ def single_forecast_text():
   "provider": "Organization 1",
   "run_length": 1440,
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
   "variable": "ghi"
 }
 """
@@ -673,7 +702,8 @@ def many_forecasts_text():
 [
   {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:37+00:00",
     "extra_parameters": "",
@@ -688,11 +718,13 @@ def many_forecasts_text():
     "provider": "Organization 1",
     "run_length": 1440,
     "site_id": "123e4567-e89b-12d3-a456-426655440001",
+    "aggregate_id": null,
     "variable": "ghi"
   },
   {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:38+00:00",
     "extra_parameters": "",
@@ -707,21 +739,44 @@ def many_forecasts_text():
     "provider": "Organization 1",
     "run_length": 60,
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
     "variable": "ac_power"
+  },
+  {
+    "_links": {
+      "site": null,
+      "aggregate": "http://localhost:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+    },
+    "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "GHI Aggregate FX",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": null,
+    "variable": "ghi"
   }
 ]
 """  # NOQA
 
 
 @pytest.fixture()
-def _forecast_from_dict(single_site, get_site):
+def _forecast_from_dict(single_site, get_site, get_aggregate):
     def f(fx_dict):
         return datamodel.Forecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
@@ -747,7 +802,8 @@ def prob_forecast_constant_value_text():
     return b"""
 {
   "_links": {
-    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002"
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
   },
   "created_at": "2019-03-01T11:55:37+00:00",
   "extra_parameters": "",
@@ -762,6 +818,7 @@ def prob_forecast_constant_value_text():
   "provider": "Organization 1",
   "run_length": 1440,
   "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
   "variable": "ghi",
   "axis": "x",
   "constant_value": 0
@@ -774,7 +831,8 @@ def prob_forecast_text():
     return b"""
 {
     "_links": {
-      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
     },
     "created_at": "2019-03-01T11:55:37+00:00",
     "extra_parameters": "",
@@ -789,6 +847,7 @@ def prob_forecast_text():
     "provider": "Organization 1",
     "run_length": 1440,
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
     "variable": "ghi",
     "axis": "x",
     "constant_values": [
@@ -808,7 +867,8 @@ def many_prob_forecasts_text():
 [
     {
         "_links": {
-        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+          "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+          "aggregate": null
         },
         "created_at": "2019-03-01T11:55:37+00:00",
         "extra_parameters": "",
@@ -823,6 +883,7 @@ def many_prob_forecasts_text():
         "provider": "Organization 1",
         "run_length": 1440,
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "aggregate_id": null,
         "variable": "ghi",
         "axis": "x",
         "constant_values": [
@@ -835,7 +896,8 @@ def many_prob_forecasts_text():
     },
     {
         "_links": {
-        "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001"
+          "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+          "aggregate": null
         },
         "created_at": "2019-03-01T11:55:37+00:00",
         "extra_parameters": "",
@@ -850,7 +912,37 @@ def many_prob_forecasts_text():
         "provider": "Organization 1",
         "run_length": 1440,
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
+        "aggregate_id": null,
         "variable": "ghi",
+        "axis": "x",
+        "constant_values": [
+            {
+                "_links": {},
+                "constant_value": 0,
+                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+            }
+        ]
+    },
+    {
+        "_links": {
+          "site": null,
+          "aggregate": "http://127.0.0.1:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+        },
+        "created_at": "2019-03-02T14:55:38+00:00",
+        "extra_parameters": "",
+        "forecast_id": "f6b620ca-f743-11e9-a34f-f4939feddd82",
+        "interval_label": "beginning",
+        "interval_length": 5,
+        "interval_value_type": "interval_mean",
+        "issue_time_of_day": "06:00",
+        "lead_time_to_start": 60,
+        "modified_at": "2019-03-02T14:55:38+00:00",
+        "name": "GHI Aggregate CDF FX",
+        "provider": "Organization 1",
+        "run_length": 1440,
+        "site_id": null,
+        "variable": "ghi",
+        "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
         "axis": "x",
         "constant_values": [
             {
@@ -865,14 +957,15 @@ def many_prob_forecasts_text():
 
 
 @pytest.fixture()
-def _prob_forecast_constant_value_from_dict(get_site):
+def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
     def f(fx_dict):
         return datamodel.ProbabilisticForecastConstantValue(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
@@ -885,14 +978,16 @@ def _prob_forecast_constant_value_from_dict(get_site):
 
 
 @pytest.fixture()
-def _prob_forecast_from_dict(get_site, prob_forecast_constant_value):
+def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
+                             get_aggregate):
     def f(fx_dict):
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
             interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
             interval_label=fx_dict['interval_label'],
-            site=get_site(fx_dict['site_id']),
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
             issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
                                       int(fx_dict['issue_time_of_day'][3:])),
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
@@ -1068,3 +1163,227 @@ def raw_report(report_objects):
         raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
         return raw
     return gen
+
+
+@pytest.fixture()
+def aggregate_text():
+    return b"""
+{
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "aggregate_type": "mean",
+  "created_at": "2019-09-24T12:00:00+00:00",
+  "description": "ghi agg",
+  "extra_parameters": "extra",
+  "interval_label": "ending",
+  "interval_length": 60,
+  "interval_value_type": "interval_mean",
+  "modified_at": "2019-09-24T12:00:00+00:00",
+  "name": "Test Aggregate ghi",
+  "observations": [
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/123e4567-e89b-12d3-a456-426655440000/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
+      "effective_until": "2020-01-01T00:00:00+00:00",
+      "observation_deleted_at": null,
+      "observation_id": "123e4567-e89b-12d3-a456-426655440000"
+    },
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/e0da0dea-9482-4073-84de-f1b12c304d23/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
+      "effective_until": null,
+      "observation_deleted_at": null,
+      "observation_id": "e0da0dea-9482-4073-84de-f1b12c304d23"
+    },
+    {
+      "_links": {
+        "observation": "http://localhost:5000/observations/b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2/metadata"
+      },
+      "created_at": "2019-09-25T00:00:00+00:00",
+      "effective_from": "2019-01-01T00:00:00+00:00",
+      "effective_until": null,
+      "observation_deleted_at": null,
+      "observation_id": "b1dfe2cb-9c8e-43cd-afcf-c5a6feaf81e2"
+    }
+  ],
+  "provider": "Organization 1",
+  "timezone": "America/Denver",
+  "variable": "ghi"
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def aggregate_observations(aggregate_text, many_observations):
+    obsd = {o.observation_id: o for o in many_observations}
+    aggd = json.loads(aggregate_text)
+
+    def _tstamp(val):
+        if val is None:
+            return val
+        else:
+            return pd.Timestamp(val)
+
+    aggobs = tuple([datamodel.AggregateObservation(
+        observation=obsd[o['observation_id']],
+        effective_from=_tstamp(o['effective_from']),
+        effective_until=_tstamp(o['effective_until']),
+        observation_deleted_at=_tstamp(o['observation_deleted_at']))
+                    for o in aggd['observations']])
+    return aggobs
+
+
+@pytest.fixture()
+def aggregate(aggregate_text, aggregate_observations):
+    aggd = json.loads(aggregate_text)
+    return datamodel.Aggregate(
+        name=aggd['name'], description=aggd['description'],
+        variable=aggd['variable'], aggregate_type=aggd['aggregate_type'],
+        interval_length=pd.Timedelta(f"{aggd['interval_length']}min"),
+        interval_label=aggd['interval_label'],
+        timezone=aggd['timezone'], aggregate_id=aggd['aggregate_id'],
+        provider=aggd['provider'], extra_parameters=aggd['extra_parameters'],
+        observations=aggregate_observations)
+
+
+@pytest.fixture()
+def aggregate_forecast_text():
+    return b"""
+{
+  "_links": {
+    "site": null,
+    "aggregate": "http://localhost:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+  },
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "GHI Aggregate FX",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": null,
+  "variable": "ghi"
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def aggregateforecast(aggregate_forecast_text, aggregate):
+    fx_dict = json.loads(aggregate_forecast_text)
+    return datamodel.Forecast(
+        name=fx_dict['name'], variable=fx_dict['variable'],
+        interval_value_type=fx_dict['interval_value_type'],
+        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+        interval_label=fx_dict['interval_label'],
+        aggregate=aggregate,
+        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                  int(fx_dict['issue_time_of_day'][3:])),
+        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+        forecast_id=fx_dict.get('forecast_id', ''),
+        extra_parameters=fx_dict.get('extra_parameters', ''))
+
+
+@pytest.fixture()
+def aggregate_prob_forecast_text():
+    return b"""
+{
+    "_links": {
+      "site": null,
+      "aggregate": "http://127.0.0.1:5000/aggregates/458ffc27-df0b-11e9-b622-62adb5fd6af0"
+    },
+    "created_at": "2019-03-02T14:55:38+00:00",
+    "extra_parameters": "",
+    "forecast_id": "f6b620ca-f743-11e9-a34f-f4939feddd82",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-02T14:55:38+00:00",
+    "name": "GHI Aggregate CDF FX",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": null,
+    "variable": "ghi",
+    "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+    "axis": "x",
+    "constant_values": [
+        {
+            "_links": {},
+            "constant_value": 0,
+            "forecast_id": "12c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def agg_prob_forecast_constant_value_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "12c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+  "site_id": null,
+  "variable": "ghi",
+  "axis": "x",
+  "constant_value": 0
+}
+"""
+
+
+@pytest.fixture()
+def agg_prob_forecast_constant_value(_prob_forecast_constant_value_from_dict,
+                                     agg_prob_forecast_constant_value_text):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(agg_prob_forecast_constant_value_text))
+
+
+@pytest.fixture()
+def aggregate_prob_forecast(aggregate_prob_forecast_text,
+                            agg_prob_forecast_constant_value,
+                            aggregate):
+    fx_dict = json.loads(aggregate_prob_forecast_text)
+    fx_dict['constant_values'] = agg_prob_forecast_constant_value
+    return datamodel.ProbabilisticForecast(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=None,
+            aggregate=aggregate,
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''),
+            axis=fx_dict['axis'],
+            constant_values=(agg_prob_forecast_constant_value, ))

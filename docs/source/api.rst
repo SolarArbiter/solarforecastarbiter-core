@@ -47,6 +47,14 @@ Probabilistic forecasts:
    datamodel.ProbabilisticForecast
    datamodel.ProbabilisticForecastConstantValue
 
+Aggregates:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.AggregateObservation
+   datamodel.Aggregate
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 
@@ -286,7 +294,6 @@ Forecasts
    io.api.APISession.post_forecast_values
 
 Probabilistic Forecasts
------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -297,6 +304,16 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
+
+Aggregates
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.get_aggregate
+   io.api.APISession.list_aggregates
+   io.api.APISession.create_aggregate
+   io.api.APISession.get_aggregate_values
 
 Utils
 -----

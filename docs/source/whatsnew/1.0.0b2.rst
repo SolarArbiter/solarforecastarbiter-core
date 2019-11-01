@@ -13,6 +13,10 @@ API Changes
   :py:mod:`solarforecastarbiter.metrics.preprocessing.resample_and_align`, and
   :py:mod:`solarforecastarbiter.metrics.preprocessing.exclude`. (:pull:`221`)
 * Moved temporary functions from report to metrics calculator. (:pull:`221`)
+* Add Aggregate to the datamodel, allow forecasts to reference
+  either a Site or an Aggregate, and add corresponding Aggregate
+  methods to the APISession (:pull:`235`)
+
 
 Enhancements
 ~~~~~~~~~~~~

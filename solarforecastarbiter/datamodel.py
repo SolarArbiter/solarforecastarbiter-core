@@ -420,6 +420,138 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
+class AggregateObservation(BaseModel):
+    """
+    Class for keeping track of an Observation and when it is added and
+    (optionally) removed from an Aggregate. This metadata allows the
+    Arbiter to calculate the correct quantities while the Aggregate grows
+    or shrinks over time.
+
+    Parameters
+    ----------
+    observation : Observation
+        The Observation object that is part of the Aggregate
+    effective_from : pandas.Timestamp
+        The datetime of when the Observation should be
+        included in the Aggregate
+    effective_until : pandas.Timestamp
+        The datetime of when the Observation should be
+        excluded from the Aggregate
+    observation_deleted_at : pandas.Timestamp
+        The datetime that the Observation was deleted from the
+        Arbiter. This indicates that the Observation should be
+        removed from the Aggregate, and without the data
+        from this Observation, the Aggregate is invalid before
+        this time.
+
+    See Also
+    --------
+    Observation
+    Aggregate
+    """
+    observation: Observation
+    effective_from: pd.Timestamp
+    effective_until: Union[pd.Timestamp, None] = None
+    observation_deleted_at: Union[pd.Timestamp, None] = None
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name in ('effective_until', 'observation_deleted_at'):
+            if val is None:
+                return val
+            else:
+                return pd.Timestamp(val)
+        else:  # pragma: no cover
+            return val
+
+
+def __check_variable__(variable, *args):
+    if not all(arg.variable == variable for arg in args):
+        raise ValueError('All variables must be identical.')
+
+
+def __check_aggregate_interval_compatibility__(interval, *args):
+    if any(arg.interval_length > interval for arg in args):
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'aggregate.interval_length.')
+    if any(arg.interval_value_type not in ('interval_mean', 'instantaneous')
+           for arg in args):
+        raise ValueError('Only observations with interval_value_type of '
+                         'interval_mean or instantaneous are acceptable')
+
+
+@dataclass(frozen=True)
+class Aggregate(BaseModel):
+    """
+    Class for keeping track of Aggregate metadata. Aggregates always
+    have interval_value_type of 'interval_mean'.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Aggregate, e.g. Utility X Solar PV
+    description : str
+        A description of what the aggregate is.
+    variable : str
+        Variable name, e.g. power, GHI. Each allowed variable has an
+        associated pre-defined unit. All observations that make up the
+        Aggregate must also have this variable.
+    aggregate_type : str
+        The aggregation function that will be applied to observations.
+        Generally, this will be 'sum' although one might be interested,
+        for example, in the 'mean' irradiance of some observations.
+        May be an aggregate function string supported by Pandas. Common
+        options include ('sum', 'mean', 'min', 'max', 'median', 'std').
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour. This must be >= the interval lengths of any Observations that
+        will make up the Aggregate.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average.
+    timezone : str
+        IANA timezone of the Aggregate, e.g. Etc/GMT+8
+    aggregate_id : str, optional
+        UUID of the Aggregate in the API
+    provider : str, optional
+        Provider of the Aggregate information.
+    extra_parameters : str, optional
+        Any extra parameters for the Aggregate.
+    observations : tuple of AggregateObservation
+        The Observations that contribute to the Aggregate
+
+    See Also
+    --------
+    Observation
+    """
+    name: str
+    description: str
+    variable: str
+    aggregate_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    timezone: str
+    observations: Tuple[AggregateObservation, ...]
+    aggregate_id: str = ''
+    provider: str = ''
+    extra_parameters: str = ''
+    units: str = field(init=False)
+    interval_value_type: str = field(default='interval_mean')
+
+    def __post_init__(self):
+        __set_units__(self)
+        observations = [
+            ao.observation for ao in self.observations
+            if ao.observation is not None]
+        __check_variable__(
+            self.variable,
+            *observations)
+        __check_aggregate_interval_compatibility__(
+            self.interval_length,
+            *observations)
+        object.__setattr__(self, 'interval_value_type', 'interval_mean')
+
+
+@dataclass(frozen=True)
 class _ForecastBase:
     name: str
     issue_time_of_day: datetime.time
@@ -429,15 +561,22 @@ class _ForecastBase:
     interval_label: str
     interval_value_type: str
     variable: str
-    site: Site
-    units: str = field(init=False)
-    __post_init__ = __set_units__
 
 
 @dataclass(frozen=True)
 class _ForecastDefaultsBase:
+    site: Union[Site, None] = None
+    aggregate: Union[Aggregate, None] = None
     forecast_id: str = ''
     extra_parameters: str = ''
+    units: str = field(init=False)
+
+
+def __site_or_agg__(cls):
+    if cls.site is not None and cls.aggregate is not None:
+        raise KeyError('Only provide one of "site" or "aggregate" to Forecast')
+    elif cls.site is None and cls.aggregate is None:
+        raise KeyError('Must provide one of "site" or "aggregate" to Forecast')
 
 
 # Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
@@ -476,9 +615,10 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     forecast_id : str, optional
         UUID of the forecast in the API
     extra_parameters : str, optional
@@ -487,9 +627,25 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     See Also
     --------
     Site
+    Aggregate
     """
     def __post_init__(self):
-        super().__post_init__()
+        __set_units__(self)
+        __site_or_agg__(self)
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name == 'site':
+            if isinstance(val, dict):
+                return Site.from_dict(val)
+            else:
+                return val
+        elif model_field.name == 'aggregate':
+            if isinstance(val, dict):
+                return Aggregate.from_dict(val)
+            else:
+                return val
+        else:
+            return val
 
 
 @dataclass(frozen=True)
@@ -534,9 +690,10 @@ class ProbabilisticForecastConstantValue(
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     axis : str
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
@@ -600,9 +757,10 @@ class ProbabilisticForecast(
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     axis : str
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
@@ -617,6 +775,7 @@ class ProbabilisticForecast(
     See also
     --------
     ProbabilisticForecastConstantValue
+    Forecast
     """
     def __post_init__(self):
         super().__post_init__()
