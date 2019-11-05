@@ -289,3 +289,15 @@ def test_forecast_invalid(single_forecast, single_site, aggregate):
         single_forecast.replace(site=None, aggregate=None)
     with pytest.raises(KeyError):
         single_forecast.replace(site=single_site, aggregate=aggregate)
+
+
+def test_probabilistic_forecast_float_constant_values(
+        prob_forecast_text, single_site, prob_forecast_constant_value,
+        prob_forecasts):
+    fx_dict = json.loads(prob_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict['constant_values'] = (
+        prob_forecast_constant_value.constant_value, )
+    out = datamodel.ProbabilisticForecast.from_dict(fx_dict)
+    object.__setattr__(prob_forecasts.constant_values[0], 'forecast_id', '')
+    assert out == prob_forecasts

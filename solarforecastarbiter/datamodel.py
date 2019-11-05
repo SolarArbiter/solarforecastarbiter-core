@@ -717,7 +717,7 @@ class ProbabilisticForecastConstantValue(
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
-    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
+    constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float], ...]  # NOQA
 
 
 @dataclass(frozen=True)
@@ -781,6 +781,29 @@ class ProbabilisticForecast(
         super().__post_init__()
         __check_axis__(self.axis)
         __check_axis_consistency__(self.axis, self.constant_values)
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        constant_values = dict_.pop('constant_values')
+        new_cvs = []
+        for cv in constant_values:
+            if isinstance(cv, dict):
+                new_cvs.append(ProbabilisticForecastConstantValue.from_dict(cv))
+            elif isinstance(cv, ProbabilisticForecastConstantValue):
+                new_cvs.append(cv)
+            elif isinstance(cv, (float, int)):
+                cv_dict = dict_.copy()
+                cv_dict.pop('forecast_id')
+                cv_dict['constant_value'] = cv
+                new_cvs.append(
+                    ProbabilisticForecastConstantValue.from_dict(cv_dict))
+            else:
+                raise TypeError(
+                    f'Invalid type for a constant value {cv}. '
+                    'Must be a dict, float, or ProbablisticConstantValue')
+        dict_['constant_values'] = tuple(new_cvs)
+        return super().from_dict(dict_, raise_on_extra)
 
 
 def __check_axis__(axis):
