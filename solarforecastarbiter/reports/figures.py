@@ -80,10 +80,10 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
 
     Parameters
     ----------
-    obs_fx_cds : tuple of (ForecastObservation, cds) tuples
-        ForecastObservation is a datamodel.ForecastObservation object.
-        cds is a Bokeh ColumnDataSource with columns
-        timestamp, observation, forecast.
+    obs_fx_cds : list
+        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
+        ColumnDataSource must have columns timestamp, observation,
+        forecast.
     start : pandas.Timestamp
         Report start time
     end : pandas.Timestamp
@@ -105,25 +105,33 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
         name='timeseries')
 
     plotted_objects = []
-    for fx_obs, cds in fx_obs_cds:
-        if fx_obs.observation in plotted_objects:
+    for proc_fx_obs, cds in fx_obs_cds:
+        unique_obs = (
+            proc_fx_obs.original.observation, proc_fx_obs.interval_value_type,
+            proc_fx_obs.interval_length, proc_fx_obs. interval_label
+        )
+        unique_fx = (
+            proc_fx_obs.original.forecast, proc_fx_obs.interval_value_type,
+            proc_fx_obs.interval_length, proc_fx_obs. interval_label
+        )
+        if unique_obs in plotted_objects:
             pass
         else:
-            plotted_objects.append(fx_obs.observation)
+            plotted_objects.append(unique_obs)
             plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                fx_obs.observation.interval_label)
-            name = _obs_name(fx_obs)
-            obs_color = _obs_color(fx_obs.observation.interval_length)
+                proc_fx_obs.interval_label)
+            name = _obs_name(proc_fx_obs.original)
+            obs_color = _obs_color(proc_fx_obs.interval_length)
             getattr(fig, plot_method)(
                 x='timestamp', y='observation', source=cds,
                 color=obs_color, legend=name, **plot_kwargs)
-        if fx_obs.forecast in plotted_objects:
+        if unique_fx in plotted_objects:
             pass
         else:
-            plotted_objects.append(fx_obs.forecast)
+            plotted_objects.append(unique_fx)
             plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                fx_obs.forecast.interval_label)
-            name = _fx_name(fx_obs)
+                proc_fx_obs.interval_label)
+            name = _fx_name(proc_fx_obs.original)
             getattr(fig, plot_method)(
                 x='timestamp', y='forecast', source=cds,
                 color=next(palette), legend=name, **plot_kwargs)
@@ -131,7 +139,8 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
     fig.xaxis.axis_label = f'Time ({timezone})'
-    fig.yaxis.axis_label = format_variable_name(fx_obs.forecast.variable)
+    fig.yaxis.axis_label = format_variable_name(
+        proc_fx_obs.original.forecast.variable)
     return fig
 
 
@@ -156,10 +165,10 @@ def scatter(fx_obs_cds):
 
     Parameters
     ----------
-    obs_fx_cds : tuple of (ForecastObservation, cds) tuples
-        ForecastObservation is a datamodel.ForecastObservation object.
-        cds is a Bokeh ColumnDataSource with columns
-        timestamp, observation, forecast.
+    obs_fx_cds : list
+        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
+        ColumnDataSource must have columns timestamp, observation,
+        forecast.
 
     Returns
     -------
@@ -177,14 +186,15 @@ def scatter(fx_obs_cds):
 
     palette = iter(PALETTE)
 
-    for fx_obs, cds in fx_obs_cds:
+    for proc_fx_obs, cds in fx_obs_cds:
         fig.scatter(
             x='observation', y='forecast', source=cds,
-            fill_color=next(palette), legend=fx_obs.forecast.name, **kwargs)
+            fill_color=next(palette),
+            legend=proc_fx_obs.original.forecast.name, **kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    label = format_variable_name(fx_obs.forecast.variable)
+    label = format_variable_name(proc_fx_obs.original.forecast.variable)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
     return fig
