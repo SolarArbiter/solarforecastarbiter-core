@@ -120,8 +120,8 @@ def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
     Parameters
     ----------
     fx_obs_cds : list
-        List of (forecast, observation, ColumnDataSource) tuples to
-        pass to bokeh plotting objects.
+        List of (ProcessedForecastObservation, ColumnDataSource)
+        tuples to pass to bokeh plotting objects.
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
     report_template : str, markdown
