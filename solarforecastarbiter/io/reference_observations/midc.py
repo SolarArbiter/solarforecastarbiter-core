@@ -54,7 +54,7 @@ def initialize_site_forecasts(api, site):
         return
     site_api_id = extra_params['network_api_id']
     common.create_forecasts(
-        api, site, midc_config.midc_var_map[site_api_id].keys())
+        api, site, midc_config.midc_var_map[site_api_id].keys(), True)
 
 
 def update_observation_data(api, sites, observations, start, end):

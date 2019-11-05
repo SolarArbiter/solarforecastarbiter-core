@@ -74,7 +74,7 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, DOE_RTC_VARIABLE_MAP.values())
+    common.create_forecasts(api, site, DOE_RTC_VARIABLE_MAP.values(), True)
 
 
 def update_observation_data(api, sites, observations, start, end):

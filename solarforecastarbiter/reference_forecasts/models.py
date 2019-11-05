@@ -540,7 +540,7 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     -----
     Returned values are hourly averages sorted from smallest to largest
     at each time stamp. Each variable is sorted independently.
-    This describes a ProbabilisticForecast with ``axis='x'`` and
+    This describes a ProbabilisticForecast with ``axis='y'`` and
     ``constant_values=[0, 5, ...95, 100]``.
     """
     start_floored, end_ceil = _adjust_gfs_start_end(start, end)

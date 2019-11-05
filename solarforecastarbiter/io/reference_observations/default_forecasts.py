@@ -6,7 +6,8 @@ import json
 import pandas as pd
 
 
-from solarforecastarbiter.datamodel import Forecast, Site
+from solarforecastarbiter.datamodel import (
+    Forecast, Site, ProbabilisticForecast)
 from solarforecastarbiter.io.fetch.nwp import DOMAIN
 
 
@@ -88,4 +89,25 @@ TEMPLATE_FORECASTS = [
              'model': 'nam_12km_cloud_cover_to_hourly_mean'
              })
         ),
+]
+
+TEMPLATE_PROBABILISTIC_FORECASTS = [
+    ProbabilisticForecast.from_dict(dict(
+        name='Day Ahead GEFS',
+        issue_time_of_day='00:00',
+        lead_time_to_start=1440,
+        interval_length=60,
+        run_length=1440,
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        axis='y',
+        constant_values=range(0, 101, 5),
+        extra_parameters=json.dumps(
+            {'is_reference_forecast': True,
+             'model': 'gefs_half_deg_to_hourly_mean'
+             })
+        )
+    )
 ]

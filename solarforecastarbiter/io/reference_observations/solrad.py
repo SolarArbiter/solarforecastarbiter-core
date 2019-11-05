@@ -98,7 +98,7 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, solrad_variables)
+    common.create_forecasts(api, site, solrad_variables, True)
 
 
 def update_observation_data(api, sites, observations, start, end):

@@ -103,7 +103,7 @@ def initialize_site_observations(api, site):
 
 def initialize_site_forecasts(api, site):
     """
-    Create a forecasts for each variable in surfrad_variables the site
+    Create forecasts for each variable in surfrad_variables at the site
 
     Parameters
     ----------
@@ -112,7 +112,7 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, surfrad_variables)
+    common.create_forecasts(api, site, surfrad_variables, True)
 
 
 def update_observation_data(api, sites, observations, start, end):
