@@ -312,9 +312,14 @@ class APISession(requests.Session):
             fx_dict['aggregate'] = agg
         cvs = []
         for constant_value_dict in fx_dict['constant_values']:
-            cvs.append(self.get_probabilistic_forecast_constant_value(
-                constant_value_dict['forecast_id'], site=site,
-                aggregate=agg))
+            # the API just gets the groups attributes for the
+            # single constant value forecasts, so avoid
+            # those excess calls
+            cv_dict = fx_dict.copy()
+            cv_dict.update(constant_value_dict)
+            cvs.append(
+                datamodel.ProbabilisticForecastConstantValue.from_dict(
+                    cv_dict))
         fx_dict['constant_values'] = cvs
         return datamodel.ProbabilisticForecast.from_dict(fx_dict)
 

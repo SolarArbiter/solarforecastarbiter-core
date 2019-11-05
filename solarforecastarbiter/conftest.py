@@ -948,7 +948,7 @@ def many_prob_forecasts_text():
             {
                 "_links": {},
                 "constant_value": 0,
-                "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+                "forecast_id": "12c20780-76ae-4b11-bef1-7a75bdc784e3"
             }
         ]
     }
@@ -979,8 +979,12 @@ def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
 
 @pytest.fixture()
 def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
-                             get_aggregate):
+                             get_aggregate, agg_prob_forecast_constant_value):
     def f(fx_dict):
+        if fx_dict.get('aggregate_id') is not None:
+            cv = agg_prob_forecast_constant_value
+        else:
+            cv = prob_forecast_constant_value
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
@@ -995,7 +999,7 @@ def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
             forecast_id=fx_dict.get('forecast_id', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
             axis=fx_dict['axis'],
-            constant_values=(prob_forecast_constant_value, ))
+            constant_values=(cv,))
     return f
 
 
@@ -1346,8 +1350,7 @@ def agg_prob_forecast_constant_value_text():
   "interval_value_type": "interval_mean",
   "issue_time_of_day": "06:00",
   "lead_time_to_start": 60,
-  "modified_at": "2019-03-01T11:55:37+00:00",
-  "name": "DA GHI",
+  "name": "GHI Aggregate CDF FX",
   "provider": "Organization 1",
   "run_length": 1440,
   "aggregate_id": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
