@@ -21,6 +21,8 @@ Enhancements
 
 Bug fixes
 ~~~~~~~~~
+* Fix handling of observation and forecast metadata in report timeseries
+  and scatter plots. (:issue:`238`)
 
 
 Contributors
