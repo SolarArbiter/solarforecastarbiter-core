@@ -789,12 +789,13 @@ class ProbabilisticForecast(
         new_cvs = []
         for cv in constant_values:
             if isinstance(cv, dict):
-                new_cvs.append(ProbabilisticForecastConstantValue.from_dict(cv))
+                new_cvs.append(
+                    ProbabilisticForecastConstantValue.from_dict(cv))
             elif isinstance(cv, ProbabilisticForecastConstantValue):
                 new_cvs.append(cv)
             elif isinstance(cv, (float, int)):
                 cv_dict = dict_.copy()
-                cv_dict.pop('forecast_id')
+                cv_dict.pop('forecast_id', None)
                 cv_dict['constant_value'] = cv
                 new_cvs.append(
                     ProbabilisticForecastConstantValue.from_dict(cv_dict))
