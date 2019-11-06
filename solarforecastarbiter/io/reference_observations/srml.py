@@ -7,7 +7,8 @@ from pvlib import iotools
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.io.reference_observations import common, default_forecasts
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 # maps the desired variable names to those returned by pvlib.iotools

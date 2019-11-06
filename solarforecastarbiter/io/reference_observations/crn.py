@@ -5,7 +5,8 @@ from urllib.error import URLError
 import pandas as pd
 from pvlib import iotools
 
-from solarforecastarbiter.io.reference_observations import common, default_forecasts
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 CRN_URL = 'https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/'

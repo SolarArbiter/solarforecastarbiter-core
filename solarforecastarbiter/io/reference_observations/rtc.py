@@ -6,7 +6,8 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.io.fetch import rtc
-from solarforecastarbiter.io.reference_observations import common, default_forecasts
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 logger = logging.getLogger('reference_data')

@@ -6,7 +6,8 @@ import pandas as pd
 from pvlib import iotools
 
 
-from solarforecastarbiter.io.reference_observations import common, default_forecasts
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 solrad_variables = ['ghi', 'dni', 'dhi']

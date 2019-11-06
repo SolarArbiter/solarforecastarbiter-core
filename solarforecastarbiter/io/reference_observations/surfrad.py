@@ -10,7 +10,8 @@ import pandas as pd
 
 from pvlib import iotools
 from solarforecastarbiter.io.utils import observation_df_to_json_payload as obs_to_payload # NOQA
-from solarforecastarbiter.io.reference_observations import common, default_forecasts
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 # Format strings for the location of a surfrad data file. Expects the following
