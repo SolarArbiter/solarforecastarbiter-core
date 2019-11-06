@@ -8,7 +8,8 @@ import pytest
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.datamodel import Site, Observation, Forecast
+from solarforecastarbiter.datamodel import (
+    Site, Observation, Forecast, ProbabilisticForecast)
 from solarforecastarbiter.io.reference_observations import common
 from solarforecastarbiter.io.reference_observations.tests.conftest import (
     expected_site,
@@ -381,6 +382,8 @@ def test_update_site_observations_no_data(
 @pytest.fixture()
 def template_fx(mock_api, mocker):
     mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)
+    mock_api.create_probabilistic_forecast = mocker.MagicMock(
+        side_effect=lambda x: x)
     site = site_objects[1].replace(latitude=32, longitude=-110)
     template = Forecast(
         name='Test Template',
@@ -474,9 +477,15 @@ def test_create_one_forecast_existing(template_fx, mocker):
 def test_create_forecasts(template_fx, mocker, vars_, primary):
     api, template, site = template_fx
     templates = [template.replace(name='one'), template.replace(name='two')]
+    fxdict = template.to_dict()
+    fxdict['constant_values'] = [0, 50, 100]
+    fxdict['axis'] = 'y'
+    cdf_template = [ProbabilisticForecast.from_dict(fxdict)]
     mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
-    fxs = common.create_forecasts(api, site, vars_)
-    assert len(fxs) == 4
+    mocker.patch.object(common, 'TEMPLATE_PROBABILISTIC_FORECASTS',
+                        new=cdf_template)
+    fxs = common.create_forecasts(api, site, vars_, True)
+    assert len(fxs) == 6
     if primary:
         assert fxs[0].variable == primary
         assert fxs[2].variable == primary
@@ -486,6 +495,7 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     assert 'two' in fxs[2].name
     assert 'two' in fxs[3].name
     assert fxs[2].forecast_id in fxs[3].extra_parameters
+    assert isinstance(fxs[-1], ProbabilisticForecast)
 
 
 def test_create_forecasts_outside(template_fx, mocker, log):
