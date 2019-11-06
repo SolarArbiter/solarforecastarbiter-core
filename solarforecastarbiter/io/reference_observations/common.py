@@ -423,11 +423,13 @@ def create_forecasts(api, site, variables, templates):
     site : solarforecastarbiter.datamodel.site
         A site object.
     variables : list-like
-        List of variables to make a new forecast for each of TEMPLATE_FORECASTS
-    include_probabilistic : boolean, default False
-        If true, also create ProbabilisticForecasts from
-        TEMPLATE_PROBABILISTIC_FORECASTS
-    """
+        List of variables to make a new forecast for each of the template
+        forecasts
+    templates : list of datamodel.Forecasts or datamodel.ProbabilisticForecast
+        Forecasts that will be used as templates for many fields. See
+        :py:mod:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
+        for the fields that are required vs overwritten.
+    """  # NOQA
     if not is_in_nwp_domain(site):
         raise ValueError(
             f'Site {site.name} is outside the domain of the current NWP '

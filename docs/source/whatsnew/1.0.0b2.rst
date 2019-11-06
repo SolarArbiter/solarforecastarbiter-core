@@ -20,7 +20,7 @@ API Changes
 * Add Aggregate to the datamodel, allow forecasts to reference
   either a Site or an Aggregate, and add corresponding Aggregate
   methods to the APISession (:pull:`235`)
-* Add flag to also create probabilistic reference forecasts to
+* Require that a list of template Forecasts/ProbabilisticForecasts is passed to
   :py:mod:`solarforecastarbiter.io.reference_observations.common.create_forecasts`
   (:pull:`240`)
 
