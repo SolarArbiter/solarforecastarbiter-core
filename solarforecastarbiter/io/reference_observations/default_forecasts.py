@@ -92,12 +92,12 @@ TEMPLATE_FORECASTS = [
 ]
 
 TEMPLATE_PROBABILISTIC_FORECASTS = [
-    ProbabilisticForecast.from_dict(dict(
+    ProbabilisticForecast(
         name='Day Ahead GEFS',
-        issue_time_of_day='00:00',
-        lead_time_to_start=1440,
-        interval_length=60,
-        run_length=1440,
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('1d'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('24h'),
         interval_label='ending',
         interval_value_type='interval_mean',
         variable='ghi',
@@ -108,6 +108,5 @@ TEMPLATE_PROBABILISTIC_FORECASTS = [
             {'is_reference_forecast': True,
              'model': 'gefs_half_deg_to_hourly_mean'
              })
-        )
     )
 ]

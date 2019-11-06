@@ -291,7 +291,30 @@ def test_forecast_invalid(single_forecast, single_site, aggregate):
         single_forecast.replace(site=single_site, aggregate=aggregate)
 
 
-def test_probabilistic_forecast_float_constant_values(
+def test_probabilistic_forecast_float_constant_values(prob_forecasts):
+    out = datamodel.ProbabilisticForecast(
+        name=prob_forecasts.name,
+        issue_time_of_day=prob_forecasts.issue_time_of_day,
+        lead_time_to_start=prob_forecasts.lead_time_to_start,
+        interval_length=prob_forecasts.interval_length,
+        run_length=prob_forecasts.run_length,
+        interval_label=prob_forecasts.interval_label,
+        interval_value_type=prob_forecasts.interval_value_type,
+        variable=prob_forecasts.variable,
+        site=prob_forecasts.site,
+        forecast_id=prob_forecasts.forecast_id,
+        axis=prob_forecasts.axis,
+        extra_parameters=prob_forecasts.extra_parameters,
+        constant_values=tuple(cv.constant_value
+                              for cv in prob_forecasts.constant_values),
+    )
+    object.__setattr__(prob_forecasts.constant_values[0], 'forecast_id', '')
+    assert isinstance(out.constant_values[0],
+                      datamodel.ProbabilisticForecastConstantValue)
+    assert out == prob_forecasts
+
+
+def test_probabilistic_forecast_float_constant_values_from_dict(
         prob_forecast_text, single_site, prob_forecast_constant_value,
         prob_forecasts):
     fx_dict = json.loads(prob_forecast_text)
@@ -301,3 +324,8 @@ def test_probabilistic_forecast_float_constant_values(
     out = datamodel.ProbabilisticForecast.from_dict(fx_dict)
     object.__setattr__(prob_forecasts.constant_values[0], 'forecast_id', '')
     assert out == prob_forecasts
+
+
+def test_probabilistic_forecast_invalid_constant_value(prob_forecasts):
+    with pytest.raises(TypeError):
+        prob_forecasts.replace(constant_values=(1, 'a'))
