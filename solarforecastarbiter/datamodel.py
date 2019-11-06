@@ -717,7 +717,7 @@ class ProbabilisticForecastConstantValue(
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
-    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
+    constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float], ...]  # NOQA
 
 
 @dataclass(frozen=True)
@@ -765,8 +765,9 @@ class ProbabilisticForecast(
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
         (constant percentiles).
-    constant_values : tuple of ProbabilisticForecastConstantValue
-        The variable values or percentiles.
+    constant_values : tuple of ProbabilisticForecastConstantValue or float
+        The variable values or percentiles. Floats will automatically
+        be converted to ProbabilisticForecastConstantValue objects.
     forecast_id : str, optional
         UUID of the forecast in the API
     extra_parameters : str, optional
@@ -780,7 +781,40 @@ class ProbabilisticForecast(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        constant_values = dict_.pop('constant_values')
+        new_cvs = []
+        for cv in constant_values:
+            if isinstance(cv, dict):
+                new_cvs.append(
+                    ProbabilisticForecastConstantValue.from_dict(cv))
+            else:
+                new_cvs.append(cv)
+        dict_['constant_values'] = tuple(new_cvs)
+        return super().from_dict(dict_, raise_on_extra)
+
+
+def __set_constant_values__(self):
+    out = []
+    for cv in self.constant_values:
+        if isinstance(cv, ProbabilisticForecastConstantValue):
+            out.append(cv)
+        elif isinstance(cv, (float, int)):
+            cv_dict = self.to_dict()
+            cv_dict.pop('forecast_id', None)
+            cv_dict['constant_value'] = cv
+            out.append(
+                    ProbabilisticForecastConstantValue.from_dict(cv_dict))
+        else:
+            raise TypeError(
+                f'Invalid type for a constant value {cv}. '
+                'Must be int, float, or ProbablisticConstantValue')
+    object.__setattr__(self, 'constant_values', tuple(out))
 
 
 def __check_axis__(axis):

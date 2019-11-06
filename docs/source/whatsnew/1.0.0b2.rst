@@ -20,11 +20,20 @@ API Changes
 * Add Aggregate to the datamodel, allow forecasts to reference
   either a Site or an Aggregate, and add corresponding Aggregate
   methods to the APISession (:pull:`235`)
+* Require that a list of template Forecasts/ProbabilisticForecasts is passed to
+  :py:mod:`solarforecastarbiter.io.reference_observations.common.create_forecasts`
+  (:pull:`240`)
 
 
 Enhancements
 ~~~~~~~~~~~~
 * Add function to compute an aggregate timeseries (:pull:`223`)
+* Simplify the creation of ProbabilisticForecast objects by passing a list of
+  floats to ``constant_values`` to automatically create
+  :py:mod:`solarforecastarbiter.datamodel.ProbabilisticForecastConstantValues`
+* Make API requests for probabilistic forecasts more efficient (:pull:`240`)
+* Create probabilistic reference forecasts using GEFS and automatically generate
+  those values (:pull:`240`)
 
 
 Bug fixes

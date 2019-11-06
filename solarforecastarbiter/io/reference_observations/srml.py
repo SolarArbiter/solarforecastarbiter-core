@@ -7,7 +7,8 @@ from pvlib import iotools
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 # maps the desired variable names to those returned by pvlib.iotools
@@ -201,7 +202,8 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, srml_variable_map.values())
+    common.create_forecasts(api, site, srml_variable_map.values(),
+                            default_forecasts.TEMPLATE_DETERMINISTIC_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

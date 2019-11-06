@@ -230,12 +230,14 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_observation(new_id)
 
-    def _process_fx(self, fx_dict):
+    def _process_fx(self, fx_dict, sites={}):
         if fx_dict['site_id'] is not None:
-            fx_dict['site'] = self.get_site(fx_dict['site_id'])
+            if fx_dict['site_id'] in sites:
+                fx_dict['site'] = sites[fx_dict['site_id']]
+            else:
+                fx_dict['site'] = self.get_site(fx_dict['site_id'])
         elif fx_dict['aggregate_id'] is not None:
-            fx_dict['aggregate'] = self.get_aggregate(
-                fx_dict['aggregate_id'])
+            fx_dict['aggregate'] = self.get_aggregate(fx_dict['aggregate_id'])
         return datamodel.Forecast.from_dict(fx_dict)
 
     def get_forecast(self, forecast_id):
@@ -267,9 +269,10 @@ class APISession(requests.Session):
         fx_dicts = req.json()
         if len(fx_dicts) == 0:
             return []
+        sites = {site.site_id: site for site in self.list_sites()}
         out = []
         for fx_dict in fx_dicts:
-            out.append(self._process_fx(fx_dict))
+            out.append(self._process_fx(fx_dict, sites=sites))
         return out
 
     def create_forecast(self, forecast):
@@ -301,20 +304,24 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_forecast(new_id)
 
-    def _process_prob_forecast(self, fx_dict):
-        site = None
-        agg = None
+    def _process_prob_forecast(self, fx_dict, sites={}):
         if fx_dict['site_id'] is not None:
-            site = self.get_site(fx_dict['site_id'])
-            fx_dict['site'] = site
+            if fx_dict['site_id'] in sites:
+                fx_dict['site'] = sites[fx_dict['site_id']]
+            else:
+                fx_dict['site'] = self.get_site(fx_dict['site_id'])
         elif fx_dict['aggregate_id'] is not None:
-            agg = self.get_aggregate(fx_dict['aggregate_id'])
-            fx_dict['aggregate'] = agg
+            fx_dict['aggregate'] = self.get_aggregate(fx_dict['aggregate_id'])
         cvs = []
         for constant_value_dict in fx_dict['constant_values']:
-            cvs.append(self.get_probabilistic_forecast_constant_value(
-                constant_value_dict['forecast_id'], site=site,
-                aggregate=agg))
+            # the API just gets the groups attributes for the
+            # single constant value forecasts, so avoid
+            # those excess calls
+            cv_dict = fx_dict.copy()
+            cv_dict.update(constant_value_dict)
+            cvs.append(
+                datamodel.ProbabilisticForecastConstantValue.from_dict(
+                    cv_dict))
         fx_dict['constant_values'] = cvs
         return datamodel.ProbabilisticForecast.from_dict(fx_dict)
 
@@ -330,9 +337,10 @@ class APISession(requests.Session):
         fx_dicts = req.json()
         if len(fx_dicts) == 0:
             return []
+        sites = {site.site_id: site for site in self.list_sites()}
         out = []
         for fx_dict in fx_dicts:
-            out.append(self._process_prob_forecast(fx_dict))
+            out.append(self._process_prob_forecast(fx_dict, sites))
         return out
 
     def get_probabilistic_forecast(self, forecast_id):

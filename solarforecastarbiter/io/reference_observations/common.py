@@ -8,9 +8,10 @@ import pandas as pd
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.datamodel import Observation
+from solarforecastarbiter.datamodel import Observation, ProbabilisticForecast
 from solarforecastarbiter.io.reference_observations.default_forecasts import (  # NOQA
-    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain)
+    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain,
+    TEMPLATE_PROBABILISTIC_FORECASTS)
 
 
 logger = logging.getLogger('reference_data')
@@ -88,7 +89,9 @@ def existing_observations(api):
 
 @lru_cache(maxsize=4)
 def existing_forecasts(api):
-    return {fx.name: fx for fx in api.list_forecasts()}
+    out = {fx.name: fx for fx in api.list_forecasts()}
+    out.update({fx.name: fx for fx in api.list_probabilistic_forecasts()})
+    return out
 
 
 @lru_cache(maxsize=4)
@@ -335,8 +338,8 @@ def site_name_no_network(site):
 
 def create_one_forecast(api, site, template_forecast, variable,
                         piggyback_on=None):
-    """Creates a new Forecast for the variable and site based on the
-    template forecast.
+    """Creates a new Forecast or ProbabilisticForecast for the variable
+    and site based on the template forecast.
 
     Parameters
     ----------
@@ -345,8 +348,9 @@ def create_one_forecast(api, site, template_forecast, variable,
     site : solarforecastarbiter.datamodel.site
         A site object.
     template_forecast : solarforecastarbiter.datamodel.Forecast
-        A Forecast object that will only have name, site, variable, and
-        issue_time_of_day replaced. New keys may be added to extra parameters.
+        A Forecast or ProbabilisticForecast object that will only have name,
+        site, variable, and issue_time_of_day replaced. New keys may be added
+        to extra parameters.
     variable : string
         Variable measured in the forecast.
 
@@ -390,8 +394,13 @@ def create_one_forecast(api, site, template_forecast, variable,
         logger.info('Forecast, %s, already exists', forecast.name)
         return existing[forecast.name]
 
+    if isinstance(forecast, ProbabilisticForecast):
+        create_func = api.create_probabilistic_forecast
+    else:
+        create_func = api.create_forecast
+
     try:
-        created = api.create_forecast(forecast)
+        created = create_func(forecast)
     except HTTPError as e:
         logger.error(f'Failed to create {variable} forecast at Site '
                      f'{site.name}.')
@@ -401,7 +410,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         return created
 
 
-def create_forecasts(api, site, variables):
+def create_forecasts(api, site, variables, templates):
     """Create Forecast objects for each of variables, if NWP forecasts
     can be made for that variable. Each of TEMPLATE_FORECASTS will be
     updated with the appropriate parameters for each variable. Forecasts
@@ -414,8 +423,13 @@ def create_forecasts(api, site, variables):
     site : solarforecastarbiter.datamodel.site
         A site object.
     variables : list-like
-        List of variables to make a new forecast for each of TEMPLATE_FORECASTS
-    """
+        List of variables to make a new forecast for each of the template
+        forecasts
+    templates : list of datamodel.Forecasts or datamodel.ProbabilisticForecast
+        Forecasts that will be used as templates for many fields. See
+        :py:mod:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
+        for the fields that are required vs overwritten.
+    """  # NOQA
     if not is_in_nwp_domain(site):
         raise ValueError(
             f'Site {site.name} is outside the domain of the current NWP '
@@ -437,7 +451,7 @@ def create_forecasts(api, site, variables):
         primary = vars_.pop()
 
     created = []
-    for template_fx in TEMPLATE_FORECASTS:
+    for template_fx in templates:
         logger.info('Creating forecasts based on %s at site %s',
                     template_fx.name, site.name)
         primary_fx = create_one_forecast(api, site, template_fx, primary)
