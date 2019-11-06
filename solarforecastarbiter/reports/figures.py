@@ -1,6 +1,7 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
+from itertools import cycle
 import textwrap
 
 from bokeh.models import ColumnDataSource, HoverTool
@@ -17,7 +18,8 @@ from solarforecastarbiter.plotting.utils import (line_or_step,
                                                  format_variable_name)
 
 
-PALETTE = palettes.d3['Category10'][6]
+PALETTE = (
+    palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
 OBS_PALETTE = palettes.grey(_num_obs_colors+1)[0:_num_obs_colors]  # drop white
 OBS_PALETTE.reverse()
@@ -96,7 +98,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
     fig : bokeh.plotting.figure
     """
 
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
 
     fig = figure(
         sizing_mode='scale_width', plot_width=900, plot_height=300,
@@ -184,7 +186,7 @@ def scatter(fx_obs_cds):
 
     kwargs = dict(size=6, line_color=None)
 
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
 
     for proc_fx_obs, cds in fx_obs_cds:
         fig.scatter(
@@ -296,11 +298,13 @@ def bar(cds, metric):
     data_table : bokeh.widgets.DataTable
     """
     x_range = cds.data['forecast']
+    palette = cycle(PALETTE)
+    palette = [next(palette) for _ in x_range]
     # TODO: add units to title
     fig = figure(x_range=x_range, width=800, height=200, title=metric.upper())
     fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
              line_color='white',
-             fill_color=factor_cmap('forecast', PALETTE, factors=x_range))
+             fill_color=factor_cmap('forecast', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
     if metric in START_AT_ZER0:
         fig.y_range.start = 0
@@ -338,7 +342,7 @@ def bar_subdivisions(cds, kind, metric):
     -------
     figs : tuple of figures
     """
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
     fig_kwargs = dict(tools=tools)
     figs = []

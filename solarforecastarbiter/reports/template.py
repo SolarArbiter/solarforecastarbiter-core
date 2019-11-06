@@ -66,6 +66,8 @@ def template_report(report, metadata, metrics,
 
 def _metrics_script_divs(report, metrics):
     def rename(x, limit=3):
+        # might need to add logic to ensure uniqueness
+        # and/or enforce max length using textwrap.shorten
         components = x.split(' ')
         out_components = []
         for c in components:
