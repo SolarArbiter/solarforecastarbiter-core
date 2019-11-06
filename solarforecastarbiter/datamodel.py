@@ -765,11 +765,9 @@ class ProbabilisticForecast(
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
         (constant percentiles).
-    constant_values : tuple of ProbabilisticForecastConstantValue or
-            tuple of float
-        The variable values or percentiles. A tuple of floats will
-        automatically be converted to ProbabilisticForecastConstantValue
-        objects.
+    constant_values : tuple of ProbabilisticForecastConstantValue or float
+        The variable values or percentiles. Floats will automatically
+        be converted to ProbabilisticForecastConstantValue objects.
     forecast_id : str, optional
         UUID of the forecast in the API
     extra_parameters : str, optional

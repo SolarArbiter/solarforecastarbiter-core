@@ -28,7 +28,7 @@ CURRENT_NWP_VARIABLES = {'ac_power', 'ghi', 'dni', 'dhi', 'air_temperature',
 
 # issue time of day is in local standard time and will be
 # adjusted to the appropriate UTC hour
-TEMPLATE_FORECASTS = [
+TEMPLATE_DETERMINISTIC_FORECASTS = [
     Forecast(
         name='Day Ahead GFS',
         issue_time_of_day=dt.time(0),
@@ -110,3 +110,7 @@ TEMPLATE_PROBABILISTIC_FORECASTS = [
              })
     )
 ]
+
+
+TEMPLATE_FORECASTS = (
+    TEMPLATE_DETERMINISTIC_FORECASTS + TEMPLATE_PROBABILISTIC_FORECASTS)

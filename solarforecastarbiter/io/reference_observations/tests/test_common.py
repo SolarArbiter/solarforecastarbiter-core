@@ -480,11 +480,9 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     fxdict = template.to_dict()
     fxdict['constant_values'] = [0, 50, 100]
     fxdict['axis'] = 'y'
-    cdf_template = [ProbabilisticForecast.from_dict(fxdict)]
-    mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
-    mocker.patch.object(common, 'TEMPLATE_PROBABILISTIC_FORECASTS',
-                        new=cdf_template)
-    fxs = common.create_forecasts(api, site, vars_, True)
+    templates += [ProbabilisticForecast.from_dict(fxdict)]
+
+    fxs = common.create_forecasts(api, site, vars_, templates)
     assert len(fxs) == 6
     if primary:
         assert fxs[0].variable == primary
@@ -503,6 +501,5 @@ def test_create_forecasts_outside(template_fx, mocker, log):
     api, template, site = template_fx
     site = site.replace(latitude=19, longitude=-159)
     templates = [template.replace(name='one'), template.replace(name='two')]
-    mocker.patch.object(common, 'TEMPLATE_FORECASTS', new=templates)
     with pytest.raises(ValueError):
-        common.create_forecasts(api, site, vars_)
+        common.create_forecasts(api, site, vars_, templates)

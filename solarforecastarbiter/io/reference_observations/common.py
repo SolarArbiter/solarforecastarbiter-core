@@ -338,7 +338,7 @@ def site_name_no_network(site):
 
 def create_one_forecast(api, site, template_forecast, variable,
                         piggyback_on=None):
-    """Creates a new Forecast or Probabilistic Forecast for the variable
+    """Creates a new Forecast or ProbabilisticForecast for the variable
     and site based on the template forecast.
 
     Parameters
@@ -410,7 +410,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         return created
 
 
-def create_forecasts(api, site, variables, include_probabilistic=False):
+def create_forecasts(api, site, variables, templates):
     """Create Forecast objects for each of variables, if NWP forecasts
     can be made for that variable. Each of TEMPLATE_FORECASTS will be
     updated with the appropriate parameters for each variable. Forecasts
@@ -449,9 +449,6 @@ def create_forecasts(api, site, variables, include_probabilistic=False):
         primary = vars_.pop()
 
     created = []
-    templates = TEMPLATE_FORECASTS.copy()
-    if include_probabilistic:
-        templates += TEMPLATE_PROBABILISTIC_FORECASTS
     for template_fx in templates:
         logger.info('Creating forecasts based on %s at site %s',
                     template_fx.name, site.name)

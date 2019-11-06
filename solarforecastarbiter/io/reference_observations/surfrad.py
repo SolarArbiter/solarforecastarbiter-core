@@ -10,7 +10,7 @@ import pandas as pd
 
 from pvlib import iotools
 from solarforecastarbiter.io.utils import observation_df_to_json_payload as obs_to_payload # NOQA
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import common, default_forecasts
 
 
 # Format strings for the location of a surfrad data file. Expects the following
@@ -112,7 +112,8 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, surfrad_variables, True)
+    common.create_forecasts(api, site, surfrad_variables,
+                            default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

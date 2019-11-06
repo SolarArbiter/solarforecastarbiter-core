@@ -5,7 +5,7 @@ from urllib.error import URLError
 import pandas as pd
 from pvlib import iotools
 
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import common, default_forecasts
 
 
 CRN_URL = 'https://www1.ncdc.noaa.gov/pub/data/uscrn/products/subhourly01/'
@@ -99,7 +99,8 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, crn_variables)
+    common.create_forecasts(api, site, crn_variables,
+                            default_forecasts.TEMPLATE_DETERMINISTIC_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

@@ -6,7 +6,7 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.io.fetch import rtc
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import common, default_forecasts
 
 
 logger = logging.getLogger('reference_data')
@@ -74,7 +74,8 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, DOE_RTC_VARIABLE_MAP.values(), True)
+    common.create_forecasts(api, site, DOE_RTC_VARIABLE_MAP.values(),
+                            default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

@@ -4,7 +4,8 @@ import logging
 from pvlib import iotools
 
 
-from solarforecastarbiter.io.reference_observations import common, midc_config
+from solarforecastarbiter.io.reference_observations import (
+    common, midc_config, default_forecasts)
 
 
 logger = logging.getLogger('reference_data')
@@ -54,7 +55,8 @@ def initialize_site_forecasts(api, site):
         return
     site_api_id = extra_params['network_api_id']
     common.create_forecasts(
-        api, site, midc_config.midc_var_map[site_api_id].keys(), True)
+        api, site, midc_config.midc_var_map[site_api_id].keys(),
+        default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):
