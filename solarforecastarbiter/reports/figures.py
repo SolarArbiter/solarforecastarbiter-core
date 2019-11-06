@@ -200,7 +200,7 @@ def scatter(fx_obs_cds):
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='forecast'):
+def construct_metrics_cds(metrics, kind, index='forecast', rename=False):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, total, month, day, hour
@@ -221,7 +221,12 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
     cds : bokeh.models.ColumnDataSource
     """
     if kind == 'total':
-        df = pd.DataFrame({m['name']: m[kind] for m in metrics})
+        if rename:
+            f = rename
+        else:
+            def f(x): return x
+        d = {f(m['name']): m[kind] for m in metrics}
+        df = pd.DataFrame(d)
     df = df.rename_axis(index='metric', columns='forecast')
     if index == 'metric':
         pass

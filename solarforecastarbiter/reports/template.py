@@ -65,7 +65,21 @@ def template_report(report, metadata, metrics,
 
 
 def _metrics_script_divs(report, metrics):
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
+    def rename(x, limit=3):
+        components = x.split(' ')
+        out_components = []
+        for c in components:
+            if len(c) <= limit:
+                out = c
+            elif c.upper() == c:
+                # probably an acronym
+                out = c
+            else:
+                out = f'{c[0:limit]}.'
+            out_components.append(out)
+        return ' '.join(out_components)
+    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
+                                        rename=rename)
     data_table = figures.metrics_table(cds)
 
     figures_bar = []
