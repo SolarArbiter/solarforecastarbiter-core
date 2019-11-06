@@ -316,6 +316,17 @@ def bar(cds, metric):
         (metric.upper(), f'@{metric}'),
     ]
     hover = HoverTool(tooltips=tooltips, mode='vline')
+    # more accurate would be if any single name is longer than each
+    # name's allotted space. For example, never need to rotate labels
+    # if forecasts are named A, B, C, D... but quickly need to rotate
+    # if they have long names.
+    if len(x_range) > 6:
+        # pi/4 looks a lot better, but first tick label flows off chart
+        # and I can't figure out how to add padding in bokeh
+        fig.xaxis.major_label_orientation = np.pi/2
+        fig.width = 800
+        # add more height to figure so that the names can go somewhere.
+        fig.height = 400
     fig.add_tools(hover)
     return fig
 
@@ -430,9 +441,11 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * len(field)
+    width = name_width + metric_width * (len(field) - 1)
+    height = 25 * (1 + len(cds.data['forecast']))
     data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=150, index_position=None, fit_columns=False)
+                           height=height, index_position=None,
+                           fit_columns=False)
     return data_table
 
 
