@@ -1,6 +1,7 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
+from itertools import cycle
 import textwrap
 
 from bokeh.models import ColumnDataSource, HoverTool
@@ -17,7 +18,8 @@ from solarforecastarbiter.plotting.utils import (line_or_step,
                                                  format_variable_name)
 
 
-PALETTE = palettes.d3['Category10'][6]
+PALETTE = (
+    palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
 OBS_PALETTE = palettes.grey(_num_obs_colors+1)[0:_num_obs_colors]  # drop white
 OBS_PALETTE.reverse()
@@ -96,7 +98,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
     fig : bokeh.plotting.figure
     """
 
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
 
     fig = figure(
         sizing_mode='scale_width', plot_width=900, plot_height=300,
@@ -184,7 +186,7 @@ def scatter(fx_obs_cds):
 
     kwargs = dict(size=6, line_color=None)
 
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
 
     for proc_fx_obs, cds in fx_obs_cds:
         fig.scatter(
@@ -200,7 +202,7 @@ def scatter(fx_obs_cds):
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='forecast'):
+def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, total, month, day, hour
@@ -215,13 +217,20 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
     index : str
         Determines if the index is the array of metrics ('metric') or
         forecast ('forecast') names
+    rename : function or None
+        Function of one argument that is applied to each forecast name.
 
     Returns
     -------
     cds : bokeh.models.ColumnDataSource
     """
     if kind == 'total':
-        df = pd.DataFrame({m['name']: m[kind] for m in metrics})
+        if rename:
+            f = rename
+        else:
+            def f(x): return x
+        d = {f(m['name']): m[kind] for m in metrics}
+        df = pd.DataFrame(d)
     df = df.rename_axis(index='metric', columns='forecast')
     if index == 'metric':
         pass
@@ -231,6 +240,23 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
         raise ValueError('index must be metric or forecast')
     cds = ColumnDataSource(df)
     return cds
+
+
+def abbreviate(x, limit=3):
+    # might need to add logic to ensure uniqueness
+    # and/or enforce max length using textwrap.shorten
+    components = x.split(' ')
+    out_components = []
+    for c in components:
+        if len(c) <= limit:
+            out = c
+        elif c.upper() == c:
+            # probably an acronym
+            out = c
+        else:
+            out = f'{c[0:limit]}.'
+        out_components.append(out)
+    return ' '.join(out_components)
 
 
 def construct_metrics_series(metrics, kind):
@@ -291,11 +317,13 @@ def bar(cds, metric):
     data_table : bokeh.widgets.DataTable
     """
     x_range = cds.data['forecast']
+    palette = cycle(PALETTE)
+    palette = [next(palette) for _ in x_range]
     # TODO: add units to title
     fig = figure(x_range=x_range, width=800, height=200, title=metric.upper())
     fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
              line_color='white',
-             fill_color=factor_cmap('forecast', PALETTE, factors=x_range))
+             fill_color=factor_cmap('forecast', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
     if metric in START_AT_ZER0:
         fig.y_range.start = 0
@@ -307,6 +335,17 @@ def bar(cds, metric):
         (metric.upper(), f'@{metric}'),
     ]
     hover = HoverTool(tooltips=tooltips, mode='vline')
+    # more accurate would be if any single name is longer than each
+    # name's allotted space. For example, never need to rotate labels
+    # if forecasts are named A, B, C, D... but quickly need to rotate
+    # if they have long names.
+    if len(x_range) > 6:
+        # pi/4 looks a lot better, but first tick label flows off chart
+        # and I can't figure out how to add padding in bokeh
+        fig.xaxis.major_label_orientation = np.pi/2
+        fig.width = 800
+        # add more height to figure so that the names can go somewhere.
+        fig.height = 400
     fig.add_tools(hover)
     return fig
 
@@ -333,7 +372,7 @@ def bar_subdivisions(cds, kind, metric):
     -------
     figs : tuple of figures
     """
-    palette = iter(PALETTE)
+    palette = cycle(PALETTE)
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
     fig_kwargs = dict(tools=tools)
     figs = []
@@ -421,9 +460,11 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * len(field)
+    width = name_width + metric_width * (len(field) - 1)
+    height = 25 * (1 + len(cds.data['forecast']))
     data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=150, index_position=None, fit_columns=False)
+                           height=height, index_position=None,
+                           fit_columns=False)
     return data_table
 
 

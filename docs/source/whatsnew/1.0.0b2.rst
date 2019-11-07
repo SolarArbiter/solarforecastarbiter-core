@@ -40,6 +40,10 @@ Bug fixes
 ~~~~~~~~~
 * Fix handling of observation and forecast metadata in report timeseries
   and scatter plots. (:issue:`238`)
+* Fix overlapping labels on report's total metrics plots and too short
+  metrics table when more than 3 forecasts are selected. (:issue:`163`)
+* Fix report limitation of 6 forecasts due to how the color palette was
+  specified. (:issue:`242`)
 
 
 Contributors
