@@ -202,7 +202,7 @@ def scatter(fx_obs_cds):
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='forecast', rename=False):
+def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, total, month, day, hour
@@ -217,6 +217,8 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=False):
     index : str
         Determines if the index is the array of metrics ('metric') or
         forecast ('forecast') names
+    rename : function or None
+        Function of one argument that is applied to each forecast name.
 
     Returns
     -------
