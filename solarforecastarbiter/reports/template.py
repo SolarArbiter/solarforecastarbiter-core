@@ -4,7 +4,6 @@ Inserts metadata and figures into the report template.
 import logging
 import subprocess
 
-
 from bokeh.embed import components
 from bokeh.layouts import gridplot
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
@@ -65,23 +64,8 @@ def template_report(report, metadata, metrics,
 
 
 def _metrics_script_divs(report, metrics):
-    def rename(x, limit=3):
-        # might need to add logic to ensure uniqueness
-        # and/or enforce max length using textwrap.shorten
-        components = x.split(' ')
-        out_components = []
-        for c in components:
-            if len(c) <= limit:
-                out = c
-            elif c.upper() == c:
-                # probably an acronym
-                out = c
-            else:
-                out = f'{c[0:limit]}.'
-            out_components.append(out)
-        return ' '.join(out_components)
     cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
-                                        rename=rename)
+                                        rename=figures.abbreviate)
     data_table = figures.metrics_table(cds)
 
     figures_bar = []

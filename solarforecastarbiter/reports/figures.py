@@ -240,6 +240,23 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=False):
     return cds
 
 
+def abbreviate(x, limit=3):
+    # might need to add logic to ensure uniqueness
+    # and/or enforce max length using textwrap.shorten
+    components = x.split(' ')
+    out_components = []
+    for c in components:
+        if len(c) <= limit:
+            out = c
+        elif c.upper() == c:
+            # probably an acronym
+            out = c
+        else:
+            out = f'{c[0:limit]}.'
+        out_components.append(out)
+    return ' '.join(out_components)
+
+
 def construct_metrics_series(metrics, kind):
     """
     Contructs a series of metrics values with a MultiIndex.
