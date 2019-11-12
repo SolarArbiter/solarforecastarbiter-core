@@ -4,7 +4,6 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 from itertools import cycle
 import textwrap
 
-from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource, HoverTool, Legend
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
