@@ -179,10 +179,12 @@ def scatter(fx_obs_cds):
     """
     xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
 
-    # match_aspect=True does not work because of the legend
+    # match_aspect=True does not work well, so these need to be close
     plot_height = 400
+    # will be updated later based on label length
+    plot_width = plot_height + 50
     fig = figure(
-        plot_width=450, plot_height=plot_height, match_aspect=True,
+        plot_width=plot_width, plot_height=plot_height, match_aspect=True,
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
         tools='pan,wheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='scatter')
@@ -202,19 +204,26 @@ def scatter(fx_obs_cds):
 
     # second figure for legend so it doesn't distort the first
     # when text length/size changes. otherwise plot_width would be
-    # coupled to length of the labels.
-    legend_fig = figure(
-        plot_width=400, plot_height=plot_height, x_axis_location=None,
-        y_axis_location=None, title=None, tools='', toolbar_location=None)
+    # coupled to length of the labels. unfortunately, this doesn't
+    # work due to bokeh's inability to communicate legend information
+    # across figures.
+    # legend_fig = figure(
+    #     plot_width=400, plot_height=plot_height, x_axis_location=None,
+    #     y_axis_location=None, title=None, tools='', toolbar_location=None)
+
     # manual legend so it can be placed outside the plot area
     legend = Legend(items=scatters_labels, location='top_center',
                     click_policy='hide')
-    legend_fig.add_layout(legend, 'left')
+    fig.add_layout(legend, 'right')
+
+    max_legend_length = max((len(label) for label, _ in scatters_labels))
+    px_per_length = 7.75
+    fig.plot_width = int(fig.plot_width + max_legend_length * px_per_length)
 
     label = format_variable_name(proc_fx_obs.original.forecast.variable)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
-    return Row(fig, legend_fig)
+    return fig
 
 
 def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
