@@ -141,6 +141,12 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
+    if len(plotted_objects) > 10:
+        fig.legend.label_height = 10
+        fig.legend.label_text_font_size = '8px'
+        fig.legend.glyph_height = 10
+        fig.legend.spacing = 1
+        fig.legend.margin = 0
     fig.xaxis.axis_label = f'Time ({timezone})'
     fig.yaxis.axis_label = format_variable_name(
         proc_fx_obs.original.forecast.variable)
