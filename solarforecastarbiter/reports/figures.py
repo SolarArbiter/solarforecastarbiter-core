@@ -299,7 +299,8 @@ def construct_metrics_series(metrics, kind):
 
 def construct_metrics_cds2(metrics_series, metric):
     df = metrics_series.xs(metric, level='metric').unstack().T
-    cds = ColumnDataSource(df)
+    idx = pd.unique(metrics_series.index.get_level_values('forecast'))
+    cds = ColumnDataSource(df[idx])
     return cds
 
 
