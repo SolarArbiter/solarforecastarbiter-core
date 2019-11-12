@@ -4,7 +4,8 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 from itertools import cycle
 import textwrap
 
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.layouts import Row
+from bokeh.models import ColumnDataSource, HoverTool, Legend
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -178,8 +179,10 @@ def scatter(fx_obs_cds):
     """
     xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
 
+    # match_aspect=True does not work because of the legend
+    plot_height = 400
     fig = figure(
-        plot_width=450, plot_height=400, match_aspect=True,  # does not work?
+        plot_width=450, plot_height=plot_height, match_aspect=True,
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
         tools='pan,wheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='scatter')
@@ -188,18 +191,30 @@ def scatter(fx_obs_cds):
 
     palette = cycle(PALETTE)
 
+    # accumulate labels and plot objects for manual legend
+    scatters_labels = []
     for proc_fx_obs, cds in fx_obs_cds:
-        fig.scatter(
+        label = proc_fx_obs.original.forecast.name
+        r = fig.scatter(
             x='observation', y='forecast', source=cds,
-            fill_color=next(palette),
-            legend=proc_fx_obs.original.forecast.name, **kwargs)
+            fill_color=next(palette), **kwargs)
+        scatters_labels.append((label, [r]))
 
-    fig.legend.location = "top_left"
-    fig.legend.click_policy = "hide"
+    # second figure for legend so it doesn't distort the first
+    # when text length/size changes. otherwise plot_width would be
+    # coupled to length of the labels.
+    legend_fig = figure(
+        plot_width=400, plot_height=plot_height, x_axis_location=None,
+        y_axis_location=None, title=None, tools='', toolbar_location=None)
+    # manual legend so it can be placed outside the plot area
+    legend = Legend(items=scatters_labels, location='top_center',
+                    click_policy='hide')
+    legend_fig.add_layout(legend, 'left')
+
     label = format_variable_name(proc_fx_obs.original.forecast.variable)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
-    return fig
+    return Row(fig, legend_fig)
 
 
 def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
