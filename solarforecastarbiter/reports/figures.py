@@ -186,7 +186,7 @@ def scatter(fx_obs_cds):
 
     # match_aspect=True does not work well, so these need to be close
     plot_height = 400
-    # will be updated later based on label length
+    # width will be updated later based on label length
     plot_width = plot_height + 50
     fig = figure(
         plot_width=plot_width, plot_height=plot_height, match_aspect=True,
@@ -207,22 +207,19 @@ def scatter(fx_obs_cds):
             fill_color=next(palette), **kwargs)
         scatters_labels.append((label, [r]))
 
-    # second figure for legend so it doesn't distort the first
-    # when text length/size changes. otherwise plot_width would be
-    # coupled to length of the labels. unfortunately, this doesn't
-    # work due to bokeh's inability to communicate legend information
-    # across figures.
-    # legend_fig = figure(
-    #     plot_width=400, plot_height=plot_height, x_axis_location=None,
-    #     y_axis_location=None, title=None, tools='', toolbar_location=None)
-
     # manual legend so it can be placed outside the plot area
     legend = Legend(items=scatters_labels, location='top_center',
                     click_policy='hide')
     fig.add_layout(legend, 'right')
 
+    # compute new plot width accounting for legend label text width.
+    # also considered using second figure for legend so it doesn't
+    # distort the first when text length/size changes. unfortunately,
+    # that doesn't work due to bokeh's inability to communicate legend
+    # information across figures.
+    # widest part of the legend
     max_legend_length = max((len(label) for label, _ in scatters_labels))
-    px_per_length = 7.75
+    px_per_length = 7.75  # found through trial and error
     fig.plot_width = int(fig.plot_width + max_legend_length * px_per_length)
 
     label = format_variable_name(proc_fx_obs.original.forecast.variable)
