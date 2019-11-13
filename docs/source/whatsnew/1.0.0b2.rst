@@ -34,6 +34,7 @@ Enhancements
 * Make API requests for probabilistic forecasts more efficient (:pull:`240`)
 * Create probabilistic reference forecasts using GEFS and automatically generate
   those values (:pull:`240`)
+* Expanded :ref:`contributing` guide. (:issue:`13`)
 
 
 Bug fixes
