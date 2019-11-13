@@ -31,9 +31,14 @@ flake8 solarforecastarbiter
 
 # Documentation
 
-[solarforecastarbiter-core.readthedocs.io](https://solarforecastarbiter-core.readthedocs.io/en/latest/)
+The documentation is hosted at [solarforecastarbiter-core.readthedocs.io](https://solarforecastarbiter-core.readthedocs.io/en/latest/)
+
+# Contributing
+
+We welcome your contributions. Please see our [contributing guide](https://solarforecastarbiter-core.readthedocs.io/en/latest/contributing.html).
 
 # Architecture
+
 Sketch of how some SFA components interact, including the core:
 
 ![system sketch](system_sketch.jpg)
