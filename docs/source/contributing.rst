@@ -77,9 +77,10 @@ Documentation must be written in
 using the `Sphinx Napoleon extension
 <https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html>`_.
 
-To build the docs locally, install the ``test`` dependencies specified in the
-`setup.py <https://github.com/SolarArbiter/solarforecastarbiter-core/blob/master/setup.py>`_
-file.
+To build the docs locally, install the dependencies specified in the
+`docs/requirements.txt <https://github.com/SolarArbiter/solarforecastarbiter-core/blob/master/docs/requirements.txt>`_
+file. After installing the dependencies, run ``make -C docs html`` from
+the root of the repository.
 
 Testing
 -------
@@ -87,8 +88,7 @@ Testing
 The vast majority of new or modified code requires contributors to write
 new tests.
 
-A pull request will automatically run the tests for you on a variety of
-platforms (Linux, Mac, Windows) and python versions. However, it is
+A pull request will automatically run the tests for you. However, it is
 typically more efficient to run and debug the tests in your own local
 environment.
 
