@@ -4,7 +4,7 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 from itertools import cycle
 import textwrap
 
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, Legend
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -140,6 +140,12 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
+    if len(plotted_objects) > 10:
+        fig.legend.label_height = 10
+        fig.legend.label_text_font_size = '8px'
+        fig.legend.glyph_height = 10
+        fig.legend.spacing = 1
+        fig.legend.margin = 0
     fig.xaxis.axis_label = f'Time ({timezone})'
     fig.yaxis.axis_label = format_variable_name(
         proc_fx_obs.original.forecast.variable)
@@ -178,8 +184,12 @@ def scatter(fx_obs_cds):
     """
     xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
 
+    # match_aspect=True does not work well, so these need to be close
+    plot_height = 400
+    # width will be updated later based on label length
+    plot_width = plot_height + 50
     fig = figure(
-        plot_width=450, plot_height=400, match_aspect=True,  # does not work?
+        plot_width=plot_width, plot_height=plot_height, match_aspect=True,
         x_range=Range1d(xy_min, xy_max), y_range=Range1d(xy_min, xy_max),
         tools='pan,wheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='scatter')
@@ -188,14 +198,30 @@ def scatter(fx_obs_cds):
 
     palette = cycle(PALETTE)
 
+    # accumulate labels and plot objects for manual legend
+    scatters_labels = []
     for proc_fx_obs, cds in fx_obs_cds:
-        fig.scatter(
+        label = proc_fx_obs.original.forecast.name
+        r = fig.scatter(
             x='observation', y='forecast', source=cds,
-            fill_color=next(palette),
-            legend=proc_fx_obs.original.forecast.name, **kwargs)
+            fill_color=next(palette), **kwargs)
+        scatters_labels.append((label, [r]))
 
-    fig.legend.location = "top_left"
-    fig.legend.click_policy = "hide"
+    # manual legend so it can be placed outside the plot area
+    legend = Legend(items=scatters_labels, location='top_center',
+                    click_policy='hide')
+    fig.add_layout(legend, 'right')
+
+    # compute new plot width accounting for legend label text width.
+    # also considered using second figure for legend so it doesn't
+    # distort the first when text length/size changes. unfortunately,
+    # that doesn't work due to bokeh's inability to communicate legend
+    # information across figures.
+    # widest part of the legend
+    max_legend_length = max((len(label) for label, _ in scatters_labels))
+    px_per_length = 7.75  # found through trial and error
+    fig.plot_width = int(fig.plot_width + max_legend_length * px_per_length)
+
     label = format_variable_name(proc_fx_obs.original.forecast.variable)
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label

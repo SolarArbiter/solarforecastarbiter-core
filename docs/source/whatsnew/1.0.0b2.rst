@@ -44,6 +44,9 @@ Bug fixes
   metrics table when more than 3 forecasts are selected. (:issue:`163`)
 * Fix report limitation of 6 forecasts due to how the color palette was
   specified. (:issue:`242`)
+* Timeseries plot legends can accomodate more items (20) by shrinking
+  the font size and scatter plot legends were moved to the side to
+  prevent them from blocking the data. (:issue:`218`)
 
 
 Contributors
