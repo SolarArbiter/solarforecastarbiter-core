@@ -324,8 +324,28 @@ def construct_metrics_series(metrics, kind):
 
 
 def construct_metrics_cds2(metrics_series, metric):
+    """
+    Create a ColumnDataSource for a single metric (MAE, MBE, etc.) for
+    many forecasts.
+
+    Parameters
+    ----------
+    metrics_series : pd.Series
+        Has a MultiIndex with levels 'forecast', 'metric', group
+    metric : str
+        e.g. MAE
+
+    Returns
+    -------
+    cds : bokeh.models.ColumnDataSource
+    """
     df = metrics_series.xs(metric, level='metric').unstack().T
-    cds = ColumnDataSource(df)
+    # unstack sorts alphabetically, so manually reorder the columns
+    # to put them in the expected order. this ensures that plots are
+    # created in the same order and thus with the same colors for each
+    # forecast. GH issue 204, pull 244
+    idx = pd.unique(metrics_series.index.get_level_values('forecast'))
+    cds = ColumnDataSource(df[idx])
     return cds
 
 
