@@ -55,6 +55,34 @@ Aggregates:
    datamodel.AggregateObservation
    datamodel.Aggregate
 
+Data validation toolkit filters for use with reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.BaseFilter
+   datamodel.QualityFlagFilter
+   datamodel.TimeOfDayFilter
+   datamodel.ValueFilter
+
+Containers to associate forecasts and observations for use with reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ForecastObservation
+   datamodel.ProcessedForecastObservation
+
+Reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ReportMetadata
+   datamodel.RawReport
+   datamodel.Report
+
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 
