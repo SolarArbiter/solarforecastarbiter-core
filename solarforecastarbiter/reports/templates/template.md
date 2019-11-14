@@ -5,13 +5,13 @@
 {# 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
 {# 3. pandoc renders the html or pdf version of the full report #}
 
-{# fix this #}
-{% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
+{# use empty string for relative urls. if provided, must end in / #}
+{% set dash_url = '' %}
 
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
 {{ '::: {.download}' }}
-{# Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }}) #}
+{# Download as [html]({{ dash_url|safe }}reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}reports/download/{{ pdf_link|safe }}) #}
 Download as [html]() or [pdf]()
 :::
 
@@ -63,7 +63,7 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
 {% for fx_ob in proc_fx_obs -%}
-[{{ fx_ob.original.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.original.observation.observation_id|safe }}) | {{ fx_ob.original.observation.interval_label | safe}} | {{ (fx_ob.original.observation.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
+[{{ fx_ob.original.observation.name|safe }}]({{ dash_url|safe }}observations/{{ fx_ob.original.observation.observation_id|safe }}) | {{ fx_ob.original.observation.interval_label | safe}} | {{ (fx_ob.original.observation.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}]({{ dash_url|safe }}forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
