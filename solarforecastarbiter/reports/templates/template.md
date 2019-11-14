@@ -5,9 +5,6 @@
 {# 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
 {# 3. pandoc renders the html or pdf version of the full report #}
 
-{# use empty string for relative urls. if provided, must end in / #}
-{% set dash_url = '' %}
-
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
 {{ '::: {.download}' }}

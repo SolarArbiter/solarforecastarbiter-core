@@ -110,7 +110,7 @@ def create_metadata(report_request):
         name=report_request.name, start=report_request.start,
         end=report_request.end, now=pd.Timestamp.utcnow(),
         timezone=timezone, versions=versions,
-        validation_issues=validation_issues)
+        validation_issues=validation_issues, base_url=report_request.base_url)
     return metadata
 
 

@@ -629,6 +629,7 @@ class APISession(requests.Session):
             datamodel.ForecastObservation(self.get_forecast(o[0]),
                                           self.get_observation(o[1]))
             for o in req_dict['object_pairs']])
+        req_dict['base_url'] = self.base_url
         return datamodel.Report.from_dict(req_dict)
 
     def get_report(self, report_id):

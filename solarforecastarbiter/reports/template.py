@@ -49,7 +49,14 @@ def template_report(report, metadata, metrics,
 
     strftime = '%Y-%m-%d %H:%M:%S %z'
 
+    if metadata.base_url:
+        dash_url = metadata.base_url.replace('api', 'dashboard')
+        dash_url = dash_url if dash_url.endswith('/') else dash_url + '/'
+    else:
+        dash_url = ''
+
     rendered = template.render(
+        dash_url=dash_url,
         name=metadata.name,
         start=metadata.start.strftime(strftime),
         end=metadata.end.strftime(strftime),

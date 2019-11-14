@@ -943,6 +943,7 @@ class ReportMetadata(BaseModel):
     timezone: str
     versions: dict
     validation_issues: dict
+    base_url: Union[str, None] = None
 
 
 # need apply filtering + resampling to each forecast obs pair
@@ -1002,6 +1003,10 @@ class Report(BaseModel):
         Status of the report
     report_id : str
         ID of the report in the API
+    base_url : str or None
+        URL of the API for which Report, Observations, and Forecasts
+        can be found. If None, uses default set in
+        :py:ref:`~solarforecastarbiter.io.api`.
     raw_report : RawReport or None
         Once computed, the raw report should be stored here
     __version__ : str
@@ -1017,6 +1022,7 @@ class Report(BaseModel):
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'
     report_id: str = ''
+    base_url: Union[str, None] = None
     raw_report: Union[None, RawReport] = None
     __version__: int = 0  # should add version to api
 
