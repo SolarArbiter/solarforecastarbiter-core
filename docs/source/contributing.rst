@@ -3,7 +3,7 @@
 Contributing
 ============
 
-We welcome and encourage community contributions to the Solar Forecast
+We welcome and encourage your contributions to the Solar Forecast
 Arbiter. This guide aims to provide potential contributors with a better
 idea of how to prepare their code for the solarforecastarbiter-core and
 what to expect from the project maintainers.
@@ -33,7 +33,7 @@ prevents the git commit history from becoming cluttered with whitespace
 changes.
 
 The majority of the solarforecastarbiter-core code consists of
-functions that accept primatives or pandas.Series. Some higher-level
+functions that accept primitives or pandas.Series. Some higher-level
 functions accept :py:mod:`~solarforecastarbiter.datamodel` objects.
 Avoid writing new classes and methods.
 
@@ -52,9 +52,9 @@ DataFrames and Series
 ---------------------
 
 The solarforecastarbiter-core repository focuses on analyses of time
-series data. Therefore, it is natural for the code to expect and return
+series data. The code makes extensive use of
 pandas objects with DatetimeIndexes. In most cases, code should expect
-and return one or more pandas.Series rather than a single
+and return one or more pandas.Series rather than a
 pandas.DataFrame. A function that requires multiple Series is
 self-documenting by virtue of the names of the parameters. Providing or
 expecting the wrong data from such a function raises an exception at the
@@ -90,13 +90,14 @@ new tests.
 
 A pull request will automatically run the tests for you. However, it is
 typically more efficient to run and debug the tests in your own local
-environment.
+environment. See :ref:`installation` for instructions to set up and use
+an environment.
 
 To run the tests locally, install the ``test`` dependencies specified in the
 `setup.py <https://github.com/SolarArbiter/solarforecastarbiter-core/blob/master/setup.py>`_
 file. The unit tests may be run using::
 
-``pytest solarforecastarbiter``
+  pytest solarforecastarbiter
 
 Pull request review
 -------------------
