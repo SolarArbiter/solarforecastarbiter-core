@@ -49,6 +49,8 @@ Bug fixes
   prevent them from blocking the data. (:issue:`218`)
 * Fix inconsistent forecast ordering and coloring in report bar charts.
   (:issue:`204`)
+* :py:class:`datamodel.Report` and associated classes were missing from
+  :ref:`api` documentation. Fixed. (:issue:`228`)
 
 
 Contributors
