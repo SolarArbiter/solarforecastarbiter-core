@@ -70,6 +70,52 @@ def _dict_factory(inp):
     return dict_
 
 
+def _single_field_processing(model, field, val, field_type=None):
+    type_ = field_type or field.type
+    if (
+            # If the value is already the right type, return
+            # typing type_s do not work with isinstance, so check __origin__
+            not hasattr(type_, '__origin__') and
+            isinstance(val, type_)
+    ):
+        return val
+    elif type_ == pd.Timedelta:
+        return pd.Timedelta(f'{val}min')
+    elif type_ == pd.Timestamp:
+        out = pd.Timestamp(val)
+        if pd.isna(out):
+            raise ValueError(f'{val} is not a time')
+        return out
+    elif type_ == datetime.time:
+        return datetime.datetime.strptime(val, '%H:%M').time()
+    elif (
+            is_dataclass(type_) and
+            isinstance(val, dict)
+    ):
+        return type_.from_dict(val)
+    elif (
+            hasattr(type_, '__origin__') and
+            type_.__origin__ is Union
+    ):
+        # with a Union, we must return the right type
+        for ntype in type_.__args__:
+            try:
+                processed_val = _single_field_processing(
+                    model, field, val, ntype
+                )
+            except (TypeError, ValueError, KeyError):
+                continue
+            else:
+                if not isinstance(processed_val, ntype):
+                    continue
+                else:
+                    return processed_val
+        raise TypeError(f'Unable to process {val} as one of {type_.__args__}')
+    else:
+        return model._special_field_processing(
+            model, field, val)
+
+
 class BaseModel:
     def _special_field_processing(self, model_field, val):
         return val
@@ -109,6 +155,9 @@ class BaseModel:
         ValueError
             If a pandas.Timedelta, pandas.Timestamp, datetime.time, or
             modeling_parameters field cannot be parsed from the input_dict
+        TypeError
+            If the field has a Union type and the input parameter is not
+            processed into one of the Union arguments
         """
         dict_ = input_dict.copy()
         model_fields = fields(model)
@@ -116,46 +165,29 @@ class BaseModel:
         errors = []
         for model_field in model_fields:
             if model_field.name in dict_:
-                if model_field.type == pd.Timedelta:
-                    kwargs[model_field.name] = pd.Timedelta(
-                        f'{dict_[model_field.name]}min')
-                elif model_field.type == pd.Timestamp:
-                    kwargs[model_field.name] = pd.Timestamp(
-                        dict_[model_field.name])
-                elif model_field.type == datetime.time:
-                    kwargs[model_field.name] = datetime.datetime.strptime(
-                        dict_[model_field.name], '%H:%M').time()
-                elif (
-                        is_dataclass(model_field.type) and
-                        isinstance(dict_[model_field.name], dict)
-                ):
-                    kwargs[model_field.name] = model_field.type.from_dict(
-                        dict_[model_field.name])
-                elif (
-                    hasattr(model_field.type, '__origin__') and
-                    model_field.type.__origin__ is tuple and
-                    is_dataclass(model_field.type.__args__[0])
+                field_val = dict_[model_field.name]
+                if (
+                        hasattr(model_field.type, '__origin__') and
+                        model_field.type.__origin__ is tuple
                 ):
                     out = []
-                    for arg in dict_[model_field.name]:
-                        if is_dataclass(arg):
-                            out.append(arg)
-                        elif isinstance(arg, dict):
-                            out.append(
-                                model_field.type.__args__[0].from_dict(
-                                    arg)
-                            )
+                    default_type = model_field.type.__args__[0]
+                    for i, arg in enumerate(field_val):
+                        if (
+                                i < len(model_field.type.__args__) and
+                                model_field.type.__args__[i] is not Ellipsis
+                        ):
+                            this_type = model_field.type.__args__[i]
                         else:
-                            raise TypeError(
-                                f'Invalid type of argument for '
-                                f'{model_field.name}, '
-                                f'must be dict or '
-                                f'{model_field.type.__args__[0]}'
-                            )
+                            this_type = default_type
+
+                        out.append(
+                            _single_field_processing(
+                                model, model_field, arg, this_type))
                     kwargs[model_field.name] = tuple(out)
                 else:
-                    kwargs[model_field.name] = model._special_field_processing(
-                        model, model_field, dict_[model_field.name])
+                    kwargs[model_field.name] = _single_field_processing(
+                        model, model_field, field_val)
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -717,7 +749,7 @@ class ProbabilisticForecastConstantValue(
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
-    constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float], ...]  # NOQA
+    constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float, int], ...]  # NOQA
 
 
 @dataclass(frozen=True)
@@ -783,20 +815,6 @@ class ProbabilisticForecast(
         __check_axis__(self.axis)
         __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
-
-    @classmethod
-    def from_dict(model, input_dict, raise_on_extra=False):
-        dict_ = input_dict.copy()
-        constant_values = dict_.pop('constant_values')
-        new_cvs = []
-        for cv in constant_values:
-            if isinstance(cv, dict):
-                new_cvs.append(
-                    ProbabilisticForecastConstantValue.from_dict(cv))
-            else:
-                new_cvs.append(cv)
-        dict_['constant_values'] = tuple(new_cvs)
-        return super().from_dict(dict_, raise_on_extra)
 
 
 def __set_constant_values__(self):
@@ -864,7 +882,21 @@ class BaseFilter(BaseModel):
     """
     Base class for filters to be applied in a report.
     """
-    pass
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if model != BaseFilter:
+            return super().from_dict(dict_, raise_on_extra)
+
+        if 'quality_flags' in dict_:
+            return QualityFlagFilter.from_dict(dict_, raise_on_extra)
+        elif 'time_of_day_range' in dict_:
+            return TimeOfDayFilter.from_dict(dict_, raise_on_extra)
+        elif 'value_range' in dict_:
+            return ValueFilter.from_dict(dict_, raise_on_extra)
+        else:
+            raise NotImplementedError(
+                f'Do not know how to process {dict_} into a Filter.')
 
 
 @dataclass(frozen=True)
