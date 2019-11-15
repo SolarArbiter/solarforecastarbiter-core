@@ -12,7 +12,7 @@ import pytest
 import requests
 
 
-from solarforecastarbiter import cli, __version__
+from solarforecastarbiter import cli, __version__, datamodel
 
 
 @pytest.fixture()
@@ -222,14 +222,18 @@ def test_reference_nwp(cli_token, mocker):
                               pd.Timedelta('2h'), mocker.ANY)
 
 
-def test_report(cli_token, mocker):
-    mocker.patch('solarforecastarbiter.cli.APISession')
-    mocker.patch('solarforecastarbiter.cli.datamodel.ForecastObservation')
-    mocker.patch('solarforecastarbiter.cli.datamodel.Report')
-    mocker.patch('solarforecastarbiter.cli.reports')
-    mocker.patch('solarforecastarbiter.cli.template.report_md_to_html')
-    mocker.patch('solarforecastarbiter.cli.template.full_html',
-                 return_value='test')
+def test_report(cli_token, mocker, report_objects):
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report_objects[0])
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series([0] * len(index), index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': data + 3})
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value={report_objects[2]: data,
+                               report_objects[3]: data,
+                               report_objects[1]: obs})
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
         infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /

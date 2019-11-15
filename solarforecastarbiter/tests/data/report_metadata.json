@@ -1,14 +1,29 @@
 {
-    "name": "test",
+    "name": "NREL MIDC OASIS GHI Forecast Analysis",
     "report_parameters": {
-        "start": "2019-08-27T00:00:00Z",
-        "end": "2019-08-28T00:00:00Z",
-        "filters": [],
+        "start": "2019-04-01T00:00:00Z",
+        "end": "2019-04-04T23:59:00Z",
+        "filters": [
+            {"quality_flags": [
+                "USER FLAGGED",
+                "NIGHTTIME",
+                "LIMITS EXCEEDED",
+                "STALE VALUES",
+                "INTERPOLATED VALUES",
+                "INCONSISTENT IRRADIANCE COMPONENTS"
+            ]
+            },
+            {"time_of_day_range": [
+                "12:00", "14:00"
+            ]
+            }
+        ],
         "metrics": [
             "mae",
-            "mbe",
-            "rmse"
+            "rmse",
+            "mbe"
         ],
+        "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
         "object_pairs": [
             ["9f657636-7e49-11e9-b77f-0a580a8003e9", "31ae8548-9a07-11e9-b2f4-0a580a8003d5"],
             ["9f657636-7e49-11e9-b77f-0a580a8003e9", "77be10e8-9c22-11e9-a974-0a580a8003d5"]
