@@ -42,18 +42,6 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
 
 
-@pytest.mark.parametrize("f,value", [
-    ([0.1234], [0.1]),
-    ([0.1689], [0.2]),
-    (np.ones(999) * 0.1234, np.ones(999) * 0.1),
-    (np.ones(1000) * 0.1234, np.ones(1000) * 0.12),
-    (np.ones(1000) * 0.1580, np.ones(1000) * 0.16),
-    (np.ones(1001) * 0.1580, np.ones(1001) * 0.16),
-])
-def test_unique_forecasts(f, value):
-    np.testing.assert_array_equal(prob._unique_forecasts(f), value)
-
-
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
     (
         np.array([10, 10]),
@@ -116,6 +104,26 @@ def test_reliability(fx, fx_prob, obs, value):
         np.array([100, 50]),
         np.array([8, 8]),
         0.25,
+    ),
+
+    # effects of determining unique forecasts
+    (
+        np.array([10, 5]),
+        np.array([95, 100]),
+        np.array([8, 8]),
+        (2 * (0.5 - 0.5) ** 2) / 2,
+    ),
+    (
+        np.concatenate([np.ones(20) * 10, np.ones(10) * 5]),
+        np.concatenate([np.ones(20) * 95, np.ones(10) * 100]),
+        np.concatenate([np.ones(20) * 8, np.ones(10) * 8]),
+        (30 * (0.5 - 0.5) ** 2) / 30,
+    ),
+    (
+        np.concatenate([np.ones(1000) * 10, np.ones(500) * 5]),
+        np.concatenate([np.ones(1000) * 95, np.ones(500) * 100]),
+        np.concatenate([np.ones(1000) * 8, np.ones(500) * 8]),
+        (1000 * (1 - 2/3) ** 2 + 500 * (0 - 2/3) ** 2) / 1500,
     ),
 ])
 def test_resolution(fx, fx_prob, obs, value):

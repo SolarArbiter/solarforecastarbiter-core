@@ -87,47 +87,6 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     return skill
 
 
-def _unique_forecasts(f):
-    """Convert forecast probabilities to a set of unique values.
-
-    Determine a set of unique forecast probabilities, based on input forecast
-    probabilities of arbitrary precision, and approximate the input
-    probabilities to lie within the set of unique values.
-
-    Parameters
-    ----------
-    f : (n,) array_like
-        Probability [unitless] associated with the forecasts.
-
-    Returns
-    -------
-    f_uniq : (n,) array_like
-        The converted forecast probabilities [unitless].
-
-    Notes
-    -----
-    This implementation determines the set of unique forecast probabilities by
-    rounding the input probabilities to a precision determined by the number of
-    input probability values: if less than 1000 samples, bin by tenths;
-    otherwise bin by hundredths.
-
-    Examples
-    --------
-    >>> f = np.array([0.1234, 0.156891, 0.10561])
-    >>> _unique_forecasts(f)
-    array([0.1, 0.2, 0.1])
-
-    """
-
-    if len(f) >= 1000:
-        n_decimals = 2  # bin by hundredths (0.01, 0.02, etc.)
-    else:
-        n_decimals = 1  # bin by tenths (0.1, 0.2, etc.)
-
-    f_uniq = np.around(f, decimals=n_decimals)
-    return f_uniq
-
-
 def brier_decomposition(fx, fx_prob, obs):
     """The 3-component decomposition of the Brier Score.
 
@@ -153,8 +112,13 @@ def brier_decomposition(fx, fx_prob, obs):
     # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
-    # get unique forecast probabilities
-    f = _unique_forecasts(f)
+    # get unique forecast probabilities by binning
+    if len(f) >= 1000:
+        n_decimals = 2  # bin by hundredths (0.01, 0.02, etc.)
+    else:
+        n_decimals = 1  # bin by tenths (0.1, 0.2, etc.)
+
+    f = np.around(f, decimals=n_decimals)
 
     # reliability
     rel = 0.0
