@@ -62,21 +62,21 @@ def test_unique_forecasts(f, value):
         0.0,
     ),
     (
-        np.asarray([3, 4]),
-        np.asarray([100, 100]),
-        np.asarray([10, 11]),
+        np.array([3, 4]),
+        np.array([100, 100]),
+        np.array([10, 11]),
         1.0,
     ),
     (
-        np.asarray([10, 5]),
-        np.asarray([100, 50]),
-        np.asarray([8, 8]),
+        np.array([10, 5]),
+        np.array([100, 50]),
+        np.array([8, 8]),
         0.125,
     ),
     (
-        np.asarray([10, 10]),
-        np.asarray([100, 50]),
-        np.asarray([8, 8]),
+        np.array([10, 10]),
+        np.array([100, 50]),
+        np.array([8, 8]),
         0.125,
     ),
 ])
@@ -86,21 +86,21 @@ def test_reliability(fx, fx_prob, obs, value):
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
     (
-        np.asarray([10, 10]),
-        np.asarray([100, 100]),
-        np.asarray([8, 8]),
+        np.array([10, 10]),
+        np.array([100, 100]),
+        np.array([8, 8]),
         0.0,
     ),
     (
-        np.asarray([8, 8]),
-        np.asarray([100, 100]),
-        np.asarray([10, 10]),
+        np.array([8, 8]),
+        np.array([100, 100]),
+        np.array([10, 10]),
         0.0,
     ),
     (
-        np.asarray([10, 5]),
-        np.asarray([100, 50]),
-        np.asarray([8, 8]),
+        np.array([10, 5]),
+        np.array([100, 50]),
+        np.array([8, 8]),
         0.25,
     ),
 ])
@@ -108,17 +108,21 @@ def test_resolution(fx, fx_prob, obs, value):
     assert prob.resolution(fx, fx_prob, obs) == value
 
 
-@pytest.mark.parametrize("fx,obs,value", [
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
     # scalar inputs
-    (10, 8, 0.0),
-    (5, 8, 0.0),
+    (np.array([10]), np.array([100]), np.array([8]), 0.0),
+    (np.array([10]), np.array([35]), np.array([8]), 0.0),
+    (np.array([5]), np.array([100]), np.array([8]), 0.0),
+    (np.array([5]), np.array([35]), np.array([8]), 0.0),
 
     # vector inputs
-    (np.asarray([10, 5]), np.asarray([8, 8]), 0.25),
-    (np.asarray([8, 8]), np.asarray([10, 10]), 0.0),
+    (np.array([10, 5]), np.array([100, 100]), np.array([8, 8]), 0.25),
+    (np.array([8, 8]), np.array([100, 100]), np.array([10, 10]), 0.0),
+    (np.array([10, 5]), np.array([15, 25]), np.array([8, 8]), 0.25),
+    (np.array([8, 8]), np.array([33, 31]), np.array([10, 10]), 0.0),
 ])
-def test_unc(fx, obs, value):
-    assert prob.uncertainty(fx, obs) == value
+def test_unc(fx, fx_prob, obs, value):
+    assert prob.uncertainty(fx, fx_prob, obs) == value
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs", [
@@ -134,9 +138,7 @@ def test_unc(fx, obs, value):
 ])
 def test_brier_decomposition(fx, fx_prob, obs):
     bs = prob.brier_score(fx, fx_prob, obs)
-    rel = prob.reliability(fx, fx_prob, obs)
-    res = prob.resolution(fx, fx_prob, obs)
-    unc = prob.uncertainty(fx, obs)
+    rel, res, unc = prob.brier_decomposition(fx, fx_prob, obs)
     assert bs == rel - res + unc
 
 

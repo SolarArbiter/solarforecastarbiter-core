@@ -128,6 +128,56 @@ def _unique_forecasts(f):
     return f_uniq
 
 
+def brier_decomposition(fx, fx_prob, obs):
+    """The 3-component decomposition of the Brier Score.
+
+        BS = REL - RES + UNC
+
+    where REL is the reliability, RES is the resolution and UNC is the
+    uncertatinty.
+
+    Parameters
+    ----------
+    fx : (n,) array_like
+        Forecasts (physical units).
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    obs : (n,) array_like
+        Observations (physical unit).
+
+    """
+
+    # event: 0=did not happen, 1=did happen
+    o = np.where(obs <= fx, 1.0, 0.0)
+
+    # forecast probabilities [unitless]
+    f = fx_prob / 100.0
+
+    # get unique forecast probabilities
+    f = _unique_forecasts(f)
+
+    # reliability
+    rel = 0.0
+    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
+        o_i = np.mean(o[f == f_i])
+        rel += N_i * (f_i - o_i) ** 2
+    rel /= len(f)
+
+    # resolution
+    res = 0.0
+    o_avg = np.mean(o)
+    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
+        o_i = np.mean(o[f == f_i])    # mean event value per set
+        res += N_i * (o_i - o_avg) ** 2
+    res /= len(f)
+
+    # uncertainty
+    base_rate = np.mean(o)
+    unc = base_rate * (1.0 - base_rate)
+
+    return rel, res, unc
+
+
 def reliability(fx, fx_prob, obs):
     """Reliability (REL) of the forecast.
 
@@ -153,22 +203,13 @@ def reliability(fx, fx_prob, obs):
         The reliability of the forecast [unitless], where a perfectly reliable
         forecast has value of 0.
 
+    See Also:
+    ---------
+    brier_decomposition : 3-component decomposition of the Brier Score
+
     """
 
-    # event: 0=did not happen, 1=did happen
-    o = np.where(obs <= fx, 1.0, 0.0)
-
-    # forecast probabilities [unitless]
-    f = fx_prob / 100.0
-
-    # get unique forecast probabilities
-    f = _unique_forecasts(f)
-
-    rel = 0.0
-    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
-        o_i = np.mean(o[f == f_i])
-        rel += N_i * (f_i - o_i) ** 2
-    rel /= len(f)
+    rel = brier_decomposition(fx, fx_prob, obs)[0]
     return rel
 
 
@@ -198,27 +239,17 @@ def resolution(fx, fx_prob, obs):
         The resolution of the forecast [unitless], where higher values are
         better.
 
+    See Also:
+    ---------
+    brier_decomposition : 3-component decomposition of the Brier Score
+
     """
 
-    # event: 0=did not happen, 1=did happen
-    o = np.where(obs <= fx, 1.0, 0.0)
-
-    # forecast probabilities [unitless]
-    f = fx_prob / 100.0
-
-    # get unique forecast probabilities
-    f = _unique_forecasts(f)
-
-    res = 0.0
-    o_avg = np.mean(o)
-    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
-        o_i = np.mean(o[f == f_i])    # mean event value per set
-        res += N_i * (o_i - o_avg) ** 2
-    res /= len(f)
+    res = brier_decomposition(fx, fx_prob, obs)[1]
     return res
 
 
-def uncertainty(fx, obs):
+def uncertainty(fx, fx_prob, obs):
     """Uncertainty (UNC) of the forecast.
 
         UNC = base_rate * (1 - base_rate)
@@ -229,6 +260,8 @@ def uncertainty(fx, obs):
     ----------
     fx : (n,) array_like
         Forecasts (physical units).
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
     obs : (n,) array_like
         Observations (physical unit).
 
@@ -238,13 +271,13 @@ def uncertainty(fx, obs):
         The uncertainty [unitless], where lower values indicate the event being
         forecasted occurs rarely.
 
+    See Also:
+    ---------
+    brier_decomposition : 3-component decomposition of the Brier Score
+
     """
 
-    # event: 0=did not happen, 1=did happen
-    o = np.where(obs <= fx, 1.0, 0.0)
-
-    base_rate = np.mean(o)
-    unc = base_rate * (1.0 - base_rate)
+    unc = brier_decomposition(fx, fx_prob, obs)[2]
     return unc
 
 
