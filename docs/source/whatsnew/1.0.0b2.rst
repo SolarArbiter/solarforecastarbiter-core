@@ -57,7 +57,7 @@ Bug fixes
   :ref:`api` documentation. Fixed. (:issue:`228`)
 * Fix loading :py:class:`datamodel.Report` and :py:class:`datamodel.BaseFilter`
   from a dictionary (:pull:`249`, :issue:`137`)
-* :py:class:`io.api.APISession` Report methods where  missing from
+* :py:class:`io.api.APISession` Report methods were missing from
   :ref:`api` documentation (:pull:`249`)
 
 Contributors
