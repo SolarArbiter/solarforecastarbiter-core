@@ -4,7 +4,7 @@ import pandas as pd
 from solarforecastarbiter.metrics import probabilistic as prob
 
 
-@pytest.mark.parametrize("y_pred,y_prob,y_true,value", [
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
     # forecast 10 MW with 100% probability
     (10, 100, 8, 0.0),   # actual: 8 MW
     (10, 100, 10, 0.0),  # actual: 10 MW
@@ -31,18 +31,18 @@ from solarforecastarbiter.metrics import probabilistic as prob
     (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([17, 17]), 1.0),
     (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([2, 14]), 0.5),
 ])
-def test_brier_score(y_pred, y_prob, y_true, value):
-    assert prob.brier_score(y_pred, y_prob, y_true) == value
+def test_brier_score(fx, fx_prob, obs, value):
+    assert prob.brier_score(fx, fx_prob, obs) == value
 
 
-#@pytest.mark.parametrize("fx,obs,ref,value", [
-#    (1.00, 0, 1.00, 1.0 - 1.0 / 1.0),
-#    (1.00, 0, 0.50, 1.0 - 1.0 / 0.25),
-#])
-#def test_brier_skill_score_scalar(fx, obs, ref, value):
-#    assert prob.brier_skill_score(fx, obs, ref) == value
-#
-#
+@pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
+    (7, 100, 5, 100, 8, 1.0 - 1.0 / 1.0),
+    (10, 50, 5, 100, 8, 1.0 - 0.25 / 1.0),
+])
+def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
+    assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
+
+
 #@pytest.mark.parametrize("fx,obs,ref,value", [
 #    (
 #        np.array([1.0, 1.0]),

@@ -107,16 +107,16 @@ def _transform(fx, obs, kind="actuals", x=[25, 50, 75, 100]):
         raise NameError
 
 
-def brier_score(y_pred, y_prob, y_true):
+def brier_score(fx, fx_prob, obs):
     """Brier Score (BS).
 
     Parameters
     ----------
-    y_pred: (n,) array_like
+    fx : (n,) array_like
         Forecasts (physical units).
-    y_prob: (n,) array_like
+    fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    y_true: (n,) array_like
+    obs : (n,) array_like
         Observations (physical unit).
 
     Returns
@@ -127,32 +127,35 @@ def brier_score(y_pred, y_prob, y_true):
     """
 
     # event: 0=did not happen, 1=did happen
-    o = np.zeros_like(y_true)
-    o[y_true <= y_pred] = 1.0
+    o = np.zeros_like(obs)
+    o[obs <= fx] = 1.0
 
     # forecast probabilities [-]
-    f = y_prob / 100.0
+    f = fx_prob / 100.0
 
     BS = np.mean((f - o) ** 2)
     return BS
 
 
-def brier_skill_score(fx, obs, ref):
+def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     """Brier Skill Score (BSS).
 
         BSS = 1 - BS_f / BS_ref
 
-    where BS_f is the evaluated forecast and BS_ref is a reference forecast.
+    where BS_fx is the evaluated forecast and BS_ref is a reference forecast.
 
     Parameters
     ----------
-    fx: (n,) array_like
-        Forecasted probability of the event (between 0 and 1) for n samples.
-    obs: (n,) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for n
-        samples.
-    ref: (n,) array_like
-        Reference forecast of the probability of the event (between 0 and 1).
+    fx : (n,) array_like
+        Forecasts (physical units).
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    ref : (n,) array_like
+        Reference forecast (physical units).
+    ref_prob : (n,) array_like
+        Probability [%] associated with the reference forecast.
+    obs : (n,) array_like
+        Observations (physical unit).
 
     Returns
     -------
@@ -160,9 +163,9 @@ def brier_skill_score(fx, obs, ref):
         The Brier Skill Score [-].
 
     """
-    bs_f = brier_score(fx, obs)
-    bs_ref = brier_score(ref, obs)
-    return 1.0 - bs_f / bs_ref
+    bs_fx = brier_score(fx, fx_prob, obs)
+    bs_ref = brier_score(ref, ref_prob, obs)
+    return 1.0 - bs_fx / bs_ref
 
 
 def reliability(fx, obs):
