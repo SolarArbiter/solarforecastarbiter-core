@@ -25,10 +25,10 @@ from solarforecastarbiter.metrics import probabilistic as prob
     (2, 70, 4, (0.7 - 0) ** 2),  # actual: 4 kWh
 
     # vector inputs
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8]), 0.0),
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([10, 10]), 0.0),
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([17, 17]), 1.0),
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([2, 14]), 0.5),
+    (np.array([10, 10]), np.array([100, 100]), np.array([8, 8]), 0.0),
+    (np.array([10, 10]), np.array([100, 100]), np.array([10, 10]), 0.0),
+    (np.array([10, 10]), np.array([100, 100]), np.array([17, 17]), 1.0),
+    (np.array([10, 10]), np.array([100, 100]), np.array([2, 14]), 0.5),
 ])
 def test_brier_score(fx, fx_prob, obs, value):
     assert prob.brier_score(fx, fx_prob, obs) == value
@@ -56,9 +56,9 @@ def test_unique_forecasts(f, value):
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
     (
-        np.asarray([10, 10]),
-        np.asarray([100, 100]),
-        np.asarray([8, 8]),
+        np.array([10, 10]),
+        np.array([100, 100]),
+        np.array([8, 8]),
         0.0,
     ),
     (
@@ -127,14 +127,14 @@ def test_unc(fx, fx_prob, obs, value):
 
 @pytest.mark.parametrize("fx,fx_prob,obs", [
     # scalar inputs
-    (np.asarray([10]), np.asarray([100]), np.asarray([8])),
-    (np.asarray([10]), np.asarray([100]), np.asarray([10])),
-    (np.asarray([10]), np.asarray([100]), np.asarray([15])),
+    (np.array([10]), np.array([100]), np.array([8])),
+    (np.array([10]), np.array([100]), np.array([10])),
+    (np.array([10]), np.array([100]), np.array([15])),
 
     # vector inputs
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8])),
-    (np.asarray([10, 5]), np.asarray([100, 50]), np.asarray([8, 8])),
-    (np.asarray([8, 8]), np.asarray([100, 100]), np.asarray([10, 10])),
+    (np.array([10, 10]), np.array([100, 100]), np.array([8, 8])),
+    (np.array([10, 5]), np.array([100, 50]), np.array([8, 8])),
+    (np.array([8, 8]), np.array([100, 100]), np.array([10, 10])),
 ])
 def test_brier_decomposition(fx, fx_prob, obs):
     bs = prob.brier_score(fx, fx_prob, obs)
