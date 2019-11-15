@@ -107,16 +107,17 @@ def _transform(fx, obs, kind="actuals", x=[25, 50, 75, 100]):
         raise NameError
 
 
-def brier_score(fx, obs):
+def brier_score(y_pred, y_prob, y_true):
     """Brier Score (BS).
 
     Parameters
     ----------
-    F : (m, n) array_like
-        Forecasted probability [-] for m samples and n categories.
-    O : (m, n) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for m
-        samples and n categories.
+    y_pred: (n,) array_like
+        Forecasts (physical units).
+    y_prob: (n,) array_like
+        Probability [%] associated with the forecasts.
+    y_true: (n,) array_like
+        Observations (physical unit).
 
     Returns
     -------
@@ -125,10 +126,15 @@ def brier_score(fx, obs):
 
     """
 
-    if F.size == 2 and O.size == 2:
-        return np.mean(np.sum(F - O, axis=-1) ** 2)
-    else:
-        return np.mean(F - O ** 2)
+    # event: 0=did not happen, 1=did happen
+    o = np.zeros_like(y_true)
+    o[y_true <= y_pred] = 1.0
+
+    # forecast probabilities [-]
+    f = y_prob / 100.0
+
+    BS = np.mean((f - o) ** 2)
+    return BS
 
 
 def brier_skill_score(fx, obs, ref):
