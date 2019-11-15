@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-import pandas as pd
 from solarforecastarbiter.metrics import probabilistic as prob
 
 
@@ -98,8 +97,11 @@ def test_resolution(fx, fx_prob, obs, value):
 
 
 @pytest.mark.parametrize("fx,obs,value", [
+    # scalar inputs
     (10, 8, 0.0),
     (5, 8, 0.0),
+
+    # vector inputs
     (np.asarray([10, 5]), np.asarray([8, 8]), 0.25),
     (np.asarray([8, 8]), np.asarray([10, 10]), 0.0),
 ])
@@ -108,76 +110,34 @@ def test_unc(fx, obs, value):
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs", [
-    # scalar
+    # scalar inputs
     (np.asarray([10]), np.asarray([100]), np.asarray([8])),
     (np.asarray([10]), np.asarray([100]), np.asarray([10])),
     (np.asarray([10]), np.asarray([100]), np.asarray([15])),
 
-    # vector
+    # vector inputs
     (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8])),
     (np.asarray([10, 5]), np.asarray([100, 50]), np.asarray([8, 8])),
     (np.asarray([8, 8]), np.asarray([100, 100]), np.asarray([10, 10])),
 ])
 def test_brier_decomposition(fx, fx_prob, obs):
-    bs = prob.brier_score(fx, fx_prob, obs)  # 1.0
+    bs = prob.brier_score(fx, fx_prob, obs)
     rel = prob.reliability(fx, fx_prob, obs)
     res = prob.resolution(fx, fx_prob, obs)
-    unc = prob.uncertainty(fx, obs)  # 0.0
+    unc = prob.uncertainty(fx, obs)
     assert bs == rel - res + unc
 
 
 @pytest.mark.parametrize("fx_lower,fx_upper,value", [
-    # scalar
+    # scalar inputs
     (0.0, 1.0, 1.0),
     (0.5, 0.6, 0.1),
 
-    # vector
+    # vector inputs
     (np.array([0.0, 0.0]), np.array([1.0, 1.0]), 1.0),
     (np.array([0.2, 0.7]), np.array([0.3, 0.8]), 0.1),
     (np.array([0.0, 0.1]), np.array([0.5, 0.6]), 0.5),
 ])
-def test_sharpness_scalar(fx_lower, fx_upper, value):
+def test_sharpness(fx_lower, fx_upper, value):
     sh = prob.sharpness(fx_lower, fx_upper)
     assert pytest.approx(sh) == value
-
-
-#@pytest.mark.parametrize("F,O,q,value", [
-#    (
-#        np.array([[0.0, 1.0], [0.0, 1.0]]),  # predicted CDF [-]
-#        np.array([[0, 0], [0, 0]]),          # observed CDF [-] (binary)
-#        np.array([0, 1]),                    # actuals [MW] = grid
-#        (0.5 + 0.5) / 2,
-#    ),
-#    (
-#        np.array([[0.0, 1.0], [0.0, 1.0]]),
-#        np.array([[0, 1], [0, 1]]),
-#        np.array([0, 1]),
-#        (0.0 + 0.0) / 2,
-#    ),
-#    (
-#        np.array([[0.0, 0.2], [0.0, 0.2]]),
-#        np.array([[0, 1], [0, 1]]),
-#        np.array([0, 1]),
-#        (0.4 + 0.4) / 2,
-#    ),
-#    (
-#        np.array([[0.0, 1.0], [0.0, 0.4]]),
-#        np.array([[0, 1], [0, 1]]),
-#        np.array([0, 1]),
-#        (0.0 + 0.3) / 2,
-#    ),
-#    (
-#        np.array([[0.0, 0.5, 1.0], [0.0, 0.5, 1.0]]),
-#        np.array([[0, 1, 1], [0, 1, 1]]),
-#        np.array([0, 1, 2]),
-#        (0.5 + 0.5) / 2,
-#    ),
-#    (
-#        np.array([[0.0, 0.2, 0.4], [0.0, 0.5, 1.0]]),
-#        np.array([[0, 1, 1], [0, 1, 1]]),
-#        np.array([0, 1, 2]),
-#        ((0.4 + 0.7) + 0.5) / 2,
-#    ),
-#])
-#def test_crps(F, O, q, value):
-#    assert prob.crps(F, O, q) == value
