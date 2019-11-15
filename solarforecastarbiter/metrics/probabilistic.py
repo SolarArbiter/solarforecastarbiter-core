@@ -127,6 +127,17 @@ def brier_decomposition(fx, fx_prob, obs):
         The uncertainty [unitless], where lower values indicate the event being
         forecasted occurs rarely.
 
+    Notes
+    -----
+    The current implementation iterates over the unique forecasts to compute
+    the reliability and resolution, rather than using a vectorized formulation.
+    While a vectorized formulation may be more computationally efficient, the
+    clarity of the iterate version outweighs the efficiency gains from the
+    vectorized version. Additionally, the number of unique forecasts is
+    currently capped at 100, which small enough that there is likely no
+    practical difference in computation time between the iterate vs vectorized
+    versions.
+
     """
 
     # event: 0=did not happen, 1=did happen
