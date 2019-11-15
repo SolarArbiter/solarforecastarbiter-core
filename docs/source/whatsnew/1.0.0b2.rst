@@ -16,6 +16,14 @@ API Changes
   :py:mod:`solarforecastarbiter.metrics.deterministic.kolmogorov_smirnov_integral`,
   :py:mod:`solarforecastarbiter.metrics.deterministic.over`, and
   :py:mod:`solarforecastarbiter.metrics.deterministic.combined_performance_index`. (:pull:`230`)
+* Add metrics for probabilistic forecasts
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_score`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_skill_score`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_decomposition`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.reliability`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.resolution`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.uncertainty`, and
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.sharpness`. (:issue:`115`) (:issue:`232`) (:issue:`233`) (:pull:`202`)
 * Moved temporary functions from report to metrics calculator. (:pull:`221`)
 * Add Aggregate to the datamodel, allow forecasts to reference
   either a Site or an Aggregate, and add corresponding Aggregate
