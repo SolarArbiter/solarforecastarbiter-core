@@ -16,7 +16,7 @@ from solarforecastarbiter import datamodel
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
                         'report', 'quality_filter',
-                        'timeofdayfilter'])
+                        'timeofdayfilter', 'valuefilter'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
@@ -30,7 +30,7 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 agg_prob_forecast_constant_value,
                 report_objects, report_dict, quality_filter,
                 quality_filter_dict, timeofdayfilter,
-                timeofdayfilter_dict):
+                timeofdayfilter_dict, valuefilter, valuefilter_dict):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -93,6 +93,9 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
     elif request.param == 'timeofdayfilter':
         return (timeofdayfilter, timeofdayfilter_dict,
                 datamodel.TimeOfDayFilter)
+    elif request.param == 'valuefilter':
+        return (valuefilter, valuefilter_dict,
+                datamodel.ValueFilter)
 
 
 @pytest.mark.parametrize('extra', [

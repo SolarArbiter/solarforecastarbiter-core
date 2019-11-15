@@ -1147,6 +1147,22 @@ def timeofdayfilter_dict():
 
 
 @pytest.fixture()
+def valuefilter(single_forecast):
+    return datamodel.ValueFilter(
+        metadata=single_forecast,
+        value_range=(100.0, 900.0)
+    )
+
+
+@pytest.fixture()
+def valuefilter_dict(single_forecast):
+    return {
+        'metadata': single_forecast.to_dict(),
+        'value_range': (100.0, 900.0)
+    }
+
+
+@pytest.fixture()
 def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
     report, observation, forecast_0, forecast_1 = report_objects
     return {
