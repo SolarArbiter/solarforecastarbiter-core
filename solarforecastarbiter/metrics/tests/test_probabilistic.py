@@ -94,9 +94,12 @@ def test_unc(fx, obs, value):
     assert prob.uncertainty(fx, obs) == value
 
 
-@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+@pytest.mark.parametrize("fx,fx_prob,obs", [
+    (np.asarray([10]), np.asarray([100]), np.asarray([8])),
+    (np.asarray([10]), np.asarray([100]), np.asarray([10])),
+    (np.asarray([10]), np.asarray([100]), np.asarray([15])),
 ])
-def test_brier_decomposition(fx, fx_prob, obs, value):
+def test_brier_decomposition(fx, fx_prob, obs):
     bs = prob.brier_score(fx, fx_prob, obs)
     rel = prob.reliability(fx, fx_prob, obs)
     res = prob.resolution(fx, fx_prob, obs)
