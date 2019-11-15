@@ -104,6 +104,18 @@ def brier_decomposition(fx, fx_prob, obs):
     obs : (n,) array_like
         Observations (physical unit).
 
+    Returns
+    -------
+    rel : float
+        The reliability of the forecast [unitless], where a perfectly reliable
+        forecast has value of 0.
+    res : float
+        The resolution of the forecast [unitless], where higher values are
+        better.
+    unc : float
+        The uncertainty [unitless], where lower values indicate the event being
+        forecasted occurs rarely.
+
     """
 
     # event: 0=did not happen, 1=did happen
