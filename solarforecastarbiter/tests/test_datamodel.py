@@ -1,5 +1,6 @@
 from dataclasses import fields, MISSING, dataclass
 import json
+from typing import Union
 
 
 import pandas as pd
@@ -13,7 +14,9 @@ from solarforecastarbiter import datamodel
                         'forecast', 'forecastobservation',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
-                        'aggregateforecast', 'aggregateprobforecast'])
+                        'aggregateforecast', 'aggregateprobforecast',
+                        'report', 'quality_filter',
+                        'timeofdayfilter', 'valuefilter'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
@@ -24,7 +27,10 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 aggregate_text, aggregate_forecast_text,
                 aggregateforecast, aggregate_prob_forecast,
                 aggregate_prob_forecast_text,
-                agg_prob_forecast_constant_value):
+                agg_prob_forecast_constant_value,
+                report_objects, report_dict, quality_filter,
+                quality_filter_dict, timeofdayfilter,
+                timeofdayfilter_dict, valuefilter, valuefilter_dict):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -78,6 +84,18 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict['constant_values'] = (agg_prob_forecast_constant_value, )
         return (aggregate_prob_forecast, fx_dict,
                 datamodel.ProbabilisticForecast)
+    elif request.param == 'report':
+        report, *_ = report_objects
+        return (report, report_dict.copy(), datamodel.Report)
+    elif request.param == 'quality_filter':
+        return (quality_filter, quality_filter_dict,
+                datamodel.QualityFlagFilter)
+    elif request.param == 'timeofdayfilter':
+        return (timeofdayfilter, timeofdayfilter_dict,
+                datamodel.TimeOfDayFilter)
+    elif request.param == 'valuefilter':
+        return (valuefilter, valuefilter_dict,
+                datamodel.ValueFilter)
 
 
 @pytest.mark.parametrize('extra', [
@@ -93,12 +111,15 @@ def test_from_dict_into_datamodel(extra, pdid_params):
 
 def test_from_dict_into_datamodel_missing_field(pdid_params):
     _, obj_dict, model = pdid_params
+    field_to_remove = None
     for field in fields(model):
         if field.default is MISSING and field.default_factory is MISSING:
+            field_to_remove = field.name
             break
-    del obj_dict[field.name]
-    with pytest.raises(KeyError):
-        model.from_dict(obj_dict)
+    if field_to_remove is not None:
+        del obj_dict[field_to_remove]
+        with pytest.raises(KeyError):
+            model.from_dict(obj_dict)
 
 
 def test_from_dict_into_datamodel_no_extra(pdid_params):
@@ -329,3 +350,33 @@ def test_probabilistic_forecast_float_constant_values_from_dict(
 def test_probabilistic_forecast_invalid_constant_value(prob_forecasts):
     with pytest.raises(TypeError):
         prob_forecasts.replace(constant_values=(1, 'a'))
+
+
+def test__single_field_processing_union():
+    @dataclass
+    class Model(datamodel.BaseModel):
+        myfield: Union[int, pd.Timestamp, None]
+
+    out = datamodel._single_field_processing(Model, fields(Model)[0],
+                                             '20190101')
+    assert out == pd.Timestamp('20190101')
+
+    out = datamodel._single_field_processing(Model, fields(Model)[0], None)
+    assert out is None
+
+    out = datamodel._single_field_processing(Model, fields(Model)[0], 10)
+    assert out == 10
+
+    with pytest.raises(TypeError):
+        datamodel._single_field_processing(Model, fields(Model)[0], 'bad')
+
+
+def test_forecast_from_union(single_forecast, single_forecast_text, site_text):
+    @dataclass
+    class Model(datamodel.BaseModel):
+        myfield: Union[datamodel.Observation, datamodel.Forecast]
+
+    fxdict = json.loads(single_forecast_text)
+    fxdict['site'] = json.loads(site_text)
+    out = Model.from_dict({'myfield': fxdict})
+    assert out.myfield == single_forecast

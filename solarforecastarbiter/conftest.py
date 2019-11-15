@@ -1086,15 +1086,17 @@ def report_objects():
     fxobs0 = datamodel.ForecastObservation(forecast_0, observation)
     fxobs1 = datamodel.ForecastObservation(forecast_1, observation)
     quality_flag_filter = datamodel.QualityFlagFilter(
-        [
+        (
             "USER FLAGGED",
             "NIGHTTIME",
             "LIMITS EXCEEDED",
             "STALE VALUES",
             "INTERPOLATED VALUES",
             "INCONSISTENT IRRADIANCE COMPONENTS",
-        ]
+        )
     )
+    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0),
+                                                 dt.time(14, 0)))
     report = datamodel.Report(
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
@@ -1102,9 +1104,84 @@ def report_objects():
         forecast_observations=(fxobs0, fxobs1),
         metrics=("mae", "rmse", "mbe"),
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
-        filters=(quality_flag_filter,)
+        filters=(quality_flag_filter, timeofdayfilter)
     )
     return report, observation, forecast_0, forecast_1
+
+
+@pytest.fixture()
+def quality_filter():
+    return datamodel.QualityFlagFilter(
+        (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES",
+            "INCONSISTENT IRRADIANCE COMPONENTS",
+        )
+    )
+
+
+@pytest.fixture()
+def quality_filter_dict():
+    return {'quality_flags': (
+        "USER FLAGGED",
+        "NIGHTTIME",
+        "LIMITS EXCEEDED",
+        "STALE VALUES",
+        "INTERPOLATED VALUES",
+        "INCONSISTENT IRRADIANCE COMPONENTS",
+    )}
+
+
+@pytest.fixture()
+def timeofdayfilter():
+    return datamodel.TimeOfDayFilter(
+        time_of_day_range=(dt.time(12, 0), dt.time(14, 0))
+    )
+
+
+@pytest.fixture()
+def timeofdayfilter_dict():
+    return {'time_of_day_range': ("12:00", "14:00")}
+
+
+@pytest.fixture()
+def valuefilter(single_forecast):
+    return datamodel.ValueFilter(
+        metadata=single_forecast,
+        value_range=(100.0, 900.0)
+    )
+
+
+@pytest.fixture()
+def valuefilter_dict(single_forecast):
+    return {
+        'metadata': single_forecast.to_dict(),
+        'value_range': (100.0, 900.0)
+    }
+
+
+@pytest.fixture()
+def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
+    report, observation, forecast_0, forecast_1 = report_objects
+    return {
+        'name': report.name,
+        'start': report.start,
+        'end': report.end,
+        'forecast_observations': (
+            {'forecast': forecast_0.to_dict(),
+             'observation': observation.to_dict()},
+            {'forecast': forecast_1.to_dict(),
+             'observation': observation.to_dict()},
+        ),
+        'metrics': ('mae', 'rmse', 'mbe'),
+        'filters': (quality_filter_dict, timeofdayfilter_dict),
+        'status': report.status,
+        'report_id': report.report_id,
+        '__version__': report.__version__
+    }
 
 
 @pytest.fixture()
@@ -1118,7 +1195,17 @@ def report_text():
     "report_parameters": {
         "start": "2019-04-01T00:00:00-07:00",
         "end": "2019-04-04T23:59:00-07:00",
-        "filters": [],
+        "filters": [
+            {"quality_flags": [
+                "USER FLAGGED",
+                "NIGHTTIME",
+                "LIMITS EXCEEDED",
+                "STALE VALUES",
+                "INTERPOLATED VALUES",
+                "INCONSISTENT IRRADIANCE COMPONENTS"
+            ]},
+            {"time_of_day_range": ["12:00", "14:00"]}
+        ],
         "metrics": ["mae", "rmse", "mbe"],
         "object_pairs": [
             ["da2bc386-8712-11e9-a1c7-0a580a8200ae",

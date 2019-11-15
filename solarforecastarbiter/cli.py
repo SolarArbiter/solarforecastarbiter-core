@@ -13,7 +13,7 @@ import requests
 import sentry_sdk
 
 
-from solarforecastarbiter import __version__, datamodel
+from solarforecastarbiter import __version__
 from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
 from solarforecastarbiter.io.fetch import start_cluster
@@ -305,19 +305,7 @@ def report(verbose, user, password, base_url, report_file, output_file):
     session = APISession(token, base_url=base_url)
     with open(report_file) as f:
         metadata = json.load(f)
-    params = metadata['report_parameters']
-    fx_obs = []
-    for uuid_pair in params['object_pairs']:
-        obs = session.get_observation(uuid_pair[0])
-        fx = session.get_forecast(uuid_pair[1])
-        fx_obs.append(datamodel.ForecastObservation(fx, obs))
-    report = datamodel.Report(
-        name=metadata['name'],
-        start=pd.Timestamp(params['start']),
-        end=pd.Timestamp(params['end']),
-        forecast_observations=fx_obs,
-        metrics=params['metrics']
-    )
+    report = session.process_report_dict(metadata)
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)
     report_md = reports.render_raw_report(raw_report)

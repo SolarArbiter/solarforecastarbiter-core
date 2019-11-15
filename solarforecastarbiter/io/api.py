@@ -620,10 +620,24 @@ class APISession(requests.Session):
                   data=json_vals,
                   headers={'Content-Type': 'application/json'})
 
-    def _process_report_dict(self, rep_dict):
-        req_dict = rep_dict['report_parameters']
+    def process_report_dict(self, rep_dict):
+        """
+        Load parameters from rep_dict into a Report object, getting forecasts
+        and observations as necessary
+
+        Parameters
+        ----------
+        rep_dict : dict
+            Report dictionary as posted to the the API. See the API schema for
+            details
+
+        Returns
+        -------
+        datamodel.Report
+        """
+        req_dict = rep_dict['report_parameters'].copy()
         for key in ('name', 'report_id', 'status'):
-            req_dict[key] = rep_dict[key]
+            req_dict[key] = rep_dict.get(key, '')
         req_dict['metrics'] = tuple(req_dict['metrics'])
         req_dict['forecast_observations'] = tuple([
             datamodel.ForecastObservation(self.get_forecast(o[0]),
@@ -648,7 +662,7 @@ class APISession(requests.Session):
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
         raw = resp.pop('raw_report')
-        report = self._process_report_dict(resp)
+        report = self.process_report_dict(resp)
         if raw is not None:
             raw_report = deserialize_raw_report(raw)
             processed_fxobs = self.get_raw_report_processed_data(
@@ -673,7 +687,7 @@ class APISession(requests.Session):
             return []
         out = []
         for rep_dict in rep_dicts:
-            out.append(self._process_report_dict(rep_dict))
+            out.append(self.process_report_dict(rep_dict))
         return out
 
     def create_report(self, report):
