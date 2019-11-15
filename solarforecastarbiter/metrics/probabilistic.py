@@ -206,7 +206,7 @@ def reliability(fx, fx_prob, obs):
     f = np.around(f, decimals=n_decimals)
     REL = 0.0
     for f_i in np.unique(f):
-        N_i = len(fx_prob[f == f_i])  # no. forecasts per set
+        N_i = len(f[f == f_i])  # no. forecasts per set
         o_i = np.mean(o[f == f_i])    # mean event value per set
         REL += N_i * (f_i - o_i) ** 2
 
@@ -214,7 +214,7 @@ def reliability(fx, fx_prob, obs):
     return REL
 
 
-def resolution(fx, obs):
+def resolution(fx, fx_prob, obs):
     """Resolution (RES) of the forecast.
 
     Parameters
@@ -232,7 +232,32 @@ def resolution(fx, obs):
         The resolution of the forecast, where higher values are better.
 
     """
-    return None
+
+    # event: 0=did not happen, 1=did happen
+    o = np.zeros_like(obs)
+    o[obs <= fx] = 1.0
+
+    # forecast probabilities [-]
+    f = fx_prob / 100.0
+
+    # get unique forecast probabilities
+    if len(fx_prob) > 1000:
+        n_decimals = 3
+    elif len(fx_prob) > 100:
+        n_decimals = 2
+    else:
+        n_decimals = 1
+
+    f = np.around(f, decimals=n_decimals)
+    RES = 0.0
+    o_avg = np.mean(o)
+    for f_i in np.unique(f):
+        N_i = len(f[f == f_i])  # no. forecasts per set
+        o_i = np.mean(o[f == f_i])    # mean event value per set
+        RES += N_i * (o_i - o_avg) ** 2
+
+    RES = RES / len(np.unique(f))
+    return RES
 
 
 def uncertainty(fx, obs):

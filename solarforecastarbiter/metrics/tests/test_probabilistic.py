@@ -44,7 +44,12 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8]), 0.0),
+    (
+        np.asarray([10, 10]),
+        np.asarray([100, 100]),
+        np.asarray([8, 8]),
+        (1 * 0.0) / 1,
+    ),
     (
         np.asarray([10, 10]),
         np.asarray([100, 50]),
@@ -56,6 +61,30 @@ def test_reliability(fx, fx_prob, obs, value):
     assert prob.reliability(fx, fx_prob, obs) == value
 
 
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    (
+        np.asarray([10, 10]),
+        np.asarray([100, 100]),
+        np.asarray([8, 8]),
+        (2 * (0.0 - 0.0) ** 2) / 2,
+    ),
+    (
+        np.asarray([8, 8]),
+        np.asarray([100, 100]),
+        np.asarray([10, 10]),
+        (2 * (1.0 - 1.0) ** 2) / 2,
+    ),
+    (
+        np.asarray([10, 5]),
+        np.asarray([100, 50]),
+        np.asarray([8, 8]),
+        ((0.0 - 0.5) ** 2 + (1.0 - 0.5) ** 2) / 2,
+    ),
+])
+def test_resolution(fx, fx_prob, obs, value):
+    assert prob.resolution(fx, fx_prob, obs) == value
+
+
 @pytest.mark.parametrize("fx,obs,value", [
     (10, 8, 1.0 * (1 - 1.0)),
     (5, 8, 0.0 * (1 - 0.0)),
@@ -63,6 +92,16 @@ def test_reliability(fx, fx_prob, obs, value):
 ])
 def test_unc(fx, obs, value):
     assert prob.uncertainty(fx, obs) == value
+
+
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+])
+def test_brier_decomposition(fx, fx_prob, obs, value):
+    bs = prob.brier_score(fx, fx_prob, obs)
+    rel = prob.reliability(fx, fx_prob, obs)
+    res = prob.resolution(fx, fx_prob, obs)
+    unc = prob.uncertainty(fx, obs)
+    assert bs == rel + res + unc
 
 
 @pytest.mark.parametrize("fx_lower,fx_upper,value", [
