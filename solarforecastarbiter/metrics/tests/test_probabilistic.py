@@ -4,22 +4,22 @@ from solarforecastarbiter.metrics import probabilistic as prob
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    # forecast 10 MW with 100% probability
+    # forecast <= 10 MW with 100% probability
     (10, 100, 8, 0.0),   # actual: 8 MW
     (10, 100, 10, 0.0),  # actual: 10 MW
     (10, 100, 17, 1.0),  # actual: 17 MW
 
-    # forecast 8 MW with 50% probability
+    # forecast <= 8 MW with 50% probability
     (8, 50, 2, 0.25),   # actual: 2 MW
     (8, 50, 8, 0.25),   # actual: 8 MW
     (8, 50, 13, 0.25),  # actual: 13 MW
 
-    # forecast 350 W/m^2 with 30% probability
+    # forecast <= 350 W/m^2 with 30% probability
     (350, 30, 270, (0.3 - 1) ** 2),  # actual: 270 W/m^2
     (350, 30, 350, (0.3 - 1) ** 2),  # actual: 350 W/m^2
     (350, 30, 521, (0.3 - 0) ** 2),  # actual: 521 W/m^2
 
-    # forecast 2 kWh with 70% probability
+    # forecast <= 2 kWh with 70% probability
     (2, 70, 1, (0.7 - 1) ** 2),  # actual: 1 kWh
     (2, 70, 2, (0.7 - 1) ** 2),  # actual: 2 kWh
     (2, 70, 4, (0.7 - 0) ** 2),  # actual: 4 kWh
@@ -79,9 +79,23 @@ def test_unique_forecasts(f, value):
         np.array([8, 8]),
         0.125,
     ),
+
+    # effects of determining unique forecasts
+    (
+        np.ones(999) * 2,
+        np.ones(999) * 51,
+        np.ones(999) * 1,
+        (0.5 - 1.0) ** 2
+    ),
+    (
+        np.ones(1000) * 10,
+        np.ones(1000) * 51,
+        np.ones(1000) * 8,
+        (0.51 - 1.0) ** 2
+    ),
 ])
 def test_reliability(fx, fx_prob, obs, value):
-    assert prob.reliability(fx, fx_prob, obs) == value
+    assert prob.reliability(fx, fx_prob, obs) == pytest.approx(value)
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
@@ -139,7 +153,7 @@ def test_unc(fx, fx_prob, obs, value):
 def test_brier_decomposition(fx, fx_prob, obs):
     bs = prob.brier_score(fx, fx_prob, obs)
     rel, res, unc = prob.brier_decomposition(fx, fx_prob, obs)
-    assert bs == rel - res + unc
+    assert pytest.approx(bs) == rel - res + unc
 
 
 @pytest.mark.parametrize("fx_lower,fx_upper,value", [
