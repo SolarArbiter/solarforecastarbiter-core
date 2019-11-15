@@ -132,19 +132,14 @@ def brier_decomposition(fx, fx_prob, obs):
 
     f = np.around(f, decimals=n_decimals)
 
-    # reliability
-    rel = 0.0
-    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
-        o_i = np.mean(o[f == f_i])
-        rel += N_i * (f_i - o_i) ** 2
-    rel /= len(f)
-
-    # resolution
-    res = 0.0
+    # reliability and resolution
+    rel, res = 0.0, 0.0
     o_avg = np.mean(o)
     for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
-        o_i = np.mean(o[f == f_i])    # mean event value per set
+        o_i = np.mean(o[f == f_i])      # mean event value per set
+        rel += N_i * (f_i - o_i) ** 2
         res += N_i * (o_i - o_avg) ** 2
+    rel /= len(f)
     res /= len(f)
 
     # uncertainty
