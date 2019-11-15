@@ -24,5 +24,6 @@ If you want to build the docs, also run::
 
     pip install -r docs/requirements.txt
 
-.. todo::
-   possibly add more info from pvlib install docs
+If you want to install all requirements, use::
+
+    pip install -e .[all]
