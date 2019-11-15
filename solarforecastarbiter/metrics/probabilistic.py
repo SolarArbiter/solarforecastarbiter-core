@@ -19,12 +19,20 @@ def brier_score(fx, fx_prob, obs):
 
     where n is the number of forecasts, f_i is the forecasted probability of
     event i, and o_i is the observed event indicator (o_i=0: event did not
-    occur, o_i=1: event occured).
+    occur, o_i=1: event occured). The forecasts are supplied as the
+    right-hand-side of a CDF interval, e.g., forecast <= 10 MW at time i, and
+    therefore o_i is defined as:
+
+        o_i = 1 if obs_i <= fx_i, else o_i = 0
+
+    where fx_i and obs_i are the forecast and observation at time i,
+    respectively.
 
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
@@ -65,11 +73,13 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     ref : (n,) array_like
-        Reference forecast (physical units).
+        Reference forecast (physical units) of the right-hand-side of a CDF
+        interval.
     ref_prob : (n,) array_like
         Probability [%] associated with the reference forecast.
     obs : (n,) array_like
@@ -98,7 +108,8 @@ def brier_decomposition(fx, fx_prob, obs):
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
@@ -162,7 +173,8 @@ def reliability(fx, fx_prob, obs):
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
@@ -198,7 +210,8 @@ def resolution(fx, fx_prob, obs):
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
@@ -230,7 +243,8 @@ def uncertainty(fx, fx_prob, obs):
     Parameters
     ----------
     fx : (n,) array_like
-        Forecasts (physical units).
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
