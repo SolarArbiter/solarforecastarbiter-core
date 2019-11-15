@@ -26,8 +26,8 @@ def brier_score(fx, fx_prob, obs):
 
     Returns
     -------
-    score : float
-        The Brier Score.
+    bs : float
+        The Brier Score [unitless].
 
     """
 
@@ -37,8 +37,8 @@ def brier_score(fx, fx_prob, obs):
     # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
-    BS = np.mean((f - o) ** 2)
-    return BS
+    bs = np.mean((f - o) ** 2)
+    return bs
 
 
 def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
@@ -86,7 +86,7 @@ def reliability(fx, fx_prob, obs):
 
     Returns
     -------
-    REL : float
+    rel : float
         The reliability of the forecast, where a perfectly reliable forecast
         has REL = 0.
 
@@ -105,14 +105,12 @@ def reliability(fx, fx_prob, obs):
         n_decimals = 2
 
     f = np.around(f, decimals=n_decimals)
-    REL = 0.0
-    for f_i in np.unique(f):
-        N_i = len(f[f == f_i])  # no. forecasts per set
-        o_i = np.mean(o[f == f_i])    # mean event value per set
-        REL += N_i * (f_i - o_i) ** 2
-
-    REL = REL / len(f)
-    return REL
+    rel = 0.0
+    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
+        o_i = np.mean(o[f == f_i])
+        rel += N_i * (f_i - o_i) ** 2
+    rel /= len(f)
+    return rel
 
 
 def resolution(fx, fx_prob, obs):
@@ -129,7 +127,7 @@ def resolution(fx, fx_prob, obs):
 
     Returns
     -------
-    RES : float
+    res : float
         The resolution of the forecast, where higher values are better.
 
     """
@@ -147,15 +145,13 @@ def resolution(fx, fx_prob, obs):
         n_decimals = 2
 
     f = np.around(f, decimals=n_decimals)
-    RES = 0.0
+    res = 0.0
     o_avg = np.mean(o)
-    for f_i in np.unique(f):
-        N_i = len(f[f == f_i])  # no. forecasts per set
+    for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
         o_i = np.mean(o[f == f_i])    # mean event value per set
-        RES += N_i * (o_i - o_avg) ** 2
-
-    RES = RES / len(f)
-    return RES
+        res += N_i * (o_i - o_avg) ** 2
+    res /= len(f)
+    return res
 
 
 def uncertainty(fx, obs):
