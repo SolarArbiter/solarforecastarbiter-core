@@ -372,6 +372,17 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
 
+Functions to compute forecast probabilistic performance metrics:
+
+.. autosummary::
+    :toctree: generated/
+
+    metrics.probabilistic.brier_score
+    metrics.probabilistic.brier_skill_score
+    metrics.probabilistic.reliability
+    metrics.probabilistic.resolution
+    metrics.probabilistic.uncertainty
+    metrics.probabilistic.sharpness
 
 Reports
 =======
