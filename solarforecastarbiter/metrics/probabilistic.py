@@ -88,7 +88,11 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
 
 
 def _unique_forecasts(f):
-    """Convert forecast probabilities to a set of unique probability values.
+    """Convert forecast probabilities to a set of unique values.
+
+    Determine a set of unique forecast probabilities, based on input forecast
+    probabilities of arbitrary precision, and approximate the input
+    probabilities to lie within the set of unique values.
 
     Parameters
     ----------
@@ -98,17 +102,31 @@ def _unique_forecasts(f):
     Returns
     -------
     f_uniq : (n,) array_like
-        The probabilities converted to lie within a unique set of values.
+        The converted forecast probabilities [unitless].
+
+    Notes
+    -----
+    This implementation determines the set of unique forecast probabilities by
+    rounding the input probabilities to a precision determined by the number of
+    input probability values: if less than 1000 samples, bin by tenths;
+    otherwise bin by hundredths.
+
+    Examples
+    --------
+    >>> f = np.array([0.1234, 0.156891, 0.10561])
+    >>> _unique_forecasts(f)
+    array([0.1, 0.2, 0.1])
 
     """
 
-    if len(f) > 1000:
-        n_decimals = 2
+    if len(f) >= 1000:
+        n_decimals = 2  # bin by hundredths (0.01, 0.02, etc.)
     else:
-        n_decimals = 1
+        n_decimals = 1  # bin by tenths (0.1, 0.2, etc.)
 
     f_uniq = np.around(f, decimals=n_decimals)
     return f_uniq
+
 
 def reliability(fx, fx_prob, obs):
     """Reliability (REL) of the forecast.

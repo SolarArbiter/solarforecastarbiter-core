@@ -43,9 +43,11 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
 
 
 @pytest.mark.parametrize("f,value", [
-    (np.ones(10) * 0.1234, np.ones(10) * 0.1),
-    (np.ones(10) * 0.1689, np.ones(10) * 0.2),
-    (np.ones(1001) * 0.1234, np.ones(1001) * 0.12),
+    ([0.1234], [0.1]),
+    ([0.1689], [0.2]),
+    (np.ones(999) * 0.1234, np.ones(999) * 0.1),
+    (np.ones(1000) * 0.1234, np.ones(1000) * 0.12),
+    (np.ones(1000) * 0.1580, np.ones(1000) * 0.16),
     (np.ones(1001) * 0.1580, np.ones(1001) * 0.16),
 ])
 def test_unique_forecasts(f, value):
