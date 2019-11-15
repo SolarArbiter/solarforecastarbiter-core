@@ -43,42 +43,6 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
 
 
-#@pytest.mark.parametrize("fx,obs,ref,value", [
-#    (
-#        np.array([1.0, 1.0]),
-#        np.array([0, 0]),
-#        np.array([1.0, 1.0]),
-#        1.0 - 1.0 / 1.0
-#    ),
-#    (
-#        np.array([1.0, 1.0]),
-#        np.array([0, 0]),
-#        np.array([0.5, 0.5]),
-#        1.0 - 1.0 / 0.25
-#    ),
-#])
-#def test_brier_skill_score_vector(fx, obs, ref, value):
-#    assert prob.brier_skill_score(fx, obs, ref) == value
-#
-#
-#@pytest.mark.parametrize("fx,obs,ref,value", [
-#    (
-#        pd.Series([1.0, 1.0]),
-#        pd.Series([0, 0]),
-#        pd.Series([1.0, 1.0]),
-#        1.0 - 1.0 / 1.0
-#    ),
-#    (
-#        pd.Series([1.0, 1.0]),
-#        pd.Series([0, 0]),
-#        pd.Series([0.5, 0.5]),
-#        1.0 - 1.0 / 0.25
-#    ),
-#])
-#def test_brier_skill_score_series(fx, obs, ref, value):
-#    assert prob.brier_skill_score(fx, obs, ref) == value
-#
-#
 #@pytest.mark.parametrize("fx_lower,fx_upper,value", [
 #    (0.0, 1.0, 1.0),
 #    (0.5, 0.6, 0.1),
@@ -104,20 +68,15 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
 #def test_sharpness_series(fx_lower, fx_upper, value):
 #    sh = prob.sharpness(fx_lower, fx_upper)
 #    assert pytest.approx(sh) == value
-#
-#
-#@pytest.mark.parametrize("obs,value", [
-#    (0, 0.0),
-#    (1, 0.0),
-#    ([0, 0], 0.0),
-#    ([1, 1], 0.0),
-#    ([0, 1], 0.25),
-#    (pd.Series([0, 0]), 0.0),
-#    (pd.Series([1, 1]), 0.0),
-#    (pd.Series([0, 1]), 0.25),
-#])
-#def test_unc(obs, value):
-#    assert prob.uncertainty(obs) == value
+
+
+@pytest.mark.parametrize("fx,obs,value", [
+    (10, 8, 1.0 * (1 - 1.0)),
+    (5, 8, 0.0 * (1 - 0.0)),
+    (np.asarray([5, 10]), np.asarray([8, 8]), 0.5 * (1 - 0.5)),
+])
+def test_unc(fx, obs, value):
+    assert prob.uncertainty(fx, obs) == value
 #
 #
 #@pytest.mark.parametrize("F,O,q,value", [

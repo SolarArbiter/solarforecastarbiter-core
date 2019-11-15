@@ -168,16 +168,17 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     return 1.0 - bs_fx / bs_ref
 
 
-def reliability(fx, obs):
+def reliability(fx, fx_prob, obs):
     """Reliability (REL) of the forecast.
 
     Parameters
     ----------
-    fx: (n,) array_like
-        Forecasted probability of the event (between 0 and 1) for n samples.
-    obs: (n,) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for n
-        samples.
+    fx : (n,) array_like
+        Forecasts (physical units).
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    obs : (n,) array_like
+        Observations (physical unit).
 
     Returns
     -------
@@ -194,11 +195,12 @@ def resolution(fx, obs):
 
     Parameters
     ----------
-    fx: (n,) array_like
-        Forecasted probability of the event (between 0 and 1) for n samples.
-    obs: (n,) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for n
-        samples.
+    fx : (n,) array_like
+        Forecasts (physical units).
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    obs : (n,) array_like
+        Observations (physical unit).
 
     Returns
     -------
@@ -209,18 +211,19 @@ def resolution(fx, obs):
     return None
 
 
-def uncertainty(obs):
+def uncertainty(fx, obs):
     """Uncertainty (UNC) of the forecast.
 
         UNC = base_rate * (1 - base_rate)
 
-    where base_rate = 1/n * sum_{t=1}^n obs_t
+    where base_rate = 1/n * sum_{t=1}^n o_t.
 
     Parameters
     ----------
-    obs: (n,) array_like
-        Actual outcome of the event (0=did not happen, 1=did happen) for n
-        samples.
+    fx : (n,) array_like
+        Forecasts (physical units).
+    obs : (n,) array_like
+        Observations (physical unit).
 
     Returns
     -------
@@ -229,7 +232,12 @@ def uncertainty(obs):
         only rarely).
 
     """
-    base_rate = np.mean(obs)
+
+    # event: 0=did not happen, 1=did happen
+    o = np.zeros_like(obs)
+    o[obs <= fx] = 1.0
+
+    base_rate = np.mean(o)
     return base_rate * (1.0 - base_rate)
 
 
