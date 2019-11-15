@@ -43,31 +43,17 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
 
 
-#@pytest.mark.parametrize("fx_lower,fx_upper,value", [
-#    (0.0, 1.0, 1.0),
-#    (0.5, 0.6, 0.1),
-#])
-#def test_sharpness_scalar(fx_lower, fx_upper, value):
-#    sh = prob.sharpness(fx_lower, fx_upper)
-#    assert pytest.approx(sh) == value
-#
-#
-#@pytest.mark.parametrize("fx_lower,fx_upper,value", [
-#    (np.array([0.0, 0.0]), np.array([1.0, 1.0]), 1.0),
-#    (np.array([0.2, 0.7]), np.array([0.3, 0.8]), 0.1),
-#])
-#def test_sharpness_vector(fx_lower, fx_upper, value):
-#    sh = prob.sharpness(fx_lower, fx_upper)
-#    assert pytest.approx(sh) == value
-#
-#
-#@pytest.mark.parametrize("fx_lower,fx_upper,value", [
-#    (pd.Series([0.0, 0.0]), pd.Series([1.0, 1.0]), 1.0),
-#    (pd.Series([0.2, 0.7]), pd.Series([0.3, 0.8]), 0.1),
-#])
-#def test_sharpness_series(fx_lower, fx_upper, value):
-#    sh = prob.sharpness(fx_lower, fx_upper)
-#    assert pytest.approx(sh) == value
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8]), 0.0),
+    (
+        np.asarray([10, 10]),
+        np.asarray([100, 50]),
+        np.asarray([8, 8]),
+        (1 * 0.0 + 1 * 0.25) / 2,
+    ),
+])
+def test_reliability(fx, fx_prob, obs, value):
+    assert prob.reliability(fx, fx_prob, obs) == value
 
 
 @pytest.mark.parametrize("fx,obs,value", [
@@ -77,8 +63,23 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
 ])
 def test_unc(fx, obs, value):
     assert prob.uncertainty(fx, obs) == value
-#
-#
+
+
+@pytest.mark.parametrize("fx_lower,fx_upper,value", [
+    # scalar
+    (0.0, 1.0, 1.0),
+    (0.5, 0.6, 0.1),
+
+    # vector
+    (np.array([0.0, 0.0]), np.array([1.0, 1.0]), 1.0),
+    (np.array([0.2, 0.7]), np.array([0.3, 0.8]), 0.1),
+    (np.array([0.0, 0.1]), np.array([0.5, 0.6]), 0.5),
+])
+def test_sharpness_scalar(fx_lower, fx_upper, value):
+    sh = prob.sharpness(fx_lower, fx_upper)
+    assert pytest.approx(sh) == value
+
+
 #@pytest.mark.parametrize("F,O,q,value", [
 #    (
 #        np.array([[0.0, 1.0], [0.0, 1.0]]),  # predicted CDF [-]
