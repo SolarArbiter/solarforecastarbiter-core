@@ -12,7 +12,7 @@ import pytest
 import requests
 
 
-from solarforecastarbiter import cli, __version__, datamodel
+from solarforecastarbiter import cli, __version__
 
 
 @pytest.fixture()
