@@ -13,7 +13,7 @@ import requests
 import sentry_sdk
 
 
-from solarforecastarbiter import __version__, datamodel
+from solarforecastarbiter import __version__
 from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
 from solarforecastarbiter.io.fetch import start_cluster

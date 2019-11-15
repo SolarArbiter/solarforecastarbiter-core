@@ -628,7 +628,8 @@ class APISession(requests.Session):
         Parameters
         ----------
         rep_dict : dict
-            Report dictionary as posted to the the API. See the API schema for details
+            Report dictionary as posted to the the API. See the API schema for
+            details
 
         Returns
         -------

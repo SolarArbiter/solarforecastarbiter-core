@@ -1095,7 +1095,8 @@ def report_objects():
             "INCONSISTENT IRRADIANCE COMPONENTS",
         )
     )
-    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0), dt.time(14, 0)))
+    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0),
+                                                 dt.time(14, 0)))
     report = datamodel.Report(
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
