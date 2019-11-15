@@ -22,7 +22,7 @@ API Changes
   :py:mod:`solarforecastarbiter.metrics.probabilistic.reliability`,
   :py:mod:`solarforecastarbiter.metrics.probabilistic.resolution`,
   :py:mod:`solarforecastarbiter.metrics.probabilistic.uncertainty`, and
-  :py:mod:`solarforecastarbiter.metrics.probabilistic.sharpness`. (:pull:`202`)
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.sharpness`. (:issue:`115`) (:pull:`202`)
 * Moved temporary functions from report to metrics calculator. (:pull:`221`)
 * Add Aggregate to the datamodel, allow forecasts to reference
   either a Site or an Aggregate, and add corresponding Aggregate
