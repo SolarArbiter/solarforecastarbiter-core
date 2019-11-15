@@ -27,7 +27,8 @@ def brier_score(fx, fx_prob, obs):
     Returns
     -------
     bs : float
-        The Brier Score [unitless].
+        The Brier Score [unitless], where lower values indicate better forecast
+        performance.
 
     """
 
@@ -46,7 +47,8 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
 
         BSS = 1 - BS_f / BS_ref
 
-    where BS_fx is the evaluated forecast and BS_ref is a reference forecast.
+    where BS_fx is the Brier Score of the evaluated forecast and BS_ref is the
+    Brier Score of a reference forecast.
 
     Parameters
     ----------
@@ -69,11 +71,19 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     """
     bs_fx = brier_score(fx, fx_prob, obs)
     bs_ref = brier_score(ref, ref_prob, obs)
-    return 1.0 - bs_fx / bs_ref
+    skill = 1.0 - bs_fx / bs_ref
+    return skill
 
 
 def reliability(fx, fx_prob, obs):
     """Reliability (REL) of the forecast.
+
+        REL = 1/n sum_{i=1}^I N_i (f_i - o_{i,avg})^2
+
+    where n is the total number of forecasts, I is the number of unique
+    forecasts (f_1, f_2, ..., f_I), N_i is the number of times each unique
+    forecast occurs, o_{i,avg} is the average of the observed events during
+    which the forecast was f_i.
 
     Parameters
     ----------
@@ -87,8 +97,8 @@ def reliability(fx, fx_prob, obs):
     Returns
     -------
     rel : float
-        The reliability of the forecast, where a perfectly reliable forecast
-        has REL = 0.
+        The reliability of the forecast [unitless], where a perfectly reliable
+        forecast has value of 0.
 
     """
 
@@ -116,6 +126,14 @@ def reliability(fx, fx_prob, obs):
 def resolution(fx, fx_prob, obs):
     """Resolution (RES) of the forecast.
 
+        RES = 1/n sum_{i=1}^I N_i (o_{i,avg} - o_{avg})^2
+
+    where n is the total number of forecasts, I is the number of unique
+    forecasts (f_1, f_2, ..., f_I), N_i is the number of times each unique
+    forecast occurs, o_{i,avg} is the average of the observed events during
+    which the forecast was f_i, and o_{avg} is the average of all observed
+    events.
+
     Parameters
     ----------
     fx : (n,) array_like
@@ -128,7 +146,8 @@ def resolution(fx, fx_prob, obs):
     Returns
     -------
     res : float
-        The resolution of the forecast, where higher values are better.
+        The resolution of the forecast [unitless], where higher values are
+        better.
 
     """
 
@@ -159,7 +178,7 @@ def uncertainty(fx, obs):
 
         UNC = base_rate * (1 - base_rate)
 
-    where base_rate = 1/n * sum_{t=1}^n o_t.
+    where base_rate = 1/n * sum_{i=1}^n o_i, and o_i is the observed event.
 
     Parameters
     ----------
@@ -170,9 +189,9 @@ def uncertainty(fx, obs):
 
     Returns
     -------
-    UNC : float
-        The uncertainty (lower values indicate event being forecasted occurs
-        only rarely).
+    unc : float
+        The uncertainty [unitless], where lower values indicate the event being
+        forecasted occurs rarely.
 
     """
 
@@ -180,7 +199,8 @@ def uncertainty(fx, obs):
     o = np.where(obs <= fx, 1.0, 0.0)
 
     base_rate = np.mean(o)
-    return base_rate * (1.0 - base_rate)
+    unc = base_rate * (1.0 - base_rate)
+    return unc
 
 
 def sharpness(fx_lower, fx_upper):
@@ -188,15 +208,23 @@ def sharpness(fx_lower, fx_upper):
 
         SH = 1/n * sum_{i=1}^n (f_{u,i} - f_{l,i})
 
+    where n is the total number of forecasts, f_{u,i} is the upper prediction
+    interval value and f_{l,i} is the lower prediction interval value for
+    sample i.
+
     Parameters
     ----------
     fx_lower : (n,) array_like
+        The lower prediction interval values (physical units).
     fx_upper : (n,) array_like
+        The upper prediction interval values (physical units).
 
     Returns
     -------
     SH : float
-        The sharpness.
+        The sharpness (physical units), where smaller sharpness values indicate
+        "tighter" prediction intervals.
 
     """
-    return np.mean(fx_upper - fx_lower)
+    sh = np.mean(fx_upper - fx_lower)
+    return sh
