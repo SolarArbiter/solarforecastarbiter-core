@@ -51,6 +51,12 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
         0.0,
     ),
     (
+        np.asarray([3, 4]),
+        np.asarray([100, 100]),
+        np.asarray([10, 11]),
+        1.0,
+    ),
+    (
         np.asarray([10, 5]),
         np.asarray([100, 50]),
         np.asarray([8, 8]),
@@ -95,6 +101,7 @@ def test_resolution(fx, fx_prob, obs, value):
     (10, 8, 0.0),
     (5, 8, 0.0),
     (np.asarray([10, 5]), np.asarray([8, 8]), 0.25),
+    (np.asarray([8, 8]), np.asarray([10, 10]), 0.0),
 ])
 def test_unc(fx, obs, value):
     assert prob.uncertainty(fx, obs) == value
@@ -108,14 +115,14 @@ def test_unc(fx, obs, value):
 
     # vector
     (np.asarray([10, 10]), np.asarray([100, 100]), np.asarray([8, 8])),
-    #(np.asarray([8, 8]), np.asarray([100, 100]), np.asarray([10, 10])),
     (np.asarray([10, 5]), np.asarray([100, 50]), np.asarray([8, 8])),
+    (np.asarray([8, 8]), np.asarray([100, 100]), np.asarray([10, 10])),
 ])
 def test_brier_decomposition(fx, fx_prob, obs):
-    bs = prob.brier_score(fx, fx_prob, obs)
+    bs = prob.brier_score(fx, fx_prob, obs)  # 1.0
     rel = prob.reliability(fx, fx_prob, obs)
     res = prob.resolution(fx, fx_prob, obs)
-    unc = prob.uncertainty(fx, obs)
+    unc = prob.uncertainty(fx, obs)  # 0.0
     assert bs == rel - res + unc
 
 

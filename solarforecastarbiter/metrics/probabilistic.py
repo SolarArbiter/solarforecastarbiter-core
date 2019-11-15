@@ -196,12 +196,10 @@ def reliability(fx, fx_prob, obs):
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
-    if len(fx_prob) > 1000:
-        n_decimals = 3
-    elif len(fx_prob) > 100:
-        n_decimals = 2
-    else:
+    if len(f) < 1000:
         n_decimals = 1
+    else:
+        n_decimals = 2
 
     f = np.around(f, decimals=n_decimals)
     REL = 0.0
@@ -210,7 +208,7 @@ def reliability(fx, fx_prob, obs):
         o_i = np.mean(o[f == f_i])    # mean event value per set
         REL += N_i * (f_i - o_i) ** 2
 
-    REL = REL / len(np.unique(f))
+    REL = REL / len(f)
     return REL
 
 
@@ -241,12 +239,10 @@ def resolution(fx, fx_prob, obs):
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
-    if len(fx_prob) > 1000:
-        n_decimals = 3
-    elif len(fx_prob) > 100:
-        n_decimals = 2
-    else:
+    if len(f) < 1000:
         n_decimals = 1
+    else:
+        n_decimals = 2
 
     f = np.around(f, decimals=n_decimals)
     RES = 0.0
@@ -256,7 +252,7 @@ def resolution(fx, fx_prob, obs):
         o_i = np.mean(o[f == f_i])    # mean event value per set
         RES += N_i * (o_i - o_avg) ** 2
 
-    RES = RES / len(np.unique(f))
+    RES = RES / len(f)
     return RES
 
 
