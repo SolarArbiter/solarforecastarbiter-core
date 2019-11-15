@@ -32,10 +32,9 @@ def brier_score(fx, fx_prob, obs):
     """
 
     # event: 0=did not happen, 1=did happen
-    o = np.zeros_like(obs)
-    o[obs <= fx] = 1.0
+    o = np.where(obs <= fx, 1.0, 0.0)
 
-    # forecast probabilities [-]
+    # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
     BS = np.mean((f - o) ** 2)
@@ -65,7 +64,7 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     Returns
     -------
     skill : float
-        The Brier Skill Score [-].
+        The Brier Skill Score [unitless].
 
     """
     bs_fx = brier_score(fx, fx_prob, obs)
@@ -94,10 +93,9 @@ def reliability(fx, fx_prob, obs):
     """
 
     # event: 0=did not happen, 1=did happen
-    o = np.zeros_like(obs)
-    o[obs <= fx] = 1.0
+    o = np.where(obs <= fx, 1.0, 0.0)
 
-    # forecast probabilities [-]
+    # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
@@ -137,10 +135,9 @@ def resolution(fx, fx_prob, obs):
     """
 
     # event: 0=did not happen, 1=did happen
-    o = np.zeros_like(obs)
-    o[obs <= fx] = 1.0
+    o = np.where(obs <= fx, 1.0, 0.0)
 
-    # forecast probabilities [-]
+    # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
@@ -184,8 +181,7 @@ def uncertainty(fx, obs):
     """
 
     # event: 0=did not happen, 1=did happen
-    o = np.zeros_like(obs)
-    o[obs <= fx] = 1.0
+    o = np.where(obs <= fx, 1.0, 0.0)
 
     base_rate = np.mean(o)
     return base_rate * (1.0 - base_rate)
