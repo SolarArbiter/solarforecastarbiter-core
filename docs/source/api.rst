@@ -343,6 +343,20 @@ Aggregates
    io.api.APISession.create_aggregate
    io.api.APISession.get_aggregate_values
 
+Reports
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.process_report_dict
+   io.api.APISession.get_report
+   io.api.APISession.list_reports
+   io.api.APISession.create_report
+   io.api.APISession.post_raw_report_processed_data
+   io.api.APISession.get_raw_report_processed_data
+   io.api.APISession.post_raw_report
+   io.api.APISession.update_report_status
+
 Utils
 -----
 

@@ -1,6 +1,6 @@
 .. _whatsnew_100b2:
 
-1.0.0b2 (???)
+1.0.0b2 (November 15, 2019)
 ------------------------
 
 This is the second 1.0 beta release.
@@ -23,6 +23,9 @@ API Changes
 * Require that a list of template Forecasts/ProbabilisticForecasts is passed to
   :py:mod:`solarforecastarbiter.io.reference_observations.common.create_forecasts`
   (:pull:`240`)
+* Add function to process report JSON objects into datamodel.Report objects
+  :py:mod:`solarforecastarbiter.io.api.APISession.process_report_dict`
+  (:pull:`249`)
 
 
 Enhancements
@@ -52,7 +55,10 @@ Bug fixes
   (:issue:`204`)
 * :py:class:`datamodel.Report` and associated classes were missing from
   :ref:`api` documentation. Fixed. (:issue:`228`)
-
+* Fix loading :py:class:`datamodel.Report` and :py:class:`datamodel.BaseFilter`
+  from a dictionary (:pull:`249`)
+* :py:class:`io.api.APISession` Report methods where  missing from
+  :ref:`api` documentation (:pull:`249`)
 
 Contributors
 ~~~~~~~~~~~~
