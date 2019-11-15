@@ -268,7 +268,7 @@ class Site(BaseModel):
         if 'modeling_parameters' in dict_:
             mp_dict = dict_.get('modeling_parameters', {})
             if not isinstance(mp_dict, PVModelingParameters):
-                tracking_type = mp_dict.pop('tracking_type', None)
+                tracking_type = mp_dict.get('tracking_type', None)
                 if tracking_type == 'fixed':
                     dict_['modeling_parameters'] = (
                         FixedTiltModelingParameters.from_dict(

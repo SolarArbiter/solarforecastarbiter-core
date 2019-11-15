@@ -366,3 +366,14 @@ def test__single_field_processing_union():
 
     with pytest.raises(TypeError):
         datamodel._single_field_processing(Model, fields(Model)[0], 'bad')
+
+
+def test_forecast_from_union(single_forecast, single_forecast_text, site_text):
+    @dataclass
+    class Model(datamodel.BaseModel):
+        myfield: Union[datamodel.Observation, datamodel.Forecast]
+
+    fxdict = json.loads(single_forecast_text)
+    fxdict['site'] = json.loads(site_text)
+    out = Model.from_dict({'myfield': fxdict})
+    assert out.myfield == single_forecast
