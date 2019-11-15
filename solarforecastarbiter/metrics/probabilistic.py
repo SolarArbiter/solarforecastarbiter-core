@@ -65,7 +65,7 @@ def brier_score(fx, fx_prob, obs):
 def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     """Brier Skill Score (BSS).
 
-        BSS = 1 - BS_f / BS_ref
+        BSS = 1 - BS_fx / BS_ref
 
     where BS_fx is the Brier Score of the evaluated forecast and BS_ref is the
     Brier Score of a reference forecast.
