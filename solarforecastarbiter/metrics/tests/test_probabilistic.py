@@ -42,6 +42,16 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
 
 
+@pytest.mark.parametrize("f,value", [
+    (np.ones(10) * 0.1234, np.ones(10) * 0.1),
+    (np.ones(10) * 0.1689, np.ones(10) * 0.2),
+    (np.ones(1001) * 0.1234, np.ones(1001) * 0.12),
+    (np.ones(1001) * 0.1580, np.ones(1001) * 0.16),
+])
+def test_unique_forecasts(f, value):
+    np.testing.assert_array_equal(prob._unique_forecasts(f), value)
+
+
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
     (
         np.asarray([10, 10]),

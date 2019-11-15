@@ -15,6 +15,12 @@ __all__ = [
 def brier_score(fx, fx_prob, obs):
     """Brier Score (BS).
 
+        BS = 1/n sum_{i=1}^n (f_i - o_i)^2
+
+    where n is the number of forecasts, f_i is the forecasted probability of
+    event i, and o_i is the observed event indicator (o_i=0: event did not
+    occur, o_i=1: event occured).
+
     Parameters
     ----------
     fx : (n,) array_like
@@ -27,8 +33,14 @@ def brier_score(fx, fx_prob, obs):
     Returns
     -------
     bs : float
-        The Brier Score [unitless], where lower values indicate better forecast
-        performance.
+        The Brier Score [unitless], bounded between 0 and 1, where values
+        closer to 0 indicate better forecast performance and values closer to 1
+        indicate worse performance.
+
+    Notes
+    -----
+    The Brier Score implemented in this function is for binary outcomes only,
+    rather than the more general (but less commonly used) categorical version.
 
     """
 
@@ -75,6 +87,29 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
     return skill
 
 
+def _unique_forecasts(f):
+    """Convert forecast probabilities to a set of unique probability values.
+
+    Parameters
+    ----------
+    f : (n,) array_like
+        Probability [unitless] associated with the forecasts.
+
+    Returns
+    -------
+    f_uniq : (n,) array_like
+        The probabilities converted to lie within a unique set of values.
+
+    """
+
+    if len(f) > 1000:
+        n_decimals = 2
+    else:
+        n_decimals = 1
+
+    f_uniq = np.around(f, decimals=n_decimals)
+    return f_uniq
+
 def reliability(fx, fx_prob, obs):
     """Reliability (REL) of the forecast.
 
@@ -109,12 +144,8 @@ def reliability(fx, fx_prob, obs):
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
-    if len(f) < 1000:
-        n_decimals = 1
-    else:
-        n_decimals = 2
+    f = _unique_forecasts(f)
 
-    f = np.around(f, decimals=n_decimals)
     rel = 0.0
     for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
         o_i = np.mean(o[f == f_i])
@@ -158,12 +189,8 @@ def resolution(fx, fx_prob, obs):
     f = fx_prob / 100.0
 
     # get unique forecast probabilities
-    if len(f) < 1000:
-        n_decimals = 1
-    else:
-        n_decimals = 2
+    f = _unique_forecasts(f)
 
-    f = np.around(f, decimals=n_decimals)
     res = 0.0
     o_avg = np.mean(o)
     for f_i, N_i in np.nditer(np.unique(f, return_counts=True)):
@@ -178,7 +205,7 @@ def uncertainty(fx, obs):
 
         UNC = base_rate * (1 - base_rate)
 
-    where base_rate = 1/n * sum_{i=1}^n o_i, and o_i is the observed event.
+    where base_rate = 1/n sum_{i=1}^n o_i, and o_i is the observed event.
 
     Parameters
     ----------
@@ -206,7 +233,7 @@ def uncertainty(fx, obs):
 def sharpness(fx_lower, fx_upper):
     """Sharpness (SH).
 
-        SH = 1/n * sum_{i=1}^n (f_{u,i} - f_{l,i})
+        SH = 1/n sum_{i=1}^n (f_{u,i} - f_{l,i})
 
     where n is the total number of forecasts, f_{u,i} is the upper prediction
     interval value and f_{l,i} is the lower prediction interval value for
