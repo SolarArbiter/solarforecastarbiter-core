@@ -87,6 +87,10 @@ def update_observation_data(api, sites, observations, start, end):
             logger.warning(f'Could not retrieve data for site {site.name}'
                            f' between {start} and {end}.')
             continue
+        except ValueError as e:
+            logger.error(f'Error retrieving data for site {site.name}'
+                         f' between {start} and {end}: %s', e)
+            continue
         site_observations = [obs for obs in observations if obs.site == site]
         for obs in site_observations:
             common.post_observation_data(api, obs, obs_df, start, end)
