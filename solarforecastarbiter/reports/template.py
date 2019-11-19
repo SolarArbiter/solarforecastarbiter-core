@@ -54,7 +54,7 @@ def template_report(report, metadata, metrics,
         start=metadata.start.strftime(strftime),
         end=metadata.end.strftime(strftime),
         now=metadata.now.strftime(strftime),
-        proc_fx_obs=processed_forecasts_observations,
+        proc_fx_obs=processed_forecasts_observations,  # [(fx_ob, ROUTE) for fx_ob in processed_forecasts_observations] ?
         validation_issues=metadata.validation_issues,
         versions=metadata.versions,
         script_metrics=script_metrics,

@@ -870,7 +870,7 @@ class ForecastObservation(BaseModel):
     __post_init__ checking.
     """
     forecast: Forecast
-    observation: Observation
+    observation: Union[Observation, Aggregate]
 
     def __post_init__(self):
         __check_units__(self.forecast, self.observation)

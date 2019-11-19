@@ -39,7 +39,7 @@ def apply_validation(data, qfilter, handle_func):
     for model, values in data.items():
 
         # Apply only to Observations
-        if isinstance(model, datamodel.Observation):
+        if isinstance(model, (datamodel.Observation, datamodel.Aggregate)):
             if values.empty:
                 validated_data[model] = values.value
             else:
@@ -51,7 +51,8 @@ def apply_validation(data, qfilter, handle_func):
         elif isinstance(model, datamodel.Forecast):
             validated_data[model] = values
         else:
-            raise TypeError(f"{model} not an Observation or Forecast")
+            raise TypeError(
+                f"{model} not an Observation, Aggregate, or Forecast")
 
     return validated_data
 

@@ -85,13 +85,21 @@ def get_data_for_report(session, report):
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
-        observation_id = fxobs.observation.observation_id
         if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
                 forecast_id, report.start, report.end)
         if fxobs.observation not in data:
-            data[fxobs.observation] = session.get_observation_values(
-                observation_id, report.start, report.end)
+            # alternative: add APISession.get_values(datamodel_obj, start, end)
+            # that looks up the right id attribute can calls the right
+            # get values method.
+            if isinstance(fxobs.observation, datamodel.Observation):
+                observation_id = fxobs.observation.observation_id
+                data[fxobs.observation] = session.get_observation_values(
+                    observation_id, report.start, report.end)
+            else:
+                agg_id = fxobs.observation.aggregate_id
+                data[fxobs.observation] = session.get_aggregate_values(
+                    agg_id, report.start, report.end)
     return data
 
 
