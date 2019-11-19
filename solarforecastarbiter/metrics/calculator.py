@@ -60,9 +60,11 @@ def calculate_metrics(processed_pairs, categories, metrics,
 
     for proc_fxobs in processed_pairs:
 
-        # Deterministic
-        if isinstance(proc_fxobs, datamodel.ProcessedForecastObservation):
-            # TODO: add ProbabilisticForecast check and test
+        # TODO: support ProbabilisticForecast
+        if isinstance(proc_fxobs.forecast, datamodel.ProbabilisticForecast):
+            raise NotImplementedError
+        else:
+            # calculate_deterministic_metrics
             metrics_ = calculate_deterministic_metrics(proc_fxobs,
                                                        categories,
                                                        metrics,
@@ -94,8 +96,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
     Parameters
     ----------
-    processed_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation
+    processed_fx_obs : datamodel.ProcessedForecastObservation
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
@@ -115,9 +116,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         Structure is:
 
           1. Category type as tuple (e.g., ('total'), ('month', 'hour'))
-          2. Metric name (e.g., 'mae', 'rmse')
-          3. Category group (e.g, 0, 1, 2 ..., 11 for month)g1
-          4. Value
+          2. Metric type (e.g., 'mae', 'rmse')
+          3. Category value (e.g, 0, 1, 2 ..., 11 for month)g1
+          4. Metric value
 
         If no forecast data is found an empty dictionary is returned.
 

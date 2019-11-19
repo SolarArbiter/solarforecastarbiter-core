@@ -19,7 +19,7 @@ Steps:
             * versions
         * data: base64 encoded raw report
 
-      The metrics will aloso be JSON with keys like:
+      The metrics will also be JSON with keys like:
         * metrics
             * total
             * category A
