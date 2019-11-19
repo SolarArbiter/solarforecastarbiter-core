@@ -61,7 +61,8 @@ def calculate_metrics(processed_pairs, categories, metrics,
     for proc_fxobs in processed_pairs:
 
         # TODO: support ProbabilisticForecast
-        if isinstance(proc_fxobs.forecast, datamodel.ProbabilisticForecast):
+        if isinstance(proc_fxobs.original.forecast,
+                      datamodel.ProbabilisticForecast):
             raise NotImplementedError
         else:
             # calculate_deterministic_metrics
@@ -122,6 +123,12 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
         If no forecast data is found an empty dictionary is returned.
 
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast, obersvation timeseries data or no metrics
+        are specified.
+
     """
     calc_metrics = defaultdict(dict)
     fx = processed_fx_obs.forecast_values
@@ -133,8 +140,12 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         ref_fx = ref_fx_obs.forecast_values
 
     # No data or metrics
-    if fx.empty or obs.empty or len(metrics) == 0:
-        return calc_metrics
+    if fx.empty:
+        raise RuntimeError("No Forecast timeseries data.")
+    elif obs.empty:
+        raise RuntimeError("No Obersvation timeseries data.")
+    elif len(metrics) == 0:
+        raise RuntimeError("No metrics specified.")
 
     # Dataframe for grouping
     df = pd.concat({'forecast': fx,

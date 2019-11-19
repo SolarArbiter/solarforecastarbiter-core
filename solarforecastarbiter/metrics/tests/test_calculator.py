@@ -48,6 +48,7 @@ def test_calculate_metrics(categories, metrics,
                            create_processed_fxobs,
                            many_forecast_observation):
     proc_fx_obs = []
+
     for fx_obs in many_forecast_observation:
         proc_fx_obs.append(
             create_processed_fxobs(fx_obs,
@@ -58,6 +59,15 @@ def test_calculate_metrics(categories, metrics,
     ref_fx_obs = create_processed_fxobs(many_forecast_observation[0],
                                         np.random.randn(10)+10,
                                         np.random.randn(10)+10)
+
+    # Error
+    if len(metrics) == 0:
+        with pytest.raises(RuntimeError):
+            calculator.calculate_metrics(proc_fx_obs,
+                                         categories, metrics,
+                                         ref_pair=ref_fx_obs,
+                                         normalizer=1.0)
+        return
 
     # All
     all_result = calculator.calculate_metrics(proc_fx_obs,
@@ -130,12 +140,19 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
     if normalizer is not None:
         kws['normalizer'] = normalizer
 
-    # Check if reference forecast is required
-    if (ref_values is None and any(m in deterministic._REQ_REF_FX
+    if values[0].size == 0 or values[1].size == 0 or len(metrics) == 0:
+        # Check if timeseries and metrics provided
+        with pytest.raises(RuntimeError):
+            calculator.calculate_deterministic_metrics(
+                pair, categories, metrics, **kws)
+
+    elif (ref_values is None and any(m in deterministic._REQ_REF_FX
                                    for m in metrics)):
+        # Check if reference forecast is required
         with pytest.raises(AttributeError):
             calculator.calculate_deterministic_metrics(
                 pair, categories, metrics, **kws)
+
     else:
         result = calculator.calculate_deterministic_metrics(
             pair, categories, metrics, **kws)
