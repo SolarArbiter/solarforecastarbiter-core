@@ -950,3 +950,47 @@ class APISession(requests.Session):
         out = json_payload_to_observation_df(req.json())
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
+
+    @ensure_timestamps('start', 'end')
+    def get_values(self, obj, start, end, interval_label=None):
+        """
+        Get time series values from start to end for object from the API
+
+        Parameters
+        ----------
+        obj : datamodel.Observation, datamodel.Aggregate, datamodel.Forecast, datamodel.ProbabilisticForecastConstantValues
+            Data model object for which to obtain time series data.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        interval_label : str or None
+            If beginning or ending, return only data that is
+            valid between start and end. If None, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.Series or pandas.DataFrame
+            With a datetime index. If DataFrame, (value, quality_flag)
+            columns
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """
+        # order avoids possible issues with inheritance
+        if isinstance(datamodel.ProbabilisticForecastConstantValue):
+            f = self.get_probabilistic_forecast_constant_value_values
+            obj_id = obj.forecast_id
+        elif isinstance(datamodel.Forecast):
+            f = self.get_forecast_values
+            obj_id = obj.forecast_id
+        elif isinstance(datamodel.Aggregate):
+            f = self.get_aggregate_values
+            obj_id = obj.aggregate_id
+        elif isinstance(datamodel.Observation):
+            f = self.get_observation_values
+            obj_id = obj.observation_id
+        return f(obj_id, start, end, interval_label=interval_label)
