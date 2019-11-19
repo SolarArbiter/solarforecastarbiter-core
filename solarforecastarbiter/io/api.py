@@ -991,16 +991,16 @@ class APISession(requests.Session):
             If start or end cannot be converted into a Pandas Timestamp
         """
         # order avoids possible issues with inheritance
-        if isinstance(datamodel.ProbabilisticForecastConstantValue):
+        if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
             f = self.get_probabilistic_forecast_constant_value_values
             obj_id = obj.forecast_id
-        elif isinstance(datamodel.Forecast):
+        elif isinstance(obj, datamodel.Forecast):
             f = self.get_forecast_values
             obj_id = obj.forecast_id
-        elif isinstance(datamodel.Aggregate):
+        elif isinstance(obj, datamodel.Aggregate):
             f = self.get_aggregate_values
             obj_id = obj.aggregate_id
-        elif isinstance(datamodel.Observation):
+        elif isinstance(obj, datamodel.Observation):
             f = self.get_observation_values
             obj_id = obj.observation_id
         return f(obj_id, start, end, interval_label=interval_label)

@@ -88,9 +88,9 @@ def get_data_for_report(session, report):
         if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
                 forecast_id, report.start, report.end)
-        if fxobs.observation not in data:
-            data[fxobs.observation] = session.get_values(
-                fxobs.observation, report.start, report.end)
+        if fxobs.data_object not in data:
+            data[fxobs.data_object] = session.get_values(
+                fxobs.data_object, report.start, report.end)
     return data
 
 
@@ -188,7 +188,12 @@ def validate_resample_align(report, metadata, data):
 def infer_timezone(report_request):
     # maybe not ideal when comparing across sites. might need explicit
     # tz options ('infer' or spec IANA tz) in report interface.
-    return report_request.forecast_observations[0].observation.site.timezone
+    fxobs_0 = report_request.forecast_observations[0]
+    if isinstance(fxobs_0, datamodel.ForecastObservation):
+        timezone = fxobs_0.observation.site.timezone
+    else:
+        timezone = fxobs_0.aggregate.timezone
+    return timezone
 
 
 def create_raw_report_from_data(report, data):

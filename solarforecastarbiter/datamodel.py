@@ -1005,7 +1005,7 @@ class ProcessedForecastObservation(BaseModel):
     parameters
     """
     # do this instead of subclass to compare objects later
-    original: ForecastObservation
+    original: Union[ForecastObservation, ForecastAggregate]
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
@@ -1075,6 +1075,6 @@ class Report(BaseModel):
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
         __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.observation) for k in self.forecast_observations)))
+            ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()

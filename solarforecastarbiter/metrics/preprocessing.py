@@ -64,7 +64,7 @@ def resample_and_align(fx_obs, data, tz):
 
     Parameters
     ----------
-    fx_obs : solarforecastarbiter.datamodel.ForecastObservation
+    fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
         Pair of forecast and observation.
     data : dict
         Keys are Observation and Forecast models and values
@@ -81,7 +81,7 @@ def resample_and_align(fx_obs, data, tz):
       * Add other resampling functions (besides mean like first, last, median)
     """
     fx = fx_obs.forecast
-    obs = fx_obs.observation
+    obs = fx_obs.data_object
 
     # Resample observation
     closed = datamodel.CLOSED_MAPPING[fx.interval_label]

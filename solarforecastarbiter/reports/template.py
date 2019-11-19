@@ -9,7 +9,7 @@ from bokeh.layouts import gridplot
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
                     select_autoescape, Template)
 
-
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import figures
 
 
@@ -49,12 +49,22 @@ def template_report(report, metadata, metrics,
 
     strftime = '%Y-%m-%d %H:%M:%S %z'
 
+    def route_id(fx_ob):
+        if isinstance(fx_ob.original, datamodel.ForecastObservation):
+            return 'observations', fx_ob.original.observation.observation_id
+        else:
+            return 'aggregates', fx_ob.original.aggregate.aggregate_id
+
+    proc_fx_obs = [
+        (fx_ob, *route_id(fx_ob)) for fx_ob in processed_forecasts_observations
+    ]
+
     rendered = template.render(
         name=metadata.name,
         start=metadata.start.strftime(strftime),
         end=metadata.end.strftime(strftime),
         now=metadata.now.strftime(strftime),
-        proc_fx_obs=processed_forecasts_observations,  # [(fx_ob, ROUTE) for fx_ob in processed_forecasts_observations] ?
+        proc_fx_obs=proc_fx_obs,
         validation_issues=metadata.validation_issues,
         versions=metadata.versions,
         script_metrics=script_metrics,
