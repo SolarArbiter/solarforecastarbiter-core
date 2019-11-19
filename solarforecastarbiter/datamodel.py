@@ -870,11 +870,31 @@ class ForecastObservation(BaseModel):
     __post_init__ checking.
     """
     forecast: Forecast
-    observation: Union[Observation, Aggregate]
+    observation: Observation
+    data_object: Observation = field(init=False)
 
     def __post_init__(self):
-        __check_units__(self.forecast, self.observation)
-        __check_interval_compatibility__(self.forecast, self.observation)
+        object.__setattr__(self, 'data_object', self.observation)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
+
+
+@dataclass(frozen=True)
+class ForecastAggregate(BaseModel):
+    """
+    Class for pairing Forecast and Aggregate objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    aggregate: Aggregate
+    data_object: Aggregate = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, 'data_object', self.aggregate)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
 
 
 @dataclass(frozen=True)

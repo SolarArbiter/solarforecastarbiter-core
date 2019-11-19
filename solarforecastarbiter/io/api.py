@@ -639,10 +639,20 @@ class APISession(requests.Session):
         for key in ('name', 'report_id', 'status'):
             req_dict[key] = rep_dict.get(key, '')
         req_dict['metrics'] = tuple(req_dict['metrics'])
-        req_dict['forecast_observations'] = tuple([
-            datamodel.ForecastObservation(self.get_forecast(o[0]),
-                                          self.get_observation(o[1]))
-            for o in req_dict['object_pairs']])
+        pairs = []
+        for o in req_dict['object_pairs']:
+            fx = self.get_forecast(o['forecast'])
+            if 'observation' in o:
+                obs = self.get_observation(o['observation'])
+                pair = datamodel.ForecastObservation(fx, obs)
+            elif 'aggregate' in o:
+                agg = self.get_aggregate(o['aggregate'])
+                pair = datamodel.ForecastAggregate(fx, agg)
+            else:
+                raise ValueError('must provide observation or aggregate in all'
+                                 'object_pairs')
+            pairs.append(pair)
+        req_dict['forecast_observations'] = tuple(pairs)
         return datamodel.Report.from_dict(req_dict)
 
     def get_report(self, report_id):
