@@ -10,9 +10,9 @@
             "rmse"
         ],
         "categories": [
-          "total",
-          "date",
-          "hour"
+          "Total",
+          "Date",
+          "Hour of the day"
         ],
         "object_pairs": [
             ["9f657636-7e49-11e9-b77f-0a580a8003e9", "31ae8548-9a07-11e9-b2f4-0a580a8003d5"],

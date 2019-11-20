@@ -17,9 +17,16 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import deterministic
 
 
-AVAILABLE_CATEGORIES = [
-    'total', 'year', 'month', 'day', 'hour', 'date', 'weekday'
-]
+# Keys are the category names, values are the mapping used to groupby
+AVAILABLE_CATEGORIES = {
+    'Total': 'total',
+    'Year': 'year',
+    'Month of the year': 'month',
+    'Day of the month': 'day',
+    'Hour of the day': 'hour',
+    'Date': 'date',
+    'Day of the week': 'weekday',
+}
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
@@ -116,7 +123,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         Contains all the computed metrics by categories.
         Structure is:
 
-          1. Category type as tuple (e.g., ('total'), ('month', 'hour'))
+          1. Category type as tuple (e.g., ('Total'), )
           2. Metric type (e.g., 'mae', 'rmse')
           3. Category value (e.g, 0, 1, 2 ..., 11 for month)g1
           4. Metric value
@@ -157,13 +164,14 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         calc_metrics[category] = {}
 
         # total (special category)
-        if category == 'total':
+        if category == 'Total':
             for metric_ in metrics:
                 res = _apply_deterministic_metric_func(
                     metric_, fx, obs, ref_fx=ref_fx, normalizer=normalizer)
                 calc_metrics[category][metric_] = res
         else:
-            index_category = getattr(df.index, category)
+            groupby_category = AVAILABLE_CATEGORIES[category]
+            index_category = getattr(df.index, groupby_category)
 
             for name, group in df.groupby(index_category):
                 calc_metrics[category][name] = {}

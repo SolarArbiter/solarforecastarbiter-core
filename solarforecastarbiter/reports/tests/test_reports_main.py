@@ -81,7 +81,7 @@ def test_all_categories_render(mock_data, report_objects):
         end=report.end,
         forecast_observations=report.forecast_observations,
         metrics=("mae", "rmse", "mbe"),
-        categories=calculator.AVAILABLE_CATEGORIES,
+        categories=list(calculator.AVAILABLE_CATEGORIES.keys()),
         report_id=report.report_id,
         filters=report.filters
     )

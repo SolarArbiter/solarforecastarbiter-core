@@ -12,6 +12,7 @@ from jinja2 import (Environment, DebugUndefined, PackageLoader,
 
 
 from solarforecastarbiter.reports import figures
+from solarforecastarbiter.metrics import calculator
 
 
 logger = logging.getLogger(__name__)
@@ -60,14 +61,15 @@ def template_report(report, metadata, metrics,
         versions=metadata.versions,
         script_metrics=script_metrics,
         tables=data_table_div,
-        figures=figures_div)
+        figures=figures_div,
+        metrics_toc=calculator.AVAILABLE_CATEGORIES)
 
     return rendered
 
 
 def _metrics_script_divs(report, metrics):
     # Total is required
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
+    cds = figures.construct_metrics_cds(metrics, 'Total', index='forecast')
     data_table = figures.metrics_table(cds)
 
     # Create initial bar figures
@@ -76,16 +78,16 @@ def _metrics_script_divs(report, metrics):
         fig = figures.bar(cds, metric)
         figures_bar.append(fig)
 
-    # Components for 'total'
+    # Components for 'Total' category
     script, (data_table_div, *figures_bar_divs) = components((data_table,
                                                               *figures_bar))
 
     script_metrics = script
-    figures_dict = dict(total=figures_bar_divs)
+    figures_dict = dict(Total=figures_bar_divs)
 
     # Components for other metrics
     for category in report.categories:
-        if category == 'total':
+        if category == 'Total':
             continue
 
         script_cat, figures_bar_cat = _loop_over_metrics(report, metrics,

@@ -822,7 +822,7 @@ class Report(BaseModel):
     end: pd.Timestamp
     forecast_observations: Tuple[ForecastObservation, ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
-    categories: Tuple[str, ...] = ('total', )
+    categories: Tuple[str, ...] = ('Total', )
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'

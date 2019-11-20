@@ -195,7 +195,7 @@ def scatter(fx_obs_cds):
 def construct_metrics_cds(metrics, kind, index='forecast'):
     """
     Possibly bad assumptions:
-    * metrics contains keys: name, total, month, day, hour
+    * metrics contains keys: name, Total, etc.
 
     Parameters
     ----------
@@ -203,7 +203,7 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
-        One of total, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
     index : str
         Determines if the index is the array of metrics ('metric') or
         forecast ('forecast') names
@@ -212,7 +212,7 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
     -------
     cds : bokeh.models.ColumnDataSource
     """
-    if kind == 'total':
+    if kind == 'Total':
         df = pd.DataFrame({m['name']: m[kind] for m in metrics})
     df = df.rename_axis(index='metric', columns='forecast')
     if index == 'metric':
@@ -236,7 +236,7 @@ def construct_metrics_series(metrics, kind):
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
-        One of total, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
 
     Returns
     -------
@@ -250,7 +250,7 @@ def construct_metrics_series(metrics, kind):
     # this seems the most straightforward to me
     for m in metrics:
         for col in m[kind]:
-            if kind == 'total':
+            if kind == 'Total':
                 forecasts.append(m['name'])
                 m_types.append(col)
                 m_indexes.append(0)
@@ -318,14 +318,14 @@ def bar_subdivisions(cds, kind, metric):
              |_________________
     Fx 2 MAE |
              |_________________
-               year, month, day, or hour
+               Year, Month of the year, etc.
 
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
         Fields must be kind and the names of the forecasts
     kind : str
-        One of year, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
 
     Returns
     -------
@@ -392,7 +392,7 @@ def bar_subdivisions(cds, kind, metric):
             fig_kwargs['x_range'] = fig.x_range
 
         # Hover tool and use datetime format in special cases
-        if kind == 'date':
+        if kind == 'Date':
             formatter = DatetimeTickFormatter(days='%Y-%m-%d')
             fig.xaxis.formatter = formatter
             tooltips = [

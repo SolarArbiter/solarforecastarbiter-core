@@ -520,7 +520,7 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
             "end": "2019-04-04T23:59:00-07:00",
             "filters": [],
             "metrics": ["mae", "rmse", "mbe"],
-            "categories": ["total", "day", 'hour'],
+            "categories": ["Total", "Date", "Hour of the day"],
             "object_pairs": [
                 ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
                  "9f657636-7e49-11e9-b77f-0a580a8003e9"],

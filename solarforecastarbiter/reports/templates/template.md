@@ -24,27 +24,11 @@ Contents:
   * [Observations and forecasts](#observations-and-forecasts)
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
-  {% if 'total' in figures.keys() %}
-  * [Total period analysis](#total-period-analysis)
+{% for met_key, met_val in metrics_toc.items() %}
+  {% if metric in figures.keys() %}
+  * [{{met_key}} analysis](#{{met_val}}-analysis)
   {% endif %}
-  {% if 'month' in figures.keys() %}
-  * [Monthly analysis](#monthly-analysis)
-  {% endif %}
-  {% if 'day' in figures.keys() %}
-  * [Day of month analysis](#daily-analysis)
-  {% endif %}
-  {% if 'hour' in figures.keys() %}
-  * [Hour of day analysis](#hourly-analysis)
-  {% endif %}
-  {% if 'date' in figures.keys() %}
-  * [Date analysis](#date-analysis)
-  {% endif %}
-  {% if 'year' in figures.keys() %}
-  * [Yearly analysis](#yearly-analysis)
-  {% endif %}
-  {% if 'weekday' in figures.keys() %}
-  * [Day of week analysis](#weekday-analysis)
-  {% endif %}
+{% endfor %}
 * [Versions](#versions)
 * [Hash](#hash)
 
@@ -117,7 +101,7 @@ Metrics are displayed in tables and figures below for one or more time periods. 
 {#{ figures | safe }#}
 
 {% for category in figures.keys() %}
-  {% include 'metrics_' + category + '.md' %}
+  {% include 'metrics_' + metrics_toc[category] + '.md' %}
 {% endfor %}
 
 ## Versions

@@ -10,6 +10,7 @@ from solarforecastarbiter.metrics import (calculator,
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
+LIST_OF_CATEGORIES = list(calculator.AVAILABLE_CATEGORIES.keys())
 
 
 @pytest.fixture()
@@ -42,7 +43,7 @@ def create_datetime_index():
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('categories,metrics', [
     ([], []),
-    (calculator.AVAILABLE_CATEGORIES, DETERMINISTIC_METRICS)
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
 ])
 def test_calculate_metrics(categories, metrics,
                            create_processed_fxobs,
@@ -97,11 +98,11 @@ def test_calculate_metrics(categories, metrics,
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('categories', [
     [],
-    *list(itertools.combinations(calculator.AVAILABLE_CATEGORIES, 1)),
-    calculator.AVAILABLE_CATEGORIES[0:1],
-    calculator.AVAILABLE_CATEGORIES[0:2],
-    calculator.AVAILABLE_CATEGORIES[1:],
-    calculator.AVAILABLE_CATEGORIES
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES[1:],
+    LIST_OF_CATEGORIES
 ])
 @pytest.mark.parametrize('metrics', [
     [],
@@ -147,7 +148,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                 pair, categories, metrics, **kws)
 
     elif (ref_values is None and any(m in deterministic._REQ_REF_FX
-                                   for m in metrics)):
+                                     for m in metrics)):
         # Check if reference forecast is required
         with pytest.raises(AttributeError):
             calculator.calculate_deterministic_metrics(
@@ -166,7 +167,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
         else:
             assert sorted(result.keys()) == sorted(categories)
             for cat, val_cat in result.items():
-                if cat == 'total':
+                if cat == 'Total':
                     assert sorted(val_cat.keys()) == sorted(metrics)
                     # metrics
                     for metric, val_metric in val_cat.items():
@@ -182,22 +183,22 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
 
                         fx_values = pair.forecast_values
                         # has expected groupings
-                        if cat == 'month':
+                        if cat == 'Month of the year':
                             grps = fx_values.groupby(
                                 fx_values.index.month).groups
-                        elif cat == 'hour':
+                        elif cat == 'Hour of the day':
                             grps = fx_values.groupby(
                                 fx_values.index.hour).groups
-                        elif cat == 'year':
+                        elif cat == 'Year':
                             grps = fx_values.groupby(
                                 fx_values.index.year).groups
-                        elif cat == 'day':
+                        elif cat == 'Day of the month':
                             grps = fx_values.groupby(
                                 fx_values.index.day).groups
-                        elif cat == 'date':
+                        elif cat == 'Date':
                             grps = fx_values.groupby(
                                 fx_values.index.date).groups
-                        elif cat == 'weekday':
+                        elif cat == 'Day of the week':
                             grps = fx_values.groupby(
                                 fx_values.index.weekday).groups
                         assert sorted(grps) == sorted(val_cat.keys())
