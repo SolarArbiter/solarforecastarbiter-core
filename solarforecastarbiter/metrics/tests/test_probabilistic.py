@@ -192,7 +192,15 @@ def test_sharpness(fx_lower, fx_upper, value):
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    # 2 samples, 2 intervals
+    # 1 sample, 1 CDF interval
+    (
+        np.array([[10]]),
+        np.array([[100]]),
+        np.array([8]),
+        0.0,
+    ),
+
+    # 2 samples, 2 CDF intervals
     (
         np.array([[10, 20], [10, 20]]),
         np.array([[100, 100], [100, 100]]),
@@ -203,10 +211,28 @@ def test_sharpness(fx_lower, fx_upper, value):
         np.array([[10, 20], [10, 20]]),
         np.array([[0, 100], [0, 100]]),
         np.array([8, 8]),
-        10.0,
+        1.0 * 10,
+    ),
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[50, 100], [50, 100]]),
+        np.array([8, 8]),
+        0.5 * 10,
+    ),
+    (
+        np.array([[10, 20], [5, 10]]),
+        np.array([[50, 100], [50, 100]]),
+        np.array([8, 8]),
+        (0.5 * 10 + 0.5 * 5) / 2,
+    ),
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[50, 100], [30, 100]]),
+        np.array([8, 8]),
+        (0.5 * 10 + 0.7 * 10) / 2
     ),
 
-    # 2 samples, 3 intervals
+    # 2 samples, 3 CDF intervals
     (
         np.array([[10, 20, 30], [10, 20, 30]]),
         np.array([[100, 100, 100], [100, 100, 100]]),
@@ -224,6 +250,12 @@ def test_sharpness(fx_lower, fx_upper, value):
         np.array([[0, 0, 100], [0, 0, 100]]),
         np.array([8, 8]),
         20.0,
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 50, 100], [0, 50, 100]]),
+        np.array([8, 8]),
+        1.0 * 10 + 0.5 * 10,
     ),
 ])
 def test_crps(fx, fx_prob, obs, value):
