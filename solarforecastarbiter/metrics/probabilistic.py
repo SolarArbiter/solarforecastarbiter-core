@@ -369,7 +369,20 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
 
     """
 
+    # match observations to fx shape: (n,) => (n, d)
+    obs = np.tile(obs, (fx.shape[1], 1)).T
+
     # event: 0=did not happen, 1=did happen
     O = np.where(obs <= fx, 1.0, 0.0)
 
-    returns None
+    # forecast probabilities [unitless]
+    F = fx_prob / 100.0
+
+    # integrate along each sample
+    D = np.abs(F - O)
+    dx = np.diff(fx, axis=1)
+    D_int = np.sum(D[:, :-1] * dx, axis=1)
+
+    # mean of all samples
+    crps = np.mean(D_int)
+    return crps

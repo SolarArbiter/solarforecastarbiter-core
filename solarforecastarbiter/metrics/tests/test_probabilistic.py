@@ -189,3 +189,43 @@ def test_brier_decomposition(fx, fx_prob, obs):
 def test_sharpness(fx_lower, fx_upper, value):
     sh = prob.sharpness(fx_lower, fx_upper)
     assert pytest.approx(sh) == value
+
+
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    # 2 samples, 2 intervals
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[100, 100], [100, 100]]),
+        np.array([8, 8]),
+        0.0,
+    ),
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[0, 100], [0, 100]]),
+        np.array([8, 8]),
+        10.0,
+    ),
+
+    # 2 samples, 3 intervals
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[100, 100, 100], [100, 100, 100]]),
+        np.array([8, 8]),
+        0.0,
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 100, 100], [0, 100, 100]]),
+        np.array([8, 8]),
+        10.0,
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 0, 100], [0, 0, 100]]),
+        np.array([8, 8]),
+        20.0,
+    ),
+])
+def test_crps(fx, fx_prob, obs, value):
+    crps = prob.continuous_ranked_probability_score(fx, fx_prob, obs)
+    assert crps == value
