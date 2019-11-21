@@ -31,7 +31,7 @@ def _test_data(report_objects):
 
 @pytest.fixture()
 def mock_data(mocker, _test_data):
-    def get_data(id_, start, end):
+    def get_data(id_, start, end, interval_label=None):
         return _test_data[id_].loc[start:end]
 
     get_forecast_values = mocker.patch(

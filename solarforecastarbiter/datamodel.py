@@ -67,6 +67,8 @@ def _dict_factory(inp):
 
     if 'units' in dict_:
         del dict_['units']
+    if 'data_object' in dict_:
+        del dict_['data_object']
     return dict_
 
 

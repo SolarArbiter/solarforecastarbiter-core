@@ -1208,10 +1208,10 @@ def report_text():
         ],
         "metrics": ["mae", "rmse", "mbe"],
         "object_pairs": [
-            ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"],
-            ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"}
         ]
     },
     "raw_report": null,
@@ -1355,7 +1355,7 @@ def aggregate_forecast_text():
   "extra_parameters": "",
   "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
   "interval_label": "beginning",
-  "interval_length": 5,
+  "interval_length": 60,
   "interval_value_type": "interval_mean",
   "issue_time_of_day": "06:00",
   "lead_time_to_start": 60,
