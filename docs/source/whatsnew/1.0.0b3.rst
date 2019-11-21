@@ -14,6 +14,8 @@ API Changes
   (:pull:`256`)
 * Add :py:meth:`~solarforecastarbiter.io.api.APISession.get_values`.
   (:pull:`256`)
+* Added the `provider` parameter to :py:mod:`solarforecastarbiter.Datamodel`
+  objects that were missing it
 
 Enhancements
 ~~~~~~~~~~~~

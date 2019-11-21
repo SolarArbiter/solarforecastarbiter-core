@@ -222,6 +222,7 @@ class APISession(requests.Session):
         """
         obs_dict = observation.to_dict()
         obs_dict.pop('observation_id')
+        obs_dict.pop('provider')
         site = obs_dict.pop('site')
         obs_dict['site_id'] = site['site_id']
         obs_json = json.dumps(obs_dict)
@@ -292,6 +293,7 @@ class APISession(requests.Session):
         """
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
+        fx_dict.pop('provider')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
         if site is None and agg is not None:
@@ -435,6 +437,7 @@ class APISession(requests.Session):
         """
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
+        fx_dict.pop('provider')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
         if site is None and agg is not None:
@@ -716,6 +719,7 @@ class APISession(requests.Session):
         """
         report_dict = report.to_dict()
         report_dict.pop('report_id')
+        report_dict.pop('provider')
         name = report_dict.pop('name')
         for key in ('raw_report', '__version__', 'status'):
             del report_dict[key]
