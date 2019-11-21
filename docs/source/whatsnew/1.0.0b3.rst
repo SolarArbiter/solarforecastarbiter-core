@@ -9,6 +9,9 @@ This is the third 1.0 beta release.
 API Changes
 ~~~~~~~~~~~
 
+* Add additional metrics for probabilistic forecasts
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`. (:issue:`250`) (:pull:`257`)
+
 Enhancements
 ~~~~~~~~~~~~
 
