@@ -28,10 +28,15 @@ Enhancements
 * :py:mod:`solarforecastarbiter.validation.tasks.daily_observation_validation`
   only validates data for observations with the same provider as the user's
   organization
+* Merge multiple quality flag filters together before applying in report
+  generation.
 
 Bug fixes
 ~~~~~~~~~
 * Log MIDC CSV parsing errors, but continue with other sites (:issue:`254`)
+* Fix issue of assuming the first report filter is a QualityFlagFilter,
+  partially addressing (:pull:`251`)
+* Test that pandoc report generation actually generates the HTML body
 
 Contributors
 ~~~~~~~~~~~~
