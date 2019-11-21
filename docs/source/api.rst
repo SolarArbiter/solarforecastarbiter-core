@@ -47,6 +47,42 @@ Probabilistic forecasts:
    datamodel.ProbabilisticForecast
    datamodel.ProbabilisticForecastConstantValue
 
+Aggregates:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.AggregateObservation
+   datamodel.Aggregate
+
+Data validation toolkit filters for use with reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.BaseFilter
+   datamodel.QualityFlagFilter
+   datamodel.TimeOfDayFilter
+   datamodel.ValueFilter
+
+Containers to associate forecasts and observations for use with reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ForecastObservation
+   datamodel.ProcessedForecastObservation
+
+Reports:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ReportMetadata
+   datamodel.RawReport
+   datamodel.Report
+
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 
@@ -286,7 +322,6 @@ Forecasts
    io.api.APISession.post_forecast_values
 
 Probabilistic Forecasts
------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -297,6 +332,30 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
+
+Aggregates
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.get_aggregate
+   io.api.APISession.list_aggregates
+   io.api.APISession.create_aggregate
+   io.api.APISession.get_aggregate_values
+
+Reports
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.process_report_dict
+   io.api.APISession.get_report
+   io.api.APISession.list_reports
+   io.api.APISession.create_report
+   io.api.APISession.post_raw_report_processed_data
+   io.api.APISession.get_raw_report_processed_data
+   io.api.APISession.post_raw_report
+   io.api.APISession.update_report_status
 
 Utils
 -----
@@ -351,7 +410,22 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.forecast_skill
    metrics.deterministic.pearson_correlation_coeff
    metrics.deterministic.coeff_determination
+   metrics.deterministic.kolmogorov_smirnov_integral
+   metrics.deterministic.over
+   metrics.deterministic.combined_performance_index
 
+Functions to compute forecast probabilistic performance metrics:
+
+.. autosummary::
+    :toctree: generated/
+
+    metrics.probabilistic.brier_score
+    metrics.probabilistic.brier_skill_score
+    metrics.probabilistic.brier_decomposition
+    metrics.probabilistic.reliability
+    metrics.probabilistic.resolution
+    metrics.probabilistic.uncertainty
+    metrics.probabilistic.sharpness
 
 Reports
 =======

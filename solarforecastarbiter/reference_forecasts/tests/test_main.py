@@ -289,6 +289,10 @@ def test_find_reference_nwp_forecasts(ac_power_forecast_metadata):
 @pytest.fixture()
 def forecast_list(ac_power_forecast_metadata):
     model = 'nam_12km_cloud_cover_to_hourly_mean'
+    prob_dict = ac_power_forecast_metadata.to_dict()
+    prob_dict['constant_values'] = (0, 50, 100)
+    prob_dict['axis'] = 'y'
+    prob_dict['extra_parameters'] = '{"model": "gefs_half_deg_to_hourly_mean", "is_reference_forecast": true}'  # NOQA
     return [replace(ac_power_forecast_metadata,
                     extra_parameters=(
                         '{"model": "%s", "is_reference_forecast": true}'
@@ -301,6 +305,7 @@ def forecast_list(ac_power_forecast_metadata):
                     extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='2',
                     variable='ghi'),
+            datamodel.ProbabilisticForecast.from_dict(prob_dict),
             replace(ac_power_forecast_metadata,
                     extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='3',
@@ -323,6 +328,8 @@ def test_process_nwp_forecast_groups(mocker, forecast_list):
     api = mocker.MagicMock()
     run_nwp = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
+    post_vals = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main._post_forecast_values')
 
     class res:
         ac_power = [0]
@@ -335,7 +342,7 @@ def test_process_nwp_forecast_groups(mocker, forecast_list):
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
     assert not logger.error.called
     assert not logger.warning.called
-    assert api.post_forecast_values.call_count == 3
+    assert post_vals.call_count == 4
 
 
 @pytest.mark.parametrize('run_time', [None, pd.Timestamp('20190501T0000Z')])
@@ -344,6 +351,8 @@ def test_process_nwp_forecast_groups_issue_time(mocker, forecast_list,
     api = mocker.MagicMock()
     run_nwp = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
+    post_vals = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main._post_forecast_values')
 
     class res:
         ac_power = [0]
@@ -352,7 +361,7 @@ def test_process_nwp_forecast_groups_issue_time(mocker, forecast_list,
     run_nwp.return_value = res
     fxs = main.find_reference_nwp_forecasts(forecast_list[:-4], run_time)
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
-    assert api.post_forecast_values.call_count == 3
+    assert post_vals.call_count == 4
     run_nwp.assert_called_with(mocker.ANY, mocker.ANY, mocker.ANY,
                                pd.Timestamp('20190501T0500Z'))
 
@@ -361,6 +370,8 @@ def test_process_nwp_forecast_groups_missing_var(mocker, forecast_list):
     api = mocker.MagicMock()
     run_nwp = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
+    post_vals = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main._post_forecast_values')
 
     class res:
         ac_power = [0]
@@ -374,13 +385,15 @@ def test_process_nwp_forecast_groups_missing_var(mocker, forecast_list):
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
     assert not logger.error.called
     assert logger.warning.called
-    assert api.post_forecast_values.call_count == 3
+    assert post_vals.call_count == 4
 
 
 def test_process_nwp_forecast_groups_bad_model(mocker, forecast_list):
     api = mocker.MagicMock()
     run_nwp = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.run_nwp')
+    post_vals = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main._post_forecast_values')
 
     class res:
         ac_power = [0]
@@ -388,13 +401,13 @@ def test_process_nwp_forecast_groups_bad_model(mocker, forecast_list):
         dni = None
 
     run_nwp.return_value = res
-    fxs = main.find_reference_nwp_forecasts(forecast_list[2:-1])
+    fxs = main.find_reference_nwp_forecasts(forecast_list[4:-1])
     logger = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.logger')
     main.process_nwp_forecast_groups(api, pd.Timestamp('20190501T0000Z'), fxs)
     assert logger.error.called
     assert not logger.warning.called
-    assert api.post_forecast_values.call_count == 0
+    assert post_vals.call_count == 0
 
 
 def test_process_nwp_forecast_groups_missing_runfor(mocker, forecast_list):
@@ -417,6 +430,65 @@ def test_process_nwp_forecast_groups_missing_runfor(mocker, forecast_list):
     assert api.post_forecast_values.call_count == 0
 
 
+@pytest.mark.parametrize('ind', [0, 1, 2])
+def test__post_forecast_values_regular(mocker, forecast_list, ind):
+    api = mocker.MagicMock()
+    fx = forecast_list[ind]
+    main._post_forecast_values(api, fx, [0], 'whatever')
+    assert api.post_forecast_values.call_count == 1
+
+
+def test__post_forecast_values_cdf(mocker, forecast_list):
+    api = mocker.MagicMock()
+    fx = forecast_list[3]
+
+    ser = pd.Series([0, 1])
+    vals = pd.DataFrame({i: ser for i in range(21)})
+    main._post_forecast_values(api, fx, vals, 'gefs')
+    assert api.post_probabilistic_forecast_constant_value_values.call_count == 3  # NOQA
+
+
+def test__post_forecast_values_cdf_not_gefs(mocker, forecast_list):
+    api = mocker.MagicMock()
+    fx = forecast_list[3]
+
+    ser = pd.Series([0, 1])
+    vals = pd.DataFrame({i: ser for i in range(21)})
+    with pytest.raises(ValueError):
+        main._post_forecast_values(api, fx, vals, 'gfs')
+
+
+def test__post_forecast_values_cdf_less_cols(mocker, forecast_list):
+    api = mocker.MagicMock()
+    fx = forecast_list[3]
+
+    ser = pd.Series([0, 1])
+    vals = pd.DataFrame({i: ser for i in range(10)})
+    with pytest.raises(TypeError):
+        main._post_forecast_values(api, fx, vals, 'gefs')
+
+
+def test__post_forecast_values_cdf_not_df(mocker, forecast_list):
+    api = mocker.MagicMock()
+    fx = forecast_list[3]
+
+    ser = pd.Series([0, 1])
+    with pytest.raises(TypeError):
+        main._post_forecast_values(api, fx, ser, 'gefs')
+
+
+def test__post_forecast_values_cdf_no_cv_match(mocker, forecast_list):
+    api = mocker.MagicMock()
+    fx = replace(forecast_list[3], constant_values=(
+        replace(forecast_list[3].constant_values[0], constant_value=3.0
+                ),))
+
+    ser = pd.Series([0, 1])
+    vals = pd.DataFrame({i: ser for i in range(21)})
+    with pytest.raises(KeyError):
+        main._post_forecast_values(api, fx, vals, 'gefs')
+
+
 @pytest.mark.parametrize('issue_buffer,empty', [
     (pd.Timedelta('10h'), False),
     (pd.Timedelta('1h'), True),
@@ -425,6 +497,7 @@ def test_process_nwp_forecast_groups_missing_runfor(mocker, forecast_list):
 def test_make_latest_nwp_forecasts(forecast_list, mocker, issue_buffer, empty):
     session = mocker.patch('solarforecastarbiter.io.api.APISession')
     session.return_value.list_forecasts.return_value = forecast_list[:-3]
+    session.return_value.list_probabilistic_forecasts.return_value = []
     run_time = pd.Timestamp('20190501T0000Z')
     fxdf = main.find_reference_nwp_forecasts(forecast_list[:-3], run_time)
     process = mocker.patch(

@@ -10,40 +10,29 @@ Core Solar Forecast Arbiter data gathering, validation, processing, and
 reporting package.
 
 # Installation
-The recommended way to install the package for development is as follows.
 
-First, fork and clone the repository to your machine. From within the
-root level of the repository, execute the follow shell commands:
-
-```
-conda create -n sfacore python=3.7
-conda activate sfacore
-pip install -r requirements.txt -r requirements-test.txt
-pip install -e .
-```
-
-If everything worked, you should be able to run
-
-```
-pytest solarforecastarbiter
-flake8 solarforecastarbiter
-```
+See the [installation](https://solarforecastarbiter-core.readthedocs.io/en/latest/installation.html) instructions in the documentation.
 
 # Documentation
 
-[solarforecastarbiter-core.readthedocs.io](https://solarforecastarbiter-core.readthedocs.io/en/latest/)
+The documentation is hosted at [solarforecastarbiter-core.readthedocs.io](https://solarforecastarbiter-core.readthedocs.io/en/latest/)
+
+# Contributing
+
+We welcome your contributions. Please see our [contributing guide](https://solarforecastarbiter-core.readthedocs.io/en/latest/contributing.html).
 
 # Architecture
-Sketch of how some SFA components interact, including the core:
 
-![system sketch](system_sketch.jpg)
+The diagram below depicts data flow between components of the Solar
+Forecast Arbiter framework. Users of the framework typically interact
+with the ``solarforecastarbiter-core`` code through a queue/worker
+system maintained by the API. Users may access the API directly or
+through the Dashboard. The API queues analyses to be processed by
+workers using core code. The workers then send their results to the API
+for storage in the database.
 
-All core code will be executed by *workers*. Workers are dispatched by
-a *queue*. The workers will use the *API* to get and receive data from the
-*database*.
+Alternatively, users may choose to install the core package on their own
+systems and perform their analyses independently of the Dashboard, API,
+or database.
 
-The core's dataio subpackage will provide python wrappers for the API.
-The API wrappers will typically return dicts of metadata and Series or
-DataFrames of time series data. Most functions in the core subpackages
-for validation, metrics, benchmark forecasts, and reports should assume
-pandas Series or DataFrame inputs with a valid DatetimeIndex.
+![system sketch](system_sketch.png)

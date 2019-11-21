@@ -4,7 +4,8 @@ import logging
 from pvlib import iotools
 
 
-from solarforecastarbiter.io.reference_observations import common, midc_config
+from solarforecastarbiter.io.reference_observations import (
+    common, midc_config, default_forecasts)
 
 
 logger = logging.getLogger('reference_data')
@@ -54,7 +55,8 @@ def initialize_site_forecasts(api, site):
         return
     site_api_id = extra_params['network_api_id']
     common.create_forecasts(
-        api, site, midc_config.midc_var_map[site_api_id].keys())
+        api, site, midc_config.midc_var_map[site_api_id].keys(),
+        default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):
@@ -84,6 +86,10 @@ def update_observation_data(api, sites, observations, start, end):
             # 1-column csv and causes an index error.
             logger.warning(f'Could not retrieve data for site {site.name}'
                            f' between {start} and {end}.')
+            continue
+        except ValueError as e:
+            logger.error(f'Error retrieving data for site {site.name}'
+                         f' between {start} and {end}: %s', e)
             continue
         site_observations = [obs for obs in observations if obs.site == site]
         for obs in site_observations:

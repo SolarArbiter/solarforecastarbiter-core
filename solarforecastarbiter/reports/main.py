@@ -285,7 +285,7 @@ def render_raw_report(raw_report):
         The full report.
     """
     fx_obs_cds = [
-        (pfxobs.original, figures.construct_fx_obs_cds(
+        (pfxobs, figures.construct_fx_obs_cds(
             pfxobs.forecast_values, pfxobs.observation_values))
         for pfxobs in raw_report.processed_forecasts_observations]
     report_md = template.add_figures_to_report_template(

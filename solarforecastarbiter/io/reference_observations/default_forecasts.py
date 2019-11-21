@@ -6,7 +6,8 @@ import json
 import pandas as pd
 
 
-from solarforecastarbiter.datamodel import Forecast, Site
+from solarforecastarbiter.datamodel import (
+    Forecast, Site, ProbabilisticForecast)
 from solarforecastarbiter.io.fetch.nwp import DOMAIN
 
 
@@ -27,7 +28,7 @@ CURRENT_NWP_VARIABLES = {'ac_power', 'ghi', 'dni', 'dhi', 'air_temperature',
 
 # issue time of day is in local standard time and will be
 # adjusted to the appropriate UTC hour
-TEMPLATE_FORECASTS = [
+TEMPLATE_DETERMINISTIC_FORECASTS = [
     Forecast(
         name='Day Ahead GFS',
         issue_time_of_day=dt.time(0),
@@ -89,3 +90,27 @@ TEMPLATE_FORECASTS = [
              })
         ),
 ]
+
+TEMPLATE_PROBABILISTIC_FORECASTS = [
+    ProbabilisticForecast(
+        name='Day Ahead GEFS',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('1d'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('24h'),
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        axis='y',
+        constant_values=range(0, 101, 5),
+        extra_parameters=json.dumps(
+            {'is_reference_forecast': True,
+             'model': 'gefs_half_deg_to_hourly_mean'
+             })
+    )
+]
+
+
+TEMPLATE_FORECASTS = (
+    TEMPLATE_DETERMINISTIC_FORECASTS + TEMPLATE_PROBABILISTIC_FORECASTS)

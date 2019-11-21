@@ -49,7 +49,8 @@ setup(
         'pvlib',
         'scipy',
         'bokeh',
-        'pyarrow'
+        'pyarrow',
+        'statsmodels'
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
