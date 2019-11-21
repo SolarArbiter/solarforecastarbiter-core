@@ -16,6 +16,8 @@ API Changes
   (:pull:`256`)
 * Added the `provider` parameter to :py:mod:`solarforecastarbiter.Datamodel`
   objects that were missing it
+* Add :py:mod:`solarforecastarbiter.io.api.APISession.get_user_info`
+  to get information about the current API user
 
 Enhancements
 ~~~~~~~~~~~~

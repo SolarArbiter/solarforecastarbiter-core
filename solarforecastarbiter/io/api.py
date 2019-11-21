@@ -1017,3 +1017,14 @@ class APISession(requests.Session):
             f = self.get_observation_values
             obj_id = obj.observation_id
         return f(obj_id, start, end, interval_label=interval_label)
+
+    def get_user_info(self):
+        """
+        Get information about the current user from the API
+
+        Returns
+        -------
+        dict
+        """
+        req = self.get('/users/current')
+        return req.json()
