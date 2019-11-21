@@ -8,9 +8,12 @@ This is the third 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
+* Add :py:meth:`~solarforecastarbiter.io.api.APISession.get_values`.
+  (:pull:`256`)
 
 Enhancements
 ~~~~~~~~~~~~
+* Add capability to analyze aggregates to reports. (:pull:`256`)
 
 Bug fixes
 ~~~~~~~~~

@@ -79,7 +79,7 @@ def resample_and_align(fx_obs, data, tz):
     Todo
     ----
       * Add other resampling functions (besides mean like first, last, median)
-    """
+    """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
 

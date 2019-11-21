@@ -989,7 +989,7 @@ class APISession(requests.Session):
         ------
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
-        """
+        """  # noqa: E501
         # order avoids possible issues with inheritance
         if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
             f = self.get_probabilistic_forecast_constant_value_values
