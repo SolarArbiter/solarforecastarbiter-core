@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import shutil
 
 
@@ -82,6 +83,10 @@ def test_full_render(mock_data, report_objects):
     report_md = main.render_raw_report(raw_report)
     body = template.report_md_to_html(report_md)
     full_report = template.full_html(body)
+    # at least one non whitespace character in body, usually caused
+    # by pandoc version error
+    assert re.search(
+        r'<body>(.*\S.*)</body>', full_report, re.S) is not None
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)
 
