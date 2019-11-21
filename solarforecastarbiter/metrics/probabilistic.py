@@ -343,7 +343,7 @@ def sharpness(fx_lower, fx_upper):
 def continuous_ranked_probability_score(fx, fx_prob, obs):
     """Continuous Ranked Probability Score (CRPS).
 
-        CRPS = 1/n sum_{i=1}^n int |F_i - O_i| dx
+        CRPS = 1/n sum_{i=1}^n int (F_i - O_i)^2 dx
 
     where F_i is the CDF of the forecast at time i and O_i is the CDF
     associated with the observed value obs_i:
@@ -381,7 +381,7 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
     f = fx_prob / 100.0
 
     # integrate along each sample, then average all samples
-    D = np.abs(f - o)
+    integrand = (f - o) ** 2
     dx = np.diff(fx, axis=1)
-    crps = np.mean(np.sum(D[:, :-1] * dx, axis=1))
+    crps = np.mean(np.sum(integrand[:, :-1] * dx, axis=1))
     return crps
