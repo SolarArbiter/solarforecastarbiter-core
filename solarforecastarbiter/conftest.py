@@ -1123,7 +1123,7 @@ def report_objects(aggregate):
         end=end,
         forecast_observations=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
-        categories=["Total", "Date", "Hour of the day"],
+        categories=("Total", "Date", "Hour of the day"),
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
     )
