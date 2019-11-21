@@ -12,6 +12,7 @@ from solarforecastarbiter import datamodel
 
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
+                        'forecastaggregate',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
@@ -84,6 +85,14 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict['constant_values'] = (agg_prob_forecast_constant_value, )
         return (aggregate_prob_forecast, fx_dict,
                 datamodel.ProbabilisticForecast)
+    elif request.param == 'forecastaggregate':
+        aggfx_dict = json.loads(aggregate_forecast_text)
+        aggfx_dict['aggregate'] = aggregate.to_dict()
+        agg_dict = json.loads(aggregate_text)
+        agg_dict['observations'] = aggregate_observations
+        fxobs_dict = {'forecast': aggfx_dict, 'aggregate': agg_dict}
+        fxobs = datamodel.ForecastAggregate(aggregateforecast, aggregate)
+        return (fxobs, fxobs_dict, datamodel.ForecastAggregate)
     elif request.param == 'report':
         report, *_ = report_objects
         return (report, report_dict.copy(), datamodel.Report)

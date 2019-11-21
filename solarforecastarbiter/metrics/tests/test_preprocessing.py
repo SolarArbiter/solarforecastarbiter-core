@@ -107,7 +107,7 @@ def test_resample_and_align(site_metadata, interval_label,
 ])
 @pytest.mark.parametrize('handle_func', [preprocessing.exclude])
 def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
-    report, obs_model, fx0_model, fx1_model = report_objects
+    report, obs_model, fx0_model, fx1_model, *_ = report_objects
     data = {
         obs_model: obs,
         fx0_model: fx0,
@@ -130,7 +130,7 @@ def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
 
 
 def test_apply_validation_errors(report_objects):
-    report, obs_model, fx0_model, fx1_model = report_objects
+    report, obs_model, fx0_model, fx1_model, *_ = report_objects
     obs = pd.DataFrame({'value': [1., 2., 3.],
                         'quality_flag': [OK, OK, OK]},
                        index=THREE_HOURS)

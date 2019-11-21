@@ -357,6 +357,14 @@ Reports
    io.api.APISession.post_raw_report
    io.api.APISession.update_report_status
 
+Convenience method for unifying API for getting time series values
+for observations, forecasts, aggregates, and probabilistic forecasts:
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.get_values
+
 Utils
 -----
 
