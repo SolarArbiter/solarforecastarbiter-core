@@ -555,6 +555,33 @@ def test_apisession_post_prob_forecast_constant_value_values(
     assert mocked.request_history[0].text == '{"values":[{"timestamp":"2019-01-01T13:00:00Z","value":0.0},{"timestamp":"2019-01-01T14:00:00Z","value":1.0},{"timestamp":"2019-01-01T15:00:00Z","value":2.0},{"timestamp":"2019-01-01T16:00:00Z","value":3.0},{"timestamp":"2019-01-01T17:00:00Z","value":4.0},{"timestamp":"2019-01-01T18:00:00Z","value":5.0}]}'  # NOQA
 
 
+@pytest.mark.parametrize('match, meth', [
+    ('observations', 'get_observation_values'),
+    ('forecasts/single', 'get_forecast_values'),
+    ('forecasts/cdf/single',
+     'get_probabilistic_forecast_constant_value_values'),
+    ('aggregates', 'get_aggregate_values'),
+])
+def test_apisession_get_values(
+        requests_mock, mocker, single_observation, single_forecast,
+        prob_forecast_constant_value, aggregate, match, meth, fx_start_end):
+    objs = {
+        'observations': single_observation,
+        'forecasts/single': single_forecast,
+        'forecasts/cdf/single': prob_forecast_constant_value,
+        'aggregates': aggregate
+    }
+    obj = objs[match]
+    session = api.APISession('')
+    matcher = re.compile(
+        f'{session.base_url}/{match}/.*/values')
+    requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
+    status = mocker.patch(
+        f'solarforecastarbiter.io.api.APISession.{meth}')
+    session.get_values(obj, *fx_start_end)
+    assert status.called
+
+
 @pytest.fixture()
 def mock_request_fxobs(report_objects, mocker):
     _, obs, fx0, fx1 = report_objects
