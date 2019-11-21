@@ -1,7 +1,7 @@
 
 ### <a name="weekday-analysis"></a>Day of the week analysis
 
-Metrics for weekday of the analysis period are displayed in tables and figures below. Monday is denoted by 0 to Sunday denoted by 6.
+Metrics for weekday of the analysis period are displayed in tables and figures below. 
 
 {% for figure in figures['Day of the week'] %}
   {{ figure | safe }}

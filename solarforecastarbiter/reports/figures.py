@@ -5,7 +5,7 @@ import textwrap
 import calendar
 
 from bokeh.models import (ColumnDataSource, HoverTool,
-                          DatetimeTickFormatter, CategoricalTicker, FactorRange)
+                          DatetimeTickFormatter, CategoricalTickFormatter)
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -118,7 +118,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
             obs_color = _obs_color(fx_obs.observation.interval_length)
             getattr(fig, plot_method)(
                 x='timestamp', y='observation', source=cds,
-                color=obs_color, legend=name, **plot_kwargs)
+                color=obs_color, legend_label=name, **plot_kwargs)
         if fx_obs.forecast in plotted_objects:
             pass
         else:
@@ -128,7 +128,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
             name = _fx_name(fx_obs)
             getattr(fig, plot_method)(
                 x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend=name, **plot_kwargs)
+                color=next(palette), legend_label=name, **plot_kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
@@ -182,7 +182,8 @@ def scatter(fx_obs_cds):
     for fx_obs, cds in fx_obs_cds:
         fig.scatter(
             x='observation', y='forecast', source=cds,
-            fill_color=next(palette), legend=fx_obs.forecast.name, **kwargs)
+            fill_color=next(palette),
+            legend_label=fx_obs.forecast.name, **kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
@@ -215,12 +216,14 @@ def construct_metrics_cds(metrics, kind, index='forecast'):
     if kind == 'Total':
         df = pd.DataFrame({m['name']: m[kind] for m in metrics})
     df = df.rename_axis(index='metric', columns='forecast')
+
     if index == 'metric':
         pass
     elif index == 'forecast':
         df = df.T
     else:
         raise ValueError('index must be metric or forecast')
+
     cds = ColumnDataSource(df)
     return cds
 
@@ -329,7 +332,7 @@ def bar_subdivisions(cds, kind, metric):
 
     Returns
     -------
-    figs : tuple of figures
+    figs : list of figures
     """
     palette = iter(PALETTE)
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
@@ -338,12 +341,17 @@ def bar_subdivisions(cds, kind, metric):
 
     width = 0.8
 
+    x_range = cds.data[kind]
     fig_kwargs['x_axis_label'] = kind
 
     # Special handling for x-axis with dates
-    if kind == 'date':
+    if kind == 'Date':
         fig_kwargs['x_axis_type'] = 'datetime'
         width = width * pd.Timedelta(days=1)
+    elif kind == 'Month of the year':
+        fig_kwargs['x_range'] = calendar.month_abbr[1:]
+    elif kind == 'Day of the week':
+        fig_kwargs['x_range'] = calendar.day_abbr[0:]
 
     # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
@@ -352,6 +360,8 @@ def bar_subdivisions(cds, kind, metric):
     y_max, y_min = pad_factor * y_max, pad_factor * y_min
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
+
+        #import ipdb; ipdb.set_trace()
 
         # Create figure
         title = field + ' ' + metric.upper()
@@ -375,12 +385,16 @@ def bar_subdivisions(cds, kind, metric):
             if y_min > 0:
                 fig.y_range.start = 0
                 fig.y_range.end = y_max
+
+
         if num == 0:
             # add x_range to plots to link panning
             fig_kwargs['x_range'] = fig.x_range
+            fig_kwargs['y_range'] = fig.y_range
 
-        # Hover tool and use datetime format in special cases
+        # Hover tool and format specific changes
         if kind == 'Date':
+            # Datetime x-axis
             formatter = DatetimeTickFormatter(days='%Y-%m-%d')
             fig.xaxis.formatter = formatter
             tooltips = [
@@ -389,18 +403,21 @@ def bar_subdivisions(cds, kind, metric):
             ]
             hover_kwargs = dict(tooltips=tooltips,
                                 formatters={kind: 'datetime'})
-        else:
-            # Set x-axis labels as "categorical"
-            #import ipdb; ipdb.set_trace()
-            if kind == 'Month of the year':
-                fig.x_range = FactorRange(factors=calendar.month_abbr[1:])
-            elif kind == "Day of the week":
-                fig.x_range = FactorRange(factors=calendar.day_abbr[0:])
-            else:
-                fig.xaxis.ticker = cds.data[kind]
+        elif kind == 'Month of the year' or kind == 'Day of the week':
+            # Categorical x-axis
+            formatter = CategoricalTickFormatter()
+            fig.xaxis.formatter = formatter
             tooltips = [
-                (kind, f'@{kind}'),
-                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+                (kind, f'@{{{kind}}}'),
+                (f'{metric.upper()}', f'@{{{field}}}'),
+            ]
+            hover_kwargs = dict(tooltips=tooltips)
+        else:
+            # Numerical x-axis
+            fig.xaxis.ticker = cds.data[kind]
+            tooltips = [
+                (kind, f'@{{{kind}}}'),
+                (f'{metric.upper()}', f'@{{{field}}}'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         hover = HoverTool(mode='vline', **hover_kwargs)
