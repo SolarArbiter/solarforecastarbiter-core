@@ -369,6 +369,23 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
     crps : float
         The Continuous Ranked Probability Score [unitless].
 
+    Examples
+    --------
+
+    Forecast probabilities of <= 10 MW and <= 20 MW:
+    >>> fx = np.array([[10, 20], [10, 20]])
+    >>> fx_prob = np.array([[30, 50], [65, 100]])
+    >>> obs = np.array([8, 12])
+    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    4.5625
+
+    Forecast thresholds for constant probabilities (25%, 75%):
+    >>> fx = np.array([[5, 15], [8, 14]])
+    >>> fx_prob = np.array([[25, 75], [25, 75]])
+    >>> obs = np.array([8, 10])
+    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    0.5
+
     """
 
     # match observations to fx shape: (n,) => (n, d)
