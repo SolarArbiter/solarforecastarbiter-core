@@ -14,8 +14,8 @@ API Changes
   (:pull:`256`)
 * Add :py:meth:`~solarforecastarbiter.io.api.APISession.get_values`.
   (:pull:`256`)
-* Added the `provider` parameter to :py:mod:`solarforecastarbiter.Datamodel`
-  objects that were missing it
+* Add the `provider` parameter to :py:mod:`solarforecastarbiter.Datamodel`
+  objects that were missing it (:pull:`260`)
 * Add :py:mod:`solarforecastarbiter.io.api.APISession.get_user_info`
   to get information about the current API user (:pull:`260`)
 
@@ -24,7 +24,7 @@ Enhancements
 * Add capability to analyze aggregates to reports. (:pull:`256`)
 * :py:mod:`solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`
   now only tries to update forecasts that have the same provider as the user's
-  organization
+  organization (:pull:`260`)
 * :py:mod:`solarforecastarbiter.validation.tasks.daily_observation_validation`
   only validates data for observations with the same provider as the user's
   organization (:pull:`260`)
