@@ -22,6 +22,9 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Add capability to analyze aggregates to reports. (:pull:`256`)
+* :py:mod:`solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`
+  now only tries to update forecasts that have the same provider as the user's
+  organization
 
 Bug fixes
 ~~~~~~~~~
