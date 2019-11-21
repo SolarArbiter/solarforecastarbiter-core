@@ -378,11 +378,8 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
     # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
-    # integrate along each sample
+    # integrate along each sample, then average all samples
     D = np.abs(f - o)
     dx = np.diff(fx, axis=1)
-    D_int = np.sum(D[:, :-1] * dx, axis=1)
-
-    # mean of all samples
-    crps = np.mean(D_int)
+    crps = np.mean(np.sum(D[:, :-1] * dx, axis=1))
     return crps
