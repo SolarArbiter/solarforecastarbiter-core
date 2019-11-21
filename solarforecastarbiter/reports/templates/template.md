@@ -25,7 +25,7 @@ Contents:
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
 {% for met_key, met_val in metrics_toc.items() %}
-  {% if metric in figures.keys() %}
+  {% if met_key in figures.keys() %}
   * [{{met_key}} analysis](#{{met_val}}-analysis)
   {% endif %}
 {% endfor %}
@@ -100,8 +100,10 @@ Metrics are displayed in tables and figures below for one or more time periods. 
 
 {#{ figures | safe }#}
 
-{% for category in figures.keys() %}
-  {% include 'metrics_' + metrics_toc[category] + '.md' %}
+{% for met_key, met_val in metrics_toc.items() %}
+{% if met_key in figures.keys() %}
+  {% include 'metrics_' + met_val + '.md' %}
+{% endif %}
 {% endfor %}
 
 ## Versions

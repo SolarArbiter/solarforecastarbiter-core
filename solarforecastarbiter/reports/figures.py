@@ -5,7 +5,7 @@ import textwrap
 import calendar
 
 from bokeh.models import (ColumnDataSource, HoverTool,
-                          DatetimeTickFormatter)
+                          DatetimeTickFormatter, CategoricalTicker, FactorRange)
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -335,27 +335,15 @@ def bar_subdivisions(cds, kind, metric):
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
     fig_kwargs = dict(tools=tools)
     figs = []
-    label_override = None
 
     width = 0.8
 
-    # specific category/kind settings
-    if kind == 'day':
-        fig_kwargs['x_axis_label'] = 'Day of the month'
-    elif kind == 'month':
-        fig_kwargs['x_axis_label'] = 'Month of the year'
-        label_override = [calendar.month_abbr[m] for m in cds.data[kind]]
-    elif kind == 'hour':
-        fig_kwargs['x_axis_label'] = 'Hour of the day'
-    elif kind == 'date':
-        fig_kwargs['x_axis_label'] = 'Date'
+    fig_kwargs['x_axis_label'] = kind
+
+    # Special handling for x-axis with dates
+    if kind == 'date':
         fig_kwargs['x_axis_type'] = 'datetime'
         width = width * pd.Timedelta(days=1)
-    elif kind == 'year':
-        fig_kwargs['x_axis_label'] = 'Year'
-    elif kind == 'weekday':
-        fig_kwargs['x_axis_label'] = 'Day of the week'
-        label_override = [calendar.day_abbr[d] for d in cds.data[kind]]
 
     # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
@@ -403,10 +391,13 @@ def bar_subdivisions(cds, kind, metric):
                                 formatters={kind: 'datetime'})
         else:
             # Set x-axis labels as "categorical"
-            fig.xaxis.ticker = cds.data[kind]
-            if label_override:
-                fig.xaxis.major_label_overrides = dict(
-                    zip(cds.data[kind].tolist(), label_override))
+            #import ipdb; ipdb.set_trace()
+            if kind == 'Month of the year':
+                fig.x_range = FactorRange(factors=calendar.month_abbr[1:])
+            elif kind == "Day of the week":
+                fig.x_range = FactorRange(factors=calendar.day_abbr[0:])
+            else:
+                fig.xaxis.ticker = cds.data[kind]
             tooltips = [
                 (kind, f'@{kind}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),

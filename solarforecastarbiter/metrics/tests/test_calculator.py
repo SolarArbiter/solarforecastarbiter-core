@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import itertools
-
+import calendar
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator,
@@ -186,6 +186,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                         if cat == 'Month of the year':
                             grps = fx_values.groupby(
                                 fx_values.index.month).groups
+                            grps = [calendar.month_abbr[g] for g in grps]
                         elif cat == 'Hour of the day':
                             grps = fx_values.groupby(
                                 fx_values.index.hour).groups
@@ -201,6 +202,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                         elif cat == 'Day of the week':
                             grps = fx_values.groupby(
                                 fx_values.index.weekday).groups
+                            grps = [calendar.day_abbr[g] for g in grps]
                         assert sorted(grps) == sorted(val_cat.keys())
 
 

@@ -10,6 +10,7 @@ Todo
 * Support event metrics and forecasts with new functions
 """
 from collections import defaultdict
+import calendar
 
 import pandas as pd
 
@@ -173,13 +174,19 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             groupby_category = AVAILABLE_CATEGORIES[category]
             index_category = getattr(df.index, groupby_category)
 
-            for name, group in df.groupby(index_category):
-                calc_metrics[category][name] = {}
+            for id, group in df.groupby(index_category):
+
+                # Change identifier of the group
+                if category == 'Month of the year':
+                    id = calendar.month_abbr[id]
+                elif category == 'Day of the week':
+                    id = calendar.day_abbr[id]
+                calc_metrics[category][id] = {}
 
                 for metric_ in metrics:
                     res = _apply_deterministic_metric_func(
                         metric_, group.forecast, group.observation,
                         ref_fx=ref_fx, normalizer=normalizer)
-                    calc_metrics[category][name][metric_] = res
+                    calc_metrics[category][id][metric_] = res
 
     return calc_metrics
