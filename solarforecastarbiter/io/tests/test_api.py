@@ -681,7 +681,7 @@ def test_apisession_post_raw_report_processed_data(
     _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ids = [fx0.forecast_id, obs.observation_id, fx1.forecast_id,
-           obs.observation_id, agg.aggregate_id, fxagg.forecast_id]
+           obs.observation_id, fxagg.forecast_id, agg.aggregate_id]
     mocked = requests_mock.register_uri(
         'POST', re.compile(f'{session.base_url}/reports/.*/values'),
         [{'text': id_} for id_ in ids])
