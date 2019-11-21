@@ -79,6 +79,31 @@ def mock_get_site(requests_mock, site_text, many_sites_text):
 
 
 @pytest.fixture()
+def mock_get_observation(requests_mock, many_observations_text,
+                         mock_get_site):
+    def get_observation_from_text(request, context):
+        obs_id = request.url.split('/')[-2]
+        if obs_id == '':  # pragma: no cover
+            return many_observations_text
+        else:
+            obs = json.loads(many_observations_text)
+            for ob in obs:
+                if ob['observation_id'] == obs_id:
+                    return json.dumps(ob).encode('utf-8')
+
+    matcher = re.compile(
+        'https://api.solarforecastarbiter.org/observations/.*/metadata')
+    requests_mock.register_uri(
+        'GET', matcher, content=get_observation_from_text)
+
+
+@pytest.fixture()
+def mock_get_agg(requests_mock, aggregate_text, mock_get_observation):
+    matcher = re.compile(f'https://api.solarforecastarbiter.org/aggregates/.*')
+    requests_mock.register_uri('GET', matcher, content=aggregate_text)
+
+
+@pytest.fixture()
 def mock_list_sites(mocker, many_sites):
     mocker.patch('solarforecastarbiter.io.api.APISession.list_sites',
                  return_value=many_sites)
@@ -180,7 +205,8 @@ def test_apisession_get_forecast(requests_mock, single_forecast,
 
 
 def test_apisession_list_forecasts(requests_mock, many_forecasts,
-                                   many_forecasts_text, mock_list_sites):
+                                   many_forecasts_text, mock_get_site,
+                                   mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
@@ -189,7 +215,8 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
 
 
 def test_apisession_create_forecast(requests_mock, single_forecast,
-                                    single_forecast_text, mock_get_site):
+                                    single_forecast_text, mock_get_site,
+                                    mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/single/.*')
     requests_mock.register_uri('POST', matcher,
@@ -201,6 +228,22 @@ def test_apisession_create_forecast(requests_mock, single_forecast,
     ss = type(single_forecast).from_dict(forecast_dict)
     new_forecast = session.create_forecast(ss)
     assert new_forecast == single_forecast
+
+
+def test_apisession_create_forecast_agg(
+        requests_mock, aggregate, aggregateforecast,
+        aggregate_forecast_text, mock_get_agg):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/single/.*')
+    requests_mock.register_uri('POST', matcher,
+                               text=aggregateforecast.forecast_id)
+    requests_mock.register_uri('GET', matcher, content=aggregate_forecast_text)
+    forecast_dict = aggregateforecast.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(aggregateforecast).from_dict(forecast_dict)
+    new_forecast = session.create_forecast(ss)
+    assert new_forecast == aggregateforecast
 
 
 def test_apisession_list_forecasts_empty(requests_mock):
@@ -227,7 +270,8 @@ def test_apisession_get_prob_forecast(requests_mock, prob_forecasts,
 def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
                                         many_prob_forecasts_text,
                                         mock_list_sites, mock_get_site,
-                                        prob_forecast_constant_value_text):
+                                        prob_forecast_constant_value_text,
+                                        mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
     requests_mock.register_uri(
@@ -270,6 +314,31 @@ def test_apisession_get_prob_forecast_constant_value_site(
     assert fx == prob_forecast_constant_value
 
 
+def test_apisession_get_agg_prob_forecast_constant_value(
+        requests_mock, agg_prob_forecast_constant_value,
+        agg_prob_forecast_constant_value_text, mock_get_agg,
+        aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value('')
+    assert fx == agg_prob_forecast_constant_value
+
+
+def test_apisession_get_agg_prob_forecast_constant_value_agg(
+        requests_mock, agg_prob_forecast_constant_value,
+        agg_prob_forecast_constant_value_text, mock_get_agg,
+        aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    fx = session.get_probabilistic_forecast_constant_value(
+        '', aggregate=aggregate)
+    assert fx == agg_prob_forecast_constant_value
+
+
 def test_apisession_get_prob_forecast_constant_value_site_error(
         requests_mock, prob_forecast_constant_value_text, single_site):
     session = api.APISession('')
@@ -281,6 +350,20 @@ def test_apisession_get_prob_forecast_constant_value_site_error(
     site = datamodel.Site.from_dict(site_dict)
     with pytest.raises(ValueError):
         session.get_probabilistic_forecast_constant_value('', site=site)
+
+
+def test_apisession_get_prob_forecast_constant_value_agg_error(
+        requests_mock, agg_prob_forecast_constant_value_text, aggregate):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    agg_dict = aggregate.to_dict()
+    agg_dict['aggregate_id'] = 'nope'
+    agg = datamodel.Aggregate.from_dict(agg_dict)
+    with pytest.raises(ValueError):
+        session.get_probabilistic_forecast_constant_value(
+            '', aggregate=agg)
 
 
 def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
@@ -304,6 +387,29 @@ def test_apisession_create_prob_forecast(requests_mock, prob_forecasts,
     assert new_forecast == prob_forecasts
 
 
+def test_apisession_create_prob_forecast_agg(
+        requests_mock, aggregate_prob_forecast,
+        aggregate_prob_forecast_text, mock_get_agg,
+        agg_prob_forecast_constant_value_text):
+    session = api.APISession('')
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri('POST', matcher,
+                               text=aggregate_prob_forecast.forecast_id)
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/cdf/{aggregate_prob_forecast.forecast_id}$')  # NOQA
+    requests_mock.register_uri(
+        'GET', matcher, content=aggregate_prob_forecast_text)
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=agg_prob_forecast_constant_value_text)
+    forecast_dict = aggregate_prob_forecast.to_dict()
+    del forecast_dict['forecast_id']
+    del forecast_dict['extra_parameters']
+    ss = type(aggregate_prob_forecast).from_dict(forecast_dict)
+    new_forecast = session.create_probabilistic_forecast(ss)
+    assert new_forecast == aggregate_prob_forecast
+
+
 @pytest.fixture(params=[0, 1])
 def obs_start_end(request):
     if request.param == 0:
@@ -314,14 +420,16 @@ def obs_start_end(request):
                 '2019-01-01T12:25:00-0700')
 
 
-def test_apisession_get_observation_values(
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values(
         requests_mock, observation_values, observation_values_text,
-        obs_start_end):
+        obs_start_end, func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
-    out = session.get_observation_values(
-        'obsid', *obs_start_end)
+    out = getattr(session, func)('obsid', *obs_start_end)
     pdt.assert_frame_equal(out, observation_values)
 
 
@@ -330,13 +438,16 @@ def test_apisession_get_observation_values(
     ('beginning', slice(0, -1)),
     ('ending', slice(1, 10))
 ])
-def test_apisession_get_observation_values_interval_label(
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values_interval_label(
         requests_mock, observation_values, observation_values_text,
-        label, theslice, obs_start_end):
+        label, theslice, obs_start_end, func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=observation_values_text)
-    out = session.get_observation_values(
+    out = getattr(session, func)(
         'obsid', obs_start_end[0], obs_start_end[1], label)
     pdt.assert_frame_equal(out, observation_values.iloc[theslice])
 
@@ -347,11 +458,15 @@ def empty_df():
                         index=pd.DatetimeIndex([], name='timestamp'))
 
 
-def test_apisession_get_observation_values_empty(requests_mock, empty_df):
+@pytest.mark.parametrize('func', ['get_observation_values',
+                                  'get_aggregate_values'])
+def test_apisession_get_obs_agg_values_empty(requests_mock, empty_df,
+                                             func):
     session = api.APISession('')
-    matcher = re.compile(f'{session.base_url}/observations/.*/values')
+    matcher = re.compile(
+        f'{session.base_url}/(observations|aggregates)/.*/values')
     requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
-    out = session.get_observation_values(
+    out = getattr(session, func)(
         'obsid', pd.Timestamp('2019-01-01T12:00:00-0700'),
         pd.Timestamp('2019-01-01T12:25:00-0700'))
     pdt.assert_frame_equal(out, empty_df)
@@ -461,8 +576,7 @@ def test_apisession_get_report(requests_mock, report_text, report_objects,
     requests_mock.register_uri('GET', f'{session.base_url}/reports/',
                                content=report_text)
     out = session.get_report('')
-    # TODO: fix filters
-    expected = report_objects[0].replace(filters=())
+    expected = report_objects[0]
     assert out == expected
 
 
@@ -481,9 +595,7 @@ def test_apisession_get_report_with_raw(
     requests_mock.register_uri('GET', f'{session.base_url}/reports/',
                                content=report_text)
     out = session.get_report('')
-    # TODO: fix filters
     expected = report_objects[0].replace(
-        filters=(),
         raw_report=raw.replace(processed_forecasts_observations=()))
     assert out == expected
 
@@ -494,8 +606,7 @@ def test_apisession_list_reports(requests_mock, report_text, report_objects,
     requests_mock.register_uri('GET', f'{session.base_url}/reports',
                                content=b'['+report_text+b']')
     out = session.list_reports()
-    # TODO: fix filters
-    expected = [report_objects[0].replace(filters=())]
+    expected = [report_objects[0]]
     assert out == expected
 
 
@@ -592,6 +703,80 @@ def test_apisession_update_report_status(requests_mock):
         'POST', re.compile(f'{session.base_url}/reports/REPORT_ID/status/'))
     session.update_report_status('REPORT_ID', 'complete')
     assert mocked.last_request.url.split('/')[-1] == 'complete'
+
+
+@pytest.fixture()
+def mockobs(many_observations, mocker):
+    def _getobs(cls, observation_id):
+        for obs in many_observations:
+            if observation_id == obs.observation_id:
+                return obs
+
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation',
+        new=_getobs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.list_observations',
+        return_value=many_observations)
+
+
+def test_apisession_get_aggregate(requests_mock, aggregate_text, aggregate,
+                                  mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/.*/metadata'),
+        content=aggregate_text)
+    agg = session.get_aggregate('')
+    assert agg == aggregate
+
+
+def test_apisession_list_aggregates(requests_mock, aggregate_text, aggregate,
+                                    mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/'),
+        content=b'[' + aggregate_text + b']')
+    aggs = session.list_aggregates()
+    assert aggs[0] == aggregate
+
+
+def test_apisession_list_aggregates_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/aggregates/.*')
+    requests_mock.register_uri('GET', matcher, content=b"[]")
+    obs_list = session.list_aggregates()
+    assert obs_list == []
+
+
+def test_apisession_create_aggregate(requests_mock, aggregate, aggregate_text,
+                                     mockobs):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/aggregates/.*')
+
+    def callback(request, context):
+        if request.url.endswith('aggregates/'):
+            ad = json.loads(aggregate_text)
+            for key in ('provider', 'aggregate_id', 'created_at',
+                        'modified_at', 'observations', 'interval_value_type'):
+                del ad[key]
+            assert ad == request.json()
+            return aggregate.aggregate_id
+        else:
+            rj = request.json()
+            assert 'observations' in rj
+            assert 'observation_id' in rj['observations'][0]
+            assert (
+                'effective_from' in rj['observations'][0]
+                or 'effective_until' in rj['observations'][0])
+
+    requests_mock.register_uri('POST', matcher, text=callback)
+    requests_mock.register_uri('GET', matcher, content=aggregate_text)
+    aggregate_dict = aggregate.to_dict()
+    del aggregate_dict['aggregate_id']
+    del aggregate_dict['interval_value_type']
+    ss = datamodel.Aggregate.from_dict(aggregate_dict)
+    new_aggregate = session.create_aggregate(ss)
+    assert new_aggregate == aggregate
 
 
 @pytest.fixture(scope='session')
@@ -854,3 +1039,44 @@ def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-14T00:01:00Z'))
     pdt.assert_series_equal(fx, test_ser)
+
+
+def test_real_apisession_get_aggregate(real_session):
+    agg = real_session.get_aggregate('458ffc27-df0b-11e9-b622-62adb5fd6af0')
+    assert isinstance(agg, datamodel.Aggregate)
+
+
+def test_real_apisession_list_aggregates(real_session):
+    aggs = real_session.list_aggregates()
+    assert isinstance(aggs, list)
+    assert isinstance(aggs[0], datamodel.Aggregate)
+    assert '458ffc27-df0b-11e9-b622-62adb5fd6af0' in {
+        a.aggregate_id for a in aggs}
+
+
+def test_real_apisession_create_aggregate(real_session, aggregate):
+    new_agg = real_session.create_aggregate(aggregate)
+    real_session.delete(f'/aggregates/{new_agg.aggregate_id}')
+    for attr in ('name', 'description', 'variable', 'aggregate_type',
+                 'interval_length', 'interval_label', 'timezone'):
+        assert getattr(new_agg, attr) == getattr(aggregate, attr)
+    for i, obs in enumerate(new_agg.observations):
+        assert (
+            aggregate.observations[i].observation.observation_id ==
+            obs.observation.observation_id)
+        for attr in ('effective_from', 'effective_until',
+                     'observation_deleted_at'):
+            assert getattr(aggregate.observations[i], attr) == (
+                getattr(obs, attr))
+
+
+def test_real_apisession_get_aggregate_values(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
+    agg = real_session.get_aggregate_values(
+        '458ffc27-df0b-11e9-b622-62adb5fd6af0',
+        start, end)
+    assert isinstance(agg, pd.DataFrame)
+    assert set(agg.columns) == set(['value', 'quality_flag'])
+    assert len(agg.index) > 0
+    pdt.assert_frame_equal(agg.loc[start:end], agg)

@@ -346,6 +346,30 @@ def find_reference_nwp_forecasts(forecasts, run_time=None):
     return forecast_df
 
 
+def _post_forecast_values(session, fx, fx_vals, model_str):
+    if isinstance(fx, datamodel.ProbabilisticForecast):
+        if not model_str.startswith('gefs'):
+            raise ValueError(
+                'Can only process probabilisic forecast from GEFS')
+
+        if not isinstance(fx_vals, pd.DataFrame) or len(fx_vals.columns) != 21:
+            raise TypeError(
+                'Could not post probabilistic forecast values: '
+                'forecast values in unknown format')
+        # adjust columns to be constant values
+        cv_df = fx_vals.rename(columns={i: i * 5.0 for i in range(22)})
+        for cv_fx in fx.constant_values:
+            # will raise a KeyError if no match
+            cv_vals = cv_df[cv_fx.constant_value]
+            logger.debug('Posting %s values to %s', len(cv_vals),
+                         cv_fx.forecast_id)
+            session.post_probabilistic_forecast_constant_value_values(
+                cv_fx.forecast_id, cv_vals
+            )
+    else:
+        session.post_forecast_values(fx.forecast_id, fx_vals)
+
+
 def process_nwp_forecast_groups(session, run_time, forecast_df):
     """
     Groups NWP forecasts based on piggyback_on, calculates the forecast as
@@ -376,7 +400,8 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
             logger.error('Forecast, %s,  that others are piggybacking on not '
                          'found', run_for)
             continue
-        model = getattr(models, group.loc[run_for].model)
+        model_str = group.loc[run_for].model
+        model = getattr(models, model_str)
         issue_time = group.loc[run_for].next_issue_time
         if issue_time is None:
             issue_time = utils.get_next_issue_time(key_fx, run_time)
@@ -393,7 +418,7 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
                 continue
             logger.info('Posting values %s for %s:%s issued at %s',
                         len(fx_vals), fx.name, fx_id, issue_time)
-            session.post_forecast_values(fx_id, fx_vals)
+            _post_forecast_values(session, fx, fx_vals, model_str)
 
 
 def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
@@ -419,6 +444,7 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     """
     session = api.APISession(token, base_url=base_url)
     forecasts = session.list_forecasts()
+    forecasts += session.list_probabilistic_forecasts()
     forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
     execute_for = forecast_df[
         forecast_df.next_issue_time <= run_time + issue_buffer]

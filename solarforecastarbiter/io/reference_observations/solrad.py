@@ -6,7 +6,8 @@ import pandas as pd
 from pvlib import iotools
 
 
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
 
 solrad_variables = ['ghi', 'dni', 'dhi']
@@ -98,7 +99,8 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, solrad_variables)
+    common.create_forecasts(api, site, solrad_variables,
+                            default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

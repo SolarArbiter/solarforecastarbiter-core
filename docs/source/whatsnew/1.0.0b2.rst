@@ -1,0 +1,81 @@
+.. _whatsnew_100b2:
+
+1.0.0b2 (November 15, 2019)
+---------------------------
+
+This is the second 1.0 beta release.
+
+
+API Changes
+~~~~~~~~~~~
+* Add metrics preprocessing functions
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.apply_validation`,
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.resample_and_align`, and
+  :py:mod:`solarforecastarbiter.metrics.preprocessing.exclude`. (:pull:`221`)
+* Add additional metrics for deterministic forecasts
+  :py:mod:`solarforecastarbiter.metrics.deterministic.kolmogorov_smirnov_integral`,
+  :py:mod:`solarforecastarbiter.metrics.deterministic.over`, and
+  :py:mod:`solarforecastarbiter.metrics.deterministic.combined_performance_index`. (:pull:`230`)
+* Add metrics for probabilistic forecasts
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_score`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_skill_score`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.brier_decomposition`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.reliability`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.resolution`,
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.uncertainty`, and
+  :py:mod:`solarforecastarbiter.metrics.probabilistic.sharpness`. (:issue:`115`) (:issue:`232`) (:issue:`233`) (:pull:`202`)
+* Moved temporary functions from report to metrics calculator. (:pull:`221`)
+* Add Aggregate to the datamodel, allow forecasts to reference
+  either a Site or an Aggregate, and add corresponding Aggregate
+  methods to the APISession (:pull:`235`)
+* Require that a list of template Forecasts/ProbabilisticForecasts is passed to
+  :py:mod:`solarforecastarbiter.io.reference_observations.common.create_forecasts`
+  (:pull:`240`)
+* Add function to process report JSON objects into datamodel.Report objects
+  :py:mod:`solarforecastarbiter.io.api.APISession.process_report_dict`
+  (:pull:`249`)
+
+
+Enhancements
+~~~~~~~~~~~~
+* Add function to compute an aggregate timeseries (:pull:`223`)
+* Simplify the creation of ProbabilisticForecast objects by passing a list of
+  floats to ``constant_values`` to automatically create
+  :py:mod:`solarforecastarbiter.datamodel.ProbabilisticForecastConstantValues`
+* Make API requests for probabilistic forecasts more efficient (:pull:`240`)
+* Create probabilistic reference forecasts using GEFS and automatically generate
+  those values (:pull:`240`)
+* Expanded :ref:`contributing` guide. (:issue:`13`)
+
+
+Bug fixes
+~~~~~~~~~
+* Fix handling of observation and forecast metadata in report timeseries
+  and scatter plots. (:issue:`238`)
+* Fix overlapping labels on report's total metrics plots and too short
+  metrics table when more than 3 forecasts are selected. (:issue:`163`)
+* Fix report limitation of 6 forecasts due to how the color palette was
+  specified. (:issue:`242`)
+* Timeseries plot legends can accomodate more items (20) by shrinking
+  the font size and scatter plot legends were moved to the side to
+  prevent them from blocking the data. (:issue:`218`)
+* Fix inconsistent forecast ordering and coloring in report bar charts.
+  (:issue:`204`)
+* :py:class:`datamodel.Report` and associated classes were missing from
+  :ref:`api` documentation. Fixed. (:issue:`228`)
+* Fix loading :py:class:`datamodel.Report` and :py:class:`datamodel.BaseFilter`
+  from a dictionary (:pull:`249`, :issue:`137`)
+* :py:class:`io.api.APISession` Report methods were missing from
+  :ref:`api` documentation (:pull:`249`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

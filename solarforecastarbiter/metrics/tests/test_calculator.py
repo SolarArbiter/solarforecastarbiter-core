@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 
-from solarforecastarbiter.reports import metrics
+from solarforecastarbiter.metrics import calculator
 
 
 @pytest.mark.parametrize('fx,obs,expect', [
@@ -26,7 +26,7 @@ from solarforecastarbiter.reports import metrics
 ])
 def test_calculate_metrics_runs(report_objects, fx, obs, expect):
     fxobs = report_objects[0].forecast_observations[0]
-    out = metrics.calculate_metrics(fxobs, fx, obs)
+    out = calculator.calculate_metrics(fxobs, fx, obs)
     assert isinstance(out, dict)
     assert isinstance(out["total"], dict)
     assert isinstance(out["total"]["mae"], float)

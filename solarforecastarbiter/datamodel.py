@@ -70,6 +70,52 @@ def _dict_factory(inp):
     return dict_
 
 
+def _single_field_processing(model, field, val, field_type=None):
+    type_ = field_type or field.type
+    if (
+            # If the value is already the right type, return
+            # typing type_s do not work with isinstance, so check __origin__
+            not hasattr(type_, '__origin__') and
+            isinstance(val, type_)
+    ):
+        return val
+    elif type_ == pd.Timedelta:
+        return pd.Timedelta(f'{val}min')
+    elif type_ == pd.Timestamp:
+        out = pd.Timestamp(val)
+        if pd.isna(out):
+            raise ValueError(f'{val} is not a time')
+        return out
+    elif type_ == datetime.time:
+        return datetime.datetime.strptime(val, '%H:%M').time()
+    elif (
+            is_dataclass(type_) and
+            isinstance(val, dict)
+    ):
+        return type_.from_dict(val)
+    elif (
+            hasattr(type_, '__origin__') and
+            type_.__origin__ is Union
+    ):
+        # with a Union, we must return the right type
+        for ntype in type_.__args__:
+            try:
+                processed_val = _single_field_processing(
+                    model, field, val, ntype
+                )
+            except (TypeError, ValueError, KeyError):
+                continue
+            else:
+                if not isinstance(processed_val, ntype):
+                    continue
+                else:
+                    return processed_val
+        raise TypeError(f'Unable to process {val} as one of {type_.__args__}')
+    else:
+        return model._special_field_processing(
+            model, field, val)
+
+
 class BaseModel:
     def _special_field_processing(self, model_field, val):
         return val
@@ -109,6 +155,9 @@ class BaseModel:
         ValueError
             If a pandas.Timedelta, pandas.Timestamp, datetime.time, or
             modeling_parameters field cannot be parsed from the input_dict
+        TypeError
+            If the field has a Union type and the input parameter is not
+            processed into one of the Union arguments
         """
         dict_ = input_dict.copy()
         model_fields = fields(model)
@@ -116,46 +165,29 @@ class BaseModel:
         errors = []
         for model_field in model_fields:
             if model_field.name in dict_:
-                if model_field.type == pd.Timedelta:
-                    kwargs[model_field.name] = pd.Timedelta(
-                        f'{dict_[model_field.name]}min')
-                elif model_field.type == pd.Timestamp:
-                    kwargs[model_field.name] = pd.Timestamp(
-                        dict_[model_field.name])
-                elif model_field.type == datetime.time:
-                    kwargs[model_field.name] = datetime.datetime.strptime(
-                        dict_[model_field.name], '%H:%M').time()
-                elif (
-                        is_dataclass(model_field.type) and
-                        isinstance(dict_[model_field.name], dict)
-                ):
-                    kwargs[model_field.name] = model_field.type.from_dict(
-                        dict_[model_field.name])
-                elif (
-                    hasattr(model_field.type, '__origin__') and
-                    model_field.type.__origin__ is tuple and
-                    is_dataclass(model_field.type.__args__[0])
+                field_val = dict_[model_field.name]
+                if (
+                        hasattr(model_field.type, '__origin__') and
+                        model_field.type.__origin__ is tuple
                 ):
                     out = []
-                    for arg in dict_[model_field.name]:
-                        if is_dataclass(arg):
-                            out.append(arg)
-                        elif isinstance(arg, dict):
-                            out.append(
-                                model_field.type.__args__[0].from_dict(
-                                    arg)
-                            )
+                    default_type = model_field.type.__args__[0]
+                    for i, arg in enumerate(field_val):
+                        if (
+                                i < len(model_field.type.__args__) and
+                                model_field.type.__args__[i] is not Ellipsis
+                        ):
+                            this_type = model_field.type.__args__[i]
                         else:
-                            raise TypeError(
-                                f'Invalid type of argument for '
-                                f'{model_field.name}, '
-                                f'must be dict or '
-                                f'{model_field.type.__args__[0]}'
-                            )
+                            this_type = default_type
+
+                        out.append(
+                            _single_field_processing(
+                                model, model_field, arg, this_type))
                     kwargs[model_field.name] = tuple(out)
                 else:
-                    kwargs[model_field.name] = model._special_field_processing(
-                        model, model_field, dict_[model_field.name])
+                    kwargs[model_field.name] = _single_field_processing(
+                        model, model_field, field_val)
             elif (
                     model_field.default is MISSING and
                     model_field.default_factory is MISSING and
@@ -236,7 +268,7 @@ class Site(BaseModel):
         if 'modeling_parameters' in dict_:
             mp_dict = dict_.get('modeling_parameters', {})
             if not isinstance(mp_dict, PVModelingParameters):
-                tracking_type = mp_dict.pop('tracking_type', None)
+                tracking_type = mp_dict.get('tracking_type', None)
                 if tracking_type == 'fixed':
                     dict_['modeling_parameters'] = (
                         FixedTiltModelingParameters.from_dict(
@@ -420,6 +452,138 @@ class Observation(BaseModel):
 
 
 @dataclass(frozen=True)
+class AggregateObservation(BaseModel):
+    """
+    Class for keeping track of an Observation and when it is added and
+    (optionally) removed from an Aggregate. This metadata allows the
+    Arbiter to calculate the correct quantities while the Aggregate grows
+    or shrinks over time.
+
+    Parameters
+    ----------
+    observation : Observation
+        The Observation object that is part of the Aggregate
+    effective_from : pandas.Timestamp
+        The datetime of when the Observation should be
+        included in the Aggregate
+    effective_until : pandas.Timestamp
+        The datetime of when the Observation should be
+        excluded from the Aggregate
+    observation_deleted_at : pandas.Timestamp
+        The datetime that the Observation was deleted from the
+        Arbiter. This indicates that the Observation should be
+        removed from the Aggregate, and without the data
+        from this Observation, the Aggregate is invalid before
+        this time.
+
+    See Also
+    --------
+    Observation
+    Aggregate
+    """
+    observation: Observation
+    effective_from: pd.Timestamp
+    effective_until: Union[pd.Timestamp, None] = None
+    observation_deleted_at: Union[pd.Timestamp, None] = None
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name in ('effective_until', 'observation_deleted_at'):
+            if val is None:
+                return val
+            else:
+                return pd.Timestamp(val)
+        else:  # pragma: no cover
+            return val
+
+
+def __check_variable__(variable, *args):
+    if not all(arg.variable == variable for arg in args):
+        raise ValueError('All variables must be identical.')
+
+
+def __check_aggregate_interval_compatibility__(interval, *args):
+    if any(arg.interval_length > interval for arg in args):
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'aggregate.interval_length.')
+    if any(arg.interval_value_type not in ('interval_mean', 'instantaneous')
+           for arg in args):
+        raise ValueError('Only observations with interval_value_type of '
+                         'interval_mean or instantaneous are acceptable')
+
+
+@dataclass(frozen=True)
+class Aggregate(BaseModel):
+    """
+    Class for keeping track of Aggregate metadata. Aggregates always
+    have interval_value_type of 'interval_mean'.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Aggregate, e.g. Utility X Solar PV
+    description : str
+        A description of what the aggregate is.
+    variable : str
+        Variable name, e.g. power, GHI. Each allowed variable has an
+        associated pre-defined unit. All observations that make up the
+        Aggregate must also have this variable.
+    aggregate_type : str
+        The aggregation function that will be applied to observations.
+        Generally, this will be 'sum' although one might be interested,
+        for example, in the 'mean' irradiance of some observations.
+        May be an aggregate function string supported by Pandas. Common
+        options include ('sum', 'mean', 'min', 'max', 'median', 'std').
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour. This must be >= the interval lengths of any Observations that
+        will make up the Aggregate.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average.
+    timezone : str
+        IANA timezone of the Aggregate, e.g. Etc/GMT+8
+    aggregate_id : str, optional
+        UUID of the Aggregate in the API
+    provider : str, optional
+        Provider of the Aggregate information.
+    extra_parameters : str, optional
+        Any extra parameters for the Aggregate.
+    observations : tuple of AggregateObservation
+        The Observations that contribute to the Aggregate
+
+    See Also
+    --------
+    Observation
+    """
+    name: str
+    description: str
+    variable: str
+    aggregate_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    timezone: str
+    observations: Tuple[AggregateObservation, ...]
+    aggregate_id: str = ''
+    provider: str = ''
+    extra_parameters: str = ''
+    units: str = field(init=False)
+    interval_value_type: str = field(default='interval_mean')
+
+    def __post_init__(self):
+        __set_units__(self)
+        observations = [
+            ao.observation for ao in self.observations
+            if ao.observation is not None]
+        __check_variable__(
+            self.variable,
+            *observations)
+        __check_aggregate_interval_compatibility__(
+            self.interval_length,
+            *observations)
+        object.__setattr__(self, 'interval_value_type', 'interval_mean')
+
+
+@dataclass(frozen=True)
 class _ForecastBase:
     name: str
     issue_time_of_day: datetime.time
@@ -429,15 +593,22 @@ class _ForecastBase:
     interval_label: str
     interval_value_type: str
     variable: str
-    site: Site
-    units: str = field(init=False)
-    __post_init__ = __set_units__
 
 
 @dataclass(frozen=True)
 class _ForecastDefaultsBase:
+    site: Union[Site, None] = None
+    aggregate: Union[Aggregate, None] = None
     forecast_id: str = ''
     extra_parameters: str = ''
+    units: str = field(init=False)
+
+
+def __site_or_agg__(cls):
+    if cls.site is not None and cls.aggregate is not None:
+        raise KeyError('Only provide one of "site" or "aggregate" to Forecast')
+    elif cls.site is None and cls.aggregate is None:
+        raise KeyError('Must provide one of "site" or "aggregate" to Forecast')
 
 
 # Follow MRO pattern in https://stackoverflow.com/a/53085935/2802993
@@ -476,9 +647,10 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     forecast_id : str, optional
         UUID of the forecast in the API
     extra_parameters : str, optional
@@ -487,9 +659,25 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     See Also
     --------
     Site
+    Aggregate
     """
     def __post_init__(self):
-        super().__post_init__()
+        __set_units__(self)
+        __site_or_agg__(self)
+
+    def _special_field_processing(self, model_field, val):
+        if model_field.name == 'site':
+            if isinstance(val, dict):
+                return Site.from_dict(val)
+            else:
+                return val
+        elif model_field.name == 'aggregate':
+            if isinstance(val, dict):
+                return Aggregate.from_dict(val)
+            else:
+                return val
+        else:
+            return val
 
 
 @dataclass(frozen=True)
@@ -534,9 +722,10 @@ class ProbabilisticForecastConstantValue(
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     axis : str
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
@@ -560,7 +749,7 @@ class ProbabilisticForecastConstantValue(
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
-    constant_values: Tuple[ProbabilisticForecastConstantValue, ...]
+    constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float, int], ...]  # NOQA
 
 
 @dataclass(frozen=True)
@@ -600,15 +789,17 @@ class ProbabilisticForecast(
     variable : str
         The variable in the forecast, e.g. power, GHI, DNI. Each variable is
         associated with a standard unit.
-    site : Site
-        The predefined site that the forecast is for, e.g. Power Plant X
-        or Aggregate Y.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     axis : str
         The axis on which the constant values of the CDF is specified.
         The axis can be either *x* (constant variable values) or *y*
         (constant percentiles).
-    constant_values : tuple of ProbabilisticForecastConstantValue
-        The variable values or percentiles.
+    constant_values : tuple of ProbabilisticForecastConstantValue or float
+        The variable values or percentiles. Floats will automatically
+        be converted to ProbabilisticForecastConstantValue objects.
     forecast_id : str, optional
         UUID of the forecast in the API
     extra_parameters : str, optional
@@ -617,11 +808,31 @@ class ProbabilisticForecast(
     See also
     --------
     ProbabilisticForecastConstantValue
+    Forecast
     """
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
+
+
+def __set_constant_values__(self):
+    out = []
+    for cv in self.constant_values:
+        if isinstance(cv, ProbabilisticForecastConstantValue):
+            out.append(cv)
+        elif isinstance(cv, (float, int)):
+            cv_dict = self.to_dict()
+            cv_dict.pop('forecast_id', None)
+            cv_dict['constant_value'] = cv
+            out.append(
+                    ProbabilisticForecastConstantValue.from_dict(cv_dict))
+        else:
+            raise TypeError(
+                f'Invalid type for a constant value {cv}. '
+                'Must be int, float, or ProbablisticConstantValue')
+    object.__setattr__(self, 'constant_values', tuple(out))
 
 
 def __check_axis__(axis):
@@ -671,7 +882,21 @@ class BaseFilter(BaseModel):
     """
     Base class for filters to be applied in a report.
     """
-    pass
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if model != BaseFilter:
+            return super().from_dict(dict_, raise_on_extra)
+
+        if 'quality_flags' in dict_:
+            return QualityFlagFilter.from_dict(dict_, raise_on_extra)
+        elif 'time_of_day_range' in dict_:
+            return TimeOfDayFilter.from_dict(dict_, raise_on_extra)
+        elif 'value_range' in dict_:
+            return ValueFilter.from_dict(dict_, raise_on_extra)
+        else:
+            raise NotImplementedError(
+                f'Do not know how to process {dict_} into a Filter.')
 
 
 @dataclass(frozen=True)

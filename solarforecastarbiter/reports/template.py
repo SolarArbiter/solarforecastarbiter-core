@@ -4,7 +4,6 @@ Inserts metadata and figures into the report template.
 import logging
 import subprocess
 
-
 from bokeh.embed import components
 from bokeh.layouts import gridplot
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
@@ -65,7 +64,8 @@ def template_report(report, metadata, metrics,
 
 
 def _metrics_script_divs(report, metrics):
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast')
+    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
+                                        rename=figures.abbreviate)
     data_table = figures.metrics_table(cds)
 
     figures_bar = []
@@ -120,8 +120,8 @@ def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
     Parameters
     ----------
     fx_obs_cds : list
-        List of (forecast, observation, ColumnDataSource) tuples to
-        pass to bokeh plotting objects.
+        List of (ProcessedForecastObservation, ColumnDataSource)
+        tuples to pass to bokeh plotting objects.
     report : solarforecastarbiter.datamodel.Report
         Metadata describing report
     report_template : str, markdown
