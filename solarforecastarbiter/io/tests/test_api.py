@@ -584,13 +584,17 @@ def test_apisession_get_values(
 
 @pytest.fixture()
 def mock_request_fxobs(report_objects, mocker):
-    _, obs, fx0, fx1 = report_objects
+    _, obs, fx0, fx1, agg, fxagg = report_objects
     mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
                  return_value=obs)
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_aggregate',
+                 return_value=agg)
 
     def returnone(fxid):
         if fxid == "da2bc386-8712-11e9-a1c7-0a580a8200ae":
             return fx0
+        elif fxid == "49220780-76ae-4b11-bef1-7a75bdc784e3":
+            return fxagg
         else:
             return fx1
     mocker.patch('solarforecastarbiter.io.api.APISession.get_forecast',
@@ -659,10 +663,12 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
             "filters": [],
             "metrics": ["mae", "rmse", "mbe"],
             "object_pairs": [
-                ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
-                 "9f657636-7e49-11e9-b77f-0a580a8003e9"],
-                ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-                 "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+                {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+                {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+                {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+                 "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
             ]
         }}
     session.create_report(report)
@@ -672,10 +678,10 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
 
 def test_apisession_post_raw_report_processed_data(
         requests_mock, raw_report, report_objects):
-    _, obs, fx0, fx1 = report_objects
+    _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ids = [fx0.forecast_id, obs.observation_id, fx1.forecast_id,
-           obs.observation_id]
+           obs.observation_id, agg.aggregate_id, fxagg.forecast_id]
     mocked = requests_mock.register_uri(
         'POST', re.compile(f'{session.base_url}/reports/.*/values'),
         [{'text': id_} for id_ in ids])
@@ -690,14 +696,15 @@ def test_apisession_post_raw_report_processed_data(
 
 def test_apisession_get_raw_report_processed_data(
         requests_mock, raw_report, report_objects):
-    _, obs, fx0, fx1 = report_objects
+    _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
     val = utils.serialize_data(ser)
     requests_mock.register_uri(
         'GET', re.compile(f'{session.base_url}/reports/.*/values'),
         json=[{'id': id_, 'processed_values': val} for id_ in
-              (fx0.forecast_id, fx1.forecast_id, obs.observation_id)])
+              (fx0.forecast_id, fx1.forecast_id, obs.observation_id,
+               agg.aggregate_id, fxagg.forecast_id)])
     inp = raw_report(False)
     out = session.get_raw_report_processed_data('', inp)
     for fxo in out:
@@ -708,10 +715,10 @@ def test_apisession_get_raw_report_processed_data(
 def test_apisession_post_raw_report(requests_mock, raw_report, mocker,
                                     report_objects):
     raw = raw_report(True)
-    _, obs, fx0, fx1 = report_objects
+    _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ids = [fx0.forecast_id, obs.observation_id, fx1.forecast_id,
-           obs.observation_id]
+           obs.observation_id, agg.aggregate_id, fxagg.forecast_id]
     requests_mock.register_uri(
         'POST', re.compile(f'{session.base_url}/reports/.*/values'),
         [{'text': id_} for id_ in ids])

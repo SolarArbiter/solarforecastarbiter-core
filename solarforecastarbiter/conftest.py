@@ -1241,7 +1241,7 @@ def report_text():
 
 @pytest.fixture()
 def raw_report(report_objects):
-    report, obs, fx0, fx1 = report_objects
+    report, obs, fx0, fx1, agg, fxagg = report_objects
     meta = datamodel.ReportMetadata(
         name=report.name,
         start=report.start,
@@ -1270,7 +1270,16 @@ def raw_report(report_objects):
             forecast_values=ser if with_series else fx1.forecast_id,
             observation_values=ser if with_series else obs.observation_id
         )
-        raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
+        fxagg_ = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastAggregate(fxagg, agg),
+            fxagg.interval_value_type,
+            fxagg.interval_length,
+            fxagg.interval_label,
+            forecast_values=ser if with_series else fxagg.forecast_id,
+            observation_values=ser if with_series else agg.aggregate_id
+        )
+        raw = datamodel.RawReport(meta, 'template', {},
+                                  (fxobs0, fxobs1, fxagg_))
         return raw
     return gen
 

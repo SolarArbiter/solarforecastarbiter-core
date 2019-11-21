@@ -721,10 +721,15 @@ class APISession(requests.Session):
             del report_dict[key]
         report_dict['filters'] = []
         fxobs = report_dict.pop('forecast_observations')
-        report_dict['object_pairs'] = [
-            (_fo['forecast']['forecast_id'],
-             _fo['observation']['observation_id'])
-            for _fo in fxobs]
+        object_pairs = []
+        for _fo in fxobs:
+            d = {'forecast': _fo['forecast']['forecast_id']}
+            if 'aggregate' in _fo:
+                d['aggregate'] = _fo['aggregate']['aggregate_id']
+            else:
+                d['observation'] = _fo['observation']['observation_id']
+            object_pairs.append(d)
+        report_dict['object_pairs'] = object_pairs
         params = {'name': name,
                   'report_parameters': report_dict}
         req = self.post('/reports/', json=params,
@@ -759,8 +764,12 @@ class APISession(requests.Session):
             fx_post = self.post(
                 f'/reports/{report_id}/values',
                 json=fx_data, headers={'Content-Type': 'application/json'})
+            if isinstance(fxobs.original, datamodel.ForecastObservation):
+                obj_id = fxobs.original.observation.observation_id
+            else:
+                obj_id = fxobs.original.aggregate.aggregate_id
             obs_data = {
-                'object_id': fxobs.original.observation.observation_id,
+                'object_id': obj_id,
                 'processed_values': serialize_data(fxobs.observation_values)}
             obs_post = self.post(
                 f'/reports/{report_id}/values',
