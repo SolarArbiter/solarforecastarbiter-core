@@ -14,6 +14,7 @@ from bokeh import palettes
 import pandas as pd
 import numpy as np
 
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.plotting.utils import (line_or_step,
                                                  format_variable_name)
 
@@ -58,7 +59,10 @@ def _obs_name(fx_obs):
     # TODO: add code to ensure obs names are unique
     name = fx_obs.data_object.name
     if fx_obs.forecast.name == fx_obs.data_object.name:
-        name += ' Observation'
+        if isinstance(fx_obs, datamodel.Observation):
+            name += ' Observation'
+        else:
+            name += ' Aggregate'
     return name
 
 

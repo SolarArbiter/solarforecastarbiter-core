@@ -1044,8 +1044,9 @@ class Report(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
-    forecast_observations : Tuple of ForecastObservation
-        Paired Forecasts and Observations to be analyzed in the report.
+    forecast_observations : Tuple of ForecastObservation or ForecastAggregate
+        Paired Forecasts and Observations or Aggregates to be analyzed
+        in the report.
     metrics : Tuple of str
         Metrics to be computed in the report.
     filters : Tuple of Filters
@@ -1063,7 +1064,8 @@ class Report(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    forecast_observations: Tuple[ForecastObservation, ...]
+    forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
+                                 ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
