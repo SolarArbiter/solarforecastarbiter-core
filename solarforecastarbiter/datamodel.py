@@ -67,6 +67,8 @@ def _dict_factory(inp):
 
     if 'units' in dict_:
         del dict_['units']
+    if 'data_object' in dict_:
+        del dict_['data_object']
     return dict_
 
 
@@ -871,10 +873,30 @@ class ForecastObservation(BaseModel):
     """
     forecast: Forecast
     observation: Observation
+    data_object: Observation = field(init=False)
 
     def __post_init__(self):
-        __check_units__(self.forecast, self.observation)
-        __check_interval_compatibility__(self.forecast, self.observation)
+        object.__setattr__(self, 'data_object', self.observation)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
+
+
+@dataclass(frozen=True)
+class ForecastAggregate(BaseModel):
+    """
+    Class for pairing Forecast and Aggregate objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    aggregate: Aggregate
+    data_object: Aggregate = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, 'data_object', self.aggregate)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
 
 
 @dataclass(frozen=True)
@@ -985,7 +1007,7 @@ class ProcessedForecastObservation(BaseModel):
     parameters
     """
     # do this instead of subclass to compare objects later
-    original: ForecastObservation
+    original: Union[ForecastObservation, ForecastAggregate]
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
@@ -1024,8 +1046,9 @@ class Report(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
-    forecast_observations : Tuple of ForecastObservation
-        Paired Forecasts and Observations to be analyzed in the report.
+    forecast_observations : Tuple of ForecastObservation or ForecastAggregate
+        Paired Forecasts and Observations or Aggregates to be analyzed
+        in the report.
     metrics : Tuple of str
         Metrics to be computed in the report.
     filters : Tuple of Filters
@@ -1043,7 +1066,8 @@ class Report(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    forecast_observations: Tuple[ForecastObservation, ...]
+    forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
+                                 ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
@@ -1055,6 +1079,6 @@ class Report(BaseModel):
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
         __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.observation) for k in self.forecast_observations)))
+            ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()

@@ -1032,8 +1032,8 @@ def many_forecast_observation(many_forecasts, many_observations):
     return [datamodel.ForecastObservation(c) for c in cart_prod]
 
 
-@pytest.fixture(scope='module')
-def report_objects():
+@pytest.fixture()
+def report_objects(aggregate):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)
     end = pd.Timestamp('20190404 2359', tz=tz)
@@ -1083,8 +1083,22 @@ def report_objects():
         forecast_id="68a1c22c-87b5-11e9-bf88-0a580a8200ae",
         extra_parameters='{"model": "gfs_quarter_deg_to_hourly_mean"}',
     )
+    forecast_agg = datamodel.Forecast(
+        name="GHI Aggregate FX 60",
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        extra_parameters='',
+    )
     fxobs0 = datamodel.ForecastObservation(forecast_0, observation)
     fxobs1 = datamodel.ForecastObservation(forecast_1, observation)
+    fxagg0 = datamodel.ForecastAggregate(forecast_agg, aggregate)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1101,12 +1115,12 @@ def report_objects():
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
         end=end,
-        forecast_observations=(fxobs0, fxobs1),
+        forecast_observations=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
     )
-    return report, observation, forecast_0, forecast_1
+    return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
 
 @pytest.fixture()
@@ -1165,7 +1179,8 @@ def valuefilter_dict(single_forecast):
 
 @pytest.fixture()
 def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
-    report, observation, forecast_0, forecast_1 = report_objects
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
+        report_objects
     return {
         'name': report.name,
         'start': report.start,
@@ -1175,6 +1190,8 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
              'observation': observation.to_dict()},
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict()},
+            {'forecast': forecast_agg.to_dict(),
+             'aggregate': aggregate.to_dict()},
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
@@ -1208,10 +1225,12 @@ def report_text():
         ],
         "metrics": ["mae", "rmse", "mbe"],
         "object_pairs": [
-            ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"],
-            ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+             "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
         ]
     },
     "raw_report": null,
@@ -1222,7 +1241,7 @@ def report_text():
 
 @pytest.fixture()
 def raw_report(report_objects):
-    report, obs, fx0, fx1 = report_objects
+    report, obs, fx0, fx1, agg, fxagg = report_objects
     meta = datamodel.ReportMetadata(
         name=report.name,
         start=report.start,
@@ -1251,7 +1270,16 @@ def raw_report(report_objects):
             forecast_values=ser if with_series else fx1.forecast_id,
             observation_values=ser if with_series else obs.observation_id
         )
-        raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
+        fxagg_ = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastAggregate(fxagg, agg),
+            fxagg.interval_value_type,
+            fxagg.interval_length,
+            fxagg.interval_label,
+            forecast_values=ser if with_series else fxagg.forecast_id,
+            observation_values=ser if with_series else agg.aggregate_id
+        )
+        raw = datamodel.RawReport(meta, 'template', {},
+                                  (fxobs0, fxobs1, fxagg_))
         return raw
     return gen
 
@@ -1355,7 +1383,7 @@ def aggregate_forecast_text():
   "extra_parameters": "",
   "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
   "interval_label": "beginning",
-  "interval_length": 5,
+  "interval_length": 60,
   "interval_value_type": "interval_mean",
   "issue_time_of_day": "06:00",
   "lead_time_to_start": 60,

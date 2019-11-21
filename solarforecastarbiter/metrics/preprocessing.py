@@ -39,7 +39,7 @@ def apply_validation(data, qfilter, handle_func):
     for model, values in data.items():
 
         # Apply only to Observations
-        if isinstance(model, datamodel.Observation):
+        if isinstance(model, (datamodel.Observation, datamodel.Aggregate)):
             if values.empty:
                 validated_data[model] = values.value
             else:
@@ -51,7 +51,8 @@ def apply_validation(data, qfilter, handle_func):
         elif isinstance(model, datamodel.Forecast):
             validated_data[model] = values
         else:
-            raise TypeError(f"{model} not an Observation or Forecast")
+            raise TypeError(
+                f"{model} not an Observation, Aggregate, or Forecast")
 
     return validated_data
 
@@ -63,7 +64,7 @@ def resample_and_align(fx_obs, data, tz):
 
     Parameters
     ----------
-    fx_obs : solarforecastarbiter.datamodel.ForecastObservation
+    fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
         Pair of forecast and observation.
     data : dict
         Keys are Observation and Forecast models and values
@@ -78,9 +79,9 @@ def resample_and_align(fx_obs, data, tz):
     Todo
     ----
       * Add other resampling functions (besides mean like first, last, median)
-    """
+    """  # noqa: E501
     fx = fx_obs.forecast
-    obs = fx_obs.observation
+    obs = fx_obs.data_object
 
     # Resample observation
     closed = datamodel.CLOSED_MAPPING[fx.interval_label]

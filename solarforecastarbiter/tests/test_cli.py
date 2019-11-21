@@ -233,7 +233,9 @@ def test_report(cli_token, mocker, report_objects):
     mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
-                               report_objects[1]: obs})
+                               report_objects[1]: obs,
+                               report_objects[4]: obs,
+                               report_objects[5]: data})
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
         infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /
