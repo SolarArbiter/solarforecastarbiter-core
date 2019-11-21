@@ -341,7 +341,6 @@ def bar_subdivisions(cds, kind, metric):
 
     width = 0.8
 
-    x_range = cds.data[kind]
     fig_kwargs['x_axis_label'] = kind
 
     # Special handling for x-axis with dates
@@ -360,8 +359,6 @@ def bar_subdivisions(cds, kind, metric):
     y_max, y_min = pad_factor * y_max, pad_factor * y_min
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
-
-        #import ipdb; ipdb.set_trace()
 
         # Create figure
         title = field + ' ' + metric.upper()
@@ -385,7 +382,6 @@ def bar_subdivisions(cds, kind, metric):
             if y_min > 0:
                 fig.y_range.start = 0
                 fig.y_range.end = y_max
-
 
         if num == 0:
             # add x_range to plots to link panning
