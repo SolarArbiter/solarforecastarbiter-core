@@ -345,18 +345,20 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
 
         CRPS = 1/n sum_{i=1}^n int |F_i - O_i| dx
 
-    where F_i is the CDF of the forecast quantity x at time i, and O_i is the
-    CDF associated with the observed value obs_i:
+    where F_i is the CDF of the forecast at time i and O_i is the CDF
+    associated with the observed value obs_i:
 
-        O_i = 1 if obs_i <= fx_i, else O_i = 0
+        O_{i, j} = 1 if obs_i <= fx_{i, j}, else O_{i, j} = 0
 
-    where fx_i and obs_i are the forecast and observation at time i,
-    respectively.
+    where obs_i is the observation at time i, and fx_{i, j} is the forecast at
+    time i for CDF interval j.
 
     Parameters
     ----------
     fx : (n, d) array_like
-        Forecasts (physical units) for d > 1 intervals.
+        Forecasts (physical units) of the right-hand-side of a CDF with d
+        intervals (d >= 2), e.g., fx = [10 MW, 20 MW, 30 MW] is interpreted as
+        <= 10 MW, <= 20 MW, <= 30 MW.
     fx_prob : (n, d) array_like
         Probability [%] associated with the forecasts.
     obs : (n,) array_like
