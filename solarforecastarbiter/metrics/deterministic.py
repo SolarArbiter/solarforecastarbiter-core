@@ -22,6 +22,8 @@ __all__ = [
 def mean_absolute(obs, fx):
     """Mean absolute error (MAE).
 
+        MAE = 1/n sum_{i=1}^n |fx_i - obs_i|
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -41,6 +43,8 @@ def mean_absolute(obs, fx):
 
 def mean_bias(obs, fx):
     """Mean bias error (MBE).
+
+        MBE = 1/n sum_{i=1}^n (fx_i - obs_i)
 
     Parameters
     ----------
@@ -62,6 +66,8 @@ def mean_bias(obs, fx):
 def root_mean_square(obs, fx):
     """Root mean square error (RMSE).
 
+        RMSE = sqrt( 1/n sum_{i=1}^n (fx_i - obs_i)^2 )
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -82,6 +88,8 @@ def root_mean_square(obs, fx):
 def mean_absolute_percentage(obs, fx):
     """Mean absolute percentage error (MAPE).
 
+        MAPE = 1/n sum_{i=1}^n |(fx_i - obs_i) / obs_i| * 100%
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -101,6 +109,8 @@ def mean_absolute_percentage(obs, fx):
 
 def normalized_root_mean_square(obs, fx, norm):
     """Normalized root mean square error (NRMSE).
+
+        NRMSE = RMSE / norm * 100%
 
     Parameters
     ----------
@@ -123,6 +133,11 @@ def normalized_root_mean_square(obs, fx, norm):
 
 def forecast_skill(obs, fx, ref):
     """Forecast skill (s).
+
+        s = 1 - RMSE_fx / RMSE_ref
+
+    where RMSE_fx is the RMSE of the forecast and RMSE_ref is the RMSE of the
+    reference forecast (e.g. Persistence).
 
     Parameters
     ----------
@@ -149,6 +164,16 @@ def forecast_skill(obs, fx, ref):
 def pearson_correlation_coeff(obs, fx):
     """Pearson correlation coefficient (r).
 
+        r = A / (B * C)
+
+    where:
+        
+        A = sum_{i=1}^n (fx_i - fx_avg) * (obs_i - obs_avg)
+        B = sqrt( sum_{i=1}^n (fx_i - fx_avg)^2 )
+        C = sqrt( sum_{i=1}^n (obs_i - obs_avg)^2 )
+        fx_avg = 1/n sum_{i=1} fx_i
+        obs_avg = 1/n sum_{i=1} obs_i
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -163,15 +188,32 @@ def pearson_correlation_coeff(obs, fx):
 
     """
 
-    x1 = fx - np.mean(fx)
-    x2 = obs - np.mean(obs)
-    return np.sum(x1 * x2) / (
-        np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2))
-    )
+    #f = fx - np.mean(fx)
+    #o = obs - np.mean(obs)
+    #r = np.sum(f * o) / (
+    #    np.sqrt(np.sum(f ** 2)) * np.sqrt(np.sum(o ** 2))
+    #)
+
+    fx_avg = np.mean(fx)
+    obs_avg = np.mean(obs)
+    A = np.sum((fx - fx_avg) * (obs - obs_avg))
+    B = np.sqrt(np.sum((fx - fx_avg) ** 2))
+    C = np.sqrt(np.sum((obs - obs_avg) ** 2))
+    r = A / (B * C)
+
+    #x1 = fx - np.mean(fx)
+    #x2 = obs - np.mean(obs)
+    #r = np.sum(x1 * x2) / (
+    #    np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2))
+    #)
+
+    return r
 
 
 def coeff_determination(obs, fx):
     """Coefficient of determination (R^2).
+
+        R^2 = 
 
     Parameters
     ----------
@@ -196,6 +238,8 @@ def coeff_determination(obs, fx):
 def centered_root_mean_square(obs, fx):
     """Centered (unbiased) root mean square error (CRMSE):
 
+        CRMSE = 
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -217,6 +261,8 @@ def centered_root_mean_square(obs, fx):
 
 def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
+
+        KSI = 
 
     Parameters
     ----------
@@ -264,6 +310,8 @@ def kolmogorov_smirnov_integral(obs, fx, normed=False):
 def over(obs, fx):
     """The OVER metric.
 
+        OVER = 
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -305,6 +353,8 @@ def over(obs, fx):
 def combined_performance_index(obs, fx):
     """Combined Performance Index (CPI) metric.
 
+        CPI = (KSI + OVER + 2 * RMSE) / 4
+
     Parameters
     ----------
     obs : (n,) array-like
@@ -321,5 +371,5 @@ def combined_performance_index(obs, fx):
     ksi = kolmogorov_smirnov_integral(obs, fx)
     ov = over(obs, fx)
     rmse = root_mean_square(obs, fx)
-    cpi = 1 / 4 * (ksi + ov + 2 * rmse)
+    cpi = (ksi + ov + 2 * rmse) / 4.0
     return cpi
