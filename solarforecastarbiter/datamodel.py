@@ -743,7 +743,7 @@ class ProbabilisticForecastConstantValue(
     forecast_id : str, optional
         UUID of the forecast in the API
     provider : str, optional
-        Provider of the ProbabilisticForecast information.
+        Provider of the ProbabilisticForecastConstantValue information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
