@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 
-def brier_score(fx, fx_prob, obs):
+def brier_score(obs, fx, fx_prob):
     """Brier Score (BS).
 
         BS = 1/n sum_{i=1}^n (f_i - o_i)^2
@@ -30,13 +30,13 @@ def brier_score(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -62,7 +62,7 @@ def brier_score(fx, fx_prob, obs):
     return bs
 
 
-def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
+def brier_skill_score(obs, fx, fx_prob, ref, ref_prob):
     """Brier Skill Score (BSS).
 
         BSS = 1 - BS_fx / BS_ref
@@ -72,6 +72,8 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
@@ -82,8 +84,6 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
         interval.
     ref_prob : (n,) array_like
         Probability [%] associated with the reference forecast.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -91,8 +91,8 @@ def brier_skill_score(fx, fx_prob, ref, ref_prob, obs):
         The Brier Skill Score [unitless].
 
     """
-    bs_fx = brier_score(fx, fx_prob, obs)
-    bs_ref = brier_score(ref, ref_prob, obs)
+    bs_fx = brier_score(obs, fx, fx_prob)
+    bs_ref = brier_score(obs, ref, ref_prob)
     skill = 1.0 - bs_fx / bs_ref
     return skill
 
@@ -138,7 +138,7 @@ def _unique_forecasts(f):
     return f_uniq
 
 
-def brier_decomposition(fx, fx_prob, obs):
+def brier_decomposition(obs, fx, fx_prob):
     """The 3-component decomposition of the Brier Score.
 
         BS = REL - RES + UNC
@@ -148,13 +148,13 @@ def brier_decomposition(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -207,7 +207,7 @@ def brier_decomposition(fx, fx_prob, obs):
     return rel, res, unc
 
 
-def reliability(fx, fx_prob, obs):
+def reliability(obs, fx, fx_prob):
     """Reliability (REL) of the forecast.
 
         REL = 1/n sum_{i=1}^I N_i (f_i - o_{i,avg})^2
@@ -219,13 +219,13 @@ def reliability(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -239,11 +239,11 @@ def reliability(fx, fx_prob, obs):
 
     """
 
-    rel = brier_decomposition(fx, fx_prob, obs)[0]
+    rel = brier_decomposition(obs, fx, fx_prob)[0]
     return rel
 
 
-def resolution(fx, fx_prob, obs):
+def resolution(obs, fx, fx_prob):
     """Resolution (RES) of the forecast.
 
         RES = 1/n sum_{i=1}^I N_i (o_{i,avg} - o_{avg})^2
@@ -256,13 +256,13 @@ def resolution(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -276,11 +276,11 @@ def resolution(fx, fx_prob, obs):
 
     """
 
-    res = brier_decomposition(fx, fx_prob, obs)[1]
+    res = brier_decomposition(obs, fx, fx_prob)[1]
     return res
 
 
-def uncertainty(fx, fx_prob, obs):
+def uncertainty(obs, fx, fx_prob):
     """Uncertainty (UNC) of the forecast.
 
         UNC = base_rate * (1 - base_rate)
@@ -289,13 +289,13 @@ def uncertainty(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n,) array_like
         Forecasts (physical units) of the right-hand-side of a CDF interval,
         e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
     fx_prob : (n,) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -309,7 +309,7 @@ def uncertainty(fx, fx_prob, obs):
 
     """
 
-    unc = brier_decomposition(fx, fx_prob, obs)[2]
+    unc = brier_decomposition(obs, fx, fx_prob)[2]
     return unc
 
 
@@ -340,7 +340,7 @@ def sharpness(fx_lower, fx_upper):
     return sh
 
 
-def continuous_ranked_probability_score(fx, fx_prob, obs):
+def continuous_ranked_probability_score(obs, fx, fx_prob):
     """Continuous Ranked Probability Score (CRPS).
 
         CRPS = 1/n sum_{i=1}^n int (F_i - O_i)^2 dx
@@ -355,14 +355,14 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
 
     Parameters
     ----------
+    obs : (n,) array_like
+        Observations (physical unit).
     fx : (n, d) array_like
         Forecasts (physical units) of the right-hand-side of a CDF with d
         intervals (d >= 2), e.g., fx = [10 MW, 20 MW, 30 MW] is interpreted as
         <= 10 MW, <= 20 MW, <= 30 MW.
     fx_prob : (n, d) array_like
         Probability [%] associated with the forecasts.
-    obs : (n,) array_like
-        Observations (physical unit).
 
     Returns
     -------
@@ -376,14 +376,14 @@ def continuous_ranked_probability_score(fx, fx_prob, obs):
     >>> fx = np.array([[10, 20], [10, 20]])
     >>> fx_prob = np.array([[30, 50], [65, 100]])
     >>> obs = np.array([8, 12])
-    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    >>> continuous_ranked_probability_score(obs, fx, fx_prob)
     4.5625
 
     Forecast thresholds for constant probabilities (25%, 75%):
     >>> fx = np.array([[5, 15], [8, 14]])
     >>> fx_prob = np.array([[25, 75], [25, 75]])
     >>> obs = np.array([8, 10])
-    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    >>> continuous_ranked_probability_score(obs, fx, fx_prob)
     0.5
 
     """

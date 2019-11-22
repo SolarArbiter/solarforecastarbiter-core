@@ -31,7 +31,7 @@ from solarforecastarbiter.metrics import probabilistic as prob
     (np.array([10, 10]), np.array([100, 100]), np.array([2, 14]), 0.5),
 ])
 def test_brier_score(fx, fx_prob, obs, value):
-    assert prob.brier_score(fx, fx_prob, obs) == value
+    assert prob.brier_score(obs, fx, fx_prob) == value
 
 
 @pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
@@ -39,7 +39,7 @@ def test_brier_score(fx, fx_prob, obs, value):
     (10, 50, 5, 100, 8, 1.0 - 0.25 / 1.0),
 ])
 def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
-    assert prob.brier_skill_score(fx, fx_prob, ref, ref_prob, obs) == value
+    assert prob.brier_skill_score(obs, fx, fx_prob, ref, ref_prob) == value
 
 
 @pytest.mark.parametrize("f,value", [
@@ -95,7 +95,7 @@ def test_unique_forecasts(f, value):
     ),
 ])
 def test_reliability(fx, fx_prob, obs, value):
-    assert prob.reliability(fx, fx_prob, obs) == pytest.approx(value)
+    assert prob.reliability(obs, fx, fx_prob) == pytest.approx(value)
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
@@ -139,7 +139,7 @@ def test_reliability(fx, fx_prob, obs, value):
     ),
 ])
 def test_resolution(fx, fx_prob, obs, value):
-    assert prob.resolution(fx, fx_prob, obs) == value
+    assert prob.resolution(obs, fx, fx_prob) == value
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
@@ -156,7 +156,7 @@ def test_resolution(fx, fx_prob, obs, value):
     (np.array([8, 8]), np.array([33, 31]), np.array([10, 10]), 0.0),
 ])
 def test_unc(fx, fx_prob, obs, value):
-    assert prob.uncertainty(fx, fx_prob, obs) == value
+    assert prob.uncertainty(obs, fx, fx_prob) == value
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs", [
@@ -171,8 +171,8 @@ def test_unc(fx, fx_prob, obs, value):
     (np.array([8, 8]), np.array([100, 100]), np.array([10, 10])),
 ])
 def test_brier_decomposition(fx, fx_prob, obs):
-    bs = prob.brier_score(fx, fx_prob, obs)
-    rel, res, unc = prob.brier_decomposition(fx, fx_prob, obs)
+    bs = prob.brier_score(obs, fx, fx_prob)
+    rel, res, unc = prob.brier_decomposition(obs, fx, fx_prob)
     assert pytest.approx(bs) == rel - res + unc
 
 
@@ -259,5 +259,5 @@ def test_sharpness(fx_lower, fx_upper, value):
     ),
 ])
 def test_crps(fx, fx_prob, obs, value):
-    crps = prob.continuous_ranked_probability_score(fx, fx_prob, obs)
+    crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
     assert crps == value
