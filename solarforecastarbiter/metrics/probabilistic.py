@@ -338,3 +338,67 @@ def sharpness(fx_lower, fx_upper):
     """
     sh = np.mean(fx_upper - fx_lower)
     return sh
+
+
+def continuous_ranked_probability_score(fx, fx_prob, obs):
+    """Continuous Ranked Probability Score (CRPS).
+
+        CRPS = 1/n sum_{i=1}^n int (F_i - O_i)^2 dx
+
+    where F_i is the CDF of the forecast at time i and O_i is the CDF
+    associated with the observed value obs_i:
+
+        O_{i, j} = 1 if obs_i <= fx_{i, j}, else O_{i, j} = 0
+
+    where obs_i is the observation at time i, and fx_{i, j} is the forecast at
+    time i for CDF interval j.
+
+    Parameters
+    ----------
+    fx : (n, d) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF with d
+        intervals (d >= 2), e.g., fx = [10 MW, 20 MW, 30 MW] is interpreted as
+        <= 10 MW, <= 20 MW, <= 30 MW.
+    fx_prob : (n, d) array_like
+        Probability [%] associated with the forecasts.
+    obs : (n,) array_like
+        Observations (physical unit).
+
+    Returns
+    -------
+    crps : float
+        The Continuous Ranked Probability Score [unitless].
+
+    Examples
+    --------
+
+    Forecast probabilities of <= 10 MW and <= 20 MW:
+    >>> fx = np.array([[10, 20], [10, 20]])
+    >>> fx_prob = np.array([[30, 50], [65, 100]])
+    >>> obs = np.array([8, 12])
+    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    4.5625
+
+    Forecast thresholds for constant probabilities (25%, 75%):
+    >>> fx = np.array([[5, 15], [8, 14]])
+    >>> fx_prob = np.array([[25, 75], [25, 75]])
+    >>> obs = np.array([8, 10])
+    >>> continuous_ranked_probability_score(fx, fx_prob, obs)
+    0.5
+
+    """
+
+    # match observations to fx shape: (n,) => (n, d)
+    obs = np.tile(obs, (fx.shape[1], 1)).T
+
+    # event: 0=did not happen, 1=did happen
+    o = np.where(obs <= fx, 1.0, 0.0)
+
+    # forecast probabilities [unitless]
+    f = fx_prob / 100.0
+
+    # integrate along each sample, then average all samples
+    integrand = (f - o) ** 2
+    dx = np.diff(fx, axis=1)
+    crps = np.mean(np.sum(integrand[:, :-1] * dx, axis=1))
+    return crps

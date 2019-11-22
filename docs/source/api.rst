@@ -435,6 +435,7 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.resolution
     metrics.probabilistic.uncertainty
     metrics.probabilistic.sharpness
+    metrics.probabilistic.continuous_ranked_probability_score
 
 Reports
 =======
