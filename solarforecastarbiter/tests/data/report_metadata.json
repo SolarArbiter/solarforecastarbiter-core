@@ -30,10 +30,12 @@
         ],
         "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
         "object_pairs": [
-            {"forecast": "9f657636-7e49-11e9-b77f-0a580a8003e9",
-             "observation": "31ae8548-9a07-11e9-b2f4-0a580a8003d5"},
-            {"forecast": "9f657636-7e49-11e9-b77f-0a580a8003e9",
-             "observation": "77be10e8-9c22-11e9-a974-0a580a8003d5"}
+            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+             "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
         ]
     }
 }

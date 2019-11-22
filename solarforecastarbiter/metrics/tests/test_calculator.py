@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
+import copy
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator,
@@ -61,7 +62,7 @@ def test_calculate_metrics(categories, metrics,
                                         np.random.randn(10)+10,
                                         np.random.randn(10)+10)
 
-    # Error
+    # Error - no metrics
     if len(metrics) == 0:
         with pytest.raises(RuntimeError):
             calculator.calculate_metrics(proc_fx_obs,
@@ -91,6 +92,26 @@ def test_calculate_metrics(categories, metrics,
 
     assert isinstance(one_result, list)
     assert len(one_result) == 1
+
+
+@pytest.mark.parametrize('categories,metrics', [
+    ([], []),
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
+])
+def test_calculate_metrics_with_probablistic(categories, metrics,
+                                             create_processed_fxobs,
+                                             single_observation,
+                                             prob_forecasts):
+    prfxobs = datamodel.ForecastObservation(prob_forecasts, single_observation)
+    proc_prfx_obs = create_processed_fxobs(prfxobs,
+                                           np.random.randn(10)+10,
+                                           np.random.randn(10)+10)
+
+    # Error - ProbabilisticForecast not yet supported
+    with pytest.raises(NotImplementedError):
+        calculator.calculate_metrics([proc_prfx_obs],
+                                     categories, metrics)
+
 
 
 # Suppress RuntimeWarnings b/c in some metrics will divide by zero or

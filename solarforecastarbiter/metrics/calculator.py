@@ -123,14 +123,16 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         Structure is:
 
           * dictionary of forecast 'name' and category types as tuple
-            (e.g., ('Total'), )
-          * dictionary with key of metric type (e.g., 'mae', 'rmse')
+            (e.g., ('Total'), ('Month of the year') )
+          * dictionary with key of metric type
+            (e.g., 'mae', 'rmse')
           * values of pandas.Series with Index of category values
+            (e.g., pandas.Series([1, 2], index='Aug','Sep'])
 
     Raises
     ------
     RuntimeError
-        If there is no forecast, obersvation timeseries data or no metrics
+        If there is no forecast, observation timeseries data or no metrics
         are specified.
 
     """
