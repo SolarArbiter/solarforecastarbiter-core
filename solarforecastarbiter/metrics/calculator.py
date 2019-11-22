@@ -151,7 +151,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     if fx.empty:
         raise RuntimeError("No Forecast timeseries data.")
     elif obs.empty:
-        raise RuntimeError("No Obersvation timeseries data.")
+        raise RuntimeError("No Observation timeseries data.")
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
 

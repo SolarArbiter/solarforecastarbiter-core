@@ -8,9 +8,6 @@ This is the second 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
-* Add metrics calculator functions for processing forecasts and observations
-  :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics`, and
-  :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics`. (:pull:`224`)
 * Add metrics preprocessing functions
   :py:mod:`solarforecastarbiter.metrics.preprocessing.apply_validation`,
   :py:mod:`solarforecastarbiter.metrics.preprocessing.resample_and_align`, and
@@ -41,8 +38,6 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-* Made improvements the figures in reports to include categories:
-  total, year, month, date, weekday, day, hour (:pull:`224`)
 * Dictionary of metric results from metrics.calculator now has structure with
   levels of  1) category type 2) metric type 3) category value, 4) metric value
   (:pull:`224`)
