@@ -95,7 +95,8 @@ def test_full_render(mock_data, report_objects):
 @pytest.mark.skipif(shutil.which('pandoc') is None,
                     reason='Pandoc can not be found')
 def test_all_categories_render(mock_data, report_objects):
-    report, observation, forecast_0, forecast_1 = report_objects
+    # Create report using template but with all categories
+    report, observation, forecast_0, forecast_1, _, _ = report_objects
     all_report = datamodel.Report(
         name=report.name,
         start=report.start,

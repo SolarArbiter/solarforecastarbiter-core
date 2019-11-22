@@ -1083,7 +1083,7 @@ class Report(BaseModel):
     forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
                                  ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
-    categories: Tuple[str, ...] = ('Total', )
+    categories: Tuple[str, ...] = ('Total', 'Date', 'Hour of the day')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'

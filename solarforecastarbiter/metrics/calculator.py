@@ -122,7 +122,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         Contains all the computed metrics by categories.
         Structure is:
 
-          * dictionary of forecast 'name' and category type as tuple
+          * dictionary of forecast 'name' and category types as tuple
             (e.g., ('Total'), )
           * dictionary with key of metric type (e.g., 'mae', 'rmse')
           * values of pandas.Series with Index of category values

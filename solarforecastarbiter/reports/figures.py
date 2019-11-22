@@ -142,7 +142,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
             name = _fx_name(proc_fx_obs.original)
             getattr(fig, plot_method)(
                 x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend_label=name, **plot_kwargs)
+                color=next(palette), legend=name, **plot_kwargs)
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
