@@ -18,10 +18,8 @@ API Changes
   objects that were missing it (:pull:`260`)
 * Add :py:mod:`solarforecastarbiter.io.api.APISession.get_user_info`
   to get information about the current API user (:pull:`260`)
-
 * Add additional metric for probabilistic forecasts
   :py:mod:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`. (:issue:`250`) (:pull:`257`)
-
 * Standardize metric input naming and order conventions to `function(obs, fx)`,
   where `obs` = observations and `fx` = forecasts (:issue:`262`) (:pull:`263`)
 
