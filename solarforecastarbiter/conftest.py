@@ -629,6 +629,7 @@ def _observation_from_dict(get_site):
             site=get_site(obs_dict['site_id']),
             uncertainty=obs_dict['uncertainty'],
             observation_id=obs_dict.get('observation_id', ''),
+            provider=obs_dict.get('provider', ''),
             extra_parameters=obs_dict.get('extra_parameters', ''))
     return f
 
@@ -782,6 +783,7 @@ def _forecast_from_dict(single_site, get_site, get_aggregate):
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''))
     return f
 
@@ -971,6 +973,7 @@ def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
             axis=fx_dict['axis'],
             constant_value=fx_dict['constant_value'])
@@ -997,6 +1000,7 @@ def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
             axis=fx_dict['axis'],
             constant_values=(cv,))
@@ -1417,6 +1421,7 @@ def aggregateforecast(aggregate_forecast_text, aggregate):
         lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
         run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
         forecast_id=fx_dict.get('forecast_id', ''),
+        provider=fx_dict.get('provider', ''),
         extra_parameters=fx_dict.get('extra_parameters', ''))
 
 
@@ -1497,17 +1502,18 @@ def aggregate_prob_forecast(aggregate_prob_forecast_text,
     fx_dict = json.loads(aggregate_prob_forecast_text)
     fx_dict['constant_values'] = agg_prob_forecast_constant_value
     return datamodel.ProbabilisticForecast(
-            name=fx_dict['name'], variable=fx_dict['variable'],
-            interval_value_type=fx_dict['interval_value_type'],
-            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
-            interval_label=fx_dict['interval_label'],
-            site=None,
-            aggregate=aggregate,
-            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
-                                      int(fx_dict['issue_time_of_day'][3:])),
-            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
-            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
-            forecast_id=fx_dict.get('forecast_id', ''),
-            extra_parameters=fx_dict.get('extra_parameters', ''),
-            axis=fx_dict['axis'],
-            constant_values=(agg_prob_forecast_constant_value, ))
+        name=fx_dict['name'], variable=fx_dict['variable'],
+        interval_value_type=fx_dict['interval_value_type'],
+        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+        interval_label=fx_dict['interval_label'],
+        site=None,
+        aggregate=aggregate,
+        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                  int(fx_dict['issue_time_of_day'][3:])),
+        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),
+        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+        forecast_id=fx_dict.get('forecast_id', ''),
+        extra_parameters=fx_dict.get('extra_parameters', ''),
+        provider=fx_dict.get('provider', ''),
+        axis=fx_dict['axis'],
+        constant_values=(agg_prob_forecast_constant_value, ))

@@ -428,7 +428,8 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     this function may run in a cronjob every five minutes with *run_time*
     set to now. By setting *issue_buffer* to '5min', only forecasts that
     should be issued in the next five minutes will be generated on each
-    run.
+    run. Only forecasts that belong to the same provider/organization
+    of the token user will be updated.
 
     Parameters
     ----------
@@ -443,8 +444,11 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
         Alternate base_url of the API
     """
     session = api.APISession(token, base_url=base_url)
+    user_info = session.get_user_info()
     forecasts = session.list_forecasts()
     forecasts += session.list_probabilistic_forecasts()
+    forecasts = [fx for fx in forecasts
+                 if fx.provider == user_info['organization']]
     forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
     execute_for = forecast_df[
         forecast_df.next_issue_time <= run_time + issue_buffer]

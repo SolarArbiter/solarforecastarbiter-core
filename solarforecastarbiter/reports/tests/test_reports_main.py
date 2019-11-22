@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import shutil
 
 
@@ -83,10 +84,15 @@ def test_full_render(mock_data, report_objects):
     report_md = main.render_raw_report(raw_report)
     body = template.report_md_to_html(report_md)
     full_report = template.full_html(body)
+    # at least one non whitespace character in body, usually caused
+    # by pandoc version error
+    assert re.search(
+        r'<body>(.*\S.*)</body>', full_report, re.S) is not None
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)
 
 
+<<<<<<< HEAD
 @pytest.mark.skipif(shutil.which('pandoc') is None,
                     reason='Pandoc can not be found')
 def test_all_categories_render(mock_data, report_objects):
@@ -114,6 +120,37 @@ def test_all_categories_render(mock_data, report_objects):
 def test_validate_resample_align(mock_data, report_objects):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
+=======
+def test_merge_quality_filters():
+    filters = [
+        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
+                                     'CLIPPED VALUES')),
+        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
+        datamodel.QualityFlagFilter(())
+    ]
+    out = main._merge_quality_filters(filters)
+    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
+                                      'CLIPPED VALUES', 'SHADED'}
+
+
+@pytest.fixture(params=[0, 1, 2])
+def more_report_objects(report_objects, request):
+    report, observation, forecast_0, forecast_1, *_ = report_objects
+    if request.param == 0:
+        return report, observation, forecast_0, forecast_1
+    elif request.param == 1:
+        new_filters = ()
+        return (report.replace(filters=new_filters), observation, forecast_0,
+                forecast_1)
+    elif request.param == 2:
+        new_filters = (datamodel.QualityFlagFilter(()),)
+        return (report.replace(filters=new_filters), observation, forecast_0,
+                forecast_1)
+
+
+def test_validate_resample_align(mock_data, more_report_objects):
+    report, observation, forecast_0, forecast_1 = more_report_objects
+>>>>>>> solararbiter/master
     meta = main.create_metadata(report)
     session = api.APISession('nope')
     data = main.get_data_for_report(session, report)

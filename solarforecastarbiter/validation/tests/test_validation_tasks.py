@@ -16,7 +16,7 @@ def make_observation(single_site):
             name='test', variable=variable, interval_value_type='mean',
             interval_length=pd.Timedelta('1hr'), interval_label='beginning',
             site=single_site, uncertainty=0.1, observation_id='OBSID',
-            extra_parameters='')
+            provider='Organization 1', extra_parameters='')
     return f
 
 
@@ -736,6 +736,7 @@ def test_daily_observation_validation_other(var, mocker, make_observation,
 def test_daily_observation_validation_many(mocker, make_observation,
                                            daily_index):
     obs = [make_observation('dhi'), make_observation('dni')]
+    obs += [make_observation('ghi').replace(provider='Organization 2')]
     data = pd.DataFrame(
         [(0, 0), (100, 0), (-100, 0), (100, 0), (300, 0),
          (300, 0), (300, 0), (300, 0), (100, 0), (0, 0),
@@ -744,6 +745,8 @@ def test_daily_observation_validation_many(mocker, make_observation,
         columns=['value', 'quality_flag'])
     mocker.patch('solarforecastarbiter.io.api.APISession.list_observations',
                  return_value=obs)
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_user_info',
+                 return_value={'organization': obs[0].provider})
     mocker.patch(
         'solarforecastarbiter.io.api.APISession.get_observation_values',
         return_value=data)
@@ -792,6 +795,8 @@ def test_daily_observation_validation_not_enough(mocker, make_observation):
         columns=['value', 'quality_flag'])
     mocker.patch('solarforecastarbiter.io.api.APISession.list_observations',
                  return_value=obs)
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_user_info',
+                 return_value={'organization': obs[0].provider})
     mocker.patch(
         'solarforecastarbiter.io.api.APISession.get_observation_values',
         return_value=data)

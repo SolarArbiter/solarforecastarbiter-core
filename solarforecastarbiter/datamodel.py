@@ -433,6 +433,8 @@ class Observation(BaseModel):
         will be determined later.
     observation_id : str, optional
         UUID of the observation in the API
+    provider : str, optional
+        Provider of the Observation information.
     extra_parameters : str, optional
         Any extra parameters for the observation
 
@@ -448,6 +450,7 @@ class Observation(BaseModel):
     site: Site
     uncertainty: float
     observation_id: str = ''
+    provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
@@ -602,6 +605,7 @@ class _ForecastDefaultsBase:
     site: Union[Site, None] = None
     aggregate: Union[Aggregate, None] = None
     forecast_id: str = ''
+    provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
 
@@ -655,6 +659,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the Forecast information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -736,6 +742,8 @@ class ProbabilisticForecastConstantValue(
         The variable value or percentile.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the ProbabilisticForecastConstantValue information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -804,6 +812,8 @@ class ProbabilisticForecast(
         be converted to ProbabilisticForecastConstantValue objects.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the ProbabilisticForecast information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -1061,6 +1071,8 @@ class Report(BaseModel):
         ID of the report in the API
     raw_report : RawReport or None
         Once computed, the raw report should be stored here
+    provider : str, optional
+        Provider of the Report information.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
@@ -1077,6 +1089,7 @@ class Report(BaseModel):
     status: str = 'pending'
     report_id: str = ''
     raw_report: Union[None, RawReport] = None
+    provider: str = ''
     __version__: int = 0  # should add version to api
 
     def __post_init__(self):

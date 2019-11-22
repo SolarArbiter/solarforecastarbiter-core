@@ -14,6 +14,10 @@ API Changes
   (:pull:`256`)
 * Add :py:meth:`~solarforecastarbiter.io.api.APISession.get_values`.
   (:pull:`256`)
+* Add the `provider` parameter to :py:mod:`solarforecastarbiter.Datamodel`
+  objects that were missing it (:pull:`260`)
+* Add :py:mod:`solarforecastarbiter.io.api.APISession.get_user_info`
+  to get information about the current API user (:pull:`260`)
 * Add metrics calculator functions for processing forecasts and observations
   :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics`, and
   :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics`. (:pull:`224`)
@@ -21,6 +25,14 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Add capability to analyze aggregates to reports. (:pull:`256`)
+* :py:mod:`solarforecastarbiter.reference_forecasts.main.make_latest_nwp_forecasts`
+  now only tries to update forecasts that have the same provider as the user's
+  organization (:pull:`260`)
+* :py:mod:`solarforecastarbiter.validation.tasks.daily_observation_validation`
+  only validates data for observations with the same provider as the user's
+  organization (:pull:`260`)
+* Merge multiple quality flag filters together before applying in report
+  generation. (:pull:`260`)
 * Made improvements the figures in reports to include categories:
   Total, Year, Month, Date, Day of the week, Day of the mont, and
   Hour of the day (:pull:`224`)
@@ -28,6 +40,9 @@ Enhancements
 Bug fixes
 ~~~~~~~~~
 * Log MIDC CSV parsing errors, but continue with other sites (:issue:`254`)
+* Fix issue of assuming the first report filter is a QualityFlagFilter,
+  partially addressing (:issue:`251`) (:pull:`260`)
+* Test that pandoc report generation actually generates the HTML body (:pull:`260`)
 
 Contributors
 ~~~~~~~~~~~~
