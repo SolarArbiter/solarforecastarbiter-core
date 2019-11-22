@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from solarforecastarbiter.metrics import valuation
 
+
 @pytest.mark.parametrize("fx,obs,cost,value", [
     # 10 USD per MW
     (np.array([1, 2, 3]), np.array([1, 2, 3]), 10, 0.0),
