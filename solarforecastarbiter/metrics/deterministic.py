@@ -131,7 +131,7 @@ def normalized_root_mean_square(obs, fx, norm):
     return root_mean_square(obs, fx) / norm * 100.0
 
 
-def forecast_skill(obs, fx, ref):
+def forecast_skill(obs, fx, fx_ref):
     """Forecast skill (s).
 
         s = 1 - RMSE_fx / RMSE_ref
@@ -145,7 +145,7 @@ def forecast_skill(obs, fx, ref):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
-    ref : (n,) array_like
+    fx_ref : (n,) array_like
         A reference forecast.
 
     Returns
@@ -157,7 +157,7 @@ def forecast_skill(obs, fx, ref):
     """
 
     rmse_fx = root_mean_square(obs, fx)
-    rmse_ref = root_mean_square(obs, ref)
+    rmse_ref = root_mean_square(obs, fx_ref)
     return 1.0 - rmse_fx / rmse_ref
 
 
