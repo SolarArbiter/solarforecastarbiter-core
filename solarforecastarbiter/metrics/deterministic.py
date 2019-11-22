@@ -188,12 +188,7 @@ def pearson_correlation_coeff(obs, fx):
 
     """
 
-    fx_avg = np.mean(fx)
-    obs_avg = np.mean(obs)
-    A = np.sum((fx - fx_avg) * (obs - obs_avg))
-    B = np.sqrt(np.sum((fx - fx_avg) ** 2))
-    C = np.sqrt(np.sum((obs - obs_avg) ** 2))
-    r = A / (B * C)
+    r = np.corrcoef(obs, fx)[0, 1]
     return r
 
 
