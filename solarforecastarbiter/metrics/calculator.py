@@ -9,7 +9,6 @@ Todo
 * Support probabilistic metrics and forecasts with new functions
 * Support event metrics and forecasts with new functions
 """
-from collections import defaultdict
 import calendar
 
 import pandas as pd
@@ -79,7 +78,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
                                                        metrics,
                                                        ref_fx_obs=ref_pair,
                                                        normalizer=normalizer)
-            metrics_['name'] = proc_fxobs.original.forecast.name
             calc_metrics.append(metrics_)
 
     return calc_metrics
@@ -124,12 +122,10 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         Contains all the computed metrics by categories.
         Structure is:
 
-          1. Category type as tuple (e.g., ('Total'), )
-          2. Metric type (e.g., 'mae', 'rmse')
-          3. Category value (e.g, 0, 1, 2 ..., 11 for month)g1
-          4. Metric value
-
-        If no forecast data is found an empty dictionary is returned.
+          * dictionary of forecast 'name' and category type as tuple
+            (e.g., ('Total'), )
+          * dictionary with key of metric type (e.g., 'mae', 'rmse')
+          * values of pandas.Series with Index of category values
 
     Raises
     ------
@@ -138,7 +134,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         are specified.
 
     """
-    calc_metrics = defaultdict(dict)
+    calc_metrics = {}
+    calc_metrics['name'] = processed_fx_obs.original.forecast.name
+
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values
 
@@ -174,19 +172,30 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             groupby_category = AVAILABLE_CATEGORIES[category]
             index_category = getattr(df.index, groupby_category)
 
-            for id, group in df.groupby(index_category):
+            # Calculate each metric
+            for metric_ in metrics:
 
-                # Change identifier of the group
-                if category == 'Month of the year':
-                    id = calendar.month_abbr[id]
-                elif category == 'Day of the week':
-                    id = calendar.day_abbr[id]
-                calc_metrics[category][id] = {}
+                metric_values = []
+                cat_values = []
 
-                for metric_ in metrics:
+                # Group by category
+                for id, group in df.groupby(index_category):
+
+                    # Calculate
                     res = _apply_deterministic_metric_func(
                         metric_, group.forecast, group.observation,
                         ref_fx=ref_fx, normalizer=normalizer)
-                    calc_metrics[category][id][metric_] = res
+
+                    # Change id of the group
+                    if category == 'Month of the year':
+                        id = calendar.month_abbr[id]
+                    elif category == 'Day of the week':
+                        id = calendar.day_abbr[id]
+
+                    metric_values.append(res)
+                    cat_values.append(id)
+
+                calc_metrics[category][metric_] = pd.Series(metric_values,
+                                                            index=cat_values)
 
     return calc_metrics

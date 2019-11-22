@@ -163,25 +163,24 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
         if (len(metrics) == 0 or len(categories) == 0 or
                 len(pair.forecast_values) == 0):
             # Empty results
-            assert len(result) == 0
+            assert len(result) == 1
+            assert result['name'] == pair.original.forecast.name
         else:
-            assert sorted(result.keys()) == sorted(categories)
-            for cat, val_cat in result.items():
-                if cat == 'Total':
-                    assert sorted(val_cat.keys()) == sorted(metrics)
-                    # metrics
-                    for metric, val_metric in val_cat.items():
-                        assert isinstance(val_metric, float)
+            assert sorted(result.keys()) == sorted(list(categories)+['name'])
+            for cat, cat_values in result.items():
+                if cat == 'name':
+                    assert cat_values == pair.original.forecast.name
+                elif cat == 'Total':
+                    assert sorted(cat_values.keys()) == sorted(metrics)
+                    # check metric values
+                    for metric, met_value in cat_values.items():
+                        assert isinstance(met_value, float)
                 else:
-                    # category groups
-                    for cat_group, metric_group in val_cat.items():
-                        assert sorted(metric_group.keys()) == sorted(metrics)
-
-                        # metrics
-                        for metric, val_metric in metric_group.items():
-                            assert isinstance(val_metric, float)
+                    # check metric values and category values
+                    for metric, met_values in cat_values.items():
 
                         fx_values = pair.forecast_values
+
                         # has expected groupings
                         if cat == 'Month of the year':
                             grps = fx_values.groupby(
@@ -203,7 +202,11 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                             grps = fx_values.groupby(
                                 fx_values.index.weekday).groups
                             grps = [calendar.day_abbr[g] for g in grps]
-                        assert sorted(grps) == sorted(val_cat.keys())
+                        assert sorted(grps) == sorted(met_values.index)
+
+                        # has valid values
+                        assert np.issubdtype(met_values.values.dtype,
+                                             np.number)
 
 
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [

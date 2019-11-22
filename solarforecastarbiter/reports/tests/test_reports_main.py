@@ -92,7 +92,6 @@ def test_full_render(mock_data, report_objects):
         f.write(full_report)
 
 
-<<<<<<< HEAD
 @pytest.mark.skipif(shutil.which('pandoc') is None,
                     reason='Pandoc can not be found')
 def test_all_categories_render(mock_data, report_objects):
@@ -117,10 +116,6 @@ def test_all_categories_render(mock_data, report_objects):
         f.write(full_report)
 
 
-def test_validate_resample_align(mock_data, report_objects):
-    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
-        report_objects
-=======
 def test_merge_quality_filters():
     filters = [
         datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
@@ -150,7 +145,6 @@ def more_report_objects(report_objects, request):
 
 def test_validate_resample_align(mock_data, more_report_objects):
     report, observation, forecast_0, forecast_1 = more_report_objects
->>>>>>> solararbiter/master
     meta = main.create_metadata(report)
     session = api.APISession('nope')
     data = main.get_data_for_report(session, report)
