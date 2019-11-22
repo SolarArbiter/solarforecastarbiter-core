@@ -103,7 +103,7 @@ def test_merge_quality_filters():
                                       'CLIPPED VALUES', 'SHADED'}
 
 
-@pytest.fixture(scope='module', params=[0, 1, 2])
+@pytest.fixture(params=[0, 1, 2])
 def more_report_objects(report_objects, request):
     report, observation, forecast_0, forecast_1, *_ = report_objects
     if request.param == 0:
