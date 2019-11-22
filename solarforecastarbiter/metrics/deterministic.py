@@ -1,6 +1,7 @@
 """Deterministic forecast error metrics."""
 
 import numpy as np
+import scipy as sp
 from statsmodels.distributions.empirical_distribution import ECDF
 
 __all__ = [
@@ -188,7 +189,7 @@ def pearson_correlation_coeff(obs, fx):
 
     """
 
-    r = np.corrcoef(obs, fx)[0, 1]
+    r, _ = sp.stats.pearsonr(obs, fx)
     return r
 
 
