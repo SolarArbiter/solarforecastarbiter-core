@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
-import copy
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator,
@@ -111,7 +110,6 @@ def test_calculate_metrics_with_probablistic(categories, metrics,
     with pytest.raises(NotImplementedError):
         calculator.calculate_metrics([proc_prfx_obs],
                                      categories, metrics)
-
 
 
 # Suppress RuntimeWarnings b/c in some metrics will divide by zero or
