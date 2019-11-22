@@ -146,7 +146,7 @@ def forecast_skill(obs, fx, fx_ref):
     fx : (n,) array-like
         Forecasted values.
     fx_ref : (n,) array_like
-        A reference forecast.
+        Reference forecast values.
 
     Returns
     -------
