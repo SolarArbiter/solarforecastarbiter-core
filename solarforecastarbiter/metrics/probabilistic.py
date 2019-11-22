@@ -9,6 +9,7 @@ __all__ = [
     "resolution",
     "uncertainty",
     "sharpness",
+    "continuous_ranked_probability_score",
 ]
 
 
