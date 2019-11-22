@@ -798,12 +798,6 @@ def many_forecasts(many_forecasts_text, _forecast_from_dict):
 
 
 @pytest.fixture()
-def many_ghi_forecasts(many_ghi_forecasts_text, _forecast_from_dict):
-    return [_forecast_from_dict(fx) for fx
-            in json.loads(many_ghi_forecasts_text)]
-
-
-@pytest.fixture()
 def prob_forecast_constant_value_text():
     return b"""
 {
@@ -1033,8 +1027,12 @@ def single_forecast_observation(single_forecast, single_observation):
 
 
 @pytest.fixture()
-def many_forecast_observation(many_ghi_forecasts, many_observations):
-    cart_prod = itertools.product(many_ghi_forecasts, many_observations)
+def many_forecast_observation(many_forecasts, many_observations):
+    many_ghi_forecasts = [fx for fx in many_forecasts
+                          if fx.variable == 'ghi']
+    many_ghi_observations = [obs for obs in many_observations
+                             if obs.variable == 'ghi']
+    cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 

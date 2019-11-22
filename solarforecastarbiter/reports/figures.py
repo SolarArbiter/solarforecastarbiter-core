@@ -257,13 +257,13 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     cds : bokeh.models.ColumnDataSource
     """
 
-    if kind == 'Total':
-        if rename:
-            f = rename
-        else:
-            def f(x): return x
-        d = {f(m['name']): m[kind] for m in metrics}
-        df = pd.DataFrame(d)
+    if rename:
+        f = rename
+    else:
+        def f(x): return x
+
+    data = {f(m['name']): m[kind] for m in metrics}
+    df = pd.DataFrame(data)
     df = df.rename_axis(index='metric', columns='forecast')
 
     if index == 'metric':
@@ -327,8 +327,8 @@ def construct_metrics_series(metrics, kind):
             else:
                 for i, v in m[kind][col].items():
                     forecasts.append(m['name'])
-                    m_types.append(i)
-                    m_indexes.append(col)
+                    m_types.append(col)
+                    m_indexes.append(i)
                     m_values.append(v)
     index = pd.MultiIndex.from_arrays([forecasts, m_types, m_indexes],
                                       names=['forecast', 'metric', kind])
