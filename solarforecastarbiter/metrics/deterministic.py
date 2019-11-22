@@ -19,218 +19,218 @@ __all__ = [
 ]
 
 
-def mean_absolute(y_true, y_pred):
+def mean_absolute(obs, fx):
     """Mean absolute error (MAE).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     mae : float
-        The MAE between the true and predicted values.
+        The MAE of the forecast.
+
     """
 
-    return np.mean(np.abs(y_true - y_pred))
+    return np.mean(np.abs(fx - obs))
 
 
-def mean_bias(y_true, y_pred):
+def mean_bias(obs, fx):
     """Mean bias error (MBE).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     mbe : float
-        The MBE between the true and predicted values.
+        The MBE of the forecast.
 
     """
 
-    return np.mean(y_pred - y_true)
+    return np.mean(fx - obs)
 
 
-def root_mean_square(y_true, y_pred):
+def root_mean_square(obs, fx):
     """Root mean square error (RMSE).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     rmse : float
-        The RMSE between the true and predicted values.
+        The RMSE of the forecast.
 
     """
 
-    return np.sqrt(np.mean((y_true - y_pred) ** 2))
+    return np.sqrt(np.mean((fx - obs) ** 2))
 
 
-def mean_absolute_percentage(y_true, y_pred):
+def mean_absolute_percentage(obs, fx):
     """Mean absolute percentage error (MAPE).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     mape : float
-        The MAPE [%] between the true and predicted values.
+        The MAPE [%] of the forecast.
 
     """
 
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100.0
+    return np.mean(np.abs((obs - fx) / obs)) * 100.0
 
 
-def normalized_root_mean_square(y_true, y_pred, y_norm):
+def normalized_root_mean_square(obs, fx, norm):
     """Normalized root mean square error (NRMSE).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
-    y_norm : float
-        Normalized factor, in the same units as y_true and y_pred.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+    norm : float
+        Normalized factor, in the same units as obs and fx.
 
     Returns
     -------
     nrmse : float
-        The NRMSE [%] between the true and predicted values.
+        The NRMSE [%] of the forecast.
 
     """
 
-    return root_mean_square(y_true, y_pred) / y_norm * 100.0
+    return root_mean_square(obs, fx) / norm * 100.0
 
 
-def forecast_skill(y_true, y_pred, y_ref):
+def forecast_skill(obs, fx, ref):
     """Forecast skill (s).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
-    y_ref: array_like
-        Reference forecast values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+    ref : (n,) array_like
+        A reference forecast.
 
     Returns
     -------
     s : float
-        The forecast skill [-] between the true and predicted values compared
-        to a reference forecast.
+        The forecast skill [-] of the forecast relative to a reference
+        forecast.
 
     """
 
-    rmse_pred = root_mean_square(y_true, y_pred)
-    rmse_ref = root_mean_square(y_true, y_ref)
-    return 1.0 - rmse_pred / rmse_ref
+    rmse_fx = root_mean_square(obs, fx)
+    rmse_ref = root_mean_square(obs, ref)
+    return 1.0 - rmse_fx / rmse_ref
 
 
-def pearson_correlation_coeff(y_true, y_pred):
+def pearson_correlation_coeff(obs, fx):
     """Pearson correlation coefficient (r).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     r : float
-        The correlation coefficient (r [-]) between the true and predicted
-        values.
+        The correlation coefficient (r [-]) of the observations and forecasts.
 
     """
 
-    x1 = y_pred - np.mean(y_pred)
-    x2 = y_true - np.mean(y_true)
+    x1 = fx - np.mean(fx)
+    x2 = obs - np.mean(obs)
     return np.sum(x1 * x2) / (
         np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2))
     )
 
 
-def coeff_determination(y_true, y_pred):
+def coeff_determination(obs, fx):
     """Coefficient of determination (R^2).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     r2 : float
-        The coefficient of determination (R^2 [-]) between the true and
-        predicted values.
+        The coefficient of determination (R^2 [-]) of the observations and
+        forecasts.
 
     """
 
-    ss_res = np.sum((y_true - y_pred) ** 2)
-    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    ss_res = np.sum((obs - fx) ** 2)
+    ss_tot = np.sum((obs - np.mean(obs)) ** 2)
     return 1.0 - ss_res / ss_tot
 
 
-def centered_root_mean_square(y_true, y_pred):
+def centered_root_mean_square(obs, fx):
     """Centered (unbiased) root mean square error (CRMSE):
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     crmse : float
-        The CRMSE between the true and predicted values.
+        The CRMSE of the forecast.
 
     """
 
     return np.sqrt(np.mean(
-        ((y_pred - np.mean(y_pred)) - (y_true - np.mean(y_true))) ** 2
+        ((fx - np.mean(fx)) - (obs - np.mean(obs))) ** 2
     ))
 
 
-def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
+def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
     normed : bool, optional
         If True, return the normalized KSI [%].
 
     Returns
     -------
     ksi : float
-        The KSI between the true and predicted values.
+        The KSI of the forecast.
 
     Notes
     -----
@@ -241,11 +241,11 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     """
 
     # empirical CDF
-    ecdf_obs = ECDF(y_true)
-    ecdf_fx = ECDF(y_pred)
+    ecdf_obs = ECDF(obs)
+    ecdf_fx = ECDF(fx)
 
     # evaluate CDFs
-    x = np.unique(np.concatenate((y_true, y_pred)))
+    x = np.unique(np.concatenate((obs, fx)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
@@ -254,27 +254,27 @@ def kolmogorov_smirnov_integral(y_true, y_pred, normed=False):
     ksi = np.sum(D[:-1] * np.diff(x))
 
     if normed:
-        Vc = 1.63 / np.sqrt(len(y_true))
+        Vc = 1.63 / np.sqrt(len(obs))
         a_critical = Vc * (x.max() - x.min())
         return ksi / a_critical * 100.0
     else:
         return ksi
 
 
-def over(y_true, y_pred):
-    """OVER metric.
+def over(obs, fx):
+    """The OVER metric.
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
     over : float
-        The OVER metric between the true and predicted values.
+        The OVER metric of the forecast.
 
     Notes
     -----
@@ -285,32 +285,32 @@ def over(y_true, y_pred):
     """
 
     # empirical CDF
-    ecdf_obs = ECDF(y_true)
-    ecdf_fx = ECDF(y_pred)
+    ecdf_obs = ECDF(obs)
+    ecdf_fx = ECDF(fx)
 
     # evaluate CDFs
-    x = np.unique(np.concatenate((y_true, y_pred)))
+    x = np.unique(np.concatenate((obs, fx)))
     y_o = ecdf_obs(x)
     y_f = ecdf_fx(x)
 
     # compute metric
     D = np.abs(y_o - y_f)
-    Vc = 1.63 / np.sqrt(len(y_true))
+    Vc = 1.63 / np.sqrt(len(obs))
     Dstar = D - Vc
     Dstar[D <= Vc] = 0.0
     over = np.sum(Dstar[:-1] * np.diff(x))
     return over
 
 
-def combined_performance_index(y_true, y_pred):
+def combined_performance_index(obs, fx):
     """Combined Performance Index (CPI) metric.
 
     Parameters
     ----------
-    y_true : array-like
-        True values.
-    y_pred : array-like
-        Predicted values.
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
 
     Returns
     -------
@@ -318,8 +318,8 @@ def combined_performance_index(y_true, y_pred):
         The CPI between the true and predicted values.
 
     """
-    ksi = kolmogorov_smirnov_integral(y_true, y_pred)
-    ov = over(y_true, y_pred)
-    rmse = root_mean_square(y_true, y_pred)
+    ksi = kolmogorov_smirnov_integral(obs, fx)
+    ov = over(obs, fx)
+    rmse = root_mean_square(obs, fx)
     cpi = 1 / 4 * (ksi + ov + 2 * rmse)
     return cpi
