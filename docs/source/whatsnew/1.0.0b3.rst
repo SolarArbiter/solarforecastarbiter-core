@@ -22,6 +22,9 @@ API Changes
 * Add additional metric for probabilistic forecasts
   :py:mod:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`. (:issue:`250`) (:pull:`257`)
 
+* Standardize metric input naming and order conventions to `function(obs, fx)`,
+  where `obs` = observations and `fx` = forecasts (:issue:`262`) (:pull:`263`)
+
 Enhancements
 ~~~~~~~~~~~~
 * Add capability to analyze aggregates to reports. (:pull:`256`)
