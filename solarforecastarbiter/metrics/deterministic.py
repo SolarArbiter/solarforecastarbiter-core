@@ -167,7 +167,7 @@ def pearson_correlation_coeff(obs, fx):
         r = A / (B * C)
 
     where:
-        
+
         A = sum_{i=1}^n (fx_i - fx_avg) * (obs_i - obs_avg)
         B = sqrt( sum_{i=1}^n (fx_i - fx_avg)^2 )
         C = sqrt( sum_{i=1}^n (obs_i - obs_avg)^2 )
@@ -188,32 +188,25 @@ def pearson_correlation_coeff(obs, fx):
 
     """
 
-    #f = fx - np.mean(fx)
-    #o = obs - np.mean(obs)
-    #r = np.sum(f * o) / (
-    #    np.sqrt(np.sum(f ** 2)) * np.sqrt(np.sum(o ** 2))
-    #)
-
     fx_avg = np.mean(fx)
     obs_avg = np.mean(obs)
     A = np.sum((fx - fx_avg) * (obs - obs_avg))
     B = np.sqrt(np.sum((fx - fx_avg) ** 2))
     C = np.sqrt(np.sum((obs - obs_avg) ** 2))
     r = A / (B * C)
-
-    #x1 = fx - np.mean(fx)
-    #x2 = obs - np.mean(obs)
-    #r = np.sum(x1 * x2) / (
-    #    np.sqrt(np.sum(x1 ** 2)) * np.sqrt(np.sum(x2 ** 2))
-    #)
-
     return r
 
 
 def coeff_determination(obs, fx):
     """Coefficient of determination (R^2).
 
-        R^2 = 
+        R^2 = 1 - (A / B)
+
+    where:
+
+        A = sum_{i=1}^n (obs_i - fx_i)^2
+        B = sum_{i=1}^n (obs_i - obs_avg)^2
+        obs_avg = 1/n sum_{i=1} obs_i
 
     Parameters
     ----------
@@ -238,7 +231,12 @@ def coeff_determination(obs, fx):
 def centered_root_mean_square(obs, fx):
     """Centered (unbiased) root mean square error (CRMSE):
 
-        CRMSE = 
+        CRMSE = sqrt( 1/n sum_{i=1}^n ((fx_i - fx_avg) - (obs_i - obs_avg))^2 )
+
+    where:
+
+        fx_avg = 1/n sum_{i=1} fx_i
+        obs_avg = 1/n sum_{i=1} obs_i
 
     Parameters
     ----------
@@ -262,7 +260,21 @@ def centered_root_mean_square(obs, fx):
 def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
-        KSI = 
+        KSI = int_{p_min}^{p_max} D_n(p) dp
+
+    where:
+
+        D_n(p) = max(|CDF_obs(p) - CDF_fx(p)|)
+
+    and CDF_obs and CDF_fx are the empirical CDFs of the observations and
+    forecasts, respectively. KSI can be normalized as:
+
+        KSI [%] = KSI / a_critical * 100%
+
+    where:
+
+        a_critical = V_c * (p_max - p_min)
+        V_c = 1.63 / sqrt(n)
 
     Parameters
     ----------
@@ -310,7 +322,13 @@ def kolmogorov_smirnov_integral(obs, fx, normed=False):
 def over(obs, fx):
     """The OVER metric.
 
-        OVER = 
+        OVER = int_{p_min}^{p_max} D_n^*(p) dp
+
+    where:
+
+        D_n^* = (D_n - V_c) if D_n > V_c, else D_n^* = 0
+
+    with D_n and V_c defined the same as in KSI.
 
     Parameters
     ----------
