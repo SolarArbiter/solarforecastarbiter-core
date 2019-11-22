@@ -155,6 +155,15 @@ def get_validation_issues():
     return test
 
 
+def _merge_quality_filters(filters):
+    """Merge any quality flag filters into one single QualityFlagFilter"""
+    combo = set()
+    for filter_ in filters:
+        if isinstance(filter_, datamodel.QualityFlagFilter):
+            combo |= set(filter_.quality_flags)
+    return datamodel.QualityFlagFilter(tuple(combo))
+
+
 def validate_resample_align(report, metadata, data):
     """
     Validate the data and resample.
@@ -176,8 +185,9 @@ def validate_resample_align(report, metadata, data):
     ----
     * Support different apply_validation fillin functions.
     """
+    qfilter = _merge_quality_filters(report.filters)
     data_validated = preprocessing.apply_validation(data,
-                                                    report.filters[0],
+                                                    qfilter,
                                                     preprocessing.exclude)
     processed_fxobs = [preprocessing.resample_and_align(
                             fxobs, data_validated, metadata.timezone)

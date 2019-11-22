@@ -427,10 +427,12 @@ def daily_single_observation_validation(access_token, observation_id, start,
 def daily_observation_validation(access_token, start, end, base_url=None):
     """
     Run the daily observation validation for all observations that the user
-    has access to.
+    has access to in their organization.
     """
     session = APISession(access_token, base_url=base_url)
-    observations = session.list_observations()
+    user_info = session.get_user_info()
+    observations = [obs for obs in session.list_observations()
+                    if obs.provider == user_info['organization']]
     for observation in observations:
         try:
             _daily_validation(session, observation, start, end, base_url)

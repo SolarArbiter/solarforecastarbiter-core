@@ -289,6 +289,7 @@ Class for communicating with the Solar Forecast Arbiter API.
 
    io.api.APISession
    io.api.APISession.request
+   io.api.APISession.get_user_info
 
 Sites
 

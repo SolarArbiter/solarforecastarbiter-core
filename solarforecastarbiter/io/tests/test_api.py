@@ -813,6 +813,14 @@ def test_apisession_create_aggregate(requests_mock, aggregate, aggregate_text,
     assert new_aggregate == aggregate
 
 
+def test_apisession_get_user_info(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/users/current')
+    requests_mock.register_uri('GET', matcher, content=b'{"test": "key"}')
+    out = session.get_user_info()
+    assert out['test'] == 'key'
+
+
 @pytest.fixture(scope='session')
 def auth_token():
     try:
@@ -1114,3 +1122,8 @@ def test_real_apisession_get_aggregate_values(real_session):
     assert set(agg.columns) == set(['value', 'quality_flag'])
     assert len(agg.index) > 0
     pdt.assert_frame_equal(agg.loc[start:end], agg)
+
+
+def test_real_apisession_get_user_info(real_session):
+    user_info = real_session.get_user_info()
+    assert user_info['organization'] == 'Organization 1'

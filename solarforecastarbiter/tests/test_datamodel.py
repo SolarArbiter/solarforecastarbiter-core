@@ -335,6 +335,7 @@ def test_probabilistic_forecast_float_constant_values(prob_forecasts):
         forecast_id=prob_forecasts.forecast_id,
         axis=prob_forecasts.axis,
         extra_parameters=prob_forecasts.extra_parameters,
+        provider=prob_forecasts.provider,
         constant_values=tuple(cv.constant_value
                               for cv in prob_forecasts.constant_values),
     )

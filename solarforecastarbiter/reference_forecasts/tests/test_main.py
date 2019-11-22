@@ -309,7 +309,9 @@ def forecast_list(ac_power_forecast_metadata):
             replace(ac_power_forecast_metadata,
                     extra_parameters='{"piggyback_on": "0", "model": "%s", "is_reference_forecast": true}' % model,  # NOQA
                     forecast_id='3',
-                    variable='dni'),
+                    variable='dni',
+                    provider='Organization 2'
+            ),
             replace(ac_power_forecast_metadata,
                     extra_parameters='{"piggyback_on": "0", "model": "badmodel", "is_reference_forecast": true}',  # NOQA
                     forecast_id='4'),
@@ -496,10 +498,12 @@ def test__post_forecast_values_cdf_no_cv_match(mocker, forecast_list):
 ])
 def test_make_latest_nwp_forecasts(forecast_list, mocker, issue_buffer, empty):
     session = mocker.patch('solarforecastarbiter.io.api.APISession')
+    session.return_value.get_user_info.return_value = {'organization': ''}
     session.return_value.list_forecasts.return_value = forecast_list[:-3]
     session.return_value.list_probabilistic_forecasts.return_value = []
     run_time = pd.Timestamp('20190501T0000Z')
-    fxdf = main.find_reference_nwp_forecasts(forecast_list[:-3], run_time)
+    # last fx has different org
+    fxdf = main.find_reference_nwp_forecasts(forecast_list[:-4], run_time)
     process = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.process_nwp_forecast_groups')  # NOQA
     main.make_latest_nwp_forecasts('', run_time, issue_buffer)
