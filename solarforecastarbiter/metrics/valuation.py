@@ -6,10 +6,10 @@ import numpy as np
 def fixed_error_cost(fx, obs, cost):
     """Fixed cost per forecast error.
 
-        C = sum_{i=1}^n |fx_i - obs_i| * cost
+        total_cost = sum_{i=1}^n |fx_i - obs_i| * cost
 
-    where cost is the fixed cost per forecast error (e.g. USD per MW of
-    error) and C is the total cost.
+    where cost is the fixed cost per forecast error (e.g. USD per MW of error)
+    and total_cost is cost of the entire forecast time-series.
 
     Parameters
     ----------
