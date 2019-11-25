@@ -437,6 +437,13 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.sharpness
     metrics.probabilistic.continuous_ranked_probability_score
 
+Functions to compute forecast valuation metrics:
+
+.. autosummary::
+    :toctree: generated/
+
+    metrics.valuation.fixed_error_cost
+
 Reports
 =======
 
