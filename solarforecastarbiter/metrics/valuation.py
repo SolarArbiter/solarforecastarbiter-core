@@ -38,5 +38,5 @@ def fixed_error_cost(obs, fx, cost):
     """
 
     error = np.abs(fx - obs)
-    total_cost = np.sum(error * cost)
+    total_cost = np.sum(error) * cost  # more efficient than sum(error * cost)
     return total_cost
