@@ -30,7 +30,7 @@ def fixed_error_cost(obs, fx, cost):
 
     Forecast power [kW], cost: 10 USD per kW
     >>> fx = np.array([1, 2, 3])
-    >>> obs = np.array([1, 3, 4])
+    >>> obs = np.array([1, 1, 4])
     >>> cost = 10  # 10 USD per kW
     >>> fixed_error_cost(fx, obs, cost)
     20
