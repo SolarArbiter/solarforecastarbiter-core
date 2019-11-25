@@ -22,6 +22,8 @@ API Changes
   :py:mod:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`. (:issue:`250`) (:pull:`257`)
 * Standardize metric input naming and order conventions to `function(obs, fx)`,
   where `obs` = observations and `fx` = forecasts (:issue:`262`) (:pull:`263`)
+* Add valuation metric for evaluating forecast errors
+  :py:mod:`solarforecastarbiter.metrics.valuation.fixed_error_cost` (:issue:`258`) (:pull:`261`)
 
 Enhancements
 ~~~~~~~~~~~~
