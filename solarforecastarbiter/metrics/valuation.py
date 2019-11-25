@@ -1,4 +1,4 @@
-"""Metrics for quantifying the (monetary) value of forecasts."""
+"""Metrics for quantifying the monetary value of forecasts."""
 
 import numpy as np
 
