@@ -12,4 +12,4 @@ from solarforecastarbiter.metrics import valuation
     (np.array([500, 600, 650]), np.array([500, 580, 630]), 1, 20 + 20),
 ])
 def test_fixed_cost(fx, obs, cost, value):
-    return valuation.fixed_error_cost(fx, obs, cost) == value
+    return valuation.fixed_error_cost(obs, fx, cost) == value
