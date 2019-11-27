@@ -38,9 +38,6 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-* Dictionary of metric results from metrics.calculator now has structure with
-  levels of  1) category type 2) metric type 3) category value, 4) metric value
-  (:pull:`224`)
 * Add function to compute an aggregate timeseries (:pull:`223`)
 * Simplify the creation of ProbabilisticForecast objects by passing a list of
   floats to ``constant_values`` to automatically create
