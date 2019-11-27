@@ -172,7 +172,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
         # total (special category)
         if category == 'Total':
-            for metric_ in metrics:
+            for metric_ in set(metrics):
                 res = _apply_deterministic_metric_func(
                     metric_, fx, obs, ref_fx=ref_fx, normalizer=normalizer)
                 calc_metrics[category][metric_] = res
@@ -181,7 +181,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             index_category = getattr(df.index, groupby_category)
 
             # Calculate each metric
-            for metric_ in metrics:
+            for metric_ in set(metrics):
 
                 metric_values = []
                 cat_values = []
