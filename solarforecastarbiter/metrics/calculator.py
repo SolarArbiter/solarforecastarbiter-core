@@ -11,7 +11,6 @@ Todo
 """
 import calendar
 
-import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel
@@ -89,20 +88,11 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     metric functions. """
     metric_func = deterministic._MAP[metric]
     if metric in deterministic._REQ_REF_FX:
-        try:
-            return metric_func(obs, fx, kwargs['ref_fx'])
-        except ValueError:
-            return np.nan
+        return metric_func(obs, fx, kwargs['ref_fx'])
     elif metric in deterministic._REQ_NORM:
-        try:
-            return metric_func(obs, fx, kwargs['normalizer'])
-        except ValueError:
-            return np.nan
+        return metric_func(obs, fx, kwargs['normalizer'])
     else:
-        try:
-            return metric_func(obs, fx)
-        except ValueError:
-            return np.nan
+        return metric_func(obs, fx)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
