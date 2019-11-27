@@ -11,6 +11,7 @@ Todo
 """
 import calendar
 
+import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel
@@ -88,12 +89,20 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     metric functions. """
     metric_func = deterministic._MAP[metric]
     if metric in deterministic._REQ_REF_FX:
-        return metric_func(obs, fx, kwargs['ref_fx'])
+        try:
+            return metric_func(obs, fx, kwargs['ref_fx'])
+        except ValueError:
+            return np.nan
     elif metric in deterministic._REQ_NORM:
-        return metric_func(obs, fx, kwargs['normalizer'])
+        try:
+            return metric_func(obs, fx, kwargs['normalizer'])
+        except ValueError:
+            return np.nan
     else:
-        return metric_func(obs, fx)
-
+        try:
+            return metric_func(obs, fx)
+        except ValueError:
+            return np.nan
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                                     ref_fx_obs=None, normalizer=1.0):
@@ -146,7 +155,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
         if not ref_fx_obs:
-            raise RuntimeError("No reference forecast provided but it is " \
+            raise RuntimeError("No reference forecast provided but it is "
                                "required for desired metrics")
 
         ref_fx = ref_fx_obs.forecast_values
