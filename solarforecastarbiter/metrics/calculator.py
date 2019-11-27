@@ -118,7 +118,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
     Returns
     -------
-    pd.DataFrame or dict:
+    dict:
         Contains all the computed metrics by categories.
         Structure is:
 
@@ -143,9 +143,14 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     obs = processed_fx_obs.observation_values
 
     # Check reference forecast is from processed pair, if needed
-    ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
+        if not ref_fx_obs:
+            raise RuntimeError("No reference forecast provided but it is " \
+                               "required for desired metrics")
+
         ref_fx = ref_fx_obs.forecast_values
+        if ref_fx.empty:
+            raise RuntimeError("No reference forecast timeseries data")
 
     # No data or metrics
     if fx.empty:

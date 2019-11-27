@@ -163,16 +163,22 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
     if normalizer is not None:
         kws['normalizer'] = normalizer
 
+    # Check if timeseries and metrics provided
     if values[0].size == 0 or values[1].size == 0 or len(metrics) == 0:
-        # Check if timeseries and metrics provided
         with pytest.raises(RuntimeError):
             calculator.calculate_deterministic_metrics(
                 pair, categories, metrics, **kws)
 
+    # Check if reference forecast is required
     elif (ref_values is None and any(m in deterministic._REQ_REF_FX
                                      for m in metrics)):
-        # Check if reference forecast is required
-        with pytest.raises(AttributeError):
+        # error if no reference forecast given
+        with pytest.raises(RuntimeError):
+            calculator.calculate_deterministic_metrics(
+                pair, categories, metrics, **kws)
+
+        # error if reference forecast given but no reference forecast data
+        with pytest.raises(RuntimeError):
             calculator.calculate_deterministic_metrics(
                 pair, categories, metrics, **kws)
 
