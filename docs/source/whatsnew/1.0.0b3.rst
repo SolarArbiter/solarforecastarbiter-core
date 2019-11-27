@@ -35,7 +35,7 @@ Enhancements
   generation. (:pull:`260`)
 * Made improvements the figures in reports to include categories:
   Total, Year, Month, Date, Day of the week, Day of the month, and
-  Hour of the day (:pull:`224`)
+  Hour of the day (:issue:`4`, :pull:`224`)
 * Dictionary of metric results from metrics.calculator now has structure with
   levels of  1) category type 2) metric type 3) pandas.Series of metrics values
   with index of category values (:pull:`224`)
