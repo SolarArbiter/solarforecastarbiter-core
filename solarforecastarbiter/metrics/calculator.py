@@ -143,6 +143,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     obs = processed_fx_obs.observation_values
 
     # Check reference forecast is from processed pair, if needed
+    ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
         if not ref_fx_obs:
             raise RuntimeError("No reference forecast provided but it is " \

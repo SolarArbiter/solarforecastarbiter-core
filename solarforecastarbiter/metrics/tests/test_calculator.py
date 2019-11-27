@@ -70,7 +70,7 @@ def test_calculate_metrics(categories, metrics,
                                          normalizer=1.0)
         return
 
-    # All
+    # All options selected
     all_result = calculator.calculate_metrics(proc_fx_obs,
                                               categories, metrics,
                                               ref_pair=ref_fx_obs,
@@ -79,13 +79,15 @@ def test_calculate_metrics(categories, metrics,
     assert isinstance(all_result, list)
     assert len(all_result) == len(proc_fx_obs)
 
-    # 1 value no options
-    if len(metrics) > 0:
-        with pytest.raises(AttributeError):
+    # One processed pair missing reference forecast but required by metrics
+    if any(m for m in metrics if m in deterministic._REQ_REF_FX):
+        with pytest.raises(RuntimeError):
             calculator.calculate_metrics([proc_fx_obs[0]],
                                          categories, metrics)
         # drop metrics requiring reference forecast
         list(map(metrics.remove, deterministic._REQ_REF_FX))
+
+    # One processed pair (no reference forecast)
     one_result = calculator.calculate_metrics([proc_fx_obs[0]],
                                               categories, metrics)
 
@@ -179,6 +181,8 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
 
         # error if reference forecast given but no reference forecast data
         with pytest.raises(RuntimeError):
+            kws['ref_fx_obs'] = create_processed_fxobs(
+                single_forecast_observation, np.array([]), np.array([]))
             calculator.calculate_deterministic_metrics(
                 pair, categories, metrics, **kws)
 
