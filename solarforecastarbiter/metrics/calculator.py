@@ -104,6 +104,7 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
         except ValueError:
             return np.nan
 
+
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                                     ref_fx_obs=None, normalizer=1.0):
     """
