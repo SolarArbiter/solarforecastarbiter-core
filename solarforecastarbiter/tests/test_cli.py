@@ -216,7 +216,7 @@ def test_reference_nwp(cli_token, mocker):
                             ['-u user', '-p pass', '--run-time=20190501T1200Z',
                              '--issue-time-buffer=2h',
                              tmpdir])
-        assert cli.nwp.BASE_PATH.replace('/private', '') == tmpdir
+        assert cli.nwp.BASE_PATH == str(Path(tmpdir).resolve())
     assert res.exit_code == 0
     mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
                               pd.Timedelta('2h'), mocker.ANY)
