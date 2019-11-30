@@ -94,8 +94,6 @@ These intervals were removed from the raw time series before resampling and real
 
 Metrics are displayed in tables and figures below for one or more time periods. Metrics may be downloaded in csv format.
 
-{{ tables | safe }}
-
 {# Loop through each metric as keys in figures_bar by calling the markdown #}
 
 {#{ figures | safe }#}
