@@ -19,16 +19,16 @@ Steps:
             * versions
         * data: base64 encoded raw report
 
-      The metrics will aloso be JSON with keys like:
+      The metrics will also be JSON with keys like:
         * metrics
             * total
-            * filter A
+            * category A
                 * metric 1
                 * metric 2
-            * filter B
+            * category B
                 * metric 1
                 * metric 2
-            * filter C
+            * category C
                 * metric 1
                 * metric 2
        The JSON could be large and difficult for a person to read, but
@@ -221,6 +221,10 @@ def create_raw_report_from_data(report, data):
     Returns
     -------
     raw_report : datamodel.RawReport
+
+    Todo
+    ----
+    * add reference forecast
     """
     # call function: metrics.align_observations_forecasts
     # call function: metrics.calculate_many
@@ -236,11 +240,13 @@ def create_raw_report_from_data(report, data):
     processed_fxobs = validate_resample_align(report, metadata, data)
 
     # Calculate metrics
-    metrics_list = calculator.calculate_metrics_for_processed_pairs(
-        processed_fxobs)
+    metrics_list = calculator.calculate_metrics(processed_fxobs,
+                                                list(report.categories),
+                                                list(report.metrics))
 
     # can be ~50kb
-    report_template = template.template_report(report, metadata, metrics_list,
+    report_template = template.template_report(report, metadata,
+                                               metrics_list,
                                                processed_fxobs)
 
     raw_report = datamodel.RawReport(

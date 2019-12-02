@@ -18,6 +18,9 @@ API Changes
   objects that were missing it (:pull:`260`)
 * Add :py:mod:`solarforecastarbiter.io.api.APISession.get_user_info`
   to get information about the current API user (:pull:`260`)
+* Add metrics calculator functions for processing forecasts and observations
+  :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics`, and
+  :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics`. (:pull:`224`)
 * Add additional metric for probabilistic forecasts
   :py:mod:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`. (:issue:`250`) (:pull:`257`)
 * Standardize metric input naming and order conventions to `function(obs, fx)`,
@@ -36,6 +39,12 @@ Enhancements
   organization (:pull:`260`)
 * Merge multiple quality flag filters together before applying in report
   generation. (:pull:`260`)
+* Made improvements the figures in reports to include categories:
+  Total, Year, Month, Date, Day of the week, Day of the month, and
+  Hour of the day (:issue:`4`, :pull:`224`)
+* Dictionary of metric results from metrics.calculator now has structure with
+  levels of  1) category type 2) metric type 3) pandas.Series of metrics values
+  with index of category values (:pull:`224`)
 
 Bug fixes
 ~~~~~~~~~

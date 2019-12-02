@@ -4,21 +4,6 @@ import numpy as np
 import scipy as sp
 from statsmodels.distributions.empirical_distribution import ECDF
 
-__all__ = [
-    "mean_absolute",
-    "mean_bias",
-    "root_mean_square",
-    "mean_absolute_percentage",
-    "normalized_root_mean_square",
-    "forecast_skill",
-    "pearson_correlation_coeff",
-    "coeff_determination",
-    "centered_root_mean_square",
-    "kolmogorov_smirnov_integral",
-    "over",
-    "combined_performance_index",
-]
-
 
 def mean_absolute(obs, fx):
     """Mean absolute error (MAE).
@@ -188,6 +173,8 @@ def pearson_correlation_coeff(obs, fx):
         The correlation coefficient (r [-]) of the observations and forecasts.
 
     """
+    if len(obs) == 1 or len(fx) == 1:
+        return np.nan
 
     r, _ = sp.stats.pearsonr(obs, fx)
     return r
@@ -387,3 +374,25 @@ def combined_performance_index(obs, fx):
     rmse = root_mean_square(obs, fx)
     cpi = (ksi + ov + 2 * rmse) / 4.0
     return cpi
+
+
+# Add new metrics to this map to map shorthand to function
+_MAP = {
+    'mae': mean_absolute,
+    'mbe': mean_bias,
+    'rmse': root_mean_square,
+    'mape': mean_absolute_percentage,
+    'nrmse': normalized_root_mean_square,
+    's': forecast_skill,
+    'r': pearson_correlation_coeff,
+    'r^2': coeff_determination,
+    'crmse': centered_root_mean_square
+}
+
+__all__ = [m.__name__ for m in _MAP.values()]
+
+# Functions that require a reference forecast
+_REQ_REF_FX = ['s']
+
+# Functions that require normalized factor
+_REQ_NORM = ['nrmse']

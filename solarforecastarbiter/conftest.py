@@ -1032,8 +1032,12 @@ def single_forecast_observation(single_forecast, single_observation):
 
 @pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
-    cart_prod = itertools.product(many_forecasts, many_observations)
-    return [datamodel.ForecastObservation(c) for c in cart_prod]
+    many_ghi_forecasts = [fx for fx in many_forecasts
+                          if fx.variable == 'ghi']
+    many_ghi_observations = [obs for obs in many_observations
+                             if obs.variable == 'ghi']
+    cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
+    return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
 @pytest.fixture()
@@ -1121,6 +1125,7 @@ def report_objects(aggregate):
         end=end,
         forecast_observations=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
+        categories=("Total", "Date", "Hour of the day"),
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
     )
@@ -1228,6 +1233,7 @@ def report_text():
             {"time_of_day_range": ["12:00", "14:00"]}
         ],
         "metrics": ["mae", "rmse", "mbe"],
+        "categories": ["Total", "Date", "Hour of the day"],
         "object_pairs": [
             {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},

@@ -1061,6 +1061,8 @@ class Report(BaseModel):
         in the report.
     metrics : Tuple of str
         Metrics to be computed in the report.
+    categories : Tuple of str
+        Categories to compute and organize metrics over in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
     status : str
@@ -1081,6 +1083,7 @@ class Report(BaseModel):
     forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
                                  ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    categories: Tuple[str, ...] = ('Total', 'Date', 'Hour of the day')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'

@@ -11,6 +11,7 @@ from jinja2 import (Environment, DebugUndefined, PackageLoader,
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import figures
+from solarforecastarbiter.metrics import calculator
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def template_report(report, metadata, metrics,
 
     template = env.get_template('template.md')
 
-    script_metrics, data_table_div, figures_dict = _metrics_script_divs(
+    script_metrics, data_table_div, figures_div = _metrics_script_divs(
         report, metrics)
 
     strftime = '%Y-%m-%d %H:%M:%S %z'
@@ -69,39 +70,39 @@ def template_report(report, metadata, metrics,
         versions=metadata.versions,
         script_metrics=script_metrics,
         tables=data_table_div,
-        **figures_dict)
+        figures=figures_div,
+        metrics_toc=calculator.AVAILABLE_CATEGORIES)
+
     return rendered
 
 
 def _metrics_script_divs(report, metrics):
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
+    cds = figures.construct_metrics_cds(metrics, 'Total', index='forecast',
                                         rename=figures.abbreviate)
     data_table = figures.metrics_table(cds)
 
+    # Create initial bar figures
     figures_bar = []
     for num, metric in enumerate(report.metrics):
         fig = figures.bar(cds, metric)
         figures_bar.append(fig)
 
+    # Components for 'Total' category
     script, (data_table_div, *figures_bar_divs) = components((data_table,
                                                               *figures_bar))
 
-    script_month, figures_bar_month_divs = _loop_over_metrics(report, metrics,
-                                                              'month')
+    script_metrics = script
+    figures_dict = dict(Total=figures_bar_divs)
 
-    script_day, figures_bar_day_divs = _loop_over_metrics(report, metrics,
-                                                          'day')
+    # Components for other metrics
+    for category in report.categories:
+        if category == 'Total':
+            continue
 
-    script_hour, figures_bar_hour_divs = _loop_over_metrics(report, metrics,
-                                                            'hour')
-
-    script_metrics = script + script_month + script_day + script_hour
-
-    figures_dict = dict(
-        figures_bar=figures_bar_divs,
-        figures_bar_month=figures_bar_month_divs,
-        figures_bar_day=figures_bar_day_divs,
-        figures_bar_hour=figures_bar_hour_divs)
+        script_cat, figures_bar_cat = _loop_over_metrics(report, metrics,
+                                                         category)
+        script_metrics += script_cat
+        figures_dict[category] = figures_bar_cat
 
     return script_metrics, data_table_div, figures_dict
 
@@ -110,9 +111,9 @@ def _loop_over_metrics(report, metrics, kind):
     figs = []
     # series with MultiIndex of metric, forecast, day
     # JSON serialization issues if we don't drop or fill na.
-    # fillna ensures 0 - 24 hrs on hourly plots.
+    # fillna ensures 0 - 23 hrs on hourly plots.
     metrics_series = figures.construct_metrics_series(metrics, kind).fillna(0)
-    for num, metric in enumerate(report.metrics):
+    for metric in report.metrics:
         cds = figures.construct_metrics_cds2(metrics_series, metric)
         # one figure with a subfig for each forecast
         fig = figures.bar_subdivisions(cds, kind, metric)

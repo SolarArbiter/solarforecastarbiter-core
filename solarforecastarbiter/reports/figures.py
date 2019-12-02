@@ -3,8 +3,10 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 from itertools import cycle
 import textwrap
+import calendar
 
-from bokeh.models import ColumnDataSource, HoverTool, Legend
+from bokeh.models import (ColumnDataSource, HoverTool, Legend,
+                          DatetimeTickFormatter, CategoricalTickFormatter)
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
@@ -235,7 +237,7 @@ def scatter(fx_obs_cds):
 def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     """
     Possibly bad assumptions:
-    * metrics contains keys: name, total, month, day, hour
+    * metrics contains keys: name, Total, etc.
 
     Parameters
     ----------
@@ -243,7 +245,7 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
-        One of total, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
     index : str
         Determines if the index is the array of metrics ('metric') or
         forecast ('forecast') names
@@ -254,20 +256,23 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     -------
     cds : bokeh.models.ColumnDataSource
     """
-    if kind == 'total':
-        if rename:
-            f = rename
-        else:
-            def f(x): return x
-        d = {f(m['name']): m[kind] for m in metrics}
-        df = pd.DataFrame(d)
+
+    if rename:
+        f = rename
+    else:
+        def f(x): return x
+
+    data = {f(m['name']): m[kind] for m in metrics}
+    df = pd.DataFrame(data)
     df = df.rename_axis(index='metric', columns='forecast')
+
     if index == 'metric':
         pass
     elif index == 'forecast':
         df = df.T
     else:
         raise ValueError('index must be metric or forecast')
+
     cds = ColumnDataSource(df)
     return cds
 
@@ -300,7 +305,7 @@ def construct_metrics_series(metrics, kind):
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
-        One of total, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
 
     Returns
     -------
@@ -314,11 +319,17 @@ def construct_metrics_series(metrics, kind):
     # this seems the most straightforward to me
     for m in metrics:
         for col in m[kind]:
-            for i, v in m[kind][col].items():
+            if kind == 'Total':
                 forecasts.append(m['name'])
                 m_types.append(col)
-                m_indexes.append(i)
-                m_values.append(v)
+                m_indexes.append(0)
+                m_values.append(m[kind][col])
+            else:
+                for i, v in m[kind][col].items():
+                    forecasts.append(m['name'])
+                    m_types.append(col)
+                    m_indexes.append(i)
+                    m_values.append(v)
     index = pd.MultiIndex.from_arrays([forecasts, m_types, m_indexes],
                                       names=['forecast', 'metric', kind])
     metrics_series = pd.Series(m_values, index=index)
@@ -409,40 +420,56 @@ def bar_subdivisions(cds, kind, metric):
              |_________________
     Fx 2 MAE |
              |_________________
-               year, month, day, or hour
+               Year, Month of the year, etc.
 
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
         Fields must be kind and the names of the forecasts
     kind : str
-        One of year, month, day, hour
+        One of the available metrics grouping categories (e.g., Total)
 
     Returns
     -------
-    figs : tuple of figures
+    figs : list of figures
     """
     palette = cycle(PALETTE)
     tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
     fig_kwargs = dict(tools=tools)
     figs = []
-    if kind == 'day':
-        fig_kwargs['x_axis_type'] = 'datetime'
-        width = 0.8 * pd.Timedelta('1day')
-    else:
-        width = 0.8
 
+    width = 0.8
+
+    fig_kwargs['x_axis_label'] = kind
+
+    # Special handling for x-axis with dates
+    if kind == 'Date':
+        fig_kwargs['x_axis_type'] = 'datetime'
+        width = width * pd.Timedelta(days=1)
+    elif kind == 'Month of the year':
+        fig_kwargs['x_range'] = calendar.month_abbr[1:]
+    elif kind == 'Day of the week':
+        fig_kwargs['x_range'] = calendar.day_abbr[0:]
+
+    # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
     y_max = max(d.max() for k, d in cds.data.items() if k != kind)
     pad_factor = 1.03
     y_max, y_min = pad_factor * y_max, pad_factor * y_min
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
+
+        # Create figure
         title = field + ' ' + metric.upper()
-        fig = figure(width=800, height=200, title=title, **fig_kwargs)
+        fig = figure(width=800, height=200, title=title,
+                     **fig_kwargs)
+
         fig.vbar(x=kind, top=field, width=width, source=cds,
                  line_color='white', fill_color=next(palette))
+
+        # axes parameters
         fig.xgrid.grid_line_color = None
+        fig.xaxis.minor_tick_line_color = None
         fig.y_range.start = y_min
         fig.y_range.end = y_max
         if metric in START_AT_ZER0:
@@ -454,25 +481,45 @@ def bar_subdivisions(cds, kind, metric):
             if y_min > 0:
                 fig.y_range.start = 0
                 fig.y_range.end = y_max
+
         if num == 0:
             # add x_range to plots to link panning
             fig_kwargs['x_range'] = fig.x_range
-        if kind == 'day':
+            fig_kwargs['y_range'] = fig.y_range
+
+        # Hover tool and format specific changes
+        if kind == 'Date':
+            # Datetime x-axis
+            formatter = DatetimeTickFormatter(days='%Y-%m-%d')
+            fig.xaxis.formatter = formatter
             tooltips = [
                 (kind, f'@{kind}{{%F}}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),
             ]
-            formatters = {kind: 'datetime'}
-            hover_kwargs = dict(tooltips=tooltips, formatters=formatters)
-        else:
+            hover_kwargs = dict(tooltips=tooltips,
+                                formatters={kind: 'datetime'})
+        elif kind == 'Month of the year' or kind == 'Day of the week':
+            # Categorical x-axis
+            formatter = CategoricalTickFormatter()
+            fig.xaxis.formatter = formatter
             tooltips = [
-                (kind, f'@{kind}'),
-                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+                (kind, f'@{{{kind}}}'),
+                (f'{metric.upper()}', f'@{{{field}}}'),
+            ]
+            hover_kwargs = dict(tooltips=tooltips)
+        else:
+            # Numerical x-axis
+            fig.xaxis.ticker = cds.data[kind]
+            tooltips = [
+                (kind, f'@{{{kind}}}'),
+                (f'{metric.upper()}', f'@{{{field}}}'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         hover = HoverTool(mode='vline', **hover_kwargs)
         fig.add_tools(hover)
+
         figs.append(fig)
+
     return figs
 
 

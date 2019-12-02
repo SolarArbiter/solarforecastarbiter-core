@@ -10,6 +10,7 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
+from solarforecastarbiter.metrics import calculator
 
 
 @pytest.fixture()
@@ -87,6 +88,31 @@ def test_full_render(mock_data, report_objects):
     # by pandoc version error
     assert re.search(
         r'<body>(.*\S.*)</body>', full_report, re.S) is not None
+    with open('bokeh_report.html', 'w') as f:
+        f.write(full_report)
+
+
+@pytest.mark.skipif(shutil.which('pandoc') is None,
+                    reason='Pandoc can not be found')
+def test_all_categories_render(mock_data, report_objects):
+    # Create report using template but with all categories
+    report, observation, forecast_0, forecast_1, _, _ = report_objects
+    all_report = datamodel.Report(
+        name=report.name,
+        start=report.start,
+        end=report.end,
+        forecast_observations=report.forecast_observations,
+        metrics=("mae", "rmse", "mbe"),
+        categories=list(calculator.AVAILABLE_CATEGORIES.keys()),
+        report_id=report.report_id,
+        filters=report.filters
+    )
+    session = api.APISession('nope')
+    data = main.get_data_for_report(session, all_report)
+    raw_report = main.create_raw_report_from_data(all_report, data)
+    report_md = main.render_raw_report(raw_report)
+    body = template.report_md_to_html(report_md)
+    full_report = template.full_html(body)
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)
 

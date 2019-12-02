@@ -1,8 +1,8 @@
 {
     "name": "NREL MIDC OASIS GHI Forecast Analysis",
     "report_parameters": {
-        "start": "2019-04-01T00:00:00Z",
-        "end": "2019-04-04T23:59:00Z",
+        "start": "2019-10-01T00:00:00Z",
+        "end": "2019-10-07T23:59:00Z",
         "filters": [
             {"quality_flags": [
                 "USER FLAGGED",
@@ -23,10 +23,17 @@
             "rmse",
             "mbe"
         ],
+        "categories": [
+          "Total",
+          "Date",
+          "Hour of the day"
+        ],
         "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
         "object_pairs": [
-            ["9f657636-7e49-11e9-b77f-0a580a8003e9", "31ae8548-9a07-11e9-b2f4-0a580a8003d5"],
-            ["9f657636-7e49-11e9-b77f-0a580a8003e9", "77be10e8-9c22-11e9-a974-0a580a8003d5"]
-      ]
+          {"forecast": "2cfed5da-9a07-11e9-bc1f-0a580a8003d5",
+           "observation": "9e1c23da-7e49-11e9-9ec0-0a580a8003e9"},
+          {"forecast": "2c725aac-9a07-11e9-99c8-0a580a8003d5",
+           "observation": "9dfe124a-7e49-11e9-98c3-0a580a8003e9"}
+        ]
     }
-  }
+}
