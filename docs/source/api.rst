@@ -413,6 +413,8 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.mean_absolute
    metrics.deterministic.mean_bias
    metrics.deterministic.root_mean_square
+   metrics.deterministic.normalized_mean_absolute
+   metrics.deterministic.normalized_mean_bias
    metrics.deterministic.normalized_root_mean_square
    metrics.deterministic.centered_root_mean_square
    metrics.deterministic.mean_absolute_percentage
