@@ -396,6 +396,9 @@ Entry points for calculating metrics for
    metrics.calculator.calculate_metrics
    metrics.calculator.calculate_deterministic_metrics
 
+Preprocessing
+-------------
+
 Functions for preparing the timeseries data before calculating metrics:
 
 .. autosummary::
@@ -404,6 +407,9 @@ Functions for preparing the timeseries data before calculating metrics:
    metrics.preprocessing.apply_validation
    metrics.preprocessing.resample_and_align
    metrics.preprocessing.exclude
+
+Deterministic
+-------------
 
 Functions to compute forecast deterministic performance metrics:
 
@@ -425,6 +431,9 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
 
+Probabilistic
+-------------
+
 Functions to compute forecast probabilistic performance metrics:
 
 .. autosummary::
@@ -438,6 +447,9 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.uncertainty
     metrics.probabilistic.sharpness
     metrics.probabilistic.continuous_ranked_probability_score
+
+Value
+-----
 
 Functions to compute forecast valuation metrics:
 
