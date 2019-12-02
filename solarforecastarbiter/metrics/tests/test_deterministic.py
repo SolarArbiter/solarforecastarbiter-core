@@ -15,6 +15,10 @@ def test_mae(obs, fx, value):
 @pytest.mark.parametrize("obs,fx,value", [
     (np.array([0, 1, 2]), np.array([0, 1, 2]), 0.0),
     (np.array([0, 1, 2]), np.array([1, 0, 2]), 0.0),
+    (np.array([0, 1, 2]), np.array([1, 2, 3]), 1.0),
+    (np.array([0, 1, 2]), np.array([1, 3, 4]), (1 + 2 + 2) / 3),
+    (np.array([5, 5, 5]), np.array([4, 4, 4]), -1.0),
+    (np.array([5, 5, 5]), np.array([4, 3, 3]), -(1 + 2 + 2) / 3),
 ])
 def test_mbe(obs, fx, value):
     mbe = deterministic.mean_bias(obs, fx)
@@ -51,6 +55,9 @@ def test_nmae(obs, fx, norm, value):
 @pytest.mark.parametrize("obs,fx,norm,value", [
     (np.array([0, 1, 2]), np.array([0, 1, 2]), 55, 0.0),
     (np.array([0, 1, 2]), np.array([1, 0, 2]), 20, 0.0),
+    (np.array([0, 1, 2]), np.array([1, 3, 4]), 7, (1 + 2 + 2) / 3 / 7 * 100),
+    (np.array([5, 5, 5]), np.array([4, 4, 4]), 2, -1.0 / 2 * 100),
+    (np.array([5, 5, 5]), np.array([4, 3, 3]), 2, -(1 + 2 + 2) / 3 / 2 * 100),
 ])
 def test_nmbe(obs, fx, norm, value):
     nmbe = deterministic.normalized_mean_bias(obs, fx, norm)
