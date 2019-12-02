@@ -107,6 +107,8 @@ def test_r2(obs, fx, value):
 
 @pytest.mark.parametrize("obs,fx,value", [
     (np.array([0, 1]), np.array([0, 1]), 0.0),
+    (np.array([0, 2]), np.array([0, 4]), 1.0),
+    (np.array([0, 2]), np.array([0, 6]), 2.0),
 ])
 def test_crmse(obs, fx, value):
     crmse = deterministic.centered_root_mean_square(obs, fx)
