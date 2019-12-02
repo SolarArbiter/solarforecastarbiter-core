@@ -129,12 +129,13 @@ def test_ksi(obs, fx, value):
 @pytest.mark.parametrize("obs,fx,value", [
     ([0, 1], [0, 1], 0.0),
     ([1, 2], [1, 2], 0.0),
+    ([0, 1, 2], [0, 0, 2], 1 / 3 / (1.63 / np.sqrt(3) * 2) * 100),
 ])
 def test_ksi_norm(obs, fx, value):
     ksi = deterministic.kolmogorov_smirnov_integral(
         obs, fx, normed=True
     )
-    assert ksi == value
+    assert pytest.approx(ksi) == value
 
 
 @pytest.mark.parametrize("obs,fx,value", [
