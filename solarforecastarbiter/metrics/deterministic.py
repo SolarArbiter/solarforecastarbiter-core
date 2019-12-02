@@ -430,6 +430,8 @@ _MAP = {
     'mbe': mean_bias,
     'rmse': root_mean_square,
     'mape': mean_absolute_percentage,
+    'nmae': normalized_mean_absolute,
+    'nmbe': normalized_mean_bias,
     'nrmse': normalized_root_mean_square,
     's': forecast_skill,
     'r': pearson_correlation_coeff,
@@ -443,4 +445,4 @@ __all__ = [m.__name__ for m in _MAP.values()]
 _REQ_REF_FX = ['s']
 
 # Functions that require normalized factor
-_REQ_NORM = ['nrmse']
+_REQ_NORM = ['nmae', 'nmbe', 'nrmse']
