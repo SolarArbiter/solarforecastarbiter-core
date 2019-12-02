@@ -93,6 +93,54 @@ def mean_absolute_percentage(obs, fx):
     return np.mean(np.abs((obs - fx) / obs)) * 100.0
 
 
+def normalized_mean_absolute(obs, fx, norm):
+    """Normalized mean absolute error (NMAE).
+
+        NMAE = MAE / norm * 100%
+
+    Parameters
+    ----------
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+    norm : float
+        Normalized factor, in the same units as obs and fx.
+
+    Returns
+    -------
+    nmae : float
+        The NMAE [%] of the forecast.
+
+    """
+
+    return mean_absolute(obs, fx) / norm * 100.0
+
+
+def normalized_mean_bias(obs, fx, norm):
+    """Normalized mean bias error (NMBE).
+
+        NMBE = MBE / norm * 100%
+
+    Parameters
+    ----------
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+    norm : float
+        Normalized factor, in the same units as obs and fx.
+
+    Returns
+    -------
+    nmbe : float
+        The NMBE [%] of the forecast.
+
+    """
+
+    return mean_bias(obs, fx) / norm * 100.0
+
+
 def normalized_root_mean_square(obs, fx, norm):
     """Normalized root mean square error (NRMSE).
 
@@ -382,6 +430,8 @@ _MAP = {
     'mbe': mean_bias,
     'rmse': root_mean_square,
     'mape': mean_absolute_percentage,
+    'nmae': normalized_mean_absolute,
+    'nmbe': normalized_mean_bias,
     'nrmse': normalized_root_mean_square,
     's': forecast_skill,
     'r': pearson_correlation_coeff,
@@ -395,4 +445,4 @@ __all__ = [m.__name__ for m in _MAP.values()]
 _REQ_REF_FX = ['s']
 
 # Functions that require normalized factor
-_REQ_NORM = ['nrmse']
+_REQ_NORM = ['nmae', 'nmbe', 'nrmse']

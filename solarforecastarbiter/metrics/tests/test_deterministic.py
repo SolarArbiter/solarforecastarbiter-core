@@ -39,6 +39,24 @@ def test_mape(obs, fx, value):
     assert mape == value
 
 
+@pytest.mark.parametrize("obs,fx,norm,value", [
+    (np.array([0, 1, 2]), np.array([0, 1, 2]), 55, 0.0),
+    (np.array([0, 1, 2]), np.array([0, 1, 1]), 20, 1 / 3 / 20 * 100),
+])
+def test_nmae(obs, fx, norm, value):
+    nmae = deterministic.normalized_mean_absolute(obs, fx, norm)
+    assert nmae == value
+
+
+@pytest.mark.parametrize("obs,fx,norm,value", [
+    (np.array([0, 1, 2]), np.array([0, 1, 2]), 55, 0.0),
+    (np.array([0, 1, 2]), np.array([1, 0, 2]), 20, 0.0),
+])
+def test_nmbe(obs, fx, norm, value):
+    nmbe = deterministic.normalized_mean_bias(obs, fx, norm)
+    assert nmbe == value
+
+
 @pytest.mark.parametrize("obs,fx,y_norm,value", [
     (np.array([0, 1, 2]), np.array([0, 1, 2]), 1.0, 0.0),
     (np.array([0, 1, 2]), np.array([0, 1, 2]), 55.0, 0.0),

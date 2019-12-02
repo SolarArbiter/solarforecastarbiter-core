@@ -27,6 +27,9 @@ API Changes
   where `obs` = observations and `fx` = forecasts (:issue:`262`) (:pull:`263`)
 * Add valuation metric for evaluating forecast errors
   :py:mod:`solarforecastarbiter.metrics.valuation.fixed_error_cost` (:issue:`258`) (:pull:`261`)
+* Add additional normalized deterministic metrics
+  :py:mod:`solarforecastarbiter.metrics.deterministic.normalized_mean_absolute`, and
+  :py:mod:`solarforecastarbiter.metrics.deterministic.normalized_mean_bias`. (:issue:`118`) (:pull:`268`)
 
 Enhancements
 ~~~~~~~~~~~~
