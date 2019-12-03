@@ -387,7 +387,7 @@ def bar(cds, metric):
     # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != 'forecast')
     y_max = max(d.max() for k, d in cds.data.items() if k != 'forecast')
-    start, end = calc_ylim(y_min, y_max)
+    start, end = calc_y_start_end(y_min, y_max)
     fig.y_range.start = start
     fig.y_range.end = end
 
@@ -411,9 +411,20 @@ def bar(cds, metric):
     return fig
 
 
-def calc_ylim(y_min, y_max, pad_factor=1.03):
+def calc_y_start_end(y_min, y_max, pad_factor=1.03):
     """
     Determine y axis start, end.
+
+    Parameters
+    ----------
+    y_min : float
+    y_max : float
+    pad_factor : float
+        Number by which to multiply the start, end.
+
+    Returns
+    -------
+    start, end : float, float
     """
     # bokeh does not play well with nans
     y_min = np.nan_to_num(y_min)
@@ -478,7 +489,7 @@ def bar_subdivisions(cds, kind, metric):
     # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
     y_max = max(d.max() for k, d in cds.data.items() if k != kind)
-    start, end = calc_ylim(y_min, y_max)
+    start, end = calc_y_start_end(y_min, y_max)
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
 
