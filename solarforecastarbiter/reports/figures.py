@@ -385,8 +385,8 @@ def bar(cds, metric):
     fig.xgrid.grid_line_color = None
 
     # vertical axis limits
-    y_min = min(d.min() for k, d in cds.data.items() if k != 'forecast')
-    y_max = max(d.max() for k, d in cds.data.items() if k != 'forecast')
+    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != 'forecast')
+    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != 'forecast')
     start, end = calc_y_start_end(y_min, y_max)
     fig.y_range.start = start
     fig.y_range.end = end
@@ -487,8 +487,8 @@ def bar_subdivisions(cds, kind, metric):
         fig_kwargs['x_range'] = calendar.day_abbr[0:]
 
     # vertical axis limits
-    y_min = min(d.min() for k, d in cds.data.items() if k != kind)
-    y_max = max(d.max() for k, d in cds.data.items() if k != kind)
+    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != kind)
+    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != kind)
     start, end = calc_y_start_end(y_min, y_max)
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
