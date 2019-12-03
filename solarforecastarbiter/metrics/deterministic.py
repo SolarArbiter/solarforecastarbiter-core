@@ -436,7 +436,10 @@ _MAP = {
     's': forecast_skill,
     'r': pearson_correlation_coeff,
     'r^2': coeff_determination,
-    'crmse': centered_root_mean_square
+    'crmse': centered_root_mean_square,
+    'ksi': kolmogorov_smirnov_integral,
+    'over': over,
+    'cpi': combined_performance_index,
 }
 
 __all__ = [m.__name__ for m in _MAP.values()]

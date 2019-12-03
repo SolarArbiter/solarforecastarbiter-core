@@ -2,16 +2,6 @@
 
 import numpy as np
 
-__all__ = [
-    "brier_score",
-    "brier_skill_score",
-    "reliability",
-    "resolution",
-    "uncertainty",
-    "sharpness",
-    "continuous_ranked_probability_score",
-]
-
 
 def brier_score(obs, fx, fx_prob):
     """Brier Score (BS).
@@ -403,3 +393,23 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     dx = np.diff(fx, axis=1)
     crps = np.mean(np.sum(integrand[:, :-1] * dx, axis=1))
     return crps
+
+
+# Add new metrics to this map to map shorthand to function
+_MAP = {
+    'bs': brier_score,
+    'bss': brier_skill_score,
+    'rel': reliability,
+    'res': resolution,
+    'unc': uncertainty,
+    'sh': sharpness,
+    'crps': continuous_ranked_probability_score,
+}
+
+__all__ = [m.__name__ for m in _MAP.values()]
+
+# Functions that require a reference forecast
+_REQ_REF_FX = ['bss']
+
+# Functions that require normalized factor
+_REQ_NORM = []
