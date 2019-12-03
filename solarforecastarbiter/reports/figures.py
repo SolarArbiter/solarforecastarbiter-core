@@ -383,11 +383,14 @@ def bar(cds, metric):
              line_color='white',
              fill_color=factor_cmap('forecast', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
-    if metric in START_AT_ZER0:
-        fig.y_range.start = 0
-    else:
-        # TODO: add heavy 0 line
-        pass
+
+    # vertical axis limits
+    y_min = min(d.min() for k, d in cds.data.items() if k != 'forecast')
+    y_max = max(d.max() for k, d in cds.data.items() if k != 'forecast')
+    start, end = calc_ylim(y_min, y_max)
+    fig.y_range.start = start
+    fig.y_range.end = end
+
     tooltips = [
         ('forecast', '@forecast'),
         (metric.upper(), f'@{metric}'),
@@ -406,6 +409,30 @@ def bar(cds, metric):
         fig.height = 400
     fig.add_tools(hover)
     return fig
+
+
+def calc_ylim(y_min, y_max, pad_factor=1.03):
+    """
+    Determine y axis start, end.
+    """
+    # bokeh does not play well with nans
+    y_min = np.nan_to_num(y_min)
+    y_max = np.nan_to_num(y_max)
+
+    if y_max < 0:
+        # all negative, so set range from y_min to 0
+        start = y_min
+        end = 0
+    elif y_min > 0:
+        # all positive, so set range from 0 to y_max
+        start = 0
+        end = y_max
+    else:
+        start = y_min
+        end = y_max
+
+    start, end = pad_factor * start, pad_factor * end
+    return start, end
 
 
 def bar_subdivisions(cds, kind, metric):
@@ -451,8 +478,7 @@ def bar_subdivisions(cds, kind, metric):
     # vertical axis limits
     y_min = min(d.min() for k, d in cds.data.items() if k != kind)
     y_max = max(d.max() for k, d in cds.data.items() if k != kind)
-    pad_factor = 1.03
-    y_max, y_min = pad_factor * y_max, pad_factor * y_min
+    start, end = calc_ylim(y_min, y_max)
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
 
@@ -467,17 +493,9 @@ def bar_subdivisions(cds, kind, metric):
         # axes parameters
         fig.xgrid.grid_line_color = None
         fig.xaxis.minor_tick_line_color = None
-        fig.y_range.start = y_min
-        fig.y_range.end = y_max
 
-        if y_max < 0:
-            # all negative, so set range from y_min to 0
-            fig.y_range.start = y_min
-            fig.y_range.end = 0
-        if y_min > 0:
-            # all positive, so set range from 0 to y_max
-            fig.y_range.start = 0
-            fig.y_range.end = y_max
+        fig.y_range.start = start
+        fig.y_range.end = end
 
         if num == 0:
             # add x_range to plots to link panning
