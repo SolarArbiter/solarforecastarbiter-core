@@ -29,9 +29,6 @@ OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
-START_AT_ZER0 = ['mae', 'rmse']
-START_OR_END_AT_ZER0 = ['mbe']
-
 
 def construct_fx_obs_cds(fx_values, obs_values):
     """
@@ -472,15 +469,15 @@ def bar_subdivisions(cds, kind, metric):
         fig.xaxis.minor_tick_line_color = None
         fig.y_range.start = y_min
         fig.y_range.end = y_max
-        if metric in START_AT_ZER0:
+
+        if y_max < 0:
+            # all negative, so set range from y_min to 0
+            fig.y_range.start = y_min
+            fig.y_range.end = 0
+        if y_min > 0:
+            # all positive, so set range from 0 to y_max
             fig.y_range.start = 0
-        elif metric in START_OR_END_AT_ZER0:
-            if y_max < 0:
-                fig.y_range.start = y_min
-                fig.y_range.end = 0
-            if y_min > 0:
-                fig.y_range.start = 0
-                fig.y_range.end = y_max
+            fig.y_range.end = y_max
 
         if num == 0:
             # add x_range to plots to link panning
