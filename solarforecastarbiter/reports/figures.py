@@ -29,9 +29,6 @@ OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
-START_AT_ZER0 = ['mae', 'rmse']
-START_OR_END_AT_ZER0 = ['mbe']
-
 
 def construct_fx_obs_cds(fx_values, obs_values):
     """
@@ -386,11 +383,14 @@ def bar(cds, metric):
              line_color='white',
              fill_color=factor_cmap('forecast', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
-    if metric in START_AT_ZER0:
-        fig.y_range.start = 0
-    else:
-        # TODO: add heavy 0 line
-        pass
+
+    # vertical axis limits
+    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != 'forecast')
+    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != 'forecast')
+    start, end = calc_y_start_end(y_min, y_max)
+    fig.y_range.start = start
+    fig.y_range.end = end
+
     tooltips = [
         ('forecast', '@forecast'),
         (metric.upper(), f'@{metric}'),
@@ -409,6 +409,41 @@ def bar(cds, metric):
         fig.height = 400
     fig.add_tools(hover)
     return fig
+
+
+def calc_y_start_end(y_min, y_max, pad_factor=1.03):
+    """
+    Determine y axis start, end.
+
+    Parameters
+    ----------
+    y_min : float
+    y_max : float
+    pad_factor : float
+        Number by which to multiply the start, end.
+
+    Returns
+    -------
+    start, end : float, float
+    """
+    # bokeh does not play well with nans
+    y_min = np.nan_to_num(y_min)
+    y_max = np.nan_to_num(y_max)
+
+    if y_max < 0:
+        # all negative, so set range from y_min to 0
+        start = y_min
+        end = 0
+    elif y_min > 0:
+        # all positive, so set range from 0 to y_max
+        start = 0
+        end = y_max
+    else:
+        start = y_min
+        end = y_max
+
+    start, end = pad_factor * start, pad_factor * end
+    return start, end
 
 
 def bar_subdivisions(cds, kind, metric):
@@ -452,10 +487,9 @@ def bar_subdivisions(cds, kind, metric):
         fig_kwargs['x_range'] = calendar.day_abbr[0:]
 
     # vertical axis limits
-    y_min = min(d.min() for k, d in cds.data.items() if k != kind)
-    y_max = max(d.max() for k, d in cds.data.items() if k != kind)
-    pad_factor = 1.03
-    y_max, y_min = pad_factor * y_max, pad_factor * y_min
+    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != kind)
+    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != kind)
+    start, end = calc_y_start_end(y_min, y_max)
 
     for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
 
@@ -470,17 +504,9 @@ def bar_subdivisions(cds, kind, metric):
         # axes parameters
         fig.xgrid.grid_line_color = None
         fig.xaxis.minor_tick_line_color = None
-        fig.y_range.start = y_min
-        fig.y_range.end = y_max
-        if metric in START_AT_ZER0:
-            fig.y_range.start = 0
-        elif metric in START_OR_END_AT_ZER0:
-            if y_max < 0:
-                fig.y_range.start = y_min
-                fig.y_range.end = 0
-            if y_min > 0:
-                fig.y_range.start = 0
-                fig.y_range.end = y_max
+
+        fig.y_range.start = start
+        fig.y_range.end = end
 
         if num == 0:
             # add x_range to plots to link panning
