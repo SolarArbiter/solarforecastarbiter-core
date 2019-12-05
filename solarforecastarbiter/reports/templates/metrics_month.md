@@ -3,6 +3,6 @@
 
 Metrics for each month of the analysis period are displayed in tables and figures below.
 
-{% for figure in figures['Month of the year'] %}
+{% for figure in figures['month'] %}
   {{ figure | safe }}
 {% endfor %}

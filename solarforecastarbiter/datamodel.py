@@ -54,6 +54,18 @@ CLOSED_MAPPING = {
 }
 
 
+# Keys are the categories passed to pandas groupby, values are the human
+# readable versions for plotting and forms.
+ALLOWED_CATEGORIES = {
+    'total': 'Total',
+    'year': 'Year',
+    'month': 'Month of the year',
+    'hour': 'Hour of the day',
+    'date': 'Date',
+    'weekday': 'Day of the week'
+}
+
+
 def _dict_factory(inp):
     dict_ = dict(inp)
     for k, v in dict_.items():
@@ -995,6 +1007,11 @@ def __check_metrics__():
     pass
 
 
+def __check_categories__(categories):
+    if not set(categories) <= ALLOWED_CATEGORIES.keys():
+        raise ValueError('Categories must be in ALLOWED_CATEGORIES')
+
+
 @dataclass(frozen=True)
 class ReportMetadata(BaseModel):
     """
@@ -1083,7 +1100,7 @@ class Report(BaseModel):
     forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
                                  ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
-    categories: Tuple[str, ...] = ('Total', 'Date', 'Hour of the day')
+    categories: Tuple[str, ...] = ('total', 'date', 'hour')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'
@@ -1098,3 +1115,5 @@ class Report(BaseModel):
             ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()
+        # ensure that categories are valid
+        __check_categories__(self.categories)

@@ -26,7 +26,7 @@ Contents:
 * [Metrics](#metrics)
 {% for met_key, met_val in metrics_toc.items() %}
   {% if met_key in figures.keys() %}
-  * [{{met_key}} analysis](#{{met_val}}-analysis)
+  * [{{met_val}} analysis](#{{met_key}}-analysis)
   {% endif %}
 {% endfor %}
 * [Versions](#versions)
@@ -98,9 +98,9 @@ Metrics are displayed in tables and figures below for one or more time periods. 
 
 {#{ figures | safe }#}
 
-{% for met_key, met_val in metrics_toc.items() %}
+{% for met_key in metrics_toc.keys() %}
 {% if met_key in figures.keys() %}
-  {% include 'metrics_' + met_val + '.md' %}
+  {% include 'metrics_' + met_key + '.md' %}
 {% endif %}
 {% endfor %}
 
