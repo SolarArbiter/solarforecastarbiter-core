@@ -308,7 +308,6 @@ def construct_metrics_series(metrics, category):
     -------
     pandas.Series
     """
-    human_category = datamodel.ALLOWED_CATEGORIES[category]
     forecasts = []
     m_types = []
     m_indexes = []

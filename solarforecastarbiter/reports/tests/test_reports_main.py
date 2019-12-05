@@ -10,7 +10,6 @@ import pytest
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.reports import template, main
-from solarforecastarbiter.metrics import calculator
 
 
 @pytest.fixture()
@@ -103,7 +102,7 @@ def test_all_categories_render(mock_data, report_objects):
         end=report.end,
         forecast_observations=report.forecast_observations,
         metrics=("mae", "rmse", "mbe"),
-        categories=list(calculator.AVAILABLE_CATEGORIES.keys()),
+        categories=list(datamodel.ALLOWED_CATEGORIES.keys()),
         report_id=report.report_id,
         filters=report.filters
     )

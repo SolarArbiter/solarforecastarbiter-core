@@ -5,12 +5,11 @@ import itertools
 import calendar
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import (calculator,
-                                          deterministic)
+from solarforecastarbiter.metrics import (calculator, deterministic)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
-LIST_OF_CATEGORIES = list(calculator.AVAILABLE_CATEGORIES.keys())
+LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 
 @pytest.fixture()
@@ -202,7 +201,7 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
             for cat, cat_values in result.items():
                 if cat == 'name':
                     assert cat_values == pair.original.forecast.name
-                elif cat == 'Total':
+                elif cat == 'total':
                     assert sorted(cat_values.keys()) == sorted(metrics)
                     # check metric values
                     for metric, met_value in cat_values.items():
@@ -214,23 +213,20 @@ def test_calculate_deterministic_metrics(values, categories, metrics,
                         fx_values = pair.forecast_values
 
                         # has expected groupings
-                        if cat == 'Month of the year':
+                        if cat == 'month':
                             grps = fx_values.groupby(
                                 fx_values.index.month).groups
                             grps = [calendar.month_abbr[g] for g in grps]
-                        elif cat == 'Hour of the day':
+                        elif cat == 'hour':
                             grps = fx_values.groupby(
                                 fx_values.index.hour).groups
-                        elif cat == 'Year':
+                        elif cat == 'year':
                             grps = fx_values.groupby(
                                 fx_values.index.year).groups
-                        elif cat == 'Day of the month':
-                            grps = fx_values.groupby(
-                                fx_values.index.day).groups
-                        elif cat == 'Date':
+                        elif cat == 'date':
                             grps = fx_values.groupby(
                                 fx_values.index.date).groups
-                        elif cat == 'Day of the week':
+                        elif cat == 'weekday':
                             grps = fx_values.groupby(
                                 fx_values.index.weekday).groups
                             grps = [calendar.day_abbr[g] for g in grps]
