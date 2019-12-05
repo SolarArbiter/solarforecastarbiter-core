@@ -390,3 +390,9 @@ def test_forecast_from_union(single_forecast, single_forecast_text, site_text):
     fxdict['site'] = json.loads(site_text)
     out = Model.from_dict({'myfield': fxdict})
     assert out.myfield == single_forecast
+
+
+def test___check_categories__():
+    datamodel.__check_categories__(['total', 'weekday'])
+    with pytest.raises(ValueError):
+        datamodel.__check_categories__(['bad', 'very bad'])
