@@ -221,10 +221,14 @@ def pearson_correlation_coeff(obs, fx):
         The correlation coefficient (r [-]) of the observations and forecasts.
 
     """
-    if len(obs) == 1 or len(fx) == 1:
-        return np.nan
 
-    r, _ = sp.stats.pearsonr(obs, fx)
+    try:
+        r, _ = sp.stats.pearsonr(obs, fx)
+    except ValueError as e:
+        #print(e)
+        #r = np.nan
+        raise e
+
     return r
 
 
