@@ -93,7 +93,20 @@ def test_skill(obs, fx, ref, value):
 ])
 def test_r(obs, fx, value):
     r = deterministic.pearson_correlation_coeff(obs, fx)
-    assert pytest.approx(r) == value
+    assert r == value
+
+
+@pytest.mark.parametrize("obs,fx", [
+    # len(obs) < 2 or len(fx) < 2
+    (np.array([0]), np.array([1])),
+
+    # len(obs) != len(fx)
+    (np.array([0, 1, 2]), np.array([0, 1, 2, 3])),
+    (np.array([2, 3, 4]), np.array([2, 3, 5, 6])),
+])
+def test_r_nan(obs, fx):
+    r = deterministic.pearson_correlation_coeff(obs, fx)
+    assert np.isnan(r)
 
 
 @pytest.mark.parametrize("obs,fx,value", [
