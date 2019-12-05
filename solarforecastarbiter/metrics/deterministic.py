@@ -224,7 +224,7 @@ def pearson_correlation_coeff(obs, fx):
 
     try:
         r, _ = sp.stats.pearsonr(obs, fx)
-    except ValueError as e:
+    except ValueError:
         r = np.nan
 
     return r
