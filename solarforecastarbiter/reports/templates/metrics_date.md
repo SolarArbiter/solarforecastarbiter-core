@@ -3,6 +3,6 @@
 
 Metrics for each date of the analysis period are displayed in tables and figures below.
 
-{% for figure in figures['Date'] %}
+{% for figure in figures['date'] %}
   {{ figure | safe }}
 {% endfor %}

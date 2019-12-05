@@ -17,18 +17,6 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import deterministic
 
 
-# Keys are the category names, values are the mapping used to groupby
-AVAILABLE_CATEGORIES = {
-    'Total': 'total',
-    'Year': 'year',
-    'Month of the year': 'month',
-    'Day of the month': 'day',
-    'Hour of the day': 'hour',
-    'Date': 'date',
-    'Day of the week': 'weekday',
-}
-
-
 def calculate_metrics(processed_pairs, categories, metrics,
                       ref_pair=None, normalizer=1.0):
     """
@@ -171,14 +159,13 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         calc_metrics[category] = {}
 
         # total (special category)
-        if category == 'Total':
+        if category == 'total':
             for metric_ in set(metrics):
                 res = _apply_deterministic_metric_func(
                     metric_, fx, obs, ref_fx=ref_fx, normalizer=normalizer)
                 calc_metrics[category][metric_] = res
         else:
-            groupby_category = AVAILABLE_CATEGORIES[category]
-            index_category = getattr(df.index, groupby_category)
+            index_category = getattr(df.index, category)
 
             # Calculate each metric
             for metric_ in set(metrics):
@@ -187,21 +174,22 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 cat_values = []
 
                 # Group by category
-                for id, group in df.groupby(index_category):
+                for cat, group in df.groupby(index_category):
 
                     # Calculate
                     res = _apply_deterministic_metric_func(
                         metric_, group.forecast, group.observation,
                         ref_fx=ref_fx, normalizer=normalizer)
 
-                    # Change id of the group
-                    if category == 'Month of the year':
-                        id = calendar.month_abbr[id]
-                    elif category == 'Day of the week':
-                        id = calendar.day_abbr[id]
+                    # Change category label of the group from numbers
+                    # to e.g. January or Monday
+                    if category == 'month':
+                        cat = calendar.month_abbr[cat]
+                    elif category == 'weekday':
+                        cat = calendar.day_abbr[cat]
 
                     metric_values.append(res)
-                    cat_values.append(id)
+                    cat_values.append(cat)
 
                 calc_metrics[category][metric_] = pd.Series(metric_values,
                                                             index=cat_values)

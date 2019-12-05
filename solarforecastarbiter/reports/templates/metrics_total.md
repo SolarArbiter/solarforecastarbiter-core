@@ -4,6 +4,6 @@
 Metrics for the total analysis period are displayed in tables and figures below.
 
 {{ tables | safe }}
-{% for figure in figures['Total'] %}
+{% for figure in figures['total'] %}
   {{ figure | safe }}
 {% endfor %}

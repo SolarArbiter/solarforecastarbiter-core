@@ -242,7 +242,7 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
-        One of the available metrics grouping categories (e.g., Total)
+        One of the available metrics grouping categories (e.g., total)
     index : str
         Determines if the index is the array of metrics ('metric') or
         forecast ('forecast') names
@@ -291,7 +291,7 @@ def abbreviate(x, limit=3):
     return ' '.join(out_components)
 
 
-def construct_metrics_series(metrics, kind):
+def construct_metrics_series(metrics, category):
     """
     Contructs a series of metrics values with a MultiIndex.
     MultiIndex names are metric, forecast, kind.
@@ -301,8 +301,8 @@ def construct_metrics_series(metrics, kind):
     metrics : list of metrics dicts
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
-    kind : str
-        One of the available metrics grouping categories (e.g., Total)
+    category : str
+        One of the available metrics grouping categories (e.g., total)
 
     Returns
     -------
@@ -315,23 +315,24 @@ def construct_metrics_series(metrics, kind):
     # There is probably a more clever way to do this but
     # this seems the most straightforward to me
     for m in metrics:
-        for col in m[kind]:
-            if kind == 'Total':
+        for col in m[category]:
+            if category == 'total':
                 forecasts.append(m['name'])
                 m_types.append(col)
                 m_indexes.append(0)
-                m_values.append(m[kind][col])
+                m_values.append(m[category][col])
             else:
-                for i, v in m[kind][col].items():
+                for i, v in m[category][col].items():
                     forecasts.append(m['name'])
                     m_types.append(col)
                     m_indexes.append(i)
                     m_values.append(v)
-    index = pd.MultiIndex.from_arrays([forecasts, m_types, m_indexes],
-                                      names=['forecast', 'metric', kind])
+    index = pd.MultiIndex.from_arrays(
+        [forecasts, m_types, m_indexes],
+        names=['forecast', 'metric', category])
     metrics_series = pd.Series(m_values, index=index)
     metrics_series = metrics_series.reorder_levels(
-        ('metric', 'forecast', kind))
+        ('metric', 'forecast', category))
     return metrics_series
 
 
@@ -446,7 +447,7 @@ def calc_y_start_end(y_min, y_max, pad_factor=1.03):
     return start, end
 
 
-def bar_subdivisions(cds, kind, metric):
+def bar_subdivisions(cds, category, metric):
     """
     Create bar graphs comparing a single metric across subdivisions of
     time for multiple forecasts. e.g.
@@ -461,8 +462,8 @@ def bar_subdivisions(cds, kind, metric):
     ----------
     cds : bokeh.models.ColumnDataSource
         Fields must be kind and the names of the forecasts
-    kind : str
-        One of the available metrics grouping categories (e.g., Total)
+    category : str
+        One of the available metrics grouping categories (e.g., total)
 
     Returns
     -------
@@ -475,30 +476,32 @@ def bar_subdivisions(cds, kind, metric):
 
     width = 0.8
 
-    fig_kwargs['x_axis_label'] = kind
+    human_category = datamodel.ALLOWED_CATEGORIES[category]
+
+    fig_kwargs['x_axis_label'] = human_category
 
     # Special handling for x-axis with dates
-    if kind == 'Date':
+    if category == 'date':
         fig_kwargs['x_axis_type'] = 'datetime'
         width = width * pd.Timedelta(days=1)
-    elif kind == 'Month of the year':
+    elif category == 'month':
         fig_kwargs['x_range'] = calendar.month_abbr[1:]
-    elif kind == 'Day of the week':
+    elif category == 'weekday':
         fig_kwargs['x_range'] = calendar.day_abbr[0:]
 
     # vertical axis limits
-    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != kind)
-    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != kind)
+    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != category)
+    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != category)
     start, end = calc_y_start_end(y_min, y_max)
 
-    for num, field in enumerate(filter(lambda x: x != kind, cds.data)):
+    for num, field in enumerate(filter(lambda x: x != category, cds.data)):
 
         # Create figure
         title = field + ' ' + metric.upper()
         fig = figure(width=800, height=200, title=title,
                      **fig_kwargs)
 
-        fig.vbar(x=kind, top=field, width=width, source=cds,
+        fig.vbar(x=category, top=field, width=width, source=cds,
                  line_color='white', fill_color=next(palette))
 
         # axes parameters
@@ -514,30 +517,30 @@ def bar_subdivisions(cds, kind, metric):
             fig_kwargs['y_range'] = fig.y_range
 
         # Hover tool and format specific changes
-        if kind == 'Date':
+        if category == 'date':
             # Datetime x-axis
             formatter = DatetimeTickFormatter(days='%Y-%m-%d')
             fig.xaxis.formatter = formatter
             tooltips = [
-                (kind, f'@{kind}{{%F}}'),
+                (human_category, f'@{category}{{%F}}'),
                 (f'{field} {metric.upper()}', f'@{{{field}}}'),
             ]
             hover_kwargs = dict(tooltips=tooltips,
-                                formatters={kind: 'datetime'})
-        elif kind == 'Month of the year' or kind == 'Day of the week':
+                                formatters={category: 'datetime'})
+        elif category == 'month' or category == 'weekday':
             # Categorical x-axis
             formatter = CategoricalTickFormatter()
             fig.xaxis.formatter = formatter
             tooltips = [
-                (kind, f'@{{{kind}}}'),
+                (human_category, f'@{{{category}}}'),
                 (f'{metric.upper()}', f'@{{{field}}}'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         else:
             # Numerical x-axis
-            fig.xaxis.ticker = cds.data[kind]
+            fig.xaxis.ticker = cds.data[category]
             tooltips = [
-                (kind, f'@{{{kind}}}'),
+                (human_category, f'@{{{category}}}'),
                 (f'{metric.upper()}', f'@{{{field}}}'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
@@ -583,7 +586,7 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * (len(field) - 1)
+    width = name_width + metric_width * (len(columns) - 1)
     height = 25 * (1 + len(cds.data['forecast']))
     data_table = DataTable(source=cds, columns=columns, width=width,
                            height=height, index_position=None,
