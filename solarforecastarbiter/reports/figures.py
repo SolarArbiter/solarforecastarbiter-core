@@ -586,7 +586,7 @@ def metrics_table(cds):
         col = TableColumn(field=field, title=title.upper(),
                           formatter=formatter, width=metric_width)
         columns.append(col)
-    width = name_width + metric_width * (len(field) - 1)
+    width = name_width + metric_width * (len(columns) - 1)
     height = 25 * (1 + len(cds.data['forecast']))
     data_table = DataTable(source=cds, columns=columns, width=width,
                            height=height, index_position=None,

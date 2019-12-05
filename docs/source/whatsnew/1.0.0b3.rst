@@ -59,6 +59,8 @@ Bug fixes
   partially addressing (:issue:`251`) (:pull:`260`)
 * Test that pandoc report generation actually generates the HTML body (:pull:`260`)
 * Fix metric plot limits for newer metrics. (:issue:`276`)
+* Fix bug in which metrics table width was not calculated correctly,
+  leading to not all metrics being displayed. (:issue:`284`)
 
 Contributors
 ~~~~~~~~~~~~
