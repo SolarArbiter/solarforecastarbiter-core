@@ -406,7 +406,7 @@ _MAP = {
     'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
 
-__all__ = [m.__name__ for m in _MAP.values()]
+__all__ = [m[0].__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
 _REQ_REF_FX = ['bss']
