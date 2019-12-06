@@ -397,13 +397,13 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
 
 # Add new metrics to this map to map shorthand to function
 _MAP = {
-    'bs': brier_score,
-    'bss': brier_skill_score,
-    'rel': reliability,
-    'res': resolution,
-    'unc': uncertainty,
-    'sh': sharpness,
-    'crps': continuous_ranked_probability_score,
+    'bs': (brier_score, 'BS'),
+    'bss': (brier_skill_score, 'BSS'),
+    'rel': (reliability, 'REL'),
+    'res': (resolution, 'RES'),
+    'unc': (uncertainty, 'UNC'),
+    'sh': (sharpness, 'SH'),
+    'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
 
 __all__ = [m.__name__ for m in _MAP.values()]

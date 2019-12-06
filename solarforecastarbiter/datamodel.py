@@ -13,6 +13,8 @@ from typing import Tuple, Union
 import pandas as pd
 
 
+from solarforecastarbiter.metrics.deterministic import _MAP as deterministic
+from solarforecastarbiter.metrics.probabilistic import _MAP as probabilistic
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
 
@@ -66,31 +68,10 @@ ALLOWED_CATEGORIES = {
 }
 
 ALLOWED_DETERMINISTIC_METRICS = {
-    'mae': 'MAE',
-    'mbe': 'MBE',
-    'rmse': 'RMSE',
-    'mape': 'MAPE',
-    'nmae': 'NMAE',
-    'nmbe': 'NMBE',
-    'nrmse': 'NRMSE',
-    's': 'Skill',
-    'r': 'r',
-    'r^2': 'R^2',
-    'crmse': 'CRMSE',
-    'ksi': 'KSI',
-    'over': 'OVER',
-    'cpi': 'CPI'
-}
+    k: v[1] for k, v in deterministic.items()}
 
 ALLOWED_PROBABILISTIC_METRICS = {
-    'bs': 'BS',
-    'bss': 'BSS',
-    'rel': 'REL',
-    'res': 'RES',
-    'unc': 'UNC',
-    'sh': 'SH',
-    'crps': 'CRPS',
-}
+    k: v[1] for k, v in probabilistic.items()}
 
 
 def _dict_factory(inp):

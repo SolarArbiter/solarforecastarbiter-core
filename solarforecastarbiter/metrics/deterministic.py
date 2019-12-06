@@ -428,23 +428,23 @@ def combined_performance_index(obs, fx):
 
 # Add new metrics to this map to map shorthand to function
 _MAP = {
-    'mae': mean_absolute,
-    'mbe': mean_bias,
-    'rmse': root_mean_square,
-    'mape': mean_absolute_percentage,
-    'nmae': normalized_mean_absolute,
-    'nmbe': normalized_mean_bias,
-    'nrmse': normalized_root_mean_square,
-    's': forecast_skill,
-    'r': pearson_correlation_coeff,
-    'r^2': coeff_determination,
-    'crmse': centered_root_mean_square,
-    'ksi': kolmogorov_smirnov_integral,
-    'over': over,
-    'cpi': combined_performance_index,
+    'mae': (mean_absolute, 'MAE'),
+    'mbe': (mean_bias, 'MBE'),
+    'rmse': (root_mean_square, 'RMSE'),
+    'mape': (mean_absolute_percentage, 'MAPE'),
+    'nmae': (normalized_mean_absolute, 'NMAE'),
+    'nmbe': (normalized_mean_bias, 'NMBE'),
+    'nrmse': (normalized_root_mean_square, 'NRMSE'),
+    's': (forecast_skill, 'Skill'),
+    'r': (pearson_correlation_coeff, 'r'),
+    'r^2': (coeff_determination, 'R^2'),
+    'crmse': (centered_root_mean_square, 'CRMSE'),
+    'ksi': (kolmogorov_smirnov_integral, 'KSI'),
+    'over': (over, 'OVER'),
+    'cpi': (combined_performance_index, 'CPI'),
 }
 
-__all__ = [m.__name__ for m in _MAP.values()]
+__all__ = [m[0].__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
 _REQ_REF_FX = ['s']
