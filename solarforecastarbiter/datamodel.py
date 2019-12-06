@@ -65,6 +65,33 @@ ALLOWED_CATEGORIES = {
     'weekday': 'Day of the week'
 }
 
+ALLOWED_DETERMINISTIC_METRICS = {
+    'mae': 'MAE',
+    'mbe': 'MBE',
+    'rmse': 'RMSE',
+    'mape': 'MAPE',
+    'nmae': 'NMAE',
+    'nmbe': 'NMBE',
+    'nrmse': 'NRMSE',
+    's': 'S',
+    'r': 'R',
+    'r^2': 'R^2',
+    'crmse': 'CRMSE',
+    'ksi': 'KSI',
+    'over': 'OVER',
+    'cpi': 'CPI'
+}
+
+ALLOWED_DETERMINISTIC_METRICS = {
+    'bs': 'BS',
+    'bss': 'BSS',
+    'rel': 'REL',
+    'res': 'RES',
+    'unc': 'UNC',
+    'sh': 'SH',
+    'crps': 'CRPS',
+}
+
 
 def _dict_factory(inp):
     dict_ = dict(inp)
