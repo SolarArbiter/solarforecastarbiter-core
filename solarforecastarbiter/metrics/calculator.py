@@ -74,7 +74,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
 def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     metric functions. """
-    metric_func = deterministic._MAP[metric]
+    metric_func = deterministic._MAP[metric][0]
     if metric in deterministic._REQ_REF_FX:
         return metric_func(obs, fx, kwargs['ref_fx'])
     elif metric in deterministic._REQ_NORM:

@@ -51,6 +51,10 @@ Enhancements
 * Dictionary of metric results from metrics.calculator now has structure with
   levels of  1) category type 2) metric type 3) pandas.Series of metrics values
   with index of category values (:pull:`224`)
+* Added ``datamodel.ALLOWED_DETERMINISTIC_METRICS`` and 
+  ``datamodel.ALLOWED_PROBABILISTIC_METRICS`` dictionaries for importing
+  metrics options outside of core. (:pull:`286`)
+
 
 Bug fixes
 ~~~~~~~~~

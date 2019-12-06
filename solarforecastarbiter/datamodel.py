@@ -13,6 +13,10 @@ from typing import Tuple, Union
 import pandas as pd
 
 
+from solarforecastarbiter.metrics.deterministic import \
+    _MAP as deterministic_mapping
+from solarforecastarbiter.metrics.probabilistic import \
+    _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
 
@@ -64,6 +68,12 @@ ALLOWED_CATEGORIES = {
     'date': 'Date',
     'weekday': 'Day of the week'
 }
+
+ALLOWED_DETERMINISTIC_METRICS = {
+    k: v[1] for k, v in deterministic_mapping.items()}
+
+ALLOWED_PROBABILISTIC_METRICS = {
+    k: v[1] for k, v in probabilistic_mapping.items()}
 
 
 def _dict_factory(inp):
