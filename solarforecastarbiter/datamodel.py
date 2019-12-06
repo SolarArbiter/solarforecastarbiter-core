@@ -74,7 +74,7 @@ ALLOWED_DETERMINISTIC_METRICS = {
     'nmbe': 'NMBE',
     'nrmse': 'NRMSE',
     's': 'Skill',
-    'r': 'R',
+    'r': 'r',
     'r^2': 'R^2',
     'crmse': 'CRMSE',
     'ksi': 'KSI',
