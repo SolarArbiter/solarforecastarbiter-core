@@ -82,7 +82,7 @@ ALLOWED_DETERMINISTIC_METRICS = {
     'cpi': 'CPI'
 }
 
-ALLOWED_DETERMINISTIC_METRICS = {
+ALLOWED_PROBABILISTIC_METRICS = {
     'bs': 'BS',
     'bss': 'BSS',
     'rel': 'REL',
