@@ -1,9 +1,8 @@
-
 ### <a name="total-analysis"></a>Total analysis
 
 Metrics for the total analysis period are displayed in tables and figures below.
 
 {{ tables | safe }}
-{% for figure in figures['total'] %}
+{% for figure in figures['total'] -%}
   {{ figure | safe }}
-{% endfor %}
+{%- endfor %}
