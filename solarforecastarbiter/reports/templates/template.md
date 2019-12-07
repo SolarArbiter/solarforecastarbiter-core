@@ -1,12 +1,12 @@
 # {{ name }}
 
-{# this document is designed to be rendered in 3 steps #}
-{# 1. jinja renders the "prereport" - a markdown file with bokeh html/js tables and metrics graphics #}
-{# 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
-{# 3. pandoc renders the html or pdf version of the full report #}
 
 {# fix this #}
 {% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
+{#- this document is designed to be rendered in 3 steps #}
+{#- 1. jinja renders the "prereport" - a markdown file with bokeh html/js tables and metrics graphics #}
+{#- 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
+{#- 3. pandoc renders the html or pdf version of the full report #}
 
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
@@ -24,17 +24,16 @@ Contents:
   * [Observations and forecasts](#observations-and-forecasts)
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
-{% for met_key, met_val in metrics_toc.items() %}
-  {% if met_key in figures.keys() %}
+{%- for met_key, met_val in metrics_toc.items() %}
+  {%- if met_key in figures.keys() %}
   * [{{met_val}} analysis](#{{met_key}}-analysis)
-  {% endif %}
-{% endfor %}
+  {%- endif %}
+{%- endfor %}
 * [Versions](#versions)
-* [Hash](#hash)
 
 ## Report metadata
 
-{# jinja requires that we escape the markdown div specification #}
+{#- jinja requires that we escape the markdown div specification #}
 {{ '::: {.metadata-table}' }}
 
 * Name: {{ name }}
@@ -45,12 +44,12 @@ Contents:
 
 ## Data
 
-{# replace with warning if not all forecast/obs data is accessible #}
-{% if checksum_failure %}
+{#- replace with warning if not all forecast/obs data is accessible #}
+{%- if checksum_failure %}
 {{ '::: warning' }}
 WARNING: One or more of the observation or forecast data has changed since this report was created. Consider creating a new report.
 :::
-{% endif %}
+{%- endif %}
 
 This report includes forecast and observation data available from {{ start }} to {{ end }}.
 
@@ -73,7 +72,6 @@ Controls to pan, zoom, and save the plot are shown on the right. Clicking on an 
 {# endif #}
 
 {{ script_data | safe }}
-
 {{ figures_timeseries_scatter | safe }}
 
 ### Data validation
@@ -88,20 +86,18 @@ These intervals were removed from the raw time series before resampling and real
 
 ## Metrics
 
-{{ '{%' }} raw {{ '%}' }}
+{{- '{%' }} raw {{ '%}' }}
 {{ script_metrics | safe }}
-{{ '{%' }} endraw {{ '%}' }}
+{{- '{%' }} endraw {{ '%}' }}
 
 Metrics are displayed in tables and figures below for one or more time periods. Metrics may be downloaded in csv format.
 
-{# Loop through each metric as keys in figures_bar by calling the markdown #}
+{#- Loop through each metric as keys in figures_bar by calling the markdown #}
 
-{#{ figures | safe }#}
-
-{% for met_key in metrics_toc.keys() %}
-{% if met_key in figures.keys() %}
-  {% include 'metrics_' + met_key + '.md' %}
-{% endif %}
+{% for met_key in metrics_toc.keys() -%}
+{%- if met_key in figures.keys() %}
+{% include 'metrics_' + met_key + '.md' %}
+{%- endif %}
 {% endfor %}
 
 ## Versions
