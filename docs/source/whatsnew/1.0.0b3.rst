@@ -30,6 +30,8 @@ API Changes
 * Add additional normalized deterministic metrics
   :py:mod:`solarforecastarbiter.metrics.deterministic.normalized_mean_absolute`, and
   :py:mod:`solarforecastarbiter.metrics.deterministic.normalized_mean_bias`. (:issue:`118`) (:pull:`268`)
+* Add `base_url` keyword to :py:mod:`solarforecastarbiter.reports.template.full_html` (:pull:`287`)
+
 
 Enhancements
 ~~~~~~~~~~~~
@@ -61,6 +63,7 @@ Bug fixes
 * Fix metric plot limits for newer metrics. (:issue:`276`)
 * Fix bug in which metrics table width was not calculated correctly,
   leading to not all metrics being displayed. (:issue:`284`)
+* Fix report links (:issue:`175`) (:pull:`287`)
 
 Contributors
 ~~~~~~~~~~~~
