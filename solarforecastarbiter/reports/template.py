@@ -188,7 +188,7 @@ def report_md_to_html(report_md):
     return out.stdout.decode()
 
 
-def full_html(body):
+def full_html(body, base_url=None):
     """Create full html file.
 
     The Solar Forecast Arbiter dashboard will likely use its own
@@ -208,6 +208,9 @@ def full_html(body):
         autoescape=select_autoescape(['html', 'xml']))
     base_template = env.get_template('base.html')
 
-    base = base_template.render(body=body)
+    args = {'body': body}
+    if base_url is not None:
+        args['base_url'] = base_url.replace('api.', 'dashboard.')
 
+    base = base_template.render(**args)
     return base

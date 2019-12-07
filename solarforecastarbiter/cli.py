@@ -310,7 +310,7 @@ def report(verbose, user, password, base_url, report_file, output_file):
     raw_report = reports.create_raw_report_from_data(report, data)
     report_md = reports.render_raw_report(raw_report)
     body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
+    full_report = template.full_html(body, base_url)
     with open(output_file, 'w') as f:
         f.write(full_report)
 
