@@ -109,10 +109,3 @@ This report was created using open source software packages. The relevant packag
 {% for package, version in versions.items() -%}
     | {{ package|e }} | {{ version|e }} |
 {% endfor %}
-
-## Hash
-
-{# fix this #}
-The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a
-
-The signature can be verified using the Solar Forecast Arbiter [public key](solarforecastarbiter.org).
