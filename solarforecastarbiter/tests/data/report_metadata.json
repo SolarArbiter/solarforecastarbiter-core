@@ -24,9 +24,9 @@
             "mbe"
         ],
         "categories": [
-          "Total",
-          "Date",
-          "Hour of the day"
+          "total",
+          "date",
+          "hour"
         ],
         "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
         "object_pairs": [
