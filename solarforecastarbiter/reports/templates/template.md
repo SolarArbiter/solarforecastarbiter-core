@@ -1,8 +1,6 @@
 # {{ name }}
 
 
-{# fix this #}
-{% set dash_url = 'https://dashboard.solarforecastarbiter.org' %}
 {#- this document is designed to be rendered in 3 steps #}
 {#- 1. jinja renders the "prereport" - a markdown file with bokeh html/js tables and metrics graphics #}
 {#- 2. jinja renders the "full report" - a markdown file with bokeh html/js with the above plus timeseries and scatter plots #}
@@ -63,7 +61,7 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
 {% for fx_ob, route, id in proc_fx_obs -%}
-[{{ fx_ob.original.data_object.name|safe }}]({{ dash_url|safe }}/{{ route|safe }}/{{ id|safe }}) | {{ fx_ob.original.data_object.interval_label | safe}} | {{ (fx_ob.original.data_object.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
+[{{ fx_ob.original.data_object.name|safe }}](/{{ route|safe }}/{{ id|safe }}) | {{ fx_ob.original.data_object.interval_label | safe}} | {{ (fx_ob.original.data_object.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}](/forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
