@@ -44,6 +44,8 @@ OK = int(0b10)  # OK version 0 (2)
     (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS),
     (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN),
     (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
 ])
 def test_resample_and_align(site_metadata, interval_label,
                             fx_series, obs_series, expected_dt):
