@@ -89,10 +89,14 @@ def resample_and_align(fx_obs, data, tz):
                                        label=closed,
                                        closed=closed).mean()
 
+    # Remove NaNs
+    obs_resampled = obs_resampled.dropna(how="any")
+    data[fx] = data[fx].dropna(how="any")
+
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
     # fill missing observations with NaN
-    fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'left')
+    fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'inner')
 
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)
