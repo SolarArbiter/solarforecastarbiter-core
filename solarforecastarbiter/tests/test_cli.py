@@ -238,9 +238,10 @@ def test_report(cli_token, mocker, report_objects):
                                report_objects[5]: data})
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
-        infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /
-                  'report_metadata.json')
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
         outfile = tmpdir + '/test_out.html'
         res = runner.invoke(cli.report,
-                            ['-u user', '-p pass', str(infile), outfile])
+                            ['-u user', '-p pass', infile, outfile])
     assert res.exit_code == 0
