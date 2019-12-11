@@ -11,8 +11,9 @@
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
 {{ '::: {.download}' }}
-{# Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }}) #}
-Download as [html]() or [pdf]()
+Download as [html](javascript:window.location.replace(window.location.href+'/download/html', '_self')) or pdf (coming soon).
+The download is a ZIP archive that includes checksums for the report file and a PGP signature that can be used to verify the authenticity of the report.
+The Solar Forecast Arbiter PGP key ID is [0x22bd497c0930f8b0](https://solarforecastarbiter.org/assets/solarforecastarbiter.gpg).
 :::
 
 Please see our GitHub repository for [known issues](https://github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports) with the reports or to create a new issue.
@@ -24,13 +25,12 @@ Contents:
   * [Observations and forecasts](#observations-and-forecasts)
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
-{% for met_key, met_val in metrics_toc.items() %}
-  {% if met_key in figures.keys() %}
+{%- for met_key, met_val in metrics_toc.items() -%}
+  {%- if met_key in figures.keys() %}
   * [{{met_val}} analysis](#{{met_key}}-analysis)
-  {% endif %}
-{% endfor %}
+  {%- endif %}
+{%- endfor %}
 * [Versions](#versions)
-* [Hash](#hash)
 
 ## Report metadata
 
@@ -113,10 +113,3 @@ This report was created using open source software packages. The relevant packag
 {% for package, version in versions.items() -%}
     | {{ package|e }} | {{ version|e }} |
 {% endfor %}
-
-## Hash
-
-{# fix this #}
-The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a
-
-The signature can be verified using the Solar Forecast Arbiter [public key](solarforecastarbiter.org).

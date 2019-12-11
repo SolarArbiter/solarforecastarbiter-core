@@ -1,4 +1,5 @@
 {
+    "_comment": "This file is not currently used for tests, but can be used with the CLI tool to generate a real report when using data from the prod. API.",
     "name": "NREL MIDC OASIS GHI Forecast Analysis",
     "report_parameters": {
         "start": "2019-10-01T00:00:00Z",
@@ -24,9 +25,9 @@
             "mbe"
         ],
         "categories": [
-          "Total",
-          "Date",
-          "Hour of the day"
+          "total",
+          "date",
+          "hour"
         ],
         "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
         "object_pairs": [
