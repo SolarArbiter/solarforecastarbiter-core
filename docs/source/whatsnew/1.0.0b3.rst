@@ -51,9 +51,10 @@ Enhancements
 * Dictionary of metric results from metrics.calculator now has structure with
   levels of  1) category type 2) metric type 3) pandas.Series of metrics values
   with index of category values (:pull:`224`)
-* Added ``datamodel.ALLOWED_DETERMINISTIC_METRICS`` and 
+* Added ``datamodel.ALLOWED_DETERMINISTIC_METRICS`` and
   ``datamodel.ALLOWED_PROBABILISTIC_METRICS`` dictionaries for importing
   metrics options outside of core. (:pull:`286`)
+* Add link to report to download HTML version (:pull:`289`)
 
 
 Bug fixes
@@ -65,6 +66,7 @@ Bug fixes
 * Fix metric plot limits for newer metrics. (:issue:`276`)
 * Fix bug in which metrics table width was not calculated correctly,
   leading to not all metrics being displayed. (:issue:`284`)
+* Fix report table of content spacing (:pull:`289`)
 
 Contributors
 ~~~~~~~~~~~~
