@@ -13,7 +13,7 @@ This report of solar forecast accuracy was automatically generated using the [So
 {{ '::: {.download}' }}
 Download as [html](javascript:window.location.replace(window.location.href+'/download/html', '_self')) or pdf (coming soon).
 The download is a ZIP archive that includes checksums for the report file and a PGP signature that can be used to verify the authenticity of the report.
-The Solar Forecast Arbiter PGP key ID is [0x22bd497c0930f8b0](https://solarforecastarbiter.org/assests/solarforecastarbiter.gpg).
+The Solar Forecast Arbiter PGP key ID is [0x22bd497c0930f8b0](https://solarforecastarbiter.org/assets/solarforecastarbiter.gpg).
 :::
 
 Please see our GitHub repository for [known issues](https://github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports) with the reports or to create a new issue.
