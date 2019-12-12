@@ -93,7 +93,7 @@ def resample_and_align(fx_obs, data, tz):
         ).agg(["mean", "count"])
 
         # Drop intervals if too many samples missing
-        count_threshold = int(fx.interval_length / obs.interval_length * 0.5)
+        count_threshold = int(fx.interval_length / obs.interval_length * 0.1)
         obs_resampled = obs_resampled["mean"].where(
             obs_resampled["count"] >= count_threshold
         )
