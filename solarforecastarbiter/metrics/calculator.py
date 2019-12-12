@@ -124,8 +124,11 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         are specified.
 
     """
-    calc_metrics = {}
-    calc_metrics['name'] = processed_fx_obs.original.forecast.name
+    out = {
+        'name': processed_fx_obs.original.forecast.name,
+        'forecast_id': processed_fx_obs.original.forecast.forecast_id,
+        'observation_id': processed_fx_obs.original.observation.observation_id, # aggregate?
+    }
 
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values
@@ -138,6 +141,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                                "required for desired metrics")
 
         ref_fx = ref_fx_obs.forecast_values
+        out['reference_forecast_id'] = ref_fx_obs.original.forecast.forecast_id
         if ref_fx.empty:
             raise RuntimeError("No reference forecast timeseries data")
         elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
@@ -162,44 +166,35 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     if processed_fx_obs.interval_label == "ending":
         df.index -= pd.Timedelta("1ns")
 
+    metric_vals = []
     # Calculate metrics
     for category in set(categories):
-        calc_metrics[category] = {}
-
         # total (special category)
         if category == 'total':
-            for metric_ in set(metrics):
-                res = _apply_deterministic_metric_func(
-                    metric_, fx, obs, ref_fx=ref_fx, normalizer=normalizer)
-                calc_metrics[category][metric_] = res
+            index_category = lambda x: 0  # NOQA
         else:
             index_category = getattr(df.index, category)
 
-            # Calculate each metric
-            for metric_ in set(metrics):
+        # Calculate each metric
+        for metric_ in set(metrics):
+            # Group by category
+            for cat, group in df.groupby(index_category):
 
-                metric_values = []
-                cat_values = []
+                # Calculate
+                res = _apply_deterministic_metric_func(
+                    metric_, group.forecast, group.observation,
+                    ref_fx=ref_fx, normalizer=normalizer)
 
-                # Group by category
-                for cat, group in df.groupby(index_category):
+                # Change category label of the group from numbers
+                # to e.g. January or Monday
+                if category == 'month':
+                    cat = calendar.month_abbr[cat]
+                elif category == 'weekday':
+                    cat = calendar.day_abbr[cat]
 
-                    # Calculate
-                    res = _apply_deterministic_metric_func(
-                        metric_, group.forecast, group.observation,
-                        ref_fx=ref_fx, normalizer=normalizer)
+                metric_vals.append(datamodel.MetricValue(
+                    category, metric_, str(cat), res))
 
-                    # Change category label of the group from numbers
-                    # to e.g. January or Monday
-                    if category == 'month':
-                        cat = calendar.month_abbr[cat]
-                    elif category == 'weekday':
-                        cat = calendar.day_abbr[cat]
-
-                    metric_values.append(res)
-                    cat_values.append(cat)
-
-                calc_metrics[category][metric_] = pd.Series(metric_values,
-                                                            index=cat_values)
-
+    out['values'] = tuple(metric_vals)
+    calc_metrics = datamodel.MetricResult.from_dict(out)
     return calc_metrics

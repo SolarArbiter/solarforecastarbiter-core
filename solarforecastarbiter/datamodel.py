@@ -1156,3 +1156,36 @@ class Report(BaseModel):
             __check_metrics__(k.forecast, self.metrics)
         # ensure that categories are valid
         __check_categories__(self.categories)
+
+
+@dataclass(frozen=True)
+class MetricValue(BaseModel):
+    category: str
+    metric: str
+    index: str
+    value: float
+    # filter?
+
+
+@dataclass(frozen=True)
+class MetricResult(BaseModel):
+    name: str
+    forecast_id: str
+    observation_id: str
+    values: Tuple[MetricValue, ...]
+    reference_forecast_id: str = ''
+
+
+@dataclass(frozen=True)
+class MetricPlot(BaseModel):
+    name: str
+    category: str
+    metric: str
+    div: str
+    svg: str
+
+
+@dataclass(frozen=True)
+class RawReportPlots(BaseModel):
+    script: str
+    plots: Tuple[MetricPlot, ...]
