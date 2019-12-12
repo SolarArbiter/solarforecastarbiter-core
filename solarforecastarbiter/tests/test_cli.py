@@ -228,8 +228,8 @@ def test_report(cli_token, mocker, report_objects):
     index = pd.date_range(
         start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
         freq='1h')
-    data = pd.Series([0] * len(index), index=index)
-    obs = pd.DataFrame({'value': data, 'quality_flag': data + 3})
+    data = pd.Series(0, index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
     mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
