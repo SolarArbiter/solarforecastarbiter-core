@@ -309,7 +309,9 @@ def report(verbose, user, password, base_url, report_file, output_file):
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)
     nreport = report.replace(raw_report=raw_report)
-    full_report = template.full_html(nreport)
+    full_report = template.render_html(
+        nreport, base_url.replace('api', 'dashboard'), with_timeseries=True,
+        body_only=False)
     with open(output_file, 'w') as f:
         f.write(full_report)
 

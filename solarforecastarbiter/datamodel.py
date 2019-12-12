@@ -1086,7 +1086,6 @@ class MetricValue(BaseModel):
     metric: str
     index: str
     value: float
-    # filter?
 
 
 @dataclass(frozen=True)

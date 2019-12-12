@@ -282,32 +282,10 @@ def compute_report(access_token, report_id, base_url=None):
     return raw_report
 
 
-def render_raw_report(raw_report):
-    """
-    Convert raw report to full report.
-
-    Parameters
-
-    ----------
-    raw_report : solarforecastarbiter.datamodel.RawReport
-
-    Returns
-    -------
-    str, markdown
-        The full report.
-    """
-    fx_obs_cds = [
-        (pfxobs, figures.construct_fx_obs_cds(
-            pfxobs.forecast_values, pfxobs.observation_values))
-        for pfxobs in raw_report.processed_forecasts_observations]
-    report_md = template.add_figures_to_report_template(
-        fx_obs_cds, raw_report.metadata, raw_report.template)
-    return report_md
-
-
-def report_to_html_body(report):
-    report_md = render_raw_report(report.raw_report)
-    body = template.report_md_to_html(report_md)
+def report_to_html_body(
+        report, dash_url='https://dashboard.solarforecastarbiter.org'):
+    body = template.render_html(report, dash_url, with_timeseries=True,
+                                body_only=True)
     return body
 
 

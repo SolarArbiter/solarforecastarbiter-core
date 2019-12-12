@@ -47,6 +47,18 @@
 {% block obsandfx %}
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
 {% include "obsfx_table.html" %}
+
+{% if timeseries_script is defined %}
+<p>The plots below show the realigned and resampled time series of
+observation and forecast data as well as a scatter plot of forecast vs
+observation data.</p>
+
+<p>Controls to pan, zoom, and save the plot are shown on the
+right. Clicking on an item in the legend will hide/show it.</p>
+
+{{ timeseries_script | safe}}
+{{ timeseries_div | safe }}
+{% endif %}
 {% endblock %}
 
 {% block datavalidation %}
