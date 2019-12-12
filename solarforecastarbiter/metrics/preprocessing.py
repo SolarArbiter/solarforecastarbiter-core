@@ -95,6 +95,9 @@ def resample_and_align(fx_obs, data, tz):
         obs_resampled = obs_resampled["mean"].where(
             obs_resampled["count"] >= count_threshold
         )
+    elif fx.interval_length < obs.interval_length:
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'forecast.interval_length.')
     else:
         obs_resampled = obs_resampled["mean"]
 
