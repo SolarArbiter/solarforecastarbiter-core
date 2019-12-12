@@ -1,0 +1,101 @@
+<h1 id="report-title">{{ report.name }}</h1>
+
+<p>
+  This report of solar forecast accuracy was automatically generated using the
+  <a href="https://solarforecastarbiter.org">Solar Forecast Arbiter</a>.
+  Please see our GitHub repository for
+  <a href="//github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports">known issues</a>
+  with the reports or to create a new issue.
+</p>
+
+{% block download %}{% endblock %}
+
+{% block contents %}
+<ul>
+  <li><a href="#report-metadata">Report Metadata</a></li>
+  <li><a href="#data">Data</a></li>
+  <ul>
+    <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
+    <li><a href="#data-validation">Data Validation</a></li>
+  </ul>
+  <li><a href="#metrics">Metrics</a></li>
+  <ul>
+    {% for category in report.categories %}
+      <li><a href="#{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</a></li>
+    {% endfor %}
+  </ul>
+  <li><a href="#versions">Versions</a></li>
+</ul>
+{% endblock %}
+
+
+{% block reportmetadata %}
+<h2 id="report-metadata">Report Metadata</h2>
+<ul>
+  <li>Name: {{ report.name }}</li>
+  <li>Start: {{ report.raw_report.metadata.start }}</li>
+  <li>End: {{ report.raw_report.metadata.end }}</li>
+  <li>Generated at: {{ report.raw_report.metadata.now }}</li>
+</ul>
+{% endblock %}
+
+{% block data %}
+<h2 id="data">Data</h2>
+<p>
+  This report includes forecast and observation data available from {{ report.start }} to {{ report.end }}.
+{% endblock %}
+{% block obsandfx %}
+<h3 id="observations-and-forecasts">Observations and Forecasts</h3>
+{% include "obsfx_table.html" %}
+{% endblock %}
+
+{% block datavalidation %}
+<h3 id="data-validation">Data Validation</h3>
+<p>The Solar Forecast Arbiter’s data validation toolkit identified the
+following issues with the unprocessed observation data:</p>
+<ul>
+<li>USER FLAGGED: 0 intervals</li>
+<li>NIGHTTIME: 39855 intervals</li>
+<li>LIMITS EXCEEDED: 318 intervals</li>
+<li>STALE VALUES: 12104 intervals</li>
+<li>INTERPOLATED VALUES: 5598 intervals</li>
+<li>INCONSISTENT IRRADIANCE COMPONENTS: 0 intervals</li>
+</ul>
+<p>These intervals were removed from the raw time series before
+resampling and realignment. For more details on the data validation
+results for each observation, please see the observation page linked
+to in the table above. Data providers may elect to reupload data to
+fix issues identified by the validation toolkit. The metrics computed
+in this report will remain unchanged, however, a user may generate a
+new report after the data provider submits new data. The online
+version of this report verifies that the data was not modified after
+the metrics were computed.</p>
+{% endblock %}
+
+{% block metrics %}
+<h2 id="metrics">Metrics</h2>
+<p>
+  Metrics are displayed in the tables and figures below.
+  Metrics may be downloaded in CSV format by clicking <a>here</a>.
+</p>
+{{ report.raw_report.plots.script | safe }}
+{% for category in report.categories %}
+<h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
+  {% if category_blubs is defined %}
+<p>{{ category_blubs[category] }}</p>
+  {% endif %}
+  {% for metric in report.metrics %}
+    {% for rep_fig in report.raw_report.plots.figures %}
+      {% if rep_fig.category == category and rep_fig.metric == metric %}
+<div data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+{% endblock %}
+
+
+{% block versions %}
+<h2 id="versions">Versions</h2>
+{% include "versions.html" %}
+{% endblock %}

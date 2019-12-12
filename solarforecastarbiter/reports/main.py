@@ -244,14 +244,11 @@ def create_raw_report_from_data(report, data):
                                                 list(report.categories),
                                                 list(report.metrics))
 
-    # can be ~50kb
-    report_template = template.template_report(report, metadata,
-                                               metrics_list,
-                                               processed_fxobs)
+    report_plots = figures.raw_report_plots(report, metrics_list)
 
     raw_report = datamodel.RawReport(
-        metadata=metadata, template=report_template, metrics=metrics_list,
-        processed_forecasts_observations=processed_fxobs)
+        metadata=metadata, plots=report_plots, metrics=tuple(metrics_list),
+        processed_forecasts_observations=tuple(processed_fxobs))
     return raw_report
 
 
@@ -290,6 +287,7 @@ def render_raw_report(raw_report):
     Convert raw report to full report.
 
     Parameters
+
     ----------
     raw_report : solarforecastarbiter.datamodel.RawReport
 

@@ -1,11 +1,14 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
+import calendar
 import datetime as dt
 from itertools import cycle
 import textwrap
-import calendar
 
+
+from bokeh.embed import components
+from bokeh.io.export import get_svgs
 from bokeh.models import (ColumnDataSource, HoverTool, Legend,
                           DatetimeTickFormatter, CategoricalTickFormatter,
                           CDSView, GroupFilter)
@@ -14,6 +17,7 @@ from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes
+from bokeh import __version__ as bokeh_version
 
 import pandas as pd
 import numpy as np
@@ -645,3 +649,29 @@ def reliability_diagram():
 
 def rank_histogram():
     raise NotImplementedError
+
+
+def raw_report_plots(report, metrics):
+    cds = construct_metrics_cds(metrics, rename=abbreviate)
+    # Create initial bar figures
+    figure_dict = {}
+    # Components for other metrics
+    for category in report.categories:
+        for metric in report.metrics:
+            if category == 'total':
+                fig = bar(cds, metric)
+                figure_dict[f'total_{metric}_all'] = fig
+            else:
+                figs = bar_subdivisions(cds, category, metric)
+                for name, fig in figs.items():
+                    figure_dict[f'{category}_{metric}_{name}'] = fig
+    script, divs = components(figure_dict)
+    mplots = []
+    for k, v in divs.items():
+        cat, met, name = k.split('_')
+        fig = figure_dict[k]
+        fig.output_backend = 'svg'
+        svg = get_svgs(fig)[0]
+        mplots.append(datamodel.MetricFigure(name, cat, met, v, svg))
+    out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
+    return out
