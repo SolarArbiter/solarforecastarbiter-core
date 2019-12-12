@@ -84,13 +84,15 @@ def resample_and_align(fx_obs, data, tz):
     obs = fx_obs.data_object
 
     # Resample observation
-    closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-    obs_resampled = data[obs].resample(fx.interval_length,
-                                       label=closed,
-                                       closed=closed).agg(["mean", "count"])
-
-    # Drop periods if too many samples missing
     if fx.interval_length > obs.interval_length:
+        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+        obs_resampled = data[obs].resample(
+            fx.interval_length,
+            label=closed,
+            closed=closed
+        ).agg(["mean", "count"])
+
+        # Drop intervals if too many samples missing
         count_threshold = int(fx.interval_length / obs.interval_length * 0.5)
         obs_resampled = obs_resampled["mean"].where(
             obs_resampled["count"] >= count_threshold
@@ -99,7 +101,7 @@ def resample_and_align(fx_obs, data, tz):
         raise ValueError('observation.interval_length cannot be greater than '
                          'forecast.interval_length.')
     else:
-        obs_resampled = obs_resampled["mean"]
+        obs_resampled = data[obs]
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
