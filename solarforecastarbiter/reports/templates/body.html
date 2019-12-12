@@ -87,7 +87,7 @@ the metrics were computed.</p>
   {% for metric in report.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
-<div data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
+<div class="metric-block" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
       {% endif %}
     {% endfor %}
   {% endfor %}
