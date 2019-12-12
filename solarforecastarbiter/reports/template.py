@@ -2,11 +2,13 @@
 Inserts metadata and figures into the report template.
 """
 from collections import defaultdict
-from functools import partial
 import logging
 import subprocess
+import tempfile
+
 
 from bokeh.embed import components
+from bokeh.io import export_svgs
 from bokeh.layouts import gridplot
 from jinja2 import (Environment, DebugUndefined, PackageLoader,
                     select_autoescape, Template)
@@ -99,6 +101,38 @@ def _metrics_script_divs(report, metrics):
     # make svg
     # return rawreportplots
     return script, out_divs
+
+
+def raw_report_plots(report, metrics):
+    cds = figures.construct_metrics_cds(metrics,
+                                        rename=figures.abbreviate)
+
+    # Create initial bar figures
+    figure_dict = {}
+    # Components for other metrics
+    for category in report.categories:
+        for metric in report.metrics:
+            if category == 'total':
+                fig = figures.bar(cds, metric)
+                figure_dict[f'total_{metric}_all'] = fig
+            else:
+                figs = figures.bar_subdivisions(cds, category, metric)
+                for name, fig in figs.items():
+                    figure_dict[f'{category}_{metric}_{name}'] = fig
+    script, divs = components(figure_dict)
+    mplots = []
+    for k, v in divs.items():
+        cat, met, name = k.split('_')
+        fig = figure_dict[k]
+        fig.output_backend = 'svg'
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            export_svgs(fig, filename=tmpfile.name)
+            tmpfile.flush()
+            tmpfile.seek(0)
+            svg = tmpfile.read().decode()
+        mplots.append(datamodel.MetricPlot(name, cat, met, v, svg))
+    out = datamodel.RawReportPlots(script, tuple(mplots))
+    return out
 
 
 # not all args currently used, but expect they will eventually be used

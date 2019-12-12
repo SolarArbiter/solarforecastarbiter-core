@@ -1174,6 +1174,7 @@ class MetricResult(BaseModel):
     observation_id: str
     values: Tuple[MetricValue, ...]
     reference_forecast_id: str = ''
+    version: int = 1
 
 
 @dataclass(frozen=True)
