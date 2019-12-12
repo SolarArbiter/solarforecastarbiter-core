@@ -1,6 +1,8 @@
 """
 Inserts metadata and figures into the report template.
 """
+from collections import defaultdict
+from functools import partial
 import logging
 import subprocess
 
@@ -44,7 +46,7 @@ def template_report(report, metadata, metrics,
 
     template = env.get_template('template.md')
 
-    script_metrics, data_table_div, figures_div = _metrics_script_divs(
+    script_metrics, figures_div = _metrics_script_divs(
         report, metrics)
 
     strftime = '%Y-%m-%d %H:%M:%S %z'
@@ -58,7 +60,6 @@ def template_report(report, metadata, metrics,
     proc_fx_obs = [
         (fx_ob, *route_id(fx_ob)) for fx_ob in processed_forecasts_observations
     ]
-
     rendered = template.render(
         name=metadata.name,
         start=metadata.start.strftime(strftime),
@@ -68,7 +69,6 @@ def template_report(report, metadata, metrics,
         validation_issues=metadata.validation_issues,
         versions=metadata.versions,
         script_metrics=script_metrics,
-        tables=data_table_div,
         figures=figures_div,
         metrics_toc=datamodel.ALLOWED_CATEGORIES)
 
@@ -76,49 +76,29 @@ def template_report(report, metadata, metrics,
 
 
 def _metrics_script_divs(report, metrics):
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
+    cds = figures.construct_metrics_cds(metrics,
                                         rename=figures.abbreviate)
-    data_table = figures.metrics_table(cds)
 
     # Create initial bar figures
-    figures_bar = []
-    for num, metric in enumerate(report.metrics):
-        fig = figures.bar(cds, metric)
-        figures_bar.append(fig)
-
-    # Components for 'total' category
-    script, (data_table_div, *figures_bar_divs) = components((data_table,
-                                                              *figures_bar))
-
-    script_metrics = script
-    figures_dict = dict(total=figures_bar_divs)
-
+    figure_dict = {}
     # Components for other metrics
     for category in report.categories:
-        if category == 'total':
-            continue
-
-        script_cat, figures_bar_cat = _loop_over_metrics(report, metrics,
-                                                         category)
-        script_metrics += script_cat
-        figures_dict[category] = figures_bar_cat
-
-    return script_metrics, data_table_div, figures_dict
-
-
-def _loop_over_metrics(report, metrics, kind):
-    figs = []
-    # series with MultiIndex of metric, forecast, day
-    # JSON serialization issues if we don't drop or fill na.
-    # fillna ensures 0 - 23 hrs on hourly plots.
-    metrics_series = figures.construct_metrics_series(metrics, kind).fillna(0)
-    for metric in report.metrics:
-        cds = figures.construct_metrics_cds2(metrics_series, metric)
-        # one figure with a subfig for each forecast
-        fig = figures.bar_subdivisions(cds, kind, metric)
-        figs.append(gridplot(fig, ncols=1))
-    script, divs = components(figs)
-    return script, divs
+        for metric in report.metrics:
+            if category == 'total':
+                fig = figures.bar(cds, metric)
+                figure_dict[f'total_{metric}'] = fig
+            else:
+                figs = figures.bar_subdivisions(cds, category, metric)
+                for name, fig in figs.items():
+                    figure_dict[f'{category}_{metric}_{name}'] = fig
+    script, divs = components(figure_dict)
+    out_divs = defaultdict(list)
+    for k, v in divs.items():
+        cat = k.split('_')[0]
+        out_divs[cat].append(v)
+    # make svg
+    # return rawreportplots
+    return script, out_divs
 
 
 # not all args currently used, but expect they will eventually be used

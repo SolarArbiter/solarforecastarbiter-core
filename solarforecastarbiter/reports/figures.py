@@ -1,13 +1,15 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
+import datetime as dt
 from itertools import cycle
 import textwrap
 import calendar
 
 from bokeh.models import (ColumnDataSource, HoverTool, Legend,
-                          DatetimeTickFormatter, CategoricalTickFormatter)
-from bokeh.models.ranges import Range1d
+                          DatetimeTickFormatter, CategoricalTickFormatter,
+                          CDSView, GroupFilter)
+from bokeh.models.ranges import Range1d, FactorRange, DataRange1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
@@ -231,7 +233,7 @@ def scatter(fx_obs_cds):
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
+def construct_metrics_cds(metrics, rename=None):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, Total, etc.
@@ -259,18 +261,24 @@ def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
     else:
         def f(x): return x
 
-    data = {f(m['name']): m[kind] for m in metrics}
+    data = []
+    for metric_result in metrics:
+        for mvalue in metric_result.values:
+            new = {
+                'name': metric_result.name,
+                'abbrev': f(metric_result.name),
+                'category': mvalue.category,
+                'metric': mvalue.metric,
+                'value': mvalue.value
+            }
+            if new['category'] == 'date':
+                new['index'] = dt.datetime.strptime(
+                    mvalue.index, '%Y-%m-%d')
+            else:
+                new['index'] = mvalue.index
+            data.append(new)
     df = pd.DataFrame(data)
-    df = df.rename_axis(index='metric', columns='forecast')
-
-    if index == 'metric':
-        pass
-    elif index == 'forecast':
-        df = df.T
-    else:
-        raise ValueError('index must be metric or forecast')
-
-    cds = ColumnDataSource(df)
+    cds = ColumnDataSource(df, name='metrics_cds')
     return cds
 
 
@@ -369,32 +377,33 @@ def bar(cds, metric):
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
-        Fields must be 'forecast' and the names of the metrics.
-
+        Fields must be 'forecast' and the names of the metrics
+.
     Returns
     -------
     data_table : bokeh.widgets.DataTable
     """
-    x_range = cds.data['forecast']
+    x_range = np.unique(cds.data['abbrev'])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_range]
+    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
+    view = CDSView(source=cds, filters=[
+        GroupFilter(column_name='metric', group=metric),
+        GroupFilter(column_name='category', group='total')
+    ])
     # TODO: add units to title
-    fig = figure(x_range=x_range, width=800, height=200, title=metric.upper())
-    fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
+    fig = figure(x_range=x_range, width=800, height=200, title=metric_name,
+                 name=f'{metric}_total_bar', toolbar_location='above',
+                 tools='pan,xwheel_zoom,box_zoom,reset,save')
+    fig.vbar(x='abbrev', top='value', width=0.8,
+             source=cds, view=view,
              line_color='white',
-             fill_color=factor_cmap('forecast', palette, factors=x_range))
+             fill_color=factor_cmap('abbrev', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
 
-    # vertical axis limits
-    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != 'forecast')
-    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != 'forecast')
-    start, end = calc_y_start_end(y_min, y_max)
-    fig.y_range.start = start
-    fig.y_range.end = end
-
     tooltips = [
-        ('forecast', '@forecast'),
-        (metric.upper(), f'@{metric}'),
+        ('Forecast', '@name'),
+        (metric_name, '@value'),
     ]
     hover = HoverTool(tooltips=tooltips, mode='vline')
     # more accurate would be if any single name is longer than each
@@ -467,62 +476,72 @@ def bar_subdivisions(cds, category, metric):
 
     Returns
     -------
-    figs : list of figures
+    figs : dict of figures
     """
     palette = cycle(PALETTE)
-    tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
-    fig_kwargs = dict(tools=tools)
-    figs = []
+    tools = 'pan,xwheel_zoom,box_zoom,reset,save'
+    fig_kwargs = dict(tools=tools, toolbar_location='above')
+    figs = {}
 
     width = 0.8
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
+    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
 
     fig_kwargs['x_axis_label'] = human_category
+    fig_kwargs['y_axis_label'] = metric_name
 
+    filter_ = ((cds.data['category'] == category) &
+               (cds.data['metric'] == metric))
     # Special handling for x-axis with dates
     if category == 'date':
         fig_kwargs['x_axis_type'] = 'datetime'
         width = width * pd.Timedelta(days=1)
+        fig_kwargs['x_range'] = DataRange1d()
     elif category == 'month':
-        fig_kwargs['x_range'] = calendar.month_abbr[1:]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=calendar.month_abbr[1:])
     elif category == 'weekday':
-        fig_kwargs['x_range'] = calendar.day_abbr[0:]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=calendar.day_abbr[0:])
     elif category == 'hour':
-        fig_kwargs['x_range'] = [0, 23]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=[str(i) for i in range(24)])
+    else:
+        fig_kwargs['x_range'] = FactorRange(
+            factors=np.unique(cds.data['index'][filter_]))
 
-    # vertical axis limits
-    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != category)
-    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != category)
+    y_min = np.nanmin(cds.data['value'][filter_])
+    y_max = np.nanmax(cds.data['value'][filter_])
     start, end = calc_y_start_end(y_min, y_max)
+    fig_kwargs['y_range'] = DataRange1d(start=start, end=end)
 
-    for num, field in enumerate(filter(lambda x: x != category, cds.data)):
+    for name in np.unique(cds.data['name'][filter_]):
+        view = CDSView(source=cds, filters=[
+            GroupFilter(column_name='metric', group=metric),
+            GroupFilter(column_name='category', group=category),
+            GroupFilter(column_name='name', group=name)
+        ])
 
         # Create figure
-        title = field + ' ' + metric.upper()
+        title = name + ' ' + metric_name
         fig = figure(width=800, height=200, title=title,
                      **fig_kwargs)
 
         # Custom bar alignment
         if category == 'hour':
             # Center bars between hour ticks
-            x = dodge(category, 0.5, range=fig.x_range)
+            x = dodge('index', 0.5, range=fig.x_range)
         else:
-            x = category
-        fig.vbar(x=x, top=field, width=width, source=cds, line_color='white',
-                 fill_color=next(palette))
+            x = 'index'
+
+        fig.vbar(x=x, top='value', width=width, source=cds,
+                 view=view,
+                 line_color='white', fill_color=next(palette))
 
         # axes parameters
         fig.xgrid.grid_line_color = None
         fig.xaxis.minor_tick_line_color = None
-
-        fig.y_range.start = start
-        fig.y_range.end = end
-
-        if num == 0:
-            # add x_range to plots to link panning
-            fig_kwargs['x_range'] = fig.x_range
-            fig_kwargs['y_range'] = fig.y_range
 
         # Hover tool and format specific changes
         if category == 'date':
@@ -530,32 +549,34 @@ def bar_subdivisions(cds, category, metric):
             formatter = DatetimeTickFormatter(days='%Y-%m-%d')
             fig.xaxis.formatter = formatter
             tooltips = [
-                (human_category, f'@{category}{{%F}}'),
-                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index{%F}'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips,
-                                formatters={category: 'datetime'})
+                                formatters={'index': 'datetime'})
         elif category == 'month' or category == 'weekday':
             # Categorical x-axis
             formatter = CategoricalTickFormatter()
             fig.xaxis.formatter = formatter
             tooltips = [
-                (human_category, f'@{{{category}}}'),
-                (f'{metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         else:
             # Numerical x-axis
-            fig.xaxis.ticker = cds.data[category]
             tooltips = [
-                (human_category, f'@{{{category}}}'),
-                (f'{metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         hover = HoverTool(mode='vline', **hover_kwargs)
         fig.add_tools(hover)
 
-        figs.append(fig)
+        figs[name] = fig
 
     return figs
 
