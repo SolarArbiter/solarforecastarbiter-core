@@ -67,10 +67,10 @@ def resample_and_align(fx_obs, data, tz):
     fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
         Pair of forecast and observation.
     data : dict
-        Keys are Observation and Forecast models and values
-        the validated timeseries data as pandas.Series.
+        Keys are Observation and Forecast models and values the validated
+        timeseries data as pandas.Series.
     tz : str
-        Timezone to witch processed data will be converted.
+        Timezone to which processed data will be converted.
 
     Returns
     -------
