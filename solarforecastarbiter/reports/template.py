@@ -49,6 +49,21 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     return kwargs
 
 
+def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
+    env = Environment(
+        loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
+        autoescape=select_autoescape(['html', 'xml']),
+        lstrip_blocks=True,
+        trim_blocks=True
+    )
+    if body_only:
+        template = env.get_template('body.html')
+    else:
+        template = env.get_template('base.html')
+    kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
+    return template, kwargs
+
+
 def render_html(report, dash_url='https://dashboard.solarforecastarbiter.org',
                 with_timeseries=True, body_only=False):
     """Create full html file.
@@ -65,16 +80,7 @@ def render_html(report, dash_url='https://dashboard.solarforecastarbiter.org',
         head : str, html
         Header for the full report.
     """
-    env = Environment(
-        loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
-        autoescape=select_autoescape(['html', 'xml']),
-        lstrip_blocks=True,
-        trim_blocks=True
-    )
-    if body_only:
-        template = env.get_template('body.html')
-    else:
-        template = env.get_template('base.html')
-    kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
+    template, kwargs = get_template_and_kwargs(
+        report, dash_url, with_timeseries, body_only)
     out = template.render(**kwargs)
     return out

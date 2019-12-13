@@ -1,5 +1,7 @@
+{% block report_title %}
 <h1 id="report-title">{{ report.name }}</h1>
-
+{% endblock %}
+{% block report_decription %}
 <p>
   This report of solar forecast accuracy was automatically generated using the
   <a href="https://solarforecastarbiter.org">Solar Forecast Arbiter</a>.
@@ -7,10 +9,10 @@
   <a href="//github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports">known issues</a>
   with the reports or to create a new issue.
 </p>
-
+{% endblock %}
 {% block download %}{% endblock %}
 
-{% block contents %}
+{% block toc %}
 <ul>
   <li><a href="#report-metadata">Report Metadata</a></li>
   <li><a href="#data">Data</a></li>
