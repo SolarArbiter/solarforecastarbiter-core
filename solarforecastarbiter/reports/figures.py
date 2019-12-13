@@ -596,7 +596,8 @@ def raw_report_plots(report, metrics):
 def timeseries_plots(report):
     cds = construct_timeseries_cds(report)
     units = report.forecast_observations[0].forecast.units
-    tfig = timeseries(cds, report.start, report.end, units)
+    tfig = timeseries(cds, report.start, report.end, units,
+                      report.raw_report.metadata.timezone)
     sfig = scatter(cds, units)
     layout = gridplot((tfig, sfig), ncols=1)
     script, div = components(layout)
