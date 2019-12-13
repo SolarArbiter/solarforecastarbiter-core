@@ -1,3 +1,5 @@
+{% import "macros.j2" as macros with context %}
+
 {% block report_title %}
 <h1 id="report-title">{{ report.name }}</h1>
 {% endblock %}
@@ -88,9 +90,11 @@ the metrics were computed.</p>
 
 {% block metrics %}
 <h2 id="metrics">Metrics</h2>
+
 <p>
   Metrics are displayed in the tables and figures below.
-  Metrics may be downloaded in CSV format by clicking <a>here</a>.
+  Metrics may be downloaded in CSV format by clicking
+  <a href="javascript:download_metrics_as_csv('{{ report.name }}')">here</a>.
 </p>
 {{ report.raw_report.plots.script | safe }}
 {% for category in report.categories %}
@@ -99,7 +103,6 @@ the metrics were computed.</p>
 <p>{{ category_blubs[category] }}</p>
   {% endif %}
   {% if category == "total" %}
-    {% import "macros.j2" as macros with context %}
     {{ macros.metric_table(report.raw_report.metrics, "total", report.metrics) }}
   {% endif %}
   {% for metric in report.metrics %}
@@ -110,6 +113,7 @@ the metrics were computed.</p>
     {% endfor %}
   {% endfor %}
 {% endfor %}
+{{ macros.download_csv_script ()}}
 {% endblock %}
 
 

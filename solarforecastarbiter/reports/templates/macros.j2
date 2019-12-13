@@ -28,3 +28,56 @@
   </tbody>
 </table>
 {% endmacro %}
+
+
+{% macro download_csv_script() %}
+<script>
+    function table_to_csv(source) {
+        const columns = Object.keys(source.data)
+        const nrows = source.get_length()
+        const lines = [columns.join(',')]
+
+        for (let i = 0; i < nrows; i++) {
+            let row = [];
+            for (let j = 0; j < columns.length; j++) {
+                const column = columns[j]
+                var val = source.data[column][i]
+                if (column == 'index' && typeof val == 'number' && val > 100000000) {
+                    val = new Date(val).toISOString().split('T')[0]
+                } else {
+                    val = val.toString()
+                }
+                row.push(val)
+            }
+            lines.push(row.join(','))
+        }
+        return lines.join('\n').concat('\n')
+    }
+
+    function download_metrics_as_csv(report_name) {
+        var source;
+        for (doc of Bokeh.documents) {
+            var nsource = doc.get_model_by_name('metrics_cds')
+            if (nsource != null) {
+                source = nsource
+            }
+        }
+
+        const filename = report_name.replace(' ', '_') + '_metrics.csv'
+        filetext = table_to_csv(source)
+        const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
+
+        //addresses IE
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename)
+        } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.target = '_blank'
+            link.style.visibility = 'hidden'
+            link.dispatchEvent(new MouseEvent('click'))
+        }
+    }
+</script>
+{% endmacro %}
