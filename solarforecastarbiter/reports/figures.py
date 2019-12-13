@@ -306,6 +306,7 @@ def construct_metrics_cds(metrics, rename=None):
             data.append(new)
     df = pd.DataFrame(data)
     cds = ColumnDataSource(df, name='metrics_cds')
+    cds.data.pop('level_0', None)
     return cds
 
 

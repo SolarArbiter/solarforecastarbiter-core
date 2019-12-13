@@ -63,7 +63,7 @@
             }
         }
 
-        const filename = report_name.replace(' ', '_') + '_metrics.csv'
+        const filename = report_name.replace(/ /g, '_') + '_metrics.csv'
         filetext = table_to_csv(source)
         const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
 
