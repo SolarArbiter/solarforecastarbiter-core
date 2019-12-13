@@ -9,6 +9,7 @@ import textwrap
 
 from bokeh.embed import components
 from bokeh.io.export import get_svgs
+from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, HoverTool, Legend,
                           DatetimeTickFormatter, CategoricalTickFormatter,
                           CDSView, GroupFilter)
@@ -23,8 +24,7 @@ import pandas as pd
 import numpy as np
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.plotting.utils import (line_or_step,
-                                                 format_variable_name)
+from solarforecastarbiter.plotting.utils import line_or_step
 
 
 PALETTE = (
@@ -36,7 +36,7 @@ OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
 
-def construct_fx_obs_cds(fx_values, obs_values):
+def construct_timeseries_cds(report):
     """
     Construct a standardized Bokeh CDS for the plot functions.
 
@@ -52,7 +52,29 @@ def construct_fx_obs_cds(fx_values, obs_values):
         tz-aware input times are converted to tz-naive times in the
         input time zone.
     """
-    data = pd.DataFrame({'observation': obs_values, 'forecast': fx_values})
+    frames = []
+    for pfxobs in report.raw_report.processed_forecasts_observations:
+        frame_dict = {
+            'observation_values': pfxobs.observation_values,
+            'forecast_values': pfxobs.forecast_values,
+            'observation_name': _obs_name(pfxobs.original),
+            'forecast_name': _fx_name(pfxobs.original),
+            'interval_label': pfxobs.interval_label,
+            'observation_hash': str(hash(
+                (pfxobs.original.data_object,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'forecast_hash': str(hash(
+                (pfxobs.original.forecast,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'observation_color': _obs_color(
+                pfxobs.interval_length)
+        }
+        frames.append(pd.DataFrame(frame_dict))
+    data = pd.concat(frames)
     # drop tz info from localized times. GH164
     data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
@@ -85,7 +107,7 @@ def _obs_color(interval_length):
     return obs_color
 
 
-def timeseries(fx_obs_cds, start, end, timezone='UTC'):
+def timeseries(timeseries_cds, start, end, units, timezone='UTC'):
     """
     Timeseries plot of one or more forecasts and observations.
 
@@ -115,58 +137,57 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
         tools='pan,xwheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='timeseries')
 
-    plotted_objects = []
-    for proc_fx_obs, cds in fx_obs_cds:
-        unique_obs = (
-            proc_fx_obs.original.data_object, proc_fx_obs.interval_value_type,
-            proc_fx_obs.interval_length, proc_fx_obs. interval_label
-        )
-        unique_fx = (
-            proc_fx_obs.original.forecast, proc_fx_obs.interval_value_type,
-            proc_fx_obs.interval_length, proc_fx_obs. interval_label
-        )
-        if unique_obs in plotted_objects:
-            pass
-        else:
-            plotted_objects.append(unique_obs)
-            plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                proc_fx_obs.interval_label)
-            name = _obs_name(proc_fx_obs.original)
-            obs_color = _obs_color(proc_fx_obs.interval_length)
-            getattr(fig, plot_method)(
-                x='timestamp', y='observation', source=cds,
-                color=obs_color, legend=name, **plot_kwargs)
-        if unique_fx in plotted_objects:
-            pass
-        else:
-            plotted_objects.append(unique_fx)
-            plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                proc_fx_obs.interval_label)
-            name = _fx_name(proc_fx_obs.original)
-            getattr(fig, plot_method)(
-                x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend=name, **plot_kwargs)
+    plotted_objects = 0
+    for obs_hash in np.unique(timeseries_cds.data['observation_hash']):
+        first_row = np.argwhere(
+            timeseries_cds.data['observation_hash'] == obs_hash)[0][0]
+        view = CDSView(source=timeseries_cds, filters=[
+            GroupFilter(column_name='observation_hash', group=obs_hash)
+        ])
+        plot_method, plot_kwargs, hover_kwargs = line_or_step(
+            timeseries_cds.data['interval_label'][first_row])
+        legend_label = timeseries_cds.data['observation_name'][first_row]
+        color = timeseries_cds.data['observation_color'][first_row]
+        getattr(fig, plot_method)(
+            x='timestamp', y='observation_values', source=timeseries_cds,
+            view=view, color=color, legend_label=legend_label,
+            **plot_kwargs)
+        plotted_objects += 1
+
+    for fx_hash in np.unique(timeseries_cds.data['forecast_hash']):
+        first_row = np.argwhere(
+            timeseries_cds.data['forecast_hash'] == fx_hash)[0][0]
+        view = CDSView(source=timeseries_cds, filters=[
+            GroupFilter(column_name='forecast_hash', group=fx_hash)
+        ])
+        plot_method, plot_kwargs, hover_kwargs = line_or_step(
+            timeseries_cds.data['interval_label'][first_row])
+        legend_label = timeseries_cds.data['forecast_name'][first_row]
+        color = next(palette)
+        getattr(fig, plot_method)(
+            x='timestamp', y='forecast_values', source=timeseries_cds,
+            view=view, color=color, legend_label=legend_label,
+            **plot_kwargs)
+        plotted_objects += 1
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    if len(plotted_objects) > 10:
+    if plotted_objects > 10:
         fig.legend.label_height = 10
         fig.legend.label_text_font_size = '8px'
         fig.legend.glyph_height = 10
         fig.legend.spacing = 1
         fig.legend.margin = 0
     fig.xaxis.axis_label = f'Time ({timezone})'
-    fig.yaxis.axis_label = format_variable_name(
-        proc_fx_obs.original.forecast.variable)
+    fig.yaxis.axis_label = f'Data ({units})'
     return fig
 
 
-def _get_scatter_limits(fx_obs_cds):
+def _get_scatter_limits(cds):
     extremes = []
-    for _, cds in fx_obs_cds:
-        for kind in ('forecast', 'observation'):
-            extremes.append(np.nanmin(cds.data[kind]))
-            extremes.append(np.nanmax(cds.data[kind]))
+    for kind in ('forecast_values', 'observation_values'):
+        extremes.append(np.nanmin(cds.data[kind]))
+        extremes.append(np.nanmax(cds.data[kind]))
     min_ = min(extremes)
     if min_ == np.nan:
         min_ = -999
@@ -176,7 +197,7 @@ def _get_scatter_limits(fx_obs_cds):
     return min_, max_
 
 
-def scatter(fx_obs_cds):
+def scatter(timeseries_cds, units):
     """
     Scatter plot of one or more forecasts and observations.
 
@@ -191,7 +212,7 @@ def scatter(fx_obs_cds):
     -------
     fig : bokeh.plotting.figure
     """
-    xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
+    xy_min, xy_max = _get_scatter_limits(timeseries_cds)
 
     # match_aspect=True does not work well, so these need to be close
     plot_height = 400
@@ -209,11 +230,15 @@ def scatter(fx_obs_cds):
 
     # accumulate labels and plot objects for manual legend
     scatters_labels = []
-    for proc_fx_obs, cds in fx_obs_cds:
-        label = proc_fx_obs.original.forecast.name
+    for fxhash in np.unique(timeseries_cds.data['forecast_hash']):
+        view = CDSView(source=timeseries_cds, filters=[
+            GroupFilter(column_name='forecast_hash', group=fxhash)
+        ])
+        label = timeseries_cds.data['forecast_name'][
+            timeseries_cds.data['forecast_hash'] == fxhash][0]
         r = fig.scatter(
-            x='observation', y='forecast', source=cds,
-            fill_color=next(palette), **kwargs)
+            x='observation_values', y='forecast_values', source=timeseries_cds,
+            view=view, fill_color=next(palette), **kwargs)
         scatters_labels.append((label, [r]))
 
     # manual legend so it can be placed outside the plot area
@@ -231,7 +256,7 @@ def scatter(fx_obs_cds):
     px_per_length = 7.75  # found through trial and error
     fig.plot_width = int(fig.plot_width + max_legend_length * px_per_length)
 
-    label = format_variable_name(proc_fx_obs.original.forecast.variable)
+    label = f'({units})'
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
     return fig
@@ -301,77 +326,6 @@ def abbreviate(x, limit=3):
             out = f'{c[0:limit]}.'
         out_components.append(out)
     return ' '.join(out_components)
-
-
-def construct_metrics_series(metrics, category):
-    """
-    Contructs a series of metrics values with a MultiIndex.
-    MultiIndex names are metric, forecast, kind.
-
-    Parameters
-    ----------
-    metrics : list of metrics dicts
-        Each metric dict is for a different forecast. Forecast name is
-        specified by the name key.
-    category : str
-        One of the available metrics grouping categories (e.g., total)
-
-    Returns
-    -------
-    pandas.Series
-    """
-    forecasts = []
-    m_types = []
-    m_indexes = []
-    m_values = []
-    # There is probably a more clever way to do this but
-    # this seems the most straightforward to me
-    for m in metrics:
-        for col in m[category]:
-            if category == 'total':
-                forecasts.append(m['name'])
-                m_types.append(col)
-                m_indexes.append(0)
-                m_values.append(m[category][col])
-            else:
-                for i, v in m[category][col].items():
-                    forecasts.append(m['name'])
-                    m_types.append(col)
-                    m_indexes.append(i)
-                    m_values.append(v)
-    index = pd.MultiIndex.from_arrays(
-        [forecasts, m_types, m_indexes],
-        names=['forecast', 'metric', category])
-    metrics_series = pd.Series(m_values, index=index)
-    metrics_series = metrics_series.reorder_levels(
-        ('metric', 'forecast', category))
-    return metrics_series
-
-
-def construct_metrics_cds2(metrics_series, metric):
-    """
-    Create a ColumnDataSource for a single metric (MAE, MBE, etc.) for
-    many forecasts.
-
-    Parameters
-    ----------
-    metrics_series : pd.Series
-        Has a MultiIndex with levels 'forecast', 'metric', group
-    metric : str
-        e.g. MAE
-
-    Returns
-    -------
-    cds : bokeh.models.ColumnDataSource
-    """
-    df = metrics_series.xs(metric, level='metric').unstack().T
-    # unstack sorts alphabetically, so manually reorder the columns
-    # to put them in the expected order. this ensures that plots are
-    # created in the same order and thus with the same colors for each
-    # forecast. GH issue 204, pull 244
-    idx = pd.unique(metrics_series.index.get_level_values('forecast'))
-    cds = ColumnDataSource(df[idx])
-    return cds
 
 
 def bar(cds, metric):
@@ -589,44 +543,6 @@ def nested_bar():
     raise NotImplementedError
 
 
-def _table_title(name):
-    # bokeh doesn't care :(
-    title = '\n'.join(textwrap.wrap(name, width=15))
-    return title
-
-
-def metrics_table(cds):
-    """
-    Create an ugly, poorly formatted Bokeh table of metrics
-
-    Parameters
-    ----------
-    cds : bokeh.models.ColumnDataSource
-        Fields must be 'forecast' and the names of the metrics.
-
-    Returns
-    -------
-    data_table : bokeh.widgets.DataTable
-    """
-    formatter = NumberFormatter(format="0.000")
-    # construct list of columns. make sure that forecast name is first
-    name_width = 300
-    metric_width = 60
-    columns = [TableColumn(field='forecast', title='Forecast',
-                           width=name_width)]
-    for field in filter(lambda x: x != 'forecast', cds.data):
-        title = _table_title(field)
-        col = TableColumn(field=field, title=title.upper(),
-                          formatter=formatter, width=metric_width)
-        columns.append(col)
-    width = name_width + metric_width * (len(columns) - 1)
-    height = 25 * (1 + len(cds.data['forecast']))
-    data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=height, index_position=None,
-                           fit_columns=False)
-    return data_table
-
-
 def joint_distribution():
     raise NotImplementedError
 
@@ -670,8 +586,19 @@ def raw_report_plots(report, metrics):
     for k, v in divs.items():
         cat, met, name = k.split('_')
         fig = figure_dict[k]
+        # catch svg errors as non critical
         fig.output_backend = 'svg'
         svg = get_svgs(fig)[0]
         mplots.append(datamodel.MetricFigure(name, cat, met, v, svg))
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
     return out
+
+
+def timeseries_plots(report):
+    cds = construct_timeseries_cds(report)
+    units = report.forecast_observations[0].forecast.units
+    tfig = timeseries(cds, report.start, report.end, units)
+    sfig = scatter(cds, units)
+    layout = gridplot((tfig, sfig), ncols=1)
+    script, div = components(layout)
+    return script, div
