@@ -589,7 +589,8 @@ def raw_report_plots(report, metrics):
         # catch svg errors as non critical
         fig.output_backend = 'svg'
         svg = get_svgs(fig)[0]
-        mplots.append(datamodel.MetricFigure(name, cat, met, v, svg))
+        mplots.append(datamodel.ReportFigure(
+            name=name, category=cat, metric=met, div=v, svg=svg, type='bar'))
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
     return out
 

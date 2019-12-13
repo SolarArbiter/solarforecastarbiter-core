@@ -1099,19 +1099,20 @@ class MetricResult(BaseModel):
 
 
 @dataclass(frozen=True)
-class MetricFigure(BaseModel):
+class ReportFigure(BaseModel):
     name: str
-    category: str
-    metric: str
     div: str
     svg: str
+    type: str
+    category: str = ''
+    metric: str = ''
 
 
 @dataclass(frozen=True)
 class RawReportPlots(BaseModel):
     bokeh_version: str
     script: str
-    figures: Tuple[MetricFigure, ...]
+    figures: Tuple[ReportFigure, ...]
 
 
 @dataclass(frozen=True)

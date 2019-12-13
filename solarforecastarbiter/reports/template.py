@@ -4,8 +4,6 @@ Inserts metadata and figures into the report template.
 import logging
 
 
-from bokeh.embed import components
-from bokeh.layouts import gridplot
 from jinja2 import (Environment, PackageLoader,
                     select_autoescape)
 
@@ -24,23 +22,14 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         bokeh_version=report.raw_report.plots.bokeh_version
     )
     if with_timeseries:
-        fx_obs_cds = [
-            (pfxobs, figures.construct_fx_obs_cds(
-                pfxobs.forecast_values, pfxobs.observation_values))
-            for pfxobs in report.raw_report.processed_forecasts_observations]
-        ts_fig = figures.timeseries(
-            fx_obs_cds, report.raw_report.metadata.start,
-            report.raw_report.metadata.end,
-            timezone=report.raw_report.metadata.timezone)
-        scat_fig = figures.scatter(fx_obs_cds)
         try:
-            script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
+            script, div = figures.timeseries_plots(report)
         except Exception:
             logger.exception(
                 'Failed to make Bokeh items for timeseries and scatterplot')
             script = ''
             div = """<div class="alert alert-warning">
-  <strong>Warning</strong> Failed to make timeseries and scatter figure
+  <strong>Warning</strong> Failed to make timeseries and scatter plots
   from stored data. Try generating report again.
 </div>
             """
