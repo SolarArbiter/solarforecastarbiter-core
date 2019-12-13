@@ -1059,7 +1059,7 @@ def report_objects(aggregate):
         name="University of Arizona OASIS ghi",
         variable="ghi",
         interval_value_type="interval_mean",
-        interval_length=pd.Timedelta("1h"),
+        interval_length=pd.Timedelta("15min"),
         interval_label="ending",
         site=site,
         uncertainty=0.0,
