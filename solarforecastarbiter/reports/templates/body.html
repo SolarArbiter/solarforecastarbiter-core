@@ -98,6 +98,10 @@ the metrics were computed.</p>
   {% if category_blubs is defined %}
 <p>{{ category_blubs[category] }}</p>
   {% endif %}
+  {% if category == "total" %}
+    {% import "macros.j2" as macros with context %}
+    {{ macros.metric_table(report.raw_report.metrics, "total", report.metrics) }}
+  {% endif %}
   {% for metric in report.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}

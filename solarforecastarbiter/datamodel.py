@@ -75,6 +75,9 @@ ALLOWED_DETERMINISTIC_METRICS = {
 ALLOWED_PROBABILISTIC_METRICS = {
     k: v[1] for k, v in probabilistic_mapping.items()}
 
+ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
+ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
+
 
 def _dict_factory(inp):
     dict_ = dict(inp)
@@ -1095,7 +1098,6 @@ class MetricResult(BaseModel):
     observation_id: str
     values: Tuple[MetricValue, ...]
     reference_forecast_id: str = ''
-    version: int = 1
 
 
 @dataclass(frozen=True)

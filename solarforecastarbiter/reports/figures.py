@@ -4,7 +4,6 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 import calendar
 import datetime as dt
 from itertools import cycle
-import textwrap
 
 
 from bokeh.embed import components
@@ -14,7 +13,6 @@ from bokeh.models import (ColumnDataSource, HoverTool, Legend,
                           DatetimeTickFormatter, CategoricalTickFormatter,
                           CDSView, GroupFilter)
 from bokeh.models.ranges import Range1d, FactorRange, DataRange1d
-from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes

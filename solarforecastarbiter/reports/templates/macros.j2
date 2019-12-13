@@ -1,0 +1,30 @@
+{% macro metric_table(report_metrics, category, metric_ordering) %}
+<table style="width:100%;">
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Forecast</th>
+      {% for metric in metric_ordering %}
+        <th style="text-align: left;">{{ human_metrics[metric] }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for fx_result in report_metrics %}
+      <tr>
+        <td>{{ fx_result.name }}</td>
+        {% for metric in metric_ordering %}
+          {% for mval in fx_result.values %}
+            {% if mval.category == category  and mval.metric == metric %}
+              {% if -1 < mval.value < 1 %}
+                <td>{{ '%.2e' | format(mval.value) }}</td>
+              {% else %}
+                <td>{{ '%0.3g' | format(mval.value) }}</td>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}

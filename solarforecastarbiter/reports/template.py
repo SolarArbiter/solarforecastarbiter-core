@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 def _get_render_kwargs(report, dash_url, with_timeseries):
     kwargs = dict(
         human_categories=datamodel.ALLOWED_CATEGORIES,
+        human_metrics=datamodel.ALLOWED_METRICS,
         report=report,
         dash_url=dash_url,
         bokeh_version=report.raw_report.plots.bokeh_version
