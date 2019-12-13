@@ -14,7 +14,7 @@ from solarforecastarbiter.io.utils import (
     observation_df_to_json_payload,
     forecast_object_to_json,
     adjust_timeseries_for_interval_label,
-    serialize_data, deserialize_data,
+    serialize_timeseries, deserialize_timeseries,
     serialize_raw_report, deserialize_raw_report,
     HiddenToken, ensure_timestamps)
 
@@ -675,9 +675,11 @@ class APISession(requests.Session):
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
         raw = resp.pop('raw_report')
+        metrics = resp.pop('metrics', {})
         report = self.process_report_dict(resp)
         if raw is not None:
-            raw_report = deserialize_raw_report(raw)
+            raw['metrics'] = metrics
+            raw_report = datamodel.RawReport.from_dict(raw)
             processed_fxobs = self.get_raw_report_processed_data(
                 report_id, raw_report, resp['values'])
             report = report.replace(raw_report=raw_report.replace(
@@ -764,7 +766,7 @@ class APISession(requests.Session):
         for fxobs in raw_report.processed_forecasts_observations:
             fx_data = {
                 'object_id': fxobs.original.forecast.forecast_id,
-                'processed_values': serialize_data(fxobs.forecast_values)}
+                'processed_values': serialize_timeseries(fxobs.forecast_values)}
             fx_post = self.post(
                 f'/reports/{report_id}/values',
                 json=fx_data, headers={'Content-Type': 'application/json'})
@@ -774,7 +776,7 @@ class APISession(requests.Session):
                 obj_id = fxobs.original.aggregate.aggregate_id
             obs_data = {
                 'object_id': obj_id,
-                'processed_values': serialize_data(fxobs.observation_values)}
+                'processed_values': serialize_timeseries(fxobs.observation_values)}
             obs_post = self.post(
                 f'/reports/{report_id}/values',
                 json=obs_data, headers={'Content-Type': 'application/json'})
@@ -816,10 +818,10 @@ class APISession(requests.Session):
         for fxobs in raw_report.processed_forecasts_observations:
             fx_vals = val_dict.get(fxobs.forecast_values, None)
             if fx_vals is not None:
-                fx_vals = deserialize_data(fx_vals)
+                fx_vals = deserialize_timeseries(fx_vals)
             obs_vals = val_dict.get(fxobs.observation_values, None)
             if obs_vals is not None:
-                obs_vals = deserialize_data(obs_vals)
+                obs_vals = deserialize_timeseries(obs_vals)
             new_fxobs = fxobs.replace(forecast_values=fx_vals,
                                       observation_values=obs_vals)
             out.append(new_fxobs)
@@ -840,10 +842,10 @@ class APISession(requests.Session):
             report_id, raw_report)
         to_post = raw_report.replace(
             processed_forecasts_observations=posted_fxobs)
-        compressed_bundle = serialize_raw_report(to_post)
-        # metrics not really meaningful right now as JSON
+        raw_dict = to_post.to_dict()
+        metric_list = raw_dict.pop('metrics')
         self.post(f'/reports/{report_id}/metrics',
-                  json={'metrics': {}, 'raw_report': compressed_bundle},
+                  json={'metrics': metric_list, 'raw_report': raw_dict},
                   headers={'Content-Type': 'application/json'})
         self.update_report_status(report_id, 'complete')
 

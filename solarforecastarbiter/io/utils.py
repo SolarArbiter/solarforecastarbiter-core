@@ -6,11 +6,10 @@ and vice versa.
 import base64
 from functools import wraps
 from inspect import signature
-import zlib
+import json
 
 
 import pandas as pd
-import pyarrow as pa
 
 
 from solarforecastarbiter import datamodel
@@ -269,33 +268,39 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     return data.loc[start:end]
 
 
-def serialize_data(values):
-    serialized_buf = pa.serialize(values).to_buffer()
-    compressed_bytes = zlib.compress(serialized_buf)
-    encoded = base64.b64encode(compressed_bytes)
-    return encoded.decode('ascii')  # bytes to str
+def serialize_timeseries(ser):
+    if not (
+            isinstance(ser, pd.Series) and
+            isinstance(ser.index, pd.DatetimeIndex) and
+            ser.index.tzinfo is not None
+    ):
+        raise TypeError(
+            'Only pandas Series with a localized DatetimeIndex is supported')
+    v = ser.copy()
+    v.index.name = 'timestamp'
+    jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
+        orient='records', date_format='iso', date_unit='s')
+    return jsonvals
 
 
-def deserialize_data(data):
-    compressed = base64.b64decode(data)
-    serialized = zlib.decompress(compressed)
-    values = pa.deserialize(serialized)
-    return values
+def deserialize_timeseries(data):
+    df = pd.read_json(data, orient='records', convert_dates=True)
+    ser = df.set_index('timestamp')['value']
+    return ser
 
 
 def serialize_raw_report(raw):
-    bundle = {'metrics': raw.metrics,
-              'template': raw.template,
-              'metadata': raw.metadata.to_dict(),
-              'processed_forecasts_observations': [
-                  pfx.to_dict() for pfx in
-                  raw.processed_forecasts_observations]}
-    return serialize_data(bundle)
+    raw_dict = raw.to_dict()
+    metric_json = json.dumps(raw_dict.pop('metrics'))
+    raw_json = json.dumps(raw_dict)
+    return metric_json, raw_json
 
 
-def deserialize_raw_report(encoded_bundle, version=0):
-    bundle = deserialize_data(encoded_bundle)
-    return datamodel.RawReport.from_dict(bundle)
+def deserialize_raw_report(serialized_raw, serialized_metrics, version=0):
+    metrics = json.loads(serialized_metrics)
+    raw_dict = json.loads(serialized_raw)
+    raw_dict['metrics'] = metrics
+    return datamodel.RawReport.from_dict(raw_dict)
 
 
 class HiddenToken:
