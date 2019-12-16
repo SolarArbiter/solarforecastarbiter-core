@@ -67,10 +67,10 @@ def resample_and_align(fx_obs, data, tz):
     fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
         Pair of forecast and observation.
     data : dict
-        Keys are Observation and Forecast models and values
-        the validated timeseries data as pandas.Series.
+        Keys are Observation and Forecast models and values the validated
+        timeseries data as pandas.Series.
     tz : str
-        Timezone to witch processed data will be converted.
+        Timezone to which processed data will be converted.
 
     Returns
     -------
@@ -84,15 +84,31 @@ def resample_and_align(fx_obs, data, tz):
     obs = fx_obs.data_object
 
     # Resample observation
-    closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-    obs_resampled = data[obs].resample(fx.interval_length,
-                                       label=closed,
-                                       closed=closed).mean()
+    if fx.interval_length > obs.interval_length:
+        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+        obs_resampled = data[obs].resample(
+            fx.interval_length,
+            label=closed,
+            closed=closed
+        ).agg(["mean", "count"])
+
+        # Drop intervals if too many samples missing
+        count_threshold = int(fx.interval_length / obs.interval_length * 0.1)
+        obs_resampled = obs_resampled["mean"].where(
+            obs_resampled["count"] >= count_threshold
+        )
+    elif fx.interval_length < obs.interval_length:
+        raise ValueError('observation.interval_length cannot be greater than '
+                         'forecast.interval_length.')
+    else:
+        obs_resampled = data[obs]
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
-    # fill missing observations with NaN
-    fx_aligned, obs_aligned = data[fx].align(obs_resampled, 'left')
+    # forecasts, and missing periods
+    obs_resampled = obs_resampled.dropna(how="any")
+    obs_aligned, fx_aligned = obs_resampled.align(data[fx].dropna(how="any"),
+                                                  'inner')
 
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)

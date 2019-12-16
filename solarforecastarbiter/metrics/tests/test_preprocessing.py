@@ -17,6 +17,11 @@ THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
 THREE_HOUR_SERIES = pd.Series(np.arange(1., 4., 1.), index=THREE_HOURS,
                               name='value')
 
+THREE_HOUR_NAN_SERIES = pd.Series([1.0, np.nan, 4.0], index=THREE_HOURS,
+                                  name="value")
+
+THREE_HOURS_NAN = THREE_HOURS[[True, False, True]]
+
 THIRTEEN_10MIN = pd.date_range(start='2019-03-31T12:00:00',
                                periods=13,
                                freq='10min',
@@ -37,7 +42,10 @@ OK = int(0b10)  # OK version 0 (2)
 @pytest.mark.parametrize('fx_series,obs_series,expected_dt', [
     (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS),
     (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS),
-    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN)
+    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN),
+    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
 ])
 def test_resample_and_align(site_metadata, interval_label,
                             fx_series, obs_series, expected_dt):
