@@ -3,9 +3,12 @@ import numpy as np
 from solarforecastarbiter.metrics import summary
 
 
-@pytest.mark.parametrize("ts,value", [
-    ([1, 2, 3], 2),
-    ([2, np.nan, 4], 3),
+@pytest.mark.parametrize("ts", [
+    [1, 2, 3],
+    np.random.rand(10),
+    np.random.rand(1000),
 ])
-def test_mean(ts, value):
-    assert summary.mean(ts) == value
+def test_scalar(ts):
+    for metric in summary._MAP:
+        f = summary._MAP[metric][0]
+        assert np.isscalar(f(ts))
