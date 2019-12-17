@@ -188,6 +188,14 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                     elif category == 'weekday':
                         cat = calendar.day_abbr[cat]
 
+                    # Change category labels for hour of day depending on
+                    # interval_label
+                    closed = datamodel.CLOSED_MAPPING[
+                        processed_fx_obs.interval_label
+                    ]
+                    if category == "hour" and closed == "ending":
+                        cat += 1   # 0-23 becomes 1-24
+
                     metric_values.append(res)
                     cat_values.append(cat)
 
