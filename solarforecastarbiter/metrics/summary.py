@@ -5,7 +5,7 @@ import numpy as np
 
 # Add new metrics to this map to map shorthand to function
 _MAP = {
-    'mean': (np.mean, 'Max'),
+    'mean': (np.mean, 'Mean'),
     'min': (np.min, 'Min'),
     'max': (np.max, 'Max'),
     'std': (np.std, 'Std'),
