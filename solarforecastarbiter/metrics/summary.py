@@ -3,11 +3,6 @@
 import numpy as np
 
 
-# - var: np.nanvar()
-# - percentile: np.nanpercentile()  <== unnecessary with quantile?
-# - quantile: np.nanquantile()      <== unnecessary with percentile?
-
-
 def mean(ts):
     """Mean value.
 
