@@ -3,43 +3,14 @@
 import numpy as np
 
 
-def mean(ts):
-    """Mean value.
+# Add new metrics to this map to map shorthand to function
+_MAP = {
+    'mean': (np.mean, 'Max'),
+    'min': (np.min, 'Min'),
+    'max': (np.max, 'Max'),
+    'std': (np.std, 'Std'),
+    'median': (np.median, 'Median'),
+    'var': (np.var, 'Variance'),
+}
 
-    Parameters
-    ----------
-    ts : array_like
-        Time-series of observations or forecasts.
-
-    Returns
-    -------
-    avg : float
-        Mean value.
-
-    """
-
-    return np.nanmean(ts)
-
-
-def std(ts):
-    return np.nanstd(ts)
-
-
-def min(ts):
-    return np.nanmin(ts)
-
-
-def max(ts):
-    return np.nanmax(ts)
-
-
-def median(ts):
-    return np.nanmedian(ts)
-
-
-def var(ts):
-    return np.nanvar(ts)
-
-
-def quantile(ts, q):
-    return np.nanquantile(ts, q)
+__all__ = [m[0].__name__ for m in _MAP.values()]
