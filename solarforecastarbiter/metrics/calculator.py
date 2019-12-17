@@ -189,10 +189,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                         cat = calendar.month_abbr[cat]
                     elif category == 'weekday':
                         cat = calendar.day_abbr[cat]
-
                     # Change category labels for hour of day depending on
                     # interval_label
-                    if category == "hour" and closed == "ending":
+                    elif category == "hour" and closed == "ending":
                         cat += 1   # 0-23 becomes 1-24
 
                     metric_values.append(res)
