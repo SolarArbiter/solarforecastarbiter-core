@@ -130,6 +130,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values
 
+    closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
+
     # Check reference forecast is from processed pair, if needed
     ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
@@ -190,9 +192,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
                     # Change category labels for hour of day depending on
                     # interval_label
-                    closed = datamodel.CLOSED_MAPPING[
-                        processed_fx_obs.interval_label
-                    ]
                     if category == "hour" and closed == "ending":
                         cat += 1   # 0-23 becomes 1-24
 
