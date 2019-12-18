@@ -95,6 +95,7 @@ the metrics were computed.</p>
   Metrics may be downloaded in CSV format by clicking
   <a href="javascript:download_metrics_as_csv('{{ report.name }}')">here</a>.
 </p>
+<div id="metric-plot-wrapper">
 {% for category in report.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
   {% if category_blubs is defined %}
@@ -111,6 +112,7 @@ the metrics were computed.</p>
     {% endfor %}
   {% endfor %}
 {% endfor %}
+</div>
 {{ report.raw_report.plots.script | safe }}
 {{ macros.download_csv_script () | safe }}
 {% endblock %}

@@ -190,7 +190,7 @@ def validate_resample_align(report, metadata, data):
                                                     qfilter,
                                                     preprocessing.exclude)
     processed_fxobs = [preprocessing.resample_and_align(
-                            fxobs, data_validated, metadata.timezone)
+                       fxobs, data_validated, metadata.timezone)
                        for fxobs in report.forecast_observations]
     return processed_fxobs
 

@@ -11,7 +11,7 @@ from bokeh.io.export import get_svgs
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, HoverTool, Legend,
                           DatetimeTickFormatter, CategoricalTickFormatter,
-                          CDSView, GroupFilter)
+                          CDSView, GroupFilter, BooleanFilter)
 from bokeh.models.ranges import Range1d, FactorRange, DataRange1d
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
@@ -28,7 +28,8 @@ from solarforecastarbiter.plotting.utils import line_or_step
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
-OBS_PALETTE = palettes.grey(_num_obs_colors+1)[0:_num_obs_colors]  # drop white
+OBS_PALETTE = palettes.grey(
+    _num_obs_colors + 1)[0:_num_obs_colors]  # drop white
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
@@ -50,11 +51,17 @@ def construct_timeseries_cds(report):
         tz-aware input times are converted to tz-naive times in the
         input time zone.
     """
-    frames = []
-    for pfxobs in report.raw_report.processed_forecasts_observations:
-        frame_dict = {
+    value_frames = []
+    meta_rows = []
+    for idx, pfxobs in enumerate(
+            report.raw_report.processed_forecasts_observations):
+        value_frame_dict = {
+            'pair_index': idx,
             'observation_values': pfxobs.observation_values,
             'forecast_values': pfxobs.forecast_values,
+        }
+        meta_row_dict = {
+            'pair_index': idx,
             'observation_name': _obs_name(pfxobs.original),
             'forecast_name': _fx_name(pfxobs.original),
             'interval_label': pfxobs.interval_label,
@@ -71,13 +78,16 @@ def construct_timeseries_cds(report):
             'observation_color': _obs_color(
                 pfxobs.interval_length)
         }
-        frames.append(pd.DataFrame(frame_dict))
-    data = pd.concat(frames)
+        value_frames.append(pd.DataFrame(value_frame_dict))
+        meta_rows.append(meta_row_dict)
+    data = pd.concat(value_frames)
+    metadata = pd.DataFrame(meta_rows)
     # drop tz info from localized times. GH164
     data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
-    cds = ColumnDataSource(data)
-    return cds
+    value_cds = ColumnDataSource(data)
+    metadata_cds = ColumnDataSource(metadata)
+    return value_cds, metadata_cds
 
 
 def _obs_name(fx_obs):
@@ -105,7 +115,23 @@ def _obs_color(interval_length):
     return obs_color
 
 
-def timeseries(timeseries_cds, start, end, units, timezone='UTC'):
+def _boolean_filter_indices_by_pair(value_cds, pair_index):
+    return value_cds.data['pair_index'] == pair_index
+
+
+def _extract_metadata_from_cds(metadata_cds, hash_, hash_key):
+    first_row = np.argwhere(metadata_cds.data[hash_key] == hash_)[0][0]
+    return {
+        'pair_index': metadata_cds.data['pair_index'][first_row],
+        'observation_name': metadata_cds.data['observation_name'][first_row],
+        'forecast_name': metadata_cds.data['forecast_name'][first_row],
+        'interval_label': metadata_cds.data['interval_label'][first_row],
+        'observation_color': metadata_cds.data['observation_color'][first_row],
+    }
+
+
+def timeseries(timeseries_value_cds, timeseries_meta_cds,
+               start, end, units, timezone='UTC'):
     """
     Timeseries plot of one or more forecasts and observations.
 
@@ -136,34 +162,37 @@ def timeseries(timeseries_cds, start, end, units, timezone='UTC'):
         name='timeseries')
 
     plotted_objects = 0
-    for obs_hash in np.unique(timeseries_cds.data['observation_hash']):
-        first_row = np.argwhere(
-            timeseries_cds.data['observation_hash'] == obs_hash)[0][0]
-        view = CDSView(source=timeseries_cds, filters=[
-            GroupFilter(column_name='observation_hash', group=obs_hash)
+    for obs_hash in np.unique(timeseries_meta_cds.data['observation_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, obs_hash, 'observation_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds, filters=[
+            BooleanFilter(pair_indices)
         ])
         plot_method, plot_kwargs, hover_kwargs = line_or_step(
-            timeseries_cds.data['interval_label'][first_row])
-        legend_label = timeseries_cds.data['observation_name'][first_row]
-        color = timeseries_cds.data['observation_color'][first_row]
+            metadata['interval_label'])
+        legend_label = metadata['observation_name']
+        color = metadata['observation_color']
         getattr(fig, plot_method)(
-            x='timestamp', y='observation_values', source=timeseries_cds,
+            x='timestamp', y='observation_values', source=timeseries_value_cds,
             view=view, color=color, legend_label=legend_label,
             **plot_kwargs)
         plotted_objects += 1
 
-    for fx_hash in np.unique(timeseries_cds.data['forecast_hash']):
-        first_row = np.argwhere(
-            timeseries_cds.data['forecast_hash'] == fx_hash)[0][0]
-        view = CDSView(source=timeseries_cds, filters=[
-            GroupFilter(column_name='forecast_hash', group=fx_hash)
-        ])
+    for fx_hash in np.unique(timeseries_meta_cds.data['forecast_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, fx_hash, 'forecast_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds,
+                       filters=[BooleanFilter(pair_indices)])
         plot_method, plot_kwargs, hover_kwargs = line_or_step(
-            timeseries_cds.data['interval_label'][first_row])
-        legend_label = timeseries_cds.data['forecast_name'][first_row]
+            metadata['interval_label'])
+        legend_label = metadata['forecast_name']
         color = next(palette)
         getattr(fig, plot_method)(
-            x='timestamp', y='forecast_values', source=timeseries_cds,
+            x='timestamp', y='forecast_values', source=timeseries_value_cds,
             view=view, color=color, legend_label=legend_label,
             **plot_kwargs)
         plotted_objects += 1
@@ -195,7 +224,7 @@ def _get_scatter_limits(cds):
     return min_, max_
 
 
-def scatter(timeseries_cds, units):
+def scatter(timeseries_value_cds, timeseries_meta_cds, units):
     """
     Scatter plot of one or more forecasts and observations.
 
@@ -210,7 +239,7 @@ def scatter(timeseries_cds, units):
     -------
     fig : bokeh.plotting.figure
     """
-    xy_min, xy_max = _get_scatter_limits(timeseries_cds)
+    xy_min, xy_max = _get_scatter_limits(timeseries_value_cds)
 
     # match_aspect=True does not work well, so these need to be close
     plot_height = 400
@@ -228,15 +257,18 @@ def scatter(timeseries_cds, units):
 
     # accumulate labels and plot objects for manual legend
     scatters_labels = []
-    for fxhash in np.unique(timeseries_cds.data['forecast_hash']):
-        view = CDSView(source=timeseries_cds, filters=[
-            GroupFilter(column_name='forecast_hash', group=fxhash)
-        ])
-        label = timeseries_cds.data['forecast_name'][
-            timeseries_cds.data['forecast_hash'] == fxhash][0]
+    for fxhash in np.unique(timeseries_meta_cds.data['forecast_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, fxhash, 'forecast_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds,
+                       filters=[BooleanFilter(pair_indices)])
+        label = metadata['forecast_name']
         r = fig.scatter(
-            x='observation_values', y='forecast_values', source=timeseries_cds,
-            view=view, fill_color=next(palette), **kwargs)
+            x='observation_values', y='forecast_values',
+            source=timeseries_value_cds, view=view,
+            fill_color=next(palette), **kwargs)
         scatters_labels.append((label, [r]))
 
     # manual legend so it can be placed outside the plot area
@@ -286,7 +318,7 @@ def construct_metrics_cds(metrics, rename=None):
     if rename:
         f = rename
     else:
-        def f(x): return x
+        def f(x): return x  # NOQA
 
     data = []
     for metric_result in metrics:
@@ -370,7 +402,7 @@ def bar(cds, metric):
     if len(x_range) > 6:
         # pi/4 looks a lot better, but first tick label flows off chart
         # and I can't figure out how to add padding in bokeh
-        fig.xaxis.major_label_orientation = np.pi/2
+        fig.xaxis.major_label_orientation = np.pi / 2
         fig.width = 800
         # add more height to figure so that the names can go somewhere.
         fig.height = 400
@@ -595,11 +627,11 @@ def raw_report_plots(report, metrics):
 
 
 def timeseries_plots(report):
-    cds = construct_timeseries_cds(report)
+    value_cds, meta_cds = construct_timeseries_cds(report)
     units = report.forecast_observations[0].forecast.units
-    tfig = timeseries(cds, report.start, report.end, units,
+    tfig = timeseries(value_cds, meta_cds, report.start, report.end, units,
                       report.raw_report.metadata.timezone)
-    sfig = scatter(cds, units)
+    sfig = scatter(value_cds, meta_cds, units)
     layout = gridplot((tfig, sfig), ncols=1)
     script, div = components(layout)
     return script, div
