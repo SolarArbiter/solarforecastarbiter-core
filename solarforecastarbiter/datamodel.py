@@ -908,6 +908,7 @@ class ForecastObservation(BaseModel):
     """
     forecast: Forecast
     observation: Observation
+    reference_forecast: Union[Forecast, None] = None
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
@@ -926,6 +927,7 @@ class ForecastAggregate(BaseModel):
     """
     forecast: Forecast
     aggregate: Aggregate
+    reference_forecast: Union[Forecast, None] = None
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
@@ -1081,6 +1083,7 @@ class ProcessedForecastObservation(BaseModel):
     interval_label: str
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
+    reference_forecast_values: Union[pd.Series, str, None] = None
 
 
 @dataclass(frozen=True)
