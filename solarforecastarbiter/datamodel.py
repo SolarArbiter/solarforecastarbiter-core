@@ -909,6 +909,11 @@ class ForecastObservation(BaseModel):
     forecast: Forecast
     observation: Observation
     reference_forecast: Union[Forecast, None] = None
+    # for now, some function applied to observation (e.g. mean per day)
+    # possible in future
+    normalization: float = 1.0
+    # cost: Cost
+    cost_per_unit_error: float = 0.0
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
@@ -928,6 +933,8 @@ class ForecastAggregate(BaseModel):
     forecast: Forecast
     aggregate: Aggregate
     reference_forecast: Union[Forecast, None] = None
+    normalization: float = 1.0
+    cost_per_unit_error: float = 0.0
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
@@ -1084,6 +1091,17 @@ class ProcessedForecastObservation(BaseModel):
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
     reference_forecast_values: Union[pd.Series, str, None] = None
+    # This may need to be a series, e.g. normalize by the average
+    # observed value per day. Hence, repeat here instead of
+    # only in original
+    normalization_factor: Union[pd.Series, float] = 1.0
+    # For now only, a single $/unit error cost is allowed.
+    # This is defined along with each ForecastObservation, but
+    # in the future this might also be a series
+    cost_per_unit_error: float = 0.0
+    # really more of a dict probably so would need separate
+    # model
+    validation_results: tuple
 
 
 @dataclass(frozen=True)
@@ -1100,7 +1118,6 @@ class MetricResult(BaseModel):
     forecast_id: str
     observation_id: str
     values: Tuple[MetricValue, ...]
-    reference_forecast_id: str = ''
 
 
 @dataclass(frozen=True)
