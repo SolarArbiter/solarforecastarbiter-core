@@ -83,8 +83,11 @@ def resample_and_align(fx_obs, data, tz):
     fx = fx_obs.forecast
     obs = fx_obs.data_object
 
-    # Resample observation
-    if fx.interval_length > obs.interval_length:
+    # Resample observation, checking for invalid interval_length pairs or empty
+    # Series (fx or obs)
+    if fx.interval_length > obs.interval_length and not (
+        data[obs].empty or data[fx].empty
+    ):
         closed = datamodel.CLOSED_MAPPING[fx.interval_label]
         obs_resampled = data[obs].resample(
             fx.interval_length,
