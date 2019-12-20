@@ -22,6 +22,18 @@ THREE_HOUR_NAN_SERIES = pd.Series([1.0, np.nan, 4.0], index=THREE_HOURS,
 
 THREE_HOURS_NAN = THREE_HOURS[[True, False, True]]
 
+THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", freq="60min",
+                                     tz="MST")
+
+THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value")
+
+EMPTY_OBJ_SERIES = pd.Series(
+    [],
+    dtype=object,
+    name="value",
+    index=pd.DatetimeIndex([], freq="10min", tz="MST", name="timestamp")
+)
+
 THIRTEEN_10MIN = pd.date_range(start='2019-03-31T12:00:00',
                                periods=13,
                                freq='10min',
@@ -46,6 +58,9 @@ OK = int(0b10)  # OK version 0 (2)
     (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
     (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN),
     (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
+    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY),
+    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY),
+    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY),
 ])
 def test_resample_and_align(site_metadata, interval_label,
                             fx_series, obs_series, expected_dt):
