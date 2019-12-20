@@ -130,8 +130,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values
 
-    closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
-
     # Check reference forecast is from processed pair, if needed
     ref_fx = None
     if any(m in deterministic._REQ_REF_FX for m in metrics):
@@ -150,6 +148,13 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         raise RuntimeError("No Observation timeseries data.")
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
+
+    # Force `groupby` to be consistent with `interval_label`, i.e., if
+    # `interval_label == ending`, then the last interval should be in the bin
+    closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
+    if closed == "ending":
+        obs.index -= pd.Timedelta("1ns")
+        fx.index -= pd.Timedelta("1ns")
 
     # Dataframe for grouping
     df = pd.concat({'forecast': fx,
@@ -189,10 +194,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                         cat = calendar.month_abbr[cat]
                     elif category == 'weekday':
                         cat = calendar.day_abbr[cat]
-                    # Change category labels for hour of day depending on
-                    # interval_label
-                    elif category == "hour" and closed == "ending":
-                        cat += 1   # 0-23 becomes 1-24
 
                     metric_values.append(res)
                     cat_values.append(cat)
