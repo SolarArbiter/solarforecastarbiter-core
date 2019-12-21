@@ -538,7 +538,14 @@ def bar_subdivisions(cds, category, metric):
             hover_kwargs = dict(tooltips=tooltips)
         else:
             # Numerical x-axis
-            fig.xaxis.ticker = cds.data[category]
+            if category == 'hour':
+                # center bars between xticks
+                fig.xaxis.ticker = cds.data[category] - 0.5
+                fig.xaxis.major_label_overrides = {
+                    i - 0.5: str(i) for i in cds.data[category]
+                }
+            else:
+                fig.xaxis.ticker = cds.data[category]
             tooltips = [
                 (human_category, f'@{{{category}}}'),
                 (f'{metric.upper()}', f'@{{{field}}}'),
