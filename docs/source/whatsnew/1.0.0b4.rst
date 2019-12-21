@@ -15,6 +15,8 @@ Enhancements
 Bug fixes
 ~~~~~~~~~
 * Fix handling of empty observation timeseries in metrics preprocessing. (:issue:`295`) (:pull:`296`)
+* Fix handling of `interval_label == ending` in the `groupby` categories in
+  `metrics.calculator`. (:issue:`234`) (:pull:`297`)
 
 Contributors
 ~~~~~~~~~~~~
