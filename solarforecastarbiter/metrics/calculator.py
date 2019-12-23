@@ -10,6 +10,7 @@ Todo
 * Support event metrics and forecasts with new functions
 """
 import calendar
+import copy
 
 import pandas as pd
 
@@ -153,6 +154,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # `interval_label == ending`, then the last interval should be in the bin
     closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
     if closed == "ending":
+        obs = copy.deepcopy(obs)
+        fx = copy.deepcopy(fx)
         obs.index -= pd.Timedelta("1ns")
         fx.index -= pd.Timedelta("1ns")
 
