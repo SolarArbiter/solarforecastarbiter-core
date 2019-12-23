@@ -150,19 +150,16 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
 
-    # Force `groupby` to be consistent with `interval_label`, i.e., if
-    # `interval_label == ending`, then the last interval should be in the bin
-    closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
-    if closed == "ending":
-        obs = copy.deepcopy(obs)
-        fx = copy.deepcopy(fx)
-        obs.index -= pd.Timedelta("1ns")
-        fx.index -= pd.Timedelta("1ns")
-
     # Dataframe for grouping
     df = pd.concat({'forecast': fx,
                     'observation': obs,
                     'reference': ref_fx}, axis=1)
+
+    # Force `groupby` to be consistent with `interval_label`, i.e., if
+    # `interval_label == ending`, then the last interval should be in the bin
+    closed = datamodel.CLOSED_MAPPING[processed_fx_obs.interval_label]
+    if closed == "ending":
+        df.index -= pd.Timedelta("1ns")
 
     # Calculate metrics
     for category in set(categories):
