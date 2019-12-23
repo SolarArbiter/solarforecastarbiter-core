@@ -10,7 +10,6 @@ Todo
 * Support event metrics and forecasts with new functions
 """
 import calendar
-import copy
 
 import pandas as pd
 
