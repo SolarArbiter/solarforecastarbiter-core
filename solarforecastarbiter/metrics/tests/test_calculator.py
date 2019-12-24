@@ -303,7 +303,7 @@ def test_apply_deterministic_bad_metric_func():
     ([], []),
     (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
 ])
-def test_mismatched_interval_label(
+def test_interval_label(
     site_metadata, categories, metrics, create_processed_fxobs
 ):
     ts = pd.date_range(
@@ -325,7 +325,7 @@ def test_mismatched_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(fx.index.freq),
-            interval_label="beginning",
+            interval_label="ending",
             issue_time_of_day=datetime.time(hour=5),
             lead_time_to_start=pd.Timedelta('1h'),
             run_length=pd.Timedelta('12h')
@@ -336,7 +336,7 @@ def test_mismatched_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(obs.index.freq),
-            interval_label="beginning",
+            interval_label="ending",
             uncertainty=1,
         )
     )
@@ -349,7 +349,7 @@ def test_mismatched_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(fx.index.freq),
-            interval_label="ending",
+            interval_label="beginning",
             issue_time_of_day=datetime.time(hour=5),
             lead_time_to_start=pd.Timedelta('1h'),
             run_length=pd.Timedelta('12h')
@@ -360,7 +360,7 @@ def test_mismatched_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(obs.index.freq),
-            interval_label="ending",
+            interval_label="beginning",
             uncertainty=1,
         )
     )
@@ -378,3 +378,11 @@ def test_mismatched_interval_label(
                 normalizer=1.0
             )
         return
+
+        calculator.calculate_metrics(
+                [proc_fx_obs],
+                categories,
+                metrics,
+                ref_pair=None,
+                normalizer=1.0
+            )
