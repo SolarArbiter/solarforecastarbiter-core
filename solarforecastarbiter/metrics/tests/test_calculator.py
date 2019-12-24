@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
+import datetime
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic)
@@ -296,3 +297,82 @@ def test_apply_deterministic_bad_metric_func():
         calculator._apply_deterministic_metric_func('BAD METRIC',
                                                     pd.Series(),
                                                     pd.Series())
+
+
+@pytest.mark.parametrize('categories,metrics', [
+    ([], []),
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
+])
+def test_mismatched_interval_label(site_metadata, categories, metrics, create_processed_fxobs):
+    ts = pd.date_range(
+        start="2019-07-01 00:00:00",
+        end="2019-07-08 00:00:00",
+        freq="1h",
+        tz="MST",
+        name="timestamp"
+    )
+    fx = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
+    obs = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
+    ref = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
+
+    # `interval_label == beginning`
+    fx_obs = datamodel.ForecastObservation(
+        forecast=datamodel.Forecast(
+            site=site_metadata,
+            name="dummy fx",
+            variable="ghi",
+            interval_value_type="instantaneous",
+            interval_length=pd.Timedelta(fx.index.freq),
+            interval_label="beginning",
+            issue_time_of_day=datetime.time(hour=5),
+            lead_time_to_start=pd.Timedelta('1h'),
+            run_length=pd.Timedelta('12h')
+        ),
+        observation=datamodel.Observation(
+            site=site_metadata,
+            name="dummy obs",
+            variable="ghi",
+            interval_value_type="instantaneous",
+            interval_length=pd.Timedelta(obs.index.freq),
+            interval_label="beginning",
+            uncertainty=1,
+        )
+    )
+
+    # `interval_label == ending`
+    ref_obs = datamodel.ForecastObservation(
+        forecast=datamodel.Forecast(
+            site=site_metadata,
+            name="dummy fx",
+            variable="ghi",
+            interval_value_type="instantaneous",
+            interval_length=pd.Timedelta(fx.index.freq),
+            interval_label="ending",
+            issue_time_of_day=datetime.time(hour=5),
+            lead_time_to_start=pd.Timedelta('1h'),
+            run_length=pd.Timedelta('12h')
+        ),
+        observation=datamodel.Observation(
+            site=site_metadata,
+            name="dummy obs",
+            variable="ghi",
+            interval_value_type="instantaneous",
+            interval_length=pd.Timedelta(obs.index.freq),
+            interval_label="ending",
+            uncertainty=1,
+        )
+    )
+
+    proc_fx_obs = create_processed_fxobs(fx_obs, fx, obs)
+    proc_ref_obs = create_processed_fxobs(ref_obs, ref, obs)
+
+    if any(m in deterministic._REQ_REF_FX for m in metrics):
+        with pytest.raises(ValueError):
+            calculator.calculate_metrics(
+                [proc_fx_obs],
+                categories,
+                metrics,
+                ref_pair=proc_ref_obs,
+                normalizer=1.0
+            )
+        return
