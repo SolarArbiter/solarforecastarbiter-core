@@ -303,7 +303,9 @@ def test_apply_deterministic_bad_metric_func():
     ([], []),
     (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
 ])
-def test_mismatched_interval_label(site_metadata, categories, metrics, create_processed_fxobs):
+def test_mismatched_interval_label(
+    site_metadata, categories, metrics, create_processed_fxobs
+):
     ts = pd.date_range(
         start="2019-07-01 00:00:00",
         end="2019-07-08 00:00:00",
