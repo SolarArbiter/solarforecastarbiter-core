@@ -142,7 +142,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             raise RuntimeError("No reference forecast timeseries data")
         elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
             raise ValueError("Mismatched `interval_label` between "
-                               "observation and reference forecast.")
+                             "observation and reference forecast.")
 
     # No data or metrics
     if fx.empty:
@@ -151,7 +151,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         raise RuntimeError("No Observation timeseries data.")
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
-
 
     # Dataframe for grouping
     df = pd.concat({'forecast': fx,
