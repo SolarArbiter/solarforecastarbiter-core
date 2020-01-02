@@ -12,6 +12,7 @@ from solarforecastarbiter import datamodel
 
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
+                        'forecastaggregate',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
@@ -84,6 +85,14 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fx_dict['constant_values'] = (agg_prob_forecast_constant_value, )
         return (aggregate_prob_forecast, fx_dict,
                 datamodel.ProbabilisticForecast)
+    elif request.param == 'forecastaggregate':
+        aggfx_dict = json.loads(aggregate_forecast_text)
+        aggfx_dict['aggregate'] = aggregate.to_dict()
+        agg_dict = json.loads(aggregate_text)
+        agg_dict['observations'] = aggregate_observations
+        fxobs_dict = {'forecast': aggfx_dict, 'aggregate': agg_dict}
+        fxobs = datamodel.ForecastAggregate(aggregateforecast, aggregate)
+        return (fxobs, fxobs_dict, datamodel.ForecastAggregate)
     elif request.param == 'report':
         report, *_ = report_objects
         return (report, report_dict.copy(), datamodel.Report)
@@ -326,6 +335,7 @@ def test_probabilistic_forecast_float_constant_values(prob_forecasts):
         forecast_id=prob_forecasts.forecast_id,
         axis=prob_forecasts.axis,
         extra_parameters=prob_forecasts.extra_parameters,
+        provider=prob_forecasts.provider,
         constant_values=tuple(cv.constant_value
                               for cv in prob_forecasts.constant_values),
     )
@@ -380,3 +390,9 @@ def test_forecast_from_union(single_forecast, single_forecast_text, site_text):
     fxdict['site'] = json.loads(site_text)
     out = Model.from_dict({'myfield': fxdict})
     assert out.myfield == single_forecast
+
+
+def test___check_categories__():
+    datamodel.__check_categories__(['total', 'weekday'])
+    with pytest.raises(ValueError):
+        datamodel.__check_categories__(['bad', 'very bad'])

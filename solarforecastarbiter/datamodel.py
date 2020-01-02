@@ -13,6 +13,10 @@ from typing import Tuple, Union
 import pandas as pd
 
 
+from solarforecastarbiter.metrics.deterministic import \
+    _MAP as deterministic_mapping
+from solarforecastarbiter.metrics.probabilistic import \
+    _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
 
@@ -54,6 +58,24 @@ CLOSED_MAPPING = {
 }
 
 
+# Keys are the categories passed to pandas groupby, values are the human
+# readable versions for plotting and forms.
+ALLOWED_CATEGORIES = {
+    'total': 'Total',
+    'year': 'Year',
+    'month': 'Month of the year',
+    'hour': 'Hour of the day',
+    'date': 'Date',
+    'weekday': 'Day of the week'
+}
+
+ALLOWED_DETERMINISTIC_METRICS = {
+    k: v[1] for k, v in deterministic_mapping.items()}
+
+ALLOWED_PROBABILISTIC_METRICS = {
+    k: v[1] for k, v in probabilistic_mapping.items()}
+
+
 def _dict_factory(inp):
     dict_ = dict(inp)
     for k, v in dict_.items():
@@ -67,6 +89,8 @@ def _dict_factory(inp):
 
     if 'units' in dict_:
         del dict_['units']
+    if 'data_object' in dict_:
+        del dict_['data_object']
     return dict_
 
 
@@ -431,6 +455,8 @@ class Observation(BaseModel):
         will be determined later.
     observation_id : str, optional
         UUID of the observation in the API
+    provider : str, optional
+        Provider of the Observation information.
     extra_parameters : str, optional
         Any extra parameters for the observation
 
@@ -446,6 +472,7 @@ class Observation(BaseModel):
     site: Site
     uncertainty: float
     observation_id: str = ''
+    provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
     __post_init__ = __set_units__
@@ -600,6 +627,7 @@ class _ForecastDefaultsBase:
     site: Union[Site, None] = None
     aggregate: Union[Aggregate, None] = None
     forecast_id: str = ''
+    provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
 
@@ -653,6 +681,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         The predefined aggregate that the forecast is for, e.g. Aggregate Y.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the Forecast information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -734,6 +764,8 @@ class ProbabilisticForecastConstantValue(
         The variable value or percentile.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the ProbabilisticForecastConstantValue information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -802,6 +834,8 @@ class ProbabilisticForecast(
         be converted to ProbabilisticForecastConstantValue objects.
     forecast_id : str, optional
         UUID of the forecast in the API
+    provider : str, optional
+        Provider of the ProbabilisticForecast information.
     extra_parameters : str, optional
         Extra configuration parameters of forecast.
 
@@ -871,10 +905,30 @@ class ForecastObservation(BaseModel):
     """
     forecast: Forecast
     observation: Observation
+    data_object: Observation = field(init=False)
 
     def __post_init__(self):
-        __check_units__(self.forecast, self.observation)
-        __check_interval_compatibility__(self.forecast, self.observation)
+        object.__setattr__(self, 'data_object', self.observation)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
+
+
+@dataclass(frozen=True)
+class ForecastAggregate(BaseModel):
+    """
+    Class for pairing Forecast and Aggregate objects for evaluation.
+
+    Maybe not needed, but makes Report type spec easier and allows for
+    __post_init__ checking.
+    """
+    forecast: Forecast
+    aggregate: Aggregate
+    data_object: Aggregate = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, 'data_object', self.aggregate)
+        __check_units__(self.forecast, self.data_object)
+        __check_interval_compatibility__(self.forecast, self.data_object)
 
 
 @dataclass(frozen=True)
@@ -963,6 +1017,11 @@ def __check_metrics__():
     pass
 
 
+def __check_categories__(categories):
+    if not set(categories) <= ALLOWED_CATEGORIES.keys():
+        raise ValueError('Categories must be in ALLOWED_CATEGORIES')
+
+
 @dataclass(frozen=True)
 class ReportMetadata(BaseModel):
     """
@@ -985,7 +1044,7 @@ class ProcessedForecastObservation(BaseModel):
     parameters
     """
     # do this instead of subclass to compare objects later
-    original: ForecastObservation
+    original: Union[ForecastObservation, ForecastAggregate]
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
@@ -1024,10 +1083,13 @@ class Report(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
-    forecast_observations : Tuple of ForecastObservation
-        Paired Forecasts and Observations to be analyzed in the report.
+    forecast_observations : Tuple of ForecastObservation or ForecastAggregate
+        Paired Forecasts and Observations or Aggregates to be analyzed
+        in the report.
     metrics : Tuple of str
         Metrics to be computed in the report.
+    categories : Tuple of str
+        Categories to compute and organize metrics over in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
     status : str
@@ -1036,6 +1098,8 @@ class Report(BaseModel):
         ID of the report in the API
     raw_report : RawReport or None
         Once computed, the raw report should be stored here
+    provider : str, optional
+        Provider of the Report information.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
@@ -1043,18 +1107,23 @@ class Report(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    forecast_observations: Tuple[ForecastObservation, ...]
+    forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
+                                 ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    categories: Tuple[str, ...] = ('total', 'date', 'hour')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     status: str = 'pending'
     report_id: str = ''
     raw_report: Union[None, RawReport] = None
+    provider: str = ''
     __version__: int = 0  # should add version to api
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
         __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.observation) for k in self.forecast_observations)))
+            ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
         __check_metrics__()
+        # ensure that categories are valid
+        __check_categories__(self.categories)

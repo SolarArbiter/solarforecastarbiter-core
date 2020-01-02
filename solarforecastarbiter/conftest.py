@@ -629,6 +629,7 @@ def _observation_from_dict(get_site):
             site=get_site(obs_dict['site_id']),
             uncertainty=obs_dict['uncertainty'],
             observation_id=obs_dict.get('observation_id', ''),
+            provider=obs_dict.get('provider', ''),
             extra_parameters=obs_dict.get('extra_parameters', ''))
     return f
 
@@ -782,6 +783,7 @@ def _forecast_from_dict(single_site, get_site, get_aggregate):
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''))
     return f
 
@@ -971,6 +973,7 @@ def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
             axis=fx_dict['axis'],
             constant_value=fx_dict['constant_value'])
@@ -997,6 +1000,7 @@ def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
             lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
             run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
             forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
             axis=fx_dict['axis'],
             constant_values=(cv,))
@@ -1028,12 +1032,16 @@ def single_forecast_observation(single_forecast, single_observation):
 
 @pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
-    cart_prod = itertools.product(many_forecasts, many_observations)
-    return [datamodel.ForecastObservation(c) for c in cart_prod]
+    many_ghi_forecasts = [fx for fx in many_forecasts
+                          if fx.variable == 'ghi']
+    many_ghi_observations = [obs for obs in many_observations
+                             if obs.variable == 'ghi']
+    cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
+    return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
-@pytest.fixture(scope='module')
-def report_objects():
+@pytest.fixture()
+def report_objects(aggregate):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)
     end = pd.Timestamp('20190404 2359', tz=tz)
@@ -1051,7 +1059,7 @@ def report_objects():
         name="University of Arizona OASIS ghi",
         variable="ghi",
         interval_value_type="interval_mean",
-        interval_length=pd.Timedelta("0 days 00:01:00"),
+        interval_length=pd.Timedelta("15min"),
         interval_label="ending",
         site=site,
         uncertainty=0.0,
@@ -1083,8 +1091,22 @@ def report_objects():
         forecast_id="68a1c22c-87b5-11e9-bf88-0a580a8200ae",
         extra_parameters='{"model": "gfs_quarter_deg_to_hourly_mean"}',
     )
+    forecast_agg = datamodel.Forecast(
+        name="GHI Aggregate FX 60",
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        extra_parameters='',
+    )
     fxobs0 = datamodel.ForecastObservation(forecast_0, observation)
     fxobs1 = datamodel.ForecastObservation(forecast_1, observation)
+    fxagg0 = datamodel.ForecastAggregate(forecast_agg, aggregate)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1101,12 +1123,13 @@ def report_objects():
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
         end=end,
-        forecast_observations=(fxobs0, fxobs1),
+        forecast_observations=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
+        categories=("total", "date", "hour"),
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
     )
-    return report, observation, forecast_0, forecast_1
+    return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
 
 @pytest.fixture()
@@ -1165,7 +1188,8 @@ def valuefilter_dict(single_forecast):
 
 @pytest.fixture()
 def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
-    report, observation, forecast_0, forecast_1 = report_objects
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
+        report_objects
     return {
         'name': report.name,
         'start': report.start,
@@ -1175,6 +1199,8 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
              'observation': observation.to_dict()},
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict()},
+            {'forecast': forecast_agg.to_dict(),
+             'aggregate': aggregate.to_dict()},
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
@@ -1207,11 +1233,14 @@ def report_text():
             {"time_of_day_range": ["12:00", "14:00"]}
         ],
         "metrics": ["mae", "rmse", "mbe"],
+        "categories": ["total", "date", "hour"],
         "object_pairs": [
-            ["da2bc386-8712-11e9-a1c7-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"],
-            ["68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-             "9f657636-7e49-11e9-b77f-0a580a8003e9"]
+            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+            {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+             "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
         ]
     },
     "raw_report": null,
@@ -1222,7 +1251,7 @@ def report_text():
 
 @pytest.fixture()
 def raw_report(report_objects):
-    report, obs, fx0, fx1 = report_objects
+    report, obs, fx0, fx1, agg, fxagg = report_objects
     meta = datamodel.ReportMetadata(
         name=report.name,
         start=report.start,
@@ -1251,7 +1280,16 @@ def raw_report(report_objects):
             forecast_values=ser if with_series else fx1.forecast_id,
             observation_values=ser if with_series else obs.observation_id
         )
-        raw = datamodel.RawReport(meta, 'template', {}, (fxobs0, fxobs1))
+        fxagg_ = datamodel.ProcessedForecastObservation(
+            datamodel.ForecastAggregate(fxagg, agg),
+            fxagg.interval_value_type,
+            fxagg.interval_length,
+            fxagg.interval_label,
+            forecast_values=ser if with_series else fxagg.forecast_id,
+            observation_values=ser if with_series else agg.aggregate_id
+        )
+        raw = datamodel.RawReport(meta, 'template', {},
+                                  (fxobs0, fxobs1, fxagg_))
         return raw
     return gen
 
@@ -1355,7 +1393,7 @@ def aggregate_forecast_text():
   "extra_parameters": "",
   "forecast_id": "39220780-76ae-4b11-bef1-7a75bdc784e3",
   "interval_label": "beginning",
-  "interval_length": 5,
+  "interval_length": 60,
   "interval_value_type": "interval_mean",
   "issue_time_of_day": "06:00",
   "lead_time_to_start": 60,
@@ -1383,6 +1421,7 @@ def aggregateforecast(aggregate_forecast_text, aggregate):
         lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
         run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
         forecast_id=fx_dict.get('forecast_id', ''),
+        provider=fx_dict.get('provider', ''),
         extra_parameters=fx_dict.get('extra_parameters', ''))
 
 
@@ -1463,17 +1502,18 @@ def aggregate_prob_forecast(aggregate_prob_forecast_text,
     fx_dict = json.loads(aggregate_prob_forecast_text)
     fx_dict['constant_values'] = agg_prob_forecast_constant_value
     return datamodel.ProbabilisticForecast(
-            name=fx_dict['name'], variable=fx_dict['variable'],
-            interval_value_type=fx_dict['interval_value_type'],
-            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
-            interval_label=fx_dict['interval_label'],
-            site=None,
-            aggregate=aggregate,
-            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
-                                      int(fx_dict['issue_time_of_day'][3:])),
-            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
-            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
-            forecast_id=fx_dict.get('forecast_id', ''),
-            extra_parameters=fx_dict.get('extra_parameters', ''),
-            axis=fx_dict['axis'],
-            constant_values=(agg_prob_forecast_constant_value, ))
+        name=fx_dict['name'], variable=fx_dict['variable'],
+        interval_value_type=fx_dict['interval_value_type'],
+        interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+        interval_label=fx_dict['interval_label'],
+        site=None,
+        aggregate=aggregate,
+        issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                  int(fx_dict['issue_time_of_day'][3:])),
+        lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),
+        run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+        forecast_id=fx_dict.get('forecast_id', ''),
+        extra_parameters=fx_dict.get('extra_parameters', ''),
+        provider=fx_dict.get('provider', ''),
+        axis=fx_dict['axis'],
+        constant_values=(agg_prob_forecast_constant_value, ))

@@ -216,7 +216,7 @@ def test_reference_nwp(cli_token, mocker):
                             ['-u user', '-p pass', '--run-time=20190501T1200Z',
                              '--issue-time-buffer=2h',
                              tmpdir])
-        assert cli.nwp.BASE_PATH == tmpdir
+        assert cli.nwp.BASE_PATH == str(Path(tmpdir).resolve())
     assert res.exit_code == 0
     mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
                               pd.Timedelta('2h'), mocker.ANY)
@@ -228,17 +228,20 @@ def test_report(cli_token, mocker, report_objects):
     index = pd.date_range(
         start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
         freq='1h')
-    data = pd.Series([0] * len(index), index=index)
-    obs = pd.DataFrame({'value': data, 'quality_flag': data + 3})
+    data = pd.Series(0, index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
     mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
-                               report_objects[1]: obs})
+                               report_objects[1]: obs,
+                               report_objects[4]: obs,
+                               report_objects[5]: data})
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
-        infile = (Path(cli.__file__).resolve().parents[0] / 'tests/data' /
-                  'report_metadata.json')
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
         outfile = tmpdir + '/test_out.html'
         res = runner.invoke(cli.report,
-                            ['-u user', '-p pass', str(infile), outfile])
+                            ['-u user', '-p pass', infile, outfile])
     assert res.exit_code == 0

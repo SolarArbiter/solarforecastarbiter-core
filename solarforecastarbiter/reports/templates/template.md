@@ -11,8 +11,9 @@
 This report of solar forecast accuracy was automatically generated using the [Solar Forecast Arbiter](https://solarforecastarbiter.org).
 
 {{ '::: {.download}' }}
-{# Download as [html]({{ dash_url|safe }}/reports/download/{{ html_link|safe }}) or pdf]({{ dash_url|safe }}/reports/download/{{ pdf_link|safe }}) #}
-Download as [html]() or [pdf]()
+Download as [html](javascript:window.location.replace(window.location.href+'/download/html', '_self')) or pdf (coming soon).
+The download is a ZIP archive that includes checksums for the report file and a PGP signature that can be used to verify the authenticity of the report.
+The Solar Forecast Arbiter PGP key ID is [0x22bd497c0930f8b0](https://solarforecastarbiter.org/assets/solarforecastarbiter.gpg).
 :::
 
 Please see our GitHub repository for [known issues](https://github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports) with the reports or to create a new issue.
@@ -24,12 +25,12 @@ Contents:
   * [Observations and forecasts](#observations-and-forecasts)
   * [Data validation](#data-validation)
 * [Metrics](#metrics)
-  * [Total analysis period](#total-analysis-period)
-  * [Monthly](#monthly)
-  * [Daily](#daily)
-  * [Hourly](#hourly)
+{%- for met_key, met_val in metrics_toc.items() -%}
+  {%- if met_key in figures.keys() %}
+  * [{{met_val}} analysis](#{{met_key}}-analysis)
+  {%- endif %}
+{%- endfor %}
 * [Versions](#versions)
-* [Hash](#hash)
 
 ## Report metadata
 
@@ -62,8 +63,8 @@ The table below shows the observation, forecast pairs analyzed in this report. T
 | Observations | | | | | Forecasts | | | | |
 |:--------|---|---|---|---|:--------|---|---|---|---|
 Name|Interval label|Interval length|Aligned interval label|Resampled interval length|Name|Interval label|Interval length|Aligned interval label|Resampled interval length
-{% for fx_ob in proc_fx_obs -%}
-[{{ fx_ob.original.observation.name|safe }}]({{ dash_url|safe }}/observations/{{ fx_ob.original.observation.observation_id|safe }}) | {{ fx_ob.original.observation.interval_label | safe}} | {{ (fx_ob.original.observation.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
+{% for fx_ob, route, id in proc_fx_obs -%}
+[{{ fx_ob.original.data_object.name|safe }}]({{ dash_url|safe }}/{{ route|safe }}/{{ id|safe }}) | {{ fx_ob.original.data_object.interval_label | safe}} | {{ (fx_ob.original.data_object.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min | [{{ fx_ob.original.forecast.name|safe }}]({{ dash_url|safe }}/forecasts/single/{{ fx_ob.original.forecast.forecast_id|safe }}) | {{ fx_ob.original.forecast.interval_label|safe }} | {{ (fx_ob.original.forecast.interval_length.total_seconds()/60)|int|safe }} min | {{ fx_ob.interval_label|safe }} | {{ (fx_ob.interval_length.total_seconds()/60)|int|safe }} min
 {% endfor %}
 
 The plots below show the realigned and resampled time series of observation and forecast data as well as a scatter plot of forecast vs observation data.
@@ -93,58 +94,15 @@ These intervals were removed from the raw time series before resampling and real
 
 Metrics are displayed in tables and figures below for one or more time periods. Metrics may be downloaded in csv format.
 
-### Total analysis period
+{# Loop through each metric as keys in figures_bar by calling the markdown #}
 
-Metrics for the total analysis period are displayed in tables and figures below.
+{#{ figures | safe }#}
 
-{{ tables | safe }}
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar %}
-    {{ figure | safe }}
+{% for met_key in metrics_toc.keys() %}
+{% if met_key in figures.keys() %}
+  {% include 'metrics_' + met_key + '.md' %}
+{% endif %}
 {% endfor %}
-:::
-
-### Monthly
-
-{# consider putting these in a jinja for loop. will also/alternatively need if statements in case the monthly/daily/hourly metrics were not part of the report specification #}
-
-Metrics for each month of the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_month %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
-
-### Daily
-
-Metrics for each day of the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_day %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
-
-### Hourly
-
-Metrics for each hour of the day during the analysis period are displayed in tables and figures below.
-
-{{ '::: {.figures_bar}' }}
-{% for figure in figures_bar_hour %}
-    {# each figure is for a different metric #}
-    {# each figure is a stack of stack of short bar charts. one bar chart for each forecast #}
-    {# consider putting the figures in collapsable divs with only the first one open #}
-    {{ figure | safe }}
-{% endfor %}
-:::
 
 ## Versions
 
@@ -155,10 +113,3 @@ This report was created using open source software packages. The relevant packag
 {% for package, version in versions.items() -%}
     | {{ package|e }} | {{ version|e }} |
 {% endfor %}
-
-## Hash
-
-{# fix this #}
-The report signature is: a46d9d6e1fbd85b1023a95835a09f5f42491cf5a
-
-The signature can be verified using the Solar Forecast Arbiter [public key](solarforecastarbiter.org).

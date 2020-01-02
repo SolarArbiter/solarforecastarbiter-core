@@ -19,16 +19,16 @@ Steps:
             * versions
         * data: base64 encoded raw report
 
-      The metrics will aloso be JSON with keys like:
+      The metrics will also be JSON with keys like:
         * metrics
             * total
-            * filter A
+            * category A
                 * metric 1
                 * metric 2
-            * filter B
+            * category B
                 * metric 1
                 * metric 2
-            * filter C
+            * category C
                 * metric 1
                 * metric 2
        The JSON could be large and difficult for a person to read, but
@@ -85,13 +85,12 @@ def get_data_for_report(session, report):
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
-        observation_id = fxobs.observation.observation_id
         if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
                 forecast_id, report.start, report.end)
-        if fxobs.observation not in data:
-            data[fxobs.observation] = session.get_observation_values(
-                observation_id, report.start, report.end)
+        if fxobs.data_object not in data:
+            data[fxobs.data_object] = session.get_values(
+                fxobs.data_object, report.start, report.end)
     return data
 
 
@@ -156,6 +155,15 @@ def get_validation_issues():
     return test
 
 
+def _merge_quality_filters(filters):
+    """Merge any quality flag filters into one single QualityFlagFilter"""
+    combo = set()
+    for filter_ in filters:
+        if isinstance(filter_, datamodel.QualityFlagFilter):
+            combo |= set(filter_.quality_flags)
+    return datamodel.QualityFlagFilter(tuple(combo))
+
+
 def validate_resample_align(report, metadata, data):
     """
     Validate the data and resample.
@@ -177,8 +185,9 @@ def validate_resample_align(report, metadata, data):
     ----
     * Support different apply_validation fillin functions.
     """
+    qfilter = _merge_quality_filters(report.filters)
     data_validated = preprocessing.apply_validation(data,
-                                                    report.filters[0],
+                                                    qfilter,
                                                     preprocessing.exclude)
     processed_fxobs = [preprocessing.resample_and_align(
                             fxobs, data_validated, metadata.timezone)
@@ -189,7 +198,12 @@ def validate_resample_align(report, metadata, data):
 def infer_timezone(report_request):
     # maybe not ideal when comparing across sites. might need explicit
     # tz options ('infer' or spec IANA tz) in report interface.
-    return report_request.forecast_observations[0].observation.site.timezone
+    fxobs_0 = report_request.forecast_observations[0]
+    if isinstance(fxobs_0, datamodel.ForecastObservation):
+        timezone = fxobs_0.observation.site.timezone
+    else:
+        timezone = fxobs_0.aggregate.timezone
+    return timezone
 
 
 def create_raw_report_from_data(report, data):
@@ -207,6 +221,10 @@ def create_raw_report_from_data(report, data):
     Returns
     -------
     raw_report : datamodel.RawReport
+
+    Todo
+    ----
+    * add reference forecast
     """
     # call function: metrics.align_observations_forecasts
     # call function: metrics.calculate_many
@@ -222,11 +240,13 @@ def create_raw_report_from_data(report, data):
     processed_fxobs = validate_resample_align(report, metadata, data)
 
     # Calculate metrics
-    metrics_list = calculator.calculate_metrics_for_processed_pairs(
-        processed_fxobs)
+    metrics_list = calculator.calculate_metrics(processed_fxobs,
+                                                list(report.categories),
+                                                list(report.metrics))
 
     # can be ~50kb
-    report_template = template.template_report(report, metadata, metrics_list,
+    report_template = template.template_report(report, metadata,
+                                               metrics_list,
                                                processed_fxobs)
 
     raw_report = datamodel.RawReport(

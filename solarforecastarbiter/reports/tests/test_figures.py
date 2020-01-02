@@ -54,12 +54,6 @@ def test_construct_metrics_series(metrics, metrics_month):
     pdt.assert_series_equal(out, metrics_month)
 
 
-def test_construct_metric_series_total(metrics):
-    # does not work for total
-    with pytest.raises(AttributeError):
-        figures.construct_metrics_series(metrics, 'total')
-
-
 def test_construct_metrics_cds2(metrics, metrics_month):
     out = figures.construct_metrics_cds2(metrics_month, 'mae')
     expected = {

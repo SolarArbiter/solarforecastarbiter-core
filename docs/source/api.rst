@@ -289,6 +289,7 @@ Class for communicating with the Solar Forecast Arbiter API.
 
    io.api.APISession
    io.api.APISession.request
+   io.api.APISession.get_user_info
 
 Sites
 
@@ -357,6 +358,14 @@ Reports
    io.api.APISession.post_raw_report
    io.api.APISession.update_report_status
 
+Convenience method for unifying API for getting time series values
+for observations, forecasts, aggregates, and probabilistic forecasts:
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.get_values
+
 Utils
 -----
 
@@ -384,8 +393,11 @@ Entry points for calculating metrics for
 .. autosummary::
    :toctree: generated/
 
-   metrics.calculator.calculate_metrics_for_processed_pairs
    metrics.calculator.calculate_metrics
+   metrics.calculator.calculate_deterministic_metrics
+
+Preprocessing
+-------------
 
 Functions for preparing the timeseries data before calculating metrics:
 
@@ -396,6 +408,9 @@ Functions for preparing the timeseries data before calculating metrics:
    metrics.preprocessing.resample_and_align
    metrics.preprocessing.exclude
 
+Deterministic
+-------------
+
 Functions to compute forecast deterministic performance metrics:
 
 .. autosummary::
@@ -404,6 +419,8 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.mean_absolute
    metrics.deterministic.mean_bias
    metrics.deterministic.root_mean_square
+   metrics.deterministic.normalized_mean_absolute
+   metrics.deterministic.normalized_mean_bias
    metrics.deterministic.normalized_root_mean_square
    metrics.deterministic.centered_root_mean_square
    metrics.deterministic.mean_absolute_percentage
@@ -413,6 +430,9 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.kolmogorov_smirnov_integral
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
+
+Probabilistic
+-------------
 
 Functions to compute forecast probabilistic performance metrics:
 
@@ -426,6 +446,17 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.resolution
     metrics.probabilistic.uncertainty
     metrics.probabilistic.sharpness
+    metrics.probabilistic.continuous_ranked_probability_score
+
+Value
+-----
+
+Functions to compute forecast valuation metrics:
+
+.. autosummary::
+    :toctree: generated/
+
+    metrics.valuation.fixed_error_cost
 
 Reports
 =======

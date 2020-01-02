@@ -222,6 +222,7 @@ class APISession(requests.Session):
         """
         obs_dict = observation.to_dict()
         obs_dict.pop('observation_id')
+        obs_dict.pop('provider')
         site = obs_dict.pop('site')
         obs_dict['site_id'] = site['site_id']
         obs_json = json.dumps(obs_dict)
@@ -292,6 +293,7 @@ class APISession(requests.Session):
         """
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
+        fx_dict.pop('provider')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
         if site is None and agg is not None:
@@ -435,6 +437,7 @@ class APISession(requests.Session):
         """
         fx_dict = forecast.to_dict()
         fx_dict.pop('forecast_id')
+        fx_dict.pop('provider')
         site = fx_dict.pop('site')
         agg = fx_dict.pop('aggregate')
         if site is None and agg is not None:
@@ -639,10 +642,20 @@ class APISession(requests.Session):
         for key in ('name', 'report_id', 'status'):
             req_dict[key] = rep_dict.get(key, '')
         req_dict['metrics'] = tuple(req_dict['metrics'])
-        req_dict['forecast_observations'] = tuple([
-            datamodel.ForecastObservation(self.get_forecast(o[0]),
-                                          self.get_observation(o[1]))
-            for o in req_dict['object_pairs']])
+        pairs = []
+        for o in req_dict['object_pairs']:
+            fx = self.get_forecast(o['forecast'])
+            if 'observation' in o:
+                obs = self.get_observation(o['observation'])
+                pair = datamodel.ForecastObservation(fx, obs)
+            elif 'aggregate' in o:
+                agg = self.get_aggregate(o['aggregate'])
+                pair = datamodel.ForecastAggregate(fx, agg)
+            else:
+                raise ValueError('must provide observation or aggregate in all'
+                                 'object_pairs')
+            pairs.append(pair)
+        req_dict['forecast_observations'] = tuple(pairs)
         return datamodel.Report.from_dict(req_dict)
 
     def get_report(self, report_id):
@@ -706,15 +719,21 @@ class APISession(requests.Session):
         """
         report_dict = report.to_dict()
         report_dict.pop('report_id')
+        report_dict.pop('provider')
         name = report_dict.pop('name')
         for key in ('raw_report', '__version__', 'status'):
             del report_dict[key]
         report_dict['filters'] = []
         fxobs = report_dict.pop('forecast_observations')
-        report_dict['object_pairs'] = [
-            (_fo['forecast']['forecast_id'],
-             _fo['observation']['observation_id'])
-            for _fo in fxobs]
+        object_pairs = []
+        for _fo in fxobs:
+            d = {'forecast': _fo['forecast']['forecast_id']}
+            if 'aggregate' in _fo:
+                d['aggregate'] = _fo['aggregate']['aggregate_id']
+            else:
+                d['observation'] = _fo['observation']['observation_id']
+            object_pairs.append(d)
+        report_dict['object_pairs'] = object_pairs
         params = {'name': name,
                   'report_parameters': report_dict}
         req = self.post('/reports/', json=params,
@@ -749,8 +768,12 @@ class APISession(requests.Session):
             fx_post = self.post(
                 f'/reports/{report_id}/values',
                 json=fx_data, headers={'Content-Type': 'application/json'})
+            if isinstance(fxobs.original, datamodel.ForecastObservation):
+                obj_id = fxobs.original.observation.observation_id
+            else:
+                obj_id = fxobs.original.aggregate.aggregate_id
             obs_data = {
-                'object_id': fxobs.original.observation.observation_id,
+                'object_id': obj_id,
                 'processed_values': serialize_data(fxobs.observation_values)}
             obs_post = self.post(
                 f'/reports/{report_id}/values',
@@ -950,3 +973,58 @@ class APISession(requests.Session):
         out = json_payload_to_observation_df(req.json())
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
+
+    @ensure_timestamps('start', 'end')
+    def get_values(self, obj, start, end, interval_label=None):
+        """
+        Get time series values from start to end for object from the API
+
+        Parameters
+        ----------
+        obj : datamodel.Observation, datamodel.Aggregate, datamodel.Forecast, datamodel.ProbabilisticForecastConstantValues
+            Data model object for which to obtain time series data.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        interval_label : str or None
+            If beginning or ending, return only data that is
+            valid between start and end. If None, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.Series or pandas.DataFrame
+            With a datetime index. If DataFrame, (value, quality_flag)
+            columns
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """  # noqa: E501
+        # order avoids possible issues with inheritance
+        if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
+            f = self.get_probabilistic_forecast_constant_value_values
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.Forecast):
+            f = self.get_forecast_values
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.Aggregate):
+            f = self.get_aggregate_values
+            obj_id = obj.aggregate_id
+        elif isinstance(obj, datamodel.Observation):
+            f = self.get_observation_values
+            obj_id = obj.observation_id
+        return f(obj_id, start, end, interval_label=interval_label)
+
+    def get_user_info(self):
+        """
+        Get information about the current user from the API
+
+        Returns
+        -------
+        dict
+        """
+        req = self.get('/users/current')
+        return req.json()
