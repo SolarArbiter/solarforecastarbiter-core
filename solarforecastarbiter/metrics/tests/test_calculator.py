@@ -385,4 +385,3 @@ def test_interval_label(
                 ref_pair=proc_ref_obs,
                 normalizer=1.0
             )
-        return
