@@ -299,12 +299,14 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
-@pytest.mark.parametrize('categories,metrics', [
-    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
+@pytest.mark.parametrize('categories,metrics,interval_label', [
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS, "beginning"),
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS, "ending")
 ])
 def test_interval_label(
-    site_metadata, categories, metrics, create_processed_fxobs
+    site_metadata, categories, metrics, interval_label, create_processed_fxobs
 ):
+
     ts = pd.date_range(
         start="2019-07-01 00:00:00",
         end="2019-07-08 00:00:00",
@@ -348,7 +350,7 @@ def test_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(fx.index.freq),
-            interval_label="beginning",
+            interval_label=interval_label,
             issue_time_of_day=datetime.time(hour=5),
             lead_time_to_start=pd.Timedelta('1h'),
             run_length=pd.Timedelta('12h')
@@ -359,7 +361,7 @@ def test_interval_label(
             variable="ghi",
             interval_value_type="instantaneous",
             interval_length=pd.Timedelta(obs.index.freq),
-            interval_label="beginning",
+            interval_label=interval_label,
             uncertainty=1,
         )
     )
@@ -367,11 +369,23 @@ def test_interval_label(
     proc_fx_obs = create_processed_fxobs(fx_obs, fx, obs)
     proc_ref_obs = create_processed_fxobs(ref_obs, ref, obs)
 
-    with pytest.raises(ValueError):
-        calculator.calculate_metrics(
+    if proc_ref_obs.interval_label != proc_ref_obs.interval_label:
+        with pytest.raises(ValueError):
+            calculator.calculate_metrics(
+                [proc_fx_obs],
+                categories,
+                metrics,
+                ref_pair=proc_ref_obs,
+                normalizer=1.0
+            )
+        return
+    else:
+        all_result = calculator.calculate_metrics(
             [proc_fx_obs],
             categories,
             metrics,
             ref_pair=proc_ref_obs,
             normalizer=1.0
         )
+
+    assert isinstance(all_result, list)
