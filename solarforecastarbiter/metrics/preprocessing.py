@@ -1,10 +1,17 @@
 """
 Provides preprocessing steps to be performed on the timeseries data.
 """
+import logging
+
+
+import pandas as pd
 
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.validation import quality_mapping
+
+
+logger = logging.getLogger(__name__)
 
 
 def apply_validation(obs_df, qfilter, handle_func):
@@ -148,7 +155,7 @@ def _merge_quality_filters(filters):
 
 
 def process_forecast_observations(forecast_observations, filters, data,
-                                  timezone):
+                                  timezone, *, _logger=logger):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -179,28 +186,40 @@ def process_forecast_observations(forecast_observations, filters, data,
     processed_fxobs = []
     for fxobs in forecast_observations:
         if fxobs.data_object not in validated_observations:
-            obs_ser, counts = apply_validation(
-                data[fxobs.data_object],
-                qfilter,
-                exclude)
-            val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
-                                for k, v in counts.items())
-            validated_observations[fxobs.data_object] = (obs_ser, val_results)
+            try:
+                obs_ser, counts = apply_validation(
+                    data[fxobs.data_object],
+                    qfilter,
+                    exclude)
+            except Exception:
+                _logger.error(
+                    'Failed to validate data for %s', fxobs.data_object.name)
+                validated_observations[fxobs.data_object] = (pd.Series(), ())
+            else:
+                val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
+                                    for k, v in counts.items())
+                validated_observations[fxobs.data_object] = (
+                    obs_ser, val_results)
 
         obs_ser, val_results = validated_observations[fxobs.data_object]
         fx_ser = data[fxobs.forecast]
-        forecast_values, observation_values = resample_and_align(
-            fxobs, fx_ser, obs_ser, timezone)
-
-        processed = datamodel.ProcessedForecastObservation(
-            original=fxobs,
-            interval_value_type=fxobs.forecast.interval_value_type,
-            interval_length=fxobs.forecast.interval_length,
-            interval_label=fxobs.forecast.interval_label,
-            valid_point_count=len(forecast_values),
-            validation_results=val_results,
-            forecast_values=forecast_values,
-            observation_values=observation_values)
-
-        processed_fxobs.append(processed)
+        try:
+            forecast_values, observation_values = resample_and_align(
+                fxobs, fx_ser, obs_ser, timezone)
+        except Exception as e:
+            _logger.error('Failed to resample and align data for pair (%s, %s): %s',
+                          fxobs.forecast.name, fxobs.data_object.name, e)
+        else:
+            _logger.info('Processed data successfully for pair (%s, %s)',
+                         fxobs.forecast.name, fxobs.data_object.name)
+            processed = datamodel.ProcessedForecastObservation(
+                original=fxobs,
+                interval_value_type=fxobs.forecast.interval_value_type,
+                interval_length=fxobs.forecast.interval_length,
+                interval_label=fxobs.forecast.interval_label,
+                valid_point_count=len(forecast_values),
+                validation_results=val_results,
+                forecast_values=forecast_values,
+                observation_values=observation_values)
+            processed_fxobs.append(processed)
     return processed_fxobs

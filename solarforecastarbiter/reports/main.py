@@ -48,6 +48,7 @@ Considerations:
   the API will need to call for the aligned data separately
   to be able to create time series, scatter, etc. plots.
 """
+import logging
 import pkg_resources
 import platform
 
@@ -148,6 +149,13 @@ def infer_timezone(report_request):
     return timezone
 
 
+class ListHandler(logging.Handler):
+    records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
 def create_raw_report_from_data(report, data):
     """
     Create a raw report using data and report metadata.
@@ -168,11 +176,19 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
+    message_logger = logging.getLogger('report_generation')
+    message_logger.propagate = False
+    handler = ListHandler()
+    message_logger.setLevel(logging.INFO)
+    handler.setLevel(logging.INFO)
+    message_logger.addHandler(handler)
+
     metadata = create_metadata(report)
 
     # Validate and resample
     processed_fxobs = preprocessing.process_forecast_observations(
-        report.forecast_observations, report.filters, data, metadata.timezone)
+        report.forecast_observations, report.filters, data, metadata.timezone,
+        _logger=message_logger)
 
     # Calculate metrics
     metrics_list = calculator.calculate_metrics(processed_fxobs,
