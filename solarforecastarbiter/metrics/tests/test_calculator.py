@@ -367,21 +367,11 @@ def test_interval_label(
     proc_fx_obs = create_processed_fxobs(fx_obs, fx, obs)
     proc_ref_obs = create_processed_fxobs(ref_obs, ref, obs)
 
-    if any(m in deterministic._REQ_REF_FX for m in metrics):
-        with pytest.raises(ValueError):
-            calculator.calculate_metrics(
-                [proc_fx_obs],
-                categories,
-                metrics,
-                ref_pair=proc_ref_obs,
-                normalizer=1.0
-            )
-        return
-
-    calculator.calculate_metrics(
-        [proc_fx_obs],
-        categories,
-        metrics,
-        ref_pair=None,
-        normalizer=1.0
-    )
+    with pytest.raises(ValueError):
+        calculator.calculate_metrics(
+            [proc_fx_obs],
+            categories,
+            metrics,
+            ref_pair=proc_ref_obs,
+            normalizer=1.0
+        )
