@@ -1009,7 +1009,7 @@ class ValueFilter(BaseFilter):
     value_range: Tuple[float, float]
 
 
-def __check_metrics__():
+def __check_metrics__(fx, metrics):
     """Validate metrics selection.
 
     Check that the selected metrics are valid for the given scenario (e.g.
@@ -1017,6 +1017,8 @@ def __check_metrics__():
 
     Parameters
     ----------
+    fx : Forecast, ProbabilisticForecast
+    metrics :
 
     Returns
     -------
@@ -1027,18 +1029,21 @@ def __check_metrics__():
     TypeError
         If the selected metrics are not valid for the given forecast type.
 
-    """
-    # maybe belongs in the metrics package
-    # deterministic forecasts --> deterministic metrics
-    # probabilistic forecasts --> probabilistic metrics
-    # event forecasts --> event metrics
+    TODO
+    ----
+    * validate event forecast metrics
 
-    if isinstance() and not isinstance():      # deterministic
-        raise TypeError("Invalid")
-    elif isinstance() and not isinstance():    # probilistic
-        raise TypeError("")
-    elif isinstance() and not isinstance():    # event
-        raise TypeError("")
+    """
+
+    if isinstance(fx, Forecast) and not set(metrics) <= \
+            ALLOWED_PROBABILISTIC_METRICS.keys():
+        raise TypeError("Invalid metric(s) for deterministic forecasts.")
+    elif isinstance(fx, ProbabilisticForecast) and not set(metrics) <= \
+            ALLOWED_PROBABILISTIC_METRICS.keys():
+        raise TypeError("Invalid metric(s) for probabilistic forecasts.")
+    #elif isinstance(fx, EventForecast) and not set(metrics) <= \
+    #        ALLOWED_EVENT_METRICS.keys():
+    #    raise TypeError("Invalid metric(s) for event forecasts.")
     else:
         pass
 

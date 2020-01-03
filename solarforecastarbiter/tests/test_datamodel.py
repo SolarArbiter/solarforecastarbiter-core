@@ -396,3 +396,7 @@ def test___check_categories__():
     datamodel.__check_categories__(['total', 'weekday'])
     with pytest.raises(ValueError):
         datamodel.__check_categories__(['bad', 'very bad'])
+
+def test___check_metrics__():
+    with pytest.raises(TypeError):
+        datamodel.__check__metrics(fx, metrics)
