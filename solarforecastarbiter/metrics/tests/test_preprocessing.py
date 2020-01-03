@@ -1,5 +1,5 @@
 import time
-import datetime
+import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
@@ -50,6 +50,8 @@ CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
 OK = int(0b10)  # OK version 0 (2)
 
 
+# TODO: test with different interval label between forecast and obs
+# TODO: test with aggregate
 @pytest.mark.parametrize('interval_label', ['beginning', 'instant', 'ending'])
 @pytest.mark.parametrize('fx_series,obs_series,expected_dt', [
     (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS),
@@ -76,7 +78,7 @@ def test_resample_and_align(site_metadata, interval_label,
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta(fx_series.index.freq),
         interval_label=interval_label,
-        issue_time_of_day=datetime.time(hour=5),
+        issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h')
     )
@@ -86,99 +88,68 @@ def test_resample_and_align(site_metadata, interval_label,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    data = {
-        fx_obs.forecast: fx_series,
-        fx_obs.observation: obs_series
-    }
-    result = preprocessing.resample_and_align(fx_obs, data, local_tz)
+    forecast_values, observation_values = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, local_tz)
 
     # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(result.forecast_values.index,
-                                  result.observation_values.index,
+    pd.testing.assert_index_equal(forecast_values.index,
+                                  observation_values.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(result.observation_values.index,
+    pd.testing.assert_index_equal(observation_values.index,
                                   expected_dt,
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize('fx0', [
-    pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
-    THREE_HOUR_SERIES
-])
-@pytest.mark.parametrize('fx1', [
-    pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
-    THREE_HOUR_SERIES
-])
-@pytest.mark.parametrize('obs', [
-    pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                 columns=['value', 'quality_flag']),
-    pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [OK, OK, OK]},
-                 index=THREE_HOURS),
-    pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                 columns=['value', 'quality_flag']),
-    pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [NT_UF, NT_UF, NT_UF]},
-                 index=THREE_HOURS),
-    pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                 columns=['value', 'quality_flag']),
-    pd.DataFrame({'value': [1., 2., 3.],
-                  'quality_flag': [CSE_NT, CSE, OK]},
-                 index=THREE_HOURS),
+@pytest.mark.parametrize('obs,somecounts', [
+    (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
+                  columns=['value', 'quality_flag']),
+     {'USER FLAGGED': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [OK, OK, OK]},
+                  index=THREE_HOURS),
+     {'USER FLAGGED': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [NT_UF, NT_UF, NT_UF]},
+                  index=THREE_HOURS),
+     {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [CSE_NT, CSE, OK]},
+                  index=THREE_HOURS),
+     {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
 ])
 @pytest.mark.parametrize('handle_func', [preprocessing.exclude])
-def test_apply_validation(report_objects, fx0, fx1, obs, handle_func):
-    report, obs_model, fx0_model, fx1_model, *_ = report_objects
-    data = {
-        obs_model: obs,
-        fx0_model: fx0,
-        fx1_model: fx1
-    }
-    result = preprocessing.apply_validation(data,
-                                            report.filters[0],
-                                            handle_func)
+@pytest.mark.parametrize('filter_', [
+    datamodel.QualityFlagFilter(
+        (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES",
+            "INCONSISTENT IRRADIANCE COMPONENTS",
+        )
+    ),
+    pytest.param(
+        datamodel.TimeOfDayFilter((dt.time(12, 0),
+                                   dt.time(14, 0))),
+        marks=pytest.mark.xfail(strict=True, type=TypeError)
+    )
+])
+def test_apply_validation(obs, handle_func, filter_, somecounts):
+    result, counts = preprocessing.apply_validation(obs, filter_,
+                                                    handle_func)
 
     # Check length and timestamps of observation
     assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
-        len(result[obs_model])
-    if not result[obs_model].empty:
+        len(result)
+    if not result.empty:
         assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-            result[obs_model].index)
-    if not fx0.empty:
-        assert result[fx0_model].equals(fx0)
-    if not fx1.empty:
-        assert result[fx1_model].equals(fx1)
-
-
-def test_apply_validation_errors(report_objects):
-    report, obs_model, fx0_model, fx1_model, *_ = report_objects
-    obs = pd.DataFrame({'value': [1., 2., 3.],
-                        'quality_flag': [OK, OK, OK]},
-                       index=THREE_HOURS)
-    fx0 = THREE_HOUR_SERIES
-    fx1 = THREE_HOUR_SERIES
-    data_ok = {
-        obs_model: obs,
-        fx0_model: fx0,
-        fx1_model: fx1
-    }
-    # Pass a none QualityFlagFilter
-    with pytest.raises(TypeError):
-        preprocessing.apply_validation(data_ok,
-                                       THREE_HOUR_SERIES,
-                                       preprocessing.exclude)
-    data_bad = {
-        obs_model: obs,
-        'NotAForecast': fx0,
-        fx1_model: fx1
-    }
-    # Pass a none Forecast
-    with pytest.raises(TypeError):
-        preprocessing.apply_validation(data_bad,
-                                       report.filters[0],
-                                       preprocessing.exclude)
+            result.index)
+    assert set(filter_.quality_flags) == set(counts.keys())
+    for k, v in somecounts.items():
+        assert counts.get(k, v) == v
 
 
 @pytest.mark.parametrize('values,qflags,expectation', [
@@ -208,3 +179,35 @@ def test_apply_validation_errors(report_objects):
 def test_exclude(values, qflags, expectation):
     result = preprocessing.exclude(values, qflags)
     pd.testing.assert_series_equal(result, expectation, check_names=False)
+
+
+def test_merge_quality_filters():
+    filters = [
+        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
+                                     'CLIPPED VALUES')),
+        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
+        datamodel.QualityFlagFilter(())
+    ]
+    out = preprocessing._merge_quality_filters(filters)
+    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
+                                      'CLIPPED VALUES', 'SHADED'}
+
+
+def test_process_forecast_observations(report_objects):
+    # TODO: add thorough tests here
+    pass
+
+
+def nooptest_validate_resample_align(mock_data, more_report_objects):
+    report, observation, forecast_0, forecast_1 = more_report_objects
+    meta = main.create_metadata(report)
+    session = api.APISession('nope')
+    data = main.get_data_for_report(session, report)
+    processed_fxobs_list = main.validate_resample_align(report, meta, data)
+    assert len(processed_fxobs_list) == len(report.forecast_observations)
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)

@@ -77,7 +77,7 @@ def get_data_for_report(session, report):
     Returns
     -------
     data : dict
-        Keys are Forecast and Observation uuids, values are
+        Keys are Forecast and Observation objects, values are
         the corresponding data.
     """
     data = {}
@@ -103,13 +103,11 @@ def create_metadata(report_request):
     metadata: solarforecastarbiter.datamodel.ReportMetadata
     """
     versions = get_versions()
-    validation_issues = get_validation_issues()
     timezone = infer_timezone(report_request)
     metadata = datamodel.ReportMetadata(
         name=report_request.name, start=report_request.start,
         end=report_request.end, now=pd.Timestamp.utcnow(),
-        timezone=timezone, versions=versions,
-        validation_issues=validation_issues)
+        timezone=timezone, versions=versions)
     return metadata
 
 
@@ -137,62 +135,6 @@ def get_versions():
     versions['python'] = platform.python_version()
     versions['platform'] = platform.platform()
     return versions
-
-
-def get_validation_issues():
-    test = {
-        'USER FLAGGED': 0, 'NIGHTTIME': 39855,
-        # 'CLOUDY': 0, 'SHADED': 0,
-        # 'UNEVEN FREQUENCY': 4,
-        'LIMITS EXCEEDED': 318,
-        # 'CLEARSKY EXCEEDED': 9548,
-        'STALE VALUES': 12104,
-        'INTERPOLATED VALUES': 5598,
-        # 'CLIPPED VALUES': 0,
-        'INCONSISTENT IRRADIANCE COMPONENTS': 0,
-        # 'NOT VALIDATED': 0
-    }
-    return test
-
-
-def _merge_quality_filters(filters):
-    """Merge any quality flag filters into one single QualityFlagFilter"""
-    combo = set()
-    for filter_ in filters:
-        if isinstance(filter_, datamodel.QualityFlagFilter):
-            combo |= set(filter_.quality_flags)
-    return datamodel.QualityFlagFilter(tuple(combo))
-
-
-def validate_resample_align(report, metadata, data):
-    """
-    Validate the data and resample.
-
-    Parameters
-    ----------
-    report : solarforecastarbiter.datamodel.Report
-    metadata : solarforecastarbiter.datamodel.ReportMetadata
-    data : dict
-        Keys are Forecast and Observation uuids, values are
-        the corresponding data.
-
-    Returns
-    -------
-    list
-        List of solarforecastarbiter.datamodel.ProcessedForecastObservation
-
-    Todo
-    ----
-    * Support different apply_validation fillin functions.
-    """
-    qfilter = _merge_quality_filters(report.filters)
-    data_validated = preprocessing.apply_validation(data,
-                                                    qfilter,
-                                                    preprocessing.exclude)
-    processed_fxobs = [preprocessing.resample_and_align(
-                       fxobs, data_validated, metadata.timezone)
-                       for fxobs in report.forecast_observations]
-    return processed_fxobs
 
 
 def infer_timezone(report_request):
@@ -226,18 +168,11 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
-    # call function: metrics.align_observations_forecasts
-    # call function: metrics.calculate_many
-    # call function: reports.metrics_to_JSON
-    # call function: add some metadata to JSON
-    # call function: configure tables and figures, add to JSON
-    # call function: pre-render report in md format
-    # return json, prereport
-
     metadata = create_metadata(report)
 
     # Validate and resample
-    processed_fxobs = validate_resample_align(report, metadata, data)
+    processed_fxobs = preprocessing.process_forecast_observations(
+        report.forecast_observations, report.filters, data, metadata.timezone)
 
     # Calculate metrics
     metrics_list = calculator.calculate_metrics(processed_fxobs,

@@ -116,18 +116,6 @@ def test_all_categories_render(mock_data, report_objects):
         f.write(full_report)
 
 
-def test_merge_quality_filters():
-    filters = [
-        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
-                                     'CLIPPED VALUES')),
-        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
-        datamodel.QualityFlagFilter(())
-    ]
-    out = main._merge_quality_filters(filters)
-    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
-                                      'CLIPPED VALUES', 'SHADED'}
-
-
 @pytest.fixture(params=[0, 1, 2])
 def more_report_objects(report_objects, request):
     report, observation, forecast_0, forecast_1, *_ = report_objects
@@ -141,18 +129,3 @@ def more_report_objects(report_objects, request):
         new_filters = (datamodel.QualityFlagFilter(()),)
         return (report.replace(filters=new_filters), observation, forecast_0,
                 forecast_1)
-
-
-def test_validate_resample_align(mock_data, more_report_objects):
-    report, observation, forecast_0, forecast_1 = more_report_objects
-    meta = main.create_metadata(report)
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, report)
-    processed_fxobs_list = main.validate_resample_align(report, meta, data)
-    assert len(processed_fxobs_list) == len(report.forecast_observations)
-    for proc_fxobs in processed_fxobs_list:
-        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
-        assert isinstance(proc_fxobs.forecast_values, pd.Series)
-        assert isinstance(proc_fxobs.observation_values, pd.Series)
-        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
-                                      proc_fxobs.observation_values.index)

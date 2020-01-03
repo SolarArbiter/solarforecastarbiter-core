@@ -1094,11 +1094,11 @@ class ProcessedForecastObservation(BaseModel):
     interval_length: pd.Timedelta
     interval_label: str
     valid_point_count: int
-    validation_results: Tuple[ValidationResult, ...]
     # some structure for reporting issues w/ nans etc
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
     reference_forecast_values: Union[pd.Series, str, None] = None
+    validation_results: Tuple[ValidationResult, ...] = ()
     # This may need to be a series, e.g. normalize by the average
     # observed value per day. Hence, repeat here instead of
     # only in original

@@ -407,6 +407,7 @@ Functions for preparing the timeseries data before calculating metrics:
    metrics.preprocessing.apply_validation
    metrics.preprocessing.resample_and_align
    metrics.preprocessing.exclude
+   metrics.preprocessing.process_forecast_observations
 
 Deterministic
 -------------
