@@ -380,9 +380,9 @@ def test_interval_label(
         return
 
         calculator.calculate_metrics(
-                [proc_fx_obs],
-                categories,
-                metrics,
-                ref_pair=None,
-                normalizer=1.0
-            )
+            [proc_fx_obs],
+            categories,
+            metrics,
+            ref_pair=None,
+            normalizer=1.0
+        )
