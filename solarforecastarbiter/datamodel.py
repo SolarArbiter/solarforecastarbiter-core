@@ -1073,7 +1073,12 @@ class ReportMetadata(BaseModel):
     now: pd.Timestamp
     timezone: str
     versions: dict
-    validation_issues: dict
+
+
+@dataclass(frozen=True)
+class ValidationResult(BaseModel):
+    flag: str
+    count: int
 
 
 # need apply filtering + resampling to each forecast obs pair
@@ -1088,6 +1093,9 @@ class ProcessedForecastObservation(BaseModel):
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
+    valid_point_count: int
+    validation_results: Tuple[ValidationResult, ...]
+    # some structure for reporting issues w/ nans etc
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
     reference_forecast_values: Union[pd.Series, str, None] = None
@@ -1099,9 +1107,6 @@ class ProcessedForecastObservation(BaseModel):
     # This is defined along with each ForecastObservation, but
     # in the future this might also be a series
     cost_per_unit_error: float = 0.0
-    # really more of a dict probably so would need separate
-    # model
-    validation_results: tuple
 
 
 @dataclass(frozen=True)
