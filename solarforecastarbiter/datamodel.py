@@ -1010,11 +1010,37 @@ class ValueFilter(BaseFilter):
 
 
 def __check_metrics__():
+    """Validate metrics selection.
+
+    Check that the selected metrics are valid for the given scenario (e.g.
+    if deterministic forecasts, then deterministic metrics).
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    TypeError
+        If the selected metrics are not valid for the given forecast type.
+
+    """
     # maybe belongs in the metrics package
     # deterministic forecasts --> deterministic metrics
     # probabilistic forecasts --> probabilistic metrics
     # event forecasts --> event metrics
-    pass
+
+    if isinstance() and not isinstance():      # deterministic
+        raise TypeError("Invalid")
+    elif isinstance() and not isinstance():    # probilistic
+        raise TypeError("")
+    elif isinstance() and not isinstance():    # event
+        raise TypeError("")
+    else:
+        pass
 
 
 def __check_categories__(categories):
