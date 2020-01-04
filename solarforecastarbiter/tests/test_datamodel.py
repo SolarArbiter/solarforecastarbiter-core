@@ -400,7 +400,8 @@ def test___check_categories__():
 
 @pytest.mark.parametrize('metrics', [
     (datamodel.ALLOWED_DETERMINISTIC_METRICS),
-    pytest.param(datamodel.ALLOWED_PROBABILISTIC_METRICS, marks=pytest.mark.xfail),
+    pytest.param(datamodel.ALLOWED_PROBABILISTIC_METRICS,
+                 marks=pytest.mark.xfail),
 ])
 def test___check_metrics__(metrics, single_forecast):
     datamodel.__check_metrics__(single_forecast, metrics)
