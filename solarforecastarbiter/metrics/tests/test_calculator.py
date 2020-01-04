@@ -302,8 +302,10 @@ def test_apply_deterministic_bad_metric_func():
 @pytest.mark.parametrize('interval_label_fx, interval_label_ref', [
     ("beginning", "beginning"),
     ("ending", "ending"),
-    pytest.param("beginning", "ending", marks=pytest.mark.xfail),
-    pytest.param("ending", "beginning", marks=pytest.mark.xfail),
+    pytest.param("beginning", "ending",
+                 marks=pytest.mark.xfail(raises=ValueError)),
+    pytest.param("ending", "beginning",
+                 marks=pytest.mark.xfail(raises=ValueError)),
 ])
 def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
                         create_processed_fxobs, many_forecast_observation):
