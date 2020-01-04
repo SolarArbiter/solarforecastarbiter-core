@@ -15,12 +15,13 @@ LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 @pytest.fixture()
 def create_processed_fxobs(create_datetime_index):
-    def _create_processed_fxobs(fxobs, fx_values, obs_values):
+    def _create_processed_fxobs(fxobs, fx_values, obs_values,
+                                interval_label="beginning"):
         return datamodel.ProcessedForecastObservation(
             fxobs,
             fxobs.forecast.interval_value_type,
             fxobs.forecast.interval_length,
-            fxobs.forecast.interval_label,
+            interval_label,
             forecast_values=pd.Series(
                 fx_values, index=create_datetime_index(len(fx_values))),
             observation_values=pd.Series(
@@ -299,93 +300,43 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
-@pytest.mark.parametrize('categories,metrics,interval_label', [
-    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS, "beginning"),
-    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS, "ending")
+@pytest.mark.parametrize('interval_label_fx, interval_label_ref', [
+    ("beginning", "beginning"),
+    ("ending", "ending"),
+    pytest.param("beginning", "ending", marks=pytest.mark.xfail),
+    pytest.param("ending", "beginning", marks=pytest.mark.xfail),
 ])
-def test_interval_label(
-    site_metadata, categories, metrics, interval_label, create_processed_fxobs
-):
+def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
+                        create_processed_fxobs, many_forecast_observation):
 
-    ts = pd.date_range(
-        start="2019-07-01 00:00:00",
-        end="2019-07-08 00:00:00",
-        freq="1h",
-        tz="MST",
-        name="timestamp"
-    )
-    fx = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
-    obs = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
-    ref = pd.Series(data=np.random.rand(len(ts)), index=ts, name="value")
+    categories = LIST_OF_CATEGORIES
+    metrics = DETERMINISTIC_METRICS
 
-    # `interval_label == beginning`
-    fx_obs = datamodel.ForecastObservation(
-        forecast=datamodel.Forecast(
-            site=site_metadata,
-            name="dummy fx",
-            variable="ghi",
-            interval_value_type="instantaneous",
-            interval_length=pd.Timedelta(fx.index.freq),
-            interval_label="ending",
-            issue_time_of_day=datetime.time(hour=5),
-            lead_time_to_start=pd.Timedelta('1h'),
-            run_length=pd.Timedelta('12h')
-        ),
-        observation=datamodel.Observation(
-            site=site_metadata,
-            name="dummy obs",
-            variable="ghi",
-            interval_value_type="instantaneous",
-            interval_length=pd.Timedelta(obs.index.freq),
-            interval_label="ending",
-            uncertainty=1,
-        )
-    )
-
-    # `interval_label == ending`
-    ref_obs = datamodel.ForecastObservation(
-        forecast=datamodel.Forecast(
-            site=site_metadata,
-            name="dummy fx",
-            variable="ghi",
-            interval_value_type="instantaneous",
-            interval_length=pd.Timedelta(fx.index.freq),
-            interval_label=interval_label,
-            issue_time_of_day=datetime.time(hour=5),
-            lead_time_to_start=pd.Timedelta('1h'),
-            run_length=pd.Timedelta('12h')
-        ),
-        observation=datamodel.Observation(
-            site=site_metadata,
-            name="dummy obs",
-            variable="ghi",
-            interval_value_type="instantaneous",
-            interval_length=pd.Timedelta(obs.index.freq),
-            interval_label=interval_label,
-            uncertainty=1,
-        )
-    )
-
-    proc_fx_obs = create_processed_fxobs(fx_obs, fx, obs)
-    proc_ref_obs = create_processed_fxobs(ref_obs, ref, obs)
-
-    if proc_ref_obs.interval_label != proc_ref_obs.interval_label:
-        with pytest.raises(ValueError):
-            calculator.calculate_metrics(
-                [proc_fx_obs],
-                categories,
-                metrics,
-                ref_pair=proc_ref_obs,
-                normalizer=1.0
+    proc_fx_obs = []
+    for fx_obs in many_forecast_observation:
+        proc_fx_obs.append(
+            create_processed_fxobs(
+                fx_obs,
+                np.random.randn(10) + 10,
+                np.random.randn(10) + 10,
+                interval_label=interval_label_fx,
             )
-        return
-    else:
-        all_result = calculator.calculate_metrics(
-            [proc_fx_obs],
-            categories,
-            metrics,
-            ref_pair=proc_ref_obs,
-            normalizer=1.0
         )
+
+    proc_ref_obs = create_processed_fxobs(
+        many_forecast_observation[0],
+        np.random.randn(10) + 10,
+        np.random.randn(10) + 10,
+        interval_label=interval_label_ref,
+    )
+
+    all_result = calculator.calculate_metrics(
+        proc_fx_obs,
+        categories,
+        metrics,
+        ref_pair=proc_ref_obs,
+        normalizer=1.0
+    )
 
     assert isinstance(all_result, list)
+    assert len(all_result) == len(proc_fx_obs)
