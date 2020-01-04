@@ -1017,8 +1017,8 @@ def __check_metrics__(fx, metrics):
 
     Parameters
     ----------
-    fx : Forecast, ProbabilisticForecast
-        Forecast.
+    fx : Forecast.
+        Forecast to be evaluated by metrics.
     metrics : Tuple of str
         Metrics to be computed in the report.
 
@@ -1033,6 +1033,7 @@ def __check_metrics__(fx, metrics):
 
     TODO
     ----
+    * validate probabilistic forecast metrics
     * validate event forecast metrics
 
     """
@@ -1040,9 +1041,6 @@ def __check_metrics__(fx, metrics):
     if isinstance(fx, Forecast) and not set(metrics) <= \
             ALLOWED_DETERMINISTIC_METRICS.keys():
         raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
-    elif isinstance(fx, ProbabilisticForecast) and not set(metrics) <= \
-            ALLOWED_PROBABILISTIC_METRICS.keys():
-        raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS")
     else:
         pass
 
