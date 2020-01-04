@@ -1018,7 +1018,9 @@ def __check_metrics__(fx, metrics):
     Parameters
     ----------
     fx : Forecast, ProbabilisticForecast
-    metrics :
+        Forecast.
+    metrics : Tuple of str
+        Metrics to be computed in the report.
 
     Returns
     -------
@@ -1036,14 +1038,14 @@ def __check_metrics__(fx, metrics):
     """
 
     if isinstance(fx, Forecast) and not set(metrics) <= \
-            ALLOWED_PROBABILISTIC_METRICS.keys():
-        raise TypeError("Invalid metric(s) for deterministic forecasts.")
+            ALLOWED_DETERMINISTIC_METRICS.keys():
+        raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
     elif isinstance(fx, ProbabilisticForecast) and not set(metrics) <= \
             ALLOWED_PROBABILISTIC_METRICS.keys():
-        raise TypeError("Invalid metric(s) for probabilistic forecasts.")
+        raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS")
     #elif isinstance(fx, EventForecast) and not set(metrics) <= \
     #        ALLOWED_EVENT_METRICS.keys():
-    #    raise TypeError("Invalid metric(s) for event forecasts.")
+    #    raise ValueError("Metrics must be in ALLOWED_EVENT_METRICS")
     else:
         pass
 
@@ -1155,6 +1157,9 @@ class Report(BaseModel):
         __check_units__(*itertools.chain.from_iterable(
             ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
-        __check_metrics__()
+        for k in self.forecast_observations:
+            __check_metrics__(k.forecast, self.metrics)
+        #__check_metrics__(*itertools.chain.from_iterable(
+        #    ((k.forecast, self.metrics) for k in self.forecast_observations)))
         # ensure that categories are valid
         __check_categories__(self.categories)
