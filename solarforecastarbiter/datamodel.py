@@ -1043,9 +1043,6 @@ def __check_metrics__(fx, metrics):
     elif isinstance(fx, ProbabilisticForecast) and not set(metrics) <= \
             ALLOWED_PROBABILISTIC_METRICS.keys():
         raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS")
-    #elif isinstance(fx, EventForecast) and not set(metrics) <= \
-    #        ALLOWED_EVENT_METRICS.keys():
-    #    raise ValueError("Metrics must be in ALLOWED_EVENT_METRICS")
     else:
         pass
 
@@ -1159,7 +1156,5 @@ class Report(BaseModel):
         # ensure the metrics can be applied to the forecasts and observations
         for k in self.forecast_observations:
             __check_metrics__(k.forecast, self.metrics)
-        #__check_metrics__(*itertools.chain.from_iterable(
-        #    ((k.forecast, self.metrics) for k in self.forecast_observations)))
         # ensure that categories are valid
         __check_categories__(self.categories)
