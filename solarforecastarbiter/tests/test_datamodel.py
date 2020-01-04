@@ -397,6 +397,7 @@ def test___check_categories__():
     with pytest.raises(ValueError):
         datamodel.__check_categories__(['bad', 'very bad'])
 
+
 @pytest.mark.parametrize('metrics', [
     (datamodel.ALLOWED_DETERMINISTIC_METRICS),
     pytest.param(datamodel.ALLOWED_PROBABILISTIC_METRICS, marks=pytest.mark.xfail),
