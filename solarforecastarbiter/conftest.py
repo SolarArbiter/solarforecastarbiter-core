@@ -1280,7 +1280,8 @@ def raw_report(report_objects):
     )
 
     def gen(with_series):
-        ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
+        ser = pd.Series(name='value', index=pd.DatetimeIndex(
+            [], tz='UTC', name='timestamp'))
         fxobs0 = datamodel.ProcessedForecastObservation(
             datamodel.ForecastObservation(fx0, obs),
             fx0.interval_value_type,
@@ -1308,8 +1309,11 @@ def raw_report(report_objects):
             forecast_values=ser if with_series else fxagg.forecast_id,
             observation_values=ser if with_series else agg.aggregate_id
         )
-        raw = datamodel.RawReport(meta, 'template', {},
-                                  (fxobs0, fxobs1, fxagg_))
+        raw = datamodel.RawReport(
+            meta,
+            datamodel.RawReportPlots('1.4.0', 'script', ()),
+            (),
+            (fxobs0, fxobs1, fxagg_))
         return raw
     return gen
 

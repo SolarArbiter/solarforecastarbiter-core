@@ -162,13 +162,17 @@ def test_serialize_timeseries(ser):
 
 @pytest.mark.parametrize('inp,exp', [
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
-     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+     pd.Series([], name='value', index=pd.DatetimeIndex(
+         [], tz='UTC', name='timestamp'))),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [], "other_stuff": {}}',  # NOQA
-     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
-    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "more": [], "data": []}',  # NOQA
-     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+     pd.Series([], name='value', index=pd.DatetimeIndex(
+         [], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "alue", "index": "timestamp", "dtype": "float64"}, "more": [], "data": []}',  # NOQA
+     pd.Series([], name='alue', index=pd.DatetimeIndex(
+         [], tz='UTC', name='timestamp'))),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "more": [], "data": [], "other": []}',  # NOQA
-     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+     pd.Series([], name='value', index=pd.DatetimeIndex(
+         [], tz='UTC', name='timestamp'))),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00Z", "value": 1.0}], "other_stuff": {}}',  # NOQA
      pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
                                              tz='UTC', name='timestamp'),

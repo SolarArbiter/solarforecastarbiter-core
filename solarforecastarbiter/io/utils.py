@@ -12,9 +12,6 @@ import re
 import pandas as pd
 
 
-from solarforecastarbiter import datamodel
-
-
 def _dataframe_to_json(payload_df):
     payload_df.index.name = 'timestamp'
     json_vals = payload_df.tz_convert("UTC").reset_index().to_json(
@@ -342,7 +339,7 @@ def deserialize_timeseries(data):
     df = pd.read_json(data_str.group(0), orient=schema['orient'],
                       convert_dates=True)
     if df.empty:
-        return pd.Series([], index=pd.DatetimeIndex(
+        return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
             [], tz='UTC', name='timestamp'))
     ser = df.set_index(schema['index'])[schema['column']].astype(
         schema['dtype'])
