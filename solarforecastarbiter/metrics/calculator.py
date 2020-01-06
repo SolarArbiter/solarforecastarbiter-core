@@ -41,8 +41,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
     Returns
     -------
     list
-        List of dict with the metric results and a key with original forecast
-        name for identification.
+        List of solarforecastarbiter.datamodel.MetricResult
 
     Todo
     ----
@@ -106,16 +105,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
     Returns
     -------
-    dict:
+    solarforecastarbiter.datamodel.MetricResult
         Contains all the computed metrics by categories.
-        Structure is:
-
-          * dictionary of forecast 'name' and category types as tuple
-            (e.g., ('Total'), ('Month of the year') )
-          * dictionary with key of metric type
-            (e.g., 'mae', 'rmse')
-          * values of pandas.Series with Index of category values
-            (e.g., pandas.Series([1, 2], index='Aug','Sep'])
 
     Raises
     ------
@@ -127,8 +118,12 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     out = {
         'name': processed_fx_obs.original.forecast.name,
         'forecast_id': processed_fx_obs.original.forecast.forecast_id,
-        'observation_id': processed_fx_obs.original.observation.observation_id, # aggregate?
     }
+
+    try:
+        out['observation_id'] = processed_fx_obs.original.observation.observation_id  # NOQA
+    except AttributeError:
+        out['aggregate_id'] = processed_fx_obs.original.aggregate.aggregate_id
 
     fx = processed_fx_obs.forecast_values
     obs = processed_fx_obs.observation_values

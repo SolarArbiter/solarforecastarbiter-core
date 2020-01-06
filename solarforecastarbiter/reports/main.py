@@ -190,7 +190,7 @@ def create_raw_report_from_data(report, data):
         report.forecast_observations, report.filters, data, metadata.timezone,
         _logger=message_logger)
 
-    # Calculate metrics
+    # Calculate metrics, list of MetricResult
     metrics_list = calculator.calculate_metrics(processed_fxobs,
                                                 list(report.categories),
                                                 list(report.metrics))

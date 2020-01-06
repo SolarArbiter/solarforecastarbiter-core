@@ -1121,9 +1121,20 @@ class MetricValue(BaseModel):
 class MetricResult(BaseModel):
     name: str
     forecast_id: str
-    observation_id: str
     values: Tuple[MetricValue, ...]
+    observation_id: Union[str, None] = None
+    aggregate_id: Union[str, None] = None
 
+    def __post_init__(self):
+        if (
+                (self.observation_id is None and self.aggregate_id is None)
+                or (
+                    self.observation_id is not None and
+                    self.aggregate_id is not None
+                )
+        ):
+            raise ValueError(
+                'One of observation_id OR aggregate_id must be set')
 
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):

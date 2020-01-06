@@ -15,7 +15,6 @@ from solarforecastarbiter.io.utils import (
     forecast_object_to_json,
     adjust_timeseries_for_interval_label,
     serialize_timeseries, deserialize_timeseries,
-    serialize_raw_report, deserialize_raw_report,
     HiddenToken, ensure_timestamps)
 
 
