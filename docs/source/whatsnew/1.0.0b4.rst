@@ -11,6 +11,7 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
+* Automatically verify selected metrics are valid for deterministic forecasts. (:issue:`267`) (:pull:`301`)
 
 Bug fixes
 ~~~~~~~~~
