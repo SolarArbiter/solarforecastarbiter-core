@@ -299,19 +299,16 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
-@pytest.mark.parametrize('interval_label_fx, interval_label_ref', [
-    ("beginning", "beginning"),
-    ("ending", "ending"),
-    pytest.param("beginning", "ending",
-                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
-    pytest.param("ending", "beginning",
-                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+@pytest.mark.parametrize('label_fx,label_ref', [
+    ("beginning", "ending"),
+    ("ending", "beginning"),
 ])
-def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
-                        create_processed_fxobs, many_forecast_observation):
+def test_interval_label_mistmatch(site_metadata, label_fx, label_ref,
+                                  create_processed_fxobs,
+                                  many_forecast_observation):
 
     categories = LIST_OF_CATEGORIES
-    metrics = DETERMINISTIC_METRICS
+    metrics = deterministic._REQ_REF_FX
 
     proc_fx_obs = []
     for fx_obs in many_forecast_observation:
@@ -320,7 +317,7 @@ def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
                 fx_obs,
                 np.random.randn(10) + 10,
                 np.random.randn(10) + 10,
-                interval_label=interval_label_fx,
+                interval_label=label_fx,
             )
         )
 
@@ -328,16 +325,14 @@ def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
         many_forecast_observation[0],
         np.random.randn(10) + 10,
         np.random.randn(10) + 10,
-        interval_label=interval_label_ref,
+        interval_label=label_ref,
     )
 
-    all_results = calculator.calculate_metrics(
-        proc_fx_obs,
-        categories,
-        metrics,
-        ref_pair=proc_ref_obs,
-        normalizer=1.0
-    )
-
-    assert isinstance(all_results, list)
-    assert len(all_results) == len(proc_fx_obs)
+    with pytest.raises(ValueError):
+        calculator.calculate_metrics(
+            proc_fx_obs,
+            categories,
+            metrics,
+            ref_pair=proc_ref_obs,
+            normalizer=1.0
+        )
