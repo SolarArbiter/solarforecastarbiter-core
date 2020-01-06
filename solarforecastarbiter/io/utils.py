@@ -98,7 +98,8 @@ def _json_to_dataframe(json_payload):
     vals = json_payload['values']
     if len(vals) == 0:
         df = pd.DataFrame([], columns=['value', 'quality_flag'],
-                          index=pd.DatetimeIndex([], name='timestamp'))
+                          index=pd.DatetimeIndex([], name='timestamp',
+                                                 tz='UTC'))
     else:
         df = pd.DataFrame.from_dict(json_payload['values'])
         df.index = pd.to_datetime(df['timestamp'], utc=True,
