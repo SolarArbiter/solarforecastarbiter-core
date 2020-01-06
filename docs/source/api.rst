@@ -381,6 +381,8 @@ Utility functions for data IO.
    io.utils.adjust_start_end_for_interval_label
    io.utils.adjust_timeseries_for_interval_label
    io.utils.ensure_timestamps
+   io.utils.serialize_timeseries
+   io.utils.deserialize_timeseries
 
 
 Metrics

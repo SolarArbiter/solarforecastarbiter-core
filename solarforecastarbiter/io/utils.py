@@ -3,10 +3,10 @@
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
-import base64
 from functools import wraps
 from inspect import signature
 import json
+import re
 
 
 import pandas as pd
@@ -269,6 +269,24 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
 
 
 def serialize_timeseries(ser):
+    """
+    Serialize a timeseries to JSON
+
+    Parameters
+    ----------
+    ser : pandas.Series
+       Must have a tz-localized datetime index
+
+    Returns
+    -------
+    str
+        The JSON serialized data along with a schema
+
+    Raises
+    ------
+    TypeError
+        If the input is invalid
+    """
     if not (
             isinstance(ser, pd.Series) and
             isinstance(ser.index, pd.DatetimeIndex) and
@@ -280,27 +298,55 @@ def serialize_timeseries(ser):
     v.index.name = 'timestamp'
     jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
         orient='records', date_format='iso', date_unit='s')
-    return jsonvals
+    schema = {
+        'version': 0,
+        'orient': 'records',
+        'timezone': 'UTC',
+        'column': 'value',
+        'index': 'timestamp',
+        'dtype': str(v.dtype),
+    }
+    out = '{"schema":' + json.dumps(schema) + ',"data":' + jsonvals + '}'
+    return out
 
 
 def deserialize_timeseries(data):
-    df = pd.read_json(data, orient='records', convert_dates=True)
-    ser = df.set_index('timestamp')['value']
+    """
+    Deserializes a timeseries from JSON
+
+    Parameters
+    ----------
+    data : str
+        JSON string to deserialize. Must have schema and data keys.
+
+    Returns
+    -------
+    pandas.Series
+        Deserialized timeseries
+
+    Raises
+    ------
+    ValueError
+       If "schema" or "data" keys are not found in the JSON string
+    KeyError
+       If the schema object does not contain the proper keys
+    """
+    schema_str = re.search('(?<="schema":)\\s*{[^{}]*}\\s*(?=(,|}))', data)
+    if schema_str is None:
+        raise ValueError('Could not locate schema in data string')
+    schema = json.loads(schema_str.group(0))
+    # find between "data": and , or }, with only one set of []
+    data_str = re.search('(?<="data":)\\s*\\[[^\\[\\]]*\\](?=\\s*(,|}))', data)
+    if data_str is None:
+        raise ValueError('Could not locate data key in data string')
+    df = pd.read_json(data_str.group(0), orient=schema['orient'],
+                      convert_dates=True)
+    if df.empty:
+        return pd.Series([], index=pd.DatetimeIndex(
+            [], tz='UTC', name='timestamp'))
+    ser = df.set_index(schema['index'])[schema['column']].astype(
+        schema['dtype'])
     return ser
-
-
-def serialize_raw_report(raw):
-    raw_dict = raw.to_dict()
-    metric_json = json.dumps(raw_dict.pop('metrics'))
-    raw_json = json.dumps(raw_dict)
-    return metric_json, raw_json
-
-
-def deserialize_raw_report(serialized_raw, serialized_metrics, version=0):
-    metrics = json.loads(serialized_metrics)
-    raw_dict = json.loads(serialized_raw)
-    raw_dict['metrics'] = metrics
-    return datamodel.RawReport.from_dict(raw_dict)
 
 
 class HiddenToken:

@@ -1257,8 +1257,7 @@ def raw_report(report_objects):
         start=report.start,
         end=report.end,
         now=report.end,
-        versions=(),
-        validation_issues=(),
+        versions={},
         timezone=obs.site.timezone
     )
 
@@ -1269,6 +1268,7 @@ def raw_report(report_objects):
             fx0.interval_value_type,
             fx0.interval_length,
             fx0.interval_label,
+            valid_point_count=len(ser),
             forecast_values=ser if with_series else fx0.forecast_id,
             observation_values=ser if with_series else obs.observation_id
         )
@@ -1277,6 +1277,7 @@ def raw_report(report_objects):
             fx1.interval_value_type,
             fx1.interval_length,
             fx1.interval_label,
+            valid_point_count=len(ser),
             forecast_values=ser if with_series else fx1.forecast_id,
             observation_values=ser if with_series else obs.observation_id
         )
@@ -1285,6 +1286,7 @@ def raw_report(report_objects):
             fxagg.interval_value_type,
             fxagg.interval_length,
             fxagg.interval_label,
+            valid_point_count=len(ser),
             forecast_values=ser if with_series else fxagg.forecast_id,
             observation_values=ser if with_series else agg.aggregate_id
         )

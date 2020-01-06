@@ -143,17 +143,58 @@ def test_adjust_timeseries_for_interval_label_series(label, exp):
     pdt.assert_series_equal(exp, out)
 
 
+@pytest.mark.parametrize('ser', [
+    TEST_DATA['value'],
+    pd.Series([], index=pd.DatetimeIndex([], tz='UTC')),
+    pytest.param(pd.Series(), marks=[
+        pytest.mark.xfail(strict=True, type=TypeError)]),
+    pytest.param(pd.Series([], index=pd.DatetimeIndex([])), marks=[
+        pytest.mark.xfail(strict=True, type=TypeError)]),
+    pytest.param(TEST_DATA, marks=[
+        pytest.mark.xfail(strict=True, type=TypeError)]),
+])
+def test_serialize_timeseries(ser):
+    out = utils.serialize_timeseries(ser)
+    outd = json.loads(out)
+    assert 'schema' in outd
+    assert 'data' in outd
+
+
+@pytest.mark.parametrize('inp,exp', [
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
+     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [], "other_stuff": {}}',  # NOQA
+     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "more": [], "data": []}',  # NOQA
+     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "more": [], "data": [], "other": []}',  # NOQA
+     pd.Series([], index=pd.DatetimeIndex([], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00Z", "value": 1.0}], "other_stuff": {}}',  # NOQA
+     pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
+                                             tz='UTC', name='timestamp'),
+               name='value')),
+    pytest.param(
+        '{"data": [], "other_stuff": {}}',
+        pd.Series(),
+        marks=[pytest.mark.xfail(strict=True, type=ValueError)]),
+    pytest.param(
+        '{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "other_stuff": {}}',  # NOQA
+        pd.Series(),
+        marks=[pytest.mark.xfail(strict=True, type=ValueError)]),
+    pytest.param(
+        '{"schema": {"version": 0, "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
+        pd.Series(),
+        marks=[pytest.mark.xfail(strict=True, type=KeyError)]),
+])
+def test_deserialize_timeseries(inp, exp):
+    out = utils.deserialize_timeseries(inp)
+    pdt.assert_series_equal(out, exp)
+
+
 def test_serialize_roundtrip():
-    ser = utils.serialize_data(TEST_DATA)
-    out = utils.deserialize_data(ser)
-    pdt.assert_frame_equal(out, TEST_DATA)
-
-
-def test_raw_serialize_roundtrip(raw_report):
-    raw = raw_report(False)
-    ser = utils.serialize_raw_report(raw)
-    out = utils.deserialize_raw_report(ser)
-    assert raw == out
+    ser = utils.serialize_timeseries(TEST_DATA['value'])
+    out = utils.deserialize_timeseries(ser)
+    pdt.assert_series_equal(out, TEST_DATA['value'])
 
 
 def test_hidden_token():
