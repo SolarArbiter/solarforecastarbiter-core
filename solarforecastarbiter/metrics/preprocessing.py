@@ -76,9 +76,19 @@ def resample_and_align(fx_obs, data, tz):
     -------
     solarforecastarbiter.datamodel.ProcessedForecastObservation
 
+    Notes
+    -----
+    In the case where the `interval_label` of the `obs` and `fx` do not match,
+    this function does the following:
+
+    - if `obs.interval_length` < `fx.interval_length`:
+    - if `obs.interval_length` == `fx.interval_length`:
+
     Todo
     ----
       * Add other resampling functions (besides mean like first, last, median)
+
+
     """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
