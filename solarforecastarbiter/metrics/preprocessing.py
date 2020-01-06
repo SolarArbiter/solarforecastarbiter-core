@@ -96,9 +96,6 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
         obs_resampled = obs_resampled["mean"].where(
             obs_resampled["count"] >= count_threshold
         )
-    elif fx.interval_length < obs.interval_length:
-        raise ValueError('observation.interval_length cannot be greater than '
-                         'forecast.interval_length.')
     else:
         obs_resampled = obs_series
 
@@ -179,8 +176,8 @@ def process_forecast_observations(forecast_observations, filters, data,
     """  # NOQA
     if not all([isinstance(filter_, datamodel.QualityFlagFilter)
                 for filter_ in filters]):
-        # TODO: warn/raise with unused filter
-        pass
+        logger.warning(
+            'Only filtering on Quality Flag is currently implemented')
     qfilter = _merge_quality_filters(filters)
     validated_observations = {}
     processed_fxobs = []

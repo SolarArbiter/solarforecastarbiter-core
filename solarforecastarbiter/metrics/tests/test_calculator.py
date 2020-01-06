@@ -143,7 +143,6 @@ def test_calculate_metrics_single(single_forecast_data_obj,
     assert len(result) == 1
 
 
-
 @pytest.mark.parametrize('categories,metrics', [
     ([], []),
     (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)

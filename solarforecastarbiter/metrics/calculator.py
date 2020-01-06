@@ -67,11 +67,13 @@ def calculate_metrics(processed_pairs, categories, metrics,
         else:
             # calculate_deterministic_metrics
             try:
-                metrics_ = calculate_deterministic_metrics(proc_fxobs,
-                                                           categories,
-                                                           metrics,
-                                                           ref_fx_obs=ref_pair,
-                                                           normalizer=normalizer)
+                metrics_ = calculate_deterministic_metrics(
+                    proc_fxobs,
+                    categories,
+                    metrics,
+                    ref_fx_obs=ref_pair,
+                    normalizer=normalizer
+                )
             except RuntimeError as e:
                 logger.error('Failed to calculate metrics for %s: %s',
                              proc_fxobs.name, e)

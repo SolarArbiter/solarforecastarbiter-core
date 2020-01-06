@@ -1137,6 +1137,7 @@ class MetricResult(BaseModel):
             raise ValueError(
                 'One of observation_id OR aggregate_id must be set')
 
+
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):
     name: str

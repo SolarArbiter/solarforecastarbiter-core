@@ -114,18 +114,3 @@ def test_all_categories_render(mock_data, report_objects):
     full_report = template.full_html(body)
     with open('bokeh_report.html', 'w') as f:
         f.write(full_report)
-
-
-@pytest.fixture(params=[0, 1, 2])
-def more_report_objects(report_objects, request):
-    report, observation, forecast_0, forecast_1, *_ = report_objects
-    if request.param == 0:
-        return report, observation, forecast_0, forecast_1
-    elif request.param == 1:
-        new_filters = ()
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)
-    elif request.param == 2:
-        new_filters = (datamodel.QualityFlagFilter(()),)
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)

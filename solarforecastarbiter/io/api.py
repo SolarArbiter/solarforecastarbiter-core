@@ -765,7 +765,8 @@ class APISession(requests.Session):
         for fxobs in raw_report.processed_forecasts_observations:
             fx_data = {
                 'object_id': fxobs.original.forecast.forecast_id,
-                'processed_values': serialize_timeseries(fxobs.forecast_values)}
+                'processed_values': serialize_timeseries(
+                    fxobs.forecast_values)}
             fx_post = self.post(
                 f'/reports/{report_id}/values',
                 json=fx_data, headers={'Content-Type': 'application/json'})
@@ -775,7 +776,8 @@ class APISession(requests.Session):
                 obj_id = fxobs.original.aggregate.aggregate_id
             obs_data = {
                 'object_id': obj_id,
-                'processed_values': serialize_timeseries(fxobs.observation_values)}
+                'processed_values': serialize_timeseries(
+                    fxobs.observation_values)}
             obs_post = self.post(
                 f'/reports/{report_id}/values',
                 json=obs_data, headers={'Content-Type': 'application/json'})
