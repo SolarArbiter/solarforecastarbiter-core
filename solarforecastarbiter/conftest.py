@@ -1283,6 +1283,7 @@ def raw_report(report_objects):
         ser = pd.Series(name='value', index=pd.DatetimeIndex(
             [], tz='UTC', name='timestamp'))
         fxobs0 = datamodel.ProcessedForecastObservation(
+            fx0.name,
             datamodel.ForecastObservation(fx0, obs),
             fx0.interval_value_type,
             fx0.interval_length,
@@ -1292,6 +1293,7 @@ def raw_report(report_objects):
             observation_values=ser if with_series else obs.observation_id
         )
         fxobs1 = datamodel.ProcessedForecastObservation(
+            fx1.name,
             datamodel.ForecastObservation(fx1, obs),
             fx1.interval_value_type,
             fx1.interval_length,
@@ -1301,6 +1303,7 @@ def raw_report(report_objects):
             observation_values=ser if with_series else obs.observation_id
         )
         fxagg_ = datamodel.ProcessedForecastObservation(
+            fxagg.name,
             datamodel.ForecastAggregate(fxagg, agg),
             fxagg.interval_value_type,
             fxagg.interval_length,

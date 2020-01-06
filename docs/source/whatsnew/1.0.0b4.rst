@@ -13,6 +13,7 @@ API Changes
 * Move functionality of :py:mod:`solarforecastarbiter.reports.main.validate_resample_align` to :py:mod:`solarforecastarbiter.metrics.prepocessing.process_forecast_observations` (:pull:`291`)
 * Rename `io.utils.serialize_data` to :py:mod:`solarforecastarbiter.io.utils.serialize_timeseries` (:pull:`291`)
 * :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics` returns a list of `~datamodel.MetridResult` and :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics` returns a single `~datamodel.MetricResult` (:pull:`291`)
+* :py:mod:`solarforecastarbiter.datamodel.ProcessedForecastObservation` now requires a name parameter (:pull:`291`)
 
 Enhancements
 ~~~~~~~~~~~~

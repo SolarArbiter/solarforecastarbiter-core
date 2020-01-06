@@ -25,6 +25,7 @@ def create_processed_fxobs(create_datetime_index):
             interval_label = fxobs.forecast.interval_label
 
         return datamodel.ProcessedForecastObservation(
+            fxobs.forecast.name,
             fxobs,
             fxobs.forecast.interval_value_type,
             fxobs.forecast.interval_length,

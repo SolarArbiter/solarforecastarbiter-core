@@ -127,7 +127,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
     """
     out = {
-        'name': processed_fx_obs.original.forecast.name,
+        'name': processed_fx_obs.name,
         'forecast_id': processed_fx_obs.original.forecast.forecast_id,
     }
 
