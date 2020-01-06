@@ -32,7 +32,6 @@
 </ul>
 {% endblock %}
 
-
 {% block reportmetadata %}
 <h2 id="report-metadata">Report Metadata</h2>
 <ul>
@@ -41,6 +40,16 @@
   <li>End: {{ report.raw_report.metadata.end }}</li>
   <li>Generated at: {{ report.raw_report.metadata.now }}</li>
 </ul>
+{% endblock %}
+
+{% block errors %}
+{% if report.raw_report.messages| length > 0 %}
+<div class="alert alert-warning">
+  {% for mesg in report.raw_report.messages %}
+  <h5>{{ mesg.message }}</h5>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block data %}

@@ -155,7 +155,7 @@ def _merge_quality_filters(filters):
 
 
 def process_forecast_observations(forecast_observations, filters, data,
-                                  timezone, *, _logger=logger):
+                                  timezone):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -192,7 +192,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                     qfilter,
                     exclude)
             except Exception:
-                _logger.error(
+                logger.error(
                     'Failed to validate data for %s', fxobs.data_object.name)
                 validated_observations[fxobs.data_object] = (pd.Series(), ())
             else:
@@ -207,12 +207,14 @@ def process_forecast_observations(forecast_observations, filters, data,
             forecast_values, observation_values = resample_and_align(
                 fxobs, fx_ser, obs_ser, timezone)
         except Exception as e:
-            _logger.error('Failed to resample and align data for pair (%s, %s): %s',
-                          fxobs.forecast.name, fxobs.data_object.name, e)
+            logger.error(
+                'Failed to resample and align data for pair (%s, %s): %s',
+                fxobs.forecast.name, fxobs.data_object.name, e)
         else:
-            _logger.info('Processed data successfully for pair (%s, %s)',
-                         fxobs.forecast.name, fxobs.data_object.name)
+            logger.info('Processed data successfully for pair (%s, %s)',
+                        fxobs.forecast.name, fxobs.data_object.name)
             processed = datamodel.ProcessedForecastObservation(
+                name=fxobs.forecast.name,
                 original=fxobs,
                 interval_value_type=fxobs.forecast.interval_value_type,
                 interval_length=fxobs.forecast.interval_length,

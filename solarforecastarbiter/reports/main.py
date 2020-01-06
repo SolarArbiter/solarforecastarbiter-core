@@ -48,6 +48,7 @@ Considerations:
   the API will need to call for the aligned data separately
   to be able to create time series, scatter, etc. plots.
 """
+from contextlib import contextmanager
 import logging
 import pkg_resources
 import platform
@@ -155,6 +156,31 @@ class ListHandler(logging.Handler):
     def emit(self, record):
         self.records.append(record)
 
+    def export_records(self, level=logging.WARNING):
+        return tuple([
+            datamodel.ReportMessage(
+                message=rec.getMessage(),
+                step=rec.name,
+                level=rec.levelname,
+                function=rec.funcName
+            )
+            for rec in self.records
+            if rec.levelno >= level
+        ])
+
+
+@contextmanager
+def hijack_loggers(loggers, handler):
+    old_handlers = {}
+    for name in loggers:
+        logger = logging.getLogger(name)
+        old_handlers[name] = logger.handlers
+        logger.handlers = [handler]
+    yield
+    for name in loggers:
+        logger = logging.getLogger(name)
+        logger.handlers = old_handlers[name]
+
 
 def create_raw_report_from_data(report, data):
     """
@@ -176,30 +202,29 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
-    message_logger = logging.getLogger('report_generation')
-    message_logger.propagate = False
     handler = ListHandler()
-    message_logger.setLevel(logging.INFO)
     handler.setLevel(logging.INFO)
-    message_logger.addHandler(handler)
-
     metadata = create_metadata(report)
 
-    # Validate and resample
-    processed_fxobs = preprocessing.process_forecast_observations(
-        report.forecast_observations, report.filters, data, metadata.timezone,
-        _logger=message_logger)
+    with hijack_loggers(['solarforecastarbiter.metrics',
+                         'solarforecastarbiter.reports.figures'],
+                        handler):
+        # Validate and resample
+        processed_fxobs = preprocessing.process_forecast_observations(
+            report.forecast_observations, report.filters, data,
+            metadata.timezone)
 
-    # Calculate metrics, list of MetricResult
-    metrics_list = calculator.calculate_metrics(processed_fxobs,
-                                                list(report.categories),
-                                                list(report.metrics))
+        # Calculate metrics, list of MetricResult
+        metrics_list = calculator.calculate_metrics(processed_fxobs,
+                                                    list(report.categories),
+                                                    list(report.metrics))
+        report_plots = figures.raw_report_plots(report, metrics_list)
 
-    report_plots = figures.raw_report_plots(report, metrics_list)
-
+    messages = handler.export_records()
     raw_report = datamodel.RawReport(
         metadata=metadata, plots=report_plots, metrics=tuple(metrics_list),
-        processed_forecasts_observations=tuple(processed_fxobs))
+        processed_forecasts_observations=tuple(processed_fxobs),
+        messages=messages)
     return raw_report
 
 

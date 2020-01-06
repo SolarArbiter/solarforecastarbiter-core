@@ -10,11 +10,17 @@ Todo
 * Support event metrics and forecasts with new functions
 """
 import calendar
+import logging
+
 
 import pandas as pd
 
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import deterministic
+
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
@@ -60,12 +66,17 @@ def calculate_metrics(processed_pairs, categories, metrics,
             raise NotImplementedError
         else:
             # calculate_deterministic_metrics
-            metrics_ = calculate_deterministic_metrics(proc_fxobs,
-                                                       categories,
-                                                       metrics,
-                                                       ref_fx_obs=ref_pair,
-                                                       normalizer=normalizer)
-            calc_metrics.append(metrics_)
+            try:
+                metrics_ = calculate_deterministic_metrics(proc_fxobs,
+                                                           categories,
+                                                           metrics,
+                                                           ref_fx_obs=ref_pair,
+                                                           normalizer=normalizer)
+            except RuntimeError as e:
+                logger.error('Failed to calculate metrics for %s: %s',
+                             proc_fxobs.name, e)
+            else:
+                calc_metrics.append(metrics_)
 
     return calc_metrics
 

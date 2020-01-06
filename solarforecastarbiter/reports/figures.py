@@ -4,6 +4,7 @@ Functions to make all of the figures for Solar Forecast Arbiter reports.
 import calendar
 import datetime as dt
 from itertools import cycle
+import logging
 
 
 from bokeh.embed import components
@@ -17,14 +18,15 @@ from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes
 from bokeh import __version__ as bokeh_version
-
 import pandas as pd
 import numpy as np
+
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.plotting.utils import line_or_step
 
 
+logger = logging.getLogger(__name__)
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
