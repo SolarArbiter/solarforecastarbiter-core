@@ -331,14 +331,13 @@ def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
         interval_label=interval_label_ref,
     )
 
-    results = calculator.calculate_deterministic_metrics(
-        proc_fx_obs[-1],
+    all_results = calculator.calculate_metrics(
+        proc_fx_obs,
         categories,
         metrics,
         ref_fx_obs=proc_ref_obs,
         normalizer=1.0
     )
 
-    assert isinstance(results, dict)
-    for cat in categories:
-        assert len(results[cat]) == len(metrics)
+    assert isinstance(all_results, list)
+    assert len(all_results) == len(proc_fx_obs)
