@@ -335,7 +335,7 @@ def test_interval_label(site_metadata, interval_label_fx, interval_label_ref,
         proc_fx_obs,
         categories,
         metrics,
-        ref_fx_obs=proc_ref_obs,
+        ref_pair=proc_ref_obs,
         normalizer=1.0
     )
 
