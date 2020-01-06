@@ -291,8 +291,9 @@ def test_process_forecast_observations_resample_fail(
     }
     filters = [quality_filter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
-    mocker.patch('solarforecastarbiter.metrics.preprocessing.resample_and_align',
-                 side_effect=ValueError)
+    mocker.patch(
+        'solarforecastarbiter.metrics.preprocessing.resample_and_align',
+        side_effect=ValueError)
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.forecast_observations, filters, data, 'MST')
     assert len(processed_fxobs_list) == 0
