@@ -396,3 +396,12 @@ def test___check_categories__():
     datamodel.__check_categories__(['total', 'weekday'])
     with pytest.raises(ValueError):
         datamodel.__check_categories__(['bad', 'very bad'])
+
+
+@pytest.mark.parametrize('metrics', [
+    (datamodel.ALLOWED_DETERMINISTIC_METRICS),
+    pytest.param(datamodel.ALLOWED_PROBABILISTIC_METRICS,
+                 marks=pytest.mark.xfail(raises=ValueError)),
+])
+def test___check_metrics__(metrics, single_forecast):
+    datamodel.__check_metrics__(single_forecast, metrics)

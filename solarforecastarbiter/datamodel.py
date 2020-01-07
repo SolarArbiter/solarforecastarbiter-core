@@ -1009,12 +1009,40 @@ class ValueFilter(BaseFilter):
     value_range: Tuple[float, float]
 
 
-def __check_metrics__():
-    # maybe belongs in the metrics package
-    # deterministic forecasts --> deterministic metrics
-    # probabilistic forecasts --> probabilistic metrics
-    # event forecasts --> event metrics
-    pass
+def __check_metrics__(fx, metrics):
+    """Validate metrics selection.
+
+    Check that the selected metrics are valid for the given scenario (e.g.
+    if deterministic forecasts, then deterministic metrics).
+
+    Parameters
+    ----------
+    fx : Forecast.
+        Forecast to be evaluated by metrics.
+    metrics : Tuple of str
+        Metrics to be computed in the report.
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    TypeError
+        If the selected metrics are not valid for the given forecast type.
+
+    TODO
+    ----
+    * validate probabilistic forecast metrics
+    * validate event forecast metrics
+
+    """
+
+    if isinstance(fx, Forecast) and not set(metrics) <= \
+            ALLOWED_DETERMINISTIC_METRICS.keys():
+        raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
+    else:
+        pass
 
 
 def __check_categories__(categories):
@@ -1124,6 +1152,7 @@ class Report(BaseModel):
         __check_units__(*itertools.chain.from_iterable(
             ((k.forecast, k.data_object) for k in self.forecast_observations)))
         # ensure the metrics can be applied to the forecasts and observations
-        __check_metrics__()
+        for k in self.forecast_observations:
+            __check_metrics__(k.forecast, self.metrics)
         # ensure that categories are valid
         __check_categories__(self.categories)
