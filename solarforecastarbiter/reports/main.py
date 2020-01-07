@@ -266,7 +266,6 @@ def report_to_html_body(
 
 
 def report_to_pdf(report):
-    # call pandoc
     raise NotImplementedError
 
 

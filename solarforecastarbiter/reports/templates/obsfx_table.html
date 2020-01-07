@@ -47,16 +47,22 @@ parameters are also shown below.</p>
     {% for pfxobs in report.raw_report.processed_forecasts_observations %}
     <tr>
       <td style="text-align: left;">
+        {% if pfxobs.original.observation is defined %}
         <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}">
           {{ pfxobs.original.observation.name }}
         </a>
+        {% else %}
+        <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}">
+          {{ pfxobs.original.aggregate.name }}
+        </a>
+        {% endif %}
       </td>
-      <td>{{ pfxobs.original.observation.interval_label }}</td>
-      <td>{{ (pfxobs.original.observation.interval_length.total_seconds() // 60) | int }} min</td>
+      <td>{{ pfxobs.original.data_object.interval_label }}</td>
+      <td>{{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min</td>
       <td>{{ pfxobs.interval_label }}</td>
       <td>{{ (pfxobs.interval_length.total_seconds() // 60) | int }} min</td>
       <td style="text-align: left;">
-        <a href="{{ dash_url }}/observations/{{ pfxobs.original.forecast.forecast_id }}">
+        <a href="{{ dash_url }}/forecasts/single/{{ pfxobs.original.forecast.forecast_id }}">
           {{ pfxobs.original.forecast.name }}
          </a>
       </td>
