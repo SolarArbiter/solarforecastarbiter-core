@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
-import datetime
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic)
