@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 import itertools
 import calendar
+import datetime
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic)
@@ -303,6 +304,107 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
+@pytest.mark.parametrize('index,interval_label,category,result', [
+    # category: hour
+    (
+        pd.DatetimeIndex(
+            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
+        ),
+        'ending',
+        'hour',
+        pd.Series(data=[-1.0, 0.5], index=[12, 13]),
+    ),
+    (
+        pd.DatetimeIndex(
+            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
+        ),
+        'beginning',
+        'hour',
+        pd.Series(data=[-0.5, 1.0], index=[13, 14]),
+    ),
+
+    # category: month
+    (
+        pd.DatetimeIndex(
+            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
+        ),
+        'ending',
+        'month',
+        pd.Series(data=[-0.5, 1.0], index=['Nov', 'Dec']),
+    ),
+    (
+        pd.DatetimeIndex(
+            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
+        ),
+        'beginning',
+        'month',
+        pd.Series(data=[-1.0, 0.5], index=['Nov', 'Dec']),
+    ),
+
+    # category: year
+    (
+        pd.DatetimeIndex(
+            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
+        ),
+        'ending',
+        'year',
+        pd.Series(data=[-0.5, 1.0], index=[2019, 2020]),
+    ),
+    (
+        pd.DatetimeIndex(
+            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
+        ),
+        'beginning',
+        'year',
+        pd.Series(data=[-1.0, 0.5], index=[2019, 2020]),
+    ),
+])
+def test_interval_label(index, interval_label, category, result, create_processed_fxobs):
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone='UTC',
+        provider='Sandia'
+    )
+
+    fx_series = pd.Series([0, 1, 2], index=index)
+    obs_series = pd.Series([1, 1, 1], index=index)
+    fxobs = datamodel.ForecastObservation(
+        observation=datamodel.Observation(
+            site=site, name='dummy obs', variable='ghi',
+            interval_value_type='instantaneous', uncertainty=1,
+            interval_length=pd.Timedelta(obs_series.index.freq),
+            interval_label=interval_label
+        ),
+        forecast=datamodel.Forecast(
+            site=site, name='dummy fx', variable='ghi',
+            interval_value_type='instantaneous',
+            interval_length=pd.Timedelta(fx_series.index.freq),
+            interval_label=interval_label,
+            issue_time_of_day=datetime.time(hour=5),
+            lead_time_to_start=pd.Timedelta('1h'),
+            run_length=pd.Timedelta('1h')
+        )
+    )
+
+    proc_fx_obs = datamodel.ProcessedForecastObservation(
+        fxobs,
+        fxobs.forecast.interval_value_type,
+        fxobs.forecast.interval_length,
+        fxobs.forecast.interval_label,
+        forecast_values=fx_series,
+        observation_values=obs_series,
+    )
+
+    res = calculator.calculate_deterministic_metrics(proc_fx_obs, [category],
+                                                     ['mbe'])
+    pd.testing.assert_series_equal(res[category]['mbe'], result)
+
+
 @pytest.mark.parametrize('label_fx,label_ref', [
     ("beginning", "beginning"),
     ("ending", "ending"),
@@ -311,8 +413,9 @@ def test_apply_deterministic_bad_metric_func():
     pytest.param("ending", "beginning",
                  marks=pytest.mark.xfail(raises=ValueError, strict=True)),
 ])
-def test_interval_label(site_metadata, label_fx, label_ref,
-                        create_processed_fxobs, many_forecast_observation):
+def test_interval_label_match(site_metadata, label_fx, label_ref,
+                              create_processed_fxobs,
+                              many_forecast_observation):
 
     categories = LIST_OF_CATEGORIES
     metrics = list(deterministic._MAP.keys())
