@@ -359,7 +359,8 @@ def test_apply_deterministic_bad_metric_func():
         pd.Series(data=[-1.0, 0.5], index=[2019, 2020]),
     ),
 ])
-def test_interval_label(index, interval_label, category, result, create_processed_fxobs):
+def test_interval_label(index, interval_label, category, result,
+                        create_processed_fxobs):
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
