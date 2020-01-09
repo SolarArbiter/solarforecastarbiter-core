@@ -39,19 +39,34 @@ OBS_PALETTE_TD_RANGE = pd.timedelta_range(
 
 def construct_timeseries_cds(report):
     """
-    Construct a standardized Bokeh CDS for the plot functions.
+    Construct two standardized Bokeh CDS for the timeseries plot functions. One
+    with timeseries data, and the other with associated metadata sharing a
+    common `pair_index` key.
 
     Parameters
     ----------
-    fx_values : pandas.Series
-    obs_values : pandas.Series
+    report: solarforecastarbiter.datamodel.Report
 
     Returns
     -------
-    cds : bokeh.models.ColumnDataSource
-        Keys are 'observation', 'forecast', and 'timestamp'.
-        tz-aware input times are converted to tz-naive times in the
-        input time zone.
+    value_cds : bokeh.models.ColumnDataSource
+        Keys are an integer `pair_index` for pairing values with the metadata
+        in the metadata_cds, and two pandas.Series, `observation_values` and
+        `forecast_values`.
+
+    metadata_cds : bokeh.models.ColumnDataSource
+       This cds has the following keys:
+        `pair_index` : Integer for pairing metadata with the values in
+            the value_cds.
+        `observation_name`: Observation name.
+        `forecast_name`: Forecast name.
+        `interval_label`: Interval label of the processed forecast and
+            observation data.
+        `observation_hash`: Hash of the original observation object and the
+            `datamodel.ProcessedForecastObservations` metadata.
+        `forecast_hash`: Hash of the original forecast object and the
+            `datamodel.ProcessedForecastObservations` metadata.
+        `
     """
     value_frames = []
     meta_rows = []
@@ -96,7 +111,7 @@ def _obs_name(fx_obs):
     # TODO: add code to ensure obs names are unique
     name = fx_obs.data_object.name
     if fx_obs.forecast.name == fx_obs.data_object.name:
-        if isinstance(fx_obs, datamodel.Observation):
+        if isinstance(fx_obs.data_object, datamodel.Observation):
             name += ' Observation'
         else:
             name += ' Aggregate'
@@ -218,10 +233,10 @@ def _get_scatter_limits(cds):
         extremes.append(np.nanmin(cds.data[kind]))
         extremes.append(np.nanmax(cds.data[kind]))
     min_ = min(extremes)
-    if min_ == np.nan:
+    if np.isnan(min_):
         min_ = -999
     max_ = max(extremes)
-    if max_ == np.nan:
+    if np.isnan(max_):
         max_ = 999
     return min_, max_
 
@@ -301,7 +316,7 @@ def construct_metrics_cds(metrics, rename=None):
 
     Parameters
     ----------
-    metrics : list of metrics dicts
+    metrics : list of datamodel.MetricResults
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
     kind : str
@@ -501,7 +516,6 @@ def bar_subdivisions(cds, category, metric):
     else:
         fig_kwargs['x_range'] = FactorRange(
             factors=np.unique(cds.data['index'][filter_]))
-
     y_min = np.nanmin(cds.data['value'][filter_])
     y_max = np.nanmax(cds.data['value'][filter_])
     start, end = calc_y_start_end(y_min, y_max)

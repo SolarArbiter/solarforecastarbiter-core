@@ -516,15 +516,6 @@ class AggregateObservation(BaseModel):
     effective_until: Union[pd.Timestamp, None] = None
     observation_deleted_at: Union[pd.Timestamp, None] = None
 
-    def _special_field_processing(self, model_field, val):
-        if model_field.name in ('effective_until', 'observation_deleted_at'):
-            if val is None:
-                return val
-            else:
-                return pd.Timestamp(val)
-        else:  # pragma: no cover
-            return val
-
 
 def __check_variable__(variable, *args):
     if not all(arg.variable == variable for arg in args):
@@ -697,20 +688,6 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
-
-    def _special_field_processing(self, model_field, val):
-        if model_field.name == 'site':
-            if isinstance(val, dict):
-                return Site.from_dict(val)
-            else:
-                return val
-        elif model_field.name == 'aggregate':
-            if isinstance(val, dict):
-                return Aggregate.from_dict(val)
-            else:
-                return val
-        else:
-            return val
 
 
 @dataclass(frozen=True)
