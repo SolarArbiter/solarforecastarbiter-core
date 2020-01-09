@@ -1,15 +1,12 @@
 from pathlib import Path
-import re
-import shutil
 
 
 import pandas as pd
 import pytest
 
 
-from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
-from solarforecastarbiter.reports import template, main
+from solarforecastarbiter.reports import main
 
 
 @pytest.fixture()

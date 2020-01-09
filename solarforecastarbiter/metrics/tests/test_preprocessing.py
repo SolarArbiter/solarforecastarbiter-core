@@ -138,7 +138,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta(length_fx),
         interval_label=label_fx,
-        issue_time_of_day=datetime.time(hour=5),
+        issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h')
     )
@@ -165,14 +165,10 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    data = {
-        fx_obs.forecast: fx_series,
-        fx_obs.observation: obs_series
-    }
-    proc_fx_obs = preprocessing.resample_and_align(fx_obs, data, local_tz)
+    fx_out, obs_out = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, local_tz)
 
-    assert proc_fx_obs.interval_label == label_fx
-    assert proc_fx_obs.interval_length == pd.Timedelta(freq)
+    assert obs_out.index.freq == freq
 
 
 @pytest.mark.parametrize('obs,somecounts', [
