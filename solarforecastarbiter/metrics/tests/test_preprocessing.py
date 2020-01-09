@@ -103,6 +103,63 @@ def test_resample_and_align(site_metadata, interval_label,
                                   check_categorical=False)
 
 
+@pytest.mark.parametrize("label_obs,label_fx,length_obs,length_fx,freq", [
+    ("beginning", "ending", "5min", "5min", "5min"),
+    ("beginning", "ending", "5min", "1h", "1h"),
+    ("ending", "beginning", "5min", "5min", "5min"),
+    ("ending", "beginning", "5min", "1h", "1h"),
+])
+def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
+                                           length_obs, length_fx, freq):
+
+    observation = datamodel.Observation(
+        site=site_metadata, name='dummy obs', variable='ghi',
+        interval_value_type='instantaneous', uncertainty=1,
+        interval_length=pd.Timedelta(length_obs),
+        interval_label=label_obs
+    )
+    forecast = datamodel.Forecast(
+        site=site_metadata, name='dummy fx', variable='ghi',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta(length_fx),
+        interval_label=label_fx,
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h')
+    )
+    fx_obs = datamodel.ForecastObservation(forecast=forecast,
+                                           observation=observation)
+
+    ts_obs = pd.date_range(
+        start='2019-03-31T12:00:00',
+        end='2019-05-01T00:00:00',
+        freq=length_obs,
+        tz='MST',
+        name='timestamp'
+    )
+    ts_fx = pd.date_range(
+        start='2019-03-31T12:00:00',
+        end='2019-05-01T00:00:00',
+        freq=length_fx,
+        tz='MST',
+        name='timestamp'
+    )
+    obs_series = pd.Series(index=ts_obs, data=np.random.rand(len(ts_obs)) + 10)
+    fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
+
+    # Use local tz
+    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+
+    data = {
+        fx_obs.forecast: fx_series,
+        fx_obs.observation: obs_series
+    }
+    proc_fx_obs = preprocessing.resample_and_align(fx_obs, data, local_tz)
+
+    assert proc_fx_obs.interval_label == label_fx
+    assert proc_fx_obs.interval_length == pd.Timedelta(freq)
+
+
 @pytest.mark.parametrize('fx0', [
     pd.Series(index=pd.DatetimeIndex([], name='timestamp'), name='value'),
     THREE_HOUR_SERIES

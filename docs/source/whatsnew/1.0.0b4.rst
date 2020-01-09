@@ -11,10 +11,15 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
+* Automatically verify selected metrics are valid for deterministic forecasts. (:issue:`267`) (:pull:`301`)
 
 Bug fixes
 ~~~~~~~~~
 * Fix handling of empty observation timeseries in metrics preprocessing. (:issue:`295`) (:pull:`296`)
+* Fix handling of `interval_label == ending` in the `groupby` categories in
+  `metrics.calculator`. (:issue:`234`) (:pull:`297`)
+* Document `resample_and_align()` behavior when the `interval_label` of the
+  forecast and observation don't match. (:issue:`300`) (:pull:`303`)
 
 Contributors
 ~~~~~~~~~~~~
