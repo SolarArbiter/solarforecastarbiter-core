@@ -1,7 +1,7 @@
 .. _whatsnew_100b3:
 
-1.0.0b3 (???)
--------------
+1.0.0b3 (December 16, 2019)
+---------------------------
 
 This is the third 1.0 beta release.
 

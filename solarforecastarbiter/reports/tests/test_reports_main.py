@@ -1,15 +1,12 @@
 from pathlib import Path
-import re
-import shutil
 
 
 import pandas as pd
 import pytest
 
 
-from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
-from solarforecastarbiter.reports import template, main
+from solarforecastarbiter.reports import main
 
 
 @pytest.fixture()
@@ -55,7 +52,7 @@ def mock_data(mocker, _test_data):
     return get_forecast_values, get_observation_values, get_aggregate_values
 
 
-def test_get_data(mock_data, report_objects):
+def test_get_data_for_report(mock_data, report_objects):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     session = api.APISession('nope')
@@ -72,87 +69,33 @@ def test_get_data(mock_data, report_objects):
     assert get_aggregate_values.call_count == 1
 
 
-@pytest.mark.skipif(shutil.which('pandoc') is None,
-                    reason='Pandoc can not be found')
-def test_full_render(mock_data, report_objects):
-    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
-        report_objects
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, report)
-    raw_report = main.create_raw_report_from_data(report, data)
-    report_md = main.render_raw_report(raw_report)
-    body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
-    # at least one non whitespace character in body, usually caused
-    # by pandoc version error
-    assert re.search(
-        r'<body>(.*\S.*)</body>', full_report, re.S) is not None
-    with open('bokeh_report.html', 'w') as f:
-        f.write(full_report)
+def test_create_metadata():
+    pass
 
 
-@pytest.mark.skipif(shutil.which('pandoc') is None,
-                    reason='Pandoc can not be found')
-def test_all_categories_render(mock_data, report_objects):
-    # Create report using template but with all categories
-    report, observation, forecast_0, forecast_1, _, _ = report_objects
-    all_report = datamodel.Report(
-        name=report.name,
-        start=report.start,
-        end=report.end,
-        forecast_observations=report.forecast_observations,
-        metrics=("mae", "rmse", "mbe"),
-        categories=list(datamodel.ALLOWED_CATEGORIES.keys()),
-        report_id=report.report_id,
-        filters=report.filters
-    )
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, all_report)
-    raw_report = main.create_raw_report_from_data(all_report, data)
-    report_md = main.render_raw_report(raw_report)
-    body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
-    with open('bokeh_report.html', 'w') as f:
-        f.write(full_report)
+def test_get_version():
+    pass
 
 
-def test_merge_quality_filters():
-    filters = [
-        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
-                                     'CLIPPED VALUES')),
-        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
-        datamodel.QualityFlagFilter(())
-    ]
-    out = main._merge_quality_filters(filters)
-    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
-                                      'CLIPPED VALUES', 'SHADED'}
+def test_infer_timezone():
+    pass
 
 
-@pytest.fixture(params=[0, 1, 2])
-def more_report_objects(report_objects, request):
-    report, observation, forecast_0, forecast_1, *_ = report_objects
-    if request.param == 0:
-        return report, observation, forecast_0, forecast_1
-    elif request.param == 1:
-        new_filters = ()
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)
-    elif request.param == 2:
-        new_filters = (datamodel.QualityFlagFilter(()),)
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)
+def test_listhandler():
+    pass
 
 
-def test_validate_resample_align(mock_data, more_report_objects):
-    report, observation, forecast_0, forecast_1 = more_report_objects
-    meta = main.create_metadata(report)
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, report)
-    processed_fxobs_list = main.validate_resample_align(report, meta, data)
-    assert len(processed_fxobs_list) == len(report.forecast_observations)
-    for proc_fxobs in processed_fxobs_list:
-        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
-        assert isinstance(proc_fxobs.forecast_values, pd.Series)
-        assert isinstance(proc_fxobs.observation_values, pd.Series)
-        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
-                                      proc_fxobs.observation_values.index)
+def test_hijack_loggers():
+    pass
+
+
+def test_create_raw_report_from_data():
+    pass
+
+
+def test_compute_report():
+    pass
+
+
+def test_report_to_html_body():
+    pass
