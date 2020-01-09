@@ -10,7 +10,7 @@ from bokeh.models import (ColumnDataSource, HoverTool, Legend,
 from bokeh.models.ranges import Range1d
 from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
 from bokeh.plotting import figure
-from bokeh.transform import factor_cmap
+from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes
 
 import pandas as pd
@@ -488,6 +488,8 @@ def bar_subdivisions(cds, category, metric):
         fig_kwargs['x_range'] = calendar.month_abbr[1:]
     elif category == 'weekday':
         fig_kwargs['x_range'] = calendar.day_abbr[0:]
+    elif category == 'hour':
+        fig_kwargs['x_range'] = [0, 23]
 
     # vertical axis limits
     y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != category)
@@ -501,8 +503,14 @@ def bar_subdivisions(cds, category, metric):
         fig = figure(width=800, height=200, title=title,
                      **fig_kwargs)
 
-        fig.vbar(x=category, top=field, width=width, source=cds,
-                 line_color='white', fill_color=next(palette))
+        # Custom bar alignment
+        if category == 'hour':
+            # Center bars between hour ticks
+            x = dodge(category, 0.5, range=fig.x_range)
+        else:
+            x = category
+        fig.vbar(x=x, top=field, width=width, source=cds, line_color='white',
+                 fill_color=next(palette))
 
         # axes parameters
         fig.xgrid.grid_line_color = None
