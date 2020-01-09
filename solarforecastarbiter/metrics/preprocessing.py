@@ -79,10 +79,9 @@ def resample_and_align(fx_obs, data, tz):
     Notes
     -----
     In the case where the `interval_label` of the `obs` and `fx` do not match,
-    this function does the following:
-
-    - if `obs.interval_length` < `fx.interval_length`:
-    - if `obs.interval_length` == `fx.interval_length`:
+    this function currently returns a `ProcessedForecastObservation` object
+    with a `interval_label` the same as the `fx`, regardless of whether the
+    `interval_length` of the `fx` and `obs` are the same or different.
 
     Todo
     ----

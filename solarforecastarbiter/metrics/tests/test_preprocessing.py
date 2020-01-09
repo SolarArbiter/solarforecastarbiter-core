@@ -103,14 +103,14 @@ def test_resample_and_align(site_metadata, interval_label,
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize("label_obs,label_fx,length_obs,length_fx", [
-    ("beginning", "ending", "5min", "5min"),
-    ("beginning", "ending", "5min", "1h"),
-    ("ending", "beginning", "5min", "5min"),
-    ("ending", "beginning", "5min", "1h"),
+@pytest.mark.parametrize("label_obs,label_fx,length_obs,length_fx,freq", [
+    ("beginning", "ending", "5min", "5min", "5min"),
+    ("beginning", "ending", "5min", "1h", "1h"),
+    ("ending", "beginning", "5min", "5min", "5min"),
+    ("ending", "beginning", "5min", "1h", "1h"),
 ])
 def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
-                                           length_obs, length_fx):
+                                           length_obs, length_fx, freq):
 
     observation = datamodel.Observation(
         site=site_metadata, name='dummy obs', variable='ghi',
@@ -154,7 +154,10 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
         fx_obs.forecast: fx_series,
         fx_obs.observation: obs_series
     }
-    result = preprocessing.resample_and_align(fx_obs, data, local_tz)
+    proc_fx_obs = preprocessing.resample_and_align(fx_obs, data, local_tz)
+
+    assert proc_fx_obs.interval_label == label_fx
+    assert proc_fx_obs.interval_length == pd.Timedelta(freq)
 
 
 @pytest.mark.parametrize('fx0', [
