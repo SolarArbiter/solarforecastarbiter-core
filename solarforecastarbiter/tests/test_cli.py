@@ -222,7 +222,7 @@ def test_reference_nwp(cli_token, mocker):
                               pd.Timedelta('2h'), mocker.ANY)
 
 
-def test_report(cli_token, mocker, report_objects):
+def test_report(cli_token, mocker, report_objects, maybe_skip_svg):
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report_objects[0])
     index = pd.date_range(

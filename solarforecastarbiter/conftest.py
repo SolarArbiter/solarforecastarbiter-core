@@ -1717,3 +1717,8 @@ def report_message_dict():
 @pytest.fixture
 def report_message(report_message_dict):
     return datamodel.ReportMessage.from_dict(report_message_dict)
+
+
+@pytest.fixture()
+def maybe_skip_svg():
+    pytest.importorskip('selenium')

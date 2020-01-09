@@ -286,7 +286,7 @@ def test_timeseries_plots(report_with_raw):
     assert div is not None
 
 
-def test_raw_report_plots(report_with_raw):
+def test_raw_report_plots(report_with_raw, maybe_skip_svg):
     metrics = report_with_raw.raw_report.metrics
     plots = figures.raw_report_plots(report_with_raw, metrics)
     assert plots is not None
