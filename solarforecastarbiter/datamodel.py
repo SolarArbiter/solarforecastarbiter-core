@@ -75,6 +75,9 @@ ALLOWED_DETERMINISTIC_METRICS = {
 ALLOWED_PROBABILISTIC_METRICS = {
     k: v[1] for k, v in probabilistic_mapping.items()}
 
+ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
+ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
+
 
 def _dict_factory(inp):
     dict_ = dict(inp)
@@ -513,15 +516,6 @@ class AggregateObservation(BaseModel):
     effective_until: Union[pd.Timestamp, None] = None
     observation_deleted_at: Union[pd.Timestamp, None] = None
 
-    def _special_field_processing(self, model_field, val):
-        if model_field.name in ('effective_until', 'observation_deleted_at'):
-            if val is None:
-                return val
-            else:
-                return pd.Timestamp(val)
-        else:  # pragma: no cover
-            return val
-
 
 def __check_variable__(variable, *args):
     if not all(arg.variable == variable for arg in args):
@@ -694,20 +688,6 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
-
-    def _special_field_processing(self, model_field, val):
-        if model_field.name == 'site':
-            if isinstance(val, dict):
-                return Site.from_dict(val)
-            else:
-                return val
-        elif model_field.name == 'aggregate':
-            if isinstance(val, dict):
-                return Aggregate.from_dict(val)
-            else:
-                return val
-        else:
-            return val
 
 
 @dataclass(frozen=True)
@@ -905,6 +885,12 @@ class ForecastObservation(BaseModel):
     """
     forecast: Forecast
     observation: Observation
+    reference_forecast: Union[Forecast, None] = None
+    # for now, some function applied to observation (e.g. mean per day)
+    # possible in future
+    normalization: float = 1.0
+    # cost: Cost
+    cost_per_unit_error: float = 0.0
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
@@ -923,6 +909,9 @@ class ForecastAggregate(BaseModel):
     """
     forecast: Forecast
     aggregate: Aggregate
+    reference_forecast: Union[Forecast, None] = None
+    normalization: float = 1.0
+    cost_per_unit_error: float = 0.0
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
@@ -1061,7 +1050,12 @@ class ReportMetadata(BaseModel):
     now: pd.Timestamp
     timezone: str
     versions: dict
-    validation_issues: dict
+
+
+@dataclass(frozen=True)
+class ValidationResult(BaseModel):
+    flag: str
+    count: int
 
 
 # need apply filtering + resampling to each forecast obs pair
@@ -1071,13 +1065,79 @@ class ProcessedForecastObservation(BaseModel):
     Hold the processed forecast and observation data with the resampling
     parameters
     """
+    name: str
     # do this instead of subclass to compare objects later
     original: Union[ForecastObservation, ForecastAggregate]
     interval_value_type: str
     interval_length: pd.Timedelta
     interval_label: str
+    valid_point_count: int
+    # some structure for reporting issues w/ nans etc
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
+    reference_forecast_values: Union[pd.Series, str, None] = None
+    validation_results: Tuple[ValidationResult, ...] = ()
+    # This may need to be a series, e.g. normalize by the average
+    # observed value per day. Hence, repeat here instead of
+    # only in original
+    normalization_factor: Union[pd.Series, float] = 1.0
+    # For now only, a single $/unit error cost is allowed.
+    # This is defined along with each ForecastObservation, but
+    # in the future this might also be a series
+    cost_per_unit_error: float = 0.0
+
+
+@dataclass(frozen=True)
+class MetricValue(BaseModel):
+    category: str
+    metric: str
+    index: str
+    value: float
+
+
+@dataclass(frozen=True)
+class MetricResult(BaseModel):
+    name: str
+    forecast_id: str
+    values: Tuple[MetricValue, ...]
+    observation_id: Union[str, None] = None
+    aggregate_id: Union[str, None] = None
+
+    def __post_init__(self):
+        if (
+                (self.observation_id is None and self.aggregate_id is None)
+                or (
+                    self.observation_id is not None and
+                    self.aggregate_id is not None
+                )
+        ):
+            raise ValueError(
+                'One of observation_id OR aggregate_id must be set')
+
+
+@dataclass(frozen=True)
+class ReportFigure(BaseModel):
+    name: str
+    div: str
+    svg: str
+    type: str
+    category: str = ''
+    metric: str = ''
+
+
+@dataclass(frozen=True)
+class RawReportPlots(BaseModel):
+    bokeh_version: str
+    script: str
+    figures: Tuple[ReportFigure, ...]
+
+
+@dataclass(frozen=True)
+class ReportMessage(BaseModel):
+    message: str
+    step: str
+    level: str
+    function: str
 
 
 @dataclass(frozen=True)
@@ -1088,9 +1148,10 @@ class RawReport(BaseModel):
     the processed forecast/observation data.
     """
     metadata: ReportMetadata
-    template: str
-    metrics: dict  # later MetricsResult
+    plots: RawReportPlots
+    metrics: Tuple[MetricResult, ...]
     processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
+    messages: Tuple[ReportMessage, ...] = ()
 
 
 @dataclass(frozen=True)

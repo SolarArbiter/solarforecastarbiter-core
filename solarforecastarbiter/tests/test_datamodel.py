@@ -16,8 +16,10 @@ from solarforecastarbiter import datamodel
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
-                        'report', 'quality_filter',
-                        'timeofdayfilter', 'valuefilter'])
+                        'aggregateobservation', 'report', 'quality_filter',
+                        'timeofdayfilter', 'valuefilter', 'metricvalue',
+                        'metricresult', 'validationresult', 'reportmetadata',
+                        'reportfigure', 'reportmessage'])
 def pdid_params(request, many_sites, many_sites_text, single_observation,
                 single_observation_text, single_site,
                 single_forecast_text, single_forecast,
@@ -29,9 +31,15 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
                 aggregateforecast, aggregate_prob_forecast,
                 aggregate_prob_forecast_text,
                 agg_prob_forecast_constant_value,
+                single_aggregate_observation,
+                single_aggregate_observation_text,
                 report_objects, report_dict, quality_filter,
                 quality_filter_dict, timeofdayfilter,
-                timeofdayfilter_dict, valuefilter, valuefilter_dict):
+                timeofdayfilter_dict, valuefilter, valuefilter_dict,
+                metric_value_dict, metric_value, metric_result_dict,
+                metric_result, validation_result_dict, validation_result,
+                report_metadata_dict, report_metadata, report_figure_dict,
+                report_figure, report_message_dict, report_message):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -93,6 +101,10 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
         fxobs_dict = {'forecast': aggfx_dict, 'aggregate': agg_dict}
         fxobs = datamodel.ForecastAggregate(aggregateforecast, aggregate)
         return (fxobs, fxobs_dict, datamodel.ForecastAggregate)
+    elif request.param == 'aggregateobservation':
+        aggobs_dict = json.loads(single_aggregate_observation_text)
+        return (single_aggregate_observation, aggobs_dict,
+                datamodel.AggregateObservation)
     elif request.param == 'report':
         report, *_ = report_objects
         return (report, report_dict.copy(), datamodel.Report)
@@ -105,6 +117,20 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
     elif request.param == 'valuefilter':
         return (valuefilter, valuefilter_dict,
                 datamodel.ValueFilter)
+    elif request.param == 'metricvalue':
+        return (metric_value, metric_value_dict, datamodel.MetricValue)
+    elif request.param == 'metricresult':
+        return (metric_result, metric_result_dict, datamodel.MetricResult)
+    elif request.param == 'validationresult':
+        return (validation_result, validation_result_dict,
+                datamodel.ValidationResult)
+    elif request.param == 'reportmetadata':
+        return (report_metadata, report_metadata_dict,
+                datamodel.ReportMetadata)
+    elif request.param == 'reportfigure':
+        return (report_figure, report_figure_dict, datamodel.ReportFigure)
+    elif request.param == 'reportmessage':
+        return (report_message, report_message_dict, datamodel.ReportMessage)
 
 
 @pytest.mark.parametrize('extra', [
@@ -115,6 +141,23 @@ def test_from_dict_into_datamodel(extra, pdid_params):
     expected, obj_dict, model = pdid_params
     obj_dict.update(extra)
     out = model.from_dict(obj_dict)
+    assert out == expected
+
+
+@pytest.fixture(params=[0, 1, 2])
+def basefilter_params(
+        request, valuefilter, valuefilter_dict, quality_filter,
+        quality_filter_dict, timeofdayfilter, timeofdayfilter_dict):
+    parameters = [
+        (valuefilter, valuefilter_dict),
+        (quality_filter, quality_filter_dict),
+        (timeofdayfilter, timeofdayfilter_dict)]
+    return parameters[request.param]
+
+
+def test_base_filter_from_dict_into_datamodel(basefilter_params):
+    expected, obj_dict = basefilter_params
+    out = datamodel.BaseFilter.from_dict(obj_dict, raise_on_extra=True)
     assert out == expected
 
 
@@ -405,3 +448,137 @@ def test___check_categories__():
 ])
 def test___check_metrics__(metrics, single_forecast):
     datamodel.__check_metrics__(single_forecast, metrics)
+
+
+@pytest.fixture
+def objects_from_attrs(mocker):
+    """Takes a list of lists with tupples of (attr_name, value)
+       and creates a listed of Mock objects with their attributes
+       set to those values
+    """
+    def fn(attr_list):
+        things_with_attrs = []
+        for attr_tuples in attr_list:
+            with_attr = mocker.Mock()
+            for (attr_name, attr_value) in attr_tuples:
+                setattr(with_attr, attr_name, attr_value)
+            things_with_attrs.append(with_attr)
+        return things_with_attrs
+    return fn
+
+
+def test___check_units__(mocker, objects_from_attrs):
+    things_with_units = objects_from_attrs(
+        [[('units', u)] for u in ['W/M^2', 'W/M^2', 'W/M^2', 'W/M^2', 'W/M^2']]
+    )
+    datamodel.__check_units__(*things_with_units)
+
+
+def test___check_units___error(mocker, objects_from_attrs):
+    things_with_units = objects_from_attrs(
+        [[('units', u)] for u in ['W/M^2', 'different', 'W/M^2', 'W/M^2']]
+    )
+    with pytest.raises(ValueError):
+        datamodel.__check_units__(*things_with_units)
+
+
+@pytest.mark.parametrize('fx_int, fx_label, obs_int, obs_label', [
+    (15, 'instant', 15, 'instant'), (1, 'ending', 1, 'ending'),
+    (5, 'beginning', 5, 'beginning'), (15, 'beginning', 5, 'instant'),
+])
+def test___check_interval_compatibility__(
+        fx_int, fx_label, obs_int, obs_label, objects_from_attrs):
+    attrs = [(('interval_length', fx_int), ('interval_label', fx_label)),
+             (('interval_length', obs_int), ('interval_label', obs_label))]
+    forecast_and_observation = objects_from_attrs(attrs)
+    datamodel.__check_interval_compatibility__(*forecast_and_observation)
+
+
+def test___check_interval_compatibility__bad_labels(objects_from_attrs):
+    attrs = [(('interval_length', 5), ('interval_label', 'instant')),
+             (('interval_length', 5), ('interval_label', 'beginning'))]
+    forecast_and_observation = objects_from_attrs(attrs)
+    with pytest.raises(ValueError):
+        datamodel.__check_interval_compatibility__(*forecast_and_observation)
+
+
+def test___check_interval_compatibility__bad_length(objects_from_attrs):
+    attrs = [(('interval_length', 5), ('interval_label', 'instant')),
+             (('interval_length', 15), ('interval_label', 'instant'))]
+    forecast_and_observation = objects_from_attrs(attrs)
+    with pytest.raises(ValueError):
+        datamodel.__check_interval_compatibility__(*forecast_and_observation)
+
+
+def test_base_filter_from_dict_error():
+    with pytest.raises(NotImplementedError):
+        datamodel.BaseFilter.from_dict({'spicyness': 'very'})
+
+
+def test_quality_flag_filter_post_init_error():
+    with pytest.raises(ValueError):
+        datamodel.QualityFlagFilter.from_dict(
+            {'quality_flags': ['spicy_filter']})
+
+
+def test_metric_result_post_init_error(metric_result_dict):
+    metric_result_dict['aggregate_id'] = None
+    metric_result_dict['observation_id'] = None
+    with pytest.raises(ValueError):
+        datamodel.MetricResult.from_dict(metric_result_dict)
+
+
+# These 'sfp' tests check that behavior found in the _special_field_processing
+# functions is maintained after removing the code.
+@pytest.mark.parametrize('sitef', [
+    lambda x: x,
+    lambda x: x.to_dict(),
+    pytest.param(lambda x: 'other', marks=pytest.mark.xfail(strict=True))
+])
+def test_forecast_sfp_site_dict(single_forecast_text, single_site, sitef):
+    forecast_dict = json.loads(single_forecast_text)
+    forecast_dict['site'] = sitef(single_site)
+    forecast = datamodel.Forecast.from_dict(forecast_dict)
+    assert isinstance(forecast.site, datamodel.Site)
+
+
+@pytest.mark.parametrize('aggf', [
+    lambda x: x,
+    lambda x: x.to_dict(),
+    pytest.param(lambda x: 'other', marks=pytest.mark.xfail(strict=True))
+])
+def test_forecast_sfp_aggregate_dict(single_forecast_text, aggregate, aggf):
+    forecast_dict = json.loads(single_forecast_text)
+    forecast_dict['aggregate'] = aggf(aggregate)
+    forecast = datamodel.Forecast.from_dict(forecast_dict)
+    assert isinstance(forecast.aggregate, datamodel.Aggregate)
+
+
+@pytest.mark.parametrize('key,value,expected', [
+    ('effective_until', None, None),
+    ('effective_until', '2020-01-01T00:00Z',
+     pd.Timestamp('2020-01-01T00:00Z')),
+    ('observation_deleted_at', None, None),
+    ('observation_deleted_at', '2020-01-01T00:00Z',
+     pd.Timestamp('2020-01-01T00:00Z'))
+])
+def test_aggregate_observation_sfp(
+        aggregate_observations, key, value, expected):
+    aggobs = aggregate_observations[0]
+    aggobs_dict = aggobs.to_dict()
+    aggobs_dict[key] = value
+    aggobs_from_dict = datamodel.AggregateObservation.from_dict(aggobs_dict)
+    assert getattr(aggobs_from_dict, key) == expected
+
+
+@pytest.mark.parametrize('key,value,expected', [
+    ('effective_until', 'bad', None),
+    ('observation_deleted_at', 'bad', None),
+])
+def test_aggregate_observation_sfp_invalid(
+        aggregate_observations, key, value, expected):
+    aggobs = aggregate_observations[0]
+    aggobs_dict = aggobs.to_dict()
+    aggobs_dict[key] = value
+    with pytest.raises(TypeError):
+        datamodel.AggregateObservation.from_dict(aggobs_dict)

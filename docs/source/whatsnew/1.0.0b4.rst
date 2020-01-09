@@ -8,10 +8,17 @@ This is the fourth 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
+* :py:mod:`solarforecastarbiter.metrics.prepocessing.apply_validation` now expects a single observation DataFrame with value and quality_flag columns instead of a dict. It also returns the processed Series along with a dict of the number of values removed for each quality flag. (:pull:`291`)
+* :py:mod:`solarforecastarbiter.metrics.prepocessing.resample_and_align` now expects the forecast and observation series explicitly. It also returns the resample and aligned values instead of a `datamodel.ProcessedForecastObservation` (:pull:`291`)
+* Move functionality of :py:mod:`solarforecastarbiter.reports.main.validate_resample_align` to :py:mod:`solarforecastarbiter.metrics.prepocessing.process_forecast_observations` (:pull:`291`)
+* Rename `io.utils.serialize_data` to :py:mod:`solarforecastarbiter.io.utils.serialize_timeseries` (:pull:`291`)
+* :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics` returns a list of `~datamodel.MetridResult` and :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics` returns a single `~datamodel.MetricResult` (:pull:`291`)
+* :py:mod:`solarforecastarbiter.datamodel.ProcessedForecastObservation` now requires a name parameter (:pull:`291`)
 
 Enhancements
 ~~~~~~~~~~~~
 * Automatically verify selected metrics are valid for deterministic forecasts. (:issue:`267`) (:pull:`301`)
+* Add schema for de/serializing timeseries in :py:mod:`solarforecastarbiter.io.utils` (:pull:`291`)
 
 Bug fixes
 ~~~~~~~~~

@@ -1,0 +1,83 @@
+{% macro metric_table(report_metrics, category, metric_ordering) %}
+<table style="width:100%;">
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Forecast</th>
+      {% for metric in metric_ordering %}
+        <th style="text-align: left;">{{ human_metrics[metric] }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for fx_result in report_metrics %}
+      <tr>
+        <td>{{ fx_result.name }}</td>
+        {% for metric in metric_ordering %}
+          {% for mval in fx_result.values %}
+            {% if mval.category == category  and mval.metric == metric %}
+              {% if -1 < mval.value < 1 %}
+                <td>{{ '%.2e' | format(mval.value) }}</td>
+              {% else %}
+                <td>{{ '%0.3g' | format(mval.value) }}</td>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro download_csv_script() %}
+<script>
+    function table_to_csv(source) {
+        const columns = Object.keys(source.data)
+        const nrows = source.get_length()
+        const lines = [columns.join(',')]
+
+        for (let i = 0; i < nrows; i++) {
+            let row = [];
+            for (let j = 0; j < columns.length; j++) {
+                const column = columns[j]
+                var val = source.data[column][i]
+                if (column == 'index' && typeof val == 'number' && val > 100000000) {
+                    val = new Date(val).toISOString().split('T')[0]
+                } else {
+                    val = val.toString()
+                }
+                row.push(val)
+            }
+            lines.push(row.join(','))
+        }
+        return lines.join('\n').concat('\n')
+    }
+
+    function download_metrics_as_csv(report_name) {
+        var source;
+        for (doc of Bokeh.documents) {
+            var nsource = doc.get_model_by_name('metrics_cds')
+            if (nsource != null) {
+                source = nsource
+            }
+        }
+
+        const filename = report_name.replace(/ /g, '_') + '_metrics.csv'
+        filetext = table_to_csv(source)
+        const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
+
+        //addresses IE
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename)
+        } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.target = '_blank'
+            link.style.visibility = 'hidden'
+            link.dispatchEvent(new MouseEvent('click'))
+        }
+    }
+</script>
+{% endmacro %}
