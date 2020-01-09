@@ -32,8 +32,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
             div = """<div class="alert alert-warning">
   <strong>Warning</strong> Failed to make timeseries and scatter plots
   from stored data. Try generating report again.
-</div>
-            """
+</div>"""
         kwargs['timeseries_script'] = script
         kwargs['timeseries_div'] = div
     return kwargs
