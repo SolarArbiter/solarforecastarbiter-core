@@ -31,10 +31,12 @@ def create_processed_fxobs(create_datetime_index):
             fxobs.forecast.interval_length,
             interval_label,
             valid_point_count=len(fx_values),
-            forecast_values=pd.Series(
-                fx_values, index=create_datetime_index(len(fx_values))),
-            observation_values=pd.Series(
-                obs_values, index=create_datetime_index(len(obs_values)))
+            forecast_values=(
+                fx_values if isinstance(fx_values, pd.Series) else pd.Series(
+                    fx_values, index=create_datetime_index(len(fx_values)))),
+            observation_values=(
+                obs_values if isinstance(obs_values, pd.Series) else pd.Series(
+                    obs_values, index=create_datetime_index(len(obs_values))))
         )
 
     return _create_processed_fxobs
@@ -382,7 +384,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'ending',
         'hour',
-        pd.Series(data=[-1.0, 0.5], index=[12, 13]),
+        {('12', -1.0), ('13', 0.5)}
     ),
     (
         pd.DatetimeIndex(
@@ -390,7 +392,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'beginning',
         'hour',
-        pd.Series(data=[-0.5, 1.0], index=[13, 14]),
+        {('13', -0.5), ('14', 1.0)}
     ),
 
     # category: month
@@ -400,7 +402,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'ending',
         'month',
-        pd.Series(data=[-0.5, 1.0], index=['Nov', 'Dec']),
+        {('Nov', -0.5), ('Dec', 1.0)}
     ),
     (
         pd.DatetimeIndex(
@@ -408,7 +410,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'beginning',
         'month',
-        pd.Series(data=[-1.0, 0.5], index=['Nov', 'Dec']),
+        {('Nov', -1.0), ('Dec', 0.5)}
     ),
 
     # category: year
@@ -418,7 +420,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'ending',
         'year',
-        pd.Series(data=[-0.5, 1.0], index=[2019, 2020]),
+        {('2019', -0.5), ('2020', 1.0)}
     ),
     (
         pd.DatetimeIndex(
@@ -426,7 +428,7 @@ def test_apply_deterministic_bad_metric_func():
         ),
         'beginning',
         'year',
-        pd.Series(data=[-1.0, 0.5], index=[2019, 2020]),
+        {('2019', -1.0), ('2020', 0.5)}
     ),
 ])
 def test_interval_label(index, interval_label, category, result,
@@ -462,18 +464,11 @@ def test_interval_label(index, interval_label, category, result,
         )
     )
 
-    proc_fx_obs = datamodel.ProcessedForecastObservation(
-        fxobs,
-        fxobs.forecast.interval_value_type,
-        fxobs.forecast.interval_length,
-        fxobs.forecast.interval_label,
-        forecast_values=fx_series,
-        observation_values=obs_series,
-    )
+    proc_fx_obs = create_processed_fxobs(fxobs, fx_series, obs_series)
 
     res = calculator.calculate_deterministic_metrics(proc_fx_obs, [category],
                                                      ['mbe'])
-    pd.testing.assert_series_equal(res[category]['mbe'], result)
+    assert {(v.index, v.value) for v in res.values} == result
 
 
 @pytest.mark.parametrize('label_fx,label_ref', [
