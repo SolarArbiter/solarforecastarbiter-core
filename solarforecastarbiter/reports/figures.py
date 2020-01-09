@@ -512,7 +512,7 @@ def bar_subdivisions(cds, category, metric):
             factors=calendar.day_abbr[0:])
     elif category == 'hour':
         fig_kwargs['x_range'] = FactorRange(
-            factors=[str(i) for i in range(24)])
+            factors=[str(i) for i in range(25)])
     else:
         fig_kwargs['x_range'] = FactorRange(
             factors=np.unique(cds.data['index'][filter_]))
