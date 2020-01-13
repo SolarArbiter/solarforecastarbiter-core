@@ -444,10 +444,19 @@ def test___check_categories__():
 @pytest.mark.parametrize('metrics', [
     (datamodel.ALLOWED_DETERMINISTIC_METRICS),
     pytest.param(datamodel.ALLOWED_PROBABILISTIC_METRICS,
-                 marks=pytest.mark.xfail(raises=ValueError)),
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
 ])
 def test___check_metrics__(metrics, single_forecast):
     datamodel.__check_metrics__(single_forecast, metrics)
+
+
+@pytest.mark.parametrize('metrics', [
+    (datamodel.ALLOWED_PROBABILISTIC_METRICS),
+    pytest.param(datamodel.ALLOWED_DETERMINISTIC_METRICS,
+                 marks=pytest.mark.xfail(raises=ValueError, stric=True)),
+])
+def test___check_metrics__probabilistic(metrics, prob_forecast_constant_value):
+    datamodel.__check_metrics__(prob_forecast_constant_value, metrics)
 
 
 @pytest.fixture

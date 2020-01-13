@@ -1017,19 +1017,22 @@ def __check_metrics__(fx, metrics):
 
     Raises
     ------
-    TypeError
+    ValueError
         If the selected metrics are not valid for the given forecast type.
 
     TODO
     ----
-    * validate probabilistic forecast metrics
     * validate event forecast metrics
 
     """
 
-    if isinstance(fx, Forecast) and not set(metrics) <= \
+    if (type(fx) == Forecast) and not set(metrics) <= \
             ALLOWED_DETERMINISTIC_METRICS.keys():
         raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
+    elif (type(fx) == any([
+            ProbabilisticForecast, ProbabilisticForecastConstantValue
+         ])) and not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
+        raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS")
     else:
         pass
 
