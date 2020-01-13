@@ -45,7 +45,7 @@ def construct_timeseries_cds(report):
 
     Parameters
     ----------
-    report: solarforecastarbiter.datamodel.Report
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
 
     Returns
     -------
@@ -154,10 +154,10 @@ def timeseries(timeseries_value_cds, timeseries_meta_cds,
 
     Parameters
     ----------
-    obs_fx_cds : list
-        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
-        ColumnDataSource must have columns timestamp, observation,
-        forecast.
+    timeseries_value_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of timeseries data. See :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds` for format.
+    timeseries_meta_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds` for format.
     start : pandas.Timestamp
         Report start time
     end : pandas.Timestamp
@@ -168,8 +168,7 @@ def timeseries(timeseries_value_cds, timeseries_meta_cds,
     Returns
     -------
     fig : bokeh.plotting.figure
-    """
-
+    """  # NOQA
     palette = cycle(PALETTE)
 
     fig = figure(
@@ -247,15 +246,19 @@ def scatter(timeseries_value_cds, timeseries_meta_cds, units):
 
     Parameters
     ----------
-    obs_fx_cds : list
-        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
-        ColumnDataSource must have columns timestamp, observation,
-        forecast.
+    timeseries_value_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds`
+        for format.
+    timeseries_meta_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds`
+        for format.
 
     Returns
     -------
     fig : bokeh.plotting.figure
-    """
+    """  # NOQA
     xy_min, xy_max = _get_scatter_limits(timeseries_value_cds)
 
     # match_aspect=True does not work well, so these need to be close
@@ -319,17 +322,14 @@ def construct_metrics_cds(metrics, rename=None):
     metrics : list of datamodel.MetricResults
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
-    kind : str
-        One of the available metrics grouping categories (e.g., total)
-    index : str
-        Determines if the index is the array of metrics ('metric') or
-        forecast ('forecast') names
     rename : function or None
         Function of one argument that is applied to each forecast name.
 
     Returns
     -------
     cds : bokeh.models.ColumnDataSource
+        ColumnDataSource with indices 'name', 'abbrev', 'category', 'metric',
+        and 'value'.
     """
 
     if rename:
@@ -383,12 +383,14 @@ def bar(cds, metric):
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
-        Fields must be 'forecast' and the names of the metrics
+        Metric cds created by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds`
+    metric: str
+        The metric to plot. This value should be found in cds['metric'].
 .
     Returns
     -------
     data_table : bokeh.widgets.DataTable
-    """
+    """  # NOQA
     x_range = np.unique(cds.data['abbrev'])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_range]
@@ -615,6 +617,16 @@ def rank_histogram():
 
 
 def raw_report_plots(report, metrics):
+    """Create a RawReportPlots object from the metrics of a report.
+
+     Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
+    """
     cds = construct_metrics_cds(metrics, rename=abbreviate)
     # Create initial bar figures
     figure_dict = {}
@@ -643,6 +655,20 @@ def raw_report_plots(report, metrics):
 
 
 def timeseries_plots(report):
+    """Return the bokeh components (script and div element) for timeseries
+    plots of the processed forecasts and observations.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    script: str
+        A script element to insert into an html template
+    div: str
+        A div element to insert into an html template.
+    """
     value_cds, meta_cds = construct_timeseries_cds(report)
     units = report.forecast_observations[0].forecast.units
     tfig = timeseries(value_cds, meta_cds, report.start, report.end, units,
