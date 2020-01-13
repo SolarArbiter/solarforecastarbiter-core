@@ -71,9 +71,9 @@ def get_data_for_report(session, report):
 
     Parameters
     ----------
-    session : solarforecastarbiter.api.APISession
+    session : :py:class:`solarforecastarbiter.api.APISession`
         API session for getting and posting data
-    report : solarforecastarbiter.datamodel.Report
+    report : :py:class:`solarforecastarbiter.datamodel.Report`
         Metadata describing report
 
     Returns
@@ -102,7 +102,7 @@ def create_metadata(report_request):
 
     Returns
     -------
-    metadata: solarforecastarbiter.datamodel.ReportMetadata
+    metadata: :py:class:`solarforecastarbiter.datamodel.ReportMetadata`
     """
     versions = get_versions()
     timezone = infer_timezone(report_request)
@@ -188,7 +188,7 @@ def create_raw_report_from_data(report, data):
 
     Parameters
     ----------
-    report : solarforecastarbiter.datamodel.Report
+    report : :py:class:`solarforecastarbiter.datamodel.Report`
         Metadata describing report
     data : dict
         Keys are all Forecast and Observation objects in the report,
@@ -196,7 +196,7 @@ def create_raw_report_from_data(report, data):
 
     Returns
     -------
-    raw_report : datamodel.RawReport
+    raw_report : :py:class:`solarforecastarbiterdatamodel.RawReport`
 
     Todo
     ----
@@ -236,7 +236,7 @@ def compute_report(access_token, report_id, base_url=None):
 
     Parameters
     ----------
-    session : solarforecastarbiter.api.APISession
+    session : :py:class:`solarforecastarbiter.api.APISession`
         API session for getting and posting data
     report_id : str
         ID of the report to fetch from the API and generate the raw
@@ -244,7 +244,7 @@ def compute_report(access_token, report_id, base_url=None):
 
     Returns
     -------
-    raw_report : datamodel.RawReport
+    raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
     session = APISession(access_token, base_url=base_url)
     try:
