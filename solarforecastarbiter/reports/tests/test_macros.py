@@ -54,11 +54,3 @@ def test_metric_table(report_with_raw, macro_test_template):
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_format.format(
             expected_metric[0].name)
-
-
-def test_download_csv_script(macro_test_template):
-    download_template = macro_test_template('download_csv_script()')
-    rendered = download_template.render()
-    # should this test more?
-    assert rendered[:8] == '<script>'
-    assert rendered[-10:] == '</script>\n'
