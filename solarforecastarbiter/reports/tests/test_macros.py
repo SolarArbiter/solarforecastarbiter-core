@@ -8,7 +8,7 @@ from solarforecastarbiter import datamodel
 @pytest.fixture
 def macro_test_template():
     def fn(macro_name_and_args):
-        macro_template = f"{{% import 'macros.j2' as macros with context%}}{{{{macros.{macro_name_and_args} | safe }}}}"
+        macro_template = f"{{% import 'macros.j2' as macros with context%}}{{{{macros.{macro_name_and_args} | safe }}}}"  # noqa
         env = Environment(
             loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
             autoescape=select_autoescape(['html', 'xml']),
@@ -40,12 +40,12 @@ metric_format = """<table style="width:100%;">
 </table>
 """
 
+
 def test_metric_table(report_with_raw, macro_test_template):
     metric_table_template = macro_test_template('metric_table(report_metrics,category,metric_ordering)')  # noqa
     metrics = report_with_raw.raw_report.metrics
     category = 'total'
     for i in range(3):
-        current_metric = report_with_raw.metrics[i]
         expected_metric = (metrics[i],)
         rendered_metric_table = metric_table_template.render(
             report_metrics=expected_metric,
