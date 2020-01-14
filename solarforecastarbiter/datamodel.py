@@ -1109,7 +1109,7 @@ class ValidationResult(BaseModel):
 class ProcessedForecastObservation(BaseModel):
     """
     Hold the processed forecast and observation data with the resampling
-    parameters
+    parameters.
 
     Parameters
     ----------

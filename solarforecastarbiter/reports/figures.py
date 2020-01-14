@@ -55,7 +55,7 @@ def construct_timeseries_cds(report):
         `forecast_values`.
 
     metadata_cds : bokeh.models.ColumnDataSource
-       This cds has the following keys:
+        This cds has the following keys:
         `pair_index` : Integer for pairing metadata with the values in
             the value_cds.
         `observation_name`: Observation name.
