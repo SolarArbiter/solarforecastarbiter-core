@@ -19,7 +19,6 @@ from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
-from solarforecastarbiter.metrics import calculator
 
 
 ALLOWED_VARIABLES = {
@@ -1027,13 +1026,15 @@ def __check_metrics__(fx, metrics):
 
     """
 
-    #ALLOWED_DETERMINISTIC_FORECASTS = (Forecast)
-    #ALLOWED_PROBABILISTIC_FORECASTS = (ProbabilisticForecast,
-    #                                   ProbabilisticForecastConstantValue)
+    ALLOWED_DETERMINISTIC_FORECASTS = [Forecast]
+    ALLOWED_PROBABILISTIC_FORECASTS = [ProbabilisticForecast,
+                                       ProbabilisticForecastConstantValue]
 
-    if type(fx) in [Forecast] and not set(metrics) <= ALLOWED_DETERMINISTIC_METRICS.keys():
+    if type(fx) in ALLOWED_DETERMINISTIC_FORECASTS and not set(metrics) \
+            <= ALLOWED_DETERMINISTIC_METRICS.keys():
         raise ValueError("Deterministic:", type(fx), type(metrics), metrics)
-    elif type(fx) in [ProbabilisticForecast, ProbabilisticForecastConstantValue] and not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
+    elif type(fx) in ALLOWED_PROBABILISTIC_FORECASTS and not set(metrics) \
+            <= ALLOWED_PROBABILISTIC_METRICS.keys():
         raise ValueError("Probabilistic:", type(fx), type(metrics), metrics)
 
 
