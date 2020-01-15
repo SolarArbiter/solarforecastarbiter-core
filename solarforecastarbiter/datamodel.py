@@ -19,6 +19,7 @@ from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
+from solarforecastarbiter.metrics import calculator
 
 
 ALLOWED_VARIABLES = {
@@ -1006,7 +1007,7 @@ def __check_metrics__(fx, metrics):
 
     Parameters
     ----------
-    fx : Forecast.
+    fx : Forecast, ProbailisticForecast
         Forecast to be evaluated by metrics.
     metrics : Tuple of str
         Metrics to be computed in the report.
@@ -1026,15 +1027,14 @@ def __check_metrics__(fx, metrics):
 
     """
 
-    if (type(fx) == Forecast) and not set(metrics) <= \
-            ALLOWED_DETERMINISTIC_METRICS.keys():
-        raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
-    elif (type(fx) == any([
-            ProbabilisticForecast, ProbabilisticForecastConstantValue
-         ])) and not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
-        raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS")
-    else:
-        pass
+    #ALLOWED_DETERMINISTIC_FORECASTS = (Forecast)
+    #ALLOWED_PROBABILISTIC_FORECASTS = (ProbabilisticForecast,
+    #                                   ProbabilisticForecastConstantValue)
+
+    if type(fx) in [Forecast] and not set(metrics) <= ALLOWED_DETERMINISTIC_METRICS.keys():
+        raise ValueError("Deterministic:", type(fx), type(metrics), metrics)
+    elif type(fx) in [ProbabilisticForecast, ProbabilisticForecastConstantValue] and not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
+        raise ValueError("Probabilistic:", type(fx), type(metrics), metrics)
 
 
 def __check_categories__(categories):
