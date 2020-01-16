@@ -1026,11 +1026,12 @@ def __check_metrics__(fx, metrics):
 
     """
 
-    if fx in [Forecast] and not set(metrics) <= \
+    if type(fx) in [Forecast] and not set(metrics) <= \
             ALLOWED_DETERMINISTIC_METRICS.keys():
         raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS.")
-    elif fx in [ProbabilisticForecast, ProbabilisticForecastConstantValue] \
-            and not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
+    elif type(fx) in [ProbabilisticForecast, \
+            ProbabilisticForecastConstantValue] and not set(metrics) <= \
+            ALLOWED_PROBABILISTIC_METRICS.keys():
         raise ValueError("Metrics must be in ALLOWED_PROBABILISTIC_METRICS.")
 
 
