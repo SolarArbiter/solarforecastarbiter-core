@@ -462,11 +462,11 @@ def test___check_metrics__(metrics, single_forecast):
     (list(datamodel.ALLOWED_PROBABILISTIC_METRICS.keys())),
     pytest.param(
         ('rmse'),
-        marks=pytest.mark.xfail(raises=ValueError, stric=True)
+        marks=pytest.mark.xfail(raises=ValueError, strict=True)
     ),
     pytest.param(
         list(datamodel.ALLOWED_DETERMINISTIC_METRICS.keys()),
-        marks=pytest.mark.xfail(raises=ValueError, stric=True)
+        marks=pytest.mark.xfail(raises=ValueError, strict=True)
     ),
 ])
 def test___check_metrics__probabilistic(metrics, prob_forecast_constant_value):
