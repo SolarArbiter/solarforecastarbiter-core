@@ -470,7 +470,6 @@ def test___check_metrics__(metrics, single_forecast):
     ),
 ])
 def test___check_metrics__probabilistic(metrics, prob_forecast_constant_value):
-    print(type(prob_forecast_constant_value))
     datamodel.__check_metrics__(prob_forecast_constant_value, metrics)
 
 
