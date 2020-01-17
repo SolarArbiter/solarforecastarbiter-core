@@ -18,6 +18,7 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Automatically verify selected metrics are valid for deterministic forecasts. (:issue:`267`) (:pull:`301`)
+* Automatically verify selected metrics are valid for probabilistic forecasts. (:issue:`302`) (:pull:`306`)
 * Add schema for de/serializing timeseries in :py:mod:`solarforecastarbiter.io.utils` (:pull:`291`)
 
 Bug fixes

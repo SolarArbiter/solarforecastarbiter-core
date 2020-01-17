@@ -1006,7 +1006,7 @@ def __check_metrics__(fx, metrics):
 
     Parameters
     ----------
-    fx : Forecast.
+    fx : Forecast, ProbabilisticForecast, ProbabilisticForecastConstantValue
         Forecast to be evaluated by metrics.
     metrics : Tuple of str
         Metrics to be computed in the report.
@@ -1017,21 +1017,24 @@ def __check_metrics__(fx, metrics):
 
     Raises
     ------
-    TypeError
+    ValueError
         If the selected metrics are not valid for the given forecast type.
 
     TODO
     ----
-    * validate probabilistic forecast metrics
     * validate event forecast metrics
 
     """
 
-    if isinstance(fx, Forecast) and not set(metrics) <= \
-            ALLOWED_DETERMINISTIC_METRICS.keys():
-        raise ValueError("Metrics must be in ALLOWED_DETERMINISTIC_METRICS")
-    else:
-        pass
+    if isinstance(fx, (ProbabilisticForecast,
+                       ProbabilisticForecastConstantValue)):
+        if not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
+            raise ValueError("Metrics must be in "
+                             "ALLOWED_PROBABILISTIC_METRICS.")
+    elif isinstance(fx, Forecast):
+        if not set(metrics) <= ALLOWED_DETERMINISTIC_METRICS.keys():
+            raise ValueError("Metrics must be in "
+                             "ALLOWED_DETERMINISTIC_METRICS.")
 
 
 def __check_categories__(categories):
