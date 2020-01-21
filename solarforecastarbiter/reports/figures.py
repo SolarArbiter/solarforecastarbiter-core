@@ -619,9 +619,10 @@ def rank_histogram():
 def raw_report_plots(report, metrics):
     """Create a RawReportPlots object from the metrics of a report.
 
-     Parameters
+    Parameters
     ----------
     report: :py:class:`solarforecastarbiter.datamodel.Report`
+    metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
 
     Returns
     -------

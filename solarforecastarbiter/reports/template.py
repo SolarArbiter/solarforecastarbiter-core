@@ -69,9 +69,9 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     with_timeseries: bool
         Whether or not to include timeseries plots.
     body_only: bool
-        When True, returns a standalone report template with the required
-        <html> and <head> tags. Otherwise returns a div for injecting into
-        another template.
+        When True, returns a div for injecting into another template,
+        otherwise returns a standalone report template with the required
+        <html> and <head> tags.
 
     Returns
     -------
@@ -109,9 +109,9 @@ def render_html(report, dash_url='https://dashboard.solarforecastarbiter.org',
     with_timeseries: bool
         Whether or not to include timeseries plots.
     body_only: bool
-        When True, returns a standalone report template with the required
-        <html> and <head> tags. Otherwise returns a div for injecting into
-        another template.
+        When True, returns a div for injecting into another template,
+        otherwise returns a standalone report template with the required
+        <html> and <head> tags.
 
     Returns
     -------

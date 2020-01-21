@@ -880,10 +880,6 @@ class ForecastObservation(BaseModel):
     """
     Class for pairing Forecast and Observation objects for evaluation.
 
-    Maybe not needed, but makes Report type spec easier and allows for
-    __post_init__ checking.
-
-
     Parameters
     ----------
     forecast: :py:class:`solarforecastarbiter.datamodel.Forecast`
@@ -891,7 +887,6 @@ class ForecastObservation(BaseModel):
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
     normalization: float
     cost_per_unit_error: float
-    data_object: :py:class:`solarforecastarbiter.datamodel.Observation`
     """  # NOQA
     forecast: Forecast
     observation: Observation
@@ -913,9 +908,6 @@ class ForecastObservation(BaseModel):
 class ForecastAggregate(BaseModel):
     """
     Class for pairing Forecast and Aggregate objects for evaluation.
-
-    Maybe not needed, but makes Report type spec easier and allows for
-    __post_init__ checking.
 
     Parameters
     ----------
@@ -1188,9 +1180,9 @@ class MetricResult(BaseModel):
     forecast_id: str
         UUID of the forecast being analyzed.
     values: tuple of :py:class: `solarforecastarbiter.datamodel.MetricValue`
-    observation_id: str
+    observation_id: str or None
         UUID of the observation being analyzed.
-    aggregate_id: str
+    aggregate_id: str or None
         UUID of the aggregate being analyzed.
 
     Notes
