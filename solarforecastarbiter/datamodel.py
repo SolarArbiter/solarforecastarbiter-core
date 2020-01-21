@@ -916,7 +916,6 @@ class ForecastAggregate(BaseModel):
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
     normalization: float
     cost_per_unit_error: float
-    data_object: :py:class:`solarforecastarbiter.datamodel.Aggregate`
     """  # NOQA
     forecast: Forecast
     aggregate: Aggregate
