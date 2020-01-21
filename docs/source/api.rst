@@ -71,7 +71,28 @@ Containers to associate forecasts and observations for use with reports:
    :toctree: generated/
 
    datamodel.ForecastObservation
+   datamodel.ForecastAggregate
    datamodel.ProcessedForecastObservation
+
+
+Report metrics and validation:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.MetricResult
+   datamodel.MetricValue
+   datamodel.ValidationResult
+   datamodel.ReportMessage
+
+Report plots:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.RawReportPlots
+   datamodel.ReportFigure
+
 
 Reports:
 
@@ -467,8 +488,20 @@ Reports
 .. autosummary::
    :toctree: generated/
 
-   reports
-
+   reports.main.compute_report
+   reports.main.create_metadata
+   reports.main.get_data_for_report
+   reports.main.create_raw_report_from_data
+   reports.figures.construct_timeseries_cds
+   reports.figures.construct_metrics_cds
+   reports.figures.timeseries
+   reports.figures.scatter
+   reports.figures.bar
+   reports.figures.bar_subdivisions
+   reports.figures.raw_report_plots
+   reports.figures.timeseries_plots
+   reports.template.render_html
+   reports.template.get_template_and_kwargs
 
 Validation
 ==========

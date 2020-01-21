@@ -334,8 +334,8 @@ class PVModelingParameters(BaseModel):
 
     See Also
     --------
-    FixedTiltModelingParameters
-    SingleAxisModelingParameters
+    :py:class:`solarforecastarbiter.datamodel.FixedTiltModelingParameters`
+    :py:class:`solarforecastarbiter.datamodel.SingleAxisModelingParameters`
     """
     ac_capacity: float
     dc_capacity: float
@@ -360,7 +360,7 @@ class FixedTiltModelingParameters(PVModelingParameters):
 
     See Also
     --------
-    PVModelingParameters
+    :py:class:`solarforecastarbiter.datamodel.PVModelingParameters`
     """
     surface_tilt: float
     surface_azimuth: float
@@ -391,7 +391,7 @@ class SingleAxisModelingParameters(PVModelingParameters):
 
     See Also
     --------
-    PVModelingParameters
+    :py:class:`solarforecastarbiter.datamodel.PVModelingParameters`
     """
     axis_tilt: float
     axis_azimuth: float
@@ -414,9 +414,9 @@ class SolarPowerPlant(Site):
 
     See Also
     --------
-    Site
-    SingleAxisModelingParameters
-    FixedTiltModelingParameters
+    :py:class:`solarforecastarbiter.datamodel.Site`
+    :py:class:`solarforecastarbiter.datamodel.SingleAxisModelingParameters`
+    :py:class:`solarforecastarbiter.datamodel.FixedTiltModelingParameters`
     """
     modeling_parameters: PVModelingParameters = field(
         default_factory=PVModelingParameters)
@@ -465,7 +465,7 @@ class Observation(BaseModel):
 
     See Also
     --------
-    Site
+    :py:class:`solarforecastarbiter.datamodel.Site`
     """
     name: str
     variable: str
@@ -508,8 +508,8 @@ class AggregateObservation(BaseModel):
 
     See Also
     --------
-    Observation
-    Aggregate
+    :py:class:`solarforecastarbiter.datamodel.Observation`
+    :py:class:`solarforecastarbiter.datamodel.Aggregate`
     """
     observation: Observation
     effective_from: pd.Timestamp
@@ -574,7 +574,7 @@ class Aggregate(BaseModel):
 
     See Also
     --------
-    Observation
+    :py:class:`solarforecastarbiter.datamodel.Observation`
     """
     name: str
     description: str
@@ -682,8 +682,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
 
     See Also
     --------
-    Site
-    Aggregate
+    :py:class:`solarforecastarbiter.datamodel.Site
+    :py:class:`solarforecastarbiter.datamodel.Aggregate
     """
     def __post_init__(self):
         __set_units__(self)
@@ -751,7 +751,7 @@ class ProbabilisticForecastConstantValue(
 
     See also
     --------
-    ProbabilisticForecast
+    :py:class:`solarforecastarbiter.datamodel.ProbabilisticForecast`
     """
     def __post_init__(self):
         super().__post_init__()
@@ -841,7 +841,7 @@ def __set_constant_values__(self):
             cv_dict.pop('forecast_id', None)
             cv_dict['constant_value'] = cv
             out.append(
-                    ProbabilisticForecastConstantValue.from_dict(cv_dict))
+                ProbabilisticForecastConstantValue.from_dict(cv_dict))
         else:
             raise TypeError(
                 f'Invalid type for a constant value {cv}. '
@@ -880,9 +880,14 @@ class ForecastObservation(BaseModel):
     """
     Class for pairing Forecast and Observation objects for evaluation.
 
-    Maybe not needed, but makes Report type spec easier and allows for
-    __post_init__ checking.
-    """
+    Parameters
+    ----------
+    forecast: :py:class:`solarforecastarbiter.datamodel.Forecast`
+    observation: :py:class:`solarforecastarbiter.datamodel.Observation`
+    reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
+    normalization: float
+    cost_per_unit_error: float
+    """  # NOQA
     forecast: Forecast
     observation: Observation
     reference_forecast: Union[Forecast, None] = None
@@ -904,9 +909,14 @@ class ForecastAggregate(BaseModel):
     """
     Class for pairing Forecast and Aggregate objects for evaluation.
 
-    Maybe not needed, but makes Report type spec easier and allows for
-    __post_init__ checking.
-    """
+    Parameters
+    ----------
+    forecast: :py:class:`solarforecastarbiter.datamodel.Forecast`
+    aggregate: :py:class:`solarforecastarbiter.datamodel.Aggregate`
+    reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
+    normalization: float
+    cost_per_unit_error: float
+    """  # NOQA
     forecast: Forecast
     aggregate: Aggregate
     reference_forecast: Union[Forecast, None] = None
@@ -988,12 +998,12 @@ class ValueFilter(BaseFilter):
 
     Parameters
     ----------
-    metadata : Observation or Forecast
+    metadata : :py:class:`solarforecastarbiter.datamodel.Forecast` or :py:class:`solarforecastarbiter.datamodel.Observation`
         Object to get values for.
     value_range : (float, float) tuple
         Value range to calculate errors. Range is inclusive
         of both endpoints. Filters are applied before resampling.
-    """
+    """  # NOQA
     metadata: Union[Observation, Forecast]
     value_range: Tuple[float, float]
 
@@ -1046,6 +1056,19 @@ def __check_categories__(categories):
 class ReportMetadata(BaseModel):
     """
     Hold additional metadata about the report
+
+    Parameters
+    ----------
+    name: str
+    start: pandas.Timestamp
+    end: pandas.Timestamp
+    now: pandas.Timestamp
+        The time at report computation.
+    timezone: str
+        The IANA timezone of the report.
+    versions: dict
+        Dictionary of version information to ensure the correct version of
+        the core library is used when rendering or recomputing the report.
     """
     name: str
     start: pd.Timestamp
@@ -1057,6 +1080,17 @@ class ReportMetadata(BaseModel):
 
 @dataclass(frozen=True)
 class ValidationResult(BaseModel):
+    """Stores the validation result for a single flag for a forecast and
+    observation pair.
+
+    Parameters
+    ----------
+    flag: str
+        The quality flag being recorded. See
+        :py:mod:`solarforecastarbiter.validation.quality_mapping`.
+    count: int
+        The number of timestamps that were flagged.
+    """
     flag: str
     count: int
 
@@ -1066,8 +1100,29 @@ class ValidationResult(BaseModel):
 class ProcessedForecastObservation(BaseModel):
     """
     Hold the processed forecast and observation data with the resampling
-    parameters
-    """
+    parameters.
+
+    Parameters
+    ----------
+    name: str
+    original: :py:class:`solarforecastarbiter.datamodel.ForecastObservation` or :py:class:`solarforecastarbiter.ForecastAggregate`
+    interval_value_type: str
+    interval_length: pd.Timedelta
+    interval_label: str
+    valid_point_count: int
+        The number of valid points in the processed forecast.
+    forecast_values: pandas.Series or str or None
+        The values of the forecast, the forecast id or None.
+    observation_values: pandas.Series or str or None
+        The values of the observation, the observation or aggregated id, or
+        None.
+    reference_forecast_values: pandas.Series or str or None
+        The values of the reference forecast, the reference forecast id or
+        None.
+    validation_results: tuple of :py:class:`solarforecastarbiter.datamodel.ValidationResult`
+    normalization_factor: pandas.Series or Float
+    cost_per_unit_error: float
+    """  # NOQA
     name: str
     # do this instead of subclass to compare objects later
     original: Union[ForecastObservation, ForecastAggregate]
@@ -1092,6 +1147,20 @@ class ProcessedForecastObservation(BaseModel):
 
 @dataclass(frozen=True)
 class MetricValue(BaseModel):
+    """Class for storing the result of a single metric calculation.
+
+    Parameters
+    ----------
+    category: str
+        The category of the metric value, e.g. total, monthly, hourly.
+    metric: str
+        The metric that was calculated.
+    index: str
+        The index of the metric value, e.g. '1-12' for monthly metrics or
+        0-23 for hourly.
+    value: float
+        The value calculated for the metric.
+    """
     category: str
     metric: str
     index: str
@@ -1100,6 +1169,25 @@ class MetricValue(BaseModel):
 
 @dataclass(frozen=True)
 class MetricResult(BaseModel):
+    """Class for storing the results of many metric calculations for a single
+    observation and forecast pair.
+
+    Parameters
+    ----------
+    name: str
+        A descriptive name for the MetricResult.
+    forecast_id: str
+        UUID of the forecast being analyzed.
+    values: tuple of :py:class: `solarforecastarbiter.datamodel.MetricValue`
+    observation_id: str or None
+        UUID of the observation being analyzed.
+    aggregate_id: str or None
+        UUID of the aggregate being analyzed.
+
+    Notes
+    -----
+    Only one of `aggregate_id` or `observation_id` may be set.
+    """
     name: str
     forecast_id: str
     values: Tuple[MetricValue, ...]
@@ -1120,6 +1208,23 @@ class MetricResult(BaseModel):
 
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):
+    """A class for storing metric plots for a report with associated metadata.
+
+    Parameters
+    ----------
+    name: str
+        A descriptive name for the figure.
+    div: str
+        An html div element to be target of Bokeh javascript.
+    svg: str
+        A static svg copy of the plot, for including in the pdf version.
+    type: str
+        The type of plot, e.g. bar or scatter.
+    category: str
+        The metric category, e.g. total, monthly, hourly.
+    metric: str
+        The metric being plotted.
+    """
     name: str
     div: str
     svg: str
@@ -1130,6 +1235,17 @@ class ReportFigure(BaseModel):
 
 @dataclass(frozen=True)
 class RawReportPlots(BaseModel):
+    """Class for storing collection of all metric plots on a raw report.
+
+    Parameters
+    ----------
+    bokeh_version: str
+        The bokeh version used when generating the plots.
+    script: str
+        The html script tag containing all of the bokeh javascript for the
+        plots.
+    figures: tuple of :py:class:`solarforecastarbiter.datamodel.ReportFigure`
+    """
     bokeh_version: str
     script: str
     figures: Tuple[ReportFigure, ...]
@@ -1137,6 +1253,17 @@ class RawReportPlots(BaseModel):
 
 @dataclass(frozen=True)
 class ReportMessage(BaseModel):
+    """Class for intercepting errors an warnings associated with report
+    processing.
+
+    Parameters
+    ----------
+    messages: str
+    step: str
+    level: str
+    function: str
+        The function where the error originated.
+    """
     message: str
     step: str
     level: str
@@ -1149,7 +1276,15 @@ class RawReport(BaseModel):
     Class for holding the result of processing a report request including
     the calculated metrics, some metadata, the markdown template, and
     the processed forecast/observation data.
-    """
+
+    Parameters
+    ----------
+    metadata: :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
+    plots: :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
+    metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
+    processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
+    messages: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMessage`
+    """  # NOQA
     metadata: ReportMetadata
     plots: RawReportPlots
     metrics: Tuple[MetricResult, ...]
