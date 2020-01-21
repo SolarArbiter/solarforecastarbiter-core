@@ -82,7 +82,7 @@ def test_construct_metrics_cds(report_with_raw):
 
     # this could maybe use value variance, but asserting the cds process
     # did not mangle values for now
-    assert (values == 1).all()
+    assert (values == 2).all()
 
 
 def test_construct_metrics_cds_with_rename(report_with_raw):

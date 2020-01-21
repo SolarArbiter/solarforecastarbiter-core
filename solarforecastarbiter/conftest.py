@@ -1303,7 +1303,7 @@ def report_metrics(metric_index):
                     {
                         'category': category,
                         'metric': metric,
-                        'value': 1,
+                        'value': 2,
                         'index': metric_index(category),
                     }
                 ))
@@ -1385,6 +1385,13 @@ def raw_report(report_objects, report_metrics):
                                   (fxobs0, fxobs1, fxagg_))
         return raw
     return gen
+
+
+@pytest.fixture
+def report_with_raw(report_dict, raw_report):
+    report_dict['raw_report'] = raw_report(True)
+    report = datamodel.Report.from_dict(report_dict)
+    return report
 
 
 @pytest.fixture()
