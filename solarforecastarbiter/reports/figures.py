@@ -227,14 +227,16 @@ def timeseries(timeseries_value_cds, timeseries_meta_cds,
 
 
 def _get_scatter_limits(cds):
-    extremes = []
+    extremes = [np.nan]
     for kind in ('forecast_values', 'observation_values'):
-        extremes.append(np.nanmin(cds.data[kind]))
-        extremes.append(np.nanmax(cds.data[kind]))
-    min_ = min(extremes)
+        arr = np.asarray(cds.data[kind]).astype(float)
+        if len(arr) != 0:
+            extremes.append(np.nanmin(arr))
+            extremes.append(np.nanmax(arr))
+    min_ = np.nanmin(extremes)
     if np.isnan(min_):
         min_ = -999
-    max_ = max(extremes)
+    max_ = np.nanmax(extremes)
     if np.isnan(max_):
         max_ = 999
     return min_, max_

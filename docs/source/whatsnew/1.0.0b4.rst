@@ -18,7 +18,7 @@ API Changes
 timeseries and metadata.
 * :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds` updated to accept a list of :py:class:`solarforecastarbiter.datamodel.MetricResults` as its first argument.
 * :py:func:`solarforecastarbiter.reports.figures.timeseries` and :py:func:`solarforecastarbiter.figures.scatter` now take two Bokeh ColumnDataSources as their first two arguments in place of a list of (ProcesseForecastObservation, ColumnDataSource) tuples. See the return value of :py:func:`solarforecastarbiter.figures.construct_timeseries_cds` for the format of these ColumnDataSources.
-* Replaced `solarforecastarbiter.reports.full_html` with :py:func:`solarforecastarbiter.reports.template.render_html` which accepts a :py:class:`solarforecastarbiter.datamodel.Report` object, a dashboard url and optional flags to include timeseries plots or generate a standalone html report. 
+* Replaced `solarforecastarbiter.reports.full_html` with :py:func:`solarforecastarbiter.reports.template.render_html` which accepts a :py:class:`solarforecastarbiter.datamodel.Report` object, a dashboard url and optional flags to include timeseries plots or generate a standalone html report.
 
 Enhancements
 ~~~~~~~~~~~~
@@ -33,6 +33,7 @@ Bug fixes
   `metrics.calculator`. (:issue:`234`) (:pull:`297`)
 * Document `resample_and_align()` behavior when the `interval_label` of the
   forecast and observation don't match. (:issue:`300`) (:pull:`303`)
+* Fix scatter plot limits when some data is NaN (:issue:`282`)
 
 Contributors
 ~~~~~~~~~~~~

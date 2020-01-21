@@ -220,15 +220,32 @@ def test_boolean_filter_indices_by_pair(mocker, array, index, expected):
     assert np.all(result == expected)
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize('fmin,fmax,omin,omax,expected', [
     (-5, 5, -3, 3, (-5, 5)),
     (1, 5, 0, 4, (0, 5)),
     (np.nan, np.nan, np.nan, np.nan, (-999, 999)),
+    (np.nan, np.nan, 0, 1, (0, 1))
 ])
 def test_get_scatter_limits(fmin, fmax, omin, omax, expected):
     cds = ColumnDataSource({
         'observation_values': np.array([omin, omax]),
         'forecast_values': np.array([fmin, fmax]),
+    })
+    assert figures._get_scatter_limits(cds) == expected
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize('obs,fx,expected', [
+    ([None], [None], (-999, 999)),
+    (np.array([]), np.array([0, 1]), (0, 1)),
+    (np.array([0, 1]), np.array([]), (0, 1)),
+    (np.array([]), np.array([]), (-999, 999)),
+])
+def test_get_scatter_limits_empty(obs, fx, expected):
+    cds = ColumnDataSource({
+        'observation_values': obs,
+        'forecast_values': fx
     })
     assert figures._get_scatter_limits(cds) == expected
 
