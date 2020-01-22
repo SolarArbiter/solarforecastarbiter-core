@@ -26,7 +26,7 @@ jobs:
   - task: Npm@1
     inputs:
       command: 'custom'
-      customCommand: 'npm install phantomjs'
+      customCommand: 'install phantomjs'
     displayName: 'Install phantomjs'
 
   - script: python -m pip install --upgrade pip && pip install -r requirements.txt -r requirements-test.txt
