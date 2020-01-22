@@ -618,6 +618,34 @@ def rank_histogram():
     raise NotImplementedError
 
 
+def output_svg(fig):
+    """
+    Generates an SVG from the Bokeh figure. Errors in the
+    process are logged and an SVG with error text is returned.
+
+    Parameters
+    ----------
+    fig : bokeh.plotting.Figure
+
+    Returns
+    -------
+    svg : str
+    """
+    fig.output_backend = 'svg'
+    try:
+        svg = get_svgs(fig)[0]
+    except Exception:
+        logger.error('Could not generate SVG for figure %s',
+                     getattr(fig, 'name', 'unnamed'))
+        svg = (
+            '<svg width="100%" height="100%">'
+            '<text x="50" y="50" class="alert alert-error">'
+            'Unable to generate SVG plot. Try rerunning report.'
+            '</text>'
+            '</svg>')
+    return svg
+
+
 def raw_report_plots(report, metrics):
     """Create a RawReportPlots object from the metrics of a report.
 
@@ -648,9 +676,7 @@ def raw_report_plots(report, metrics):
     for k, v in divs.items():
         cat, met, name = k.split('_')
         fig = figure_dict[k]
-        # catch svg errors as non critical
-        fig.output_backend = 'svg'
-        svg = get_svgs(fig)[0]
+        svg = output_svg(fig)
         mplots.append(datamodel.ReportFigure(
             name=name, category=cat, metric=met, div=v, svg=svg, type='bar'))
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))

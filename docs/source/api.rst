@@ -498,6 +498,7 @@ Reports
    reports.figures.scatter
    reports.figures.bar
    reports.figures.bar_subdivisions
+   reports.figures.output_svg
    reports.figures.raw_report_plots
    reports.figures.timeseries_plots
    reports.template.render_html
