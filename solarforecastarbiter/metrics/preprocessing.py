@@ -111,6 +111,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
     # forecasts, and missing periods
+    import ipdb; ipdb.set_trace()
     obs_resampled = obs_resampled.dropna(how="any")
     obs_aligned, fx_aligned = obs_resampled.align(fx_series.dropna(how="any"),
                                                   'inner')
@@ -206,12 +207,25 @@ def process_forecast_observations(forecast_observations, filters, data,
                                     for k, v in counts.items())
                 validated_observations[fxobs.data_object] = (
                     obs_ser, val_results)
-
+        import ipdb; ipdb.set_trace()
         obs_ser, val_results = validated_observations[fxobs.data_object]
         fx_ser = data[fxobs.forecast]
+        val_results += (datamodel.ValidationResult(
+            flag='Observations Unavailable',
+            count=obs_ser.isna().sum()),)
         try:
             forecast_values, observation_values = resample_and_align(
                 fxobs, fx_ser, obs_ser, timezone)
+            import ipdb; ipdb.set_trace()
+            val_results += (datamodel.ValidationResult(
+                flag='Observations Ignored from Resampling and Alignment',
+                count=len(obs_ser)-len(observation_values)),)
+            val_results += (datamodel.ValidationResult(
+                flag='Forecasts Ignored from Alignment',
+                count=len(fx_ser)-len(forecast_values)),)
+            val_results += (datamodel.ValidationResult(
+                flag='Total Observations Ignored',
+                count=len(data[fxobs.observation])-len(observation_values)),)
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',
