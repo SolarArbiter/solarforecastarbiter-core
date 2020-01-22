@@ -23,8 +23,10 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: sudo apt-get -y install pandoc
-    displayName: 'Install pandoc'
+  - script: |
+      curl https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 -o phantomjs.tar.bz2
+      tar -xjfO phantomjs.tar.bz2 */bin/phantomjs > /opt/app-root/bin/phantomjs
+    displayName: 'Install phantomjs'
 
   - script: python -m pip install --upgrade pip && pip install -r requirements.txt -r requirements-test.txt
     displayName: 'Install dependencies'
