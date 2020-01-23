@@ -376,38 +376,50 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
-@pytest.mark.parametrize('index,interval_label,category,result', [
+@pytest.mark.parametrize('ts,tz,interval_label,category,result', [
     # category: hour
     (
-        pd.DatetimeIndex(
-            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
-        ),
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
         'ending',
         'hour',
         {('12', -1.0), ('13', 0.5)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
-        ),
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
         'beginning',
         'hour',
         {('13', -0.5), ('14', 1.0)}
     ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'ending',
+        'hour',
+        {('4', -1.0), ('5', 0.5)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'beginning',
+        'hour',
+        {('5', -0.5), ('6', 1.0)}
+    ),
+
+
 
     # category: month
     (
-        pd.DatetimeIndex(
-            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
-        ),
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
         'ending',
         'month',
         {('Nov', -0.5), ('Dec', 1.0)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
-        ),
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
         'beginning',
         'month',
         {('Nov', -1.0), ('Dec', 0.5)}
@@ -415,24 +427,24 @@ def test_apply_deterministic_bad_metric_func():
 
     # category: year
     (
-        pd.DatetimeIndex(
-            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
-        ),
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
         'ending',
         'year',
         {('2019', -0.5), ('2020', 1.0)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
-        ),
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
         'beginning',
         'year',
         {('2019', -1.0), ('2020', 0.5)}
     ),
 ])
-def test_interval_label(index, interval_label, category, result,
+def test_interval_label(ts, tz, interval_label, category, result,
                         create_processed_fxobs):
+
+    index = pd.DatetimeIndex(ts, tz="UTC")
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
@@ -440,12 +452,17 @@ def test_interval_label(index, interval_label, category, result,
         latitude=35.05,
         longitude=-106.54,
         elevation=1657.0,
-        timezone='UTC',
+        timezone="UTC",
         provider='Sandia'
     )
 
     fx_series = pd.Series([0, 1, 2], index=index)
     obs_series = pd.Series([1, 1, 1], index=index)
+
+    # convert to local timezone
+    fx_series = fx_series.tz_convert(tz)
+    obs_series = obs_series.tz_convert(tz)
+
     fxobs = datamodel.ForecastObservation(
         observation=datamodel.Observation(
             site=site, name='dummy obs', variable='ghi',
