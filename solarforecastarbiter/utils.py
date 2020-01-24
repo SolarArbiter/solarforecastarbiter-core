@@ -1,3 +1,4 @@
+from hashlib import sha256
 import warnings
 
 
@@ -163,3 +164,9 @@ def compute_aggregate(data, interval_length, interval_label,
         int).aggregate(np.bitwise_or.reduce, axis=1)
     out = pd.DataFrame({'value': final_value, 'quality_flag': final_qf})
     return out
+
+
+def sha256_pandas_object_hash(obj):
+    return sha256(
+        pd.util.hash_pandas_object(obj).values.tobytes()
+    ).hexdigest()

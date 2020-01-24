@@ -1069,6 +1069,8 @@ class ReportMetadata(BaseModel):
     versions: dict
         Dictionary of version information to ensure the correct version of
         the core library is used when rendering or recomputing the report.
+    data_checksum: str
+        SHA-256 checksum of the raw data used in the report.
     """
     name: str
     start: pd.Timestamp
@@ -1076,6 +1078,7 @@ class ReportMetadata(BaseModel):
     now: pd.Timestamp
     timezone: str
     versions: dict
+    data_checksum: Union[str, None] = None
 
 
 @dataclass(frozen=True)

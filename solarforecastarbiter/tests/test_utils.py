@@ -353,3 +353,22 @@ def test__make_aggregate_index_localization(start, end):
         }
     with pytest.raises(TypeError):
         utils._make_aggregate_index(test_data, length, label, 'UTC')
+
+
+@pytest.mark.parametrize('inp,oup', [
+    (pd.DataFrame(), pd.Series()),
+    (pd.DataFrame(index=pd.DatetimeIndex([])), pd.DataFrame()),
+    (pd.Series([0, 1]), pd.Series([0, 1])),
+    (pd.DataFrame([[0, 1], [1, 2]]), pd.DataFrame([[0, 1], [1, 2]])),
+    pytest.param(
+        pd.Series([0, 1]),
+        pd.Series([0, 1], index=pd.date_range(start='now', freq='1min',
+                                              periods=2)),
+        marks=pytest.mark.xfail(type=AssertionError, strict=True)),
+    pytest.param(
+        pd.Series([0, 1]),
+        pd.Series([1, 0]),
+        marks=pytest.mark.xfail(type=AssertionError, strict=True))
+])
+def test_sha256_pandas_object_hash(inp, oup):
+    assert utils.sha256_pandas_object_hash(inp) == utils.sha256_pandas_object_hash(oup)  # NOQA
