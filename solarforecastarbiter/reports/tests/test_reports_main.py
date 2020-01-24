@@ -14,6 +14,7 @@ from solarforecastarbiter.reports import main
 EMPTY_DF = pd.DataFrame(columns=['value', 'quality_flag'],
                         index=pd.DatetimeIndex([], tz='UTC'))
 
+
 @pytest.fixture()
 def _test_data(report_objects):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
@@ -146,7 +147,8 @@ def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
     assert len(raw.plots.figures) > 0
 
 
-def test_create_raw_report_from_data_no_obs(mocker, report_objects, _test_data):
+def test_create_raw_report_from_data_no_obs(mocker, report_objects,
+                                            _test_data):
     report = report_objects[0]
     data = {}
     for fxobs in report.forecast_observations:
