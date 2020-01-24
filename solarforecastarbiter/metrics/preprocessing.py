@@ -208,7 +208,6 @@ def process_forecast_observations(forecast_observations, filters, data,
     validated_observations = {}
     processed_fxobs = []
     for fxobs in forecast_observations:
-        import pdb; pdb.set_trace()
         if fxobs.data_object not in validated_observations:
             try:
                 obs_ser, counts = apply_validation(

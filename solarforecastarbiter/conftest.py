@@ -1684,6 +1684,7 @@ def preprocessing_result_dict():
         'count': 1
     }
 
+
 @pytest.fixture
 def preprocessing_result(preprocessing_result_dict):
     return datamodel.PreprocessingResult.from_dict(preprocessing_result_dict)
