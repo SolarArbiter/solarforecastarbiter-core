@@ -1095,6 +1095,22 @@ class ValidationResult(BaseModel):
     count: int
 
 
+@dataclass(frozen=True)
+class PreprocessingResult(BaseModel):
+    """Stores summary information to record preprocessing results that
+    detail how data has been handled.
+
+    Parameters
+    ----------
+    name: str
+        The human readable name noting the process and data applied.
+    count: int
+        The number of timestamps that were managed in the process.
+    """
+    name: str
+    count: int
+
+
 # need apply filtering + resampling to each forecast obs pair
 @dataclass(frozen=True)
 class ProcessedForecastObservation(BaseModel):
@@ -1120,6 +1136,7 @@ class ProcessedForecastObservation(BaseModel):
         The values of the reference forecast, the reference forecast id or
         None.
     validation_results: tuple of :py:class:`solarforecastarbiter.datamodel.ValidationResult`
+    preprocessing_results: tuple of :py:class:`solarforecastarbiter.datamodel.PreprocessingResult`
     normalization_factor: pandas.Series or Float
     cost_per_unit_error: float
     """  # NOQA
@@ -1135,6 +1152,7 @@ class ProcessedForecastObservation(BaseModel):
     observation_values: Union[pd.Series, str, None]
     reference_forecast_values: Union[pd.Series, str, None] = None
     validation_results: Tuple[ValidationResult, ...] = ()
+    preprocessing_results: Tuple[PreprocessingResult, ...] = ()
     # This may need to be a series, e.g. normalize by the average
     # observed value per day. Hence, repeat here instead of
     # only in original

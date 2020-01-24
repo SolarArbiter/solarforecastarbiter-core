@@ -13,6 +13,11 @@ from solarforecastarbiter.validation import quality_mapping
 
 logger = logging.getLogger(__name__)
 
+# Titles to refer to counts of preprocessing results
+VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
+DISCARD_DATA_STRING = "Values Discarded by Alignment"
+UNDEFINED_DATA_STRING = "Undefined Values"
+
 
 def apply_validation(obs_df, qfilter, handle_func):
     """
@@ -114,11 +119,23 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     obs_resampled = obs_resampled.dropna(how="any")
     obs_aligned, fx_aligned = obs_resampled.align(fx_series.dropna(how="any"),
                                                   'inner')
-
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
-    return forecast_values, observation_values
+
+    # Return dict summarizing results
+    results = {
+        type(fx).__name__ + " " + DISCARD_DATA_STRING:
+            len(fx_series.dropna(how="any")) - len(fx_aligned),
+        type(obs).__name__ + " " + DISCARD_DATA_STRING:
+            len(obs_resampled) - len(observation_values),
+        type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
+            fx_series.isna().sum(),
+        type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
+            obs_series.isna().sum()
+    }
+
+    return forecast_values, observation_values, results
 
 
 def exclude(values, quality_flags=None):
@@ -191,6 +208,7 @@ def process_forecast_observations(forecast_observations, filters, data,
     validated_observations = {}
     processed_fxobs = []
     for fxobs in forecast_observations:
+        import pdb; pdb.set_trace()
         if fxobs.data_object not in validated_observations:
             try:
                 obs_ser, counts = apply_validation(
@@ -206,30 +224,17 @@ def process_forecast_observations(forecast_observations, filters, data,
                                     for k, v in counts.items())
                 validated_observations[fxobs.data_object] = (
                     obs_ser, val_results)
+
         obs_ser, val_results = validated_observations[fxobs.data_object]
+        preproc_results = (datamodel.PreprocessingResult(
+            name=VALIDATION_RESULT_TOTAL_STRING,
+            count=len(data[fxobs.data_object]) - len(obs_ser)),)
         fx_ser = data[fxobs.forecast]
-        val_results += (datamodel.ValidationResult(
-            flag='Observations Unavailable',
-            count=obs_ser.isna().sum()),)
         try:
-            forecast_values, observation_values = resample_and_align(
+            forecast_values, observation_values, results = resample_and_align(
                 fxobs, fx_ser, obs_ser, timezone)
-            val_results += (datamodel.ValidationResult(
-                flag='Observations Ignored from Resampling and Alignment',
-                count=len(obs_ser)-len(observation_values)),)
-            val_results += (datamodel.ValidationResult(
-                flag='Forecasts Ignored from Alignment',
-                count=len(fx_ser)-len(forecast_values)),)
-            if isinstance(fxobs, datamodel.ForecastAggregate):
-                val_results += (datamodel.ValidationResult(
-                    flag='Total Aggregate Observations Ignored',
-                    count=(len(data[fxobs.aggregate]) -
-                           len(observation_values))),)
-            else:
-                val_results += (datamodel.ValidationResult(
-                    flag='Total Observations Ignored',
-                    count=(len(data[fxobs.observation]) -
-                           len(observation_values))),)
+            preproc_results += tuple(datamodel.PreprocessingResult(
+                name=k, count=v) for k, v in results.items())
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',
@@ -245,6 +250,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 interval_label=fxobs.forecast.interval_label,
                 valid_point_count=len(forecast_values),
                 validation_results=val_results,
+                preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values)
             processed_fxobs.append(processed)

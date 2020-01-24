@@ -1678,6 +1678,18 @@ def validation_result(validation_result_dict):
 
 
 @pytest.fixture
+def preprocessing_result_dict():
+    return {
+        'name': "Undefined Values",
+        'count': 1
+    }
+
+@pytest.fixture
+def preprocessing_result(preprocessing_result_dict):
+    return datamodel.PreprocessingResult.from_dict(preprocessing_result_dict)
+
+
+@pytest.fixture
 def report_metadata_dict():
     return {
         'name': 'Report 1',
