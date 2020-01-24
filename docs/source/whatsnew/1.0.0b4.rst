@@ -29,6 +29,7 @@ Enhancements
 * Add schema for de/serializing timeseries in :py:mod:`solarforecastarbiter.io.utils` (:pull:`291`)
 * Add decorator factory :py:func:`solarforecastarbiter.reports.main.capture_report_failure` to better log report failures to the end user.
 * Add missing tests for functionality in :py:mod:`solarforecastarbiter.reports.main` (:issue:`312`)
+* Add missing tests for :py:mod:`solarforecastarbiter.reports.figures`
 
 Bug fixes
 ~~~~~~~~~

@@ -1,3 +1,4 @@
+from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource
 
 import numpy as np
@@ -104,6 +105,7 @@ def test_construct_metric_cds_no_values():
     # dataframe if no MetricResults are found in the metrics tuple
     cds = figures.construct_metrics_cds(())
     assert cds.data['index'].size == 0
+    assert 'abbrev' in cds.data
 
 
 def test_construct_timeseries_cds(report_with_raw):
@@ -332,3 +334,57 @@ def test_output_svg_no_selenium(mocker):
     assert svg.startswith('<svg')
     assert svg.endswith('</svg>')
     assert logger.error.called
+
+
+@pytest.fixture()
+def metric_cds():
+    return ColumnDataSource(data={
+        'name': ['First', 'Next'],
+        'abbrev': ['1st', 'N'],
+        'category': ['hour', 'total'],
+        'metric': ['mae', 'mae'],
+        'value': [0.1, 10.3],
+        'index': [14, 0]
+    })
+
+
+def test_bar(metric_cds):
+    out = figures.bar(metric_cds, 'mae')
+    assert isinstance(out, Figure)
+
+
+def test_bar_no_metric(metric_cds):
+    out = figures.bar(metric_cds, 'rmse')
+    assert isinstance(out, Figure)
+
+
+def test_bar_empty_cds(metric_cds):
+    cds = ColumnDataSource(data={k: [] for k in metric_cds.data.keys()})
+    out = figures.bar(cds, 's')
+    assert isinstance(out, Figure)
+
+
+def test_bar_subdivisions(metric_cds):
+    out = figures.bar_subdivisions(metric_cds, 'hour', 'mae')
+    assert isinstance(out, dict)
+    assert len(out) == 1
+    assert all([isinstance(v, Figure) for v in out.values()])
+
+
+def test_bar_subdivisions_no_cat(metric_cds):
+    out = figures.bar_subdivisions(metric_cds, 'date', 'mae')
+    assert isinstance(out, dict)
+    assert len(out) == 0
+
+
+def test_bar_subdivisions_no_metric(metric_cds):
+    out = figures.bar_subdivisions(metric_cds, 'hour', 'rmse')
+    assert isinstance(out, dict)
+    assert len(out) == 0
+
+
+def test_bar_subdivisions_empty_cds(metric_cds):
+    cds = ColumnDataSource(data={k: [] for k in metric_cds.data.keys()})
+    out = figures.bar_subdivisions(cds, 'hour', 's')
+    assert isinstance(out, dict)
+    assert len(out) == 0
