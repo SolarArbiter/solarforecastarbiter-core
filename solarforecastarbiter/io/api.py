@@ -828,7 +828,7 @@ class APISession(requests.Session):
             out.append(new_fxobs)
         return tuple(out)
 
-    def post_raw_report(self, report_id, raw_report):
+    def post_raw_report(self, report_id, raw_report, status='complete'):
         """
         Update the report with the raw report and metrics
 
@@ -848,7 +848,7 @@ class APISession(requests.Session):
         self.post(f'/reports/{report_id}/metrics',
                   json={'metrics': metric_list, 'raw_report': raw_dict},
                   headers={'Content-Type': 'application/json'})
-        self.update_report_status(report_id, 'complete')
+        self.update_report_status(report_id, status)
 
     def update_report_status(self, report_id, status):
         """
