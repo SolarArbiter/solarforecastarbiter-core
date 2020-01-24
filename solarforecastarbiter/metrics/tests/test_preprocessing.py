@@ -105,7 +105,7 @@ def test_resample_and_align(
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_values, obs_values, resdict = preprocessing.resample_and_align(
+    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
             fx_obs, fx_series, obs_series, local_tz)
 
     # Localize datetimeindex
@@ -119,7 +119,7 @@ def test_resample_and_align(
                                   check_categorical=False)
 
     expected_result = create_preprocessing_result(expected_res)
-    assert resdict == expected_result
+    assert res_dict == expected_result
 
 
 def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
@@ -183,7 +183,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_out, obs_out, res = preprocessing.resample_and_align(
+    fx_out, obs_out, res_dict = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, local_tz)
 
     assert obs_out.index.freq == freq
@@ -224,13 +224,13 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    forecast_values, observation_values = preprocessing.resample_and_align(
+    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, local_tz)
 
-    pd.testing.assert_index_equal(forecast_values.index,
-                                  observation_values.index,
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(observation_values.index,
+    pd.testing.assert_index_equal(obs_values.index,
                                   expected_dt,
                                   check_categorical=False)
 
