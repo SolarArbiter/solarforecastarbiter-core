@@ -303,7 +303,32 @@ def test_timeseries_plots(report_with_raw):
     assert div is not None
 
 
-def test_raw_report_plots(report_with_raw, maybe_skip_svg):
+def test_raw_report_plots(report_with_raw):
     metrics = report_with_raw.raw_report.metrics
     plots = figures.raw_report_plots(report_with_raw, metrics)
     assert plots is not None
+
+
+def test_output_svg(mocker):
+    pytest.importorskip('selenium')
+    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    from bokeh.plotting import figure
+    fig = figure(title='line', name='line_plot')
+    fig.line([0, 1], [0, 1])
+    svg = figures.output_svg(fig)
+    assert svg.startswith('<svg')
+    assert svg.endswith('</svg>')
+    assert not logger.error.called
+
+
+def test_output_svg_no_selenium(mocker):
+    mocker.patch('solarforecastarbiter.reports.figures.get_svgs',
+                 side_effect=RuntimeError)
+    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    from bokeh.plotting import figure
+    fig = figure(title='line', name='line_plot')
+    fig.line([0, 1], [0, 1])
+    svg = figures.output_svg(fig)
+    assert svg.startswith('<svg')
+    assert svg.endswith('</svg>')
+    assert logger.error.called

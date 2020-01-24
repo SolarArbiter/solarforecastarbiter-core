@@ -189,6 +189,52 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     assert obs_out.index.freq == freq
 
 
+@pytest.mark.parametrize("interval_label", ["beginning", "instant", "ending"])
+@pytest.mark.parametrize("tz,local_tz,local_ts", [
+    ("UTC", "UTC", ["20190702T0000", "20190702T0100"]),
+    ("UTC", "US/Pacific", ["20190701T1700", "20190701T1800"]),
+    ("US/Pacific", "UTC", ["20190702T0700", "20190702T0800"]),
+    ("US/Central", "US/Pacific", ["20190701T2200", "20190701T2300"]),
+    ("US/Pacific", "US/Eastern", ["20190702T0300", "20190702T0400"]),
+])
+def test_resample_and_align_timezone(site_metadata, interval_label, tz,
+                                     local_tz, local_ts):
+
+    expected_dt = pd.DatetimeIndex(local_ts, tz=local_tz)
+
+    # Create the fx/obs pair
+    ts = pd.DatetimeIndex(["20190702T0000", "20190702T0100"], tz=tz)
+    fx_series = pd.Series([1.0, 4.0], index=ts, name="value")
+    obs_series = pd.Series([1.1, 2.7], index=ts, name="value")
+    observation = datamodel.Observation(
+        site=site_metadata, name='dummy obs', variable='ghi',
+        interval_value_type='instantaneous', uncertainty=1,
+        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_label=interval_label,
+    )
+    forecast = datamodel.Forecast(
+        site=site_metadata, name='dummy fx', variable='ghi',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_label=interval_label,
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h')
+    )
+    fx_obs = datamodel.ForecastObservation(forecast=forecast,
+                                           observation=observation)
+
+    forecast_values, observation_values = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, local_tz)
+
+    pd.testing.assert_index_equal(forecast_values.index,
+                                  observation_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(observation_values.index,
+                                  expected_dt,
+                                  check_categorical=False)
+
+
 @pytest.mark.parametrize('obs,somecounts', [
     (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                   columns=['value', 'quality_flag']),
