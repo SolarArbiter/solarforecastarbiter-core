@@ -107,16 +107,18 @@ the metrics were computed.</p>
 <div id="metric-plot-wrapper">
 {% for category in report.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
-  {% if category_blubs is defined %}
-<p>{{ category_blubs[category] }}</p>
+  {% if category_blurbs is defined %}
+<p>{{ category_blurbs[category] }}</p>
   {% endif %}
   {% if category == "total" %}
     {{ macros.metric_table(report.raw_report.metrics, "total", report.metrics) }}
+    <br>
   {% endif %}
   {% for metric in report.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
 <div class="metric-block" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
+      <!-- {{ macros.metric_table(report.raw_report.metrics, category, report.metrics )}} -->
       {% endif %}
     {% endfor %}
   {% endfor %}

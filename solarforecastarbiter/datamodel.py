@@ -69,6 +69,17 @@ ALLOWED_CATEGORIES = {
     'weekday': 'Day of the week'
 }
 
+
+CATEGORY_BLURBS = {
+    'total': "Metric totals for the entire selected period.",
+    'year': "Metrics per year.",
+    'month': "Metrics per month.",
+    'hour': "Metrics per hour of the day.",
+    'date': "Metrics per each individual date.",
+    'weekday': "Metrics per each day of the week."
+}
+
+
 ALLOWED_DETERMINISTIC_METRICS = {
     k: v[1] for k, v in deterministic_mapping.items()}
 
