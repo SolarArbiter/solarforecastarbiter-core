@@ -20,7 +20,10 @@ def macro_test_template():
     return fn
 
 
-metric_format = """<table style="width:100%;">
+metric_format = """<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of total metrics
+  </caption>
   <thead>
     <tr class="header">
       <th style="text-align: left;">Forecast</th>
