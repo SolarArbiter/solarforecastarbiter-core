@@ -35,6 +35,7 @@ def expected_kwargs(report_with_raw, dash_url):
         kwargs = {}
         kwargs['human_categories'] = datamodel.ALLOWED_CATEGORIES
         kwargs['human_metrics'] = datamodel.ALLOWED_METRICS
+        kwargs['category_blurbs'] = datamodel.CATEGORY_BLURBS
         kwargs['report'] = report_with_raw
         kwargs['dash_url'] = dash_url
         version = report_with_raw.raw_report.plots.bokeh_version
