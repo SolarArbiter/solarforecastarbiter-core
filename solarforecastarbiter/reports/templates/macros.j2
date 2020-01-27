@@ -66,6 +66,47 @@
 {% endmacro %}
 
 
+{% macro preprocessing_table(proc_fxobs_list) %}
+{% set preproc_filters = [] %}
+{% for proc_fxobs in proc_fxobs_list %}
+  {% for res in proc_fxobs.preprocessing_results %}
+    {% if res.name not in preproc_filters %}
+      {% set preproc_filsters = preproc_filters.append(res.name) %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of data preprocessing results
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Preprocessing Description</th>
+      {% for proc_fxobs in proc_fxobs_list %}
+      <th style="text-align: center;">
+        {{ proc_fxobs.name }} <br>Number of Points
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for pfilter in preproc_filters %}
+      <tr>
+      <td style="test-align: left">{{ pfilter }}</td>
+      {% for proc_fxobs in proc_fxobs_list %}
+        {% for res in proc_fxobs.preprocessing_results %}
+          {% if res.name == pfilter %}
+            <td style="text-align: center">{{ res.count }}</td>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+
 {% macro download_csv_script() %}
 <script>
     function table_to_csv(source) {

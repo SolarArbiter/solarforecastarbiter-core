@@ -76,8 +76,9 @@ right. Clicking on an item in the legend will hide/show it.</p>
 
 {% block datavalidation %}
 <h3 id="data-validation">Data Validation</h3>
-<p>The Solar Forecast Arbiter’s data validation toolkit identified the
-following issues with the unprocessed observation data:</p>
+<p>The Solar Forecast Arbiter’s data validation toolkit using the selected
+filters identified the following issues with the unprocessed observation
+data:</p>
 {% for filter in report.filters %}
   {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
   {{ macros.validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags) }}
@@ -93,6 +94,24 @@ in this report will remain unchanged, however, a user may generate a
 new report after the data provider submits new data. The online
 version of this report verifies that the data was not modified after
 the metrics were computed.</p>
+{% endblock %}
+
+{% block dataresampleandalign %}
+<h3 id="data-alignment">Data Resampling and Alignment</h3>
+<p>The Solar Forecast Arbiter's preprocessing applies the above validation and
+excludes (other options to be added in the future) the data. The preprocessing
+then resamples the observations to the forecast using the mean. Then it checks
+for undefined values, such as not-a-number (nan) values and removes them.
+Finally the observations and forecasts are aligned and non-overlapping data
+ignored. The table below summarizes the data preprocessing results:
+</p>
+{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+<br>
+<p>
+Users may wish to fix the data issues by having new or missing data uploaded.
+The metrics computed in this report will remain unchanged, however, a user may
+generate a new report after the data provider submits new data.
+</p>
 {% endblock %}
 
 {% block metrics %}
