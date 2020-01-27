@@ -1,6 +1,6 @@
 {% macro metric_table(report_metrics, category, metric_ordering) %}
-<table style="width:100%;">
-  <caption style="caption-side:top" style="text-align:center">
+<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
     Table of {{ category }} metrics
   </caption>
   <thead>
@@ -26,6 +26,39 @@
             {% endif %}
           {% endfor %}
         {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro validation_table(proc_fxobs_list, quality_filters) %}
+<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of data validation results
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Validation Flag</th>
+      {% for proc_fxobs in proc_fxobs_list %}
+      <th style="text-align: center;">
+        {{ proc_fxobs.name }} <br>Number of Points
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for qfilter in quality_filters %}
+      <tr>
+      <td style="test-align: left">{{ qfilter }}</td>
+      {% for proc_fxobs in proc_fxobs_list %}
+        {% for res in proc_fxobs.validation_results %}
+          {% if res.flag == qfilter %}
+            <td style="text-align: center">{{ res.count }}</td>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
       </tr>
     {% endfor %}
   </tbody>
