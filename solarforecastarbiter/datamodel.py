@@ -860,6 +860,8 @@ def __check_axis_consistency__(axis, constant_values):
 
 
 def __check_units__(*args):
+    if len(args) == 0:
+        return
     ref_unit = args[0].units
     if not all(arg.units == ref_unit for arg in args):
         raise ValueError('All units must be identical.')

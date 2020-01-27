@@ -41,6 +41,7 @@ Bug fixes
 * Fix scatter plot limits when some data is NaN (:issue:`282`)
 * Handle errors on SVG export (:issue:`310`)
 * Test and handle errors in report creation for empty data (:issue:`217`)
+* Fix :py:func:`solarforecastarbiter.datamodel.__check_units__` with no arguments
 
 Contributors
 ~~~~~~~~~~~~

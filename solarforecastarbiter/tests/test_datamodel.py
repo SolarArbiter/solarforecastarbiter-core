@@ -497,6 +497,10 @@ def test___check_units__(mocker, objects_from_attrs):
     datamodel.__check_units__(*things_with_units)
 
 
+def test___check_units__no_args():
+    datamodel.__check_units__()
+
+
 def test___check_units___error(mocker, objects_from_attrs):
     things_with_units = objects_from_attrs(
         [[('units', u)] for u in ['W/M^2', 'different', 'W/M^2', 'W/M^2']]
