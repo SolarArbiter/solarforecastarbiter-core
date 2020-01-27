@@ -3,6 +3,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.metrics import preprocessing
 
 
 @pytest.fixture
@@ -57,3 +58,111 @@ def test_metric_table(report_with_raw, macro_test_template):
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_format.format(
             expected_metric[0].name)
+
+
+validation_table_format = """<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of data validation results
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Validation Flag</th>
+      <th style="text-align: center;">
+        {} <br>Number of Points
+      </th>
+      <th style="text-align: center;">
+        {} <br>Number of Points
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+  </tbody>
+</table>
+"""
+
+
+def test_validation_table(report_with_raw, macro_test_template):
+    validation_table_template = macro_test_template('validation_table(proc_fxobs_list,quality_filters)')  # noqa
+    proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
+    qfilters = list(f.quality_flags for f in report_with_raw.filters
+        if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
+    rendered_validation_table = validation_table_template.render(
+        proc_fxobs_list=proc_fxobs_list,
+        quality_filters=qfilters)
+    assert rendered_validation_table == validation_table_format.format(
+        proc_fxobs_list[0].name,
+        proc_fxobs_list[1].name,
+        *qfilters)
+
+
+preprocessing_table_format = """<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of data preprocessing results
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Preprocessing Description</th>
+      <th style="text-align: center;">
+        {} <br>Number of Points
+      </th>
+      <th style="text-align: center;">
+        {} <br>Number of Points
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+      <td style="test-align: left">{}</td>
+            <td style="text-align: center">0</td>
+            <td style="text-align: center">0</td>
+      </tr>
+  </tbody>
+</table>
+"""
+
+
+def test_preprocessing_table(report_with_raw, macro_test_template,
+        preprocessing_result_types):
+    preprocessing_table_template = macro_test_template('preprocessing_table(proc_fxobs_list)')  # noqa
+    proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
+    rendered_preprocessing_table = preprocessing_table_template.render(
+        proc_fxobs_list=proc_fxobs_list)
+    assert rendered_preprocessing_table == preprocessing_table_format.format(
+        proc_fxobs_list[0].name,
+        proc_fxobs_list[1].name,
+        *preprocessing_result_types)

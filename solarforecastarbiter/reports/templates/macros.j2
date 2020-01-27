@@ -67,11 +67,11 @@
 
 
 {% macro preprocessing_table(proc_fxobs_list) %}
-{% set preproc_filters = [] %}
+{% set preproc_steps = [] %}
 {% for proc_fxobs in proc_fxobs_list %}
   {% for res in proc_fxobs.preprocessing_results %}
-    {% if res.name not in preproc_filters %}
-      {% set preproc_filsters = preproc_filters.append(res.name) %}
+    {% if res.name not in preproc_steps %}
+      {% set preproc_filsters = preproc_steps.append(res.name) %}
     {% endif %}
   {% endfor %}
 {% endfor %}
@@ -90,12 +90,12 @@
     </tr>
   </thead>
   <tbody>
-    {% for pfilter in preproc_filters %}
+    {% for pstep in preproc_steps %}
       <tr>
-      <td style="test-align: left">{{ pfilter }}</td>
+      <td style="test-align: left">{{ pstep }}</td>
       {% for proc_fxobs in proc_fxobs_list %}
         {% for res in proc_fxobs.preprocessing_results %}
-          {% if res.name == pfilter %}
+          {% if res.name == pstep %}
             <td style="text-align: center">{{ res.count }}</td>
           {% endif %}
         {% endfor %}

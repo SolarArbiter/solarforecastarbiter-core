@@ -15,6 +15,7 @@ import pytest
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.metrics import preprocessing
 
 
 @pytest.fixture()
@@ -1280,6 +1281,15 @@ def metric_index():
 
 
 @pytest.fixture
+def preprocessing_result_types():
+    return (preprocessing.VALIDATION_RESULT_TOTAL_STRING,
+        'Forecast' + preprocessing.DISCARD_DATA_STRING,
+        'Forecast' + preprocessing.UNDEFINED_DATA_STRING,
+        'Observation' + preprocessing.DISCARD_DATA_STRING,
+        'Observation' + preprocessing.UNDEFINED_DATA_STRING)
+
+
+@pytest.fixture
 def report_metrics(metric_index):
     """Produces dummy MetricResult list for a RawReport"""
     def gen(report):
@@ -1315,7 +1325,7 @@ def report_metrics(metric_index):
 
 
 @pytest.fixture()
-def raw_report(report_objects, report_metrics):
+def raw_report(report_objects, report_metrics, preprocessing_result_types):
     report, obs, fx0, fx1, agg, fxagg = report_objects
     meta = datamodel.ReportMetadata(
         name=report.name,
@@ -1336,6 +1346,9 @@ def raw_report(report_objects, report_metrics):
                 index=ser_index)
             return ser_value
         il0 = fx0.interval_length
+        qflags = list(f.quality_flags for f in report.filters if
+            isinstance(f, datamodel.QualityFlagFilter))
+        qflags = list(qflags[0])
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,
             datamodel.ForecastObservation(fx0, obs),
@@ -1343,6 +1356,10 @@ def raw_report(report_objects, report_metrics):
             il0,
             fx0.interval_label,
             valid_point_count=len(ser(il0)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il0) if with_series else fx0.forecast_id,
             observation_values=ser(il0) if with_series else obs.observation_id
         )
@@ -1354,8 +1371,12 @@ def raw_report(report_objects, report_metrics):
             il1,
             fx1.interval_label,
             valid_point_count=len(ser(il1)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il1) if with_series else fx1.forecast_id,
-            observation_values=ser(il1) if with_series else obs.observation_id
+            observation_values=ser(il1) if with_series else obs.observation_id,
         )
         ilagg = fxagg.interval_length
         fxagg_ = datamodel.ProcessedForecastObservation(
@@ -1365,6 +1386,10 @@ def raw_report(report_objects, report_metrics):
             ilagg,
             fxagg.interval_label,
             valid_point_count=len(ser(ilagg)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
             observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
