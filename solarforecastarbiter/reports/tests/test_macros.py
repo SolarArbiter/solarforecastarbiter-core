@@ -3,7 +3,6 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import preprocessing
 
 
 @pytest.fixture
@@ -100,7 +99,7 @@ def test_validation_table(report_with_raw, macro_test_template):
     validation_table_template = macro_test_template('validation_table(proc_fxobs_list,quality_filters)')  # noqa
     proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
     qfilters = list(f.quality_flags for f in report_with_raw.filters
-        if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
+                    if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
     rendered_validation_table = validation_table_template.render(
         proc_fxobs_list=proc_fxobs_list,
         quality_filters=qfilters)
@@ -157,7 +156,7 @@ preprocessing_table_format = """<table class="table table-striped" style="width:
 
 
 def test_preprocessing_table(report_with_raw, macro_test_template,
-        preprocessing_result_types):
+                             preprocessing_result_types):
     preprocessing_table_template = macro_test_template('preprocessing_table(proc_fxobs_list)')  # noqa
     proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
     rendered_preprocessing_table = preprocessing_table_template.render(

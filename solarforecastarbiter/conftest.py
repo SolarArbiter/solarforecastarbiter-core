@@ -1283,10 +1283,10 @@ def metric_index():
 @pytest.fixture
 def preprocessing_result_types():
     return (preprocessing.VALIDATION_RESULT_TOTAL_STRING,
-        'Forecast' + preprocessing.DISCARD_DATA_STRING,
-        'Forecast' + preprocessing.UNDEFINED_DATA_STRING,
-        'Observation' + preprocessing.DISCARD_DATA_STRING,
-        'Observation' + preprocessing.UNDEFINED_DATA_STRING)
+            'Forecast' + preprocessing.DISCARD_DATA_STRING,
+            'Forecast' + preprocessing.UNDEFINED_DATA_STRING,
+            'Observation' + preprocessing.DISCARD_DATA_STRING,
+            'Observation' + preprocessing.UNDEFINED_DATA_STRING)
 
 
 @pytest.fixture
@@ -1347,7 +1347,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             return ser_value
         il0 = fx0.interval_length
         qflags = list(f.quality_flags for f in report.filters if
-            isinstance(f, datamodel.QualityFlagFilter))
+                      isinstance(f, datamodel.QualityFlagFilter))
         qflags = list(qflags[0])
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,
