@@ -155,7 +155,9 @@ class ListHandler(logging.Handler):
     """
     A logger handler that appends each log record to a list.
     """
-    records = []
+    def __init__(self):
+        super().__init__()
+        self.records = []
 
     def emit(self, record):
         self.records.append(record)
@@ -180,27 +182,35 @@ class ListHandler(logging.Handler):
 
 
 @contextmanager
-def hijack_loggers(loggers, handler):
+def hijack_loggers(loggers):
     """
     Context manager to temporarily set the handler
-    of each logger in `loggers` to `handler`.
+    of each logger in `loggers`.
 
     Parameters
     ----------
     loggers: list of str or logging.Logger
         Loggers to change
-    handler: logging.Handler
-        The handler to use for each logger
+
+    Returns
+    -------
+    ListHandler
+        The handler that will be temporarily assigned
+        to each logger.
     """
+    handler = ListHandler()
+    handler.setLevel(logging.INFO)
+
     old_handlers = {}
     for name in loggers:
         logger = logging.getLogger(name)
         old_handlers[name] = logger.handlers
         logger.handlers = [handler]
-    yield
+    yield handler
     for name in loggers:
         logger = logging.getLogger(name)
         logger.handlers = old_handlers[name]
+    del handler
 
 
 def create_raw_report_from_data(report, data):
@@ -223,13 +233,11 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
-    handler = ListHandler()
-    handler.setLevel(logging.INFO)
     metadata = create_metadata(report)
 
     with hijack_loggers(['solarforecastarbiter.metrics',
                          'solarforecastarbiter.reports.figures'],
-                        handler):
+                        ) as handler:
         # Validate and resample
         processed_fxobs = preprocessing.process_forecast_observations(
             report.forecast_observations, report.filters, data,
@@ -240,8 +248,7 @@ def create_raw_report_from_data(report, data):
                                                     list(report.categories),
                                                     list(report.metrics))
         report_plots = figures.raw_report_plots(report, metrics_list)
-
-    messages = handler.export_records()
+        messages = handler.export_records()
     raw_report = datamodel.RawReport(
         metadata=metadata, plots=report_plots, metrics=tuple(metrics_list),
         processed_forecasts_observations=tuple(processed_fxobs),
