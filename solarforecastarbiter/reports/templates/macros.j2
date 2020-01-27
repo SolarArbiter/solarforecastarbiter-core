@@ -71,7 +71,7 @@
 {% for proc_fxobs in proc_fxobs_list %}
   {% for res in proc_fxobs.preprocessing_results %}
     {% if res.name not in preproc_steps %}
-      {% set preproc_filsters = preproc_steps.append(res.name) %}
+      {% set preproc_steps = preproc_steps.append(res.name) %}
     {% endif %}
   {% endfor %}
 {% endfor %}

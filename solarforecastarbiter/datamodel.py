@@ -75,8 +75,8 @@ CATEGORY_BLURBS = {
     'year': "Metrics per year.",
     'month': "Metrics per month.",
     'hour': "Metrics per hour of the day.",
-    'date': "Metrics per each individual date.",
-    'weekday': "Metrics per each day of the week."
+    'date': "Metrics per individual date.",
+    'weekday': "Metrics per day of the week."
 }
 
 
