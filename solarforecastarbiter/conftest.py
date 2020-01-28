@@ -1743,7 +1743,6 @@ def report_metadata_dict():
     }
 
 
-
 @pytest.fixture
 def report_figure_dict():
     return {

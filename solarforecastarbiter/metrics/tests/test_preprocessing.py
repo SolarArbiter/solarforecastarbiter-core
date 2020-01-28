@@ -349,8 +349,9 @@ def test_process_forecast_observations(report_objects, quality_filter,
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.forecast_observations, filters, data, 'MST')
-    assert len(processed_fxobs_list) == len(report.forecast_observations)
+        report.report_parameters.object_pairs, filters, data, 'MST')
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
     assert logger.warning.called
     assert not logger.error.called
     for proc_fxobs in processed_fxobs_list:
@@ -379,8 +380,9 @@ def test_process_forecast_observations_no_data(
     filters = [quality_filter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.forecast_observations, filters, data, 'MST')
-    assert len(processed_fxobs_list) == len(report.forecast_observations)
+        report.report_parameters.object_pairs, filters, data, 'MST')
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
     assert logger.error.called
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
@@ -416,6 +418,6 @@ def test_process_forecast_observations_resample_fail(
         'solarforecastarbiter.metrics.preprocessing.resample_and_align',
         side_effect=ValueError)
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.forecast_observations, filters, data, 'MST')
+        report.report_parameters.object_pairs, filters, data, 'MST')
     assert len(processed_fxobs_list) == 0
     assert logger.error.called

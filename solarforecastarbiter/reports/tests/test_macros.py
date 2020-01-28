@@ -53,7 +53,7 @@ def test_metric_table_fx_vert(report_with_raw, macro_test_template):
         rendered_metric_table = metric_table_template.render(
             report_metrics=expected_metric,
             category=category,
-            metric_ordering=report_with_raw.metrics,
+            metric_ordering=report_with_raw.report_parameters.metrics,
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_table_fx_vert_format.format(
             category, expected_metric[0].name)

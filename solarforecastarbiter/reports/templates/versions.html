@@ -7,7 +7,7 @@
     </tr>
   </thead>
   <tbody>
-{% for pkg, ver in report.raw_report.metadata.versions.items() %}
+{% for pkg, ver in report.raw_report.versions.items() %}
   <tr>
     <td style="text-align: left;">{{ pkg }}</td>
     <td style="text-align: left;">{{ ver }}</td>

@@ -84,34 +84,19 @@ def get_data_for_report(session, report):
         the corresponding data.
     """
     data = {}
-    for fxobs in report.forecast_observations:
+    start = report.report_parameters.start
+    end = report.report_parameters.end
+    for fxobs in report.report_parameters.object_pairs:
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
         if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
-                forecast_id, report.start, report.end)
+                forecast_id, start, end)
         if fxobs.data_object not in data:
             data[fxobs.data_object] = session.get_values(
-                fxobs.data_object, report.start, report.end)
+                fxobs.data_object, start, end)
     return data
-
-
-def create_metadata(report_request):
-    """
-    Create metadata for the raw report.
-
-    Returns
-    -------
-    metadata: :py:class:`solarforecastarbiter.datamodel.ReportMetadata`
-    """
-    versions = get_versions()
-    timezone = infer_timezone(report_request)
-    metadata = datamodel.ReportMetadata(
-        name=report_request.name, start=report_request.start,
-        end=report_request.end, now=pd.Timestamp.utcnow(),
-        timezone=timezone, versions=versions)
-    return metadata
 
 
 def get_versions():
@@ -140,10 +125,10 @@ def get_versions():
     return versions
 
 
-def infer_timezone(report_request):
+def infer_timezone(report_parameters):
     # maybe not ideal when comparing across sites. might need explicit
     # tz options ('infer' or spec IANA tz) in report interface.
-    fxobs_0 = report_request.forecast_observations[0]
+    fxobs_0 = report_parameters.object_pairs[0]
     if isinstance(fxobs_0, datamodel.ForecastObservation):
         timezone = fxobs_0.observation.site.timezone
     else:
@@ -233,24 +218,29 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
-    metadata = create_metadata(report)
-
+    generated_at = pd.Timestamp.now(tz='UTC')
+    report_params = report.report_parameters
+    timezone = infer_timezone(report_params)
+    versions = get_versions()
     with hijack_loggers(['solarforecastarbiter.metrics',
                          'solarforecastarbiter.reports.figures'],
                         ) as handler:
         # Validate and resample
         processed_fxobs = preprocessing.process_forecast_observations(
-            report.forecast_observations, report.filters, data,
-            metadata.timezone)
+            report_params.object_pairs, report_params.filters, data,
+            timezone)
 
         # Calculate metrics, list of MetricResult
-        metrics_list = calculator.calculate_metrics(processed_fxobs,
-                                                    list(report.categories),
-                                                    list(report.metrics))
+        metrics_list = calculator.calculate_metrics(
+            processed_fxobs,
+            list(report_params.categories),
+            list(report_params.metrics)
+        )
         report_plots = figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(
-        metadata=metadata, plots=report_plots, metrics=tuple(metrics_list),
+        generated_at=generated_at, timezone=timezone, versions=versions,
+        plots=report_plots, metrics=tuple(metrics_list),
         processed_forecasts_observations=tuple(processed_fxobs),
         messages=messages)
     return raw_report
@@ -289,7 +279,9 @@ def capture_report_failure(report_id, session):
                     level='CRITICAL',
                     function=str(f)
                 )
-                raw = datamodel.RawReport({}, {}, [], [], (msg,))
+                raw = datamodel.RawReport(
+                    pd.Timestamp.now(tz='UTC'), 'UTC', {}, {},
+                    [], [], (msg,))
                 session.post_raw_report(report_id, raw, 'failed')
                 raise
             else:
