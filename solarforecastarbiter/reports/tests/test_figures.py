@@ -54,31 +54,33 @@ def test_construct_metrics_cds(report_with_raw):
     categories = cds.data['category']
     metrics = cds.data['metric']
     values = cds.data['value']
+    report_params = report.report_parameters
 
-    expected_length = (len(report.metrics) * len(report.categories) *
-                       len(report.forecast_observations))
+    expected_length = (len(report_params.metrics) *
+                       len(report_params.categories) *
+                       len(report_params.object_pairs))
     assert all([len(v) == expected_length for k, v in cds.data.items()])
 
     original_names = [fxobs.forecast.name
-                      for fxobs in report.forecast_observations]
+                      for fxobs in report_params.object_pairs]
     assert np.all(
         names == np.repeat(
             np.array(original_names),
-            len(report.metrics) * len(report.categories))
+            len(report_params.metrics) * len(report_params.categories))
     )
     assert np.all(names == abbrev)
 
     assert np.all(
         metrics == np.tile(
-            np.repeat(np.array(report.metrics, dtype=object),
-                      len(report.categories)),
-            len(report.forecast_observations))
+            np.repeat(np.array(report_params.metrics, dtype=object),
+                      len(report_params.categories)),
+            len(report_params.object_pairs))
     )
 
     assert np.all(
         categories == np.tile(
-            np.array(report.categories),
-            len(report.metrics) * len(report.forecast_observations))
+            np.array(report_params.categories),
+            len(report_params.metrics) * len(report_params.object_pairs))
     )
 
     # this could maybe use value variance, but asserting the cds process
@@ -90,13 +92,14 @@ def test_construct_metrics_cds_with_rename(report_with_raw):
     metrics = report_with_raw.raw_report.metrics
     cds = figures.construct_metrics_cds(metrics,
                                         rename=figures.abbreviate)
+    report_params = report_with_raw.report_parameters
     original_names = [fxobs.forecast.name
-                      for fxobs in report_with_raw.forecast_observations]
+                      for fxobs in report_params.object_pairs]
     abbreviated = list(map(figures.abbreviate, original_names))
     assert np.all(
         cds.data['abbrev'] == np.repeat(
             np.array(abbreviated, dtype=object),
-            len(report_with_raw.metrics) * len(report_with_raw.categories))
+            len(report_params.metrics) * len(report_params.categories))
     )
 
 
@@ -115,9 +118,10 @@ def test_construct_timeseries_cds(report_with_raw):
 
     ts_pair_index = timeseries_cds.data['pair_index']
     assert np.all(
-        ts_pair_index == np.arange(len(report.forecast_observations)).repeat(
-            [len(fxob.forecast_values)
-             for fxob in raw_report.processed_forecasts_observations])
+        ts_pair_index == np.arange(
+            len(report.report_parameters.object_pairs)).repeat(
+                [len(fxob.forecast_values)
+                 for fxob in raw_report.processed_forecasts_observations])
     )
     observation_values = timeseries_cds.data['observation_values']
     forecast_values = timeseries_cds.data['forecast_values']
@@ -278,12 +282,13 @@ def test_abbreviate(arg, expected):
 def test_timeseries(report_with_raw):
     timeseries_cds, metadata_cds = figures.construct_timeseries_cds(
         report_with_raw)
+    report_params = report_with_raw.report_parameters
     fig = figures.timeseries(
         timeseries_cds,
         metadata_cds,
-        report_with_raw.start,
-        report_with_raw.end,
-        report_with_raw.forecast_observations[0].forecast.units
+        report_params.start,
+        report_params.end,
+        report_params.object_pairs[0].forecast.units
     )
     assert fig is not None
 
@@ -294,7 +299,7 @@ def test_scatter(report_with_raw):
     fig = figures.scatter(
         timeseries_cds,
         metadata_cds,
-        report_with_raw.forecast_observations[0].forecast.units,
+        report_with_raw.report_parameters.object_pairs[0].forecast.units,
     )
     assert fig is not None
 

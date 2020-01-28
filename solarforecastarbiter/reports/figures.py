@@ -671,8 +671,8 @@ def raw_report_plots(report, metrics):
     # Create initial bar figures
     figure_dict = {}
     # Components for other metrics
-    for category in report.categories:
-        for metric in report.metrics:
+    for category in report.report_parameters.categories:
+        for metric in report.report_parameters.metrics:
             if category == 'total':
                 fig = bar(cds, metric)
                 figure_dict[f'total_{metric}_all'] = fig
@@ -708,9 +708,10 @@ def timeseries_plots(report):
         A div element to insert into an html template.
     """
     value_cds, meta_cds = construct_timeseries_cds(report)
-    units = report.forecast_observations[0].forecast.units
-    tfig = timeseries(value_cds, meta_cds, report.start, report.end, units,
-                      report.raw_report.metadata.timezone)
+    units = report.report_parameters.object_pairs[0].forecast.units
+    tfig = timeseries(value_cds, meta_cds, report.report_parameters.start,
+                      report.report_parameters.end, units,
+                      report.raw_report.timezone)
     sfig = scatter(value_cds, meta_cds, units)
     layout = gridplot((tfig, sfig), ncols=1)
     script, div = components(layout)
