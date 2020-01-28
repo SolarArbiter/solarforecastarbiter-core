@@ -18,30 +18,28 @@ from solarforecastarbiter import datamodel
                         'aggregateforecast', 'aggregateprobforecast',
                         'aggregateobservation', 'report', 'quality_filter',
                         'timeofdayfilter', 'valuefilter', 'metricvalue',
-                        'metricresult', 'validationresult',
-                        'preprocessingresult', 'reportmetadata',
+                        'metricresult', 'validationresult', 'reportparameters',
                         'reportfigure', 'reportmessage'])
-def pdid_params(request, many_sites, many_sites_text, single_observation,
-                single_observation_text, single_site,
-                single_forecast_text, single_forecast,
+def pdid_params(request, many_sites, many_sites_text,
+                single_observation, single_observation_text,
+                single_site, single_forecast_text, single_forecast,
                 prob_forecast_constant_value,
-                prob_forecast_constant_value_text,
-                prob_forecasts, prob_forecast_text,
-                aggregate, aggregate_observations,
+                prob_forecast_constant_value_text, prob_forecasts,
+                prob_forecast_text, aggregate, aggregate_observations,
                 aggregate_text, aggregate_forecast_text,
                 aggregateforecast, aggregate_prob_forecast,
                 aggregate_prob_forecast_text,
                 agg_prob_forecast_constant_value,
                 single_aggregate_observation,
-                single_aggregate_observation_text,
-                report_objects, report_dict, quality_filter,
-                quality_filter_dict, timeofdayfilter,
-                timeofdayfilter_dict, valuefilter, valuefilter_dict,
-                metric_value_dict, metric_value, metric_result_dict,
-                metric_result, validation_result_dict, validation_result,
-                preprocessing_result_dict, preprocessing_result,
-                report_metadata_dict, report_metadata, report_figure_dict,
-                report_figure, report_message_dict, report_message):
+                single_aggregate_observation_text, report_objects,
+                report_dict, quality_filter, quality_filter_dict,
+                timeofdayfilter, timeofdayfilter_dict, valuefilter,
+                valuefilter_dict, metric_value_dict, metric_value,
+                metric_result_dict, metric_result,
+                validation_result_dict, validation_result,
+                report_figure_dict, report_figure,
+                report_message_dict, report_message,
+                report_params_dict, report_params):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -126,12 +124,9 @@ def pdid_params(request, many_sites, many_sites_text, single_observation,
     elif request.param == 'validationresult':
         return (validation_result, validation_result_dict,
                 datamodel.ValidationResult)
-    elif request.param == 'preprocessingresult':
-        return (preprocessing_result, preprocessing_result_dict,
-                datamodel.PreprocessingResult)
-    elif request.param == 'reportmetadata':
-        return (report_metadata, report_metadata_dict,
-                datamodel.ReportMetadata)
+    elif request.param == 'reportparameters':
+        return (report_params, report_params_dict,
+                datamodel.ReportParameters)
     elif request.param == 'reportfigure':
         return (report_figure, report_figure_dict, datamodel.ReportFigure)
     elif request.param == 'reportmessage':
@@ -329,18 +324,6 @@ def test_process_nested_objects(single_observation_text_with_site_text,
     assert obs == single_observation
     assert obs.site == single_site
     assert obs.site == single_observation.site
-
-
-def test_report_defaults(report_objects):
-    report, *_ = report_objects
-    report_defaults = datamodel.Report(
-        name=report.name,
-        start=report.start,
-        end=report.end,
-        forecast_observations=report.forecast_observations,
-        report_id=report.report_id
-    )
-    assert isinstance(report_defaults.filters, tuple)
 
 
 @pytest.mark.parametrize('key,val', [

@@ -1140,15 +1140,18 @@ def report_objects(aggregate):
     )
     timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0),
                                                  dt.time(14, 0)))
-    report = datamodel.Report(
+    report_params = datamodel.ReportParameters(
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
         end=end,
-        forecast_observations=(fxobs0, fxobs1, fxagg0),
+        object_pairs=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
         categories=("total", "date", "hour"),
-        report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
+    )
+    report = datamodel.Report(
+        report_id="56c67770-9832-11e9-a535-f4939feddd82",
+        report_parameters=report_params
     )
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
@@ -1208,14 +1211,16 @@ def valuefilter_dict(single_forecast):
 
 
 @pytest.fixture()
-def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
+def report_params_dict(report_objects, quality_filter_dict,
+                       timeofdayfilter_dict):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
+    report_params = report.report_parameters
     return {
-        'name': report.name,
-        'start': report.start,
-        'end': report.end,
-        'forecast_observations': (
+        'name': report_params.name,
+        'start': report_params.start,
+        'end': report_params.end,
+        'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict()},
             {'forecast': forecast_1.to_dict(),
@@ -1225,6 +1230,19 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
+    }
+
+
+@pytest.fixture()
+def report_params(report_objects):
+    return report_objects[0].report_parameters
+
+
+@pytest.fixture()
+def report_dict(report_params_dict, report_objects):
+    report = report_objects[0]
+    return {
+        'report_parameters': report_params_dict,
         'status': report.status,
         'report_id': report.report_id,
         '__version__': report.__version__
@@ -1235,38 +1253,37 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
 def report_text():
     return b"""
     {"created_at": "2019-06-26T16:49:18+00:00",
-    "metrics": null,
-    "modified_at": "2019-06-26T16:49:18+00:00",
-    "name": "NREL MIDC OASIS GHI Forecast Analysis",
-    "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
-    "report_parameters": {
-        "start": "2019-04-01T00:00:00-07:00",
-        "end": "2019-04-04T23:59:00-07:00",
-        "filters": [
-            {"quality_flags": [
-                "USER FLAGGED",
-                "NIGHTTIME",
-                "LIMITS EXCEEDED",
-                "STALE VALUES",
-                "INTERPOLATED VALUES",
-                "INCONSISTENT IRRADIANCE COMPONENTS"
-            ]},
-            {"time_of_day_range": ["12:00", "14:00"]}
-        ],
-        "metrics": ["mae", "rmse", "mbe"],
-        "categories": ["total", "date", "hour"],
-        "object_pairs": [
-            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
-             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
-            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
-            {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
-             "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
-        ]
-    },
-    "raw_report": null,
-    "values": [],
-    "status": "pending"}
+     "modified_at": "2019-06-26T16:49:18+00:00",
+     "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+     "report_parameters": {
+         "name": "NREL MIDC OASIS GHI Forecast Analysis",
+         "start": "2019-04-01T00:00:00-07:00",
+         "end": "2019-04-04T23:59:00-07:00",
+         "filters": [
+             {"quality_flags": [
+                 "USER FLAGGED",
+                 "NIGHTTIME",
+                 "LIMITS EXCEEDED",
+                 "STALE VALUES",
+                 "INTERPOLATED VALUES",
+                 "INCONSISTENT IRRADIANCE COMPONENTS"
+             ]},
+             {"time_of_day_range": ["12:00", "14:00"]}
+         ],
+         "metrics": ["mae", "rmse", "mbe"],
+         "categories": ["total", "date", "hour"],
+         "object_pairs": [
+             {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
+         ]
+     },
+     "raw_report": null,
+     "values": [],
+     "status": "pending"}
     """
 
 
@@ -1327,14 +1344,6 @@ def report_metrics(metric_index):
 @pytest.fixture()
 def raw_report(report_objects, report_metrics, preprocessing_result_types):
     report, obs, fx0, fx1, agg, fxagg = report_objects
-    meta = datamodel.ReportMetadata(
-        name=report.name,
-        start=report.start,
-        end=report.end,
-        now=report.end,
-        versions={},
-        timezone=obs.site.timezone
-    )
 
     def gen(with_series):
         def ser(interval_length):
@@ -1406,8 +1415,13 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                     }
                 ),)
         )
-        raw = datamodel.RawReport(meta, figs, report_metrics(report),
-                                  (fxobs0, fxobs1, fxagg_))
+        raw = datamodel.RawReport(
+            generated_at=report.end,
+            versions={},
+            timezone=obs.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(fxobs0, fxobs1, fxagg_))
         return raw
     return gen
 
@@ -1726,10 +1740,6 @@ def report_metadata_dict():
         'versions': {}
     }
 
-
-@pytest.fixture
-def report_metadata(report_metadata_dict):
-    return datamodel.ReportMetadata.from_dict(report_metadata_dict)
 
 
 @pytest.fixture
