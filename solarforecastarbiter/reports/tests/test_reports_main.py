@@ -85,6 +85,14 @@ def test_infer_timezone(report_objects):
     assert main.infer_timezone(report.report_parameters) == "Etc/GMT+7"
 
 
+def test_infer_timezone_agg(report_objects, single_forecast_aggregate,
+                            single_forecast_observation):
+    report_params = report_objects[0].report_parameters
+    rp = report_params.replace(object_pairs=(single_forecast_aggregate,
+                                             single_forecast_observation))
+    assert main.infer_timezone(rp) == 'America/Denver'
+
+
 def test_listhandler():
     logger = logging.getLogger('testlisthandler')
     handler = main.ListHandler()

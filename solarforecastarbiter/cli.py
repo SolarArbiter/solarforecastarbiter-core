@@ -316,5 +316,5 @@ def report(verbose, user, password, base_url, report_file, output_file):
         f.write(full_report)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     cli()
