@@ -1311,7 +1311,7 @@ def report_metrics(metric_index):
     """Produces dummy MetricResult list for a RawReport"""
     def gen(report):
         metrics = ()
-        for fxobs in report.forecast_observations:
+        for fxobs in report.report_parameters.object_pairs:
             values = []
             if hasattr(fxobs, 'observation'):
                 obsid = fxobs.observation.observation_id
@@ -1323,8 +1323,8 @@ def report_metrics(metric_index):
                 'observation_id': obsid
             }
             for metric, category in itertools.product(
-                report.metrics,
-                report.categories
+                report.report_parameters.metrics,
+                report.report_parameters.categories
             ):
                 values.append(datamodel.MetricValue.from_dict(
                     {
@@ -1348,7 +1348,9 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
     def gen(with_series):
         def ser(interval_length):
             ser_index = pd.date_range(
-                report.start, report.end, freq=to_offset(interval_length),
+                report.report_parameters.start,
+                report.report_parameters.end,
+                freq=to_offset(interval_length),
                 name='timestamp')
             ser_value = pd.Series(
                 np.repeat(100, len(ser_index)), name='value',
@@ -1416,7 +1418,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                 ),)
         )
         raw = datamodel.RawReport(
-            generated_at=report.end,
+            generated_at=report.report_parameters.end,
             versions={},
             timezone=obs.site.timezone,
             plots=figs,
