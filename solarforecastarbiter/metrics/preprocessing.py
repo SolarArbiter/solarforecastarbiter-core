@@ -217,20 +217,22 @@ def process_forecast_observations(forecast_observations, filters, data,
             except Exception:
                 logger.error(
                     'Failed to validate data for %s', fxobs.data_object.name)
-                validated_observations[fxobs.data_object] = (pd.Series(), ())
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
                     count=-1), )
+                validated_observations[fxobs.data_object] = (
+                    pd.Series(), (), preproc_results)
             else:
                 val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
                                     for k, v in counts.items())
-                validated_observations[fxobs.data_object] = (
-                    obs_ser, val_results)
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
                     count=len(data[fxobs.data_object]) - len(obs_ser)), )
+                validated_observations[fxobs.data_object] = (
+                    obs_ser, val_results, preproc_results)
 
-        obs_ser, val_results = validated_observations[fxobs.data_object]
+        obs_ser, val_results, preproc_results = (
+            validated_observations[fxobs.data_object])
         fx_ser = data[fxobs.forecast]
         try:
             forecast_values, observation_values, results = resample_and_align(
