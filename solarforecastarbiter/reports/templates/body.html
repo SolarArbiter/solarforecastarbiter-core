@@ -128,9 +128,11 @@ generate a new report after the data provider submits new data.
 <p>{{ category_blurbs[category] }}</p>
   {% endif %}
   {% if category == "total" %}
-    {{ macros.metric_table(report.raw_report.metrics, "total", report.metrics) }}
-    <br>
+    {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.metrics) }}
+  {% else %}
+    {{ macros.metric_table_fx_horz(report.raw_report.metrics, category, report.metrics) }}
   {% endif %}
+  <br>
   {% for metric in report.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}

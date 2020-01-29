@@ -1,4 +1,4 @@
-{% macro metric_table(report_metrics, category, metric_ordering) %}
+{% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
 <table class="table table-striped" style="width:100%;">
   <caption style="caption-side:top; text-align:center">
     Table of {{ category }} metrics
@@ -24,6 +24,59 @@
                 <td>{{ '%0.3g' | format(mval.value) }}</td>
               {% endif %}
             {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro metric_table_fx_horz(report_metrics, category, metric_ordering) %}
+{% set metric_indexes = [] %}
+{% for mresult in report_metrics %}
+  {% for mval in mresult.values %}
+    {% if mval.category == category and mval.index not in metric_indexes %}
+      {% set metric_indexes = metric_indexes.append(mval.index) %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+<table class="table table-striped" style="width:100%;">
+  <caption style="caption-side:top; text-align:center">
+    Table of {{ category }} metrics
+  </caption>
+  <thead>
+    <tr class="header">
+      <th></th>
+      {% for mresult in report_metrics %}
+        <th colspan="{{metric_ordering|length}}" style="text-align: center;">{{ mresult.name }}</th>
+      {% endfor %}
+    </tr>
+    <tr class="header">
+      <th style="text-align: left;">{{ category }} Value</th>
+      {% for mresult in report_metrics %}
+        {% for metric in metric_ordering %}
+          <th style="test-align: center;">{{ human_metrics[metric] }}</th>
+        {% endfor %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for mindex in metric_indexes %}
+      <tr>
+        <td>{{ mindex }}</td>
+        {% for mresult in report_metrics %}
+          {% for metric in metric_ordering %}
+            {% for mval in mresult.values %}
+              {% if mval.category == category  and mval.metric == metric and mval.index == mindex %}
+                {% if -1 < mval.value < 1 %}
+                  <td>{{ '%.2e' | format(mval.value) }}</td>
+                {% else %}
+                  <td>{{ '%0.3g' | format(mval.value) }}</td>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
           {% endfor %}
         {% endfor %}
       </tr>
