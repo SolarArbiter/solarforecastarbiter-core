@@ -544,6 +544,7 @@ def bar_subdivisions(cds, category, metric):
         # Create figure
         title = name + ' ' + metric_name
         fig = figure(width=800, height=200, title=title,
+                     name=f'{category}_{metric}_{name}',
                      **fig_kwargs)
 
         # Custom bar alignment
