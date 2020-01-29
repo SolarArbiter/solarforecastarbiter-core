@@ -7,7 +7,7 @@
     </tr>
   </thead>
   <tbody>
-{% for pkg, ver in report.raw_report.versions.items() %}
+{% for pkg, ver in report.raw_report.versions.items() | sort(attribute='0') %}
   <tr>
     <td style="text-align: left;">{{ pkg }}</td>
     <td style="text-align: left;">{{ ver }}</td>
