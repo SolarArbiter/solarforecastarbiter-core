@@ -49,6 +49,7 @@ Considerations:
   to be able to create time series, scatter, etc. plots.
 """
 from contextlib import contextmanager
+from functools import wraps
 import logging
 import pkg_resources
 import platform
@@ -151,12 +152,23 @@ def infer_timezone(report_request):
 
 
 class ListHandler(logging.Handler):
-    records = []
+    """
+    A logger handler that appends each log record to a list.
+    """
+    def __init__(self):
+        super().__init__()
+        self.records = []
 
     def emit(self, record):
         self.records.append(record)
 
     def export_records(self, level=logging.WARNING):
+        """
+        Convert each log record in the records list with level
+        greater than or equal to `level` to a
+        :py:class:`solarforecastarbiter.datamodel.ReportMessage`
+        and return the tuple of messages.
+        """
         return tuple([
             datamodel.ReportMessage(
                 message=rec.getMessage(),
@@ -170,16 +182,35 @@ class ListHandler(logging.Handler):
 
 
 @contextmanager
-def hijack_loggers(loggers, handler):
+def hijack_loggers(loggers):
+    """
+    Context manager to temporarily set the handler
+    of each logger in `loggers`.
+
+    Parameters
+    ----------
+    loggers: list of str or logging.Logger
+        Loggers to change
+
+    Returns
+    -------
+    ListHandler
+        The handler that will be temporarily assigned
+        to each logger.
+    """
+    handler = ListHandler()
+    handler.setLevel(logging.INFO)
+
     old_handlers = {}
     for name in loggers:
         logger = logging.getLogger(name)
         old_handlers[name] = logger.handlers
         logger.handlers = [handler]
-    yield
+    yield handler
     for name in loggers:
         logger = logging.getLogger(name)
         logger.handlers = old_handlers[name]
+    del handler
 
 
 def create_raw_report_from_data(report, data):
@@ -202,13 +233,11 @@ def create_raw_report_from_data(report, data):
     ----
     * add reference forecast
     """
-    handler = ListHandler()
-    handler.setLevel(logging.INFO)
     metadata = create_metadata(report)
 
     with hijack_loggers(['solarforecastarbiter.metrics',
                          'solarforecastarbiter.reports.figures'],
-                        handler):
+                        ) as handler:
         # Validate and resample
         processed_fxobs = preprocessing.process_forecast_observations(
             report.forecast_observations, report.filters, data,
@@ -219,8 +248,7 @@ def create_raw_report_from_data(report, data):
                                                     list(report.categories),
                                                     list(report.metrics))
         report_plots = figures.raw_report_plots(report, metrics_list)
-
-    messages = handler.export_records()
+        messages = handler.export_records()
     raw_report = datamodel.RawReport(
         metadata=metadata, plots=report_plots, metrics=tuple(metrics_list),
         processed_forecasts_observations=tuple(processed_fxobs),
@@ -228,11 +256,53 @@ def create_raw_report_from_data(report, data):
     return raw_report
 
 
+def capture_report_failure(report_id, session):
+    """
+    Decorator factory to handle errors in report generation by
+    posting a message in an empty RawReport along with a failed
+    status to the API.
+
+    Parameters
+    ----------
+    report_id: str
+        ID of the report to update with the message and failed status
+    session: :py:class:`solarforecastarbiter.io.api.APISession`
+        Session object to connect to the API.
+
+    Returns
+    -------
+    decorator
+        Decorator to handle any errors in the decorated function.
+        The decorator has an optional `err_msg` keyword argument
+        to specify the error message if the wrapped function fails.
+    """
+    def decorator(f, *,
+                  err_msg='Critical failure computing report'):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                out = f(*args, **kwargs)
+            except Exception:
+                msg = datamodel.ReportMessage(
+                    message=err_msg,
+                    step='solarforecastarbiter.reports.main',
+                    level='CRITICAL',
+                    function=str(f)
+                )
+                raw = datamodel.RawReport({}, {}, [], [], (msg,))
+                session.post_raw_report(report_id, raw, 'failed')
+                raise
+            else:
+                return out
+        return wrapper
+    return decorator
+
+
 def compute_report(access_token, report_id, base_url=None):
     """
-    Create a raw report using data from API.
-
-    Typically called as a task.
+    Create a raw report using data from API. Typically called as a task.
+    Failures will attempt to post a message for the failure in an
+    empty RawReport to the API.
 
     Parameters
     ----------
@@ -247,19 +317,40 @@ def compute_report(access_token, report_id, base_url=None):
     raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
     session = APISession(access_token, base_url=base_url)
-    try:
-        report = session.get_report(report_id)
-        data = get_data_for_report(session, report)
-        raw_report = create_raw_report_from_data(report, data)
-        session.post_raw_report(report.report_id, raw_report)
-    except Exception:
-        session.update_report_status(report_id, 'failed')
-        raise
+    fail_wrapper = capture_report_failure(report_id, session)
+    report = fail_wrapper(session.get_report, err_msg=(
+        'Failed to retrieve report. Perhaps the report does not exist, '
+        'the user does not have permission, or the connection failed.')
+    )(report_id)
+    data = fail_wrapper(get_data_for_report, err_msg=(
+        'Failed to retrieve data for report which may indicate a lack '
+        'of permissions or that an object does not exist.')
+    )(session, report)
+    raw_report = fail_wrapper(create_raw_report_from_data, err_msg=(
+        'Unhandled exception when computing report.')
+    )(report, data)
+    fail_wrapper(session.post_raw_report, err_msg=(
+        'Computation of report completed, but failed to upload result to '
+        'the API.')
+    )(report.report_id, raw_report)
     return raw_report
 
 
 def report_to_html_body(
         report, dash_url='https://dashboard.solarforecastarbiter.org'):
+    """
+    Render the report into HTML suitable to place in the <body> div of an
+    HTML document.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        HTML string to go the <body> of a document.
+    """
     body = template.render_html(report, dash_url, with_timeseries=True,
                                 body_only=True)
     return body

@@ -355,7 +355,9 @@ def construct_metrics_cds(metrics, rename=None):
             else:
                 new['index'] = mvalue.index
             data.append(new)
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data, columns=[
+        'name', 'abbrev', 'category', 'metric', 'value', 'index'
+    ])
     cds = ColumnDataSource(df, name='metrics_cds')
     cds.data.pop('level_0', None)
     return cds
@@ -501,8 +503,8 @@ def bar_subdivisions(cds, category, metric):
     fig_kwargs['x_axis_label'] = human_category
     fig_kwargs['y_axis_label'] = metric_name
 
-    filter_ = ((cds.data['category'] == category) &
-               (cds.data['metric'] == metric))
+    filter_ = ((np.asarray(cds.data['category']) == category) &
+               (np.asarray(cds.data['metric']) == metric))
     # Special handling for x-axis with dates
     if category == 'date':
         fig_kwargs['x_axis_type'] = 'datetime'
@@ -520,12 +522,19 @@ def bar_subdivisions(cds, category, metric):
     else:
         fig_kwargs['x_range'] = FactorRange(
             factors=np.unique(cds.data['index'][filter_]))
-    y_min = np.nanmin(cds.data['value'][filter_])
-    y_max = np.nanmax(cds.data['value'][filter_])
-    start, end = calc_y_start_end(y_min, y_max)
+
+    y_data = np.asarray(cds.data['value'])[filter_]
+    if len(y_data) == 0:
+        start, end = None, None
+    else:
+        y_min = np.nanmin(y_data)
+        y_max = np.nanmax(y_data)
+        start, end = calc_y_start_end(y_min, y_max)
     fig_kwargs['y_range'] = DataRange1d(start=start, end=end)
 
-    for name in np.unique(cds.data['name'][filter_]):
+    unique_names = np.unique(np.asarray(cds.data['name'])[filter_])
+
+    for name in unique_names:
         view = CDSView(source=cds, filters=[
             GroupFilter(column_name='metric', group=metric),
             GroupFilter(column_name='category', group=category),
