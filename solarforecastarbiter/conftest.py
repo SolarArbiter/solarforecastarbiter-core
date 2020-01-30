@@ -1357,8 +1357,10 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                 index=ser_index)
             return ser_value
         il0 = fx0.interval_length
-        qflags = list(f.quality_flags for f in report.filters if
-                      isinstance(f, datamodel.QualityFlagFilter))
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
         qflags = list(qflags[0])
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,

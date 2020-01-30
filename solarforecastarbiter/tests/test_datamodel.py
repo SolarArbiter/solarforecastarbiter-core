@@ -18,7 +18,8 @@ from solarforecastarbiter import datamodel
                         'aggregateforecast', 'aggregateprobforecast',
                         'aggregateobservation', 'report', 'quality_filter',
                         'timeofdayfilter', 'valuefilter', 'metricvalue',
-                        'metricresult', 'validationresult', 'reportparameters',
+                        'metricresult', 'validationresult',
+                        'preprocessing_result', 'reportparameters',
                         'reportfigure', 'reportmessage'])
 def pdid_params(request, many_sites, many_sites_text,
                 single_observation, single_observation_text,
@@ -37,6 +38,7 @@ def pdid_params(request, many_sites, many_sites_text,
                 valuefilter_dict, metric_value_dict, metric_value,
                 metric_result_dict, metric_result,
                 validation_result_dict, validation_result,
+                preprocessing_result_dict, preprocessing_result,
                 report_figure_dict, report_figure,
                 report_message_dict, report_message,
                 report_params_dict, report_params):
@@ -124,6 +126,9 @@ def pdid_params(request, many_sites, many_sites_text,
     elif request.param == 'validationresult':
         return (validation_result, validation_result_dict,
                 datamodel.ValidationResult)
+    elif request.param == 'preprocessing_result':
+        return (preprocessing_result, preprocessing_result_dict,
+                datamodel.PreprocessingResult)
     elif request.param == 'reportparameters':
         return (report_params, report_params_dict,
                 datamodel.ReportParameters)
