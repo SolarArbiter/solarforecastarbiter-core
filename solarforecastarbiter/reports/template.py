@@ -4,6 +4,7 @@ Inserts metadata and figures into the report template.
 import logging
 
 
+from bokeh import __version__ as bokeh_version
 from jinja2 import (Environment, PackageLoader,
                     select_autoescape)
 
@@ -40,7 +41,9 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
-        bokeh_version=report.raw_report.plots.bokeh_version
+        bokeh_version=getattr(
+            getattr(report.raw_report, 'plots', None),
+            'bokeh_version', bokeh_version)
     )
     if with_timeseries:
         try:
@@ -60,11 +63,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
 
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
-    the report.
+    the report. If the report failed to compute, the template and kwargs will
+    be for an error page.
 
     Parameters
     ----------
-    report: :py:class:`solarforecastarbiter.datamodel.Report`
+    report: :py:class:`solarforecastarbiter.datamodel.Report` or dict
+        A dict will be loaded into a Report with the Report.from_dict method.
     dash_url: str
         URL of the Solar Forecast arbiter dashboard to use when building links.
     with_timeseries: bool
@@ -81,17 +86,29 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         Dictionary of template variables to use as keyword arguments to
         template.render().
     """
+    if isinstance(report, dict):
+        report = datamodel.Report.from_dict(report)
+
     env = Environment(
         loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
         autoescape=select_autoescape(['html', 'xml']),
         lstrip_blocks=True,
         trim_blocks=True
     )
-    if body_only:
-        template = env.get_template('body.html')
-    else:
-        template = env.get_template('base.html')
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
+    if report.status == 'complete':
+        template = env.get_template('body.html')
+    elif report.status == 'failed':
+        template = env.get_template('failure.html')
+    elif report.status == 'pending':
+        template = env.get_template('pending.html')
+    else:
+        raise ValueError(f'Unknown status for report {report.status}')
+
+    if body_only:
+        kwargs['base_template'] = env.get_template('empty_base.html')
+    else:
+        kwargs['base_template'] = env.get_template('base.html')
     return template, kwargs
 
 

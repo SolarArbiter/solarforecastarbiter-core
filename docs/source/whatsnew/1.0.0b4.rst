@@ -37,6 +37,7 @@ Enhancements
 * Add missing tests for :py:mod:`solarforecastarbiter.reports.figures`
 * Add data validation summary table in the html report (:issue:`299`) (:pull:`320`)
 * Track data preprocessing results add section and summary table in the html report (:issue:`299`) (:pull:`320`)
+* Generate error page templates for failed reports.
 
 Bug fixes
 ~~~~~~~~~

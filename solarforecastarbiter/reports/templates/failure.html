@@ -1,0 +1,21 @@
+{% extends base_template %}
+{% block body %}
+{% block report_title %}
+<h1 id="report-title">{{ report.report_parameters.name }}</h1>
+{% endblock %}
+<ul>
+  <li>Start: {{ report.report_parameters.start }}</li>
+  <li>End: {{ report.report_parameters.end }}</li>
+  <li>Generated at: {{ report.raw_report.generated_at }}</li>
+</ul>
+{% block errors %}
+<div class="alert alert-danger">
+<h2>Report generation failed</h2>
+{% if report.raw_report.messages| length > 0 %}
+  {% for mesg in report.raw_report.messages %}
+  <h5>{{ mesg.message }}</h5>
+  {% endfor %}
+{% endif %}
+</div>
+{% endblock %}
+{% endblock %}

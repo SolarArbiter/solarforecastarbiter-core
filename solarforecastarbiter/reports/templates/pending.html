@@ -1,0 +1,12 @@
+{% extends base_template %}
+{% block body %}
+{% block report_title %}
+<h1 id="report-title">{{ report.report_parameters.name }}</h1>
+{% endblock %}
+<p>Report generation is pending.</p>
+<ul>
+  <li>Start: {{ report.report_parameters.start }}</li>
+  <li>End: {{ report.report_parameters.end }}</li>
+  <li>Generated at: {{ report.raw_report.generated_at }}</li>
+</ul>
+{% endblock %}

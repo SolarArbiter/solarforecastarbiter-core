@@ -1433,8 +1433,31 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
 @pytest.fixture
 def report_with_raw(report_dict, raw_report):
     report_dict['raw_report'] = raw_report(True)
+    report_dict['status'] = 'complete'
     report = datamodel.Report.from_dict(report_dict)
     return report
+
+
+@pytest.fixture()
+def failed_report(report_dict):
+    report_dict['raw_report'] = datamodel.RawReport(
+        generated_at=pd.Timestamp.utcnow(), timezone='UTC',
+        versions=(), plots=None, metrics=(),
+        processed_forecasts_observations=(),
+        messages=(datamodel.ReportMessage(message='Report Failed',
+                                          step='make',
+                                          level='CRITICAL',
+                                          function='fn'))
+    )
+    report_dict['status'] = 'failed'
+    return datamodel.Report.from_dict(report_dict)
+
+
+@pytest.fixture()
+def pending_report(report_dict):
+    report_dict['status'] = 'pending'
+    report_dict['raw_report'] = None
+    return datamodel.Report.from_dict(report_dict)
 
 
 @pytest.fixture()
