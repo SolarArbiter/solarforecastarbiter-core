@@ -301,7 +301,7 @@ def check_if_series_flagged(flag_series, flag_description):
         If flag_description is not a possible check for the flag version
     """
     if not has_data_been_validated(flag_series).all():
-        raise ValueError('Not all data has not been validated')
+        raise ValueError('Data has not been validated')
     _flag_description_checks(flag_description)
     return flag_series.apply(check_if_single_value_flagged,
                              flag_description=flag_description,

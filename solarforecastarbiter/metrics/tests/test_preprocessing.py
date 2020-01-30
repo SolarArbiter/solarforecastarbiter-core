@@ -50,24 +50,39 @@ CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
 OK = int(0b10)  # OK version 0 (2)
 
 
+def create_preprocessing_result(counts):
+    """Create preprocessing results in order as
+    1. Forecast Undefined Values,
+    2. Forecast Values Discarded by Alignment,
+    3. Observation Undefined Values,
+    4. Observation Values Discarded by Alignment
+    """
+    return {
+        "Forecast " + preprocessing.UNDEFINED_DATA_STRING: counts[0],
+        "Forecast " + preprocessing.DISCARD_DATA_STRING: counts[1],
+        "Observation " + preprocessing.UNDEFINED_DATA_STRING: counts[2],
+        "Observation " + preprocessing.DISCARD_DATA_STRING: counts[3]
+    }
+
+
 @pytest.mark.parametrize('obs_interval_label',
                          ['beginning', 'instant', 'ending'])
 @pytest.mark.parametrize('fx_interval_label',
                          ['beginning', 'ending'])
-@pytest.mark.parametrize('fx_series,obs_series,expected_dt', [
-    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS),
-    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS),
-    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN),
-    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN),
-    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY),
-    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY),
-    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY),
+@pytest.mark.parametrize('fx_series,obs_series,expected_dt,expected_res', [
+    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*4),
+    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0]*4),
+    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*4),
+    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 1, 1, 0]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [1, 0, 0, 1]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0, 1, 0]),  # NOQA
+    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),  # NOQA
+    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 0, 0, 3]),  # NOQA
+    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),
 ])
 def test_resample_and_align(
         site_metadata, obs_interval_label, fx_interval_label, fx_series,
-        obs_series, expected_dt):
+        obs_series, expected_dt, expected_res):
     # Create the ForecastObservation to match interval_lengths of data
     observation = datamodel.Observation(
         site=site_metadata, name='dummy obs', variable='ghi',
@@ -90,30 +105,33 @@ def test_resample_and_align(
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    forecast_values, observation_values = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, local_tz)
+    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, local_tz)
 
     # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(forecast_values.index,
-                                  observation_values.index,
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(observation_values.index,
+    pd.testing.assert_index_equal(obs_values.index,
                                   expected_dt,
                                   check_categorical=False)
+
+    expected_result = create_preprocessing_result(expected_res)
+    assert res_dict == expected_result
 
 
 def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    forecast_values, observation_values = preprocessing.resample_and_align(
+    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
         single_forecast_aggregate, fx_series, obs_series, 'UTC')
 
-    pd.testing.assert_index_equal(forecast_values.index,
-                                  observation_values.index,
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(observation_values.index,
+    pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
                                   check_categorical=False)
 
@@ -165,7 +183,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_out, obs_out = preprocessing.resample_and_align(
+    fx_out, obs_out, res_dict = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, local_tz)
 
     assert obs_out.index.freq == freq
@@ -206,13 +224,13 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    forecast_values, observation_values = preprocessing.resample_and_align(
+    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, local_tz)
 
-    pd.testing.assert_index_equal(forecast_values.index,
-                                  observation_values.index,
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(observation_values.index,
+    pd.testing.assert_index_equal(obs_values.index,
                                   expected_dt,
                                   check_categorical=False)
 
@@ -337,6 +355,10 @@ def test_process_forecast_observations(report_objects, quality_filter,
     assert not logger.error.called
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
         assert isinstance(proc_fxobs.forecast_values, pd.Series)
         assert isinstance(proc_fxobs.observation_values, pd.Series)
         pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
