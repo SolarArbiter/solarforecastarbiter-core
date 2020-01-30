@@ -131,6 +131,7 @@ generate a new report after the data provider submits new data.
   {% if category == "total" %}
     {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
   {% endif %}
+<br>
   {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}

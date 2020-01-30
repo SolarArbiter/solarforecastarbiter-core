@@ -1,5 +1,7 @@
 import logging
 from pathlib import Path
+import re
+import uuid
 
 
 import pandas as pd
@@ -236,6 +238,28 @@ def test_compute_report(mocker, report_objects, mock_data):
     raw = main.compute_report('nope', report.report_id)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0
+
+
+def test_compute_report_request_mock(
+        mocker, report_objects, mock_data, requests_mock):
+    report = report_objects[0]
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_report',
+        return_value=report)
+    requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/values'),
+        text=lambda *x: str(uuid.uuid1()))
+    rep_post = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/raw')
+    )
+    status_up = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/status')
+    )
+    raw = main.compute_report('nope', report.report_id)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+    assert rep_post.called
+    assert 'complete' in status_up.last_request.path
 
 
 @pytest.fixture()

@@ -130,9 +130,9 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
         type(obs).__name__ + " " + DISCARD_DATA_STRING:
             len(obs_resampled) - len(observation_values),
         type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
-            fx_series.isna().sum(),
+            int(fx_series.isna().sum()),
         type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
-            obs_series.isna().sum()
+            int(obs_series.isna().sum())
     }
 
     return forecast_values, observation_values, results
