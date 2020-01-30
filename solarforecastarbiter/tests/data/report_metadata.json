@@ -1,7 +1,7 @@
 {
     "_comment": "This file is not currently used for tests, but can be used with the CLI tool to generate a real report when using data from the prod. API.",
-    "name": "NREL MIDC OASIS GHI Forecast Analysis",
     "report_parameters": {
+        "name": "NREL MIDC OASIS GHI Forecast Analysis",
         "start": "2019-10-01T00:00:00Z",
         "end": "2019-10-07T23:59:00Z",
         "filters": [

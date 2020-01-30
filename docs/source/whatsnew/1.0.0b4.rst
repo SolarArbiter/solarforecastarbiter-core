@@ -22,6 +22,9 @@ timeseries and metadata.
 * Add :py:func:`solarforecastarbiter.reports.figures.output_svg` to save Bokeh figures as SVG
 * Add optional status keyword to :py:func:`solarforecastarbiter.io.api.APISession.post_raw_report`
 * :py:mod:`solarforecastarbiter.datamodel.PreprocessingResult` Added to track prepocessing summary of results (:pull:`320`)
+* Add the :py:class:`solarforecastarbiter.datamodel.ReportParameters` class, add the ``report_parameters`` parameters to :py:class:`solarforecastarbiter.datamodel.Report`, and moved most parameters
+* Remove the ``ReportMetadata`` class and moved some parameters to :py:class:`solarforecastarbiter.datamodel.RawReport`
+* Remove :py:func:`solarforecastarbiter.reports.main.create_metadata`
 
 Enhancements
 ~~~~~~~~~~~~

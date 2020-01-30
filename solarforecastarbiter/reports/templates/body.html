@@ -1,7 +1,8 @@
 {% import "macros.j2" as macros with context %}
+{% set report_name = report.report_parameters.name %}
 
 {% block report_title %}
-<h1 id="report-title">{{ report.name }}</h1>
+<h1 id="report-title">{{ report_name }}</h1>
 {% endblock %}
 {% block report_description %}
 <p>
@@ -24,7 +25,7 @@
   </ul>
   <li><a href="#metrics">Metrics</a></li>
   <ul>
-    {% for category in report.categories %}
+    {% for category in report.report_parameters.categories %}
       <li><a href="#{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</a></li>
     {% endfor %}
   </ul>
@@ -35,10 +36,10 @@
 {% block reportmetadata %}
 <h2 id="report-metadata">Report Metadata</h2>
 <ul>
-  <li>Name: {{ report.name }}</li>
-  <li>Start: {{ report.raw_report.metadata.start }}</li>
-  <li>End: {{ report.raw_report.metadata.end }}</li>
-  <li>Generated at: {{ report.raw_report.metadata.now }}</li>
+  <li>Name: {{ report_name }}</li>
+  <li>Start: {{ report.report_parameters.start }}</li>
+  <li>End: {{ report.report_parameters.end }}</li>
+  <li>Generated at: {{ report.raw_report.generated_at }}</li>
 </ul>
 {% endblock %}
 
@@ -55,7 +56,7 @@
 {% block data %}
 <h2 id="data">Data</h2>
 <p>
-  This report includes forecast and observation data available from {{ report.start }} to {{ report.end }}.
+  This report includes forecast and observation data available from {{ report.report_parameters.start }} to {{ report.report_parameters.end }}.
 {% endblock %}
 {% block obsandfx %}
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
@@ -119,21 +120,19 @@ generate a new report after the data provider submits new data.
 <p>
   Metrics are displayed in the tables and figures below.
   Metrics may be downloaded in CSV format by clicking
-  <a href="javascript:download_metrics_as_csv('{{ report.name }}')">here</a>.
+  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
 </p>
 <div id="metric-plot-wrapper">
-{% for category in report.categories %}
+{% for category in report.report_parameters.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
   {% if category_blurbs is defined %}
 <p>{{ category_blurbs[category] }}</p>
   {% endif %}
   {% if category == "total" %}
-    {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.metrics) }}
-  {% else %}
-    {{ macros.metric_table_fx_horz(report.raw_report.metrics, category, report.metrics) }}
+    {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
   {% endif %}
-  <br>
-  {% for metric in report.metrics %}
+<br>
+  {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
 <div class="metric-block" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>

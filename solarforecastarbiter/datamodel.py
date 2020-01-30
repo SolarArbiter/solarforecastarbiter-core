@@ -1066,35 +1066,6 @@ def __check_categories__(categories):
 
 
 @dataclass(frozen=True)
-class ReportMetadata(BaseModel):
-    """
-    Hold additional metadata about the report
-
-    Parameters
-    ----------
-    name: str
-    start: pandas.Timestamp
-    end: pandas.Timestamp
-    now: pandas.Timestamp
-        The time at report computation.
-    timezone: str
-        The IANA timezone of the report.
-    versions: dict
-        Dictionary of version information to ensure the correct version of
-        the core library is used when rendering or recomputing the report.
-    data_checksum: str
-        SHA-256 checksum of the raw data used in the report.
-    """
-    name: str
-    start: pd.Timestamp
-    end: pd.Timestamp
-    now: pd.Timestamp
-    timezone: str
-    versions: dict
-    data_checksum: Union[str, None] = None
-
-
-@dataclass(frozen=True)
 class ValidationResult(BaseModel):
     """Stores the validation result for a single flag for a forecast and
     observation pair.
@@ -1306,35 +1277,43 @@ class ReportMessage(BaseModel):
 
 @dataclass(frozen=True)
 class RawReport(BaseModel):
-    """
-    Class for holding the result of processing a report request including
-    the calculated metrics, some metadata, the markdown template, and
-    the processed forecast/observation data.
+    """Class for holding the result of processing a report request
+    including some metadata, the calculated metrics, plots, the
+    processed forecast/observation data, and messages from report
+    generation. This is called a "raw" report because this object,
+    along with the report parameters, can be processed into a HTML or
+    PDF report.
 
     Parameters
     ----------
-    metadata: :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
+    generated_at: pandas.Timestamp
+        The time at report computation.
+    timezone: str
+        The IANA timezone of the report.
+    versions: dict
+        Dictionary of version information to ensure the correct version of
+        the core library is used when rendering or recomputing the report.
     plots: :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
     metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
     processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
     messages: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMessage`
+    data_checksum: str or None
+        SHA-256 checksum of the raw data used in the report.
+
     """  # NOQA
-    metadata: ReportMetadata
+    generated_at: pd.Timestamp
+    timezone: str
+    versions: dict
     plots: RawReportPlots
     metrics: Tuple[MetricResult, ...]
     processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
     messages: Tuple[ReportMessage, ...] = ()
+    data_checksum: Union[str, None] = None
 
 
 @dataclass(frozen=True)
-class Report(BaseModel):
-    """
-    Class for keeping track of report metadata and the raw report that
-    can later be rendered to HTML or PDF. Functions in
-    :py:mod:`~solarforecastarbiter.reports.main` take a Report object
-    with `raw_report` set to None, generate the report, and return
-    another Report object with `raw_report` set to a RawReport object
-    that can be rendered.
+class ReportParameters(BaseModel):
+    """Parameters required to define and generate a Report.
 
     Parameters
     ----------
@@ -1353,39 +1332,57 @@ class Report(BaseModel):
         Categories to compute and organize metrics over in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
+
+    """
+    name: str
+    start: pd.Timestamp
+    end: pd.Timestamp
+    object_pairs: Tuple[Union[ForecastObservation, ForecastAggregate], ...]
+    metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
+    categories: Tuple[str, ...] = ('total', 'date', 'hour')
+    filters: Tuple[BaseFilter, ...] = field(
+        default_factory=lambda: (QualityFlagFilter(), ))
+
+    def __post_init__(self):
+        # ensure that all forecast and observation units are the same
+        __check_units__(*itertools.chain.from_iterable(
+            ((k.forecast, k.data_object) for k in self.object_pairs)))
+        # ensure the metrics can be applied to the forecasts and observations
+        for k in self.object_pairs:
+            __check_metrics__(k.forecast, self.metrics)
+        # ensure that categories are valid
+        __check_categories__(self.categories)
+
+
+@dataclass(frozen=True)
+class Report(BaseModel):
+    """Class for keeping track of report metadata and the raw report that
+    can later be rendered to HTML or PDF. Functions in
+    :py:mod:`~solarforecastarbiter.reports.main` take a Report object
+    with `raw_report` set to None, generate the report, and return
+    another Report object with `raw_report` set to a RawReport object
+    that can be rendered.
+
+    Parameters
+    ----------
+    report_parameters : ReportParameters
+        Metadata required to specify and generate the report.
+    raw_report : RawReport or None
+        Once computed, the raw report should be stored here
     status : str
         Status of the report
     report_id : str
         ID of the report in the API
-    raw_report : RawReport or None
-        Once computed, the raw report should be stored here
     provider : str, optional
         Provider of the Report information.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
+
     """
-    name: str
-    start: pd.Timestamp
-    end: pd.Timestamp
-    forecast_observations: Tuple[Union[ForecastObservation, ForecastAggregate],
-                                 ...]
-    metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
-    categories: Tuple[str, ...] = ('total', 'date', 'hour')
-    filters: Tuple[BaseFilter, ...] = field(
-        default_factory=lambda: (QualityFlagFilter(), ))
+    report_parameters: ReportParameters
+    raw_report: Union[None, RawReport] = None
     status: str = 'pending'
     report_id: str = ''
-    raw_report: Union[None, RawReport] = None
     provider: str = ''
     __version__: int = 0  # should add version to api
-
-    def __post_init__(self):
-        # ensure that all forecast and observation units are the same
-        __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.data_object) for k in self.forecast_observations)))
-        # ensure the metrics can be applied to the forecasts and observations
-        for k in self.forecast_observations:
-            __check_metrics__(k.forecast, self.metrics)
-        # ensure that categories are valid
-        __check_categories__(self.categories)

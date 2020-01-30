@@ -100,7 +100,7 @@ Reports:
 .. autosummary::
    :toctree: generated/
 
-   datamodel.ReportMetadata
+   datamodel.ReportParameters
    datamodel.RawReport
    datamodel.Report
 
@@ -490,7 +490,6 @@ Reports
    :toctree: generated/
 
    reports.main.compute_report
-   reports.main.create_metadata
    reports.main.get_data_for_report
    reports.main.create_raw_report_from_data
    reports.figures.construct_timeseries_cds

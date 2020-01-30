@@ -1,5 +1,7 @@
 import logging
 from pathlib import Path
+import re
+import uuid
 
 
 import pandas as pd
@@ -75,12 +77,6 @@ def test_get_data_for_report(mock_data, report_objects):
     assert get_aggregate_values.call_count == 1
 
 
-def test_create_metadata(report_objects):
-    report = report_objects[0]
-    out = main.create_metadata(report)
-    assert isinstance(out, datamodel.ReportMetadata)
-
-
 def test_get_version():
     vers = main.get_versions()
     assert set(vers.keys()) > {'solarforecastarbiter', 'python'}
@@ -88,7 +84,15 @@ def test_get_version():
 
 def test_infer_timezone(report_objects):
     report = report_objects[0]
-    assert main.infer_timezone(report) == "Etc/GMT+7"
+    assert main.infer_timezone(report.report_parameters) == "Etc/GMT+7"
+
+
+def test_infer_timezone_agg(report_objects, single_forecast_aggregate,
+                            single_forecast_observation):
+    report_params = report_objects[0].report_parameters
+    rp = report_params.replace(object_pairs=(single_forecast_aggregate,
+                                             single_forecast_observation))
+    assert main.infer_timezone(rp) == 'America/Denver'
 
 
 def test_listhandler():
@@ -141,7 +145,7 @@ def test_hijack_loggers(mocker):
 def test_create_raw_report_from_data(mocker, report_objects, _test_data):
     report = report_objects[0]
     data = {}
-    for fxobs in report.forecast_observations:
+    for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
         if isinstance(fxobs, datamodel.ForecastAggregate):
             data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
@@ -157,7 +161,7 @@ def test_create_raw_report_from_data(mocker, report_objects, _test_data):
 def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
     report = report_objects[0]
     data = {}
-    for fxobs in report.forecast_observations:
+    for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = EMPTY_DF['value']
         if isinstance(fxobs, datamodel.ForecastAggregate):
             data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
@@ -174,7 +178,7 @@ def test_create_raw_report_from_data_no_obs(mocker, report_objects,
                                             _test_data):
     report = report_objects[0]
     data = {}
-    for fxobs in report.forecast_observations:
+    for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
         data[fxobs.data_object] = EMPTY_DF
 
@@ -186,7 +190,7 @@ def test_create_raw_report_from_data_no_obs(mocker, report_objects,
 def test_create_raw_report_from_data_no_data(mocker, report_objects):
     report = report_objects[0]
     data = {}
-    for fxobs in report.forecast_observations:
+    for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = EMPTY_DF['value']
         data[fxobs.data_object] = EMPTY_DF
     raw = main.create_raw_report_from_data(report, data)
@@ -204,7 +208,7 @@ def test_capture_report_failure(mocker):
     failwrap = main.capture_report_failure('report_id', session)
     with pytest.raises(TypeError):
         failwrap(fail)()
-    assert 'Critical ' in api_post.call_args_list[0][1]['json']['raw_report']['messages'][0]['message']  # NOQA
+    assert 'Critical ' in api_post.call_args_list[0][1]['json']['messages'][0]['message']  # NOQA
     assert api_post.call_args_list[1][0][0] == '/reports/report_id/status/failed'  # NOQA
 
 
@@ -219,7 +223,7 @@ def test_capture_report_failure_msg(mocker):
     err_msg = 'Super bad error message'
     with pytest.raises(TypeError):
         failwrap(fail, err_msg=err_msg)()
-    assert api_post.call_args_list[0][1]['json']['raw_report']['messages'][0]['message'] == err_msg  # NOQA
+    assert api_post.call_args_list[0][1]['json']['messages'][0]['message'] == err_msg  # NOQA
     assert api_post.call_args_list[1][0][0] == '/reports/report_id/status/failed'  # NOQA
 
 
@@ -234,6 +238,28 @@ def test_compute_report(mocker, report_objects, mock_data):
     raw = main.compute_report('nope', report.report_id)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0
+
+
+def test_compute_report_request_mock(
+        mocker, report_objects, mock_data, requests_mock):
+    report = report_objects[0]
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_report',
+        return_value=report)
+    requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/values'),
+        text=lambda *x: str(uuid.uuid1()))
+    rep_post = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/raw')
+    )
+    status_up = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/status')
+    )
+    raw = main.compute_report('nope', report.report_id)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+    assert rep_post.called
+    assert 'complete' in status_up.last_request.path
 
 
 @pytest.fixture()
@@ -280,7 +306,7 @@ def test_compute_report_compute_fail(mocker, get_report_mocked, mock_data,
 def test_report_to_html_body(report_with_raw):
     out = main.report_to_html_body(report_with_raw)
     assert len(out) > 0
-    assert report_with_raw.name in out
+    assert report_with_raw.report_parameters.name in out
 
 
 def test_report_to_pdf(report_with_raw):

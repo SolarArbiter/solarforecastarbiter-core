@@ -53,7 +53,7 @@ def test_metric_table_fx_vert(report_with_raw, macro_test_template):
         rendered_metric_table = metric_table_template.render(
             report_metrics=expected_metric,
             category=category,
-            metric_ordering=report_with_raw.metrics,
+            metric_ordering=report_with_raw.report_parameters.metrics,
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_table_fx_vert_format.format(
             category, expected_metric[0].name)
@@ -96,7 +96,7 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
         rendered_metric_table = metric_table_template.render(
             report_metrics=expected_metric,
             category=category,
-            metric_ordering=report_with_raw.metrics,
+            metric_ordering=report_with_raw.report_parameters.metrics,
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_table_fx_horz_format.format(
             category, len(metrics), expected_metric[0].name)
@@ -141,8 +141,9 @@ validation_table_format = """<table class="table table-striped" style="width:100
 def test_validation_table(report_with_raw, macro_test_template):
     validation_table_template = macro_test_template('validation_table(proc_fxobs_list,quality_filters)')  # noqa
     proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
-    qfilters = list(f.quality_flags for f in report_with_raw.filters
-                    if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
+    qfilters = list(
+        f.quality_flags for f in report_with_raw.report_parameters.filters
+        if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
     rendered_validation_table = validation_table_template.render(
         proc_fxobs_list=proc_fxobs_list,
         quality_filters=qfilters)

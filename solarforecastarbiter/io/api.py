@@ -637,12 +637,12 @@ class APISession(requests.Session):
         -------
         datamodel.Report
         """
-        req_dict = rep_dict['report_parameters'].copy()
-        for key in ('name', 'report_id', 'status'):
+        rep_params = rep_dict['report_parameters'].copy()
+        req_dict = {}
+        for key in ('report_id', 'status', 'provider'):
             req_dict[key] = rep_dict.get(key, '')
-        req_dict['metrics'] = tuple(req_dict['metrics'])
         pairs = []
-        for o in req_dict['object_pairs']:
+        for o in rep_params['object_pairs']:
             fx = self.get_forecast(o['forecast'])
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
@@ -654,7 +654,8 @@ class APISession(requests.Session):
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')
             pairs.append(pair)
-        req_dict['forecast_observations'] = tuple(pairs)
+        rep_params['object_pairs'] = tuple(pairs)
+        req_dict['report_parameters'] = rep_params
         return datamodel.Report.from_dict(req_dict)
 
     def get_report(self, report_id):
@@ -674,10 +675,8 @@ class APISession(requests.Session):
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
         raw = resp.pop('raw_report')
-        metrics = resp.pop('metrics', {})
         report = self.process_report_dict(resp)
         if raw is not None:
-            raw['metrics'] = metrics
             raw_report = datamodel.RawReport.from_dict(raw)
             processed_fxobs = self.get_raw_report_processed_data(
                 report_id, raw_report, resp['values'])
@@ -718,14 +717,8 @@ class APISession(requests.Session):
         datamodel.Report
            As returned by the API
         """
-        report_dict = report.to_dict()
-        report_dict.pop('report_id')
-        report_dict.pop('provider')
-        name = report_dict.pop('name')
-        for key in ('raw_report', '__version__', 'status'):
-            del report_dict[key]
-        report_dict['filters'] = []
-        fxobs = report_dict.pop('forecast_observations')
+        report_params = report.report_parameters.to_dict()
+        fxobs = report_params.pop('object_pairs')
         object_pairs = []
         for _fo in fxobs:
             d = {'forecast': _fo['forecast']['forecast_id']}
@@ -734,9 +727,9 @@ class APISession(requests.Session):
             else:
                 d['observation'] = _fo['observation']['observation_id']
             object_pairs.append(d)
-        report_dict['object_pairs'] = object_pairs
-        params = {'name': name,
-                  'report_parameters': report_dict}
+        report_params['object_pairs'] = object_pairs
+        report_params['filters'] = []
+        params = {'report_parameters': report_params}
         req = self.post('/reports/', json=params,
                         headers={'Content-Type': 'application/json'})
         new_id = req.text
@@ -841,12 +834,10 @@ class APISession(requests.Session):
         """
         posted_fxobs = self.post_raw_report_processed_data(
             report_id, raw_report)
-        to_post = raw_report.replace(
-            processed_forecasts_observations=posted_fxobs)
-        raw_dict = to_post.to_dict()
-        metric_list = raw_dict.pop('metrics')
-        self.post(f'/reports/{report_id}/metrics',
-                  json={'metrics': metric_list, 'raw_report': raw_dict},
+        raw_dict = raw_report.replace(
+            processed_forecasts_observations=posted_fxobs).to_dict()
+        self.post(f'/reports/{report_id}/raw',
+                  json=raw_dict,
                   headers={'Content-Type': 'application/json'})
         self.update_report_status(report_id, status)
 
