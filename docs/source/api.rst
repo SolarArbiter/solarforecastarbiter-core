@@ -83,6 +83,7 @@ Report metrics and validation:
    datamodel.MetricResult
    datamodel.MetricValue
    datamodel.ValidationResult
+   datamodel.PreprocessingResult
    datamodel.ReportMessage
 
 Report plots:

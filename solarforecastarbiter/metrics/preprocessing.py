@@ -13,6 +13,11 @@ from solarforecastarbiter.validation import quality_mapping
 
 logger = logging.getLogger(__name__)
 
+# Titles to refer to counts of preprocessing results
+VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
+DISCARD_DATA_STRING = "Values Discarded by Alignment"
+UNDEFINED_DATA_STRING = "Undefined Values"
+
 
 def apply_validation(obs_df, qfilter, handle_func):
     """
@@ -114,11 +119,23 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     obs_resampled = obs_resampled.dropna(how="any")
     obs_aligned, fx_aligned = obs_resampled.align(fx_series.dropna(how="any"),
                                                   'inner')
-
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
-    return forecast_values, observation_values
+
+    # Return dict summarizing results
+    results = {
+        type(fx).__name__ + " " + DISCARD_DATA_STRING:
+            len(fx_series.dropna(how="any")) - len(fx_aligned),
+        type(obs).__name__ + " " + DISCARD_DATA_STRING:
+            len(obs_resampled) - len(observation_values),
+        type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
+            fx_series.isna().sum(),
+        type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
+            obs_series.isna().sum()
+    }
+
+    return forecast_values, observation_values, results
 
 
 def exclude(values, quality_flags=None):
@@ -200,18 +217,28 @@ def process_forecast_observations(forecast_observations, filters, data,
             except Exception:
                 logger.error(
                     'Failed to validate data for %s', fxobs.data_object.name)
-                validated_observations[fxobs.data_object] = (pd.Series(), ())
+                preproc_results = (datamodel.PreprocessingResult(
+                    name=VALIDATION_RESULT_TOTAL_STRING,
+                    count=-1), )
+                validated_observations[fxobs.data_object] = (
+                    pd.Series(), (), preproc_results)
             else:
                 val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
                                     for k, v in counts.items())
+                preproc_results = (datamodel.PreprocessingResult(
+                    name=VALIDATION_RESULT_TOTAL_STRING,
+                    count=len(data[fxobs.data_object]) - len(obs_ser)), )
                 validated_observations[fxobs.data_object] = (
-                    obs_ser, val_results)
+                    obs_ser, val_results, preproc_results)
 
-        obs_ser, val_results = validated_observations[fxobs.data_object]
+        obs_ser, val_results, preproc_results = (
+            validated_observations[fxobs.data_object])
         fx_ser = data[fxobs.forecast]
         try:
-            forecast_values, observation_values = resample_and_align(
+            forecast_values, observation_values, results = resample_and_align(
                 fxobs, fx_ser, obs_ser, timezone)
+            preproc_results += tuple(datamodel.PreprocessingResult(
+                name=k, count=v) for k, v in results.items())
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',
@@ -227,6 +254,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 interval_label=fxobs.forecast.interval_label,
                 valid_point_count=len(forecast_values),
                 validation_results=val_results,
+                preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values)
             processed_fxobs.append(processed)
