@@ -212,6 +212,20 @@ def test_capture_report_failure(mocker):
     assert api_post.call_args_list[1][0][0] == '/reports/report_id/status/failed'  # NOQA
 
 
+def test_capture_report_failure_is_valid_datamodel(mocker):
+    api_post = mocker.patch('solarforecastarbiter.io.api.APISession.post')
+
+    def fail():
+        raise TypeError()
+
+    session = api.APISession('nope')
+    failwrap = main.capture_report_failure('report_id', session)
+    with pytest.raises(TypeError):
+        failwrap(fail)()
+    raw = datamodel.RawReport.from_dict(api_post.call_args_list[0][1]['json'])
+    assert 'CRITICAL' == raw.messages[0].level
+
+
 def test_capture_report_failure_msg(mocker):
     api_post = mocker.patch('solarforecastarbiter.io.api.APISession.post')
 

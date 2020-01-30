@@ -280,7 +280,7 @@ def capture_report_failure(report_id, session):
                     function=str(f)
                 )
                 raw = datamodel.RawReport(
-                    pd.Timestamp.now(tz='UTC'), 'UTC', (), {},
+                    pd.Timestamp.now(tz='UTC'), 'UTC', (), None,
                     (), (), (msg,))
                 session.post_raw_report(report_id, raw, 'failed')
                 raise
