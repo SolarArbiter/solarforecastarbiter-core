@@ -79,7 +79,7 @@ def test_get_data_for_report(mock_data, report_objects):
 
 def test_get_version():
     vers = main.get_versions()
-    assert set(vers.keys()) > {'solarforecastarbiter', 'python'}
+    assert {v[0] for v in vers} > {'solarforecastarbiter', 'python'}
 
 
 def test_infer_timezone(report_objects):

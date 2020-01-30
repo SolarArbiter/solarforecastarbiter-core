@@ -1421,7 +1421,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
-            versions={},
+            versions=(),
             timezone=obs.site.timezone,
             plots=figs,
             metrics=report_metrics(report),
@@ -1741,7 +1741,7 @@ def report_metadata_dict():
         'end': '2019-01-02T00:00Z',
         'now': '2019-01-03T00:00Z',
         'timezone': 'America/Pheonix',
-        'versions': {}
+        'versions': (),
     }
 
 

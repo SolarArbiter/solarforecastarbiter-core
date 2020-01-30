@@ -113,16 +113,16 @@ def get_versions():
         'bottleneck',
         'jinja2',
     ]
-    versions = {}
+    versions = []
     for p in packages:
         try:
             v = pkg_resources.get_distribution(p).version
         except pkg_resources.DistributionNotFound:
             v = 'None'
-        versions[p] = v
-    versions['python'] = platform.python_version()
-    versions['platform'] = platform.platform()
-    return versions
+        versions.append((p, str(v)))
+    versions.append(('python', str(platform.python_version())))
+    versions.append(('platform', platform.platform()))
+    return tuple(versions)
 
 
 def infer_timezone(report_parameters):
@@ -280,8 +280,8 @@ def capture_report_failure(report_id, session):
                     function=str(f)
                 )
                 raw = datamodel.RawReport(
-                    pd.Timestamp.now(tz='UTC'), 'UTC', {}, {},
-                    [], [], (msg,))
+                    pd.Timestamp.now(tz='UTC'), 'UTC', (), {},
+                    (), (), (msg,))
                 session.post_raw_report(report_id, raw, 'failed')
                 raise
             else:

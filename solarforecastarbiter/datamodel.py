@@ -1303,8 +1303,8 @@ class RawReport(BaseModel):
     """  # NOQA
     generated_at: pd.Timestamp
     timezone: str
-    versions: dict
     plots: RawReportPlots
+    versions: Tuple[Tuple[str, str], ...]
     metrics: Tuple[MetricResult, ...]
     processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
     messages: Tuple[ReportMessage, ...] = ()
