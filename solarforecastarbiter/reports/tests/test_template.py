@@ -126,6 +126,15 @@ def test_get_template_and_kwargs(
     assert kwargs == expected_kwargs(with_series, False)
 
 
+def test_get_template_and_kwargs_bad_status(
+        report_with_raw, dash_url, mocked_timeseries_plots):
+    inp = report_with_raw.to_dict()
+    inp['status'] = 'notokay'
+    with pytest.raises(ValueError):
+        template.get_template_and_kwargs(
+            inp, dash_url, False, True)
+
+
 def test_render_html_body_only(report_with_raw, dash_url, with_series,
                                mocked_timeseries_plots):
     rendered = template.render_html(
