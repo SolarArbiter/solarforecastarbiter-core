@@ -107,23 +107,29 @@ def compute_aggregate(data, interval_length, interval_label,
     pandas.DataFrame
         - Index is a DatetimeIndex that adheres to interval_length and
           interval_label
+
         - Columns are 'value', for the aggregated value according to agg_func,
           and 'quality_flag', the bitwise or of all flags in the aggregate for
           the interval.
+
         - A 'value' of NaN means that data from one or more
           observations was missing in that interval.
 
     Raises
     ------
     KeyError
-        - If data is missing a key for an observation in aggregate_obsevations
-        - If any DataFrames in data do not have 'value' or 'quality_flag'
+        If data is missing a key for an observation in aggregate_obsevations
+
+        + Or, if any DataFrames in data do not have 'value' or 'quality_flag'
           columns
+
     ValueError
-        - If interval_length is not a divisor of one day
-        - If an observation has been deleted but the data is
-          required for the aggregate
-        - If interval_label is not beginning or ending
+        If interval_length is not a divisor of one day
+
+        + Or, if an observation has been deleted but the data is required for
+          the aggregate
+        + Or, if interval_label is not beginning or ending
+
     """
     new_index = _make_aggregate_index(
         data, interval_length, interval_label, timezone)
@@ -169,6 +175,20 @@ def compute_aggregate(data, interval_length, interval_label,
 
 
 def sha256_pandas_object_hash(obj):
+    """
+    Compute a hash for a pandas object. No sorting of the
+    object is performed, so an object with the same data in
+    in a different order returns a different hash.
+
+    Parameters
+    ----------
+    obj: pandas.Series or pandas.DataFrame
+
+    Returns
+    -------
+    str
+       Hex digest of the SHA-256 hash of the individual object row hashes
+    """
     return sha256(
         pd.util.hash_pandas_object(obj).values.tobytes()
     ).hexdigest()

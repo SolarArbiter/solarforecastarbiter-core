@@ -716,6 +716,11 @@ class APISession(requests.Session):
         -------
         datamodel.Report
            As returned by the API
+
+        Note
+        ----
+        The 'filters' key of the report parameters is ignored. This
+        should be resolved by :issue:`251`.
         """
         report_params = report.report_parameters.to_dict()
         fxobs = report_params.pop('object_pairs')

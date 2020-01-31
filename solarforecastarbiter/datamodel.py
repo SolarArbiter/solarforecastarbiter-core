@@ -696,8 +696,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
 
     See Also
     --------
-    :py:class:`solarforecastarbiter.datamodel.Site
-    :py:class:`solarforecastarbiter.datamodel.Aggregate
+    :py:class:`solarforecastarbiter.datamodel.Site`
+    :py:class:`solarforecastarbiter.datamodel.Aggregate`
     """
     def __post_init__(self):
         __set_units__(self)
@@ -1020,6 +1020,7 @@ class ValueFilter(BaseFilter):
         Value range to calculate errors. Range is inclusive
         of both endpoints. Filters are applied before resampling.
     """  # NOQA
+    # TODO: implement. Also add Aggregate
     metadata: Union[Observation, Forecast]
     value_range: Tuple[float, float]
 
@@ -1194,6 +1195,12 @@ class MetricResult(BaseModel):
     Notes
     -----
     Only one of `aggregate_id` or `observation_id` may be set.
+
+    Raises
+    ------
+    ValueError
+        When both `aggregate_id` and `observation_id` are not None, or when
+        both are None.
     """
     name: str
     forecast_id: str

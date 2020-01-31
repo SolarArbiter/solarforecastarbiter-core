@@ -56,19 +56,15 @@ def construct_timeseries_cds(report):
 
     metadata_cds : bokeh.models.ColumnDataSource
         This cds has the following keys:
-        `pair_index` : Integer for pairing metadata with the values in
-            the value_cds.
-        `observation_name`: Observation name.
-        `forecast_name`: Forecast name.
-        `interval_label`: Interval label of the processed forecast and
-            observation data.
-        `observation_hash`: Hash of the original observation object and the
-            `datamodel.ProcessedForecastObservations` metadata.
-        `forecast_hash`: Hash of the original forecast object and the
-            `datamodel.ProcessedForecastObservations` metadata.
-        `
 
-    """
+        - `pair_index`: Integer for pairing metadata with the values in the value_cds.
+        - `observation_name`: Observation name.
+        - `forecast_name`: Forecast name.
+        - `interval_label`: Interval label of the processed forecast and observation data.
+        - `observation_hash`: Hash of the original observation object and the `datamodel.ProcessedForecastObservations` metadata.
+        - `forecast_hash`: Hash of the original forecast object and the `datamodel.ProcessedForecastObservations` metadata.
+
+    """  # NOQA
     value_frames = []
     meta_rows = []
     for idx, pfxobs in enumerate(
@@ -391,7 +387,7 @@ def bar(cds, metric):
         Metric cds created by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds`
     metric: str
         The metric to plot. This value should be found in cds['metric'].
-.
+
     Returns
     -------
     data_table : bokeh.widgets.DataTable
@@ -472,13 +468,13 @@ def calc_y_start_end(y_min, y_max, pad_factor=1.03):
 def bar_subdivisions(cds, category, metric):
     """
     Create bar graphs comparing a single metric across subdivisions of
-    time for multiple forecasts. e.g.
+    time for multiple forecasts. e.g.::
 
-    Fx 1 MAE |
-             |_________________
-    Fx 2 MAE |
-             |_________________
-               Year, Month of the year, etc.
+        Fx 1 MAE |
+                 |_________________
+        Fx 2 MAE |
+                 |_________________
+                   Year, Month of the year, etc.
 
     Parameters
     ----------

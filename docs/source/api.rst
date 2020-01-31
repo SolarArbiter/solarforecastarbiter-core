@@ -608,3 +608,15 @@ Utility functions for plotting.
    plotting.utils.format_variable_name
    plotting.utils.align_index
    plotting.utils.line_or_step
+
+
+Generic Utilities
+=================
+
+Generic utility functions.
+
+.. autosummary::
+   :toctree: generated/
+
+   utils.compute_aggregate
+   utils.sha256_pandas_object_hash

@@ -6,7 +6,7 @@ import numpy as np
 def fixed_error_cost(obs, fx, cost):
     """Fixed cost per forecast error.
 
-        total_cost = sum_{i=1}^n |fx_i - obs_i| * cost
+    .. math::    \\text{total_cost} = \\sum_{i=1}^n |\\text{fx}_i - \\text{obs}_i| * \\text{cost}
 
     where cost is the fixed cost per forecast error (e.g. USD per MW of error)
     and total_cost is cost of the entire forecast time-series.
@@ -27,15 +27,15 @@ def fixed_error_cost(obs, fx, cost):
 
     Examples
     --------
+    Forecast power in KW
 
-    Forecast power [kW], cost: 10 USD per kW
     >>> fx = np.array([1, 2, 3])
     >>> obs = np.array([1, 1, 4])
     >>> cost = 10  # 10 USD per kW
     >>> fixed_error_cost(fx, obs, cost)
     20
 
-    """
+    """  # NOQA
 
     error = np.abs(fx - obs)
     total_cost = np.sum(error) * cost  # more efficient than sum(error * cost)

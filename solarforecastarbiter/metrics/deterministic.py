@@ -8,7 +8,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 def mean_absolute(obs, fx):
     """Mean absolute error (MAE).
 
-        MAE = 1/n sum_{i=1}^n |fx_i - obs_i|
+    .. math:: \\text{MAE} = 1/n \\sum_{i=1}^n |\\text{fx}_i - \\text{obs}_i|
 
     Parameters
     ----------
@@ -30,7 +30,7 @@ def mean_absolute(obs, fx):
 def mean_bias(obs, fx):
     """Mean bias error (MBE).
 
-        MBE = 1/n sum_{i=1}^n (fx_i - obs_i)
+    .. math:: \\text{MBE} = 1/n \\sum_{i=1}^n (\\text{fx}_i - \\text{obs}_i)
 
     Parameters
     ----------
@@ -52,7 +52,9 @@ def mean_bias(obs, fx):
 def root_mean_square(obs, fx):
     """Root mean square error (RMSE).
 
-        RMSE = sqrt( 1/n sum_{i=1}^n (fx_i - obs_i)^2 )
+    .. math::
+        \\text{RMSE} = \\sqrt{
+            1/n \\sum_{i=1}^n (\\text{fx}_i - \\text{obs}_i)^2 }
 
     Parameters
     ----------
@@ -74,7 +76,10 @@ def root_mean_square(obs, fx):
 def mean_absolute_percentage(obs, fx):
     """Mean absolute percentage error (MAPE).
 
-        MAPE = 1/n sum_{i=1}^n |(fx_i - obs_i) / obs_i| * 100%
+    .. math::
+        \\text{MAPE} = 1/n \\sum_{i=1}^n |
+            (\\text{fx}_i - \\text{obs}_i) / \\text{obs}_i
+        | * 100%
 
     Parameters
     ----------
@@ -96,7 +101,7 @@ def mean_absolute_percentage(obs, fx):
 def normalized_mean_absolute(obs, fx, norm):
     """Normalized mean absolute error (NMAE).
 
-        NMAE = MAE / norm * 100%
+    .. math:: \\text{NMAE} = \\text{MAE} / \\text{norm} * 100%
 
     Parameters
     ----------
@@ -120,7 +125,7 @@ def normalized_mean_absolute(obs, fx, norm):
 def normalized_mean_bias(obs, fx, norm):
     """Normalized mean bias error (NMBE).
 
-        NMBE = MBE / norm * 100%
+    .. math:: \\text{NMBE} = \\text{MBE} / \\text{norm} * 100%
 
     Parameters
     ----------
@@ -144,7 +149,7 @@ def normalized_mean_bias(obs, fx, norm):
 def normalized_root_mean_square(obs, fx, norm):
     """Normalized root mean square error (NRMSE).
 
-        NRMSE = RMSE / norm * 100%
+    .. math:: \\text{NRMSE} = \\text{RMSE} / \\text{norm} * 100%
 
     Parameters
     ----------
@@ -168,7 +173,7 @@ def normalized_root_mean_square(obs, fx, norm):
 def forecast_skill(obs, fx, ref):
     """Forecast skill (s).
 
-        s = 1 - RMSE_fx / RMSE_ref
+    .. math:: s = 1 - \\text{RMSE}_\\text{fx} / \\text{RMSE}_\\text{ref}
 
     where RMSE_fx is the RMSE of the forecast and RMSE_ref is the RMSE of the
     reference forecast (e.g. Persistence).
@@ -198,15 +203,16 @@ def forecast_skill(obs, fx, ref):
 def pearson_correlation_coeff(obs, fx):
     """Pearson correlation coefficient (r).
 
-        r = A / (B * C)
+    .. math:: r = A / (B * C)
 
     where:
 
-        A = sum_{i=1}^n (fx_i - fx_avg) * (obs_i - obs_avg)
-        B = sqrt( sum_{i=1}^n (fx_i - fx_avg)^2 )
-        C = sqrt( sum_{i=1}^n (obs_i - obs_avg)^2 )
-        fx_avg = 1/n sum_{i=1} fx_i
-        obs_avg = 1/n sum_{i=1} obs_i
+    .. math:: A = \\sum_{i=1}^n (\\text{fx}_i - \\text{fx}_\\text{avg}) *
+                  (\\text{obs}_i - \\text{obs}_\\text{avg})
+    .. math:: B = \\sqrt{ \\sum_{i=1}^n (\\text{fx}_i - \\text{fx}_\\text{avg})^2 }
+    .. math:: C = \\sqrt{ \\sum_{i=1}^n (\\text{obs}_i - \\text{obs}_\\text{avg})^2 }
+    .. math:: \\text{fx}_\\text{avg} = 1/n \\sum_{i=1} \\text{fx}_i
+    .. math:: \\text{obs}_\\text{avg} = 1/n \\sum_{i=1} \\text{obs}_i
 
     Parameters
     ----------
@@ -220,7 +226,7 @@ def pearson_correlation_coeff(obs, fx):
     r : float
         The correlation coefficient (r [-]) of the observations and forecasts.
 
-    """
+    """  # NOQA
 
     try:
         r, _ = sp.stats.pearsonr(obs, fx)
@@ -233,13 +239,13 @@ def pearson_correlation_coeff(obs, fx):
 def coeff_determination(obs, fx):
     """Coefficient of determination (R^2).
 
-        R^2 = 1 - (A / B)
+    .. math:: R^2 = 1 - (A / B)
 
     where:
 
-        A = sum_{i=1}^n (obs_i - fx_i)^2
-        B = sum_{i=1}^n (obs_i - obs_avg)^2
-        obs_avg = 1/n sum_{i=1} obs_i
+    .. math:: A = \\sum_{i=1}^n (\\text{obs}_i - \\text{fx}_i)^2
+    .. math:: B = \\sum_{i=1}^n (\\text{obs}_i - \\text{obs}_\\text{avg})^2
+    .. math:: \\text{obs}_\\text{avg} = 1/n \\sum_{i=1} \\text{obs}_i
 
     Parameters
     ----------
@@ -264,12 +270,14 @@ def coeff_determination(obs, fx):
 def centered_root_mean_square(obs, fx):
     """Centered (unbiased) root mean square error (CRMSE):
 
-        CRMSE = sqrt( 1/n sum_{i=1}^n ((fx_i - fx_avg) - (obs_i - obs_avg))^2 )
+    .. math:: \\text{CRMSE} = \\sqrt{1/n \\sum_{i=1}^n (
+        (\\text{fx}_i - \\text{fx}_\\text{avg}) -
+        (\\text{obs}_i - \\text{obs}_\\text{avg}))^2 }
 
     where:
 
-        fx_avg = 1/n sum_{i=1} fx_i
-        obs_avg = 1/n sum_{i=1} obs_i
+    .. math:: \\text{fx}_\\text{avg} = 1/n \\sum_{i=1} \\text{fx}_i
+    .. math:: \\text{obs}_\\text{avg} = 1/n \\sum_{i=1} \\text{obs}_i
 
     Parameters
     ----------
@@ -293,21 +301,21 @@ def centered_root_mean_square(obs, fx):
 def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
-        KSI = int_{p_min}^{p_max} D_n(p) dp
+    .. math:: \\text{KSI} = \\int_{p_\\min}^{p_\\max} D_n(p) dp
 
     where:
 
-        D_n(p) = max(|CDF_obs(p) - CDF_fx(p)|)
+    .. math:: D_n(p) = \\max(|\\text{CDF}_\\text{obs}(p) - \\text{CDF}_\\text{fx}(p)|)
 
     and CDF_obs and CDF_fx are the empirical CDFs of the observations and
     forecasts, respectively. KSI can be normalized as:
 
-        KSI [%] = KSI / a_critical * 100%
+    .. math:: \\text{KSI [%]} = \\text{KSI} / a_\\text{critical} * 100%
 
     where:
 
-        a_critical = V_c * (p_max - p_min)
-        V_c = 1.63 / sqrt(n)
+    .. math:: a_\\text{critical} = V_c * (p_\\max - p_\\min)
+    .. math:: V_c = 1.63 / \\sqrt{n}
 
     Parameters
     ----------
@@ -329,7 +337,7 @@ def kolmogorov_smirnov_integral(obs, fx, normed=False):
     default of the statsmodels ECDF function). For example, if the data is
     [1.0, 2.0], then ECDF output is 0.5 for any input less than 1.0.
 
-    """
+    """  # NOQA
 
     # empirical CDF
     ecdf_obs = ECDF(obs)
@@ -355,11 +363,16 @@ def kolmogorov_smirnov_integral(obs, fx, normed=False):
 def over(obs, fx):
     """The OVER metric.
 
-        OVER = int_{p_min}^{p_max} D_n^*(p) dp
+    .. math:: \\text{OVER} = \\int_{p_\\min}^{p_\\max} D_n^*(p) dp
 
     where:
 
-        D_n^* = (D_n - V_c) if D_n > V_c, else D_n^* = 0
+    .. math::
+
+       D_n^* = \\begin{cases}
+          (D_n - V_c) & D_n > V_c \\\\
+          D_n^* = 0 & \\text{otherwise}
+       \\end{cases}
 
     with D_n and V_c defined the same as in KSI.
 
@@ -404,7 +417,7 @@ def over(obs, fx):
 def combined_performance_index(obs, fx):
     """Combined Performance Index (CPI) metric.
 
-        CPI = (KSI + OVER + 2 * RMSE) / 4
+    .. math::  \\text{CPI} = (\\text{KSI} + \\text{OVER} + 2 * \\text{RMSE}) / 4
 
     Parameters
     ----------
@@ -418,7 +431,7 @@ def combined_performance_index(obs, fx):
     cpi : float
         The CPI between the true and predicted values.
 
-    """
+    """  # NOQA
     ksi = kolmogorov_smirnov_integral(obs, fx)
     ov = over(obs, fx)
     rmse = root_mean_square(obs, fx)

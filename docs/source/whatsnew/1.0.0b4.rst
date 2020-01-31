@@ -3,7 +3,7 @@
 1.0.0b4 (???)
 -------------
 
-This is the fourth 1.0 beta release.
+This is the fourth 1.0 beta release. Further changes beyond the pull requests listed here may have been applied in (:pull:`321`).
 
 
 API Changes
@@ -12,19 +12,18 @@ API Changes
 * :py:mod:`solarforecastarbiter.metrics.prepocessing.resample_and_align` now expects the forecast and observation series explicitly. It also returns the resample and aligned values instead of a `datamodel.ProcessedForecastObservation` (:pull:`291`)
 * Move functionality of :py:mod:`solarforecastarbiter.reports.main.validate_resample_align` to :py:mod:`solarforecastarbiter.metrics.prepocessing.process_forecast_observations` (:pull:`291`)
 * Rename `io.utils.serialize_data` to :py:mod:`solarforecastarbiter.io.utils.serialize_timeseries` (:pull:`291`)
-* :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics` returns a list of `~datamodel.MetridResult` and :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics` returns a single `~datamodel.MetricResult` (:pull:`291`)
+* :py:mod:`solarforecastarbiter.metrics.calculator.calculate_metrics` returns a list of `~datamodel.MetricResult` and :py:mod:`solarforecastarbiter.metrics.calculator.calculate_deterministic_metrics` returns a single `~datamodel.MetricResult` (:pull:`291`)
 * :py:mod:`solarforecastarbiter.datamodel.ProcessedForecastObservation` now requires a name parameter (:pull:`291`)
-* :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_cds` now takes a single :py:class:`solarforecastarbiter.datamodel.Report` object and returns separate Bokeh ColumnDataSources for
-timeseries and metadata.
-* :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds` updated to accept a list of :py:class:`solarforecastarbiter.datamodel.MetricResults` as its first argument.
-* :py:func:`solarforecastarbiter.reports.figures.timeseries` and :py:func:`solarforecastarbiter.figures.scatter` now take two Bokeh ColumnDataSources as their first two arguments in place of a list of (ProcesseForecastObservation, ColumnDataSource) tuples. See the return value of :py:func:`solarforecastarbiter.figures.construct_timeseries_cds` for the format of these ColumnDataSources.
-* Replaced `solarforecastarbiter.reports.full_html` with :py:func:`solarforecastarbiter.reports.template.render_html` which accepts a :py:class:`solarforecastarbiter.datamodel.Report` object, a dashboard url and optional flags to include timeseries plots or generate a standalone html report.
-* Add :py:func:`solarforecastarbiter.reports.figures.output_svg` to save Bokeh figures as SVG
-* Add optional status keyword to :py:func:`solarforecastarbiter.io.api.APISession.post_raw_report`
+* :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_cds` now takes a single :py:class:`solarforecastarbiter.datamodel.Report` object and returns separate Bokeh ColumnDataSources for timeseries and metadata. (:pull:`307`)
+* :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds` updated to accept a list of :py:class:`solarforecastarbiter.datamodel.MetricResult` as its first argument. (:pull:`307`)
+* :py:func:`solarforecastarbiter.reports.figures.timeseries` and :py:func:`solarforecastarbiter.figures.scatter` now take two Bokeh ColumnDataSources as their first two arguments in place of a list of (ProcesseForecastObservation, ColumnDataSource) tuples. See the return value of :py:func:`solarforecastarbiter.figures.construct_timeseries_cds` for the format of these ColumnDataSources. (:pull:`307`)
+* Replaced `solarforecastarbiter.reports.full_html` with :py:func:`solarforecastarbiter.reports.template.render_html` which accepts a :py:class:`solarforecastarbiter.datamodel.Report` object, a dashboard url and optional flags to include timeseries plots or generate a standalone html report. (:pull:`311`)
+* Add :py:func:`solarforecastarbiter.reports.figures.output_svg` to save Bokeh figures as SVG (:pull:`313`)
+* Add optional status keyword to :py:func:`solarforecastarbiter.io.api.APISession.post_raw_report` (:pull:`318`)
 * :py:mod:`solarforecastarbiter.datamodel.PreprocessingResult` Added to track prepocessing summary of results (:pull:`320`)
-* Add the :py:class:`solarforecastarbiter.datamodel.ReportParameters` class, add the ``report_parameters`` parameters to :py:class:`solarforecastarbiter.datamodel.Report`, and moved most parameters
-* Remove the ``ReportMetadata`` class and moved some parameters to :py:class:`solarforecastarbiter.datamodel.RawReport`
-* Remove :py:func:`solarforecastarbiter.reports.main.create_metadata`
+* Add the :py:class:`solarforecastarbiter.datamodel.ReportParameters` class, add the ``report_parameters`` parameters to :py:class:`solarforecastarbiter.datamodel.Report`, and moved most parameters (:pull:`324`)
+* Remove the ``ReportMetadata`` class and moved some parameters to :py:class:`solarforecastarbiter.datamodel.RawReport` (:pull:`324`)
+* Remove `solarforecastarbiter.reports.main.create_metadata` (:pull:`324`)
 * :py:func:`solarforecastarbiter.reports.main.get_versions` now returns a tuple of (package, version) tuples (:pull:`325`)
 
 Enhancements
@@ -32,9 +31,9 @@ Enhancements
 * Automatically verify selected metrics are valid for deterministic forecasts. (:issue:`267`) (:pull:`301`)
 * Automatically verify selected metrics are valid for probabilistic forecasts. (:issue:`302`) (:pull:`306`)
 * Add schema for de/serializing timeseries in :py:mod:`solarforecastarbiter.io.utils` (:pull:`291`)
-* Add decorator factory :py:func:`solarforecastarbiter.reports.main.capture_report_failure` to better log report failures to the end user.
-* Add missing tests for functionality in :py:mod:`solarforecastarbiter.reports.main` (:issue:`312`)
-* Add missing tests for :py:mod:`solarforecastarbiter.reports.figures`
+* Add decorator factory :py:func:`solarforecastarbiter.reports.main.capture_report_failure` to better log report failures to the end user. (:pull:`318`)
+* Add missing tests for functionality in :py:mod:`solarforecastarbiter.reports.main` (:issue:`312`) (:pull:`318`)
+* Add missing tests for :py:mod:`solarforecastarbiter.reports.figures` (:pull:`318`)
 * Add data validation summary table in the html report (:issue:`299`) (:pull:`320`)
 * Track data preprocessing results add section and summary table in the html report (:issue:`299`) (:pull:`320`)
 * Generate error page templates for failed reports. (:pull:`325`)
@@ -46,10 +45,10 @@ Bug fixes
   `metrics.calculator`. (:issue:`234`) (:pull:`297`)
 * Document `resample_and_align()` behavior when the `interval_label` of the
   forecast and observation don't match. (:issue:`300`) (:pull:`303`)
-* Fix scatter plot limits when some data is NaN (:issue:`282`)
-* Handle errors on SVG export (:issue:`310`)
-* Test and handle errors in report creation for empty data (:issue:`217`)
-* Fix :py:func:`solarforecastarbiter.datamodel.__check_units__` with no arguments
+* Fix scatter plot limits when some data is NaN (:issue:`282`) (:pull:`311`)
+* Handle errors on SVG export (:issue:`310`) (:pull:`313`)
+* Test and handle errors in report creation for empty data (:issue:`217`) (:pull:`318`)
+* Fix :py:func:`solarforecastarbiter.datamodel.__check_units__` with no arguments (:pull:`318`)
 
 Contributors
 ~~~~~~~~~~~~
