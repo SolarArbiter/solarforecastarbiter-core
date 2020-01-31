@@ -25,6 +25,7 @@ timeseries and metadata.
 * Add the :py:class:`solarforecastarbiter.datamodel.ReportParameters` class, add the ``report_parameters`` parameters to :py:class:`solarforecastarbiter.datamodel.Report`, and moved most parameters
 * Remove the ``ReportMetadata`` class and moved some parameters to :py:class:`solarforecastarbiter.datamodel.RawReport`
 * Remove :py:func:`solarforecastarbiter.reports.main.create_metadata`
+* :py:func:`solarforecastarbiter.reports.main.get_versions` now returns a tuple of (package, version) tuples (:pull:`325`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -36,6 +37,7 @@ Enhancements
 * Add missing tests for :py:mod:`solarforecastarbiter.reports.figures`
 * Add data validation summary table in the html report (:issue:`299`) (:pull:`320`)
 * Track data preprocessing results add section and summary table in the html report (:issue:`299`) (:pull:`320`)
+* Generate error page templates for failed reports. (:pull:`325`)
 
 Bug fixes
 ~~~~~~~~~

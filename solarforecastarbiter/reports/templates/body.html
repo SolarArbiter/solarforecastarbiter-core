@@ -1,6 +1,8 @@
+{% extends base_template %}
 {% import "macros.j2" as macros with context %}
 {% set report_name = report.report_parameters.name %}
 
+{% block body %}
 {% block report_title %}
 <h1 id="report-title">{{ report_name }}</h1>
 {% endblock %}
@@ -149,4 +151,5 @@ generate a new report after the data provider submits new data.
 {% block versions %}
 <h2 id="versions">Versions</h2>
 {% include "versions.html" %}
+{% endblock %}
 {% endblock %}
