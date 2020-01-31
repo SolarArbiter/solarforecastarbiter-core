@@ -164,6 +164,9 @@ def test_serialize_timeseries(ser):
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
      pd.Series([], name='value', index=pd.DatetimeIndex(
          [], tz='UTC', name='timestamp'))),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "US/Arizona", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
+     pd.Series([], name='value', index=pd.DatetimeIndex(
+         [], tz='US/Arizona', name='timestamp'))),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [], "other_stuff": {}}',  # NOQA
      pd.Series([], name='value', index=pd.DatetimeIndex(
          [], tz='UTC', name='timestamp'))),
@@ -176,6 +179,14 @@ def test_serialize_timeseries(ser):
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00Z", "value": 1.0}], "other_stuff": {}}',  # NOQA
      pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
                                              tz='UTC', name='timestamp'),
+               name='value')),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00", "value": 1.0}], "other_stuff": {}}',  # NOQA
+     pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
+                                             tz='UTC', name='timestamp'),
+               name='value')),
+    ('{"schema": {"version": 0, "orient": "records", "timezone": "Etc/GMT+8", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00", "value": 1.0}], "other_stuff": {}}',  # NOQA
+     pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
+                                             tz='Etc/GMT+8', name='timestamp'),
                name='value')),
     pytest.param(
         '{"data": [], "other_stuff": {}}',

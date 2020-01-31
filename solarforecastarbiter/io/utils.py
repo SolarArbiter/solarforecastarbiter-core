@@ -268,7 +268,8 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
 
 def serialize_timeseries(ser):
     """
-    Serialize a timeseries to JSON
+    Serialize a timeseries to JSON. Note that the microseconds
+    portion of the index will be discarded.
 
     Parameters
     ----------
@@ -341,9 +342,11 @@ def deserialize_timeseries(data):
                       convert_dates=True)
     if df.empty:
         return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
-            [], tz='UTC', name='timestamp'))
+            [], tz=schema['timezone'], name='timestamp'))
     ser = df.set_index(schema['index'])[schema['column']].astype(
         schema['dtype'])
+    if ser.index.tzinfo is None:
+        ser = ser.tz_localize(schema['timezone'])
     return ser
 
 
