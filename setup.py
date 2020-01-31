@@ -15,7 +15,7 @@ EXTRAS_REQUIRE = {
     'fetch': ['aiohttp'],
     'log': ['sentry-sdk'],
     'cli': ['click'],
-    'plotting': ['bokeh']
+    'plotting': ['bokeh', 'selenium']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]

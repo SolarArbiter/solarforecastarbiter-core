@@ -13,3 +13,4 @@ sentry-sdk==0.12.3
 statsmodels==0.10.1
 tables==3.5.2
 xarray==0.13.0
+selenium==3.141.0
