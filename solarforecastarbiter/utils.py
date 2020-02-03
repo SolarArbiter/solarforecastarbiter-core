@@ -1,4 +1,6 @@
+from contextlib import contextmanager
 from hashlib import sha256
+import logging
 import warnings
 
 
@@ -170,3 +172,74 @@ def sha256_pandas_object_hash(obj):
     return sha256(
         pd.util.hash_pandas_object(obj).values.tobytes()
     ).hexdigest()
+
+
+class ListHandler(logging.Handler):
+    """
+    A logger handler that appends each log record to a list.
+    """
+    def __init__(self):
+        super().__init__()
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+    def export_records(self, level=logging.WARNING):
+        """
+        Convert each log record in the records list with level
+        greater than or equal to `level` to a
+        :py:class:`solarforecastarbiter.datamodel.ReportMessage`
+        and return the tuple of messages.
+        """
+        out = []
+        for rec in self.records:
+            if rec.levelno >= level:
+                out.append(
+                    datamodel.ReportMessage(
+                        message=rec.getMessage(),
+                        step=rec.name,
+                        level=rec.levelname,
+                        function=rec.funcName
+                    )
+                )
+        return tuple(out)
+
+
+@contextmanager
+def hijack_loggers(loggers, level=logging.INFO):
+    """
+    Context manager to temporarily set the handler
+    of each logger in `loggers`.
+
+    Parameters
+    ----------
+    loggers: list of str or logging.Logger
+        Loggers to change
+    level: logging LEVEL int
+        Level to set the temporary handler to
+
+    Returns
+    -------
+    ListHandler
+        The handler that will be temporarily assigned
+        to each logger.
+
+    Notes
+    -----
+    This may not capture all records when used in a
+    distributed or multiprocessing workflow
+    """
+    handler = ListHandler()
+    handler.setLevel(level)
+
+    old_handlers = {}
+    for name in loggers:
+        logger = logging.getLogger(name)
+        old_handlers[name] = logger.handlers
+        logger.handlers = [handler]
+    yield handler
+    for name in loggers:
+        logger = logging.getLogger(name)
+        logger.handlers = old_handlers[name]
+    del handler

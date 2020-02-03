@@ -1,3 +1,6 @@
+import logging
+
+
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -372,3 +375,50 @@ def test__make_aggregate_index_localization(start, end):
 ])
 def test_sha256_pandas_object_hash(inp, oup):
     assert utils.sha256_pandas_object_hash(inp) == utils.sha256_pandas_object_hash(oup)  # NOQA
+
+
+def test_listhandler():
+    logger = logging.getLogger('testlisthandler')
+    handler = utils.ListHandler()
+    logger.addHandler(handler)
+    logger.setLevel('DEBUG')
+    logger.warning('Test it')
+    logger.debug('What?')
+    out = handler.export_records()
+    assert len(out) == 1
+    assert out[0].message == 'Test it'
+    assert len(handler.export_records(logging.DEBUG)) == 2
+
+
+def test_listhandler_recreate():
+    logger = logging.getLogger('testlisthandler')
+    handler = utils.ListHandler()
+    logger.addHandler(handler)
+    logger.setLevel('DEBUG')
+    logger.warning('Test it')
+    logger.debug('What?')
+    out = handler.export_records()
+    assert len(out) == 1
+    assert out[0].message == 'Test it'
+    assert len(handler.export_records(logging.DEBUG)) == 2
+
+    l2 = logging.getLogger('testlist2')
+    h2 = utils.ListHandler()
+    l2.addHandler(h2)
+    l2.error('Second fail')
+    out = h2.export_records()
+    assert len(out) == 1
+    assert out[0].message == 'Second fail'
+
+
+def test_hijack_loggers(mocker):
+    old_handler = mocker.MagicMock()
+    new_handler = mocker.MagicMock()
+    mocker.patch('solarforecastarbiter.utils.ListHandler',
+                 return_value=new_handler)
+    logger = logging.getLogger('testhijack')
+    logger.addHandler(old_handler)
+    assert logger.handlers[0] == old_handler
+    with utils.hijack_loggers(['testhijack']):
+        assert logger.handlers[0] == new_handler
+    assert logger.handlers[0] == old_handler

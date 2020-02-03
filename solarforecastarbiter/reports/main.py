@@ -48,9 +48,7 @@ Considerations:
   the API will need to call for the aligned data separately
   to be able to create time series, scatter, etc. plots.
 """
-from contextlib import contextmanager
 from functools import wraps
-import logging
 import pkg_resources
 import platform
 
@@ -62,6 +60,7 @@ from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
 from solarforecastarbiter.reports import figures, template
+from solarforecastarbiter.utils import hijack_loggers
 
 
 def get_data_for_report(session, report):
@@ -135,68 +134,6 @@ def infer_timezone(report_parameters):
     else:
         timezone = fxobs_0.aggregate.timezone
     return timezone
-
-
-class ListHandler(logging.Handler):
-    """
-    A logger handler that appends each log record to a list.
-    """
-    def __init__(self):
-        super().__init__()
-        self.records = []
-
-    def emit(self, record):
-        self.records.append(record)
-
-    def export_records(self, level=logging.WARNING):
-        """
-        Convert each log record in the records list with level
-        greater than or equal to `level` to a
-        :py:class:`solarforecastarbiter.datamodel.ReportMessage`
-        and return the tuple of messages.
-        """
-        return tuple([
-            datamodel.ReportMessage(
-                message=rec.getMessage(),
-                step=rec.name,
-                level=rec.levelname,
-                function=rec.funcName
-            )
-            for rec in self.records
-            if rec.levelno >= level
-        ])
-
-
-@contextmanager
-def hijack_loggers(loggers):
-    """
-    Context manager to temporarily set the handler
-    of each logger in `loggers`.
-
-    Parameters
-    ----------
-    loggers: list of str or logging.Logger
-        Loggers to change
-
-    Returns
-    -------
-    ListHandler
-        The handler that will be temporarily assigned
-        to each logger.
-    """
-    handler = ListHandler()
-    handler.setLevel(logging.INFO)
-
-    old_handlers = {}
-    for name in loggers:
-        logger = logging.getLogger(name)
-        old_handlers[name] = logger.handlers
-        logger.handlers = [handler]
-    yield handler
-    for name in loggers:
-        logger = logging.getLogger(name)
-        logger.handlers = old_handlers[name]
-    del handler
 
 
 def create_raw_report_from_data(report, data):
