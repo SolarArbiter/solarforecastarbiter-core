@@ -1227,7 +1227,7 @@ class ReportFigure(BaseModel):
     figure_type: str
         The type of plot, e.g. bar or scatter.
     category: str
-        The metric category, e.g. total, monthly, hourly.
+        The metric category. One of ALLOWED_CATEGORIES keys.
     metric: str
         The metric being plotted.
     """
@@ -1259,7 +1259,7 @@ class RawReportPlots(BaseModel):
 
 @dataclass(frozen=True)
 class ReportMessage(BaseModel):
-    """Class for intercepting errors an warnings associated with report
+    """Class for intercepting errors and warnings associated with report
     processing.
 
     Parameters
