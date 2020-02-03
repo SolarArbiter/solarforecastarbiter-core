@@ -48,6 +48,7 @@ Considerations:
   the API will need to call for the aligned data separately
   to be able to create time series, scatter, etc. plots.
 """
+from functools import wraps
 import pkg_resources
 import platform
 
@@ -58,7 +59,8 @@ import pandas as pd
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
-from solarforecastarbiter.reports import figures, template
+from solarforecastarbiter.reports import figures
+from solarforecastarbiter.utils import hijack_loggers
 
 
 def get_data_for_report(session, report):
@@ -69,48 +71,31 @@ def get_data_for_report(session, report):
 
     Parameters
     ----------
-    session : solarforecastarbiter.api.APISession
+    session : :py:class:`solarforecastarbiter.api.APISession`
         API session for getting and posting data
-    report : solarforecastarbiter.datamodel.Report
+    report : :py:class:`solarforecastarbiter.datamodel.Report`
         Metadata describing report
 
     Returns
     -------
     data : dict
-        Keys are Forecast and Observation uuids, values are
+        Keys are Forecast and Observation objects, values are
         the corresponding data.
     """
     data = {}
-    for fxobs in report.forecast_observations:
+    start = report.report_parameters.start
+    end = report.report_parameters.end
+    for fxobs in report.report_parameters.object_pairs:
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
         forecast_id = fxobs.forecast.forecast_id
         if fxobs.forecast not in data:
             data[fxobs.forecast] = session.get_forecast_values(
-                forecast_id, report.start, report.end)
+                forecast_id, start, end)
         if fxobs.data_object not in data:
             data[fxobs.data_object] = session.get_values(
-                fxobs.data_object, report.start, report.end)
+                fxobs.data_object, start, end)
     return data
-
-
-def create_metadata(report_request):
-    """
-    Create metadata for the raw report.
-
-    Returns
-    -------
-    metadata: solarforecastarbiter.datamodel.ReportMetadata
-    """
-    versions = get_versions()
-    validation_issues = get_validation_issues()
-    timezone = infer_timezone(report_request)
-    metadata = datamodel.ReportMetadata(
-        name=report_request.name, start=report_request.start,
-        end=report_request.end, now=pd.Timestamp.utcnow(),
-        timezone=timezone, versions=versions,
-        validation_issues=validation_issues)
-    return metadata
 
 
 def get_versions():
@@ -126,79 +111,24 @@ def get_versions():
         'numexpr',
         'bottleneck',
         'jinja2',
+        'statsmodels'
     ]
-    versions = {}
+    versions = []
     for p in packages:
         try:
             v = pkg_resources.get_distribution(p).version
         except pkg_resources.DistributionNotFound:
             v = 'None'
-        versions[p] = v
-    versions['python'] = platform.python_version()
-    versions['platform'] = platform.platform()
-    return versions
+        versions.append((p, str(v)))
+    versions.append(('python', str(platform.python_version())))
+    versions.append(('platform', platform.platform()))
+    return tuple(versions)
 
 
-def get_validation_issues():
-    test = {
-        'USER FLAGGED': 0, 'NIGHTTIME': 39855,
-        # 'CLOUDY': 0, 'SHADED': 0,
-        # 'UNEVEN FREQUENCY': 4,
-        'LIMITS EXCEEDED': 318,
-        # 'CLEARSKY EXCEEDED': 9548,
-        'STALE VALUES': 12104,
-        'INTERPOLATED VALUES': 5598,
-        # 'CLIPPED VALUES': 0,
-        'INCONSISTENT IRRADIANCE COMPONENTS': 0,
-        # 'NOT VALIDATED': 0
-    }
-    return test
-
-
-def _merge_quality_filters(filters):
-    """Merge any quality flag filters into one single QualityFlagFilter"""
-    combo = set()
-    for filter_ in filters:
-        if isinstance(filter_, datamodel.QualityFlagFilter):
-            combo |= set(filter_.quality_flags)
-    return datamodel.QualityFlagFilter(tuple(combo))
-
-
-def validate_resample_align(report, metadata, data):
-    """
-    Validate the data and resample.
-
-    Parameters
-    ----------
-    report : solarforecastarbiter.datamodel.Report
-    metadata : solarforecastarbiter.datamodel.ReportMetadata
-    data : dict
-        Keys are Forecast and Observation uuids, values are
-        the corresponding data.
-
-    Returns
-    -------
-    list
-        List of solarforecastarbiter.datamodel.ProcessedForecastObservation
-
-    Todo
-    ----
-    * Support different apply_validation fillin functions.
-    """
-    qfilter = _merge_quality_filters(report.filters)
-    data_validated = preprocessing.apply_validation(data,
-                                                    qfilter,
-                                                    preprocessing.exclude)
-    processed_fxobs = [preprocessing.resample_and_align(
-                            fxobs, data_validated, metadata.timezone)
-                       for fxobs in report.forecast_observations]
-    return processed_fxobs
-
-
-def infer_timezone(report_request):
+def infer_timezone(report_parameters):
     # maybe not ideal when comparing across sites. might need explicit
     # tz options ('infer' or spec IANA tz) in report interface.
-    fxobs_0 = report_request.forecast_observations[0]
+    fxobs_0 = report_parameters.object_pairs[0]
     if isinstance(fxobs_0, datamodel.ForecastObservation):
         timezone = fxobs_0.observation.site.timezone
     else:
@@ -212,58 +142,101 @@ def create_raw_report_from_data(report, data):
 
     Parameters
     ----------
-    report : solarforecastarbiter.datamodel.Report
+    report : :py:class:`solarforecastarbiter.datamodel.Report`
         Metadata describing report
     data : dict
-        Keys are all Forecast and Observation objects in the report,
-        values are the corresponding data.
+        Keys are all Forecast and Observation (or Aggregate)
+        objects in the report, values are the corresponding data.
 
     Returns
     -------
-    raw_report : datamodel.RawReport
+    raw_report : :py:class:`solarforecastarbiterdatamodel.RawReport`
 
     Todo
     ----
     * add reference forecast
     """
-    # call function: metrics.align_observations_forecasts
-    # call function: metrics.calculate_many
-    # call function: reports.metrics_to_JSON
-    # call function: add some metadata to JSON
-    # call function: configure tables and figures, add to JSON
-    # call function: pre-render report in md format
-    # return json, prereport
+    generated_at = pd.Timestamp.now(tz='UTC')
+    report_params = report.report_parameters
+    timezone = infer_timezone(report_params)
+    versions = get_versions()
+    with hijack_loggers(['solarforecastarbiter.metrics',
+                         'solarforecastarbiter.reports.figures'],
+                        ) as handler:
+        # Validate and resample
+        processed_fxobs = preprocessing.process_forecast_observations(
+            report_params.object_pairs, report_params.filters, data,
+            timezone)
 
-    metadata = create_metadata(report)
-
-    # Validate and resample
-    processed_fxobs = validate_resample_align(report, metadata, data)
-
-    # Calculate metrics
-    metrics_list = calculator.calculate_metrics(processed_fxobs,
-                                                list(report.categories),
-                                                list(report.metrics))
-
-    # can be ~50kb
-    report_template = template.template_report(report, metadata,
-                                               metrics_list,
-                                               processed_fxobs)
-
+        # Calculate metrics, list of MetricResult
+        metrics_list = calculator.calculate_metrics(
+            processed_fxobs,
+            list(report_params.categories),
+            list(report_params.metrics)
+        )
+        report_plots = figures.raw_report_plots(report, metrics_list)
+        messages = handler.export_records()
     raw_report = datamodel.RawReport(
-        metadata=metadata, template=report_template, metrics=metrics_list,
-        processed_forecasts_observations=processed_fxobs)
+        generated_at=generated_at, timezone=timezone, versions=versions,
+        plots=report_plots, metrics=tuple(metrics_list),
+        processed_forecasts_observations=tuple(processed_fxobs),
+        messages=messages)
     return raw_report
+
+
+def capture_report_failure(report_id, session):
+    """
+    Decorator factory to handle errors in report generation by
+    posting a message in an empty RawReport along with a failed
+    status to the API.
+
+    Parameters
+    ----------
+    report_id: str
+        ID of the report to update with the message and failed status
+    session: :py:class:`solarforecastarbiter.io.api.APISession`
+        Session object to connect to the API.
+
+    Returns
+    -------
+    decorator
+        Decorator to handle any errors in the decorated function.
+        The decorator has an optional `err_msg` keyword argument
+        to specify the error message if the wrapped function fails.
+    """
+    def decorator(f, *,
+                  err_msg='Critical failure computing report'):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                out = f(*args, **kwargs)
+            except Exception:
+                msg = datamodel.ReportMessage(
+                    message=err_msg,
+                    step='solarforecastarbiter.reports.main',
+                    level='CRITICAL',
+                    function=str(f)
+                )
+                raw = datamodel.RawReport(
+                    pd.Timestamp.now(tz='UTC'), 'UTC', (), None,
+                    (), (), (msg,))
+                session.post_raw_report(report_id, raw, 'failed')
+                raise
+            else:
+                return out
+        return wrapper
+    return decorator
 
 
 def compute_report(access_token, report_id, base_url=None):
     """
-    Create a raw report using data from API.
-
-    Typically called as a task.
+    Create a raw report using data from API. Typically called as a task.
+    Failures will attempt to post a message for the failure in an
+    empty RawReport to the API.
 
     Parameters
     ----------
-    session : solarforecastarbiter.api.APISession
+    session : :py:class:`solarforecastarbiter.api.APISession`
         API session for getting and posting data
     report_id : str
         ID of the report to fetch from the API and generate the raw
@@ -271,52 +244,23 @@ def compute_report(access_token, report_id, base_url=None):
 
     Returns
     -------
-    raw_report : datamodel.RawReport
+    raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
     session = APISession(access_token, base_url=base_url)
-    try:
-        report = session.get_report(report_id)
-        data = get_data_for_report(session, report)
-        raw_report = create_raw_report_from_data(report, data)
-        session.post_raw_report(report.report_id, raw_report)
-    except Exception:
-        session.update_report_status(report_id, 'failed')
-        raise
+    fail_wrapper = capture_report_failure(report_id, session)
+    report = fail_wrapper(session.get_report, err_msg=(
+        'Failed to retrieve report. Perhaps the report does not exist, '
+        'the user does not have permission, or the connection failed.')
+    )(report_id)
+    data = fail_wrapper(get_data_for_report, err_msg=(
+        'Failed to retrieve data for report which may indicate a lack '
+        'of permissions or that an object does not exist.')
+    )(session, report)
+    raw_report = fail_wrapper(create_raw_report_from_data, err_msg=(
+        'Unhandled exception when computing report.')
+    )(report, data)
+    fail_wrapper(session.post_raw_report, err_msg=(
+        'Computation of report completed, but failed to upload result to '
+        'the API.')
+    )(report.report_id, raw_report)
     return raw_report
-
-
-def render_raw_report(raw_report):
-    """
-    Convert raw report to full report.
-
-    Parameters
-    ----------
-    raw_report : solarforecastarbiter.datamodel.RawReport
-
-    Returns
-    -------
-    str, markdown
-        The full report.
-    """
-    fx_obs_cds = [
-        (pfxobs, figures.construct_fx_obs_cds(
-            pfxobs.forecast_values, pfxobs.observation_values))
-        for pfxobs in raw_report.processed_forecasts_observations]
-    report_md = template.add_figures_to_report_template(
-        fx_obs_cds, raw_report.metadata, raw_report.template)
-    return report_md
-
-
-def report_to_html_body(report):
-    report_md = render_raw_report(report.raw_report)
-    body = template.report_md_to_html(report_md)
-    return body
-
-
-def report_to_pdf(report):
-    # call pandoc
-    raise NotImplementedError
-
-
-def report_to_jupyter(report):
-    raise NotImplementedError

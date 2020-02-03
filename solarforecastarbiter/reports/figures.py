@@ -1,64 +1,118 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
-from itertools import cycle
-import textwrap
 import calendar
+import datetime as dt
+from itertools import cycle
+import logging
 
+
+from bokeh.embed import components
+from bokeh.io.export import get_svgs
+from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, HoverTool, Legend,
-                          DatetimeTickFormatter, CategoricalTickFormatter)
-from bokeh.models.ranges import Range1d
-from bokeh.models.widgets import DataTable, TableColumn, NumberFormatter
+                          DatetimeTickFormatter, CategoricalTickFormatter,
+                          CDSView, GroupFilter, BooleanFilter)
+from bokeh.models.ranges import Range1d, FactorRange, DataRange1d
 from bokeh.plotting import figure
 from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes
-
+from bokeh import __version__ as bokeh_version
 import pandas as pd
 import numpy as np
 
+
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.plotting.utils import (line_or_step,
-                                                 format_variable_name)
+from solarforecastarbiter.plotting.utils import line_or_step
 
 
+logger = logging.getLogger(__name__)
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
-OBS_PALETTE = palettes.grey(_num_obs_colors+1)[0:_num_obs_colors]  # drop white
+# drop white
+OBS_PALETTE = palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors]
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
 
-def construct_fx_obs_cds(fx_values, obs_values):
-    """
-    Construct a standardized Bokeh CDS for the plot functions.
+def construct_timeseries_cds(report):
+    """Construct two standardized Bokeh CDS for the timeseries and scatter
+    plot functions. One with timeseries data for all observations,
+    aggregates, and forecasts in the report, and the other with
+    associated metadata sharing a common `pair_index` key.
 
     Parameters
     ----------
-    fx_values : pandas.Series
-    obs_values : pandas.Series
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
 
     Returns
     -------
-    cds : bokeh.models.ColumnDataSource
-        Keys are 'observation', 'forecast', and 'timestamp'.
-        tz-aware input times are converted to tz-naive times in the
-        input time zone.
+    value_cds : bokeh.models.ColumnDataSource
+        Keys are an integer `pair_index` for pairing values with the metadata
+        in the metadata_cds, and two pandas.Series, `observation_values` and
+        `forecast_values`.
+
+    metadata_cds : bokeh.models.ColumnDataSource
+        This cds has the following keys:
+        `pair_index` : Integer for pairing metadata with the values in
+            the value_cds.
+        `observation_name`: Observation name.
+        `forecast_name`: Forecast name.
+        `interval_label`: Interval label of the processed forecast and
+            observation data.
+        `observation_hash`: Hash of the original observation object and the
+            `datamodel.ProcessedForecastObservations` metadata.
+        `forecast_hash`: Hash of the original forecast object and the
+            `datamodel.ProcessedForecastObservations` metadata.
+        `
+
     """
-    data = pd.DataFrame({'observation': obs_values, 'forecast': fx_values})
+    value_frames = []
+    meta_rows = []
+    for idx, pfxobs in enumerate(
+            report.raw_report.processed_forecasts_observations):
+        value_frame_dict = {
+            'pair_index': idx,
+            'observation_values': pfxobs.observation_values,
+            'forecast_values': pfxobs.forecast_values,
+        }
+        meta_row_dict = {
+            'pair_index': idx,
+            'observation_name': _obs_name(pfxobs.original),
+            'forecast_name': _fx_name(pfxobs.original),
+            'interval_label': pfxobs.interval_label,
+            'observation_hash': str(hash(
+                (pfxobs.original.data_object,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'forecast_hash': str(hash(
+                (pfxobs.original.forecast,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'observation_color': _obs_color(
+                pfxobs.interval_length)
+        }
+        value_frames.append(pd.DataFrame(value_frame_dict))
+        meta_rows.append(meta_row_dict)
+    data = pd.concat(value_frames)
+    metadata = pd.DataFrame(meta_rows)
     # drop tz info from localized times. GH164
     data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
-    cds = ColumnDataSource(data)
-    return cds
+    value_cds = ColumnDataSource(data)
+    metadata_cds = ColumnDataSource(metadata)
+    return value_cds, metadata_cds
 
 
 def _obs_name(fx_obs):
     # TODO: add code to ensure obs names are unique
     name = fx_obs.data_object.name
     if fx_obs.forecast.name == fx_obs.data_object.name:
-        if isinstance(fx_obs, datamodel.Observation):
+        if isinstance(fx_obs.data_object, datamodel.Observation):
             name += ' Observation'
         else:
             name += ' Aggregate'
@@ -79,16 +133,32 @@ def _obs_color(interval_length):
     return obs_color
 
 
-def timeseries(fx_obs_cds, start, end, timezone='UTC'):
+def _boolean_filter_indices_by_pair(value_cds, pair_index):
+    return value_cds.data['pair_index'] == pair_index
+
+
+def _extract_metadata_from_cds(metadata_cds, hash_, hash_key):
+    first_row = np.argwhere(metadata_cds.data[hash_key] == hash_)[0][0]
+    return {
+        'pair_index': metadata_cds.data['pair_index'][first_row],
+        'observation_name': metadata_cds.data['observation_name'][first_row],
+        'forecast_name': metadata_cds.data['forecast_name'][first_row],
+        'interval_label': metadata_cds.data['interval_label'][first_row],
+        'observation_color': metadata_cds.data['observation_color'][first_row],
+    }
+
+
+def timeseries(timeseries_value_cds, timeseries_meta_cds,
+               start, end, units, timezone='UTC'):
     """
     Timeseries plot of one or more forecasts and observations.
 
     Parameters
     ----------
-    obs_fx_cds : list
-        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
-        ColumnDataSource must have columns timestamp, observation,
-        forecast.
+    timeseries_value_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of timeseries data. See :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds` for format.
+    timeseries_meta_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds` for format.
     start : pandas.Timestamp
         Report start time
     end : pandas.Timestamp
@@ -99,8 +169,7 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
     Returns
     -------
     fig : bokeh.plotting.figure
-    """
-
+    """  # NOQA
     palette = cycle(PALETTE)
 
     fig = figure(
@@ -109,83 +178,91 @@ def timeseries(fx_obs_cds, start, end, timezone='UTC'):
         tools='pan,xwheel_zoom,box_zoom,box_select,lasso_select,reset,save',
         name='timeseries')
 
-    plotted_objects = []
-    for proc_fx_obs, cds in fx_obs_cds:
-        unique_obs = (
-            proc_fx_obs.original.data_object, proc_fx_obs.interval_value_type,
-            proc_fx_obs.interval_length, proc_fx_obs. interval_label
-        )
-        unique_fx = (
-            proc_fx_obs.original.forecast, proc_fx_obs.interval_value_type,
-            proc_fx_obs.interval_length, proc_fx_obs. interval_label
-        )
-        if unique_obs in plotted_objects:
-            pass
-        else:
-            plotted_objects.append(unique_obs)
-            plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                proc_fx_obs.interval_label)
-            name = _obs_name(proc_fx_obs.original)
-            obs_color = _obs_color(proc_fx_obs.interval_length)
-            getattr(fig, plot_method)(
-                x='timestamp', y='observation', source=cds,
-                color=obs_color, legend=name, **plot_kwargs)
-        if unique_fx in plotted_objects:
-            pass
-        else:
-            plotted_objects.append(unique_fx)
-            plot_method, plot_kwargs, hover_kwargs = line_or_step(
-                proc_fx_obs.interval_label)
-            name = _fx_name(proc_fx_obs.original)
-            getattr(fig, plot_method)(
-                x='timestamp', y='forecast', source=cds,
-                color=next(palette), legend=name, **plot_kwargs)
+    plotted_objects = 0
+    for obs_hash in np.unique(timeseries_meta_cds.data['observation_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, obs_hash, 'observation_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds, filters=[
+            BooleanFilter(pair_indices)
+        ])
+        plot_method, plot_kwargs, hover_kwargs = line_or_step(
+            metadata['interval_label'])
+        legend_label = metadata['observation_name']
+        color = metadata['observation_color']
+        getattr(fig, plot_method)(
+            x='timestamp', y='observation_values', source=timeseries_value_cds,
+            view=view, color=color, legend_label=legend_label,
+            **plot_kwargs)
+        plotted_objects += 1
+
+    for fx_hash in np.unique(timeseries_meta_cds.data['forecast_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, fx_hash, 'forecast_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds,
+                       filters=[BooleanFilter(pair_indices)])
+        plot_method, plot_kwargs, hover_kwargs = line_or_step(
+            metadata['interval_label'])
+        legend_label = metadata['forecast_name']
+        color = next(palette)
+        getattr(fig, plot_method)(
+            x='timestamp', y='forecast_values', source=timeseries_value_cds,
+            view=view, color=color, legend_label=legend_label,
+            **plot_kwargs)
+        plotted_objects += 1
 
     fig.legend.location = "top_left"
     fig.legend.click_policy = "hide"
-    if len(plotted_objects) > 10:
+    if plotted_objects > 10:
         fig.legend.label_height = 10
         fig.legend.label_text_font_size = '8px'
         fig.legend.glyph_height = 10
         fig.legend.spacing = 1
         fig.legend.margin = 0
     fig.xaxis.axis_label = f'Time ({timezone})'
-    fig.yaxis.axis_label = format_variable_name(
-        proc_fx_obs.original.forecast.variable)
+    fig.yaxis.axis_label = f'Data ({units})'
     return fig
 
 
-def _get_scatter_limits(fx_obs_cds):
-    extremes = []
-    for _, cds in fx_obs_cds:
-        for kind in ('forecast', 'observation'):
-            extremes.append(np.nanmin(cds.data[kind]))
-            extremes.append(np.nanmax(cds.data[kind]))
-    min_ = min(extremes)
-    if min_ == np.nan:
+def _get_scatter_limits(cds):
+    extremes = [np.nan]
+    for kind in ('forecast_values', 'observation_values'):
+        arr = np.asarray(cds.data[kind]).astype(float)
+        if len(arr) != 0:
+            extremes.append(np.nanmin(arr))
+            extremes.append(np.nanmax(arr))
+    min_ = np.nanmin(extremes)
+    if np.isnan(min_):
         min_ = -999
-    max_ = max(extremes)
-    if max_ == np.nan:
+    max_ = np.nanmax(extremes)
+    if np.isnan(max_):
         max_ = 999
     return min_, max_
 
 
-def scatter(fx_obs_cds):
+def scatter(timeseries_value_cds, timeseries_meta_cds, units):
     """
     Scatter plot of one or more forecasts and observations.
 
     Parameters
     ----------
-    obs_fx_cds : list
-        List of (ProcessedForecastObservation, ColumnDataSource) tuples.
-        ColumnDataSource must have columns timestamp, observation,
-        forecast.
+    timeseries_value_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds`
+        for format.
+    timeseries_meta_cds: bokeh.models.ColumnDataSource
+        ColumnDataSource of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.reoports.figures.construct_timeseries_cds`
+        for format.
 
     Returns
     -------
     fig : bokeh.plotting.figure
-    """
-    xy_min, xy_max = _get_scatter_limits(fx_obs_cds)
+    """  # NOQA
+    xy_min, xy_max = _get_scatter_limits(timeseries_value_cds)
 
     # match_aspect=True does not work well, so these need to be close
     plot_height = 400
@@ -203,10 +280,17 @@ def scatter(fx_obs_cds):
 
     # accumulate labels and plot objects for manual legend
     scatters_labels = []
-    for proc_fx_obs, cds in fx_obs_cds:
-        label = proc_fx_obs.original.forecast.name
+    for fxhash in np.unique(timeseries_meta_cds.data['forecast_hash']):
+        metadata = _extract_metadata_from_cds(
+            timeseries_meta_cds, fxhash, 'forecast_hash')
+        pair_indices = _boolean_filter_indices_by_pair(
+            timeseries_value_cds, metadata['pair_index'])
+        view = CDSView(source=timeseries_value_cds,
+                       filters=[BooleanFilter(pair_indices)])
+        label = metadata['forecast_name']
         r = fig.scatter(
-            x='observation', y='forecast', source=cds,
+            x='observation_values', y='forecast_values',
+            source=timeseries_value_cds, view=view,
             fill_color=next(palette), **kwargs)
         scatters_labels.append((label, [r]))
 
@@ -225,52 +309,58 @@ def scatter(fx_obs_cds):
     px_per_length = 7.75  # found through trial and error
     fig.plot_width = int(fig.plot_width + max_legend_length * px_per_length)
 
-    label = format_variable_name(proc_fx_obs.original.forecast.variable)
+    label = f'({units})'
     fig.xaxis.axis_label = 'Observed ' + label
     fig.yaxis.axis_label = 'Forecast ' + label
     return fig
 
 
-def construct_metrics_cds(metrics, kind, index='forecast', rename=None):
+def construct_metrics_cds(metrics, rename=None):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, Total, etc.
 
     Parameters
     ----------
-    metrics : list of metrics dicts
+    metrics : list of datamodel.MetricResults
         Each metric dict is for a different forecast. Forecast name is
         specified by the name key.
-    kind : str
-        One of the available metrics grouping categories (e.g., total)
-    index : str
-        Determines if the index is the array of metrics ('metric') or
-        forecast ('forecast') names
     rename : function or None
         Function of one argument that is applied to each forecast name.
 
     Returns
     -------
     cds : bokeh.models.ColumnDataSource
+        ColumnDataSource with indices 'name', 'abbrev', 'category', 'metric',
+        and 'value'.
     """
 
     if rename:
         f = rename
     else:
-        def f(x): return x
+        def f(x): return x  # NOQA
 
-    data = {f(m['name']): m[kind] for m in metrics}
-    df = pd.DataFrame(data)
-    df = df.rename_axis(index='metric', columns='forecast')
-
-    if index == 'metric':
-        pass
-    elif index == 'forecast':
-        df = df.T
-    else:
-        raise ValueError('index must be metric or forecast')
-
-    cds = ColumnDataSource(df)
+    data = []
+    for metric_result in metrics:
+        for mvalue in metric_result.values:
+            new = {
+                'name': metric_result.name,
+                'abbrev': f(metric_result.name),
+                'category': mvalue.category,
+                'metric': mvalue.metric,
+                'value': mvalue.value
+            }
+            if new['category'] == 'date':
+                new['index'] = dt.datetime.strptime(
+                    mvalue.index, '%Y-%m-%d')
+            else:
+                new['index'] = mvalue.index
+            data.append(new)
+    df = pd.DataFrame(data, columns=[
+        'name', 'abbrev', 'category', 'metric', 'value', 'index'
+    ])
+    cds = ColumnDataSource(df, name='metrics_cds')
+    cds.data.pop('level_0', None)
     return cds
 
 
@@ -291,77 +381,6 @@ def abbreviate(x, limit=3):
     return ' '.join(out_components)
 
 
-def construct_metrics_series(metrics, category):
-    """
-    Contructs a series of metrics values with a MultiIndex.
-    MultiIndex names are metric, forecast, kind.
-
-    Parameters
-    ----------
-    metrics : list of metrics dicts
-        Each metric dict is for a different forecast. Forecast name is
-        specified by the name key.
-    category : str
-        One of the available metrics grouping categories (e.g., total)
-
-    Returns
-    -------
-    pandas.Series
-    """
-    forecasts = []
-    m_types = []
-    m_indexes = []
-    m_values = []
-    # There is probably a more clever way to do this but
-    # this seems the most straightforward to me
-    for m in metrics:
-        for col in m[category]:
-            if category == 'total':
-                forecasts.append(m['name'])
-                m_types.append(col)
-                m_indexes.append(0)
-                m_values.append(m[category][col])
-            else:
-                for i, v in m[category][col].items():
-                    forecasts.append(m['name'])
-                    m_types.append(col)
-                    m_indexes.append(i)
-                    m_values.append(v)
-    index = pd.MultiIndex.from_arrays(
-        [forecasts, m_types, m_indexes],
-        names=['forecast', 'metric', category])
-    metrics_series = pd.Series(m_values, index=index)
-    metrics_series = metrics_series.reorder_levels(
-        ('metric', 'forecast', category))
-    return metrics_series
-
-
-def construct_metrics_cds2(metrics_series, metric):
-    """
-    Create a ColumnDataSource for a single metric (MAE, MBE, etc.) for
-    many forecasts.
-
-    Parameters
-    ----------
-    metrics_series : pd.Series
-        Has a MultiIndex with levels 'forecast', 'metric', group
-    metric : str
-        e.g. MAE
-
-    Returns
-    -------
-    cds : bokeh.models.ColumnDataSource
-    """
-    df = metrics_series.xs(metric, level='metric').unstack().T
-    # unstack sorts alphabetically, so manually reorder the columns
-    # to put them in the expected order. this ensures that plots are
-    # created in the same order and thus with the same colors for each
-    # forecast. GH issue 204, pull 244
-    idx = pd.unique(metrics_series.index.get_level_values('forecast'))
-    cds = ColumnDataSource(df[idx])
-    return cds
-
-
 def bar(cds, metric):
     """
     Create a bar graph comparing a single metric across forecasts.
@@ -369,32 +388,35 @@ def bar(cds, metric):
     Parameters
     ----------
     cds : bokeh.models.ColumnDataSource
-        Fields must be 'forecast' and the names of the metrics.
-
+        Metric cds created by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds`
+    metric: str
+        The metric to plot. This value should be found in cds['metric'].
+.
     Returns
     -------
     data_table : bokeh.widgets.DataTable
-    """
-    x_range = cds.data['forecast']
+    """  # NOQA
+    x_range = np.unique(cds.data['abbrev'])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_range]
+    metric_name = datamodel.ALLOWED_METRICS[metric]
+    view = CDSView(source=cds, filters=[
+        GroupFilter(column_name='metric', group=metric),
+        GroupFilter(column_name='category', group='total')
+    ])
     # TODO: add units to title
-    fig = figure(x_range=x_range, width=800, height=200, title=metric.upper())
-    fig.vbar(x='forecast', top=metric, width=0.8, source=cds,
+    fig = figure(x_range=x_range, width=800, height=200, title=metric_name,
+                 name=f'{metric}_total_bar', toolbar_location='above',
+                 tools='pan,xwheel_zoom,box_zoom,reset,save')
+    fig.vbar(x='abbrev', top='value', width=0.8,
+             source=cds, view=view,
              line_color='white',
-             fill_color=factor_cmap('forecast', palette, factors=x_range))
+             fill_color=factor_cmap('abbrev', palette, factors=x_range))
     fig.xgrid.grid_line_color = None
 
-    # vertical axis limits
-    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != 'forecast')
-    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != 'forecast')
-    start, end = calc_y_start_end(y_min, y_max)
-    fig.y_range.start = start
-    fig.y_range.end = end
-
     tooltips = [
-        ('forecast', '@forecast'),
-        (metric.upper(), f'@{metric}'),
+        ('Forecast', '@name'),
+        (metric_name, '@value'),
     ]
     hover = HoverTool(tooltips=tooltips, mode='vline')
     # more accurate would be if any single name is longer than each
@@ -404,7 +426,7 @@ def bar(cds, metric):
     if len(x_range) > 6:
         # pi/4 looks a lot better, but first tick label flows off chart
         # and I can't figure out how to add padding in bokeh
-        fig.xaxis.major_label_orientation = np.pi/2
+        fig.xaxis.major_label_orientation = np.pi / 2
         fig.width = 800
         # add more height to figure so that the names can go somewhere.
         fig.height = 400
@@ -467,62 +489,79 @@ def bar_subdivisions(cds, category, metric):
 
     Returns
     -------
-    figs : list of figures
+    figs : dict of figures
     """
     palette = cycle(PALETTE)
-    tools = 'pan,xwheel_zoom,box_zoom,box_select,reset,save'
-    fig_kwargs = dict(tools=tools)
-    figs = []
+    tools = 'pan,xwheel_zoom,box_zoom,reset,save'
+    fig_kwargs = dict(tools=tools, toolbar_location='above')
+    figs = {}
 
     width = 0.8
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
+    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
 
     fig_kwargs['x_axis_label'] = human_category
+    fig_kwargs['y_axis_label'] = metric_name
 
+    filter_ = ((np.asarray(cds.data['category']) == category) &
+               (np.asarray(cds.data['metric']) == metric))
     # Special handling for x-axis with dates
     if category == 'date':
         fig_kwargs['x_axis_type'] = 'datetime'
         width = width * pd.Timedelta(days=1)
+        fig_kwargs['x_range'] = DataRange1d()
     elif category == 'month':
-        fig_kwargs['x_range'] = calendar.month_abbr[1:]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=calendar.month_abbr[1:])
     elif category == 'weekday':
-        fig_kwargs['x_range'] = calendar.day_abbr[0:]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=calendar.day_abbr[0:])
     elif category == 'hour':
-        fig_kwargs['x_range'] = [0, 23]
+        fig_kwargs['x_range'] = FactorRange(
+            factors=[str(i) for i in range(25)])
+    else:
+        fig_kwargs['x_range'] = FactorRange(
+            factors=np.unique(cds.data['index'][filter_]))
 
-    # vertical axis limits
-    y_min = min(np.nanmin(d) for k, d in cds.data.items() if k != category)
-    y_max = max(np.nanmax(d) for k, d in cds.data.items() if k != category)
-    start, end = calc_y_start_end(y_min, y_max)
+    y_data = np.asarray(cds.data['value'])[filter_]
+    if len(y_data) == 0:
+        start, end = None, None
+    else:
+        y_min = np.nanmin(y_data)
+        y_max = np.nanmax(y_data)
+        start, end = calc_y_start_end(y_min, y_max)
+    fig_kwargs['y_range'] = DataRange1d(start=start, end=end)
 
-    for num, field in enumerate(filter(lambda x: x != category, cds.data)):
+    unique_names = np.unique(np.asarray(cds.data['name'])[filter_])
+
+    for name in unique_names:
+        view = CDSView(source=cds, filters=[
+            GroupFilter(column_name='metric', group=metric),
+            GroupFilter(column_name='category', group=category),
+            GroupFilter(column_name='name', group=name)
+        ])
 
         # Create figure
-        title = field + ' ' + metric.upper()
+        title = name + ' ' + metric_name
         fig = figure(width=800, height=200, title=title,
+                     name=f'{category}_{metric}_{name}',
                      **fig_kwargs)
 
         # Custom bar alignment
         if category == 'hour':
             # Center bars between hour ticks
-            x = dodge(category, 0.5, range=fig.x_range)
+            x = dodge('index', 0.5, range=fig.x_range)
         else:
-            x = category
-        fig.vbar(x=x, top=field, width=width, source=cds, line_color='white',
-                 fill_color=next(palette))
+            x = 'index'
+
+        fig.vbar(x=x, top='value', width=width, source=cds,
+                 view=view,
+                 line_color='white', fill_color=next(palette))
 
         # axes parameters
         fig.xgrid.grid_line_color = None
         fig.xaxis.minor_tick_line_color = None
-
-        fig.y_range.start = start
-        fig.y_range.end = end
-
-        if num == 0:
-            # add x_range to plots to link panning
-            fig_kwargs['x_range'] = fig.x_range
-            fig_kwargs['y_range'] = fig.y_range
 
         # Hover tool and format specific changes
         if category == 'date':
@@ -530,76 +569,40 @@ def bar_subdivisions(cds, category, metric):
             formatter = DatetimeTickFormatter(days='%Y-%m-%d')
             fig.xaxis.formatter = formatter
             tooltips = [
-                (human_category, f'@{category}{{%F}}'),
-                (f'{field} {metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index{%F}'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips,
-                                formatters={category: 'datetime'})
+                                formatters={'index': 'datetime'})
         elif category == 'month' or category == 'weekday':
             # Categorical x-axis
             formatter = CategoricalTickFormatter()
             fig.xaxis.formatter = formatter
             tooltips = [
-                (human_category, f'@{{{category}}}'),
-                (f'{metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         else:
             # Numerical x-axis
-            fig.xaxis.ticker = cds.data[category]
             tooltips = [
-                (human_category, f'@{{{category}}}'),
-                (f'{metric.upper()}', f'@{{{field}}}'),
+                ('Forecast', '@name'),
+                (human_category, '@index'),
+                (metric_name, '@value'),
             ]
             hover_kwargs = dict(tooltips=tooltips)
         hover = HoverTool(mode='vline', **hover_kwargs)
         fig.add_tools(hover)
 
-        figs.append(fig)
+        figs[name] = fig
 
     return figs
 
 
 def nested_bar():
     raise NotImplementedError
-
-
-def _table_title(name):
-    # bokeh doesn't care :(
-    title = '\n'.join(textwrap.wrap(name, width=15))
-    return title
-
-
-def metrics_table(cds):
-    """
-    Create an ugly, poorly formatted Bokeh table of metrics
-
-    Parameters
-    ----------
-    cds : bokeh.models.ColumnDataSource
-        Fields must be 'forecast' and the names of the metrics.
-
-    Returns
-    -------
-    data_table : bokeh.widgets.DataTable
-    """
-    formatter = NumberFormatter(format="0.000")
-    # construct list of columns. make sure that forecast name is first
-    name_width = 300
-    metric_width = 60
-    columns = [TableColumn(field='forecast', title='Forecast',
-                           width=name_width)]
-    for field in filter(lambda x: x != 'forecast', cds.data):
-        title = _table_title(field)
-        col = TableColumn(field=field, title=title.upper(),
-                          formatter=formatter, width=metric_width)
-        columns.append(col)
-    width = name_width + metric_width * (len(columns) - 1)
-    height = 25 * (1 + len(cds.data['forecast']))
-    data_table = DataTable(source=cds, columns=columns, width=width,
-                           height=height, index_position=None,
-                           fit_columns=False)
-    return data_table
 
 
 def joint_distribution():
@@ -624,3 +627,95 @@ def reliability_diagram():
 
 def rank_histogram():
     raise NotImplementedError
+
+
+def output_svg(fig):
+    """
+    Generates an SVG from the Bokeh figure. Errors in the
+    process are logged and an SVG with error text is returned.
+
+    Parameters
+    ----------
+    fig : bokeh.plotting.Figure
+
+    Returns
+    -------
+    svg : str
+    """
+    fig.output_backend = 'svg'
+    try:
+        svg = get_svgs(fig)[0]
+    except Exception:
+        logger.error('Could not generate SVG for figure %s',
+                     getattr(fig, 'name', 'unnamed'))
+        svg = (
+            '<svg width="100%" height="100%">'
+            '<text x="50" y="50" class="alert alert-error">'
+            'Unable to generate SVG plot.'
+            '</text>'
+            '</svg>')
+    return svg
+
+
+def raw_report_plots(report, metrics):
+    """Create a RawReportPlots object from the metrics of a report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+    metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
+
+    Returns
+    -------
+    :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
+    """
+    cds = construct_metrics_cds(metrics, rename=abbreviate)
+    # Create initial bar figures
+    figure_dict = {}
+    # Components for other metrics
+    for category in report.report_parameters.categories:
+        for metric in report.report_parameters.metrics:
+            if category == 'total':
+                fig = bar(cds, metric)
+                figure_dict[f'total_{metric}_all'] = fig
+            else:
+                figs = bar_subdivisions(cds, category, metric)
+                for name, fig in figs.items():
+                    figure_dict[f'{category}_{metric}_{name}'] = fig
+    script, divs = components(figure_dict)
+    mplots = []
+    for k, v in divs.items():
+        cat, met, name = k.split('_')
+        fig = figure_dict[k]
+        svg = output_svg(fig)
+        mplots.append(datamodel.ReportFigure(
+            name=name, category=cat, metric=met, div=v, svg=svg,
+            figure_type='bar'))
+    out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
+    return out
+
+
+def timeseries_plots(report):
+    """Return the bokeh components (script and div element) for timeseries
+    and scatter plots of the processed forecasts and observations.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    script: str
+        A script element to insert into an html template
+    div: str
+        A div element to insert into an html template.
+    """
+    value_cds, meta_cds = construct_timeseries_cds(report)
+    units = report.report_parameters.object_pairs[0].forecast.units
+    tfig = timeseries(value_cds, meta_cds, report.report_parameters.start,
+                      report.report_parameters.end, units,
+                      report.raw_report.timezone)
+    sfig = scatter(value_cds, meta_cds, units)
+    layout = gridplot((tfig, sfig), ncols=1)
+    script, div = components(layout)
+    return script, div

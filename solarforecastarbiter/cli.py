@@ -308,12 +308,15 @@ def report(verbose, user, password, base_url, report_file, output_file):
     report = session.process_report_dict(metadata)
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)
-    report_md = reports.render_raw_report(raw_report)
-    body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
+    full_report = report.replace(raw_report=raw_report)
+    # assumed dashboard url based on api url
+    dash_url = base_url.replace('api', 'dashboard')
+    html_report = template.render_html(
+        full_report, dash_url,
+        with_timeseries=True, body_only=False)
     with open(output_file, 'w') as f:
-        f.write(full_report)
+        f.write(html_report)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     cli()

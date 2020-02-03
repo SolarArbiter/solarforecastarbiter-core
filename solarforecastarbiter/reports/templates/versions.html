@@ -1,0 +1,17 @@
+<p>This report was created using open source software packages. The relevant packages and their versions are listed below. Readers are encouraged to study the source code to understand exactly how the data was processed.</p>
+<table>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Package</th>
+      <th style="text-align: left;">Version</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for pkg_ver in report.raw_report.versions %}
+  <tr>
+    <td style="text-align: left;">{{ pkg_ver[0] }}</td>
+    <td style="text-align: left;">{{ pkg_ver[1] }}</td>
+  </tr>
+{% endfor %}
+  </tbody>
+</table>

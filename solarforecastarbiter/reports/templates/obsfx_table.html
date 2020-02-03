@@ -1,0 +1,74 @@
+<p>The table below shows the observation, forecast pairs analyzed in
+this report. The table includes the unprocessed observation and
+forecast <em>interval label</em> (beginning, ending, instantaneous)
+and <em>interval length</em>. If these quantities do not match, the
+Solar Forecast Arbiter must align and/or resample the data before
+computing error statistics. The Solar Forecast Arbiter aligns the
+observation data to the forecast data. The aligned and resampled
+parameters are also shown below.</p>
+<table style="width:100%; ">
+  <colgroup>
+    <col style="width: 21%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+    <col style="width: 21%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+    <col style="width: 7%" />
+  </colgroup>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Observations</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th style="text-align: left;">Forecasts</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+    <tr class="header">
+      <td style="text-align: left;">Name</td>
+      <td>Interval label</td>
+      <td>Interval length</td>
+      <td>Aligned interval label</td>
+      <td>Resampled interval length</td>
+      <td style="text-align: left;">Name</td>
+      <td>Interval label</td>
+      <td>Interval length</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pfxobs in report.raw_report.processed_forecasts_observations %}
+    <tr>
+      <td style="text-align: left;">
+        {% if pfxobs.original.observation is defined %}
+        <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}">
+          {{ pfxobs.original.observation.name }}
+        </a>
+        {% else %}
+        <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}">
+          {{ pfxobs.original.aggregate.name }}
+        </a>
+        {% endif %}
+      </td>
+      <td>{{ pfxobs.original.data_object.interval_label }}</td>
+      <td>{{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min</td>
+      <td>{{ pfxobs.interval_label }}</td>
+      <td>{{ (pfxobs.interval_length.total_seconds() // 60) | int }} min</td>
+      <td style="text-align: left;">
+        <a href="{{ dash_url }}/forecasts/single/{{ pfxobs.original.forecast.forecast_id }}">
+          {{ pfxobs.original.forecast.name }}
+         </a>
+      </td>
+      <td>{{ pfxobs.original.forecast.interval_label }}</td>
+      <td>{{ (pfxobs.original.forecast.interval_length.total_seconds() // 60) | int }} min</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

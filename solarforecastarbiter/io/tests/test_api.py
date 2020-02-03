@@ -455,7 +455,7 @@ def test_apisession_get_obs_agg_values_interval_label(
 @pytest.fixture()
 def empty_df():
     return pd.DataFrame([], columns=['value', 'quality_flag'],
-                        index=pd.DatetimeIndex([], name='timestamp'))
+                        index=pd.DatetimeIndex([], name='timestamp', tz='UTC'))
 
 
 @pytest.mark.parametrize('func', ['get_observation_values',
@@ -615,9 +615,9 @@ def test_apisession_get_report_with_raw(
         requests_mock, report_text, report_objects, mock_request_fxobs,
         raw_report, mocker):
     raw = raw_report(False)
-    raw_txt = utils.serialize_raw_report(raw)
+    raw_dict = raw.to_dict()
     report = json.loads(report_text)
-    report['raw_report'] = raw_txt
+    report['raw_report'] = raw_dict
     report_text = json.dumps(report).encode()
     mocker.patch(
         'solarforecastarbiter.io.api.APISession.get_raw_report_processed_data',
@@ -656,8 +656,8 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
     mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
                  return_value=report)
     expected = {
-        "name": "NREL MIDC OASIS GHI Forecast Analysis",
         "report_parameters": {
+            "name": "NREL MIDC OASIS GHI Forecast Analysis",
             "start": "2019-04-01T00:00:00-07:00",
             "end": "2019-04-04T23:59:00-07:00",
             "filters": [],
@@ -699,8 +699,9 @@ def test_apisession_get_raw_report_processed_data(
         requests_mock, raw_report, report_objects):
     _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
-    ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
-    val = utils.serialize_data(ser)
+    ser = pd.Series(name='value', index=pd.DatetimeIndex(
+        [], tz='UTC', name='timestamp'))
+    val = utils.serialize_timeseries(ser)
     requests_mock.register_uri(
         'GET', re.compile(f'{session.base_url}/reports/.*/values'),
         json=[{'id': id_, 'processed_values': val} for id_ in
@@ -724,11 +725,11 @@ def test_apisession_post_raw_report(requests_mock, raw_report, mocker,
         'POST', re.compile(f'{session.base_url}/reports/.*/values'),
         [{'text': id_} for id_ in ids])
     mocked = requests_mock.register_uri(
-        'POST', re.compile(f'{session.base_url}/reports/.*/metrics'))
+        'POST', re.compile(f'{session.base_url}/reports/.*/raw'))
     status = mocker.patch(
         'solarforecastarbiter.io.api.APISession.update_report_status')
     session.post_raw_report('', raw)
-    assert isinstance(mocked.last_request.json()['raw_report'], str)
+    assert isinstance(mocked.last_request.json(), dict)
     assert status.called
 
 

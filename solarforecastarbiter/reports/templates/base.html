@@ -1,10 +1,17 @@
-
 <!doctype html>
 <html lang="en" class="h-100">
   <head>
     {% include "head.html" %}
   </head>
-  <body>
-    {{ body | safe }}
+  <body class="d-flex flex-column h-100">
+    <main role="main" class="flex-shrink-0">
+      <div class="container">
+        <div class="row">
+          <div class="content col-md-9 col-sm-12">
+            {% block body %}{% endblock %}
+          </div>
+        </div>
+      </div>
+    </main>
   </body>
 </html>

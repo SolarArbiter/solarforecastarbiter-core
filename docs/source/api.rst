@@ -71,14 +71,36 @@ Containers to associate forecasts and observations for use with reports:
    :toctree: generated/
 
    datamodel.ForecastObservation
+   datamodel.ForecastAggregate
    datamodel.ProcessedForecastObservation
+
+
+Report metrics and validation:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.MetricResult
+   datamodel.MetricValue
+   datamodel.ValidationResult
+   datamodel.PreprocessingResult
+   datamodel.ReportMessage
+
+Report plots:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.RawReportPlots
+   datamodel.ReportFigure
+
 
 Reports:
 
 .. autosummary::
    :toctree: generated/
 
-   datamodel.ReportMetadata
+   datamodel.ReportParameters
    datamodel.RawReport
    datamodel.Report
 
@@ -381,6 +403,8 @@ Utility functions for data IO.
    io.utils.adjust_start_end_for_interval_label
    io.utils.adjust_timeseries_for_interval_label
    io.utils.ensure_timestamps
+   io.utils.serialize_timeseries
+   io.utils.deserialize_timeseries
 
 
 Metrics
@@ -407,6 +431,7 @@ Functions for preparing the timeseries data before calculating metrics:
    metrics.preprocessing.apply_validation
    metrics.preprocessing.resample_and_align
    metrics.preprocessing.exclude
+   metrics.preprocessing.process_forecast_observations
 
 Deterministic
 -------------
@@ -464,8 +489,20 @@ Reports
 .. autosummary::
    :toctree: generated/
 
-   reports
-
+   reports.main.compute_report
+   reports.main.get_data_for_report
+   reports.main.create_raw_report_from_data
+   reports.figures.construct_timeseries_cds
+   reports.figures.construct_metrics_cds
+   reports.figures.timeseries
+   reports.figures.scatter
+   reports.figures.bar
+   reports.figures.bar_subdivisions
+   reports.figures.output_svg
+   reports.figures.raw_report_plots
+   reports.figures.timeseries_plots
+   reports.template.render_html
+   reports.template.get_template_and_kwargs
 
 Validation
 ==========

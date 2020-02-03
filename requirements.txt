@@ -1,11 +1,10 @@
 aiohttp==3.6.2
-bokeh==1.3.4
+bokeh==1.4.0
 Click==7.0
 netCDF4==1.5.2
 numpy==1.17.2
 pandas==0.25.1
 pvlib==0.6.3
-pyarrow==0.15.0
 python-dateutil==2.8.0
 requests==2.22.0
 scipy==1.3.1
@@ -13,3 +12,4 @@ sentry-sdk==0.12.3
 statsmodels==0.10.1
 tables==3.5.2
 xarray==0.13.0
+selenium==3.141.0

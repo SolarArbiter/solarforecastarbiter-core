@@ -8,11 +8,14 @@ import datetime as dt
 import json
 
 
+import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 import pytest
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.metrics import preprocessing
 
 
 @pytest.fixture()
@@ -508,7 +511,7 @@ def tracking_modeling_parameters():
     modeling_params = datamodel.SingleAxisModelingParameters(
         ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
         dc_loss_factor=3, ac_loss_factor=0,
-        axis_tilt=0, axis_azimuth=0, ground_coverage_ratio=2/7,
+        axis_tilt=0, axis_azimuth=0, ground_coverage_ratio=2 / 7,
         backtrack=True, max_rotation_angle=45)
     return modeling_params
 
@@ -1041,6 +1044,24 @@ def many_forecast_observation(many_forecasts, many_observations):
 
 
 @pytest.fixture()
+def single_forecast_aggregate(aggregate, single_site):
+    forecast_agg = datamodel.Forecast(
+        name="GHI Aggregate FX 60",
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=single_site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        extra_parameters='',
+    )
+    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+
+
+@pytest.fixture()
 def report_objects(aggregate):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)
@@ -1119,15 +1140,18 @@ def report_objects(aggregate):
     )
     timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0),
                                                  dt.time(14, 0)))
-    report = datamodel.Report(
+    report_params = datamodel.ReportParameters(
         name="NREL MIDC OASIS GHI Forecast Analysis",
         start=start,
         end=end,
-        forecast_observations=(fxobs0, fxobs1, fxagg0),
+        object_pairs=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe"),
         categories=("total", "date", "hour"),
-        report_id="56c67770-9832-11e9-a535-f4939feddd82",
         filters=(quality_flag_filter, timeofdayfilter)
+    )
+    report = datamodel.Report(
+        report_id="56c67770-9832-11e9-a535-f4939feddd82",
+        report_parameters=report_params
     )
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
@@ -1187,14 +1211,16 @@ def valuefilter_dict(single_forecast):
 
 
 @pytest.fixture()
-def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
+def report_params_dict(report_objects, quality_filter_dict,
+                       timeofdayfilter_dict):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
+    report_params = report.report_parameters
     return {
-        'name': report.name,
-        'start': report.start,
-        'end': report.end,
-        'forecast_observations': (
+        'name': report_params.name,
+        'start': report_params.start,
+        'end': report_params.end,
+        'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict()},
             {'forecast': forecast_1.to_dict(),
@@ -1204,6 +1230,19 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
+    }
+
+
+@pytest.fixture()
+def report_params(report_objects):
+    return report_objects[0].report_parameters
+
+
+@pytest.fixture()
+def report_dict(report_params_dict, report_objects):
+    report = report_objects[0]
+    return {
+        'report_parameters': report_params_dict,
         'status': report.status,
         'report_id': report.report_id,
         '__version__': report.__version__
@@ -1214,84 +1253,211 @@ def report_dict(report_objects, quality_filter_dict, timeofdayfilter_dict):
 def report_text():
     return b"""
     {"created_at": "2019-06-26T16:49:18+00:00",
-    "metrics": null,
-    "modified_at": "2019-06-26T16:49:18+00:00",
-    "name": "NREL MIDC OASIS GHI Forecast Analysis",
-    "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
-    "report_parameters": {
-        "start": "2019-04-01T00:00:00-07:00",
-        "end": "2019-04-04T23:59:00-07:00",
-        "filters": [
-            {"quality_flags": [
-                "USER FLAGGED",
-                "NIGHTTIME",
-                "LIMITS EXCEEDED",
-                "STALE VALUES",
-                "INTERPOLATED VALUES",
-                "INCONSISTENT IRRADIANCE COMPONENTS"
-            ]},
-            {"time_of_day_range": ["12:00", "14:00"]}
-        ],
-        "metrics": ["mae", "rmse", "mbe"],
-        "categories": ["total", "date", "hour"],
-        "object_pairs": [
-            {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
-             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
-            {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-             "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
-            {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
-             "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
-        ]
-    },
-    "raw_report": null,
-    "values": [],
-    "status": "pending"}
+     "modified_at": "2019-06-26T16:49:18+00:00",
+     "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+     "report_parameters": {
+         "name": "NREL MIDC OASIS GHI Forecast Analysis",
+         "start": "2019-04-01T00:00:00-07:00",
+         "end": "2019-04-04T23:59:00-07:00",
+         "filters": [
+             {"quality_flags": [
+                 "USER FLAGGED",
+                 "NIGHTTIME",
+                 "LIMITS EXCEEDED",
+                 "STALE VALUES",
+                 "INTERPOLATED VALUES",
+                 "INCONSISTENT IRRADIANCE COMPONENTS"
+             ]},
+             {"time_of_day_range": ["12:00", "14:00"]}
+         ],
+         "metrics": ["mae", "rmse", "mbe"],
+         "categories": ["total", "date", "hour"],
+         "object_pairs": [
+             {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
+         ]
+     },
+     "raw_report": null,
+     "values": [],
+     "status": "pending"}
     """
 
 
+@pytest.fixture
+def metric_index():
+    def index(category):
+        if category == 'date':
+            return '2019-01-01'
+        else:
+            return 1
+    return index
+
+
+@pytest.fixture
+def preprocessing_result_types():
+    return (preprocessing.VALIDATION_RESULT_TOTAL_STRING,
+            'Forecast ' + preprocessing.DISCARD_DATA_STRING,
+            'Forecast ' + preprocessing.UNDEFINED_DATA_STRING,
+            'Observation ' + preprocessing.DISCARD_DATA_STRING,
+            'Observation ' + preprocessing.UNDEFINED_DATA_STRING)
+
+
+@pytest.fixture
+def report_metrics(metric_index):
+    """Produces dummy MetricResult list for a RawReport"""
+    def gen(report):
+        metrics = ()
+        for fxobs in report.report_parameters.object_pairs:
+            values = []
+            if hasattr(fxobs, 'observation'):
+                obsid = fxobs.observation.observation_id
+            else:
+                obsid = fxobs.aggregate.aggregate_id
+            metrics_dict = {
+                'name': f'{fxobs.forecast.name}',
+                'forecast_id': fxobs.forecast.forecast_id,
+                'observation_id': obsid
+            }
+            for metric, category in itertools.product(
+                report.report_parameters.metrics,
+                report.report_parameters.categories
+            ):
+                values.append(datamodel.MetricValue.from_dict(
+                    {
+                        'category': category,
+                        'metric': metric,
+                        'value': 2,
+                        'index': metric_index(category),
+                    }
+                ))
+            metrics_dict['values'] = values
+            metrics = metrics + (
+                datamodel.MetricResult.from_dict(metrics_dict),)
+        return metrics
+    return gen
+
+
 @pytest.fixture()
-def raw_report(report_objects):
+def raw_report(report_objects, report_metrics, preprocessing_result_types):
     report, obs, fx0, fx1, agg, fxagg = report_objects
-    meta = datamodel.ReportMetadata(
-        name=report.name,
-        start=report.start,
-        end=report.end,
-        now=report.end,
-        versions=(),
-        validation_issues=(),
-        timezone=obs.site.timezone
-    )
 
     def gen(with_series):
-        ser = pd.Series(name='value', index=pd.Index([], name='timestamp'))
+        def ser(interval_length):
+            ser_index = pd.date_range(
+                report.report_parameters.start,
+                report.report_parameters.end,
+                freq=to_offset(interval_length),
+                name='timestamp')
+            ser_value = pd.Series(
+                np.repeat(100, len(ser_index)), name='value',
+                index=ser_index)
+            return ser_value
+        il0 = fx0.interval_length
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
+        qflags = list(qflags[0])
         fxobs0 = datamodel.ProcessedForecastObservation(
+            fx0.name,
             datamodel.ForecastObservation(fx0, obs),
             fx0.interval_value_type,
-            fx0.interval_length,
+            il0,
             fx0.interval_label,
-            forecast_values=ser if with_series else fx0.forecast_id,
-            observation_values=ser if with_series else obs.observation_id
+            valid_point_count=len(ser(il0)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=ser(il0) if with_series else fx0.forecast_id,
+            observation_values=ser(il0) if with_series else obs.observation_id
         )
+        il1 = fx1.interval_length
         fxobs1 = datamodel.ProcessedForecastObservation(
+            fx1.name,
             datamodel.ForecastObservation(fx1, obs),
             fx1.interval_value_type,
-            fx1.interval_length,
+            il1,
             fx1.interval_label,
-            forecast_values=ser if with_series else fx1.forecast_id,
-            observation_values=ser if with_series else obs.observation_id
+            valid_point_count=len(ser(il1)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=ser(il1) if with_series else fx1.forecast_id,
+            observation_values=ser(il1) if with_series else obs.observation_id,
         )
+        ilagg = fxagg.interval_length
         fxagg_ = datamodel.ProcessedForecastObservation(
+            fxagg.name,
             datamodel.ForecastAggregate(fxagg, agg),
             fxagg.interval_value_type,
-            fxagg.interval_length,
+            ilagg,
             fxagg.interval_label,
-            forecast_values=ser if with_series else fxagg.forecast_id,
-            observation_values=ser if with_series else agg.aggregate_id
+            valid_point_count=len(ser(ilagg)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
+            observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
-        raw = datamodel.RawReport(meta, 'template', {},
-                                  (fxobs0, fxobs1, fxagg_))
+        figs = datamodel.RawReportPlots(
+            '1.4.0', '<script></script', (
+                datamodel.ReportFigure.from_dict(
+                    {
+                        'name': 'mae tucson ghi',
+                        'div': '<div></div>',
+                        'svg': '<svg></svg>',
+                        'figure_type': 'plot?',
+                        'category': 'total',
+                        'metric': 'mae'
+                    }
+                ),)
+        )
+        raw = datamodel.RawReport(
+            generated_at=report.report_parameters.end,
+            versions=(),
+            timezone=obs.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(fxobs0, fxobs1, fxagg_))
         return raw
     return gen
+
+
+@pytest.fixture
+def report_with_raw(report_dict, raw_report):
+    report_dict['raw_report'] = raw_report(True)
+    report_dict['status'] = 'complete'
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture()
+def failed_report(report_dict):
+    report_dict['raw_report'] = datamodel.RawReport(
+        generated_at=pd.Timestamp.utcnow(), timezone='UTC',
+        versions=(), plots=None, metrics=(),
+        processed_forecasts_observations=(),
+        messages=(datamodel.ReportMessage(message='Report Failed',
+                                          step='make',
+                                          level='CRITICAL',
+                                          function='fn'))
+    )
+    report_dict['status'] = 'failed'
+    return datamodel.Report.from_dict(report_dict)
+
+
+@pytest.fixture()
+def pending_report(report_dict):
+    report_dict['status'] = 'pending'
+    report_dict['raw_report'] = None
+    return datamodel.Report.from_dict(report_dict)
 
 
 @pytest.fixture()
@@ -1363,8 +1529,22 @@ def aggregate_observations(aggregate_text, many_observations):
         effective_from=_tstamp(o['effective_from']),
         effective_until=_tstamp(o['effective_until']),
         observation_deleted_at=_tstamp(o['observation_deleted_at']))
-                    for o in aggd['observations']])
+        for o in aggd['observations']])
     return aggobs
+
+
+@pytest.fixture()
+def single_aggregate_observation_text(single_observation_text_with_site_text):
+    return (b'{"observation": ' + single_observation_text_with_site_text +
+            b', "effective_from": "2019-01-03T13:00:00Z"}')
+
+
+@pytest.fixture()
+def single_aggregate_observation(single_observation):
+    return datamodel.AggregateObservation(
+        observation=single_observation,
+        effective_from=pd.Timestamp('2019-01-03T13:00:00Z')
+    )
 
 
 @pytest.fixture()
@@ -1517,3 +1697,104 @@ def aggregate_prob_forecast(aggregate_prob_forecast_text,
         provider=fx_dict.get('provider', ''),
         axis=fx_dict['axis'],
         constant_values=(agg_prob_forecast_constant_value, ))
+
+
+@pytest.fixture
+def metric_value_dict():
+    return {
+        'category': 'total',
+        'metric': 'mae',
+        'index': 1,
+        'value': 1,
+    }
+
+
+@pytest.fixture
+def metric_value(metric_value_dict):
+    return datamodel.MetricValue.from_dict(metric_value_dict)
+
+
+@pytest.fixture
+def metric_result_dict(metric_value_dict):
+    return {
+        'name': 'total tucson ghi mae',
+        'forecast_id': 'fxid',
+        'values': [metric_value_dict],
+        'observation_id': 'obsid',
+        'aggregate_id': None,
+    }
+
+
+@pytest.fixture
+def metric_result(metric_result_dict):
+    return datamodel.MetricResult.from_dict(metric_result_dict)
+
+
+@pytest.fixture
+def validation_result_dict():
+    return {
+        'flag': 2,
+        'count': 1,
+    }
+
+
+@pytest.fixture
+def validation_result(validation_result_dict):
+    return datamodel.ValidationResult.from_dict(validation_result_dict)
+
+
+@pytest.fixture
+def preprocessing_result_dict():
+    return {
+        'name': "Undefined Values",
+        'count': 1
+    }
+
+
+@pytest.fixture
+def preprocessing_result(preprocessing_result_dict):
+    return datamodel.PreprocessingResult.from_dict(preprocessing_result_dict)
+
+
+@pytest.fixture
+def report_metadata_dict():
+    return {
+        'name': 'Report 1',
+        'start': '2019-01-01T00:00Z',
+        'end': '2019-01-02T00:00Z',
+        'now': '2019-01-03T00:00Z',
+        'timezone': 'America/Pheonix',
+        'versions': (),
+    }
+
+
+@pytest.fixture
+def report_figure_dict():
+    return {
+        'name': 'mae tucson ghi',
+        'div': '<div></div>',
+        'svg': '<svg></svg>',
+        'figure_type': 'plot?',
+        'category': 'total',
+        'metric': 'mae'
+    }
+
+
+@pytest.fixture
+def report_figure(report_figure_dict):
+    return datamodel.ReportFigure.from_dict(report_figure_dict)
+
+
+@pytest.fixture
+def report_message_dict():
+    return {
+        'message': 'Report was bad',
+        'step': 'calculating metrics',
+        'level': 'exception',
+        'function': 'calculate_deterministic_metrics',
+    }
+
+
+@pytest.fixture
+def report_message(report_message_dict):
+    return datamodel.ReportMessage.from_dict(report_message_dict)

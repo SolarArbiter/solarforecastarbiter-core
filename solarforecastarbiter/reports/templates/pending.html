@@ -1,0 +1,10 @@
+{% extends base_template %}
+{% block body %}
+{% block report_title %}
+<h1 id="report-title">{{ report.report_parameters.name }}</h1>
+{% endblock %}
+<div class="alert alert-info">
+  Report generation is pending. We will try and fetch the report again in 30 seconds, or you can try reloading this page.
+</div>
+<script>setInterval(function () {  window.location.reload(); }, 30000);</script>
+{% endblock %}

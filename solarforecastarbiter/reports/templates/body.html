@@ -1,0 +1,155 @@
+{% extends base_template %}
+{% import "macros.j2" as macros with context %}
+{% set report_name = report.report_parameters.name %}
+
+{% block body %}
+{% block report_title %}
+<h1 id="report-title">{{ report_name }}</h1>
+{% endblock %}
+{% block report_description %}
+<p>
+  This report of solar forecast accuracy was automatically generated using the
+  <a href="https://solarforecastarbiter.org">Solar Forecast Arbiter</a>.
+  Please see our GitHub repository for
+  <a href="//github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports">known issues</a>
+  with the reports or to create a new issue.
+</p>
+{% endblock %}
+{% block download %}{% endblock %}
+
+{% block toc %}
+<ul>
+  <li><a href="#report-metadata">Report Metadata</a></li>
+  <li><a href="#data">Data</a></li>
+  <ul>
+    <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
+    <li><a href="#data-validation">Data Validation</a></li>
+  </ul>
+  <li><a href="#metrics">Metrics</a></li>
+  <ul>
+    {% for category in report.report_parameters.categories %}
+      <li><a href="#{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</a></li>
+    {% endfor %}
+  </ul>
+  <li><a href="#versions">Versions</a></li>
+</ul>
+{% endblock %}
+
+{% block reportmetadata %}
+<h2 id="report-metadata">Report Metadata</h2>
+<ul>
+  <li>Name: {{ report_name }}</li>
+  <li>Start: {{ report.report_parameters.start }}</li>
+  <li>End: {{ report.report_parameters.end }}</li>
+  <li>Generated at: {{ report.raw_report.generated_at }}</li>
+</ul>
+{% endblock %}
+
+{% block errors %}
+{% if report.raw_report.messages| length > 0 %}
+<div class="alert alert-warning">
+  {% for mesg in report.raw_report.messages %}
+  <h5>{{ mesg.message }}</h5>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block data %}
+<h2 id="data">Data</h2>
+<p>
+  This report includes forecast and observation data available from {{ report.report_parameters.start }} to {{ report.report_parameters.end }}.
+{% endblock %}
+{% block obsandfx %}
+<h3 id="observations-and-forecasts">Observations and Forecasts</h3>
+{% include "obsfx_table.html" %}
+
+{% if timeseries_script is defined %}
+<p>The plots below show the realigned and resampled time series of
+observation and forecast data as well as a scatter plot of forecast vs
+observation data.</p>
+
+<p>Controls to pan, zoom, and save the plot are shown on the
+right. Clicking on an item in the legend will hide/show it.</p>
+
+{{ timeseries_div | safe }}
+{{ timeseries_script | safe}}
+{% endif %}
+{% endblock %}
+
+{% block datavalidation %}
+<h3 id="data-validation">Data Validation</h3>
+<p>The Solar Forecast Arbiter’s data validation toolkit using the selected
+filters identified the following issues with the unprocessed observation
+data:</p>
+{% for filter in report.filters %}
+  {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
+  {{ macros.validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags) }}
+  <br>
+  {% endif %}
+{% endfor %}
+<p>These intervals were removed from the raw time series before
+resampling and realignment. For more details on the data validation
+results for each observation, please see the observation page linked
+to in the table above. Data providers may elect to reupload data to
+fix issues identified by the validation toolkit. The metrics computed
+in this report will remain unchanged, however, a user may generate a
+new report after the data provider submits new data. The online
+version of this report verifies that the data was not modified after
+the metrics were computed.</p>
+{% endblock %}
+
+{% block dataresampleandalign %}
+<h3 id="data-alignment">Data Resampling and Alignment</h3>
+<p>The Solar Forecast Arbiter's preprocessing applies the above validation and
+excludes (other options to be added in the future) the data. The preprocessing
+then resamples the observations to the forecast using the mean. Then it checks
+for undefined values, such as not-a-number (nan) values and removes them.
+Finally the observations and forecasts are aligned and non-overlapping data
+ignored. The table below summarizes the data preprocessing results:
+</p>
+{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+<br>
+<p>
+Users may wish to fix the data issues by having new or missing data uploaded.
+The metrics computed in this report will remain unchanged, however, a user may
+generate a new report after the data provider submits new data.
+</p>
+{% endblock %}
+
+{% block metrics %}
+<h2 id="metrics">Metrics</h2>
+<p>
+  Metrics are displayed in the tables and figures below.
+  Metrics may be downloaded in CSV format by clicking
+  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
+</p>
+<div id="metric-plot-wrapper">
+{% for category in report.report_parameters.categories %}
+<h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
+  {% if category_blurbs is defined %}
+<p>{{ category_blurbs[category] }}</p>
+  {% endif %}
+  {% if category == "total" %}
+    {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
+  {% endif %}
+<br>
+  {% for metric in report.report_parameters.metrics %}
+    {% for rep_fig in report.raw_report.plots.figures %}
+      {% if rep_fig.category == category and rep_fig.metric == metric %}
+<div class="metric-block" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+</div>
+{{ report.raw_report.plots.script | safe }}
+{{ macros.download_csv_script () | safe }}
+{% endblock %}
+
+
+{% block versions %}
+<h2 id="versions">Versions</h2>
+{% include "versions.html" %}
+{% endblock %}
+{% endblock %}

@@ -3,17 +3,13 @@
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
-import base64
 from functools import wraps
 from inspect import signature
-import zlib
+import json
+import re
 
 
 import pandas as pd
-import pyarrow as pa
-
-
-from solarforecastarbiter import datamodel
 
 
 def _dataframe_to_json(payload_df):
@@ -102,7 +98,8 @@ def _json_to_dataframe(json_payload):
     vals = json_payload['values']
     if len(vals) == 0:
         df = pd.DataFrame([], columns=['value', 'quality_flag'],
-                          index=pd.DatetimeIndex([], name='timestamp'))
+                          index=pd.DatetimeIndex([], name='timestamp',
+                                                 tz='UTC'))
     else:
         df = pd.DataFrame.from_dict(json_payload['values'])
         df.index = pd.to_datetime(df['timestamp'], utc=True,
@@ -269,33 +266,88 @@ def adjust_timeseries_for_interval_label(data, interval_label, start, end):
     return data.loc[start:end]
 
 
-def serialize_data(values):
-    serialized_buf = pa.serialize(values).to_buffer()
-    compressed_bytes = zlib.compress(serialized_buf)
-    encoded = base64.b64encode(compressed_bytes)
-    return encoded.decode('ascii')  # bytes to str
+def serialize_timeseries(ser):
+    """
+    Serialize a timeseries to JSON. Note that the microseconds
+    portion of the index will be discarded.
+
+    Parameters
+    ----------
+    ser : pandas.Series
+       Must have a tz-localized datetime index
+
+    Returns
+    -------
+    str
+        The JSON serialized data along with a schema
+
+    Raises
+    ------
+    TypeError
+        If the input is invalid
+    """
+    if not (
+            isinstance(ser, pd.Series) and
+            isinstance(ser.index, pd.DatetimeIndex) and
+            ser.index.tzinfo is not None
+    ):
+        raise TypeError(
+            'Only pandas Series with a localized DatetimeIndex is supported')
+    v = ser.copy()
+    v.index.name = 'timestamp'
+    jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
+        orient='records', date_format='iso', date_unit='s')
+    schema = {
+        'version': 0,
+        'orient': 'records',
+        'timezone': 'UTC',
+        'column': 'value',
+        'index': 'timestamp',
+        'dtype': str(v.dtype),
+    }
+    out = '{"schema":' + json.dumps(schema) + ',"data":' + jsonvals + '}'
+    return out
 
 
-def deserialize_data(data):
-    compressed = base64.b64decode(data)
-    serialized = zlib.decompress(compressed)
-    values = pa.deserialize(serialized)
-    return values
+def deserialize_timeseries(data):
+    """
+    Deserializes a timeseries from JSON
 
+    Parameters
+    ----------
+    data : str
+        JSON string to deserialize. Must have schema and data keys.
 
-def serialize_raw_report(raw):
-    bundle = {'metrics': raw.metrics,
-              'template': raw.template,
-              'metadata': raw.metadata.to_dict(),
-              'processed_forecasts_observations': [
-                  pfx.to_dict() for pfx in
-                  raw.processed_forecasts_observations]}
-    return serialize_data(bundle)
+    Returns
+    -------
+    pandas.Series
+        Deserialized timeseries
 
-
-def deserialize_raw_report(encoded_bundle, version=0):
-    bundle = deserialize_data(encoded_bundle)
-    return datamodel.RawReport.from_dict(bundle)
+    Raises
+    ------
+    ValueError
+       If "schema" or "data" keys are not found in the JSON string
+    KeyError
+       If the schema object does not contain the proper keys
+    """
+    schema_str = re.search('(?<="schema":)\\s*{[^{}]*}\\s*(?=(,|}))', data)
+    if schema_str is None:
+        raise ValueError('Could not locate schema in data string')
+    schema = json.loads(schema_str.group(0))
+    # find between "data": and , or }, with only one set of []
+    data_str = re.search('(?<="data":)\\s*\\[[^\\[\\]]*\\](?=\\s*(,|}))', data)
+    if data_str is None:
+        raise ValueError('Could not locate data key in data string')
+    df = pd.read_json(data_str.group(0), orient=schema['orient'],
+                      convert_dates=True)
+    if df.empty:
+        return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
+            [], tz=schema['timezone'], name='timestamp'))
+    ser = df.set_index(schema['index'])[schema['column']].astype(
+        schema['dtype'])
+    if ser.index.tzinfo is None:
+        ser = ser.tz_localize(schema['timezone'])
+    return ser
 
 
 class HiddenToken:

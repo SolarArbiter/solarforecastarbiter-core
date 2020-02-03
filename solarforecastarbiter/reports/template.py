@@ -2,13 +2,10 @@
 Inserts metadata and figures into the report template.
 """
 import logging
-import subprocess
 
-from bokeh.embed import components
-from bokeh.layouts import gridplot
-from jinja2 import (Environment, DebugUndefined, PackageLoader,
-                    select_autoescape, Template)
 
+from bokeh import __version__ as bokeh_version
+from jinja2 import Environment, PackageLoader, select_autoescape
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import figures
 
@@ -16,179 +13,103 @@ from solarforecastarbiter.reports import figures
 logger = logging.getLogger(__name__)
 
 
-def template_report(report, metadata, metrics,
-                    processed_forecasts_observations):
-    """
-    Render the markdown report template. Figures are left untemplated.
+def _get_render_kwargs(report, dash_url, with_timeseries):
+    """Creates a dictionary of key word template arguments for a jinja2
+    report template.
 
     Parameters
     ----------
-    report : solarforecastarbiter.datamodel.Report
-        Metadata describing report
-    metadata : solarforecastarbiter.datamodel.ReportMetadata
-        Describes the pre-report
-    metrics : tuple of dict
-    processed_forecasts_observations : tuple of solarforecastarbiter.datamodel.ProcessedForecastObservation
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+    dash_url: str
+        URL of the Solar Forecast arbiter dashboard to use when building links.
+    with_timeseries: bool
+        Whether or not to include timeseries plots. If an error occurs, sets
+        `timeseries_script` to an empty string and `timeseries_div` will
+        contain a <div> element for warning the user of the failure.
 
     Returns
     -------
-    markdown
-    """  # noqa
-    # By default, jinja removes undefined variables from the rendered string.
-    # DebugUndefined leaves undefined variables in the string so that they
-    # can be used in the full report template process.
+    kwargs: dict
+        Dictionary of template variables to unpack as key word arguments when
+        rendering.
+    """
+    kwargs = dict(
+        human_categories=datamodel.ALLOWED_CATEGORIES,
+        human_metrics=datamodel.ALLOWED_METRICS,
+        report=report,
+        category_blurbs=datamodel.CATEGORY_BLURBS,
+        dash_url=dash_url,
+        # get bokeh version used when plots were generated.
+        # if plot generation failed, fallback to the curent version
+        bokeh_version=getattr(
+            getattr(report.raw_report, 'plots', None),
+            'bokeh_version', bokeh_version)
+    )
+    if with_timeseries:
+        try:
+            script, div = figures.timeseries_plots(report)
+        except Exception:
+            logger.exception(
+                'Failed to make Bokeh items for timeseries and scatterplot')
+            script = ''
+            div = """<div class="alert alert-warning">
+  <strong>Warning</strong> Failed to make timeseries and scatter plots
+  from stored data.
+</div>"""
+        kwargs['timeseries_script'] = script
+        kwargs['timeseries_div'] = div
+    return kwargs
+
+
+def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
+    """Returns the jinja2 Template object and a dict of template variables for
+    the report. If the report failed to compute, the template and kwargs will
+    be for an error page.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+    dash_url: str
+        URL of the Solar Forecast arbiter dashboard to use when building links.
+    with_timeseries: bool
+        Whether or not to include timeseries plots.
+    body_only: bool
+        When True, returns a div for injecting into another template,
+        otherwise returns a full html document with the required
+        <html> and <head> tags.
+
+    Returns
+    -------
+    template: jinja2.environment.Template
+    kwargs: dict
+        Dictionary of template variables to use as keyword arguments to
+        template.render().
+    """
     env = Environment(
         loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
         autoescape=select_autoescape(['html', 'xml']),
-        undefined=DebugUndefined)
+        lstrip_blocks=True,
+        trim_blocks=True
+    )
+    kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
+    if report.status == 'complete':
+        template = env.get_template('body.html')
+    elif report.status == 'failed':
+        template = env.get_template('failure.html')
+    elif report.status == 'pending':
+        template = env.get_template('pending.html')
+    else:
+        raise ValueError(f'Unknown status for report {report.status}')
 
-    template = env.get_template('template.md')
-
-    script_metrics, data_table_div, figures_div = _metrics_script_divs(
-        report, metrics)
-
-    strftime = '%Y-%m-%d %H:%M:%S %z'
-
-    def route_id(fx_ob):
-        if isinstance(fx_ob.original, datamodel.ForecastObservation):
-            return 'observations', fx_ob.original.observation.observation_id
-        else:
-            return 'aggregates', fx_ob.original.aggregate.aggregate_id
-
-    proc_fx_obs = [
-        (fx_ob, *route_id(fx_ob)) for fx_ob in processed_forecasts_observations
-    ]
-
-    rendered = template.render(
-        name=metadata.name,
-        start=metadata.start.strftime(strftime),
-        end=metadata.end.strftime(strftime),
-        now=metadata.now.strftime(strftime),
-        proc_fx_obs=proc_fx_obs,
-        validation_issues=metadata.validation_issues,
-        versions=metadata.versions,
-        script_metrics=script_metrics,
-        tables=data_table_div,
-        figures=figures_div,
-        metrics_toc=datamodel.ALLOWED_CATEGORIES)
-
-    return rendered
+    if body_only:
+        kwargs['base_template'] = env.get_template('empty_base.html')
+    else:
+        kwargs['base_template'] = env.get_template('base.html')
+    return template, kwargs
 
 
-def _metrics_script_divs(report, metrics):
-    cds = figures.construct_metrics_cds(metrics, 'total', index='forecast',
-                                        rename=figures.abbreviate)
-    data_table = figures.metrics_table(cds)
-
-    # Create initial bar figures
-    figures_bar = []
-    for num, metric in enumerate(report.metrics):
-        fig = figures.bar(cds, metric)
-        figures_bar.append(fig)
-
-    # Components for 'total' category
-    script, (data_table_div, *figures_bar_divs) = components((data_table,
-                                                              *figures_bar))
-
-    script_metrics = script
-    figures_dict = dict(total=figures_bar_divs)
-
-    # Components for other metrics
-    for category in report.categories:
-        if category == 'total':
-            continue
-
-        script_cat, figures_bar_cat = _loop_over_metrics(report, metrics,
-                                                         category)
-        script_metrics += script_cat
-        figures_dict[category] = figures_bar_cat
-
-    return script_metrics, data_table_div, figures_dict
-
-
-def _loop_over_metrics(report, metrics, kind):
-    figs = []
-    # series with MultiIndex of metric, forecast, day
-    # JSON serialization issues if we don't drop or fill na.
-    # fillna ensures 0 - 23 hrs on hourly plots.
-    metrics_series = figures.construct_metrics_series(metrics, kind).fillna(0)
-    for metric in report.metrics:
-        cds = figures.construct_metrics_cds2(metrics_series, metric)
-        # one figure with a subfig for each forecast
-        fig = figures.bar_subdivisions(cds, kind, metric)
-        figs.append(gridplot(fig, ncols=1))
-    script, divs = components(figs)
-    return script, divs
-
-
-# not all args currently used, but expect they will eventually be used
-def add_figures_to_report_template(fx_obs_cds, metadata, report_template,
-                                   html=True):
-    """
-    Add figures to the report_template
-
-    Parameters
-    ----------
-    fx_obs_cds : list
-        List of (ProcessedForecastObservation, ColumnDataSource)
-        tuples to pass to bokeh plotting objects.
-    report : solarforecastarbiter.datamodel.Report
-        Metadata describing report
-    report_template : str, markdown
-        The templated report
-    html : bool
-        Indicates if the template will be rendered into html or pdf.
-
-    Returns
-    -------
-    body : str, markdown
-    """
-    body_template = Template(report_template)
-
-    ts_fig = figures.timeseries(fx_obs_cds, metadata.start, metadata.end,
-                                timezone=metadata.timezone)
-    scat_fig = figures.scatter(fx_obs_cds)
-    try:
-        script, div = components(gridplot((ts_fig, scat_fig), ncols=1))
-    except Exception:
-        logger.exception(
-            'Failed to make Bokeh items for timeseries and scatterplot')
-        script = ''
-        div = """
-::: warning
-Failed to make timeseries and scatter figure from stored data. Try
-generating report again.
-:::
-"""
-
-    body = body_template.render(
-        script_data=script,
-        html=html,
-        figures_timeseries_scatter=div)
-    return body
-
-
-def report_md_to_html(report_md):
-    """
-    Render markdown into simple html using pandoc.
-
-    Parameters
-    ----------
-    report_md : str, markdown
-
-    Returns
-    -------
-    str, html
-    """
-    try:
-        out = subprocess.run(args=['pandoc', '--from', 'markdown+pipe_tables'],
-                             input=report_md.encode(), capture_output=True)
-    except (FileNotFoundError, subprocess.CalledProcessError) as e:
-        raise OSError('Error converting prereport to html using pandoc') from e
-    return out.stdout.decode()
-
-
-def full_html(body):
+def render_html(report, dash_url=datamodel.DASH_URL,
+                with_timeseries=True, body_only=False):
     """Create full html file.
 
     The Solar Forecast Arbiter dashboard will likely use its own
@@ -196,18 +117,22 @@ def full_html(body):
 
     Parameters
     ----------
-    body : html
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+    dash_url: str
+        URL of the Solar Forecast arbiter dashboard to use when building links.
+    with_timeseries: bool
+        Whether or not to include timeseries plots.
+    body_only: bool
+        When True, returns a div for injecting into another template,
+        otherwise returns a full html document with the required
+        <html> and <head> tags.
 
     Returns
     -------
-        head : str, html
-        Header for the full report.
+    str
+        The rendered html report
     """
-    env = Environment(
-        loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
-        autoescape=select_autoescape(['html', 'xml']))
-    base_template = env.get_template('base.html')
-
-    base = base_template.render(body=body)
-
-    return base
+    template, kwargs = get_template_and_kwargs(
+        report, dash_url, with_timeseries, body_only)
+    out = template.render(**kwargs)
+    return out

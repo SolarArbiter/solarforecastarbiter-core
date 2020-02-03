@@ -10,6 +10,9 @@ from solarforecastarbiter.metrics import (calculator, deterministic)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
+NO_NORM = set(DETERMINISTIC_METRICS) - set(deterministic._REQ_NORM)
+NO_REF = set(DETERMINISTIC_METRICS) - set(deterministic._REQ_REF_FX)
+NO_REF_NO_NORM = set(NO_NORM) - set(deterministic._REQ_REF_FX)
 LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 
@@ -22,14 +25,18 @@ def create_processed_fxobs(create_datetime_index):
             interval_label = fxobs.forecast.interval_label
 
         return datamodel.ProcessedForecastObservation(
+            fxobs.forecast.name,
             fxobs,
             fxobs.forecast.interval_value_type,
             fxobs.forecast.interval_length,
             interval_label,
-            forecast_values=pd.Series(
-                fx_values, index=create_datetime_index(len(fx_values))),
-            observation_values=pd.Series(
-                obs_values, index=create_datetime_index(len(obs_values)))
+            valid_point_count=len(fx_values),
+            forecast_values=(
+                fx_values if isinstance(fx_values, pd.Series) else pd.Series(
+                    fx_values, index=create_datetime_index(len(fx_values)))),
+            observation_values=(
+                obs_values if isinstance(obs_values, pd.Series) else pd.Series(
+                    obs_values, index=create_datetime_index(len(obs_values))))
         )
 
     return _create_processed_fxobs
@@ -43,16 +50,19 @@ def create_datetime_index():
 
     return _create_datetime_index
 
-# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
-# don't handle single values well
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.parametrize('categories,metrics', [
-    ([], []),
-    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
-])
-def test_calculate_metrics(categories, metrics,
-                           create_processed_fxobs,
-                           many_forecast_observation):
+
+@pytest.fixture(params=['fxobs', 'fxagg'])
+def single_forecast_data_obj(
+        request, single_forecast_aggregate,
+        single_forecast_observation):
+    if request.param == 'fxobs':
+        return single_forecast_observation
+    else:
+        return single_forecast_aggregate
+
+
+@pytest.fixture()
+def proc_fx_obs(create_processed_fxobs, many_forecast_observation):
     proc_fx_obs = []
 
     for fx_obs in many_forecast_observation:
@@ -61,43 +71,78 @@ def test_calculate_metrics(categories, metrics,
                                    np.random.randn(10)+10,
                                    np.random.randn(10)+10)
         )
+    return proc_fx_obs
 
+
+@pytest.fixture()
+def ref_fx_obs(create_processed_fxobs, many_forecast_observation):
     ref_fx_obs = create_processed_fxobs(many_forecast_observation[0],
                                         np.random.randn(10)+10,
                                         np.random.randn(10)+10)
+    return ref_fx_obs
 
-    # Error - no metrics
-    if len(metrics) == 0:
-        with pytest.raises(RuntimeError):
-            calculator.calculate_metrics(proc_fx_obs,
-                                         categories, metrics,
-                                         ref_pair=ref_fx_obs,
-                                         normalizer=1.0)
-        return
 
-    # All options selected
-    all_result = calculator.calculate_metrics(proc_fx_obs,
-                                              categories, metrics,
-                                              ref_pair=ref_fx_obs,
-                                              normalizer=1.0)
+# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
+# don't handle single values well
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories,metrics', [
+    pytest.param(
+        [], [], marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    pytest.param(
+        ['date', 'month'], [],
+        marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    pytest.param(
+        LIST_OF_CATEGORIES, DETERMINISTIC_METRICS,
+        marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    pytest.param(
+        LIST_OF_CATEGORIES, NO_NORM,
+        marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    (LIST_OF_CATEGORIES, NO_REF),
+    (LIST_OF_CATEGORIES, NO_REF_NO_NORM)
+])
+def test_calculate_metrics_no_reference(
+        categories, metrics, proc_fx_obs):
+    result = calculator.calculate_metrics(proc_fx_obs,
+                                          categories, metrics)
 
-    assert isinstance(all_result, list)
-    assert len(all_result) == len(proc_fx_obs)
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == len(proc_fx_obs)
 
-    # One processed pair missing reference forecast but required by metrics
-    if any(m for m in metrics if m in deterministic._REQ_REF_FX):
-        with pytest.raises(RuntimeError):
-            calculator.calculate_metrics([proc_fx_obs[0]],
-                                         categories, metrics)
-        # drop metrics requiring reference forecast
-        list(map(metrics.remove, deterministic._REQ_REF_FX))
 
-    # One processed pair (no reference forecast)
-    one_result = calculator.calculate_metrics([proc_fx_obs[0]],
-                                              categories, metrics)
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories,metrics', [
+    pytest.param(
+        [], [], marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    pytest.param(
+        ['date', 'month'], [],
+        marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS),
+    (LIST_OF_CATEGORIES, NO_REF),
+])
+def test_calculate_metrics_with_reference(
+        categories, metrics, proc_fx_obs, ref_fx_obs):
+    result = calculator.calculate_metrics(proc_fx_obs,
+                                          categories, metrics,
+                                          ref_pair=ref_fx_obs)
 
-    assert isinstance(one_result, list)
-    assert len(one_result) == 1
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == len(proc_fx_obs)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_calculate_metrics_single(single_forecast_data_obj,
+                                  create_processed_fxobs, ref_fx_obs):
+    inp = [create_processed_fxobs(single_forecast_data_obj,
+                                  np.random.randn(10)+10,
+                                  np.random.randn(10)+10)]
+    result = calculator.calculate_metrics(inp, LIST_OF_CATEGORIES,
+                                          DETERMINISTIC_METRICS,
+                                          ref_pair=ref_fx_obs)
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
 
 
 @pytest.mark.parametrize('categories,metrics', [
@@ -119,6 +164,87 @@ def test_calculate_metrics_with_probablistic(categories, metrics,
                                      categories, metrics)
 
 
+def test_calculate_deterministic_metrics_no_metrics(ref_fx_obs):
+    with pytest.raises(RuntimeError):
+        calculator.calculate_deterministic_metrics(
+            ref_fx_obs, LIST_OF_CATEGORIES, []
+        )
+
+
+def test_calculate_deterministic_metrics_no_reference(ref_fx_obs):
+    with pytest.raises(RuntimeError):
+        calculator.calculate_deterministic_metrics(
+            ref_fx_obs, LIST_OF_CATEGORIES, DETERMINISTIC_METRICS
+        )
+
+
+def test_calculate_deterministic_metrics_no_reference_data(
+        create_processed_fxobs, single_forecast_observation):
+    pair = create_processed_fxobs(single_forecast_observation,
+                                  np.random.randn(10),
+                                  np.random.randn(10))
+    ref = create_processed_fxobs(single_forecast_observation,
+                                 np.random.randn(0),
+                                 np.random.randn(0))
+
+    with pytest.raises(RuntimeError):
+        calculator.calculate_deterministic_metrics(
+            pair, LIST_OF_CATEGORIES, DETERMINISTIC_METRICS,
+            ref_fx_obs=ref
+        )
+
+
+@pytest.mark.parametrize('fx_vals,obs_vals', [
+    (np.random.randn(0), np.random.randn(0)),
+    (np.random.randn(10), np.random.randn(0)),
+    (np.random.randn(0), np.random.randn(10)),
+])
+def test_calculate_deterministic_metrics_missing_values(
+        create_processed_fxobs, single_forecast_observation,
+        fx_vals, obs_vals):
+    pair = create_processed_fxobs(single_forecast_observation,
+                                  fx_vals, obs_vals)
+    with pytest.raises(RuntimeError):
+        calculator.calculate_deterministic_metrics(
+            pair, LIST_OF_CATEGORIES, NO_REF
+        )
+
+
+def test_calculate_deterministic_metrics_normalizer(
+        create_processed_fxobs, single_forecast_observation):
+    pair = create_processed_fxobs(single_forecast_observation,
+                                  np.random.randn(10), np.random.randn(10))
+    s0 = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_NORM, normalizer=1.0)
+    s1 = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_NORM, normalizer=1.0)
+    s2 = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_NORM, normalizer=2.0)
+    for s in [s0, s1, s2]:
+        assert isinstance(s, datamodel.MetricResult)
+    assert s0 == s1
+    assert s1 != s2
+
+
+def test_calculate_deterministic_metrics_reference(
+        create_processed_fxobs, single_forecast_observation):
+    pair = create_processed_fxobs(single_forecast_observation,
+                                  np.random.randn(10), np.random.randn(10))
+    ref0 = create_processed_fxobs(single_forecast_observation,
+                                  np.random.randn(10), np.random.randn(10))
+    ref1 = create_processed_fxobs(single_forecast_observation,
+                                  np.random.randn(10), np.random.randn(10))
+    s0 = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_REF_FX,
+        ref_fx_obs=ref0)
+    s1 = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_REF_FX,
+        ref_fx_obs=ref1)
+    for s in [s0, s1]:
+        assert isinstance(s, datamodel.MetricResult)
+    assert s0 != s1
+
+
 # Suppress RuntimeWarnings b/c in some metrics will divide by zero or
 # don't handle single values well
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -127,120 +253,66 @@ def test_calculate_metrics_with_probablistic(categories, metrics,
     *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
     LIST_OF_CATEGORIES[0:1],
     LIST_OF_CATEGORIES[0:2],
-    LIST_OF_CATEGORIES[1:],
     LIST_OF_CATEGORIES
 ])
 @pytest.mark.parametrize('metrics', [
-    [],
     *list(itertools.combinations(DETERMINISTIC_METRICS, 1)),
     DETERMINISTIC_METRICS[0:1],
     DETERMINISTIC_METRICS[0:2],
-    DETERMINISTIC_METRICS[1:],
     DETERMINISTIC_METRICS
 ])
-@pytest.mark.parametrize('values,ref_values,normalizer', [
-    ((np.random.randn(0), np.random.randn(0)),
-     (np.random.randn(0), np.random.randn(0)),
-     1.0),
-    ((np.random.randn(10)+10, np.random.randn(0)),
-     (np.random.randn(10)+10, np.random.randn(0)),
-     1.0),
-    ((np.random.randn(10)+10, np.random.randn(10)+10),
-     (np.random.randn(10)+10, np.random.randn(10)+10),
-     1.0),
-    ((np.random.randn(10)+10, np.random.randn(10)+10),
-     (np.random.randn(10)+10, np.random.randn(10)+10),
-     None),
-    ((np.random.randn(10)+10, np.random.randn(10)+10),
-     None,
-     None),
-])
-def test_calculate_deterministic_metrics(values, categories, metrics,
-                                         ref_values, normalizer,
+def test_calculate_deterministic_metrics(categories, metrics,
+                                         single_forecast_data_obj,
                                          single_forecast_observation,
                                          create_processed_fxobs):
-    pair = create_processed_fxobs(single_forecast_observation, *values)
+    pair = create_processed_fxobs(single_forecast_data_obj,
+                                  np.random.randn(10)+10,
+                                  np.random.randn(10)+10)
+    ref = create_processed_fxobs(single_forecast_observation,
+                                 np.random.randn(10)+10,
+                                 np.random.randn(10)+10)
+    result = calculator.calculate_deterministic_metrics(
+        pair, categories, metrics, ref_fx_obs=ref)
+    # Check results
+    assert isinstance(result, datamodel.MetricResult)
+    assert result.forecast_id == pair.original.forecast.forecast_id
+    assert result.name == pair.original.forecast.name
+    assert len(result.values) % len(metrics) == 0
+    cats = {val.category for val in result.values}
+    assert cats == set(categories)
+    fx_values = pair.forecast_values
+    for cat in categories:
+        cat_grps = {v.index for v in result.values if v.category == cat}
+        assert len(
+            {v.metric for v in result.values if v.category == cat}
+        ) == len(metrics)
 
-    kws = {}
-
-    if ref_values is not None:
-        kws['ref_fx_obs'] = create_processed_fxobs(single_forecast_observation,
-                                                   *ref_values)
-
-    if normalizer is not None:
-        kws['normalizer'] = normalizer
-
-    # Check if timeseries and metrics provided
-    if values[0].size == 0 or values[1].size == 0 or len(metrics) == 0:
-        with pytest.raises(RuntimeError):
-            calculator.calculate_deterministic_metrics(
-                pair, categories, metrics, **kws)
-
-    # Check if reference forecast is required
-    elif (ref_values is None and any(m in deterministic._REQ_REF_FX
-                                     for m in metrics)):
-        # error if no reference forecast given
-        with pytest.raises(RuntimeError):
-            calculator.calculate_deterministic_metrics(
-                pair, categories, metrics, **kws)
-
-        # error if reference forecast given but no reference forecast data
-        with pytest.raises(RuntimeError):
-            kws['ref_fx_obs'] = create_processed_fxobs(
-                single_forecast_observation, np.array([]), np.array([]))
-            calculator.calculate_deterministic_metrics(
-                pair, categories, metrics, **kws)
-
-    else:
-        result = calculator.calculate_deterministic_metrics(
-            pair, categories, metrics, **kws)
-
-        # Check results
-        assert isinstance(result, dict)
-        if (len(metrics) == 0 or len(categories) == 0 or
-                len(pair.forecast_values) == 0):
-            # Empty results
-            assert len(result) == 1
-            assert result['name'] == pair.original.forecast.name
-        else:
-            assert sorted(result.keys()) == sorted(list(categories)+['name'])
-            for cat, cat_values in result.items():
-                if cat == 'name':
-                    assert cat_values == pair.original.forecast.name
-                elif cat == 'total':
-                    assert sorted(cat_values.keys()) == sorted(metrics)
-                    # check metric values
-                    for metric, met_value in cat_values.items():
-                        assert isinstance(met_value, float)
-                else:
-                    # check metric values and category values
-                    for metric, met_values in cat_values.items():
-
-                        fx_values = pair.forecast_values
-
-                        # has expected groupings
-                        if cat == 'month':
-                            grps = fx_values.groupby(
-                                fx_values.index.month).groups
-                            grps = [calendar.month_abbr[g] for g in grps]
-                        elif cat == 'hour':
-                            grps = fx_values.groupby(
-                                fx_values.index.hour).groups
-                        elif cat == 'year':
-                            grps = fx_values.groupby(
-                                fx_values.index.year).groups
-                        elif cat == 'date':
-                            grps = fx_values.groupby(
-                                fx_values.index.date).groups
-                        elif cat == 'weekday':
-                            grps = fx_values.groupby(
-                                fx_values.index.weekday).groups
-                            grps = [calendar.day_abbr[g] for g in grps]
-                        assert sorted(grps) == sorted(met_values.index)
-
-                        # has valid values
-                        assert np.issubdtype(met_values.values.dtype,
-                                             np.number)
+        # has expected groupings
+        if cat == 'month':
+            grps = fx_values.groupby(
+                fx_values.index.month).groups
+            grps = [calendar.month_abbr[g] for g in grps]
+        elif cat == 'hour':
+            grps = fx_values.groupby(
+                fx_values.index.hour).groups
+        elif cat == 'year':
+            grps = fx_values.groupby(
+                fx_values.index.year).groups
+        elif cat == 'date':
+            grps = fx_values.groupby(
+                fx_values.index.date).groups
+        elif cat == 'weekday':
+            grps = fx_values.groupby(
+                fx_values.index.weekday).groups
+            grps = [calendar.day_abbr[g] for g in grps]
+        elif cat == 'total':
+            grps = ['0']
+        assert {str(g) for g in grps} == cat_grps
+    for val in result.values:
+        assert (
+            np.isnan(val.value) or
+            np.issubdtype(val.value, np.number)
+        )
 
 
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
@@ -304,63 +376,75 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series())
 
 
-@pytest.mark.parametrize('index,interval_label,category,result', [
+@pytest.mark.parametrize('ts,tz,interval_label,category,result', [
     # category: hour
     (
-        pd.DatetimeIndex(
-            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
-        ),
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
         'ending',
         'hour',
-        pd.Series(data=[-1.0, 0.5], index=[12, 13]),
+        {('12', -1.0), ('13', 0.5)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191210T1300Z', '20191210T1330Z', '20191210T1400Z']
-        ),
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
         'beginning',
         'hour',
-        pd.Series(data=[-0.5, 1.0], index=[13, 14]),
+        {('13', -0.5), ('14', 1.0)}
     ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'ending',
+        'hour',
+        {('4', -1.0), ('5', 0.5)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'beginning',
+        'hour',
+        {('5', -0.5), ('6', 1.0)}
+    ),
+
+
 
     # category: month
     (
-        pd.DatetimeIndex(
-            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
-        ),
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
         'ending',
         'month',
-        pd.Series(data=[-0.5, 1.0], index=['Nov', 'Dec']),
+        {('Nov', -0.5), ('Dec', 1.0)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191130T2330Z', '20191201T0000Z', '20191201T0030Z']
-        ),
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
         'beginning',
         'month',
-        pd.Series(data=[-1.0, 0.5], index=['Nov', 'Dec']),
+        {('Nov', -1.0), ('Dec', 0.5)}
     ),
 
     # category: year
     (
-        pd.DatetimeIndex(
-            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
-        ),
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
         'ending',
         'year',
-        pd.Series(data=[-0.5, 1.0], index=[2019, 2020]),
+        {('2019', -0.5), ('2020', 1.0)}
     ),
     (
-        pd.DatetimeIndex(
-            ['20191231T2330Z', '20200101T0000Z', '20200101T0030Z']
-        ),
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
         'beginning',
         'year',
-        pd.Series(data=[-1.0, 0.5], index=[2019, 2020]),
+        {('2019', -1.0), ('2020', 0.5)}
     ),
 ])
-def test_interval_label(index, interval_label, category, result,
+def test_interval_label(ts, tz, interval_label, category, result,
                         create_processed_fxobs):
+
+    index = pd.DatetimeIndex(ts, tz="UTC")
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
@@ -368,12 +452,17 @@ def test_interval_label(index, interval_label, category, result,
         latitude=35.05,
         longitude=-106.54,
         elevation=1657.0,
-        timezone='UTC',
+        timezone="UTC",
         provider='Sandia'
     )
 
     fx_series = pd.Series([0, 1, 2], index=index)
     obs_series = pd.Series([1, 1, 1], index=index)
+
+    # convert to local timezone
+    fx_series = fx_series.tz_convert(tz)
+    obs_series = obs_series.tz_convert(tz)
+
     fxobs = datamodel.ForecastObservation(
         observation=datamodel.Observation(
             site=site, name='dummy obs', variable='ghi',
@@ -392,18 +481,11 @@ def test_interval_label(index, interval_label, category, result,
         )
     )
 
-    proc_fx_obs = datamodel.ProcessedForecastObservation(
-        fxobs,
-        fxobs.forecast.interval_value_type,
-        fxobs.forecast.interval_length,
-        fxobs.forecast.interval_label,
-        forecast_values=fx_series,
-        observation_values=obs_series,
-    )
+    proc_fx_obs = create_processed_fxobs(fxobs, fx_series, obs_series)
 
     res = calculator.calculate_deterministic_metrics(proc_fx_obs, [category],
                                                      ['mbe'])
-    pd.testing.assert_series_equal(res[category]['mbe'], result)
+    assert {(v.index, v.value) for v in res.values} == result
 
 
 @pytest.mark.parametrize('label_fx,label_ref', [

@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-import shutil
+import uuid
 
 
 import pandas as pd
@@ -9,7 +9,11 @@ import pytest
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api
-from solarforecastarbiter.reports import template, main
+from solarforecastarbiter.reports import main
+
+
+EMPTY_DF = pd.DataFrame(columns=['value', 'quality_flag'],
+                        index=pd.DatetimeIndex([], tz='UTC'))
 
 
 @pytest.fixture()
@@ -43,19 +47,19 @@ def mock_data(mocker, _test_data):
         return _test_data[id_].loc[start:end]
 
     get_forecast_values = mocker.patch(
-        'solarforecastarbiter.io.api.APISession.get_forecast_values',
+        'solarforecastarbiter.reports.main.APISession.get_forecast_values',
         side_effect=get_data)
     get_observation_values = mocker.patch(
-        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        'solarforecastarbiter.reports.main.APISession.get_observation_values',
         side_effect=get_data)
     get_aggregate_values = mocker.patch(
-        'solarforecastarbiter.io.api.APISession.get_aggregate_values',
+        'solarforecastarbiter.reports.main.APISession.get_aggregate_values',
         side_effect=get_data)
 
     return get_forecast_values, get_observation_values, get_aggregate_values
 
 
-def test_get_data(mock_data, report_objects):
+def test_get_data_for_report(mock_data, report_objects):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     session = api.APISession('nope')
@@ -72,87 +76,194 @@ def test_get_data(mock_data, report_objects):
     assert get_aggregate_values.call_count == 1
 
 
-@pytest.mark.skipif(shutil.which('pandoc') is None,
-                    reason='Pandoc can not be found')
-def test_full_render(mock_data, report_objects):
-    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
-        report_objects
+def test_get_version():
+    vers = main.get_versions()
+    assert {v[0] for v in vers} > {'solarforecastarbiter', 'python'}
+
+
+def test_infer_timezone(report_objects):
+    report = report_objects[0]
+    assert main.infer_timezone(report.report_parameters) == "Etc/GMT+7"
+
+
+def test_infer_timezone_agg(report_objects, single_forecast_aggregate,
+                            single_forecast_observation):
+    report_params = report_objects[0].report_parameters
+    rp = report_params.replace(object_pairs=(single_forecast_aggregate,
+                                             single_forecast_observation))
+    assert main.infer_timezone(rp) == 'America/Denver'
+
+
+def test_create_raw_report_from_data(mocker, report_objects, _test_data):
+    report = report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
+        if isinstance(fxobs, datamodel.ForecastAggregate):
+            data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
+        else:
+            data[fxobs.observation] = _test_data[
+                fxobs.observation.observation_id]
+
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
+    report = report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = EMPTY_DF['value']
+        if isinstance(fxobs, datamodel.ForecastAggregate):
+            data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
+        else:
+            data[fxobs.observation] = _test_data[
+                fxobs.observation.observation_id]
+
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_create_raw_report_from_data_no_obs(mocker, report_objects,
+                                            _test_data):
+    report = report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
+        data[fxobs.data_object] = EMPTY_DF
+
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_create_raw_report_from_data_no_data(mocker, report_objects):
+    report = report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = EMPTY_DF['value']
+        data[fxobs.data_object] = EMPTY_DF
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_capture_report_failure(mocker):
+    api_post = mocker.patch('solarforecastarbiter.io.api.APISession.post')
+
+    def fail():
+        raise TypeError()
+
     session = api.APISession('nope')
-    data = main.get_data_for_report(session, report)
-    raw_report = main.create_raw_report_from_data(report, data)
-    report_md = main.render_raw_report(raw_report)
-    body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
-    # at least one non whitespace character in body, usually caused
-    # by pandoc version error
-    assert re.search(
-        r'<body>(.*\S.*)</body>', full_report, re.S) is not None
-    with open('bokeh_report.html', 'w') as f:
-        f.write(full_report)
+    failwrap = main.capture_report_failure('report_id', session)
+    with pytest.raises(TypeError):
+        failwrap(fail)()
+    assert 'Critical ' in api_post.call_args_list[0][1]['json']['messages'][0]['message']  # NOQA
+    assert api_post.call_args_list[1][0][0] == '/reports/report_id/status/failed'  # NOQA
 
 
-@pytest.mark.skipif(shutil.which('pandoc') is None,
-                    reason='Pandoc can not be found')
-def test_all_categories_render(mock_data, report_objects):
-    # Create report using template but with all categories
-    report, observation, forecast_0, forecast_1, _, _ = report_objects
-    all_report = datamodel.Report(
-        name=report.name,
-        start=report.start,
-        end=report.end,
-        forecast_observations=report.forecast_observations,
-        metrics=("mae", "rmse", "mbe"),
-        categories=list(datamodel.ALLOWED_CATEGORIES.keys()),
-        report_id=report.report_id,
-        filters=report.filters
+def test_capture_report_failure_is_valid_datamodel(mocker):
+    api_post = mocker.patch('solarforecastarbiter.io.api.APISession.post')
+
+    def fail():
+        raise TypeError()
+
+    session = api.APISession('nope')
+    failwrap = main.capture_report_failure('report_id', session)
+    with pytest.raises(TypeError):
+        failwrap(fail)()
+    raw = datamodel.RawReport.from_dict(api_post.call_args_list[0][1]['json'])
+    assert 'CRITICAL' == raw.messages[0].level
+
+
+def test_capture_report_failure_msg(mocker):
+    api_post = mocker.patch('solarforecastarbiter.io.api.APISession.post')
+
+    def fail():
+        raise TypeError()
+
+    session = api.APISession('nope')
+    failwrap = main.capture_report_failure('report_id', session)
+    err_msg = 'Super bad error message'
+    with pytest.raises(TypeError):
+        failwrap(fail, err_msg=err_msg)()
+    assert api_post.call_args_list[0][1]['json']['messages'][0]['message'] == err_msg  # NOQA
+    assert api_post.call_args_list[1][0][0] == '/reports/report_id/status/failed'  # NOQA
+
+
+def test_compute_report(mocker, report_objects, mock_data):
+    report = report_objects[0]
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_report',
+        return_value=report)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_raw_report'
     )
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, all_report)
-    raw_report = main.create_raw_report_from_data(all_report, data)
-    report_md = main.render_raw_report(raw_report)
-    body = template.report_md_to_html(report_md)
-    full_report = template.full_html(body)
-    with open('bokeh_report.html', 'w') as f:
-        f.write(full_report)
+    raw = main.compute_report('nope', report.report_id)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
 
 
-def test_merge_quality_filters():
-    filters = [
-        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
-                                     'CLIPPED VALUES')),
-        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
-        datamodel.QualityFlagFilter(())
-    ]
-    out = main._merge_quality_filters(filters)
-    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
-                                      'CLIPPED VALUES', 'SHADED'}
+def test_compute_report_request_mock(
+        mocker, report_objects, mock_data, requests_mock):
+    report = report_objects[0]
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_report',
+        return_value=report)
+    requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/values'),
+        text=lambda *x: str(uuid.uuid1()))
+    rep_post = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/raw')
+    )
+    status_up = requests_mock.register_uri(
+        'POST', re.compile('.*/reports/.*/status')
+    )
+    raw = main.compute_report('nope', report.report_id)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+    assert rep_post.called
+    assert 'complete' in status_up.last_request.path
 
 
-@pytest.fixture(params=[0, 1, 2])
-def more_report_objects(report_objects, request):
-    report, observation, forecast_0, forecast_1, *_ = report_objects
-    if request.param == 0:
-        return report, observation, forecast_0, forecast_1
-    elif request.param == 1:
-        new_filters = ()
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)
-    elif request.param == 2:
-        new_filters = (datamodel.QualityFlagFilter(()),)
-        return (report.replace(filters=new_filters), observation, forecast_0,
-                forecast_1)
+@pytest.fixture()
+def assert_post_called(mocker):
+    post_report = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_raw_report')
+    yield
+    assert post_report.called
+    assert post_report.call_args[0][0] == 'repid'
+    assert post_report.call_args[0][-1] == 'failed'
+    assert len(post_report.call_args[0][1].messages[0].message) > 0
 
 
-def test_validate_resample_align(mock_data, more_report_objects):
-    report, observation, forecast_0, forecast_1 = more_report_objects
-    meta = main.create_metadata(report)
-    session = api.APISession('nope')
-    data = main.get_data_for_report(session, report)
-    processed_fxobs_list = main.validate_resample_align(report, meta, data)
-    assert len(processed_fxobs_list) == len(report.forecast_observations)
-    for proc_fxobs in processed_fxobs_list:
-        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
-        assert isinstance(proc_fxobs.forecast_values, pd.Series)
-        assert isinstance(proc_fxobs.observation_values, pd.Series)
-        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
-                                      proc_fxobs.observation_values.index)
+def test_compute_report_get_report_fail(mocker, assert_post_called):
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
+                 side_effect=TypeError)
+    with pytest.raises(TypeError):
+        main.compute_report('nope', 'repid')
+
+
+@pytest.fixture()
+def get_report_mocked(mocker, report_objects):
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
+                 return_value=report_objects[0])
+
+
+def test_compute_report_get_data_fail(
+        mocker, get_report_mocked, assert_post_called):
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
+                 side_effect=TypeError)
+    with pytest.raises(TypeError):
+        main.compute_report('nope', 'repid')
+
+
+def test_compute_report_compute_fail(mocker, get_report_mocked, mock_data,
+                                     assert_post_called):
+    mocker.patch(
+        'solarforecastarbiter.reports.main.create_raw_report_from_data',
+        side_effect=TypeError)
+    with pytest.raises(TypeError):
+        main.compute_report('nope', 'repid')
