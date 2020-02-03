@@ -30,7 +30,7 @@ API Changes
   to
   :py:func:`solarforecastarbiter.metrics.prepocessing.process_forecast_observations`
   (:pull:`291`)
-* Rename `io.utils.serialize_data` to
+* Rename ``io.utils.serialize_data`` to
   :py:func:`solarforecastarbiter.io.utils.serialize_timeseries`
   (:pull:`291`)
 * :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics`
