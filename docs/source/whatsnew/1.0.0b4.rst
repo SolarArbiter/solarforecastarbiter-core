@@ -10,8 +10,10 @@ The biggest change is a new data model for Reports so that metrics,
 processed data, and generated Bokeh javascript and SVG figures are
 stored in JSON in the API. This removes the requirement for Pandoc and
 HTML reports can be generated using only Jinja. Other changes include
-report figure generated from a common data source and better error
-handling if computing a report fails.
+report figure generated from a common data source, better error
+handling if computing a report fails, and actual data validation
+results, including the number of missing and dropped values, in the
+report.
 
 
 API Changes
