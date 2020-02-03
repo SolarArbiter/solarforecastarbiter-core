@@ -30,18 +30,18 @@ logger = logging.getLogger(__name__)
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
-OBS_PALETTE = palettes.grey(
-    _num_obs_colors + 1)[0:_num_obs_colors]  # drop white
+# drop white
+OBS_PALETTE = palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors]
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
 
 
 def construct_timeseries_cds(report):
-    """
-    Construct two standardized Bokeh CDS for the timeseries plot functions. One
-    with timeseries data, and the other with associated metadata sharing a
-    common `pair_index` key.
+    """Construct two standardized Bokeh CDS for the timeseries and scatter
+    plot functions. One with timeseries data for all observations,
+    aggregates, and forecasts in the report, and the other with
+    associated metadata sharing a common `pair_index` key.
 
     Parameters
     ----------
@@ -67,6 +67,7 @@ def construct_timeseries_cds(report):
         `forecast_hash`: Hash of the original forecast object and the
             `datamodel.ProcessedForecastObservations` metadata.
         `
+
     """
     value_frames = []
     meta_rows = []
@@ -398,7 +399,7 @@ def bar(cds, metric):
     x_range = np.unique(cds.data['abbrev'])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_range]
-    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
+    metric_name = datamodel.ALLOWED_METRICS[metric]
     view = CDSView(source=cds, filters=[
         GroupFilter(column_name='metric', group=metric),
         GroupFilter(column_name='category', group='total')
@@ -650,7 +651,7 @@ def output_svg(fig):
         svg = (
             '<svg width="100%" height="100%">'
             '<text x="50" y="50" class="alert alert-error">'
-            'Unable to generate SVG plot. Try rerunning report.'
+            'Unable to generate SVG plot.'
             '</text>'
             '</svg>')
     return svg
@@ -696,7 +697,7 @@ def raw_report_plots(report, metrics):
 
 def timeseries_plots(report):
     """Return the bokeh components (script and div element) for timeseries
-    plots of the processed forecasts and observations.
+    and scatter plots of the processed forecasts and observations.
 
     Parameters
     ----------

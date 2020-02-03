@@ -85,27 +85,20 @@ def test__get_render_kwargs_with_series_exception(
     )
     assert kwargs['timeseries_div'] == """<div class="alert alert-warning">
   <strong>Warning</strong> Failed to make timeseries and scatter plots
-  from stored data. Try generating report again.
+  from stored data.
 </div>"""
     assert kwargs['timeseries_script'] == ''
 
 
-@pytest.fixture(params=[0, 1])
-def asdict(request):
-    return request.param
-
-
 @pytest.fixture(params=[0, 1, 2])
 def good_or_bad_report(request, report_with_raw, failed_report,
-                       pending_report, asdict):
+                       pending_report):
     if request.param == 0:
         out = report_with_raw
     elif request.param == 1:
         out = failed_report
     elif request.param == 2:
         out = pending_report
-    if asdict:
-        out = out.to_dict()
     return out
 
 
@@ -128,8 +121,7 @@ def test_get_template_and_kwargs(
 
 def test_get_template_and_kwargs_bad_status(
         report_with_raw, dash_url, mocked_timeseries_plots):
-    inp = report_with_raw.to_dict()
-    inp['status'] = 'notokay'
+    inp = report_with_raw.replace(status='notokay')
     with pytest.raises(ValueError):
         template.get_template_and_kwargs(
             inp, dash_url, False, True)

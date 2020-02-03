@@ -70,7 +70,8 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     fx_series : pandas.Series
         Timeseries data of the forecast.
     obs_series : pandas.Series
-        Timeseries data of the observation/aggregate after processing the quality flag column.
+        Timeseries data of the observation/aggregate after processing the quality
+        flag column.
     tz : str
         Timezone to which processed data will be converted.
 

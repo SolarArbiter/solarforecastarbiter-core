@@ -5,9 +5,7 @@ import logging
 
 
 from bokeh import __version__ as bokeh_version
-from jinja2 import (Environment, PackageLoader,
-                    select_autoescape)
-
+from jinja2 import Environment, PackageLoader, select_autoescape
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import figures
 
@@ -41,6 +39,8 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
+        # get bokeh version used when plots were generated.
+        # if plot generation failed, fallback to the curent version
         bokeh_version=getattr(
             getattr(report.raw_report, 'plots', None),
             'bokeh_version', bokeh_version)
@@ -54,7 +54,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
             script = ''
             div = """<div class="alert alert-warning">
   <strong>Warning</strong> Failed to make timeseries and scatter plots
-  from stored data. Try generating report again.
+  from stored data.
 </div>"""
         kwargs['timeseries_script'] = script
         kwargs['timeseries_div'] = div
@@ -68,15 +68,14 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
 
     Parameters
     ----------
-    report: :py:class:`solarforecastarbiter.datamodel.Report` or dict
-        A dict will be loaded into a Report with the Report.from_dict method.
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
     dash_url: str
         URL of the Solar Forecast arbiter dashboard to use when building links.
     with_timeseries: bool
         Whether or not to include timeseries plots.
     body_only: bool
         When True, returns a div for injecting into another template,
-        otherwise returns a standalone report template with the required
+        otherwise returns a full html document with the required
         <html> and <head> tags.
 
     Returns
@@ -86,9 +85,6 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         Dictionary of template variables to use as keyword arguments to
         template.render().
     """
-    if isinstance(report, dict):
-        report = datamodel.Report.from_dict(report)
-
     env = Environment(
         loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
         autoescape=select_autoescape(['html', 'xml']),
@@ -112,7 +108,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     return template, kwargs
 
 
-def render_html(report, dash_url='https://dashboard.solarforecastarbiter.org',
+def render_html(report, dash_url=datamodel.DASH_URL,
                 with_timeseries=True, body_only=False):
     """Create full html file.
 
@@ -128,7 +124,7 @@ def render_html(report, dash_url='https://dashboard.solarforecastarbiter.org',
         Whether or not to include timeseries plots.
     body_only: bool
         When True, returns a div for injecting into another template,
-        otherwise returns a standalone report template with the required
+        otherwise returns a full html document with the required
         <html> and <head> tags.
 
     Returns

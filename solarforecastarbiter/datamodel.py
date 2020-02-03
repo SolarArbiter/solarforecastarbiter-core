@@ -21,6 +21,7 @@ from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING
 
 
+DASH_URL = 'https://dashboard.solarforecastarbiter.org'
 ALLOWED_VARIABLES = {
     'air_temperature': 'degC',
     'wind_speed': 'm/s',
