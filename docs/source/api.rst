@@ -486,12 +486,26 @@ Functions to compute forecast valuation metrics:
 Reports
 =======
 
+Main
+----
+
+Functions to compute the report.
+
 .. autosummary::
    :toctree: generated/
 
    reports.main.compute_report
    reports.main.get_data_for_report
    reports.main.create_raw_report_from_data
+
+Figures
+-------
+
+Functions to generate report figures
+
+.. autosummary::
+   :toctree: generated/
+
    reports.figures.construct_timeseries_cds
    reports.figures.construct_metrics_cds
    reports.figures.timeseries
@@ -501,6 +515,15 @@ Reports
    reports.figures.output_svg
    reports.figures.raw_report_plots
    reports.figures.timeseries_plots
+
+Template
+--------
+
+Functions to generate output (HTML, PDF) for reports
+
+.. autosummary::
+   :toctree: generated/
+
    reports.template.render_html
    reports.template.get_template_and_kwargs
 

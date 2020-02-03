@@ -3,7 +3,15 @@
 1.0.0b4 (???)
 -------------
 
-This is the fourth 1.0 beta release. Further changes beyond the pull requests listed here may have been applied in (:pull:`321`).
+This is the fourth 1.0 beta release. Further changes beyond the pull
+requests listed here may have been applied in (:pull:`321`).
+
+The biggest change is a new data model for Reports so that metrics,
+processed data, and generated Bokeh javascript and SVG figures are
+stored in JSON in the API. This removes the requirement for Pandoc and
+HTML reports can be generated using only Jinja. Other changes include
+report figure generated from a common data source and better error
+handling if computing a report fails.
 
 
 API Changes
@@ -92,6 +100,7 @@ Enhancements
 * Track data preprocessing results add section and summary table in
   the html report (:issue:`299`) (:pull:`320`)
 * Generate error page templates for failed reports. (:pull:`325`)
+* Replace the Bokeh tables with HTML tables in reports (:pull:`321`)
 
 Bug fixes
 ~~~~~~~~~
