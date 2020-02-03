@@ -75,7 +75,7 @@ API Changes
   parameters (:pull:`324`)
 * Remove the ``ReportMetadata`` class and move some parameters to
   :py:class:`solarforecastarbiter.datamodel.RawReport` (:pull:`324`)
-* Remove `solarforecastarbiter.reports.main.create_metadata` (:pull:`324`)
+* Remove ``solarforecastarbiter.reports.main.create_metadata`` (:pull:`324`)
 * :py:func:`solarforecastarbiter.reports.main.get_versions` now
   returns a tuple of (package, version) tuples (:pull:`325`)
 
