@@ -59,7 +59,7 @@ import pandas as pd
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
-from solarforecastarbiter.reports import figures, template
+from solarforecastarbiter.reports import figures
 from solarforecastarbiter.utils import hijack_loggers
 
 
