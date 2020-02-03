@@ -831,6 +831,8 @@ class APISession(requests.Session):
            ID of the report to update
         raw_report : datamodel.RawReport
            The raw report object to add to the report
+        status : str, default 'complete'
+           The new status of the report
         """
         posted_fxobs = self.post_raw_report_processed_data(
             report_id, raw_report)
