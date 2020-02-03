@@ -268,19 +268,3 @@ def test_compute_report_compute_fail(mocker, get_report_mocked, mock_data,
         side_effect=TypeError)
     with pytest.raises(TypeError):
         main.compute_report('nope', 'repid')
-
-
-def test_report_to_html_body(report_with_raw):
-    out = main.report_to_html_body(report_with_raw)
-    assert len(out) > 0
-    assert report_with_raw.report_parameters.name in out
-
-
-def test_report_to_pdf(report_with_raw):
-    with pytest.raises(NotImplementedError):
-        main.report_to_pdf(report_with_raw)
-
-
-def test_report_to_jupyter(report_with_raw):
-    with pytest.raises(NotImplementedError):
-        main.report_to_jupyter(report_with_raw)

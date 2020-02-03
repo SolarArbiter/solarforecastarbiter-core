@@ -145,8 +145,8 @@ def create_raw_report_from_data(report, data):
     report : :py:class:`solarforecastarbiter.datamodel.Report`
         Metadata describing report
     data : dict
-        Keys are all Forecast and Observation objects in the report,
-        values are the corresponding data.
+        Keys are all Forecast and Observation (or Aggregate)
+        objects in the report, values are the corresponding data.
 
     Returns
     -------
@@ -264,31 +264,3 @@ def compute_report(access_token, report_id, base_url=None):
         'the API.')
     )(report.report_id, raw_report)
     return raw_report
-
-
-def report_to_html_body(
-        report, dash_url='https://dashboard.solarforecastarbiter.org'):
-    """
-    Render the report into HTML suitable to place in the <body> div of an
-    HTML document.
-
-    Parameters
-    ----------
-    report: :py:class:`solarforecastarbiter.datamodel.Report`
-
-    Returns
-    -------
-    str
-        HTML string to go the <body> of a document.
-    """
-    body = template.render_html(report, dash_url, with_timeseries=True,
-                                body_only=True)
-    return body
-
-
-def report_to_pdf(report):
-    raise NotImplementedError
-
-
-def report_to_jupyter(report):
-    raise NotImplementedError
