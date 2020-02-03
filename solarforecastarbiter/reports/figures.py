@@ -688,7 +688,8 @@ def raw_report_plots(report, metrics):
         fig = figure_dict[k]
         svg = output_svg(fig)
         mplots.append(datamodel.ReportFigure(
-            name=name, category=cat, metric=met, div=v, svg=svg, type='bar'))
+            name=name, category=cat, metric=met, div=v, svg=svg,
+            figure_type='bar'))
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
     return out
 

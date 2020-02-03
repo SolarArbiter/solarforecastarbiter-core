@@ -70,6 +70,8 @@ ALLOWED_CATEGORIES = {
 }
 
 
+# sentences/paragraphs that will appear in the report
+# under the heading in the key
 CATEGORY_BLURBS = {
     'total': "Metric totals for the entire selected period.",
     'year': "Metrics per year.",
@@ -1134,7 +1136,6 @@ class ProcessedForecastObservation(BaseModel):
     interval_length: pd.Timedelta
     interval_label: str
     valid_point_count: int
-    # some structure for reporting issues w/ nans etc
     forecast_values: Union[pd.Series, str, None]
     observation_values: Union[pd.Series, str, None]
     reference_forecast_values: Union[pd.Series, str, None] = None
@@ -1223,7 +1224,7 @@ class ReportFigure(BaseModel):
         An html div element to be target of Bokeh javascript.
     svg: str
         A static svg copy of the plot, for including in the pdf version.
-    type: str
+    figure_type: str
         The type of plot, e.g. bar or scatter.
     category: str
         The metric category, e.g. total, monthly, hourly.
@@ -1233,7 +1234,7 @@ class ReportFigure(BaseModel):
     name: str
     div: str
     svg: str
-    type: str
+    figure_type: str
     category: str = ''
     metric: str = ''
 

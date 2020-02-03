@@ -1413,7 +1413,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                         'name': 'mae tucson ghi',
                         'div': '<div></div>',
                         'svg': '<svg></svg>',
-                        'type': 'plot?',
+                        'figure_type': 'plot?',
                         'category': 'total',
                         'metric': 'mae'
                     }
@@ -1774,7 +1774,7 @@ def report_figure_dict():
         'name': 'mae tucson ghi',
         'div': '<div></div>',
         'svg': '<svg></svg>',
-        'type': 'plot?',
+        'figure_type': 'plot?',
         'category': 'total',
         'metric': 'mae'
     }
