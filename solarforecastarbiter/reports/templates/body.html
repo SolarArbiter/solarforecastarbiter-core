@@ -124,7 +124,7 @@ generate a new report after the data provider submits new data.
   Metrics may be downloaded in CSV format by clicking
   <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
 </p>
-<div id="metric-plot-wrapper">
+
 {% for category in report.report_parameters.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
   {% if category_blurbs is defined %}
@@ -134,6 +134,8 @@ generate a new report after the data provider submits new data.
     {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
   {% endif %}
 <br>
+
+<div id="metric-plot-wrapper">
   {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
