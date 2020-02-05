@@ -7,19 +7,11 @@ computing error statistics. The Solar Forecast Arbiter aligns the
 observation data to the forecast data. The aligned and resampled
 parameters are also shown below, including a unique name for the
 aligned and resampled observation/forecast pair that appears in
-the metrics plots.</p>
+  the metrics plots.</p>
 <table class="table table-striped table-borderless" style="width:100%; ">
   <caption style="caption-side: top; text-align: center;">
     Table of data alignment parameters
   </caption>
-  <colgroup>
-    <col style="width: 20%">
-    <col style="width: 13%">
-    <col style="width: 20%">
-    <col style="width: 13%">
-    <col style="width: 20%">
-    <col style="width: 13%">
-  </colgroup>
   <thead style="text-align: left;">
     <tr class="header" style="text-align: center;">
       <th colspan="2">Aligned Pairs</th>
@@ -35,7 +27,7 @@ the metrics plots.</p>
       <th>Interval Label<br>Interval Length</th>
     </tr>
   </thead>
-  <tbody style="text-align: left;">
+  <tbody style="text-align: left; overflow-wrap: break-word;">
     {% for pfxobs in report.raw_report.processed_forecasts_observations %}
     <tr>
       <td>{{pfxobs.name}}</td>
