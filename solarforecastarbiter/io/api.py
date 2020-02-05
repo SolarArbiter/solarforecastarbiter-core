@@ -14,8 +14,9 @@ from solarforecastarbiter.io.utils import (
     observation_df_to_json_payload,
     forecast_object_to_json,
     adjust_timeseries_for_interval_label,
-    serialize_timeseries, deserialize_timeseries,
-    HiddenToken, ensure_timestamps)
+    serialize_timeseries,
+    HiddenToken, ensure_timestamps,
+    load_report_values)
 
 
 BASE_URL = 'https://api.solarforecastarbiter.org'
@@ -812,19 +813,7 @@ class APISession(requests.Session):
         if values is None:
             val_req = self.get(f'/reports/{report_id}/values')
             values = val_req.json()
-        val_dict = {v['id']: v['processed_values'] for v in values}
-        out = []
-        for fxobs in raw_report.processed_forecasts_observations:
-            fx_vals = val_dict.get(fxobs.forecast_values, None)
-            if fx_vals is not None:
-                fx_vals = deserialize_timeseries(fx_vals)
-            obs_vals = val_dict.get(fxobs.observation_values, None)
-            if obs_vals is not None:
-                obs_vals = deserialize_timeseries(obs_vals)
-            new_fxobs = fxobs.replace(forecast_values=fx_vals,
-                                      observation_values=obs_vals)
-            out.append(new_fxobs)
-        return tuple(out)
+        return load_report_values(raw_report, values)
 
     def post_raw_report(self, report_id, raw_report, status='complete'):
         """

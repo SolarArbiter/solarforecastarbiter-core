@@ -1,5 +1,6 @@
 from functools import partial
 import json
+import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -291,3 +292,20 @@ def test_ensure_timestamps_err():
         return start, end
     with pytest.raises(ValueError):
         start, end = f('', '2019-09-01T12:00Z', 'blah')
+
+
+def test_load_report_values(raw_report, report_objects):
+    _, obs, fx0, fx1, agg, fxagg = report_objects
+    ser = pd.Series(np.random.random(10),
+                    name='value', index=pd.date_range(
+                        start='20200101', freq='5min', periods=10,
+                        tz='UTC', name='timestamp'))
+    val = utils.serialize_timeseries(ser)
+    vals = [{'id': id_, 'processed_values': val} for id_ in
+            (fx0.forecast_id, fx1.forecast_id, obs.observation_id,
+             agg.aggregate_id, fxagg.forecast_id)]
+    inp = raw_report(False)
+    out = utils.load_report_values(inp, vals)
+    for fxo in out:
+        pdt.assert_series_equal(fxo.forecast_values, ser)
+        pdt.assert_series_equal(fxo.observation_values, ser)
