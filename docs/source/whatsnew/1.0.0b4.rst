@@ -103,6 +103,8 @@ Enhancements
   the html report (:issue:`299`) (:pull:`320`)
 * Generate error page templates for failed reports. (:pull:`325`)
 * Replace the Bokeh tables with HTML tables in reports (:pull:`321`)
+* Add :py:func:`solarforecastarbiter.io.utils.load_report_values`
+  convenience function (:pull:`331`)
 
 Bug fixes
 ~~~~~~~~~

@@ -411,3 +411,37 @@ def ensure_timestamps(*time_args):
             return f(*nargs, **kwargs)
         return wrapper
     return decorator
+
+
+def load_report_values(raw_report, values):
+    """
+    Load the processed forecast/observation data into the
+    datamodel.ProcessedForecastObservation objects of the raw_report.
+
+    Parameters
+    ----------
+    raw_report : datamodel.RawReport
+        The raw report with processed_forecasts_observations to
+        be replaced
+    values : list
+        The report values dict as returned by the API.
+
+    Returns
+    -------
+    tuple
+       Of datamodel.ProcessedForecastObservation with values loaded into
+       `forecast_values` and `observation_values`
+    """
+    val_dict = {v['id']: v['processed_values'] for v in values}
+    out = []
+    for fxobs in raw_report.processed_forecasts_observations:
+        fx_vals = val_dict.get(fxobs.forecast_values, None)
+        if fx_vals is not None:
+            fx_vals = deserialize_timeseries(fx_vals)
+        obs_vals = val_dict.get(fxobs.observation_values, None)
+        if obs_vals is not None:
+            obs_vals = deserialize_timeseries(obs_vals)
+        new_fxobs = fxobs.replace(forecast_values=fx_vals,
+                                  observation_values=obs_vals)
+        out.append(new_fxobs)
+    return tuple(out)

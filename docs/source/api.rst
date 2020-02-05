@@ -405,6 +405,7 @@ Utility functions for data IO.
    io.utils.ensure_timestamps
    io.utils.serialize_timeseries
    io.utils.deserialize_timeseries
+   io.utils.load_report_values
 
 
 Metrics
