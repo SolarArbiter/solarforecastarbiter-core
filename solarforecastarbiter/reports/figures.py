@@ -707,7 +707,8 @@ def timeseries_plots(report):
         A div element to insert into an html template.
     """
     value_cds, meta_cds = construct_timeseries_cds(report)
-    units = report.report_parameters.object_pairs[0].forecast.units
+    pfxobs = report.raw_report.processed_forecasts_observations
+    units = pfxobs[0].original.forecast.units
     tfig = timeseries(value_cds, meta_cds, report.report_parameters.start,
                       report.report_parameters.end, units,
                       report.raw_report.timezone)
