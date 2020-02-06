@@ -452,3 +452,10 @@ def test_process_forecast_observations_same_name(
         fxobs)
     assert len(set(pfxobs.name for pfxobs in processed_fxobs_list)) == len(
         fxobs)
+
+
+def test_name_pfxobs_recursion_limit():
+    name = 'whoami'
+    cn = [name]
+    cn += [f'{name}-{i:02d}' for i in range(129)]
+    assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'

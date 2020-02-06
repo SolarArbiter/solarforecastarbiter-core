@@ -265,8 +265,16 @@ def process_forecast_observations(forecast_observations, filters, data,
 
 
 def _name_pfxobs(current_names, forecast_name, i=1):
+    if i > 99:
+        logger.warning(
+            'Limit of unique names for identically named forecasts reached.'
+            ' Aligned pairs may have duplicate names.')
+        return forecast_name
     if forecast_name in current_names:
-        new_name = f'{forecast_name}-{i}'
+        if i == 1:
+            new_name = f'{forecast_name}-{i:02d}'
+        else:
+            new_name = f'{forecast_name[:-3]}-{i:02d}'
         return _name_pfxobs(current_names, new_name, i + 1)
     else:
         return forecast_name
