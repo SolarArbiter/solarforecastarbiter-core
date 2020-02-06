@@ -228,7 +228,7 @@ def calculate_poa_effective_explicit(surface_tilt, surface_azimuth, aoi,
         model='haydavies')
     poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(
         surface_tilt, ghi, albedo=0.25)
-    aoi_modifier = pvlib.pvsystem.physicaliam(aoi)
+    aoi_modifier = pvlib.iam.physical(aoi)
     beam_effective = dni * aoi_modifier
     poa_effective = beam_effective + poa_sky_diffuse + poa_ground_diffuse
     # aoi, tilt, azi is not defined for tracking systems
@@ -288,8 +288,8 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     -------
     ac_power : pd.Series
     """
-    pvtemps = pvlib.pvsystem.pvsyst_celltemp(poa_effective, temp_air,
-                                             wind_speed=wind_speed)
+    pvtemps = pvlib.temperature.pvsyst_cell(poa_effective, temp_air,
+                                            wind_speed=wind_speed)
     dc = pvlib.pvsystem.pvwatts_dc(poa_effective, pvtemps, dc_capacity,
                                    temperature_coefficient)
     dc *= (1 - dc_loss_factor / 100)
