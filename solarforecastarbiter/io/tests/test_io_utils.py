@@ -20,6 +20,7 @@ EMPTY_SERIES = pd.Series(dtype=float)
 EMPTY_TIMESERIES = pd.Series([], name='value', index=pd.DatetimeIndex(
     [], name='timestamp', tz='UTC'), dtype=float)
 
+
 @pytest.mark.parametrize('dump_quality,default_flag,flag_value', [
     (False, None, 1),
     (True, 2, 2)
