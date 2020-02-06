@@ -1,7 +1,7 @@
 import itertools
 
 import pandas as pd
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 
 import pytest
 
@@ -82,8 +82,8 @@ def test_reindex_fill_slice_all_nan():
 
 
 def test_reindex_fill_slice_empty():
-    out = forecast.reindex_fill_slice(pd.Series(), freq='30min')
-    assert_series_equal(out, pd.Series())
+    out = forecast.reindex_fill_slice(pd.Series(dtype=float), freq='30min')
+    assert_series_equal(out, pd.Series(dtype=float))
 
 
 def test_reindex_fill_slice_none():

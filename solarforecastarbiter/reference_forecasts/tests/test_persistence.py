@@ -2,7 +2,7 @@ from contextlib import nullcontext as does_not_raise
 from functools import partial
 
 import pandas as pd
-from pandas.util.testing import assert_series_equal
+from pandas.testing import assert_series_equal
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reference_forecasts import persistence

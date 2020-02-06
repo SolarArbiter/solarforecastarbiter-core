@@ -16,7 +16,9 @@ DF_INDEX = pd.date_range(start=pd.Timestamp('2019-01-24T00:00'),
                          periods=5,
                          tz='UTC', name='timestamp')
 TEST_DATA = pd.DataFrame(TEST_DICT, index=DF_INDEX)
-
+EMPTY_SERIES = pd.Series(dtype=float)
+EMPTY_TIMESERIES = pd.Series([], name='value', index=pd.DatetimeIndex(
+    [], name='timestamp', tz='UTC'), dtype=float)
 
 @pytest.mark.parametrize('dump_quality,default_flag,flag_value', [
     (False, None, 1),
@@ -146,11 +148,11 @@ def test_adjust_timeseries_for_interval_label_series(label, exp):
 
 @pytest.mark.parametrize('ser', [
     TEST_DATA['value'],
-    pd.Series([], index=pd.DatetimeIndex([], tz='UTC')),
-    pytest.param(pd.Series(), marks=[
+    EMPTY_TIMESERIES,
+    pytest.param(EMPTY_SERIES, marks=[
         pytest.mark.xfail(strict=True, type=TypeError)]),
-    pytest.param(pd.Series([], index=pd.DatetimeIndex([])), marks=[
-        pytest.mark.xfail(strict=True, type=TypeError)]),
+    pytest.param(pd.Series([], dtype=float, index=pd.DatetimeIndex([])),
+                 marks=[pytest.mark.xfail(strict=True, type=TypeError)]),
     pytest.param(TEST_DATA, marks=[
         pytest.mark.xfail(strict=True, type=TypeError)]),
 ])
@@ -163,20 +165,17 @@ def test_serialize_timeseries(ser):
 
 @pytest.mark.parametrize('inp,exp', [
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
-     pd.Series([], name='value', index=pd.DatetimeIndex(
-         [], tz='UTC', name='timestamp'))),
+     EMPTY_TIMESERIES),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "US/Arizona", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
      pd.Series([], name='value', index=pd.DatetimeIndex(
-         [], tz='US/Arizona', name='timestamp'))),
+         [], tz='US/Arizona', name='timestamp'), dtype=float)),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [], "other_stuff": {}}',  # NOQA
-     pd.Series([], name='value', index=pd.DatetimeIndex(
-         [], tz='UTC', name='timestamp'))),
+     EMPTY_TIMESERIES),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "alue", "index": "timestamp", "dtype": "float64"}, "more": [], "data": []}',  # NOQA
      pd.Series([], name='alue', index=pd.DatetimeIndex(
-         [], tz='UTC', name='timestamp'))),
+         [], tz='UTC', name='timestamp'), dtype=float)),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "more": [], "data": [], "other": []}',  # NOQA
-     pd.Series([], name='value', index=pd.DatetimeIndex(
-         [], tz='UTC', name='timestamp'))),
+     EMPTY_TIMESERIES),
     ('{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": [{"timestamp": "2019-01-01T00:00:00Z", "value": 1.0}], "other_stuff": {}}',  # NOQA
      pd.Series([1.0], index=pd.DatetimeIndex(["2019-01-01T00:00:00"],
                                              tz='UTC', name='timestamp'),
@@ -191,15 +190,15 @@ def test_serialize_timeseries(ser):
                name='value')),
     pytest.param(
         '{"data": [], "other_stuff": {}}',
-        pd.Series(),
+        EMPTY_SERIES,
         marks=[pytest.mark.xfail(strict=True, type=ValueError)]),
     pytest.param(
         '{"schema": {"version": 0, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "other_stuff": {}}',  # NOQA
-        pd.Series(),
+        EMPTY_SERIES,
         marks=[pytest.mark.xfail(strict=True, type=ValueError)]),
     pytest.param(
         '{"schema": {"version": 0, "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64"}, "data": []}',  # NOQA
-        pd.Series(),
+        EMPTY_SERIES,
         marks=[pytest.mark.xfail(strict=True, type=KeyError)]),
 ])
 def test_deserialize_timeseries(inp, exp):

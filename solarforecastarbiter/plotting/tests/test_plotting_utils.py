@@ -22,7 +22,7 @@ def test_format_variable_name(var, exp):
 def test_align_index(dobj, removal):
     index = pd.date_range(start='now', freq='5min',
                           periods=20, name='timestamp')
-    data = dobj(index=index)
+    data = dobj(index=index, dtype=float)
     data = data.drop(index[removal])
     out = utils.align_index(data, pd.Timedelta('5min'))
     assert_index_equal(out.index, index)
@@ -31,7 +31,7 @@ def test_align_index(dobj, removal):
 def test_align_index_new_length():
     index = pd.date_range(start='now', freq='5min',
                           periods=20, name='timestamp')
-    data = pd.Series(index=index)
+    data = pd.Series(index=index, dtype=float)
     out = utils.align_index(data, pd.Timedelta('1min'))
     nindex = pd.date_range(start=index[0], end=index[-1], freq='1min',
                            name='timestamp')
@@ -41,7 +41,7 @@ def test_align_index_new_length():
 def test_align_index_limit():
     index = pd.date_range(start='now', freq='5min',
                           periods=20, name='timestamp')
-    data = pd.Series(index=index)
+    data = pd.Series(index=index, dtype=float)
     out = utils.align_index(data, pd.Timedelta('5min'),
                             limit=pd.Timedelta('60min'))
     nindex = pd.date_range(start=index[-13], end=index[-1], freq='5min',

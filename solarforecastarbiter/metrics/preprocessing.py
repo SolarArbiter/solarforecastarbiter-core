@@ -222,7 +222,9 @@ def process_forecast_observations(forecast_observations, filters, data,
                     name=VALIDATION_RESULT_TOTAL_STRING,
                     count=-1), )
                 validated_observations[fxobs.data_object] = (
-                    pd.Series(), (), preproc_results)
+                    pd.Series([], name='value', index=pd.DatetimeIndex(
+                        [], name='timestamp', tz='UTC'), dtype=float),
+                    (), preproc_results)
             else:
                 val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
                                     for k, v in counts.items())

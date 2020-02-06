@@ -342,7 +342,8 @@ def deserialize_timeseries(data):
                       convert_dates=True)
     if df.empty:
         return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
-            [], tz=schema['timezone'], name='timestamp'))
+            [], tz=schema['timezone'], name='timestamp'),
+                         dtype=schema.get('dtype', float))
     ser = df.set_index(schema['index'])[schema['column']].astype(
         schema['dtype'])
     if ser.index.tzinfo is None:

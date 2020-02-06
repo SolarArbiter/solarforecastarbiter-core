@@ -700,7 +700,7 @@ def test_apisession_get_raw_report_processed_data(
     _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ser = pd.Series(name='value', index=pd.DatetimeIndex(
-        [], tz='UTC', name='timestamp'))
+        [], tz='UTC', name='timestamp'), dtype=float)
     val = utils.serialize_timeseries(ser)
     requests_mock.register_uri(
         'GET', re.compile(f'{session.base_url}/reports/.*/values'),
