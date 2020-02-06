@@ -105,6 +105,8 @@ Enhancements
 * Replace the Bokeh tables with HTML tables in reports (:pull:`321`)
 * Add :py:func:`solarforecastarbiter.io.utils.load_report_values`
   convenience function (:pull:`331`)
+* Adjust observations and forecasts table and make all processed pairs
+  in a report have a unique name (:pull:`333`)
 
 Bug fixes
 ~~~~~~~~~

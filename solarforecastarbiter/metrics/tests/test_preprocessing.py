@@ -421,3 +421,41 @@ def test_process_forecast_observations_resample_fail(
         report.report_parameters.object_pairs, filters, data, 'MST')
     assert len(processed_fxobs_list) == 0
     assert logger.error.called
+
+
+def test_process_forecast_observations_same_name(
+        report_objects, quality_filter, mocker):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-03-31T12:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    data = {
+        observation: obs_df,
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    fxobs = report.report_parameters.object_pairs
+    fxobs = list(fxobs) + [fxobs[0], fxobs[0]]
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        fxobs, filters, data, 'MST')
+    assert len(processed_fxobs_list) == len(
+        fxobs)
+    assert len(set(pfxobs.name for pfxobs in processed_fxobs_list)) == len(
+        fxobs)
+
+
+def test_name_pfxobs_recursion_limit():
+    name = 'whoami'
+    cn = [name]
+    cn += [f'{name}-{i:02d}' for i in range(129)]
+    assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'

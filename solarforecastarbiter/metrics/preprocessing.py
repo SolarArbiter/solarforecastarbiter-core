@@ -207,7 +207,7 @@ def process_forecast_observations(forecast_observations, filters, data,
             'Only filtering on Quality Flag is currently implemented')
     qfilter = _merge_quality_filters(filters)
     validated_observations = {}
-    processed_fxobs = []
+    processed_fxobs = {}
     for fxobs in forecast_observations:
         if fxobs.data_object not in validated_observations:
             try:
@@ -247,8 +247,10 @@ def process_forecast_observations(forecast_observations, filters, data,
         else:
             logger.info('Processed data successfully for pair (%s, %s)',
                         fxobs.forecast.name, fxobs.data_object.name)
+            name = _name_pfxobs(processed_fxobs.keys(),
+                                fxobs.forecast.name)
             processed = datamodel.ProcessedForecastObservation(
-                name=fxobs.forecast.name,
+                name=name,
                 original=fxobs,
                 interval_value_type=fxobs.forecast.interval_value_type,
                 interval_length=fxobs.forecast.interval_length,
@@ -258,5 +260,21 @@ def process_forecast_observations(forecast_observations, filters, data,
                 preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values)
-            processed_fxobs.append(processed)
-    return processed_fxobs
+            processed_fxobs[name] = processed
+    return tuple(processed_fxobs.values())
+
+
+def _name_pfxobs(current_names, forecast_name, i=1):
+    if i > 99:
+        logger.warning(
+            'Limit of unique names for identically named forecasts reached.'
+            ' Aligned pairs may have duplicate names.')
+        return forecast_name
+    if forecast_name in current_names:
+        if i == 1:
+            new_name = f'{forecast_name}-{i:02d}'
+        else:
+            new_name = f'{forecast_name[:-3]}-{i:02d}'
+        return _name_pfxobs(current_names, new_name, i + 1)
+    else:
+        return forecast_name
