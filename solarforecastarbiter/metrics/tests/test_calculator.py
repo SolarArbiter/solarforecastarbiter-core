@@ -311,7 +311,7 @@ def test_calculate_deterministic_metrics(categories, metrics,
     for val in result.values:
         assert (
             np.isnan(val.value) or
-            np.issubdtype(val.value, np.number)
+            np.issubdtype(type(val.value), np.number)
         )
 
 
