@@ -107,6 +107,7 @@ Enhancements
   convenience function (:pull:`331`)
 * Adjust observations and forecasts table and make all processed pairs
   in a report have a unique name (:pull:`333`)
+* Update versions in requirements (:pull:`335`)
 
 Bug fixes
 ~~~~~~~~~
