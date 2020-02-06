@@ -78,6 +78,7 @@ def test_compute_aggregate_empty_data(aggobs, ids):
                                 'UTC', 'sum', aggobs[:2])
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_compute_aggregate_missing_data(aggobs, ids):
     data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
                               index=nindex)
@@ -144,6 +145,7 @@ def test_compute_aggregate_mean(aggobs, ids):
         )
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_compute_aggregate_no_overlap(ids):
     data = {ids[0]: pd.DataFrame(
         {'value': [1, 2, 3], 'quality_flag': [2, 10, 338]},
@@ -359,8 +361,9 @@ def test__make_aggregate_index_localization(start, end):
 
 
 @pytest.mark.parametrize('inp,oup', [
-    (pd.DataFrame(), pd.Series()),
-    (pd.DataFrame(index=pd.DatetimeIndex([])), pd.DataFrame()),
+    (pd.DataFrame(dtype=float), pd.Series(dtype=float)),
+    (pd.DataFrame(index=pd.DatetimeIndex([]), dtype=float),
+     pd.DataFrame(dtype=float)),
     (pd.Series([0, 1]), pd.Series([0, 1])),
     (pd.DataFrame([[0, 1], [1, 2]]), pd.DataFrame([[0, 1], [1, 2]])),
     pytest.param(

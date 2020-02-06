@@ -25,7 +25,8 @@ THREE_HOURS_NAN = THREE_HOURS[[True, False, True]]
 THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", freq="60min",
                                      tz="MST")
 
-THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value")
+THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value",
+                                    dtype='float64')
 
 EMPTY_OBJ_SERIES = pd.Series(
     [],

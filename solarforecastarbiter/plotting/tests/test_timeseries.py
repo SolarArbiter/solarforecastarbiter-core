@@ -112,7 +112,7 @@ def test_generate_forecast_figure_components(ac_power_forecast_metadata,
 @pytest.mark.parametrize('rc', [True, False])
 def test_generate_forecast_figure_empty(ac_power_forecast_metadata, rc):
     assert timeseries.generate_forecast_figure(ac_power_forecast_metadata,
-                                               pd.Series(),
+                                               pd.Series(dtype=float),
                                                return_components=rc) is None
 
 

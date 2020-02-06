@@ -311,7 +311,7 @@ def test_calculate_deterministic_metrics(categories, metrics,
     for val in result.values:
         assert (
             np.isnan(val.value) or
-            np.issubdtype(val.value, np.number)
+            np.issubdtype(type(val.value), np.number)
         )
 
 
@@ -331,8 +331,10 @@ def test_calculate_deterministic_metrics(categories, metrics,
 ])
 def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
                                          create_datetime_index):
-    fx_series = pd.Series(fx, index=create_datetime_index(len(fx)))
-    obs_series = pd.Series(obs, index=create_datetime_index(len(obs)))
+    fx_series = pd.Series(fx, index=create_datetime_index(len(fx)),
+                          dtype=float)
+    obs_series = pd.Series(obs, index=create_datetime_index(len(obs)),
+                           dtype=float)
     # Check require reference forecast kwarg
     if metric in ['s']:
         if ref_fx is None:
@@ -372,8 +374,8 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
 def test_apply_deterministic_bad_metric_func():
     with pytest.raises(KeyError):
         calculator._apply_deterministic_metric_func('BAD METRIC',
-                                                    pd.Series(),
-                                                    pd.Series())
+                                                    pd.Series(dtype=float),
+                                                    pd.Series(dtype=float))
 
 
 @pytest.mark.parametrize('ts,tz,interval_label,category,result', [
@@ -488,6 +490,7 @@ def test_interval_label(ts, tz, interval_label, category, result,
     assert {(v.index, v.value) for v in res.values} == result
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('label_fx,label_ref', [
     ("beginning", "beginning"),
     ("ending", "ending"),
