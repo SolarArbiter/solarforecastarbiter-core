@@ -26,11 +26,13 @@
     <li><a href="#data-validation">Data Validation</a></li>
   </ul>
   <li><a href="#metrics">Metrics</a></li>
+  {% if include_metrics_toc | default(True) %}
   <ul>
     {% for category in report.report_parameters.categories %}
       <li><a href="#{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</a></li>
     {% endfor %}
   </ul>
+  {% endif %}
   <li><a href="#versions">Versions</a></li>
 </ul>
 {% endblock %}
@@ -120,22 +122,21 @@ generate a new report after the data provider submits new data.
 {% block metrics %}
 <h2 id="metrics">Metrics</h2>
 <p>
-  Metrics are displayed in the tables and figures below.
+  A table of metrics over the entire study period and figures for the selected
+  categories are shown below.
   Metrics may be downloaded in CSV format by clicking
   <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
 </p>
 
+{{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
+
+<div id="metric-plot-wrapper">
 {% for category in report.report_parameters.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
   {% if category_blurbs is defined %}
 <p>{{ category_blurbs[category] }}</p>
   {% endif %}
-  {% if category == "total" %}
-    {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
-  {% endif %}
 <br>
-
-<div id="metric-plot-wrapper">
   {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
