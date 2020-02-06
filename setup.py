@@ -42,11 +42,11 @@ setup(
     install_requires=[
         'netCDF4',
         'numpy',
-        'pandas>=0.25.0',
+        'pandas>=0.25.1',
         'requests',
         'xarray',
         'tables',
-        'pvlib',
+        'pvlib>=0.7.0',
         'scipy',
         'bokeh',
         'statsmodels'
