@@ -104,6 +104,8 @@ def load_forecast(
     mapping_subset = {k: v for k, v in CF_MAPPING.items() if v in variables}
 
     limit = 500  # maximum distance from point to closest grid point
+    # Time in file are stored unlocalized but are UTC
+    # so convert localized start/end to UTC then drop tz
     if start.tzinfo is not None:
         start = start.tz_convert('UTC').tz_localize(None)
     if end.tzinfo is not None:
