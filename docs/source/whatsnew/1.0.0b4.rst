@@ -1,7 +1,7 @@
 .. _whatsnew_100b4:
 
-1.0.0b4 (???)
--------------
+1.0.0b4 (February 7, 2020)
+--------------------------
 
 This is the fourth 1.0 beta release. Further changes beyond the pull
 requests listed here may have been applied in (:pull:`321`).
