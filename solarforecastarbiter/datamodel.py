@@ -110,7 +110,7 @@ def _dict_factory(inp):
     for k, v in dict(inp).items():
         if isinstance(v, tuple):
             dict_[k] = tuple(_time_conv(i) for i in v)
-        elif isinstance(v, list):
+        elif isinstance(v, list):  # pragma: no cover
             dict_[k] = [_time_conv(i) for i in v]
         else:
             dict_[k] = _time_conv(v)
