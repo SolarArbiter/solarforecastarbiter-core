@@ -673,15 +673,15 @@ def raw_report_plots(report, metrics):
         for metric in report.report_parameters.metrics:
             if category == 'total':
                 fig = bar(cds, metric)
-                figure_dict[f'total_{metric}_all'] = fig
+                figure_dict[f'total::{metric}::all'] = fig
             else:
                 figs = bar_subdivisions(cds, category, metric)
                 for name, fig in figs.items():
-                    figure_dict[f'{category}_{metric}_{name}'] = fig
+                    figure_dict[f'{category}::{metric}::{name}'] = fig
     script, divs = components(figure_dict)
     mplots = []
     for k, v in divs.items():
-        cat, met, name = k.split('_')
+        cat, met, name = k.split('::', 2)
         fig = figure_dict[k]
         svg = output_svg(fig)
         mplots.append(datamodel.ReportFigure(

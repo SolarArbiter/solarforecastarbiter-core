@@ -718,10 +718,6 @@ class APISession(requests.Session):
         datamodel.Report
            As returned by the API
 
-        Note
-        ----
-        The 'filters' key of the report parameters is ignored. This
-        should be resolved by :issue:`251`.
         """
         report_params = report.report_parameters.to_dict()
         fxobs = report_params.pop('object_pairs')
@@ -734,7 +730,6 @@ class APISession(requests.Session):
                 d['observation'] = _fo['observation']['observation_id']
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
-        report_params['filters'] = []
         params = {'report_parameters': report_params}
         req = self.post('/reports/', json=params,
                         headers={'Content-Type': 'application/json'})

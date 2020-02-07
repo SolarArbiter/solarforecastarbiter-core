@@ -166,6 +166,12 @@ def test_base_filter_from_dict_into_datamodel(basefilter_params):
     assert out == expected
 
 
+def test_filter_to_dict(basefilter_params):
+    expected, obj_dict = basefilter_params
+    out = expected.to_dict()
+    assert out == obj_dict
+
+
 def test_from_dict_into_datamodel_missing_field(pdid_params):
     _, obj_dict, model = pdid_params
     field_to_remove = None

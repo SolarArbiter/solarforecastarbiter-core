@@ -93,17 +93,27 @@ ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 
 
-def _dict_factory(inp):
-    dict_ = dict(inp)
-    for k, v in dict_.items():
-        if isinstance(v, datetime.time):
-            dict_[k] = v.strftime('%H:%M')
-        elif isinstance(v, datetime.datetime):
-            dict_[k] = v.isoformat()
-        elif isinstance(v, pd.Timedelta):
-            # convert to integer minutes
-            dict_[k] = v.total_seconds() // 60
+def _time_conv(inp):
+    if isinstance(inp, datetime.time):
+        return inp.strftime('%H:%M')
+    elif isinstance(inp, datetime.datetime):
+        return inp.isoformat()
+    elif isinstance(inp, pd.Timedelta):
+        # convert to integer minutes
+        return inp.total_seconds() // 60
+    else:
+        return inp
 
+
+def _dict_factory(inp):
+    dict_ = {}
+    for k, v in dict(inp).items():
+        if isinstance(v, tuple):
+            dict_[k] = tuple(_time_conv(i) for i in v)
+        elif isinstance(v, list):  # pragma: no cover
+            dict_[k] = [_time_conv(i) for i in v]
+        else:
+            dict_[k] = _time_conv(v)
     if 'units' in dict_:
         del dict_['units']
     if 'data_object' in dict_:
