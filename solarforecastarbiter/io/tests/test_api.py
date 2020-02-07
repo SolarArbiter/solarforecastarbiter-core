@@ -660,7 +660,16 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
             "name": "NREL MIDC OASIS GHI Forecast Analysis",
             "start": "2019-04-01T00:00:00-07:00",
             "end": "2019-04-04T23:59:00-07:00",
-            "filters": [],
+            "filters": [
+                {'quality_flags': [
+                    "USER FLAGGED",
+                    "NIGHTTIME",
+                    "LIMITS EXCEEDED",
+                    "STALE VALUES",
+                    "INTERPOLATED VALUES",
+                    "INCONSISTENT IRRADIANCE COMPONENTS",
+                ]},
+                {'time_of_day_range': ['12:00', '14:00']}],
             "metrics": ["mae", "rmse", "mbe"],
             "categories": ["total", "date", "hour"],
             "object_pairs": [
