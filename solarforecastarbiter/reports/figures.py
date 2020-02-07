@@ -681,7 +681,7 @@ def raw_report_plots(report, metrics):
     script, divs = components(figure_dict)
     mplots = []
     for k, v in divs.items():
-        cat, met, name = k.split('::')
+        cat, met, name = k.split('::', 2)
         fig = figure_dict[k]
         svg = output_svg(fig)
         mplots.append(datamodel.ReportFigure(
