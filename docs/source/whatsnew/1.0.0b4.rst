@@ -123,6 +123,12 @@ Bug fixes
   (:issue:`217`) (:pull:`318`)
 * Fix :py:func:`solarforecastarbiter.datamodel.__check_units__` with
   no arguments (:pull:`318`)
+* Fix field seperator conflict with the name when creating figures
+  (:issue:`337`) (:pull:`338`)
+* Fix dumping TimeOfDayFilter to dict (:pull:`338`)
+* Allow the posting of filters in
+  :py:func:`solarforecastarbiter.io.api.APISession.create_report`
+  (:pull:`338`)
 
 Contributors
 ~~~~~~~~~~~~
