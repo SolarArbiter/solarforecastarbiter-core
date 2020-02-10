@@ -16,11 +16,17 @@ from solarforecastarbiter.metrics import event
     ([True, True], [True, True], (2, 0, 0, 0)),
     ([False, False], [False, False], (0, 0, 2, 0)),
     ([True, True], [False, False], (0, 0, 0, 2)),
+
+    # bad data
+    pytest.param([True], [], 0,
+                 marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
+    pytest.param([], [True], 0,
+                 marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
 ])
 def test__event2count(obs, fx, result):
     tp, fp, tn, fn = event._event2count(obs, fx)
-    assert (tp + fp + tn + fn) == len(obs)
     assert (tp, fp, tn, fn) == result
+    assert (tp + fp + tn + fn) == len(obs)
 
 
 @pytest.mark.parametrize("obs,fx,result", [
@@ -55,6 +61,7 @@ def test_probability_of_false_detection(obs, fx, result):
 @pytest.mark.parametrize("obs,fx,result", [
     ([True], [False], 0.0),
     ([True], [True], 1.0),
+    ([False], [False], 0.0),
     ([True, False], [True, True], 0.5),
     ([True, False, True], [True, True, False], 1 / 3),
 ])
@@ -64,6 +71,7 @@ def test_critical_success_index(obs, fx, result):
 
 @pytest.mark.parametrize("obs,fx,result", [
     ([True], [False], 0.0),
+    ([False], [False], 0.0),
     ([True, True], [True, False], 0.5),
     ([True, False], [True, True], 2.0),
 ])
