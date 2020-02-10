@@ -31,12 +31,23 @@ def _event2count(obs, fx):
         Number of true negatives.
     fn : int
         Number of false negatives.
+
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data.
+
     """
 
     if isinstance(obs, (list, tuple)):
         obs = np.array(obs)
     if isinstance(fx, (list, tuple)):
         fx = np.array(fx)
+
+    if len(obs) == 0:
+        raise RuntimeError("No Observation timeseries data.")
+    elif len(fx) == 0:
+        raise RuntimeError("No Forecast timeseries data.")
 
     tp = np.sum(np.logical_and(fx, obs))
     fp = np.sum(np.logical_and(fx, ~obs))
@@ -197,7 +208,4 @@ def event_accuracy(obs, fx):
 
     n = len(obs)
     tp, fp, tn, fn = _event2count(obs, fx)
-    if n == 0:
-        raise ValueError("No samples.")
-    else:
-        return (tp + tn) / n
+    return (tp + tn) / n
