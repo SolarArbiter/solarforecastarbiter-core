@@ -694,7 +694,8 @@ def raw_report_plots(report, metrics):
     mplots = []
     try:
         driver = _make_chrome_webdriver()
-    except Exception:  # pragma: no cover
+    except Exception:  # pragma: no cover requires phantomjs for test pass
+        # fallback to the default bokeh webdriver
         driver = None
 
     for k, v in divs.items():
