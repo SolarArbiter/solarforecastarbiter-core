@@ -474,6 +474,21 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.sharpness
     metrics.probabilistic.continuous_ranked_probability_score
 
+Event
+-----
+
+Functions to compute deterministic event forecast performance metrics:
+
+.. autosummary::
+    :toctree: generated/
+
+    metrics.event.probability_of_detection
+    metrics.event.false_alarm_ratio
+    metrics.event.probability_of_false_detection
+    metrics.event.critical_success_index
+    metrics.event.event_bias
+    metrics.event.event_accuracy
+
 Value
 -----
 
