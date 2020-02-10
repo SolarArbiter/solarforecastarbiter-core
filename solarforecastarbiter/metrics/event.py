@@ -19,25 +19,29 @@ def _event2count(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
     tp : int
-        True positive.
+        Number of true positives.
     fp : int
-        False positive.
+        Number of false positives.
     tn : int
-        True positive.
+        Number of true negatives.
     fn : int
-        False negative.
+        Number of false negatives.
     """
 
-    tp = np.sum((fx == True) & (obs == True))    # True Positive (TP)
-    fp = np.sum((fx == True) & (obs == False))   # False Positive (FP)
-    tn = np.sum((fx == False) & (obs == False))  # True Negative (TN)
-    fn = np.sum((fx == False) & (obs == True))   # False Negative (FN)
+    if isinstance(obs, (list, tuple)):
+        obs = np.array(obs)
+    if isinstance(fx, (list, tuple)):
+        fx = np.array(fx)
 
+    tp = np.sum(np.logical_and(fx, obs))
+    fp = np.sum(np.logical_and(fx, ~obs))
+    tn = np.sum(np.logical_and(~fx, ~obs))
+    fn = np.sum(np.logical_and(~fx, obs))
     return tp, fp, tn, fn
 
 
@@ -51,7 +55,7 @@ def probability_of_detection(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -61,7 +65,10 @@ def probability_of_detection(obs, fx):
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
-    return tp / (tp + fn)
+    if (tp + fn) == 0:
+        return 0.0
+    else:
+        return tp / (tp + fn)
 
 
 def false_alarm_ratio(obs, fx):
@@ -74,7 +81,7 @@ def false_alarm_ratio(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -83,7 +90,10 @@ def false_alarm_ratio(obs, fx):
 
     """
     tp, fp, tn, fn = _event2count(obs, fx)
-    return fp / (tp + fp)
+    if (tp + fp) == 0:
+        return 0.0
+    else:
+        return fp / (tp + fp)
 
 
 def probability_of_false_detection(obs, fx):
@@ -96,7 +106,7 @@ def probability_of_false_detection(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -106,7 +116,10 @@ def probability_of_false_detection(obs, fx):
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
-    return fp / (fp + tn)
+    if (fp + tn) == 0:
+        return 0.0
+    else:
+        return fp / (fp + tn)
 
 
 def critical_success_index(obs, fx):
@@ -119,7 +132,7 @@ def critical_success_index(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -129,20 +142,23 @@ def critical_success_index(obs, fx):
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
-    return tp / (tp + fp + fn)
+    if (tp + fp + fn) == 0:
+        return 0.0
+    else:
+        return tp / (tp + fp + fn)
 
 
 def event_bias(obs, fx):
     """Event Bias (EBIAS).
 
-    .. math:: \\text{EBIAS} = (\\text{TP} + \\text{FP}) / (\\text{TP} + \\text{FN})
+    .. math:: \\text{EBIAS} = (\\text{TP} + \\text{FP}) / (\\text{TP} + \\text{FN})  # NOQA
 
     Parameters
     ----------
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -152,7 +168,10 @@ def event_bias(obs, fx):
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
-    return (tp + fp) / (tp + fn)
+    if (tp + fn) == 0:
+        return 0.0
+    else:
+        return (tp + fp) / (tp + fn)
 
 
 def event_accuracy(obs, fx):
@@ -167,7 +186,7 @@ def event_accuracy(obs, fx):
     obs : (n,) array-like
         Observed event values (True=event, False=no event).
     fx : (n,) array-like
-        Forecasted event values.
+        Forecasted event values (True=event, False=no event).
 
     Returns
     -------
@@ -178,4 +197,7 @@ def event_accuracy(obs, fx):
 
     n = len(obs)
     tp, fp, tn, fn = _event2count(obs, fx)
-    return (tp + tn) / n
+    if n == 0:
+        raise ValueError("No samples.")
+    else:
+        return (tp + tn) / n
