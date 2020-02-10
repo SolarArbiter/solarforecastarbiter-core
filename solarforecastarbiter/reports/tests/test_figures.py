@@ -1,8 +1,9 @@
+import shutil
+
+
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource
-
 import numpy as np
-
 import pytest
 
 
@@ -318,11 +319,14 @@ def test_raw_report_plots(report_with_raw):
 
 def test_output_svg(mocker):
     pytest.importorskip('selenium')
+    if shutil.which('chromedriver') is None:  # pragma: no cover
+        pytest.skip('Chrome driver must be on PATH to make SVGs')
+    driver = figures._make_chrome_webdriver()
     logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
-    svg = figures.output_svg(fig)
+    svg = figures.output_svg(fig, driver=driver)
     assert svg.startswith('<svg')
     assert svg.endswith('</svg>')
     assert not logger.error.called

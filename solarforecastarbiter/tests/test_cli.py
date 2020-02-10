@@ -224,7 +224,7 @@ def test_reference_nwp(cli_token, mocker):
 
 def test_report(cli_token, mocker, report_objects):
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
-                 return_value=report_objects[0])
+                 return_value=report_objects[0].replace(status=''))
     index = pd.date_range(
         start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
         freq='1h')

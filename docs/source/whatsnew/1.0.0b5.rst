@@ -8,15 +8,23 @@ This is the fifth 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
+* :py:func:`solarforecastarbiter.reports.figures.output_svg` now takes a
+  :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an optional
+  argument (:pull:`345`)
 
 Enhancements
 ~~~~~~~~~~~~
+* Try using the Chrome web driver instead of phantomjs for SVG geneartion
+  for better cleanup (:issue:`344`) (:pull:`345`)
 
 Bug fixes
 ~~~~~~~~~
 * Fix using deprecated 'M' string for a month offset in
   :py:func:`solarforecastarbiter.io.reference_observaions.srml.fetch`
   (:issue:`341`) (:pull:`342`)
+* Fix CLI report generation when status not set in report metadata
+  (:pull:`345`)
+
 
 Contributors
 ~~~~~~~~~~~~

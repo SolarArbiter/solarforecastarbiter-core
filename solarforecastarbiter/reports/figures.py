@@ -625,7 +625,16 @@ def rank_histogram():
     raise NotImplementedError
 
 
-def output_svg(fig):
+def _make_chrome_webdriver():
+    """Necessary until Bokeh 2.0 and to avoid zombie phantomjs processes"""
+    from selenium import webdriver
+    options = webdriver.chrome.options.Options()
+    options.add_argument('--headless')
+    options.add_argument('--hide-scrollbars')
+    return webdriver.Chrome(options=options)
+
+
+def output_svg(fig, driver=None):
     """
     Generates an SVG from the Bokeh figure. Errors in the
     process are logged and an SVG with error text is returned.
@@ -633,6 +642,9 @@ def output_svg(fig):
     Parameters
     ----------
     fig : bokeh.plotting.Figure
+    driver : selenium.webdriver.remote.webdriver.WebDriver, default None
+        Web driver to use to render SVG figures. With bokeh<2.0 this
+        defaults to trying to use phantomjs.
 
     Returns
     -------
@@ -640,7 +652,7 @@ def output_svg(fig):
     """
     fig.output_backend = 'svg'
     try:
-        svg = get_svgs(fig)[0]
+        svg = get_svgs(fig, driver=driver)[0]
     except Exception:
         logger.error('Could not generate SVG for figure %s',
                      getattr(fig, 'name', 'unnamed'))
@@ -680,13 +692,21 @@ def raw_report_plots(report, metrics):
                     figure_dict[f'{category}::{metric}::{name}'] = fig
     script, divs = components(figure_dict)
     mplots = []
+    try:
+        driver = _make_chrome_webdriver()
+    except Exception:  # pragma: no cover requires phantomjs for test pass
+        # fallback to the default bokeh webdriver
+        driver = None
+
     for k, v in divs.items():
         cat, met, name = k.split('::', 2)
         fig = figure_dict[k]
-        svg = output_svg(fig)
+        svg = output_svg(fig, driver=driver)
         mplots.append(datamodel.ReportFigure(
             name=name, category=cat, metric=met, div=v, svg=svg,
             figure_type='bar'))
+    if driver is not None:
+        driver.quit()
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
     return out
 
