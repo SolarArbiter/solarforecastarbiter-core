@@ -308,7 +308,7 @@ def report(verbose, user, password, base_url, report_file, output_file):
     report = session.process_report_dict(metadata)
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)
-    full_report = report.replace(raw_report=raw_report)
+    full_report = report.replace(raw_report=raw_report, status='complete')
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
     html_report = template.render_html(
