@@ -209,3 +209,22 @@ def event_accuracy(obs, fx):
     n = len(obs)
     tp, fp, tn, fn = _event2count(obs, fx)
     return (tp + tn) / n
+
+
+# Add new metrics to this map to map shorthand to function
+_MAP = {
+    'pod': (probability_of_detection, 'POD'),
+    'far': (false_alarm_ratio, 'FAR'),
+    'pofd': (probability_of_false_detection, 'POFD'),
+    'csi': (critical_success_index, 'CSI'),
+    'ebias': (event_bias, 'EBIAS'),
+    'ea': (event_accuracy, 'EA')
+}
+
+__all__ = [m[0].__name__ for m in _MAP.values()]
+
+# Functions that require a reference forecast
+_REQ_REF_FX = []
+
+# Functions that require normalized factor
+_REQ_NORM = []
