@@ -30,7 +30,7 @@ def test_fetch(mocker, single_site, start, end, exp):
 
 
 def test_fetch_tz(single_site):
+    start = dt.datetime(2019, 1, 1, tzinfo=dt.timezone.utc)
     with pytest.raises(TypeError):
-        srml.fetch('', single_site,
-                   dt.datetime(2019, 1, 1, tz=dt.timezone.utc),
+        srml.fetch('', single_site, start,
                    dt.datetime(2019, 2, 1))
