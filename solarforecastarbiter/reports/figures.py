@@ -691,7 +691,7 @@ def raw_report_plots(report, metrics):
     mplots = []
     try:
         driver = _make_chrome_webdriver()
-    except Exception:
+    except Exception:  # pragma: no cover
         driver = None
 
     for k, v in divs.items():

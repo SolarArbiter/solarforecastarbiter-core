@@ -319,7 +319,7 @@ def test_raw_report_plots(report_with_raw):
 
 def test_output_svg(mocker):
     pytest.importorskip('selenium')
-    if shutil.which('chromedriver') is None:
+    if shutil.which('chromedriver') is None:  # pragma: no cover
         pytest.skip('Chrome driver must be on PATH to make SVGs')
     driver = figures._make_chrome_webdriver()
     logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
