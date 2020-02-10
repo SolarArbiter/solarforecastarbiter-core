@@ -642,6 +642,9 @@ def output_svg(fig, driver=None):
     Parameters
     ----------
     fig : bokeh.plotting.Figure
+    driver : selenium.webdriver.remote.webdriver.WebDriver, default None
+        Web driver to use to render SVG figures. With bokeh<2.0 this
+        defaults to trying to use phantomjs.
 
     Returns
     -------
