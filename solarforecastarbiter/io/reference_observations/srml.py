@@ -106,6 +106,8 @@ def fetch(api, site, start, end):
     start_year = start.year
     start_month = start.month
     # Retrieve each month file necessary
+    if start.tzinfo != end.tzinfo:
+        raise TypeError('start and end cannot have different timezones')
     while start_year * 100 + start_month <= end.year * 100 + end.month:
         logger.info(f'Requesting data for SRML site {site.name}'
                     f' for {start_year}-{start_month}')

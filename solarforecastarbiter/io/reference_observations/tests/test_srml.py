@@ -27,3 +27,10 @@ def test_fetch(mocker, single_site, start, end, exp):
     srml.fetch('', single_site, start, end)
     year_month = [(ca[0][1], ca[0][2]) for ca in rd.call_args_list]
     assert year_month == exp
+
+
+def test_fetch_tz(single_site):
+    with pytest.raises(TypeError):
+        srml.fetch('', single_site,
+                   dt.datetime(2019, 1, 1, tz=dt.timezone.utc),
+                   dt.datetime(2019, 2, 1))
