@@ -103,14 +103,21 @@ def fetch(api, site, start, end):
         All of the requested data concatenated into a single DataFrame.
     """
     month_dfs = []
-    # Need to extend the range of fetched data so that if start and end
-    # are in the same month we retrieve that month's file.
-    for month in pd.date_range(start, end + pd.Timedelta(1, 'M'), freq='M'):
+    start_year = start.year
+    start_month = start.month
+    # Retrieve each month file necessary
+    if start.tzinfo != end.tzinfo:
+        raise TypeError('start and end cannot have different timezones')
+    while start_year * 100 + start_month <= end.year * 100 + end.month:
         logger.info(f'Requesting data for SRML site {site.name}'
-                    f' on {month.strftime("%Y%m%d")}.')
-        srml_month = request_data(site, month.year, month.month)
+                    f' for {start_year}-{start_month}')
+        srml_month = request_data(site, start_year, start_month)
         if srml_month is not None:
             month_dfs.append(srml_month)
+        start_month += 1
+        if start_month > 12:
+            start_month = 1
+            start_year += 1
     try:
         all_period_data = pd.concat(month_dfs)
     except ValueError:
