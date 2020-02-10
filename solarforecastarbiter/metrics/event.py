@@ -49,10 +49,10 @@ def _event2count(obs, fx):
     elif len(fx) == 0:
         raise RuntimeError("No Forecast timeseries data.")
 
-    tp = np.sum(np.logical_and(fx, obs))
-    fp = np.sum(np.logical_and(fx, ~obs))
-    tn = np.sum(np.logical_and(~fx, ~obs))
-    fn = np.sum(np.logical_and(~fx, obs))
+    tp = np.count_nonzero(np.logical_and(fx, obs))
+    fp = np.count_nonzero(np.logical_and(fx, ~obs))
+    tn = np.count_nonzero(np.logical_and(~fx, ~obs))
+    fn = np.count_nonzero(np.logical_and(~fx, obs))
     return tp, fp, tn, fn
 
 
