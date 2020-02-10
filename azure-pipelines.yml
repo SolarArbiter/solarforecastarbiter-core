@@ -23,11 +23,10 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - task: Npm@1
-    inputs:
-      command: 'custom'
-      customCommand: 'install phantomjs'
-    displayName: 'Install phantomjs'
+  - displayName: 'Install chromedriver'
+    script: |
+      apt update
+      apt install chromium-chromedriver
 
   - script: python -m pip install --upgrade pip && pip install -r requirements.txt -r requirements-test.txt
     displayName: 'Install dependencies'
