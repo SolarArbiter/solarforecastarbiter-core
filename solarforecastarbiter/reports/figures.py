@@ -2,9 +2,11 @@
 Functions to make all of the figures for Solar Forecast Arbiter reports.
 """
 import calendar
+from contextlib import contextmanager
 import datetime as dt
 from itertools import cycle
 import logging
+import warnings
 
 
 from bokeh.embed import components
@@ -625,13 +627,20 @@ def rank_histogram():
     raise NotImplementedError
 
 
-def _make_chrome_webdriver():
-    """Necessary until Bokeh 2.0 and to avoid zombie phantomjs processes"""
+@contextmanager
+def _make_webdriver():
+    """Necessary until Bokeh 2.0 when using chrome/firefox drivers will be
+    preferred and to avoid zombie phantomjs processes for now"""
     from selenium import webdriver
-    options = webdriver.chrome.options.Options()
-    options.add_argument('--headless')
-    options.add_argument('--hide-scrollbars')
-    return webdriver.Chrome(options=options)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        try:
+            driver = webdriver.PhantomJS()
+        except Exception:
+            yield None
+        else:
+            yield driver
+            driver.quit()
 
 
 def output_svg(fig, driver=None):
@@ -692,21 +701,16 @@ def raw_report_plots(report, metrics):
                     figure_dict[f'{category}::{metric}::{name}'] = fig
     script, divs = components(figure_dict)
     mplots = []
-    try:
-        driver = _make_chrome_webdriver()
-    except Exception:  # pragma: no cover requires phantomjs for test pass
-        # fallback to the default bokeh webdriver
-        driver = None
 
-    for k, v in divs.items():
-        cat, met, name = k.split('::', 2)
-        fig = figure_dict[k]
-        svg = output_svg(fig, driver=driver)
-        mplots.append(datamodel.ReportFigure(
-            name=name, category=cat, metric=met, div=v, svg=svg,
-            figure_type='bar'))
-    if driver is not None:
-        driver.quit()
+    with _make_webdriver() as driver:
+        for k, v in divs.items():
+            cat, met, name = k.split('::', 2)
+            fig = figure_dict[k]
+            svg = output_svg(fig, driver=driver)
+            mplots.append(datamodel.ReportFigure(
+                name=name, category=cat, metric=met, div=v, svg=svg,
+                figure_type='bar'))
+
     out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
     return out
 

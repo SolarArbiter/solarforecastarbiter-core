@@ -14,8 +14,8 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-* Try using the Chrome web driver instead of phantomjs for SVG geneartion
-  for better cleanup (:issue:`344`) (:pull:`345`)
+* Clean up any PhantomJS drivers created to render SVGs (:issue:`344`)
+  (:pull:`349`)
 
 Bug fixes
 ~~~~~~~~~

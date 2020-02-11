@@ -1,3 +1,4 @@
+import os
 import shutil
 
 
@@ -311,25 +312,61 @@ def test_timeseries_plots(report_with_raw):
     assert div is not None
 
 
-def test_raw_report_plots(report_with_raw):
+@pytest.fixture()
+def no_stray_phantomjs():
+    def get_phantom_pid():
+        pjs = set()
+        for pid in os.listdir('/proc'):
+            if pid.isdigit():
+                try:
+                    with open(f'/proc/{pid}/cmdline', 'r') as f:
+                        cmd = f.read()
+                except IOError:
+                    continue
+                else:
+                    if 'phantomjs' in cmd:
+                        pjs.add(pid)
+        return pjs
+    before = get_phantom_pid()
+    yield
+    after = get_phantom_pid()
+    assert before == after
+
+
+def test_raw_report_plots(report_with_raw, no_stray_phantomjs):
     metrics = report_with_raw.raw_report.metrics
     plots = figures.raw_report_plots(report_with_raw, metrics)
     assert plots is not None
 
 
-def test_output_svg(mocker):
+def test_output_svg(mocker, no_stray_phantomjs):
     pytest.importorskip('selenium')
-    if shutil.which('chromedriver') is None:  # pragma: no cover
-        pytest.skip('Chrome driver must be on PATH to make SVGs')
-    driver = figures._make_chrome_webdriver()
+    if shutil.which('phantomjs') is None:  # pragma: no cover
+        pytest.skip('PhantomJS must be on PATH to make SVGs')
     logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
-    svg = figures.output_svg(fig, driver=driver)
+    with figures._make_webdriver() as driver:
+        svg = figures.output_svg(fig, driver=driver)
     assert svg.startswith('<svg')
     assert svg.endswith('</svg>')
     assert not logger.error.called
+
+
+def test_output_svg_no_phantom(mocker):
+    pytest.importorskip('selenium')
+    mocker.patch('selenium.webdriver.PhantomJS',
+                 side_effect=RuntimeError)
+    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    from bokeh.plotting import figure
+    fig = figure(title='line', name='line_plot')
+    fig.line([0, 1], [0, 1])
+    svg = figures.output_svg(fig)
+    assert svg.startswith('<svg')
+    assert 'Unable' in svg
+    assert svg.endswith('</svg>')
+    assert logger.error.called
 
 
 def test_output_svg_no_selenium(mocker):
