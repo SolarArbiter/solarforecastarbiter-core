@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 
 
@@ -313,7 +314,7 @@ def test_timeseries_plots(report_with_raw):
 
 
 @pytest.fixture()
-def no_stray_phantomjs():
+def no_stray_phantomjs():  # pragma: no cover
     def get_phantom_pid():
         pjs = set()
         for pid in os.listdir('/proc'):
@@ -327,6 +328,9 @@ def no_stray_phantomjs():
                     if 'phantomjs' in cmd:
                         pjs.add(pid)
         return pjs
+
+    if platform.system() != 'Linux':
+        return
     before = get_phantom_pid()
     yield
     after = get_phantom_pid()
@@ -362,21 +366,23 @@ def test_output_svg_no_phantom(mocker):
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
-    svg = figures.output_svg(fig)
+    with figures._make_webdriver() as driver:
+        svg = figures.output_svg(fig, driver)
     assert svg.startswith('<svg')
     assert 'Unable' in svg
     assert svg.endswith('</svg>')
     assert logger.error.called
 
 
-def test_output_svg_no_selenium(mocker):
+def test_output_svg_bokeh_err(mocker):
     mocker.patch('solarforecastarbiter.reports.figures.get_svgs',
                  side_effect=RuntimeError)
     logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
-    svg = figures.output_svg(fig)
+    with figures._make_webdriver() as driver:
+        svg = figures.output_svg(fig, driver)
     assert svg.startswith('<svg')
     assert svg.endswith('</svg>')
     assert logger.error.called
