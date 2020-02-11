@@ -126,6 +126,12 @@ def probability_of_false_detection(obs, fx):
     pofd : float
         The POFD of the forecast.
 
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
+
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
@@ -152,6 +158,12 @@ def critical_success_index(obs, fx):
     csi : float
         The CSI of the forecast.
 
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
+
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
@@ -177,6 +189,12 @@ def event_bias(obs, fx):
     -------
     ebias : float
         The EBIAS of the forecast.
+
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
 
     """
 
@@ -205,6 +223,12 @@ def event_accuracy(obs, fx):
     -------
     ea : float
         The EA of the forecast.
+
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
 
     """
 
