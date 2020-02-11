@@ -46,6 +46,9 @@ def _event2count(obs, fx):
         raise RuntimeError("No Observation timeseries data.")
     elif len(fx) == 0:
         raise RuntimeError("No Forecast timeseries data.")
+    elif len(obs) != len(fx):
+        raise RuntimeError("Forecast and Observation timeseries data do not "
+                           "have the same length.")
 
     tp = np.count_nonzero(np.logical_and(fx, obs))
     fp = np.count_nonzero(np.logical_and(fx, ~obs))

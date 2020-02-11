@@ -22,6 +22,8 @@ from solarforecastarbiter.metrics import event
                  marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
     pytest.param([], [True], 0,
                  marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
+    pytest.param([True], [True, True], 0,
+                 marks=pytest.mark.xfail(raises=RuntimeError, strict=True))
 ])
 def test__event2count(obs, fx, result):
     tp, fp, tn, fn = event._event2count(obs, fx)
