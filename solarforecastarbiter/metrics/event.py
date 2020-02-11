@@ -39,10 +39,8 @@ def _event2count(obs, fx):
 
     """
 
-    if isinstance(obs, (list, tuple)):
-        obs = np.array(obs)
-    if isinstance(fx, (list, tuple)):
-        fx = np.array(fx)
+    obs = np.asarray(obs)
+    fx = np.asarray(fx)
 
     if len(obs) == 0:
         raise RuntimeError("No Observation timeseries data.")
@@ -136,7 +134,7 @@ def probability_of_false_detection(obs, fx):
 def critical_success_index(obs, fx):
     """Critical Success Index (CSI).
 
-    .. math:: \\text{CSI} = \\text{TP} / (\\text{TP} + \\text{FN} + \\text{FN})
+    .. math:: \\text{CSI} = \\text{TP} / (\\text{TP} + \\text{FP} + \\text{FN})
 
     Parameters
     ----------
