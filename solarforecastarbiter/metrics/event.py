@@ -35,7 +35,8 @@ def _event2count(obs, fx):
     Raises
     ------
     RuntimeError
-        If there is no forecast or observation timeseries data.
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
 
     """
 
