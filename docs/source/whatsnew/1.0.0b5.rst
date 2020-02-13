@@ -11,6 +11,14 @@ API Changes
 * :py:func:`solarforecastarbiter.reports.figures.output_svg` now takes a
   :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an optional
   argument (:pull:`345`)
+* Add metrics for deterministic event forecasts
+  :py:func:`solarforecastarbiter.metrics.event.probability_of_detection`,
+  :py:func:`solarforecastarbiter.metrics.event.false_alarm_ratio`,
+  :py:func:`solarforecastarbiter.metrics.event.probability_of_false_detection`,
+  :py:func:`solarforecastarbiter.metrics.event.critical_success_index`,
+  :py:func:`solarforecastarbiter.metrics.event.event_bias`, and
+  :py:func:`solarforecastarbiter.metrics.event.event_accuracy`. (:issue:`347`) (:pull:`348`)
+
 
 Enhancements
 ~~~~~~~~~~~~
