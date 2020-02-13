@@ -75,6 +75,12 @@ def probability_of_detection(obs, fx):
     pod : float
         The POD of the forecast.
 
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
+
     """
 
     tp, fp, tn, fn = _event2count(obs, fx)
@@ -100,6 +106,12 @@ def false_alarm_ratio(obs, fx):
     -------
     far : float
         The FAR of the forecast.
+
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast or observation timeseries data, or the forecast
+        and observation timeseries data do not have the same length.
 
     """
     tp, fp, tn, fn = _event2count(obs, fx)
