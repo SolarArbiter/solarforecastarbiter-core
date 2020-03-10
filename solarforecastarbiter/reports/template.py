@@ -6,6 +6,7 @@ import logging
 
 from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
+from plotly import __version__ as plotly_version
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import figures
 
@@ -43,7 +44,10 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         # if plot generation failed, fallback to the curent version
         bokeh_version=getattr(
             getattr(report.raw_report, 'plots', None),
-            'bokeh_version', bokeh_version)
+            'bokeh_version', bokeh_version),
+        plotly_version=getattr(
+            getattr(report.raw_report, 'plots', None),
+            'plotly_version', plotly_version)
     )
     if with_timeseries:
         try:

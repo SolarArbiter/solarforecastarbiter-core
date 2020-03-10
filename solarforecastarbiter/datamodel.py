@@ -1238,8 +1238,8 @@ class ReportFigure(BaseModel):
     ----------
     name: str
         A descriptive name for the figure.
-    div: str
-        An html div element to be target of Bokeh javascript.
+    spec: str
+        JSON representation of the plotly plot.
     svg: str
         A static svg copy of the plot, for including in the pdf version.
     figure_type: str
@@ -1250,7 +1250,7 @@ class ReportFigure(BaseModel):
         The metric being plotted.
     """
     name: str
-    div: str
+    spec: str
     svg: str
     figure_type: str
     category: str = ''
@@ -1264,15 +1264,17 @@ class RawReportPlots(BaseModel):
     Parameters
     ----------
     bokeh_version: str
-        The bokeh version used when generating the plots.
+        The bokeh version used when generating the timeseries plots.
     script: str
         The html script tag containing all of the bokeh javascript for the
         plots.
     figures: tuple of :py:class:`solarforecastarbiter.datamodel.ReportFigure`
+    plotly_version: str
+        The plotly version used when generating metrics plots.
     """
     bokeh_version: str
-    script: str
     figures: Tuple[ReportFigure, ...]
+    plotly_version: str
 
 
 @dataclass(frozen=True)

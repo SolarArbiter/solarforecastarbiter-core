@@ -10,22 +10,21 @@ import warnings
 
 
 from bokeh.embed import components
-from bokeh.io.export import get_svgs
 from bokeh.layouts import gridplot
-from bokeh.models import (ColumnDataSource, HoverTool, Legend,
-                          DatetimeTickFormatter, CategoricalTickFormatter,
-                          CDSView, GroupFilter, BooleanFilter)
-from bokeh.models.ranges import Range1d, FactorRange, DataRange1d
+from bokeh.models import ColumnDataSource, Legend, CDSView, BooleanFilter
+from bokeh.models.ranges import Range1d, DataRange1d
 from bokeh.plotting import figure
-from bokeh.transform import factor_cmap, dodge
 from bokeh import palettes
 from bokeh import __version__ as bokeh_version
 import pandas as pd
+from plotly import __version__ as plotly_version
 import numpy as np
 
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.plotting.utils import line_or_step
+
+import plotly.graph_objects as go
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +36,11 @@ OBS_PALETTE = palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors]
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
+
+PLOT_BGCOLOR = '#FFF'
+PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
+PLOT_LAYOUT_DEFAULTS = dict(autosize=True, height=250,
+                            margin=PLOT_MARGINS, plot_bgcolor=PLOT_BGCOLOR)
 
 
 def construct_timeseries_cds(report):
@@ -313,7 +317,7 @@ def scatter(timeseries_value_cds, timeseries_meta_cds, units):
     return fig
 
 
-def construct_metrics_cds(metrics, rename=None):
+def construct_metrics_dataframe(metrics, rename=None):
     """
     Possibly bad assumptions:
     * metrics contains keys: name, Total, etc.
@@ -328,9 +332,8 @@ def construct_metrics_cds(metrics, rename=None):
 
     Returns
     -------
-    cds : bokeh.models.ColumnDataSource
-        ColumnDataSource with indices 'name', 'abbrev', 'category', 'metric',
-        and 'value'.
+    df: pandas.DataFrame
+        Dataframe of computed metrics for the report.
     """
 
     if rename:
@@ -357,9 +360,7 @@ def construct_metrics_cds(metrics, rename=None):
     df = pd.DataFrame(data, columns=[
         'name', 'abbrev', 'category', 'metric', 'value', 'index'
     ])
-    cds = ColumnDataSource(df, name='metrics_cds')
-    cds.data.pop('level_0', None)
-    return cds
+    return df
 
 
 def abbreviate(x, limit=3):
@@ -379,14 +380,14 @@ def abbreviate(x, limit=3):
     return ' '.join(out_components)
 
 
-def bar(cds, metric):
+def bar(df, metric):
     """
     Create a bar graph comparing a single metric across forecasts.
 
     Parameters
     ----------
-    cds : bokeh.models.ColumnDataSource
-        Metric cds created by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_cds`
+    df: pandas Dataframe
+        Metric dataframe by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_dataframe`
     metric: str
         The metric to plot. This value should be found in cds['metric'].
 
@@ -394,41 +395,16 @@ def bar(cds, metric):
     -------
     data_table : bokeh.widgets.DataTable
     """  # NOQA
-    x_range = np.unique(cds.data['abbrev'])
+    x_range = np.unique(df['abbrev'])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_range]
     metric_name = datamodel.ALLOWED_METRICS[metric]
-    view = CDSView(source=cds, filters=[
-        GroupFilter(column_name='metric', group=metric),
-        GroupFilter(column_name='category', group='total')
-    ])
-    # TODO: add units to title
-    fig = figure(x_range=x_range, width=800, height=200, title=metric_name,
-                 name=f'{metric}_total_bar', toolbar_location='above',
-                 tools='pan,xwheel_zoom,box_zoom,reset,save')
-    fig.vbar(x='abbrev', top='value', width=0.8,
-             source=cds, view=view,
-             line_color='white',
-             fill_color=factor_cmap('abbrev', palette, factors=x_range))
-    fig.xgrid.grid_line_color = None
 
-    tooltips = [
-        ('Forecast', '@name'),
-        (metric_name, '@value'),
-    ]
-    hover = HoverTool(tooltips=tooltips, mode='vline')
-    # more accurate would be if any single name is longer than each
-    # name's allotted space. For example, never need to rotate labels
-    # if forecasts are named A, B, C, D... but quickly need to rotate
-    # if they have long names.
-    if len(x_range) > 6:
-        # pi/4 looks a lot better, but first tick label flows off chart
-        # and I can't figure out how to add padding in bokeh
-        fig.xaxis.major_label_orientation = np.pi / 2
-        fig.width = 800
-        # add more height to figure so that the names can go somewhere.
-        fig.height = 400
-    fig.add_tools(hover)
+    fig = go.Figure()
+    data = df[(df['category'] == 'total') & (df['metric'] == metric)]
+    fig.add_trace(go.Bar(x=data['name'], y=data['value'],
+                         marker=go.bar.Marker(color=palette)))
+    fig.update_layout(title=metric_name, **PLOT_LAYOUT_DEFAULTS)
     return fig
 
 
@@ -467,7 +443,7 @@ def calc_y_start_end(y_min, y_max, pad_factor=1.03):
     return start, end
 
 
-def bar_subdivisions(cds, category, metric):
+def bar_subdivisions(df, category, metric):
     """
     Create bar graphs comparing a single metric across subdivisions of
     time for multiple forecasts. e.g.::
@@ -490,11 +466,10 @@ def bar_subdivisions(cds, category, metric):
     figs : dict of figures
     """
     palette = cycle(PALETTE)
+
     tools = 'pan,xwheel_zoom,box_zoom,reset,save'
     fig_kwargs = dict(tools=tools, toolbar_location='above')
     figs = {}
-
-    width = 0.8
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
     metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
@@ -502,27 +477,22 @@ def bar_subdivisions(cds, category, metric):
     fig_kwargs['x_axis_label'] = human_category
     fig_kwargs['y_axis_label'] = metric_name
 
-    filter_ = ((np.asarray(cds.data['category']) == category) &
-               (np.asarray(cds.data['metric']) == metric))
+    data = df[(df['category'] == category) & (df['metric'] == metric)]
+
     # Special handling for x-axis with dates
     if category == 'date':
-        fig_kwargs['x_axis_type'] = 'datetime'
-        width = width * pd.Timedelta(days=1)
-        fig_kwargs['x_range'] = DataRange1d()
+        x_range = np.unique(data['index'].dt.strftime('%Y-%m-%d'))
     elif category == 'month':
-        fig_kwargs['x_range'] = FactorRange(
-            factors=calendar.month_abbr[1:])
+        x_range = calendar.month_abbr[1:]
     elif category == 'weekday':
-        fig_kwargs['x_range'] = FactorRange(
-            factors=calendar.day_abbr[0:])
+        x_range = calendar.day_abbr[0:]
     elif category == 'hour':
-        fig_kwargs['x_range'] = FactorRange(
-            factors=[str(i) for i in range(25)])
+        x_range = [str(i) for i in range(25)]
     else:
-        fig_kwargs['x_range'] = FactorRange(
-            factors=np.unique(cds.data['index'][filter_]))
+        x_range = np.unique(data['index'])
 
-    y_data = np.asarray(cds.data['value'])[filter_]
+    palette = [next(palette) for _ in x_range]
+    y_data = np.asarray(data['value'])
     if len(y_data) == 0:
         start, end = None, None
     else:
@@ -531,68 +501,15 @@ def bar_subdivisions(cds, category, metric):
         start, end = calc_y_start_end(y_min, y_max)
     fig_kwargs['y_range'] = DataRange1d(start=start, end=end)
 
-    unique_names = np.unique(np.asarray(cds.data['name'])[filter_])
-
-    for name in unique_names:
-        view = CDSView(source=cds, filters=[
-            GroupFilter(column_name='metric', group=metric),
-            GroupFilter(column_name='category', group=category),
-            GroupFilter(column_name='name', group=name)
-        ])
-
+    unique_names = np.unique(np.asarray(data['name']))
+    for i, name in enumerate(unique_names):
         # Create figure
         title = name + ' ' + metric_name
-        fig = figure(width=800, height=200, title=title,
-                     name=f'{category}_{metric}_{name}',
-                     **fig_kwargs)
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=x_range, y=data['value'],
+                             marker=go.bar.Marker(color=palette[i])))
 
-        # Custom bar alignment
-        if category == 'hour':
-            # Center bars between hour ticks
-            x = dodge('index', 0.5, range=fig.x_range)
-        else:
-            x = 'index'
-
-        fig.vbar(x=x, top='value', width=width, source=cds,
-                 view=view,
-                 line_color='white', fill_color=next(palette))
-
-        # axes parameters
-        fig.xgrid.grid_line_color = None
-        fig.xaxis.minor_tick_line_color = None
-
-        # Hover tool and format specific changes
-        if category == 'date':
-            # Datetime x-axis
-            formatter = DatetimeTickFormatter(days='%Y-%m-%d')
-            fig.xaxis.formatter = formatter
-            tooltips = [
-                ('Forecast', '@name'),
-                (human_category, '@index{%F}'),
-                (metric_name, '@value'),
-            ]
-            hover_kwargs = dict(tooltips=tooltips,
-                                formatters={'index': 'datetime'})
-        elif category == 'month' or category == 'weekday':
-            # Categorical x-axis
-            formatter = CategoricalTickFormatter()
-            fig.xaxis.formatter = formatter
-            tooltips = [
-                ('Forecast', '@name'),
-                (human_category, '@index'),
-                (metric_name, '@value'),
-            ]
-            hover_kwargs = dict(tooltips=tooltips)
-        else:
-            # Numerical x-axis
-            tooltips = [
-                ('Forecast', '@name'),
-                (human_category, '@index'),
-                (metric_name, '@value'),
-            ]
-            hover_kwargs = dict(tooltips=tooltips)
-        hover = HoverTool(mode='vline', **hover_kwargs)
-        fig.add_tools(hover)
+        fig.update_layout(title=title, **PLOT_LAYOUT_DEFAULTS)
 
         figs[name] = fig
 
@@ -643,7 +560,7 @@ def _make_webdriver():
             driver.quit()
 
 
-def output_svg(fig, driver=None):
+def output_svg(fig):
     """
     Generates an SVG from the Bokeh figure. Errors in the
     process are logged and an SVG with error text is returned.
@@ -659,9 +576,9 @@ def output_svg(fig, driver=None):
     -------
     svg : str
     """
-    fig.output_backend = 'svg'
     try:
-        svg = get_svgs(fig, driver=driver)[0]
+        svg = ''  # fig.to_image(format='svg')
+        # TODO: update after setting up ORCA
     except Exception:
         logger.error('Could not generate SVG for figure %s',
                      getattr(fig, 'name', 'unnamed'))
@@ -686,32 +603,31 @@ def raw_report_plots(report, metrics):
     -------
     :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
     """
-    cds = construct_metrics_cds(metrics, rename=abbreviate)
+    metrics_df = construct_metrics_dataframe(metrics, rename=abbreviate)
     # Create initial bar figures
     figure_dict = {}
     # Components for other metrics
     for category in report.report_parameters.categories:
         for metric in report.report_parameters.metrics:
             if category == 'total':
-                fig = bar(cds, metric)
+                fig = bar(metrics_df, metric)
                 figure_dict[f'total::{metric}::all'] = fig
             else:
-                figs = bar_subdivisions(cds, category, metric)
+                figs = bar_subdivisions(metrics_df, category, metric)
                 for name, fig in figs.items():
                     figure_dict[f'{category}::{metric}::{name}'] = fig
-    script, divs = components(figure_dict)
     mplots = []
 
-    with _make_webdriver() as driver:
-        for k, v in divs.items():
-            cat, met, name = k.split('::', 2)
-            fig = figure_dict[k]
-            svg = output_svg(fig, driver=driver)
-            mplots.append(datamodel.ReportFigure(
-                name=name, category=cat, metric=met, div=v, svg=svg,
-                figure_type='bar'))
+    for k, v in figure_dict.items():
+        cat, met, name = k.split('::', 2)
+        figure_spec = figure_dict[k].to_json()
+        svg = output_svg(fig)
+        mplots.append(datamodel.ReportFigure(
+            name=name, category=cat, metric=met, spec=figure_spec,
+            svg=svg, figure_type='bar'))
 
-    out = datamodel.RawReportPlots(bokeh_version, script, tuple(mplots))
+    out = datamodel.RawReportPlots(
+        bokeh_version, tuple(mplots), plotly_version)
     return out
 
 
