@@ -7,6 +7,7 @@ from dataclasses import (dataclass, field, fields, MISSING, asdict,
                          replace, is_dataclass)
 import datetime
 import itertools
+import json
 from typing import Tuple, Union
 
 
@@ -1230,6 +1231,14 @@ class MetricResult(BaseModel):
                 'One of observation_id OR aggregate_id must be set')
 
 
+def __check_plot_spec__(plot_spec):
+    """Ensure that the provided plot specification is valid JSON"""
+    try:
+        json.loads(plot_spec)
+    except json.JSONDecodeError:
+        raise ValueError('Figure spec must be valid json.')
+
+
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):
     """A class for storing metric plots for a report with associated metadata.
@@ -1239,7 +1248,7 @@ class ReportFigure(BaseModel):
     name: str
         A descriptive name for the figure.
     spec: str
-        JSON representation of the plotly plot.
+        JSON string representation of the plotly plot.
     svg: str
         A static svg copy of the plot, for including in the pdf version.
     figure_type: str
@@ -1255,6 +1264,9 @@ class ReportFigure(BaseModel):
     figure_type: str
     category: str = ''
     metric: str = ''
+
+    def __post_init__(self):
+        __check_plot_spec__(self.spec)
 
 
 @dataclass(frozen=True)

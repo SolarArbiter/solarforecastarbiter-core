@@ -3,9 +3,10 @@ import platform
 import shutil
 
 
-from bokeh.plotting import Figure
+from plotly import graph_objects
 from bokeh.models import ColumnDataSource
 import numpy as np
+import pandas as pd
 import pytest
 
 
@@ -48,21 +49,21 @@ def set_report_pfxobs_values(report_dict, raw_report_pfxobs_values):
     return set_pfxobs_values
 
 
-def test_construct_metrics_cds(report_with_raw):
+def test_construct_metrics_dataframe(report_with_raw):
     report = report_with_raw
     metrics = report.raw_report.metrics
-    cds = figures.construct_metrics_cds(metrics)
-    names = cds.data['name']
-    abbrev = cds.data['abbrev']
-    categories = cds.data['category']
-    metrics = cds.data['metric']
-    values = cds.data['value']
+    df = figures.construct_metrics_dataframe(metrics)
+    names = df['name']
+    abbrev = df['abbrev']
+    categories = df['category']
+    metrics = df['metric']
+    values = df['value']
     report_params = report.report_parameters
 
     expected_length = (len(report_params.metrics) *
                        len(report_params.categories) *
                        len(report_params.object_pairs))
-    assert all([len(v) == expected_length for k, v in cds.data.items()])
+    assert all([len(v) == expected_length for k, v in df.items()])
 
     original_names = [fxobs.forecast.name
                       for fxobs in report_params.object_pairs]
@@ -91,27 +92,27 @@ def test_construct_metrics_cds(report_with_raw):
     assert (values == 2).all()
 
 
-def test_construct_metrics_cds_with_rename(report_with_raw):
+def test_construct_metrics_dataframe_with_rename(report_with_raw):
     metrics = report_with_raw.raw_report.metrics
-    cds = figures.construct_metrics_cds(metrics,
-                                        rename=figures.abbreviate)
+    df = figures.construct_metrics_dataframe(metrics,
+                                             rename=figures.abbreviate)
     report_params = report_with_raw.report_parameters
     original_names = [fxobs.forecast.name
                       for fxobs in report_params.object_pairs]
     abbreviated = list(map(figures.abbreviate, original_names))
     assert np.all(
-        cds.data['abbrev'] == np.repeat(
+        df['abbrev'] == np.repeat(
             np.array(abbreviated, dtype=object),
             len(report_params.metrics) * len(report_params.categories))
     )
 
 
-def test_construct_metric_cds_no_values():
+def test_construct_metric_dataframe_no_values():
     # Iterative metrics cds creation just build empty cds from an empty
     # dataframe if no MetricResults are found in the metrics tuple
-    cds = figures.construct_metrics_cds(())
-    assert cds.data['index'].size == 0
-    assert 'abbrev' in cds.data
+    df = figures.construct_metrics_dataframe(())
+    assert df['index'].size == 0
+    assert 'abbrev' in df
 
 
 def test_construct_timeseries_cds(report_with_raw):
@@ -343,7 +344,7 @@ def test_raw_report_plots(report_with_raw, no_stray_phantomjs):
     assert plots is not None
 
 
-def test_output_svg(mocker, no_stray_phantomjs):
+def test_output_svg_with_bokeh_figure(mocker, no_stray_phantomjs):
     pytest.importorskip('selenium')
     if shutil.which('phantomjs') is None:  # pragma: no cover
         pytest.skip('PhantomJS must be on PATH to make SVGs')
@@ -388,9 +389,37 @@ def test_output_svg_bokeh_err(mocker):
     assert logger.error.called
 
 
+def test_output_svg_with_plotly_figure(mocker):
+    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    if shutil.which('orca') is None:  # pragma: no cover
+        pytest.skip('orca must be on PATH to make SVGs')
+    values = list(range(5))
+    fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
+    svg = figures.output_svg(fig)
+    assert svg.startswith('<svg')
+    assert svg.endswith('</svg>')
+    assert not logger.error.called
+
+
+@pytest.fixture(scope='function')
+def remove_orca():
+    import plotly.io as pio
+    pio.orca.config.executable = '/dev/null'
+
+def test_output_svg_with_plotly_figure_no_orca(mocker, remove_orca):
+    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    values = list(range(5))
+    fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
+    svg = figures.output_svg(fig)
+    assert svg.startswith('<svg')
+    assert 'Unable' in svg
+    assert svg.endswith('</svg>')
+    assert logger.error.called
+
+
 @pytest.fixture()
-def metric_cds():
-    return ColumnDataSource(data={
+def metric_dataframe():
+    return pd.DataFrame({
         'name': ['First', 'Next'],
         'abbrev': ['1st', 'N'],
         'category': ['hour', 'total'],
@@ -400,43 +429,43 @@ def metric_cds():
     })
 
 
-def test_bar(metric_cds):
-    out = figures.bar(metric_cds, 'mae')
-    assert isinstance(out, Figure)
+def test_bar(metric_dataframe):
+    out = figures.bar(metric_dataframe, 'mae')
+    assert isinstance(out, graph_objects.Figure)
 
 
-def test_bar_no_metric(metric_cds):
-    out = figures.bar(metric_cds, 'rmse')
-    assert isinstance(out, Figure)
+def test_bar_no_metric(metric_dataframe):
+    out = figures.bar(metric_dataframe, 'rmse')
+    assert isinstance(out, graph_objects.Figure)
 
 
-def test_bar_empty_cds(metric_cds):
-    cds = ColumnDataSource(data={k: [] for k in metric_cds.data.keys()})
-    out = figures.bar(cds, 's')
-    assert isinstance(out, Figure)
+def test_bar_empty_df(metric_dataframe):
+    df = pd.DataFrame({k: [] for k in metric_dataframe.columns})
+    out = figures.bar(df, 's')
+    assert isinstance(out, graph_objects.Figure)
 
 
-def test_bar_subdivisions(metric_cds):
-    out = figures.bar_subdivisions(metric_cds, 'hour', 'mae')
+def test_bar_subdivisions(metric_dataframe):
+    out = figures.bar_subdivisions(metric_dataframe, 'hour', 'mae')
     assert isinstance(out, dict)
     assert len(out) == 1
-    assert all([isinstance(v, Figure) for v in out.values()])
+    assert all([isinstance(v, graph_objects.Figure) for v in out.values()])
 
 
-def test_bar_subdivisions_no_cat(metric_cds):
-    out = figures.bar_subdivisions(metric_cds, 'date', 'mae')
+def test_bar_subdivisions_no_cat(metric_dataframe):
+    out = figures.bar_subdivisions(metric_dataframe, 'date', 'mae')
     assert isinstance(out, dict)
     assert len(out) == 0
 
 
-def test_bar_subdivisions_no_metric(metric_cds):
-    out = figures.bar_subdivisions(metric_cds, 'hour', 'rmse')
+def test_bar_subdivisions_no_metric(metric_dataframe):
+    out = figures.bar_subdivisions(metric_dataframe, 'hour', 'rmse')
     assert isinstance(out, dict)
     assert len(out) == 0
 
 
-def test_bar_subdivisions_empty_cds(metric_cds):
-    cds = ColumnDataSource(data={k: [] for k in metric_cds.data.keys()})
-    out = figures.bar_subdivisions(cds, 'hour', 's')
+def test_bar_subdivisions_empty_df(metric_dataframe):
+    df = pd.DataFrame({k: [] for k in metric_dataframe.columns})
+    out = figures.bar_subdivisions(df, 'hour', 's')
     assert isinstance(out, dict)
     assert len(out) == 0

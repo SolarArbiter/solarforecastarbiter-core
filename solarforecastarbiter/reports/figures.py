@@ -10,10 +10,11 @@ import warnings
 
 
 from bokeh.embed import components
+from bokeh.io.export import get_svgs
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource, Legend, CDSView, BooleanFilter
-from bokeh.models.ranges import Range1d, DataRange1d
-from bokeh.plotting import figure
+from bokeh.models.ranges import Range1d
+from bokeh.plotting import figure, Figure
 from bokeh import palettes
 from bokeh import __version__ as bokeh_version
 import pandas as pd
@@ -39,8 +40,26 @@ OBS_PALETTE_TD_RANGE = pd.timedelta_range(
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
-PLOT_LAYOUT_DEFAULTS = dict(autosize=True, height=250,
-                            margin=PLOT_MARGINS, plot_bgcolor=PLOT_BGCOLOR)
+PLOT_LAYOUT_DEFAULTS = {
+    'autosize': True,
+    'height': 250,
+    'margin': PLOT_MARGINS,
+    'plot_bgcolor': PLOT_BGCOLOR,
+    'font': {'size': 14}
+}
+
+
+def configure_axes(fig, x_range, y_range):
+    """Applies plotly axes configuration to display zero line and grid.
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+    """
+    fig.update_xaxes(showline=True, linewidth=1, linecolor='black')
+    fig.update_xaxes(ticks='outside', range=x_range)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#CCC')
+    fig.update_yaxes(showline=True, linewidth=1, linecolor='black')
+    fig.update_yaxes(ticks='outside', range=y_range)
 
 
 def construct_timeseries_cds(report):
@@ -395,16 +414,21 @@ def bar(df, metric):
     -------
     data_table : bokeh.widgets.DataTable
     """  # NOQA
-    x_range = np.unique(df['abbrev'])
+    data = df[(df['category'] == 'total') & (df['metric'] == metric)]
+    y_range = None
+    x_values = data['abbrev']
     palette = cycle(PALETTE)
-    palette = [next(palette) for _ in x_range]
+    palette = [next(palette) for _ in x_values]
     metric_name = datamodel.ALLOWED_METRICS[metric]
 
     fig = go.Figure()
-    data = df[(df['category'] == 'total') & (df['metric'] == metric)]
-    fig.add_trace(go.Bar(x=data['name'], y=data['value'],
+    fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
-    fig.update_layout(title=metric_name, **PLOT_LAYOUT_DEFAULTS)
+    fig.update_layout(
+        title=f'<b>{metric_name}</b>',
+        xaxis_title=metric_name,
+        **PLOT_LAYOUT_DEFAULTS)
+    configure_axes(fig, None, y_range)
     return fig
 
 
@@ -467,52 +491,61 @@ def bar_subdivisions(df, category, metric):
     """
     palette = cycle(PALETTE)
 
-    tools = 'pan,xwheel_zoom,box_zoom,reset,save'
-    fig_kwargs = dict(tools=tools, toolbar_location='above')
     figs = {}
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
     metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
 
-    fig_kwargs['x_axis_label'] = human_category
-    fig_kwargs['y_axis_label'] = metric_name
+    x_axis_label = human_category
+    y_axis_label = metric_name
 
     data = df[(df['category'] == category) & (df['metric'] == metric)]
 
+    # fallback to plotly defaults for x axis range and offset when not needed
+    x_range = None
+    x_offset = None
+
     # Special handling for x-axis with dates
     if category == 'date':
-        x_range = np.unique(data['index'].dt.strftime('%Y-%m-%d'))
+        if len(data['index']):
+            x_values = np.unique(data['index'].dt.strftime('%Y-%m-%d'))
+        else:
+            x_values = []
     elif category == 'month':
-        x_range = calendar.month_abbr[1:]
+        x_values = calendar.month_abbr[1:]
     elif category == 'weekday':
-        x_range = calendar.day_abbr[0:]
+        x_values = calendar.day_abbr[0:]
     elif category == 'hour':
-        x_range = [str(i) for i in range(25)]
+        x_values = [str(i) for i in range(25)]
+        x_range = (0, 24)
+        x_offset = 1
     else:
-        x_range = np.unique(data['index'])
+        x_values = np.unique(data['index'])
 
-    palette = [next(palette) for _ in x_range]
     y_data = np.asarray(data['value'])
     if len(y_data) == 0:
-        start, end = None, None
+        y_range = (None, None)
     else:
         y_min = np.nanmin(y_data)
         y_max = np.nanmax(y_data)
-        start, end = calc_y_start_end(y_min, y_max)
-    fig_kwargs['y_range'] = DataRange1d(start=start, end=end)
+        y_range = calc_y_start_end(y_min, y_max)
 
     unique_names = np.unique(np.asarray(data['name']))
+    palette = [next(palette) for _ in unique_names]
     for i, name in enumerate(unique_names):
         # Create figure
         title = name + ' ' + metric_name
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=x_range, y=data['value'],
+        fig.add_trace(go.Bar(x=x_values, y=data['value'], offset=x_offset,
                              marker=go.bar.Marker(color=palette[i])))
 
-        fig.update_layout(title=title, **PLOT_LAYOUT_DEFAULTS)
-
+        fig.update_layout(
+            title=f'<b>{title}</b>',
+            xaxis_title=x_axis_label,
+            yaxis_title=y_axis_label,
+            **PLOT_LAYOUT_DEFAULTS)
+        configure_axes(fig, x_range, y_range)
         figs[name] = fig
-
     return figs
 
 
@@ -560,14 +593,14 @@ def _make_webdriver():
             driver.quit()
 
 
-def output_svg(fig):
+def output_svg(fig, driver=None):
     """
-    Generates an SVG from the Bokeh figure. Errors in the
+    Generates an SVG from the Bokeh or Plotly figure. Errors in the
     process are logged and an SVG with error text is returned.
 
     Parameters
     ----------
-    fig : bokeh.plotting.Figure
+    fig : bokeh.plotting.Figure or plotly.graph_objects.Figure
     driver : selenium.webdriver.remote.webdriver.WebDriver, default None
         Web driver to use to render SVG figures. With bokeh<2.0 this
         defaults to trying to use phantomjs.
@@ -577,9 +610,12 @@ def output_svg(fig):
     svg : str
     """
     try:
-        svg = ''  # fig.to_image(format='svg')
-        # TODO: update after setting up ORCA
-    except Exception:
+        if isinstance(fig, Figure):
+            fig.output_backend = 'svg'
+            svg = get_svgs(fig, driver=driver)[0]
+        else:
+            svg = fig.to_image(format='svg').decode('utf-8')
+    except Exception as e:
         logger.error('Could not generate SVG for figure %s',
                      getattr(fig, 'name', 'unnamed'))
         svg = (

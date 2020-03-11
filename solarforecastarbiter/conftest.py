@@ -1407,17 +1407,18 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
         figs = datamodel.RawReportPlots(
-            '1.4.0', '<script></script', (
+            '1.4.0',(
                 datamodel.ReportFigure.from_dict(
                     {
                         'name': 'mae tucson ghi',
-                        'div': '<div></div>',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
                         'svg': '<svg></svg>',
                         'figure_type': 'plot?',
                         'category': 'total',
                         'metric': 'mae'
                     }
-                ),)
+                ),),
+            '4.5.3',
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -1772,7 +1773,7 @@ def report_metadata_dict():
 def report_figure_dict():
     return {
         'name': 'mae tucson ghi',
-        'div': '<div></div>',
+        'spec': '{"prop": "value"}',
         'svg': '<svg></svg>',
         'figure_type': 'plot?',
         'category': 'total',

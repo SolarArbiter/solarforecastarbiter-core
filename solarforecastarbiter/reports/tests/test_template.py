@@ -42,6 +42,9 @@ def expected_kwargs(report_with_raw, dash_url):
 
         version = report_with_raw.raw_report.plots.bokeh_version
         kwargs['bokeh_version'] = version
+
+        plotly_version = report_with_raw.raw_report.plots.plotly_version
+        kwargs['plotly_version'] = plotly_version
         if with_series:
             kwargs['timeseries_script'] = '<script></script>'
             kwargs['timeseries_div'] = '<div></div>'

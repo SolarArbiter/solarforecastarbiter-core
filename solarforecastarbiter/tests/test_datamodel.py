@@ -608,3 +608,30 @@ def test_aggregate_observation_sfp_invalid(
     aggobs_dict[key] = value
     with pytest.raises(TypeError):
         datamodel.AggregateObservation.from_dict(aggobs_dict)
+
+
+@pytest.mark.parametrize('spec', [
+    ('<script>alert("hello");</script>'),
+    ('bad'),
+    ('{"key": "value": "value"}'),
+    ('{"key": "value"});</script><script>parseInt(1'),  # noqa
+    ('{});</script><a onclick=alert("hello")></a><script>eval('),
+])
+def test_load_report_figure_invalid_spec(report_figure_dict, spec):
+    json_dict = report_figure_dict.copy()
+    json_dict.update(spec=spec)
+    with pytest.raises(ValueError):
+        datamodel.ReportFigure.from_dict(json_dict)
+
+
+@pytest.mark.parametrize('spec', [
+    ('<script>alert("hello");</script>'),
+    ('bad'),
+    ('{"key": "value": "value"}'),
+    ('{"key": "value"});</script><script>parseInt(1'),  # noqa
+    ('{});</script><a onclick=alert("hello")></a><script>eval('),
+])
+def test_update_report_figure_invalid_spec(report_figure_dict, spec):
+    fig = datamodel.ReportFigure.from_dict(report_figure_dict)
+    with pytest.raises(ValueError):
+        fig.replace(spec=spec)
