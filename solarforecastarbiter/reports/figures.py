@@ -616,7 +616,7 @@ def output_svg(fig, driver=None):
             svg = get_svgs(fig, driver=driver)[0]
         else:
             svg = fig.to_image(format='svg').decode('utf-8')
-    except Exception as e:
+    except Exception:
         logger.error('Could not generate SVG for figure %s',
                      getattr(fig, 'name', 'unnamed'))
         svg = (

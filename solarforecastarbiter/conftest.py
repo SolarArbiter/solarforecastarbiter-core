@@ -1407,7 +1407,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
         figs = datamodel.RawReportPlots(
-            '1.4.0',(
+            '1.4.0', (
                 datamodel.ReportFigure.from_dict(
                     {
                         'name': 'mae tucson ghi',

@@ -406,6 +406,7 @@ def remove_orca():
     import plotly.io as pio
     pio.orca.config.executable = '/dev/null'
 
+
 def test_output_svg_with_plotly_figure_no_orca(mocker, remove_orca):
     logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
     values = list(range(5))
