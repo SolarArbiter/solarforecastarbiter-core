@@ -518,7 +518,8 @@ def bar_subdivisions(df, category, metric):
     elif category == 'hour':
         x_values = [str(i) for i in range(25)]
         x_range = (0, 24)
-        x_offset = 1
+        # plotly's offset of 0, makes the bars left justified at the tick
+        x_offset = 0
     else:
         x_values = np.unique(data['index'])
 
