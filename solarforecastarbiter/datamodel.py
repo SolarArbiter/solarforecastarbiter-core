@@ -1237,7 +1237,7 @@ def __check_plot_spec__(plot_spec):
     """Ensure that the provided plot specification is a valid JSON object"""
     try:
         spec_dict = json.loads(plot_spec)
-        validate(instance=spec_dict, schema={'type':'object'})
+        validate(instance=spec_dict, schema={'type': 'object'})
     except (json.JSONDecodeError, ValidationError):
         raise ValueError('Figure spec must be a valid json object.')
 
