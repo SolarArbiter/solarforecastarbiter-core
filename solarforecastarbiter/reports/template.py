@@ -8,7 +8,7 @@ from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
 from plotly import __version__ as plotly_version
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports import figures
+import solarforecastarbiter.reports.figures.plotly_figures as figures
 
 
 logger = logging.getLogger(__name__)

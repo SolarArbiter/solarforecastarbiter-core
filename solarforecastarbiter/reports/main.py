@@ -59,7 +59,7 @@ import pandas as pd
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
-from solarforecastarbiter.reports.figures import plotly_figures, bokeh_figures
+from solarforecastarbiter.reports.figures import plotly_figures
 from solarforecastarbiter.utils import hijack_loggers
 
 
@@ -160,8 +160,9 @@ def create_raw_report_from_data(report, data):
     report_params = report.report_parameters
     timezone = infer_timezone(report_params)
     versions = get_versions()
-    with hijack_loggers(['solarforecastarbiter.metrics',
-                         'solarforecastarbiter.reports.figures'],
+    with hijack_loggers([
+        'solarforecastarbiter.metrics',
+        'solarforecastarbiter.reports.figures.plotly_figures'],
                         ) as handler:
         # Validate and resample
         processed_fxobs = preprocessing.process_forecast_observations(
@@ -174,7 +175,7 @@ def create_raw_report_from_data(report, data):
             list(report_params.categories),
             list(report_params.metrics)
         )
-        report_plots = figures.plotly_figures.raw_report_plots(report, metrics_list)
+        report_plots = plotly_figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(
         generated_at=generated_at, timezone=timezone, versions=versions,

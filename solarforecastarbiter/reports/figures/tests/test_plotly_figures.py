@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 
-from solarforecastarbiter.reports import figures
+import solarforecastarbiter.reports.figures.plotly_figures as figures
 from solarforecastarbiter import datamodel
 
 
@@ -344,53 +344,9 @@ def test_raw_report_plots(report_with_raw, no_stray_phantomjs):
     assert plots is not None
 
 
-def test_output_svg_with_bokeh_figure(mocker, no_stray_phantomjs):
-    pytest.importorskip('selenium')
-    if shutil.which('phantomjs') is None:  # pragma: no cover
-        pytest.skip('PhantomJS must be on PATH to make SVGs')
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
-    from bokeh.plotting import figure
-    fig = figure(title='line', name='line_plot')
-    fig.line([0, 1], [0, 1])
-    with figures._make_webdriver() as driver:
-        svg = figures.output_svg(fig, driver=driver)
-    assert svg.startswith('<svg')
-    assert svg.endswith('</svg>')
-    assert not logger.error.called
-
-
-def test_output_svg_no_phantom(mocker):
-    pytest.importorskip('selenium')
-    mocker.patch('selenium.webdriver.PhantomJS',
-                 side_effect=RuntimeError)
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
-    from bokeh.plotting import figure
-    fig = figure(title='line', name='line_plot')
-    fig.line([0, 1], [0, 1])
-    with figures._make_webdriver() as driver:
-        svg = figures.output_svg(fig, driver)
-    assert svg.startswith('<svg')
-    assert 'Unable' in svg
-    assert svg.endswith('</svg>')
-    assert logger.error.called
-
-
-def test_output_svg_bokeh_err(mocker):
-    mocker.patch('solarforecastarbiter.reports.figures.get_svgs',
-                 side_effect=RuntimeError)
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
-    from bokeh.plotting import figure
-    fig = figure(title='line', name='line_plot')
-    fig.line([0, 1], [0, 1])
-    with figures._make_webdriver() as driver:
-        svg = figures.output_svg(fig, driver)
-    assert svg.startswith('<svg')
-    assert svg.endswith('</svg>')
-    assert logger.error.called
-
-
 def test_output_svg_with_plotly_figure(mocker):
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.plotly_figures.logger')
     if shutil.which('orca') is None:  # pragma: no cover
         pytest.skip('orca must be on PATH to make SVGs')
     values = list(range(5))
@@ -408,7 +364,8 @@ def remove_orca():
 
 
 def test_output_svg_with_plotly_figure_no_orca(mocker, remove_orca):
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.plotly_figures.logger')
     values = list(range(5))
     fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
     svg = figures.output_svg(fig)

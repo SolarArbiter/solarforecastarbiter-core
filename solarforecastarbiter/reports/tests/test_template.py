@@ -1,6 +1,9 @@
 import pytest
 import jinja2
 
+
+from bokeh import __version__ as bokeh_version
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import template
 
@@ -8,14 +11,14 @@ from solarforecastarbiter.reports import template
 @pytest.fixture
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
     mocked.return_value = ('<script></script>', '<div></div>')
 
 
 @pytest.fixture
 def mocked_timeseries_plots_exception(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
     mocked.side_effect = Exception
 
 
@@ -39,10 +42,7 @@ def expected_kwargs(report_with_raw, dash_url):
         if with_report:
             kwargs['report'] = report_with_raw
         kwargs['dash_url'] = dash_url
-
-        version = report_with_raw.raw_report.plots.bokeh_version
-        kwargs['bokeh_version'] = version
-
+        kwargs['bokeh_version'] = bokeh_version
         plotly_version = report_with_raw.raw_report.plots.plotly_version
         kwargs['plotly_version'] = plotly_version
         if with_series:
@@ -60,21 +60,19 @@ def test__get_render_kwargs_no_series(
         dash_url,
         with_series
     )
-    assert kwargs == expected_kwargs(with_series)
+    exp = expected_kwargs(with_series)
+    assert kwargs == exp
 
 
 def test__get_render_kwargs_pending(
         mocked_timeseries_plots, pending_report, dash_url,
         expected_kwargs, mocker):
-    mocker.patch('solarforecastarbiter.reports.template.bokeh_version',
-                 new='newest')
     kwargs = template._get_render_kwargs(
         pending_report,
         dash_url,
         False
     )
     exp = expected_kwargs(False)
-    exp['bokeh_version'] = 'newest'
     exp['report'] = pending_report
     assert kwargs == exp
 

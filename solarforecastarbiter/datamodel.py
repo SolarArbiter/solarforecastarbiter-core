@@ -1278,16 +1278,10 @@ class RawReportPlots(BaseModel):
 
     Parameters
     ----------
-    bokeh_version: str
-        The bokeh version used when generating the timeseries plots.
-    script: str
-        The html script tag containing all of the bokeh javascript for the
-        plots.
     figures: tuple of :py:class:`solarforecastarbiter.datamodel.ReportFigure`
     plotly_version: str
         The plotly version used when generating metrics plots.
     """
-    bokeh_version: str
     figures: Tuple[ReportFigure, ...]
     plotly_version: str
 
