@@ -1,6 +1,12 @@
 """
 Functions to make all of the figures for Solar Forecast Arbiter reports using
 Bokeh.
+
+This code is currently unreachable from the rest of the Solar Forecast Arbiter
+Core library. It may be used in place of the plotly_figures to generate bokeh
+plots for the `plots` attribute of the RawReport object. See
+:py:mod:`solarforecastarbiter.reports.main` for an example of report
+generation.
 """
 import calendar
 from contextlib import contextmanager

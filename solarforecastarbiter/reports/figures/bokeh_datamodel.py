@@ -1,5 +1,5 @@
-"""File containing the original datamodel objects for creating bokeh plots in
-a report.
+"""File containing necessary datamodel objects for creating bokeh metric
+plots.
 """
 from typing import Tuple
 

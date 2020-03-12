@@ -11,11 +11,10 @@ import warnings
 
 
 from bokeh.embed import components
-from bokeh.io.export import get_svgs
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource, Legend, CDSView, BooleanFilter
 from bokeh.models.ranges import Range1d
-from bokeh.plotting import figure, Figure
+from bokeh.plotting import figure
 from bokeh import palettes
 import pandas as pd
 from plotly import __version__ as plotly_version
@@ -594,28 +593,21 @@ def _make_webdriver():
             driver.quit()
 
 
-def output_svg(fig, driver=None):
+def output_svg(fig):
     """
     Generates an SVG from the Bokeh or Plotly figure. Errors in the
     process are logged and an SVG with error text is returned.
 
     Parameters
     ----------
-    fig : bokeh.plotting.Figure or plotly.graph_objects.Figure
-    driver : selenium.webdriver.remote.webdriver.WebDriver, default None
-        Web driver to use to render SVG figures. With bokeh<2.0 this
-        defaults to trying to use phantomjs.
+    fig : plotly.graph_objects.Figure
 
     Returns
     -------
     svg : str
     """
     try:
-        if isinstance(fig, Figure):
-            fig.output_backend = 'svg'
-            svg = get_svgs(fig, driver=driver)[0]
-        else:
-            svg = fig.to_image(format='svg').decode('utf-8')
+        svg = fig.to_image(format='svg').decode('utf-8')
     except Exception:
         logger.error('Could not generate SVG for figure %s',
                      getattr(fig, 'name', 'unnamed'))

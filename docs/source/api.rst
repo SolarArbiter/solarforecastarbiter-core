@@ -522,15 +522,31 @@ Functions to generate report figures
 .. autosummary::
    :toctree: generated/
 
-   reports.figures.construct_timeseries_cds
-   reports.figures.construct_metrics_cds
-   reports.figures.timeseries
-   reports.figures.scatter
-   reports.figures.bar
-   reports.figures.bar_subdivisions
-   reports.figures.output_svg
-   reports.figures.raw_report_plots
-   reports.figures.timeseries_plots
+   reports.figures.plotly_figures.construct_timeseries_cds
+   reports.figures.plotly_figures.construct_metrics_cds
+   reports.figures.plotly_figures.timeseries
+   reports.figures.plotly_figures.scatter
+   reports.figures.plotly_figures.bar
+   reports.figures.plotly_figures.bar_subdivisions
+   reports.figures.plotly_figures.output_svg
+   reports.figures.plotly_figures.raw_report_plots
+   reports.figures.plotly_figures.timeseries_plots
+
+
+Retired functions for generating Bokeh metric plots.
+
+.. autosummary::
+   :toctree: generated/
+
+   reports.figures.bokeh_figures.construct_timeseries_cds
+   reports.figures.bokeh_figures.construct_metrics_cds
+   reports.figures.bokeh_figures.timeseries
+   reports.figures.bokeh_figures.scatter
+   reports.figures.bokeh_figures.bar
+   reports.figures.bokeh_figures.bar_subdivisions
+   reports.figures.bokeh_figures.output_svg
+   reports.figures.bokeh_figures.raw_report_plots
+   reports.figures.bokeh_figures.timeseries_plots
 
 Template
 --------
