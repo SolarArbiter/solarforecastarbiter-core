@@ -1,2 +1,11 @@
-{# Exports all report metric figures for later use
-<script
+{# Exports all report metric figures for later use #}
+<script>window.addEventListener('load', function () {
+    console.log('window loaded');
+    console.log("metric plots at load", metric_plots);
+    for(var key in metric_plots){
+        if(metric_plots.hasOwnProperty(key)){
+            Plotly.newPlot(key, metric_plots[key]);
+        }
+    }
+    }, false);
+</script>
