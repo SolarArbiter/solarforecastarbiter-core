@@ -4,7 +4,6 @@ import shutil
 
 
 from plotly import graph_objects
-from bokeh.models import ColumnDataSource
 import numpy as np
 import pandas as pd
 import pytest
@@ -115,57 +114,6 @@ def test_construct_metric_dataframe_no_values():
     assert 'abbrev' in df
 
 
-def test_construct_timeseries_cds(report_with_raw):
-    report = report_with_raw
-    raw_report = report.raw_report
-    timeseries_cds, metadata_cds = figures.construct_timeseries_cds(report)
-
-    ts_pair_index = timeseries_cds.data['pair_index']
-    assert np.all(
-        ts_pair_index == np.arange(
-            len(report.report_parameters.object_pairs)).repeat(
-                [len(fxob.forecast_values)
-                 for fxob in raw_report.processed_forecasts_observations])
-    )
-    observation_values = timeseries_cds.data['observation_values']
-    forecast_values = timeseries_cds.data['forecast_values']
-    assert len(observation_values) == len(ts_pair_index)
-    assert len(forecast_values) == len(ts_pair_index)
-    # just testing for non-mangling behavior here
-    assert np.all(observation_values == 100)
-    assert np.all(forecast_values == 100)
-
-    assert 'pair_index' in metadata_cds.data
-    assert 'observation_name' in metadata_cds.data
-    assert 'forecast_name' in metadata_cds.data
-    assert 'interval_label' in metadata_cds.data
-    assert 'observation_hash' in metadata_cds.data
-    assert 'forecast_hash' in metadata_cds.data
-    assert 'observation_color' in metadata_cds.data
-
-
-@pytest.mark.parametrize('value', ['someid', None])
-def test_construct_timeseries_cds_no_data(
-        set_report_pfxobs_values, value):
-    report = set_report_pfxobs_values(value)
-    with pytest.raises(ValueError):
-        timeseires_cds, metadata_cds = figures.construct_timeseries_cds(report)
-
-
-@pytest.mark.parametrize('hash_key', [
-    'observation_hash', 'forecast_hash'])
-def test_extract_metadata_from_cds(report_with_raw, hash_key):
-    timeseries_cds, metadata_cds = figures.construct_timeseries_cds(
-        report_with_raw)
-    for the_hash in metadata_cds.data[hash_key]:
-        metadata = figures._extract_metadata_from_cds(
-            metadata_cds, the_hash, hash_key)
-        assert 'pair_index' in metadata
-        assert 'observation_name' in metadata
-        assert 'interval_label' in metadata
-        assert 'observation_color' in metadata
-
-
 @pytest.fixture
 def fxobs_name_mock(mocker):
     def fn(obs_name, fx_name, agg=False):
@@ -230,36 +178,6 @@ def test_boolean_filter_indices_by_pair(mocker, array, index, expected):
     assert np.all(result == expected)
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
-@pytest.mark.parametrize('fmin,fmax,omin,omax,expected', [
-    (-5, 5, -3, 3, (-5, 5)),
-    (1, 5, 0, 4, (0, 5)),
-    (np.nan, np.nan, np.nan, np.nan, (-999, 999)),
-    (np.nan, np.nan, 0, 1, (0, 1))
-])
-def test_get_scatter_limits(fmin, fmax, omin, omax, expected):
-    cds = ColumnDataSource({
-        'observation_values': np.array([omin, omax]),
-        'forecast_values': np.array([fmin, fmax]),
-    })
-    assert figures._get_scatter_limits(cds) == expected
-
-
-@pytest.mark.filterwarnings("ignore")
-@pytest.mark.parametrize('obs,fx,expected', [
-    ([None], [None], (-999, 999)),
-    (np.array([]), np.array([0, 1]), (0, 1)),
-    (np.array([0, 1]), np.array([]), (0, 1)),
-    (np.array([]), np.array([]), (-999, 999)),
-])
-def test_get_scatter_limits_empty(obs, fx, expected):
-    cds = ColumnDataSource({
-        'observation_values': obs,
-        'forecast_values': fx
-    })
-    assert figures._get_scatter_limits(cds) == expected
-
-
 @pytest.mark.parametrize('y_min,y_max,pad,expected', [
     (1.0, 10.0, 0.5, (0.0, 5.0)),
     (-5.0, 10.0, 1.5, (-7.5, 15.0)),
@@ -281,37 +199,6 @@ def test_start_end(y_min, y_max, pad, expected):
 def test_abbreviate(arg, expected):
     out = figures.abbreviate(arg)
     assert out == expected
-
-
-def test_timeseries(report_with_raw):
-    timeseries_cds, metadata_cds = figures.construct_timeseries_cds(
-        report_with_raw)
-    report_params = report_with_raw.report_parameters
-    fig = figures.timeseries(
-        timeseries_cds,
-        metadata_cds,
-        report_params.start,
-        report_params.end,
-        report_params.object_pairs[0].forecast.units
-    )
-    assert fig is not None
-
-
-def test_scatter(report_with_raw):
-    timeseries_cds, metadata_cds = figures.construct_timeseries_cds(
-        report_with_raw)
-    fig = figures.scatter(
-        timeseries_cds,
-        metadata_cds,
-        report_with_raw.report_parameters.object_pairs[0].forecast.units,
-    )
-    assert fig is not None
-
-
-def test_timeseries_plots(report_with_raw):
-    script, div = figures.timeseries_plots(report_with_raw)
-    assert script is not None
-    assert div is not None
 
 
 @pytest.fixture()

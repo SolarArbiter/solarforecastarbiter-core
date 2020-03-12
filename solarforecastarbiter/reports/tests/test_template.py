@@ -11,14 +11,14 @@ from solarforecastarbiter.reports import template
 @pytest.fixture
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
     mocked.return_value = ('<script></script>', '<div></div>')
 
 
 @pytest.fixture
 def mocked_timeseries_plots_exception(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
     mocked.side_effect = Exception
 
 

@@ -1,4 +1,4 @@
-"""File containing necessary datamodel objects for creating bokeh metric
+"""File containing datamodel objects for creating bokeh metric
 plots.
 """
 from typing import Tuple
