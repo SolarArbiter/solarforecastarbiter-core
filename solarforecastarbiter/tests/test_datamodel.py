@@ -611,8 +611,10 @@ def test_aggregate_observation_sfp_invalid(
 
 
 @pytest.mark.parametrize('spec', [
+    ('\"<script>alert("hello");</script>\"'),
     ('<script>alert("hello");</script>'),
     ('bad'),
+    ('\"bad\"'),
     ('{"key": "value": "value"}'),
     ('{"key": "value"});</script><script>parseInt(1'),  # noqa
     ('{});</script><a onclick=alert("hello")></a><script>eval('),
@@ -625,8 +627,10 @@ def test_load_report_figure_invalid_spec(report_figure_dict, spec):
 
 
 @pytest.mark.parametrize('spec', [
+    ('\"<script>alert("hello");</script>\"'),
     ('<script>alert("hello");</script>'),
     ('bad'),
+    ('\"bad\"'),
     ('{"key": "value": "value"}'),
     ('{"key": "value"});</script><script>parseInt(1'),  # noqa
     ('{});</script><a onclick=alert("hello")></a><script>eval('),
