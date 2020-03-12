@@ -59,7 +59,7 @@ import pandas as pd
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
-from solarforecastarbiter.reports import figures
+from solarforecastarbiter.reports.figures import plotly_figures, bokeh_figures
 from solarforecastarbiter.utils import hijack_loggers
 
 
@@ -174,7 +174,7 @@ def create_raw_report_from_data(report, data):
             list(report_params.categories),
             list(report_params.metrics)
         )
-        report_plots = figures.raw_report_plots(report, metrics_list)
+        report_plots = figures.plotly_figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(
         generated_at=generated_at, timezone=timezone, versions=versions,
