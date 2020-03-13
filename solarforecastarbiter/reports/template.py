@@ -8,10 +8,26 @@ from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
 from plotly import __version__ as plotly_version
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports.figures import bokeh_figures
+from solarforecastarbiter.reports.figures import bokeh_figures, plotly_figures
 
 
 logger = logging.getLogger(__name__)
+
+
+def build_metrics_json(report):
+    """Creates a dict from the metrics results in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The json representing the report metrics
+    """
+    df = plotly_figures.construct_metrics_dataframe(report.raw_report.metrics)
+    return df.to_json(orient="records")
 
 
 def _get_render_kwargs(report, dash_url, with_timeseries):
@@ -40,9 +56,9 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
+        metrics_json=build_metrics_json(report),
     )
     report_plots = getattr(report.raw_report, 'plots', None)
-
     # get plotting library versions used when plots were generated.
     # if plot generation failed, fallback to the curent version
     plot_bokeh = getattr(report_plots, 'bokeh_version', None)

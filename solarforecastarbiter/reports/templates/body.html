@@ -155,6 +155,7 @@ generate a new report after the data provider submits new data.
   {% endfor %}
 {% endfor %}
 </div>
+{% include "load_metrics.html" %}
 {{ macros.download_csv_script () | safe }}
 {% endblock %}
 

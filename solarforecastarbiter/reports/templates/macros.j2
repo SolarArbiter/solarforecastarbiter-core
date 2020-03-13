@@ -162,20 +162,24 @@
 
 {% macro download_csv_script() %}
 <script>
-    function table_to_csv(source) {
-        const columns = Object.keys(source.data)
-        const nrows = source.get_length()
+    function json_to_csv(source) {
+        const columns = Object.getOwnPropertyNames(source[0])
+        const nrows = source.length
         const lines = [columns.join(',')]
 
         for (let i = 0; i < nrows; i++) {
             let row = [];
             for (let j = 0; j < columns.length; j++) {
                 const column = columns[j]
-                var val = source.data[column][i]
+                var val = source[i][column]
                 if (column == 'index' && typeof val == 'number' && val > 100000000) {
                     val = new Date(val).toISOString().split('T')[0]
                 } else {
-                    val = val.toString()
+                    if(val == null){
+                        val = 'nan';
+                    }else{
+                        val = val.toString()
+                    }
                 }
                 row.push(val)
             }
@@ -185,16 +189,8 @@
     }
 
     function download_metrics_as_csv(report_name) {
-        var source;
-        for (doc of Bokeh.documents) {
-            var nsource = doc.get_model_by_name('metrics_cds')
-            if (nsource != null) {
-                source = nsource
-            }
-        }
-
         const filename = report_name.replace(/ /g, '_') + '_metrics.csv'
-        filetext = table_to_csv(source)
+        filetext = json_to_csv(metrics_json)
         const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
 
         //addresses IE
