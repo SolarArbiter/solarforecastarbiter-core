@@ -1407,16 +1407,18 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
         figs = datamodel.RawReportPlots(
-           (datamodel.ReportFigure.from_dict(
-                {
-                    'name': 'mae tucson ghi',
-                    'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-                    'svg': '<svg></svg>',
-                    'figure_type': 'plot?',
-                    'category': 'total',
-                    'metric': 'mae'
-                }
-            ),), '4.5.3',
+            (
+                datamodel.PlotlyReportFigure.from_dict(
+                    {
+                        'figure_class': 'plotly',
+                        'name': 'mae tucson ghi',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
+                        'svg': '<svg></svg>',
+                        'figure_type': 'bar',
+                        'category': 'total',
+                        'metric': 'mae'
+                    }
+                ),), '4.5.3',
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -1768,20 +1770,37 @@ def report_metadata_dict():
 
 
 @pytest.fixture
-def report_figure_dict():
+def plotly_report_figure_dict():
     return {
         'name': 'mae tucson ghi',
-        'spec': '{"prop": "value"}',
+        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
         'svg': '<svg></svg>',
-        'figure_type': 'plot?',
+        'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae'
     }
 
 
 @pytest.fixture
-def report_figure(report_figure_dict):
-    return datamodel.ReportFigure.from_dict(report_figure_dict)
+def bokeh_report_figure_dict():
+    return{
+        'name': 'mae tucson ghi',
+        'div': '<div></div>',
+        'svg': '<svg></svg>',
+        'figure_type': 'bar',
+        'category': 'total',
+        'metric': 'mae'
+    }
+
+
+@pytest.fixture
+def plotly_report_figure(plotly_report_figure_dict):
+    return datamodel.PlotlyReportFigure.from_dict(plotly_report_figure_dict)
+
+
+@pytest.fixture
+def bokeh_report_figure(bokeh_report_figure_dict):
+    return datamodel.BokehReportFigure.from_dict(bokeh_report_figure_dict)
 
 
 @pytest.fixture

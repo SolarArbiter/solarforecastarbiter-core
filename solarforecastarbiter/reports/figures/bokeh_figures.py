@@ -33,8 +33,6 @@ import numpy as np
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.plotting.utils import line_or_step
-from solarforecastarbiter.reports.figures.bokeh_datamodel import (
-        BokehRawReportPlots, BokehReportFigure)
 
 
 logger = logging.getLogger(__name__)
@@ -684,7 +682,7 @@ def output_svg(fig, driver=None):
 
 
 def raw_report_plots(report, metrics):
-    """Create a BokehRawReportPlots object from the metrics of a report.
+    """Create a RawReportPlots object from the metrics of a report.
 
     Parameters
     ----------
@@ -693,8 +691,8 @@ def raw_report_plots(report, metrics):
 
     Returns
     -------
-    :py:class:`solarforecastarbiter.reports.figures.bokeh_datamodel.BokehRawReportPlots`
-    """  # noqa
+    :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
+    """
     cds = construct_metrics_cds(metrics, rename=abbreviate)
     # Create initial bar figures
     figure_dict = {}
@@ -716,12 +714,12 @@ def raw_report_plots(report, metrics):
             cat, met, name = k.split('::', 2)
             fig = figure_dict[k]
             svg = output_svg(fig, driver=driver)
-            mplots.append(BokehReportFigure(
+            mplots.append(datamodel.BokehReportFigure(
                 name=name, category=cat, metric=met, div=v, svg=svg,
                 figure_type='bar'))
 
-    out = BokehRawReportPlots(bokeh_version=bokeh_version, script=script,
-                              figures=tuple(mplots))
+    out = datamodel.RawReportPlots(bokeh_version=bokeh_version, script=script,
+                                   figures=tuple(mplots))
     return out
 
 

@@ -40,15 +40,16 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
-        # get bokeh version used when plots were generated.
-        # if plot generation failed, fallback to the curent version
-        bokeh_version=getattr(
-            getattr(report.raw_report, 'plots', None),
-            'bokeh_version', bokeh_version),
-        plotly_version=getattr(
-            getattr(report.raw_report, 'plots', None),
-            'plotly_version', plotly_version)
     )
+    report_plots = getattr(report.raw_report, 'plots', None)
+
+    # get plotting library versions used when plots were generated.
+    # if plot generation failed, fallback to the curent version
+    plot_bokeh = getattr(report_plots, 'bokeh_version', None)
+    kwargs['bokeh_version'] = plot_bokeh if plot_bokeh else bokeh_version
+
+    plot_plotly = getattr(report_plots, 'plotly_version', None)
+    kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
     if with_timeseries:
         try:
             script, div = bokeh_figures.timeseries_plots(report)

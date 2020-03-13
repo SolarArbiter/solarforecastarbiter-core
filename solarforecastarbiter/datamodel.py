@@ -1244,6 +1244,29 @@ def __check_plot_spec__(plot_spec):
 
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):
+    """Parent class for different types of Report Figures"""
+    def __post_init__(self):
+        if type(self) == ReportFigure:
+            raise ValueError("Invalid Report Figure. Figures must be of class "
+                             "PlotlyReportFigure or BokehReportFigure.")
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if model != ReportFigure:
+            return super().from_dict(dict_, raise_on_extra)
+        figure_class = dict_.get('figure_class')
+        if figure_class == 'plotly':
+            return PlotlyReportFigure.from_dict(dict_, raise_on_extra)
+        elif figure_class == 'Bokeh':
+            return BokehReportFigure.from_dict(dict_, raise_on_extra)
+        else:
+            raise NotImplementedError(
+                f'Do not know how to process {dict_} into a ReportFigure.')
+
+
+@dataclass(frozen=True)
+class PlotlyReportFigure(ReportFigure):
     """A class for storing metric plots for a report with associated metadata.
 
     Parameters
@@ -1265,11 +1288,48 @@ class ReportFigure(BaseModel):
     spec: str
     svg: str
     figure_type: str
+    figure_class: str = 'plotly'
     category: str = ''
     metric: str = ''
 
     def __post_init__(self):
         __check_plot_spec__(self.spec)
+
+
+@dataclass(frozen=True)
+class BokehReportFigure(ReportFigure):
+    """A class for storing metric plots for a report with associated metadata.
+    Parameters
+    ----------
+    name: str
+        A descriptive name for the figure.
+    div: str
+        An html div element to be target of Bokeh javascript.
+    svg: str
+        A static svg copy of the plot, for including in the pdf version.
+    figure_type: str
+        The type of plot, e.g. bar or scatter.
+    category: str
+        The metric category. One of ALLOWED_CATEGORIES keys.
+    metric: str
+        The metric being plotted.
+    """
+    name: str
+    div: str
+    svg: str
+    figure_type: str
+    figure_class: str = 'bokeh'
+    category: str = ''
+    metric: str = ''
+
+
+def __bokeh_or_plotly__(cls):
+    if cls.bokeh_version is not None and cls.plotly_version is not None:
+        raise KeyError('Only provide one of "bokeh_version" or '
+                       '"plotly_version" to RawReportPlots')
+    elif cls.bokeh_version is None and cls.plotly_version is None:
+        raise KeyError('Must provide one of "bokeh_version" or '
+                       '"plotly_version" to RawReportPlots')
 
 
 @dataclass(frozen=True)
@@ -1283,7 +1343,16 @@ class RawReportPlots(BaseModel):
         The plotly version used when generating metrics plots.
     """
     figures: Tuple[ReportFigure, ...]
-    plotly_version: str
+    plotly_version: Union[str, None] = None
+    bokeh_version: Union[str, None] = None
+    script: Union[str, None] = None
+
+    def __post_init__(self):
+        __bokeh_or_plotly__(self)
+        if self.bokeh_version is not None:
+            if self.script is None:
+                raise KeyError('Must provide script for Bokeh plots to '
+                               'RawReportPlots')
 
 
 @dataclass(frozen=True)

@@ -411,7 +411,7 @@ def raw_report_plots(report, metrics):
         cat, met, name = k.split('::', 2)
         figure_spec = figure_dict[k].to_json()
         svg = output_svg(fig)
-        mplots.append(datamodel.ReportFigure(
+        mplots.append(datamodel.PlotlyReportFigure(
             name=name, category=cat, metric=met, spec=figure_spec,
             svg=svg, figure_type='bar'))
 
