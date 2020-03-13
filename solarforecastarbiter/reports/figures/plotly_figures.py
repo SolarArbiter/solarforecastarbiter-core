@@ -42,14 +42,22 @@ PLOT_LAYOUT_DEFAULTS = {
 }
 
 
-def configure_axes(fig, x_range, y_range):
+def configure_axes(fig, x_ticks, y_range):
     """Applies plotly axes configuration to display zero line and grid.
     Parameters
     ----------
     fig: plotly.graph_objects.Figure
+
+    x_range: list
+        List of values for the x axis, None will allow cause the plot to use
+        x values as labels and restrict to available data.
+    y_range: Tuple
+        Tuple of (min, max) to set the initial y range of the plot.
     """
     fig.update_xaxes(showline=True, linewidth=1, linecolor='black')
-    fig.update_xaxes(ticks='outside', range=x_range)
+    if x_ticks is not None:
+        fig.update_xaxes(ticks='outside', tickvals=x_ticks,
+                         range=(-.5, len(x_ticks)))
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#CCC')
     fig.update_yaxes(showline=True, linewidth=1, linecolor='black')
     fig.update_yaxes(ticks='outside', range=y_range)
@@ -260,27 +268,17 @@ def bar_subdivisions(df, category, metric):
 
     data = df[(df['category'] == category) & (df['metric'] == metric)]
 
-    # fallback to plotly defaults for x axis range and offset when not needed
-    x_range = None
     x_offset = None
 
     # Special handling for x-axis with dates
-    if category == 'date':
-        if len(data['index']):
-            x_values = np.unique(data['index'].dt.strftime('%Y-%m-%d'))
-        else:
-            x_values = []
-    elif category == 'month':
-        x_values = calendar.month_abbr[1:]
-    elif category == 'weekday':
-        x_values = calendar.day_abbr[0:]
+    if category == 'weekday':
+        x_ticks = calendar.day_abbr[0:]
     elif category == 'hour':
-        x_values = [str(i) for i in range(25)]
-        x_range = (0, 24)
+        x_ticks = list(range(25))
         # plotly's offset of 0, makes the bars left justified at the tick
         x_offset = 0
     else:
-        x_values = np.unique(data['index'])
+        x_ticks = None
 
     y_data = np.asarray(data['value'])
     if len(y_data) == 0:
@@ -293,10 +291,15 @@ def bar_subdivisions(df, category, metric):
     unique_names = np.unique(np.asarray(data['name']))
     palette = [next(palette) for _ in unique_names]
     for i, name in enumerate(unique_names):
+        plot_data = data[data['name'] == name]
+        if len(plot_data['index']):
+            x_values = plot_data['index']
+        else:
+            x_values = []
         # Create figure
         title = name + ' ' + metric_name
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=x_values, y=data['value'], offset=x_offset,
+        fig.add_trace(go.Bar(x=x_values, y=plot_data['value'], offset=x_offset,
                              marker=go.bar.Marker(color=palette[i])))
 
         fig.update_layout(
@@ -304,7 +307,7 @@ def bar_subdivisions(df, category, metric):
             xaxis_title=x_axis_label,
             yaxis_title=y_axis_label,
             **PLOT_LAYOUT_DEFAULTS)
-        configure_axes(fig, x_range, y_range)
+        configure_axes(fig, x_ticks, y_range)
         figs[name] = fig
     return figs
 
