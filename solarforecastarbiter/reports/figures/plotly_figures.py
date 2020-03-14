@@ -273,6 +273,7 @@ def bar_subdivisions(df, category, metric):
     # Special handling for x-axis with dates
     if category == 'weekday':
         x_ticks = calendar.day_abbr[0:]
+
     elif category == 'hour':
         x_ticks = list(range(25))
         # plotly's offset of 0, makes the bars left justified at the tick
@@ -296,10 +297,19 @@ def bar_subdivisions(df, category, metric):
             x_values = plot_data['index']
         else:
             x_values = []
+        if category == 'weekday':
+            # Fill with mon-fri values and pass to enforce displaying the full
+            # week of data.
+            y_values = [plot_data[plot_data['index'] == day]['value'].iloc[0]
+                        if not plot_data[plot_data['index'] == day].empty
+                        else 0 for day in x_ticks]
+            x_values = x_ticks
+        else:
+            y_values = plot_data['value']
         # Create figure
         title = name + ' ' + metric_name
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=x_values, y=plot_data['value'], offset=x_offset,
+        fig.add_trace(go.Bar(x=x_values, y=y_values, offset=x_offset,
                              marker=go.bar.Marker(color=palette[i])))
 
         fig.update_layout(
