@@ -255,7 +255,7 @@ def bar_subdivisions(df, category, metric):
             # week of data.
             y_values = [plot_data[plot_data['index'] == day]['value'].iloc[0]
                         if not plot_data[plot_data['index'] == day].empty
-                        else 0 for day in x_ticks]
+                        else np.nan for day in x_ticks]
             x_values = x_ticks
         else:
             y_values = plot_data['value']
