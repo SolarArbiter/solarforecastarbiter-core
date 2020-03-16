@@ -24,10 +24,16 @@ def build_metrics_json(report):
     Returns
     -------
     str
-        The json representing the report metrics
+        The json representing the report metrics. The string will be a string
+        representing an empty json array if the report does not have a
+        computed raw_report.
     """
-    df = plotly_figures.construct_metrics_dataframe(report.raw_report.metrics)
-    return df.to_json(orient="records")
+    if getattr(report, 'raw_report') is not None:
+        df = plotly_figures.construct_metrics_dataframe(
+            report.raw_report.metrics)
+        return df.to_json(orient="records")
+    else:
+        return "[]"
 
 
 def _get_render_kwargs(report, dash_url, with_timeseries):
