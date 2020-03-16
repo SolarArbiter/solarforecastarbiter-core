@@ -978,7 +978,7 @@ class BaseFilter(BaseModel):
             return ValueFilter.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(
-                f'Do not know how to process {dict_} into a Filter.')
+                'Do not know how to process dict into a Filter.')
 
 
 @dataclass(frozen=True)
@@ -1262,7 +1262,7 @@ class ReportFigure(BaseModel):
             return BokehReportFigure.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(
-                f'Do not know how to process {dict_} into a ReportFigure.')
+                f'Do not know how to process dict into a ReportFigure.')
 
 
 @dataclass(frozen=True)
