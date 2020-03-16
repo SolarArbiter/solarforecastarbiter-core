@@ -1,5 +1,3 @@
-import os
-import platform
 import shutil
 
 
@@ -86,7 +84,7 @@ def test_construct_metrics_dataframe(report_with_raw):
             len(report_params.metrics) * len(report_params.object_pairs))
     )
 
-    # this could maybe use value variance, but asserting the cds process
+    # this could maybe use value variance, but asserting the dataframe process
     # did not mangle values for now
     assert (values == 2).all()
 
@@ -107,8 +105,8 @@ def test_construct_metrics_dataframe_with_rename(report_with_raw):
 
 
 def test_construct_metric_dataframe_no_values():
-    # Iterative metrics cds creation just build empty cds from an empty
-    # dataframe if no MetricResults are found in the metrics tuple
+    # Iterative metrics datafame creation just builds an empty dataframe
+    # with correct columns if no MetricResults are found in the metrics tuple
     df = figures.construct_metrics_dataframe(())
     assert df['index'].size == 0
     assert 'abbrev' in df
@@ -130,52 +128,6 @@ def fxobs_name_mock(mocker):
         fxobs.data_object = obs
         return fxobs
     return fn
-
-
-def test_obs_name_same(fxobs_name_mock):
-    name = 'ghi 1 hr'
-    fxobs = fxobs_name_mock(name, name)
-    fxagg = fxobs_name_mock(name, name, True)
-    new_obsname = figures._obs_name(fxobs)
-    new_aggname = figures._obs_name(fxagg)
-    assert new_obsname == f'{name} Observation'
-    assert new_aggname == f'{name} Aggregate'
-
-
-def test_obs_name_same_diff(fxobs_name_mock):
-    name = 'ghi 1 hr'
-    fx_name = 'ghi 1 hr fx'
-    fxobs = fxobs_name_mock(name, fx_name)
-    fxagg = fxobs_name_mock(name, fx_name, True)
-    new_obsname = figures._obs_name(fxobs)
-    new_aggname = figures._obs_name(fxagg)
-    assert new_obsname == name
-    assert new_aggname == name
-
-
-def test_fx_name_same(fxobs_name_mock):
-    fxobs = fxobs_name_mock('same', 'same')
-    new_fx_name = figures._fx_name(fxobs)
-    assert new_fx_name == 'same Forecast'
-
-
-def test_fx_name_diff(fxobs_name_mock):
-    fxobs = fxobs_name_mock('same', 'diff')
-    new_fx_name = figures._fx_name(fxobs)
-    assert new_fx_name == 'diff'
-
-
-@pytest.mark.parametrize('array,index,expected', [
-    ([1, 2, 3, 4], 2, [False, True, False, False]),
-    ([1, 1, 3, 4], 2, [False, False, False, False]),
-    ([1, 1, 1, 1], 1, [True, True, True, True]),
-])
-def test_boolean_filter_indices_by_pair(mocker, array, index, expected):
-    cds = mocker.Mock()
-    cds.data = {'pair_index': np.array(array)}
-    expected = np.array(expected)
-    result = figures._boolean_filter_indices_by_pair(cds, index)
-    assert np.all(result == expected)
 
 
 @pytest.mark.parametrize('y_min,y_max,pad,expected', [
@@ -201,31 +153,7 @@ def test_abbreviate(arg, expected):
     assert out == expected
 
 
-@pytest.fixture()
-def no_stray_phantomjs():  # pragma: no cover
-    def get_phantom_pid():
-        pjs = set()
-        for pid in os.listdir('/proc'):
-            if pid.isdigit():
-                try:
-                    with open(f'/proc/{pid}/cmdline', 'r') as f:
-                        cmd = f.read()
-                except IOError:
-                    continue
-                else:
-                    if 'phantomjs' in cmd:
-                        pjs.add(pid)
-        return pjs
-
-    if platform.system() != 'Linux':
-        return
-    before = get_phantom_pid()
-    yield
-    after = get_phantom_pid()
-    assert before == after
-
-
-def test_raw_report_plots(report_with_raw, no_stray_phantomjs):
+def test_raw_report_plots(report_with_raw):
     metrics = report_with_raw.raw_report.metrics
     plots = figures.raw_report_plots(report_with_raw, metrics)
     assert plots is not None

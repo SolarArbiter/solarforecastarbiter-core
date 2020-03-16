@@ -3,11 +3,9 @@ Functions to make all of the figures for Solar Forecast Arbiter reports using
 Bokeh for timeseries and Plotly for metrics.
 """
 import calendar
-from contextlib import contextmanager
 import datetime as dt
 from itertools import cycle
 import logging
-import warnings
 
 
 from bokeh import palettes
@@ -24,12 +22,7 @@ import plotly.graph_objects as go
 logger = logging.getLogger(__name__)
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
-_num_obs_colors = 3
-# drop white
-OBS_PALETTE = palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors]
-OBS_PALETTE.reverse()
-OBS_PALETTE_TD_RANGE = pd.timedelta_range(
-    freq='10min', end='60min', periods=_num_obs_colors)
+
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
@@ -61,46 +54,6 @@ def configure_axes(fig, x_ticks, y_range):
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#CCC')
     fig.update_yaxes(showline=True, linewidth=1, linecolor='black')
     fig.update_yaxes(ticks='outside', range=y_range)
-
-
-def _obs_name(fx_obs):
-    # TODO: add code to ensure obs names are unique
-    name = fx_obs.data_object.name
-    if fx_obs.forecast.name == fx_obs.data_object.name:
-        if isinstance(fx_obs.data_object, datamodel.Observation):
-            name += ' Observation'
-        else:
-            name += ' Aggregate'
-    return name
-
-
-def _fx_name(fx_obs):
-    # TODO: add code to ensure fx names are unique
-    name = fx_obs.forecast.name
-    if fx_obs.forecast.name == fx_obs.data_object.name:
-        name += ' Forecast'
-    return name
-
-
-def _obs_color(interval_length):
-    idx = np.searchsorted(OBS_PALETTE_TD_RANGE, interval_length)
-    obs_color = OBS_PALETTE[idx]
-    return obs_color
-
-
-def _boolean_filter_indices_by_pair(value_cds, pair_index):
-    return value_cds.data['pair_index'] == pair_index
-
-
-def _extract_metadata_from_cds(metadata_cds, hash_, hash_key):
-    first_row = np.argwhere(metadata_cds.data[hash_key] == hash_)[0][0]
-    return {
-        'pair_index': metadata_cds.data['pair_index'][first_row],
-        'observation_name': metadata_cds.data['observation_name'][first_row],
-        'forecast_name': metadata_cds.data['forecast_name'][first_row],
-        'interval_label': metadata_cds.data['interval_label'][first_row],
-        'observation_color': metadata_cds.data['observation_color'][first_row],
-    }
 
 
 def construct_metrics_dataframe(metrics, rename=None):
@@ -175,7 +128,7 @@ def bar(df, metric):
     df: pandas Dataframe
         Metric dataframe by :py:func:`solarforecastarbiter.reports.figures.construct_metrics_dataframe`
     metric: str
-        The metric to plot. This value should be found in cds['metric'].
+        The metric to plot. This value should be found in df['metric'].
 
     Returns
     -------
@@ -247,7 +200,7 @@ def bar_subdivisions(df, category, metric):
 
     Parameters
     ----------
-    cds : bokeh.models.ColumnDataSource
+    df: pandas.DataFrame
         Fields must be kind and the names of the forecasts
     category : str
         One of the available metrics grouping categories (e.g., total)
@@ -348,22 +301,6 @@ def reliability_diagram():
 
 def rank_histogram():
     raise NotImplementedError
-
-
-@contextmanager
-def _make_webdriver():
-    """Necessary until Bokeh 2.0 when using chrome/firefox drivers will be
-    preferred and to avoid zombie phantomjs processes for now"""
-    from selenium import webdriver
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        try:
-            driver = webdriver.PhantomJS()
-        except Exception:
-            yield None
-        else:
-            yield driver
-            driver.quit()
 
 
 def output_svg(fig):
