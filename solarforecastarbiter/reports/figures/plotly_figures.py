@@ -1,6 +1,6 @@
 """
-Functions to make all of the figures for Solar Forecast Arbiter reports using
-Bokeh for timeseries and Plotly for metrics.
+Functions to make all of the metrics figures for Solar Forecast Arbiter reports
+using Plotly.
 """
 import calendar
 import datetime as dt
@@ -305,8 +305,8 @@ def rank_histogram():
 
 def output_svg(fig):
     """
-    Generates an SVG from the Bokeh or Plotly figure. Errors in the
-    process are logged and an SVG with error text is returned.
+    Generates an SVG from the Plotly figure. Errors in the process are logged
+    and an SVG with error text is returned.
 
     Parameters
     ----------
@@ -315,6 +315,12 @@ def output_svg(fig):
     Returns
     -------
     svg : str
+
+    Notes
+    -----
+    Requires `Orca <https://plot.ly/python/orca-management/>`_ for generating
+    svgs. If orca is not installed, an svg with an error message will be
+    returned.
     """
     try:
         svg = fig.to_image(format='svg').decode('utf-8')
