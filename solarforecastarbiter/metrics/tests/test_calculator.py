@@ -6,13 +6,18 @@ import calendar
 import datetime
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import (calculator, deterministic)
+from solarforecastarbiter.metrics import (calculator, deterministic,
+                                          probabilistic)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
-NO_NORM = set(DETERMINISTIC_METRICS) - set(deterministic._REQ_NORM)
-NO_REF = set(DETERMINISTIC_METRICS) - set(deterministic._REQ_REF_FX)
-NO_REF_NO_NORM = set(NO_NORM) - set(deterministic._REQ_REF_FX)
+DET_NO_NORM = (set(DETERMINISTIC_METRICS) - set(deterministic._REQ_NORM))
+DET_NO_REF = (set(DETERMINISTIC_METRICS) - set(deterministic._REQ_REF_FX))
+DET_NO_REF_NO_NORM = (set(DET_NO_NORM) - set(deterministic._REQ_REF_FX))
+PROBABILISTIC_METRICS = list(probabilistic._MAP.keys())
+PROB_NO_NORM = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_NORM))
+PROB_NO_REF = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_REF_FX))
+PROB_NO_2DFX = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_2DFX))
 LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 
@@ -61,6 +66,16 @@ def single_forecast_data_obj(
         return single_forecast_aggregate
 
 
+@pytest.fixture(params=['probfxobs', 'probfxagg'])
+def probabilistic_forecasts_data_obj(
+        request, prob_forecasts,
+        many_prob_forecasts):
+    if request.param == 'probfxobs':
+        return prob_forecasts
+    else:
+        return many_prob_forecasts
+
+
 @pytest.fixture()
 def proc_fx_obs(create_processed_fxobs, many_forecast_observation):
     proc_fx_obs = []
@@ -72,6 +87,18 @@ def proc_fx_obs(create_processed_fxobs, many_forecast_observation):
                                    np.random.randn(10)+10)
         )
     return proc_fx_obs
+
+
+@pytest.fixture()
+def proc_prob_fx_obs(create_processed_fxobs, many_prob_forecast_observation):
+    proc_pfx_obs = []
+
+    for pfx_obs in many_prob_forecast_observation:
+        proc_pfx.obs.append(
+            create_processed_fxobs(pfx_obs,
+                                   np.random.randn(10,10)+10,
+                                   np.random.randn(10,10)+10)
+        )
 
 
 @pytest.fixture()
@@ -95,10 +122,10 @@ def ref_fx_obs(create_processed_fxobs, many_forecast_observation):
         LIST_OF_CATEGORIES, DETERMINISTIC_METRICS,
         marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
     pytest.param(
-        LIST_OF_CATEGORIES, NO_NORM,
+        LIST_OF_CATEGORIES, DET_NO_NORM,
         marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
-    (LIST_OF_CATEGORIES, NO_REF),
-    (LIST_OF_CATEGORIES, NO_REF_NO_NORM)
+    (LIST_OF_CATEGORIES, DET_NO_REF),
+    (LIST_OF_CATEGORIES, DET_NO_REF_NO_NORM)
 ])
 def test_calculate_metrics_no_reference(
         categories, metrics, proc_fx_obs):
@@ -118,7 +145,7 @@ def test_calculate_metrics_no_reference(
         ['date', 'month'], [],
         marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
     (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS),
-    (LIST_OF_CATEGORIES, NO_REF),
+    (LIST_OF_CATEGORIES, DET_NO_REF),
 ])
 def test_calculate_metrics_with_reference(
         categories, metrics, proc_fx_obs, ref_fx_obs):
@@ -158,10 +185,9 @@ def test_calculate_metrics_with_probablistic(categories, metrics,
                                            np.random.randn(10)+10,
                                            np.random.randn(10)+10)
 
-    # Error - ProbabilisticForecast not yet supported
-    with pytest.raises(NotImplementedError):
-        calculator.calculate_metrics([proc_prfx_obs],
-                                     categories, metrics)
+    pass
+    # calculator.calculate_metrics([proc_prfx_obs],
+    #                                 categories, metrics)
 
 
 def test_calculate_deterministic_metrics_no_metrics(ref_fx_obs):
@@ -206,7 +232,7 @@ def test_calculate_deterministic_metrics_missing_values(
                                   fx_vals, obs_vals)
     with pytest.raises(RuntimeError):
         calculator.calculate_deterministic_metrics(
-            pair, LIST_OF_CATEGORIES, NO_REF
+            pair, LIST_OF_CATEGORIES, DET_NO_REF
         )
 
 

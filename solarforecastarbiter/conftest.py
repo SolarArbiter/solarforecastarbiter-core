@@ -1034,12 +1034,28 @@ def single_forecast_observation(single_forecast, single_observation):
 
 
 @pytest.fixture()
+def single_prob_forecast_observation(prob_forecasts, single_observation):
+    return datamodel.ForecastObservation(prob_forecasts, single_observation)
+
+
+@pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
     many_ghi_forecasts = [fx for fx in many_forecasts
                           if fx.variable == 'ghi']
     many_ghi_observations = [obs for obs in many_observations
                              if obs.variable == 'ghi']
     cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
+    return [datamodel.ForecastObservation(*c) for c in cart_prod]
+
+
+@pytest.fixture()
+def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
+    many_ghi_prob_forecasts = [pfx for pfx in many_prob_forecasts
+                               if pfx.variable == 'ghi' and pfx.axis == 'x']
+    many_ghi_observations = [obs for obs in many_observations
+                             if obs.variable == 'ghi']
+    car_prod = itertools.product(many_ghi_prob_forecasts,
+                                 many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 

@@ -63,22 +63,22 @@ def calculate_metrics(processed_pairs, categories, metrics,
         # TODO: support ProbabilisticForecast
         if isinstance(proc_fxobs.original.forecast,
                       datamodel.ProbabilisticForecast):
-            raise NotImplementedError
+            method_ = calculate_probabilistic_metrics
         else:
-            # calculate_deterministic_metrics
-            try:
-                metrics_ = calculate_deterministic_metrics(
-                    proc_fxobs,
-                    categories,
-                    metrics,
-                    ref_fx_obs=ref_pair,
-                    normalizer=normalizer
-                )
-            except RuntimeError as e:
-                logger.error('Failed to calculate metrics for %s: %s',
-                             proc_fxobs.name, e)
-            else:
-                calc_metrics.append(metrics_)
+            method_ = calculate_deterministic_metrics
+        try:
+            metrics_ = method_(
+                proc_fxobs,
+                categories,
+                metrics,
+                ref_fx_obs=ref_pair,
+                normalizer=normalizer
+            )
+        except RuntimeError as e:
+            logger.error('Failed to calculate metrics for %s: %s',
+                         proc_fxobs.name, e)
+        else:
+            calc_metrics.append(metrics_)
 
     return calc_metrics
 
@@ -206,3 +206,50 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     out['values'] = tuple(metric_vals)
     calc_metrics = datamodel.MetricResult.from_dict(out)
     return calc_metrics
+
+
+def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
+                                    ref_fx_obs=None, normalizer=1.0):
+    """
+    Calculate probabilistic metrics for the processed data using the provided
+    categories and metric types.
+
+    Parameters
+    ----------
+    processed_fx_obs : datamodel.ProcessedForecastObservation
+    categories : list of str
+        List of categories to compute metrics over.
+    metrics : list of str
+        List of metrics to be computed.
+    ref_fx_obs :
+        solarforecastarbiter.datamodel.ProcessedForecastObservation
+        Reference forecast to be used when calculating skill metrics. Default
+        is None and no skill metrics will be calculated.
+    normalizer : float
+        Normalized factor (should be in the same units as data). Default is
+        1.0 and only needed for normalized metrics.
+
+    Returns
+    -------
+    solarforecastarbiter.datamodel.MetricResult (TBD)
+        Contains all the computed metrics by categories.
+
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast, observation timeseries data or no metrics
+        are specified.
+
+    """
+    out = {
+        'name': processed_fx_obs.name,
+        'forecast_id': processed_fx_obs.original.forecast.forecast_id,
+    }
+
+    try:
+        out['observation_id'] = processed_fx_obs.original.observation.observation_id  # NOQA
+    except AttributeError:
+        out['aggregate_id'] = processed_fx_obs.original.aggregate.aggregate_id
+
+    fx = processed_fx_obs.forecast_values
+    obs = processed_fx_obs.observation_values
