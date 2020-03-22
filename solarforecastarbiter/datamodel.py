@@ -38,6 +38,7 @@ ALLOWED_VARIABLES = {
     'dc_power': 'MW',
     'availability': '%',
     'curtailment': 'MW',
+    'event': 'boolean'
 }
 
 
@@ -716,6 +717,59 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
+
+
+@dataclass(frozen=True)
+class EventForecast(Forecast):
+    """
+    Extends Forecast dataclass to include event forecast attributes.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : str
+        Indicates if a time labels the beginning or the ending of an interval
+        average, or indicates an instantaneous value, e.g. beginning, ending,
+        instant.
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : str
+        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
+        associated with a standard unit.
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    provider : str, optional
+        Provider of the Forecast information.
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    :py:class:`solarforecastarbiter.datamodel.Forecast`
+    """
+    def __post_init__(self):
+        super().__post_init__()
 
 
 @dataclass(frozen=True)
