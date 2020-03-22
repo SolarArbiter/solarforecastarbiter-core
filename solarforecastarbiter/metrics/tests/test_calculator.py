@@ -10,7 +10,7 @@ import re
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic,
-                                          probabilistic)
+                                          probabilistic, event)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
@@ -23,6 +23,7 @@ PROB_NO_REF = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_REF_FX))
 PROB_NO_DIST = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_DIST))
 PROB_NO_REF_NO_DIST = (set(PROB_NO_REF) - set(probabilistic._REQ_DIST))
 LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
+EVENT_METRICS = list(event._MAP.keys())
 
 
 @pytest.fixture()
@@ -1132,3 +1133,116 @@ def test_transform_prob_forecast_value_and_prob(prob_forecasts,
 def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
     result = calculator._create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob)
     pd.testing.assert_frame_equal(result, exp_df)
+
+
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES,
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(EVENT_METRICS, 1)),
+    EVENT_METRICS[0:1],
+    EVENT_METRICS[0:2],
+    EVENT_METRICS,
+])
+def test_calculate_event_metrics(categories, metrics):
+
+    # data
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+    obs_series = pd.Series([True, False, True], index=index)
+    fx_series = pd.Series([True, True, False], index=index)
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+
+    obs = datamodel.Observation(
+        site=site,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx = datamodel.EventForecast(
+        site=site,
+        name="dummy fx",
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_value_type="instantaneous",
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    # fx-obs pair
+    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+
+    # processed fx-obs pair
+    proc_fx_obs = datamodel.ProcessedForecastObservation(
+        name=fxobs.forecast.name,
+        original=fxobs,
+        interval_value_type=fxobs.forecast.interval_value_type,
+        interval_length=fxobs.forecast.interval_length,
+        interval_label="event",
+        valid_point_count=len(fx_series),
+        forecast_values=fx_series,
+        observation_values=obs_series,
+    )
+
+    result = calculator.calculate_event_metrics(proc_fx_obs, categories, metrics)
+
+    # Check results
+    assert isinstance(result, datamodel.MetricResult)
+    assert result.forecast_id == proc_fx_obs.original.forecast.forecast_id
+    assert result.name == proc_fx_obs.original.forecast.name
+    assert len(result.values) % len(metrics) == 0
+    cats = {val.category for val in result.values}
+    assert cats == set(categories)
+    fx_values = proc_fx_obs.forecast_values
+    for cat in categories:
+        cat_grps = {v.index for v in result.values if v.category == cat}
+        assert len(
+            {v.metric for v in result.values if v.category == cat}
+        ) == len(metrics)
+
+        # has expected groupings
+        if cat == 'month':
+            grps = fx_values.groupby(
+                fx_values.index.month).groups
+            grps = [calendar.month_abbr[g] for g in grps]
+        elif cat == 'hour':
+            grps = fx_values.groupby(
+                fx_values.index.hour).groups
+        elif cat == 'year':
+            grps = fx_values.groupby(
+                fx_values.index.year).groups
+        elif cat == 'date':
+            grps = fx_values.groupby(
+                fx_values.index.date).groups
+        elif cat == 'weekday':
+            grps = fx_values.groupby(
+                fx_values.index.weekday).groups
+            grps = [calendar.day_abbr[g] for g in grps]
+        elif cat == 'total':
+            grps = ['0']
+        assert {str(g) for g in grps} == cat_grps
+    for val in result.values:
+        assert (
+            np.isnan(val.value) or
+            np.issubdtype(type(val.value), np.number)
+        )
