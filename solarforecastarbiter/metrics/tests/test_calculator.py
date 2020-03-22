@@ -1204,7 +1204,9 @@ def test_calculate_event_metrics(categories, metrics):
         observation_values=obs_series,
     )
 
-    result = calculator.calculate_event_metrics(proc_fx_obs, categories, metrics)
+    result = calculator.calculate_event_metrics(
+        proc_fx_obs, categories, metrics
+    )
 
     # Check results
     assert isinstance(result, datamodel.MetricResult)
