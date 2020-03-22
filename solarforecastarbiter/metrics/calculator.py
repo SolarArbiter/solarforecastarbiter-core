@@ -18,7 +18,7 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import deterministic, probabilistic
+from solarforecastarbiter.metrics import deterministic, probabilistic, event
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,14 @@ def calculate_metrics(processed_pairs, categories, metrics,
                     ref_fx_obs=ref_pair))
             except RuntimeError as e:
                 logger.error('Failed to calculate probabilistic metrics'
-                             ' for %s: %s',
+                             ' for %s: %s', proc_fxobs.name, e)
+        elif isinstance(proc_fxobs.original.forecast, datamodel.EventForecast):
+            try:
+                calc_metrics.append(calculate_event_metrics(
+                    proc_fxobs, categories, metrics
+                ))
+            except RuntimeError as e:
+                logger.error('Failed to calculate event metrics for %s: %s',
                              proc_fxobs.name, e)
         else:
             try:
@@ -128,6 +135,13 @@ def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
                            kwargs['ref_fx'], kwargs['ref_fx_prob'])
     else:
         return metric_func(obs, fx, fx_prob)
+
+
+def _apply_event_metric_func(metric, fx, obs, **kwargs):
+    """Helper function to deal with variable number of arguments possible for
+    event metric functions."""
+    metric_func = event._MAP[metric][0]
+    return metric_func(obs, fx.to_numpy())
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
@@ -304,7 +318,6 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
     ref_fx_obs : datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
-
     Returns
     -------
     tuple of (list of datamodel.MetricsResult, datamodel.MetricsResult)
@@ -312,7 +325,6 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         datamodel.ProbabilisticForecastConstantValue, and
         the second value are the metrics calculated per
         datamodel.ProbabilisticForecast.
-
     Raises
     ------
     RuntimeError
@@ -321,7 +333,6 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
     ValueError
         If original and reference forecast `interval_label` or `axis` values
         do not match.
-
     """
     single_cv_results = []
     dist_result = None
@@ -407,7 +418,6 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
     """
     Calculate probabilistic metrics for the processed data using the provided
     categories and metric types.
-
     Parameters
     ----------
     data_df : pandas.DataFrame
@@ -417,13 +427,11 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
     metrics : list of str
         List of metrics to be computed.
     interval_label : str
-
     Returns
     -------
     list of tuples of datamodel.MetricValue
         Contains all the computed metrics by categories. Each tuple is
         associated with a datamodel.ProbabilisticForecastConstantValue.
-
     """
     metric_values = []
 
@@ -484,13 +492,11 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
 def _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob):
     """
     Creates a DataFrame for grouping for the probabilistic forecasts.
-
     Parameters
     ----------
     obs : pandas.Series
     fx_fx_prob : list of tuple of pandas.Series
     ref_fx_fx_prob : list of tuple of pandas.Series
-
     Returns
     -------
     pandas.DataFrame
@@ -498,7 +504,6 @@ def _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob):
         constant_value and one of 'observation', 'forecast', 'probability',
         'reference_forecast' or 'reference_probability'. For 'observation' the
         constant_value is None.
-
     """
     data_dict = {(None, 'observation'): obs}
 
@@ -520,11 +525,9 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
     """
     Helper function that returns ordered list of series of physical values and
     probabilities for a datamodel.ProcessedForecastObservation
-
     Parameters
     ----------
     proc_fx_obs : datamodel.ProcessedForecastObservation
-
     Returns
     -------
     fx_fx_prob : list of tuples of (n,) array_like
@@ -544,3 +547,79 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
                                 name=col)
         fx_fx_prob.append((fx, fx_prob))
     return fx_fx_prob
+
+
+def calculate_event_metrics(proc_fx_obs, categories, metrics):
+    """
+    Calculate event metrics for the processed data using the provided
+    categories and metric types.
+    Parameters
+    ----------
+    proc_fx_obs : datamodel.ProcessedForecastObservation
+    categories : list of str
+        List of categories to compute metrics over.
+    metrics : list of str
+        List of metrics to be computed.
+    Returns
+    -------
+    solarforecastarbiter.datamodel.MetricResult
+        Contains all the computed metrics by categories.
+    Raises
+    ------
+    RuntimeError
+        If there is no forecast, observation timeseries data or no metrics
+        are specified.
+    """
+
+    out = {
+        'name': proc_fx_obs.name,
+        'forecast_id': proc_fx_obs.original.forecast.forecast_id,
+        'observation_id': proc_fx_obs.original.observation.observation_id
+    }
+
+    fx = proc_fx_obs.forecast_values
+    obs = proc_fx_obs.observation_values
+
+    # No data or metrics
+    if fx.empty:
+        raise RuntimeError("No Forecast timeseries data.")
+    elif obs.empty:
+        raise RuntimeError("No Observation timeseries data.")
+    elif len(metrics) == 0:
+        raise RuntimeError("No metrics specified.")
+
+    # Dataframe for grouping
+    df = pd.concat({'forecast': fx, 'observation': obs}, axis=1)
+
+    metric_vals = []
+    # Calculate metrics
+    for category in set(categories):
+        # total (special category)
+        if category == 'total':
+            index_category = lambda x: 0  # NOQA
+        else:
+            index_category = getattr(df.index, category)
+
+        # Calculate each metric
+        for metric_ in set(metrics):
+            # Group by category
+            for cat, group in df.groupby(index_category):
+
+                # Calculate
+                res = _apply_event_metric_func(
+                    metric_, group.forecast, group.observation
+                )
+
+                # Change category label of the group from numbers
+                # to e.g. January or Monday
+                if category == 'month':
+                    cat = calendar.month_abbr[cat]
+                elif category == 'weekday':
+                    cat = calendar.day_abbr[cat]
+
+                metric_vals.append(datamodel.MetricValue(
+                    category, metric_, str(cat), res))
+
+    out['values'] = tuple(metric_vals)
+    calc_metrics = datamodel.MetricResult.from_dict(out)
+    return calc_metrics
