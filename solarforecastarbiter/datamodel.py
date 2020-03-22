@@ -19,6 +19,7 @@ import pandas as pd
 
 from solarforecastarbiter.metrics.deterministic import \
     _MAP as deterministic_mapping
+from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
@@ -90,6 +91,8 @@ CATEGORY_BLURBS = {
 
 ALLOWED_DETERMINISTIC_METRICS = {
     k: v[1] for k, v in deterministic_mapping.items()}
+
+ALLOWED_EVENT_METRICS = {k: v[1] for k, v in event_mapping.items()}
 
 ALLOWED_PROBABILISTIC_METRICS = {
     k: v[1] for k, v in probabilistic_mapping.items()}
@@ -1192,6 +1195,10 @@ def __check_metrics__(fx, metrics):
         if not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
             raise ValueError("Metrics must be in "
                              "ALLOWED_PROBABILISTIC_METRICS.")
+    elif isinstance(fx, EventForecast):
+        if not set(metrics) <= ALLOWED_EVENT_METRICS.keys():
+            raise ValueError("Metrics must be in "
+                             "ALLOWED_EVENT_METRICS.")
     elif isinstance(fx, Forecast):
         if not set(metrics) <= ALLOWED_DETERMINISTIC_METRICS.keys():
             raise ValueError("Metrics must be in "

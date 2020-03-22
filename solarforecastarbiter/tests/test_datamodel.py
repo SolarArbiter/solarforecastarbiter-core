@@ -3,6 +3,7 @@ import json
 from typing import Union
 
 
+import datetime
 import numpy as np
 import pandas as pd
 import pytest
@@ -468,6 +469,38 @@ def test___check_categories__():
 ])
 def test___check_metrics__(metrics, single_forecast):
     datamodel.__check_metrics__(single_forecast, metrics)
+
+
+@pytest.mark.parametrize('metrics', [
+    (["far"]),
+    pytest.param(
+        ["rmse"],
+        marks=pytest.mark.xfail(raises=ValueError, strict=True)
+    ),
+])
+def test___check_metrics___event(metrics):
+    index = pd.DatetimeIndex(["20200301T0000Z", "20200301T0100Z"])
+    fx_series = pd.Series([True, False], index=index)
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+    fx = datamodel.EventForecast(
+        site=site,
+        name="dummy fx",
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_value_type="instantaneous",
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+    datamodel.__check_metrics__(fx, metrics)
 
 
 @pytest.mark.parametrize('metrics', [
