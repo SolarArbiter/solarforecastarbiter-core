@@ -30,7 +30,8 @@ def build_metrics_json(report):
     """
     if getattr(report, 'raw_report') is not None:
         df = plotly_figures.construct_metrics_dataframe(
-            report.raw_report.metrics)
+            report.raw_report.metrics,
+            rename=plotly_figures.abbreviate)
         return df.to_json(orient="records")
     else:
         return "[]"

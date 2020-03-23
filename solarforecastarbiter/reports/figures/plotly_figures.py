@@ -325,8 +325,11 @@ def output_svg(fig):
     try:
         svg = fig.to_image(format='svg').decode('utf-8')
     except Exception:
-        logger.error('Could not generate SVG for figure %s',
-                     getattr(fig, 'name', 'unnamed'))
+        try:
+            name = fig.layout.title['text'][3:-4]
+        except Exception:
+            name = 'unnamed'
+        logger.error('Could not generate SVG for figure %s', name)
         svg = (
             '<svg width="100%" height="100%">'
             '<text x="50" y="50" class="alert alert-error">'
@@ -365,8 +368,8 @@ def raw_report_plots(report, metrics):
 
     for k, v in figure_dict.items():
         cat, met, name = k.split('::', 2)
-        figure_spec = figure_dict[k].to_json()
-        svg = output_svg(fig)
+        figure_spec = v.to_json()
+        svg = output_svg(v)
         mplots.append(datamodel.PlotlyReportFigure(
             name=name, category=cat, metric=met, spec=figure_spec,
             svg=svg, figure_type='bar'))
