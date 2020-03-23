@@ -691,7 +691,6 @@ def test_bokeh_report_figure(bokeh_report_figure_dict):
         bokeh_report_figure_dict)
     for k, v in bokeh_report_figure_dict.items():
         assert getattr(dm_obj, k) == v
-    assert dm_obj.figure_class == 'bokeh'
 
 
 def test_plotly_report_figure(plotly_report_figure_dict):
@@ -699,7 +698,6 @@ def test_plotly_report_figure(plotly_report_figure_dict):
         plotly_report_figure_dict)
     for k, v in plotly_report_figure_dict.items():
         assert getattr(dm_obj, k) == v
-    assert dm_obj.figure_class == 'plotly'
 
 
 def test_bokeh_report_figure_plotly_dict(plotly_report_figure_dict):

@@ -1410,7 +1410,6 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             (
                 datamodel.PlotlyReportFigure.from_dict(
                     {
-                        'figure_class': 'plotly',
                         'name': 'mae tucson ghi',
                         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
                         'svg': '<svg></svg>',
@@ -1778,7 +1777,6 @@ def plotly_report_figure_dict():
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
-        'figure_class': 'plotly',
     }
 
 
@@ -1791,7 +1789,6 @@ def bokeh_report_figure_dict():
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
-        'figure_class': 'bokeh'
     }
 
 
