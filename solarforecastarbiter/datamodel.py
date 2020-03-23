@@ -121,8 +121,6 @@ def _dict_factory(inp):
         del dict_['units']
     if 'data_object' in dict_:
         del dict_['data_object']
-    if 'figure_class' in dict_:
-        del dict_['figure_class']
     return dict_
 
 
@@ -1257,9 +1255,10 @@ class ReportFigure(BaseModel):
         dict_ = input_dict.copy()
         if model != ReportFigure:
             return super().from_dict(dict_, raise_on_extra)
-        if 'spec' in dict_:
+        figure_class = dict_.get('figure_class')
+        if figure_class == 'plotly':
             return PlotlyReportFigure.from_dict(dict_, raise_on_extra)
-        elif 'div' in dict_:
+        elif figure_class == 'bokeh':
             return BokehReportFigure.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(
@@ -1291,7 +1290,7 @@ class PlotlyReportFigure(ReportFigure):
     figure_type: str
     category: str = ''
     metric: str = ''
-    figure_class: str = field(default='plotly', init=False)
+    figure_class: str = 'plotly'
 
     def __post_init__(self):
         __check_plot_spec__(self.spec)
@@ -1321,7 +1320,7 @@ class BokehReportFigure(ReportFigure):
     figure_type: str
     category: str = ''
     metric: str = ''
-    figure_class: str = field(default='bokeh', init=False)
+    figure_class: str = 'bokeh'
 
 
 def __bokeh_or_plotly__(cls):

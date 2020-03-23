@@ -1415,7 +1415,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                         'svg': '<svg></svg>',
                         'figure_type': 'bar',
                         'category': 'total',
-                        'metric': 'mae'
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
                     }
                 ),), '4.5.3',
         )
@@ -1777,6 +1778,7 @@ def plotly_report_figure_dict():
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
+        'figure_class': 'plotly',
     }
 
 
@@ -1789,6 +1791,7 @@ def bokeh_report_figure_dict():
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
+        'figure_class': 'bokeh',
     }
 
 
