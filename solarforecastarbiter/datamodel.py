@@ -1258,7 +1258,7 @@ class ReportFigure(BaseModel):
         figure_class = dict_.get('figure_class')
         if figure_class == 'plotly':
             return PlotlyReportFigure.from_dict(dict_, raise_on_extra)
-        elif figure_class == 'Bokeh':
+        elif figure_class == 'bokeh':
             return BokehReportFigure.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(

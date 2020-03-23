@@ -710,3 +710,27 @@ def test_bokeh_report_figure_plotly_dict(plotly_report_figure_dict):
 def test_plotly_report_figure_bokeh_dict(bokeh_report_figure_dict):
     with pytest.raises(KeyError):
         datamodel.PlotlyReportFigure.from_dict(bokeh_report_figure_dict)
+
+
+
+def test_report_figure_from_dict_with_bokeh(bokeh_report_figure_dict):
+    dm_obj = datamodel.ReportFigure.from_dict(bokeh_report_figure_dict)
+    for key, value in bokeh_report_figure_dict.items():
+        assert getattr(dm_obj, key) == value
+    assert isinstance(dm_obj, datamodel.BokehReportFigure)
+
+
+def test_report_figure_from_dict_with_bokeh(plotly_report_figure_dict):
+    dm_obj = datamodel.ReportFigure.from_dict(plotly_report_figure_dict)
+    for key, value in plotly_report_figure_dict.items():
+        assert getattr(dm_obj, key) == value
+    assert isinstance(dm_obj, datamodel.PlotlyReportFigure)
+
+
+@pytest.mark.parametrize('fig_dict', [
+    {"no_class": "bad"},
+    {"non-implemented": "d3"},
+])
+def test_report_figure_from_dict_invalid(fig_dict):
+    with pytest.raises(NotImplementedError):
+        datamodel.ReportFigure.from_dict(fig_dict)

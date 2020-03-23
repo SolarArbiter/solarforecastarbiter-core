@@ -1777,7 +1777,8 @@ def plotly_report_figure_dict():
         'svg': '<svg></svg>',
         'figure_type': 'bar',
         'category': 'total',
-        'metric': 'mae'
+        'metric': 'mae',
+        'figure_class': 'plotly',
     }
 
 
@@ -1789,7 +1790,8 @@ def bokeh_report_figure_dict():
         'svg': '<svg></svg>',
         'figure_type': 'bar',
         'category': 'total',
-        'metric': 'mae'
+        'metric': 'mae',
+        'figure_class': 'bokeh'
     }
 
 
