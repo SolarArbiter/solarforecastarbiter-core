@@ -1,21 +1,28 @@
 import pytest
 import jinja2
 
+
+from bokeh import __version__ as bokeh_version
+from plotly import __version__ as plotly_version
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports import template
+
+
+expected_metrics_json = """[{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"total","metric":"mae","value":2,"index":1},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"date","metric":"mae","value":2,"index":1546300800000},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"hour","metric":"mae","value":2,"index":1},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"total","metric":"rmse","value":2,"index":1},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"date","metric":"rmse","value":2,"index":1546300800000},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"hour","metric":"rmse","value":2,"index":1},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"total","metric":"mbe","value":2,"index":1},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"date","metric":"mbe","value":2,"index":1546300800000},{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","category":"hour","metric":"mbe","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"total","metric":"mae","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"date","metric":"mae","value":2,"index":1546300800000},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"hour","metric":"mae","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"total","metric":"rmse","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"date","metric":"rmse","value":2,"index":1546300800000},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"hour","metric":"rmse","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"total","metric":"mbe","value":2,"index":1},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"date","metric":"mbe","value":2,"index":1546300800000},{"name":"Day Ahead GFS GHI","abbrev":"Day Ahe. GFS GHI","category":"hour","metric":"mbe","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"total","metric":"mae","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"date","metric":"mae","value":2,"index":1546300800000},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"hour","metric":"mae","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"total","metric":"rmse","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"date","metric":"rmse","value":2,"index":1546300800000},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"hour","metric":"rmse","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"total","metric":"mbe","value":2,"index":1},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"date","metric":"mbe","value":2,"index":1546300800000},{"name":"GHI Aggregate FX 60","abbrev":"GHI Agg. FX 60","category":"hour","metric":"mbe","value":2,"index":1}]"""  # NOQA
 
 
 @pytest.fixture
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
     mocked.return_value = ('<script></script>', '<div></div>')
 
 
 @pytest.fixture
 def mocked_timeseries_plots_exception(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
     mocked.side_effect = Exception
 
 
@@ -30,18 +37,21 @@ def with_series(request):
 
 
 @pytest.fixture
-def expected_kwargs(report_with_raw, dash_url):
-    def fn(with_series, with_report=True):
+def expected_kwargs(dash_url):
+    def fn(report, with_series, with_report=True):
         kwargs = {}
         kwargs['human_categories'] = datamodel.ALLOWED_CATEGORIES
         kwargs['human_metrics'] = datamodel.ALLOWED_METRICS
         kwargs['category_blurbs'] = datamodel.CATEGORY_BLURBS
         if with_report:
-            kwargs['report'] = report_with_raw
+            kwargs['report'] = report
+        if report.status == 'complete':
+            kwargs['metrics_json'] = expected_metrics_json
+        else:
+            kwargs['metrics_json'] = '[]'
         kwargs['dash_url'] = dash_url
-
-        version = report_with_raw.raw_report.plots.bokeh_version
-        kwargs['bokeh_version'] = version
+        kwargs['bokeh_version'] = bokeh_version
+        kwargs['plotly_version'] = plotly_version
         if with_series:
             kwargs['timeseries_script'] = '<script></script>'
             kwargs['timeseries_div'] = '<div></div>'
@@ -57,22 +67,19 @@ def test__get_render_kwargs_no_series(
         dash_url,
         with_series
     )
-    assert kwargs == expected_kwargs(with_series)
+    exp = expected_kwargs(report_with_raw, with_series)
+    assert kwargs == exp
 
 
 def test__get_render_kwargs_pending(
         mocked_timeseries_plots, pending_report, dash_url,
         expected_kwargs, mocker):
-    mocker.patch('solarforecastarbiter.reports.template.bokeh_version',
-                 new='newest')
     kwargs = template._get_render_kwargs(
         pending_report,
         dash_url,
         False
     )
-    exp = expected_kwargs(False)
-    exp['bokeh_version'] = 'newest'
-    exp['report'] = pending_report
+    exp = expected_kwargs(pending_report, False)
     assert kwargs == exp
 
 
@@ -116,7 +123,8 @@ def test_get_template_and_kwargs(
     kwargs.pop('report')
     assert type(base) == jinja2.environment.Template
     assert type(html_template) == jinja2.environment.Template
-    assert kwargs == expected_kwargs(with_series, False)
+    assert kwargs == expected_kwargs(good_or_bad_report,
+                                     with_series, False)
 
 
 def test_get_template_and_kwargs_bad_status(
@@ -139,3 +147,7 @@ def test_render_html_full_html(report_with_raw, dash_url, with_series,
     rendered = template.render_html(
         report_with_raw, dash_url, with_series, False)
     assert rendered[:46] == '<!doctype html>\n<html lang="en" class="h-100">'
+
+
+def test_build_metrics_json():
+    pass

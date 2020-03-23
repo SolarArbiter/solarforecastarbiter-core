@@ -1,0 +1,9 @@
+{# Exports all report metric figures for later use #}
+<script>window.addEventListener('load', function () {
+    for(var key in metric_plots){
+        if(metric_plots.hasOwnProperty(key)){
+            Plotly.newPlot(key, metric_plots[key]);
+        }
+    }
+    }, false);
+</script>

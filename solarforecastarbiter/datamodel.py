@@ -7,6 +7,9 @@ from dataclasses import (dataclass, field, fields, MISSING, asdict,
                          replace, is_dataclass)
 import datetime
 import itertools
+import json
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from typing import Tuple, Union
 
 
@@ -975,7 +978,7 @@ class BaseFilter(BaseModel):
             return ValueFilter.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(
-                f'Do not know how to process {dict_} into a Filter.')
+                'Do not know how to process dict into a Filter.')
 
 
 @dataclass(frozen=True)
@@ -1230,10 +1233,72 @@ class MetricResult(BaseModel):
                 'One of observation_id OR aggregate_id must be set')
 
 
+def __check_plot_spec__(plot_spec):
+    """Ensure that the provided plot specification is a valid JSON object"""
+    try:
+        spec_dict = json.loads(plot_spec)
+        validate(instance=spec_dict, schema={'type': 'object'})
+    except (json.JSONDecodeError, ValidationError):
+        raise ValueError('Figure spec must be a valid json object.')
+
+
 @dataclass(frozen=True)
 class ReportFigure(BaseModel):
+    """Parent class for different types of Report Figures"""
+    def __post_init__(self):
+        if type(self) == ReportFigure:
+            raise ValueError("Invalid Report Figure. Figures must be of class "
+                             "PlotlyReportFigure or BokehReportFigure.")
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if model != ReportFigure:
+            return super().from_dict(dict_, raise_on_extra)
+        figure_class = dict_.get('figure_class')
+        if figure_class == 'plotly':
+            return PlotlyReportFigure.from_dict(dict_, raise_on_extra)
+        elif figure_class == 'bokeh':
+            return BokehReportFigure.from_dict(dict_, raise_on_extra)
+        else:
+            raise NotImplementedError(
+                f'Do not know how to process dict into a ReportFigure.')
+
+
+@dataclass(frozen=True)
+class PlotlyReportFigure(ReportFigure):
     """A class for storing metric plots for a report with associated metadata.
 
+    Parameters
+    ----------
+    name: str
+        A descriptive name for the figure.
+    spec: str
+        JSON string representation of the plotly plot.
+    svg: str
+        A static svg copy of the plot, for including in the pdf version.
+    figure_type: str
+        The type of plot, e.g. bar or scatter.
+    category: str
+        The metric category. One of ALLOWED_CATEGORIES keys.
+    metric: str
+        The metric being plotted.
+    """
+    name: str
+    spec: str
+    svg: str
+    figure_type: str
+    category: str = ''
+    metric: str = ''
+    figure_class: str = 'plotly'
+
+    def __post_init__(self):
+        __check_plot_spec__(self.spec)
+
+
+@dataclass(frozen=True)
+class BokehReportFigure(ReportFigure):
+    """A class for storing metric plots for a report with associated metadata.
     Parameters
     ----------
     name: str
@@ -1255,6 +1320,16 @@ class ReportFigure(BaseModel):
     figure_type: str
     category: str = ''
     metric: str = ''
+    figure_class: str = 'bokeh'
+
+
+def __bokeh_or_plotly__(cls):
+    if cls.bokeh_version is not None and cls.plotly_version is not None:
+        raise KeyError('Only provide one of "bokeh_version" or '
+                       '"plotly_version" to RawReportPlots')
+    elif cls.bokeh_version is None and cls.plotly_version is None:
+        raise KeyError('Must provide one of "bokeh_version" or '
+                       '"plotly_version" to RawReportPlots')
 
 
 @dataclass(frozen=True)
@@ -1263,16 +1338,21 @@ class RawReportPlots(BaseModel):
 
     Parameters
     ----------
-    bokeh_version: str
-        The bokeh version used when generating the plots.
-    script: str
-        The html script tag containing all of the bokeh javascript for the
-        plots.
     figures: tuple of :py:class:`solarforecastarbiter.datamodel.ReportFigure`
+    plotly_version: str
+        The plotly version used when generating metrics plots.
     """
-    bokeh_version: str
-    script: str
     figures: Tuple[ReportFigure, ...]
+    plotly_version: Union[str, None] = None
+    bokeh_version: Union[str, None] = None
+    script: Union[str, None] = None
+
+    def __post_init__(self):
+        __bokeh_or_plotly__(self)
+        if self.bokeh_version is not None:
+            if self.script is None:
+                raise KeyError('Must provide script for Bokeh plots to '
+                               'RawReportPlots')
 
 
 @dataclass(frozen=True)

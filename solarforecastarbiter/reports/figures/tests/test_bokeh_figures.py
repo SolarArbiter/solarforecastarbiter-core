@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 
-from solarforecastarbiter.reports import figures
+import solarforecastarbiter.reports.figures.bokeh_figures as figures
 from solarforecastarbiter import datamodel
 
 
@@ -347,7 +347,8 @@ def test_output_svg(mocker, no_stray_phantomjs):
     pytest.importorskip('selenium')
     if shutil.which('phantomjs') is None:  # pragma: no cover
         pytest.skip('PhantomJS must be on PATH to make SVGs')
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.bokeh_figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
@@ -362,7 +363,8 @@ def test_output_svg_no_phantom(mocker):
     pytest.importorskip('selenium')
     mocker.patch('selenium.webdriver.PhantomJS',
                  side_effect=RuntimeError)
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.bokeh_figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])
@@ -375,9 +377,10 @@ def test_output_svg_no_phantom(mocker):
 
 
 def test_output_svg_bokeh_err(mocker):
-    mocker.patch('solarforecastarbiter.reports.figures.get_svgs',
+    mocker.patch('solarforecastarbiter.reports.figures.bokeh_figures.get_svgs',
                  side_effect=RuntimeError)
-    logger = mocker.patch('solarforecastarbiter.reports.figures.logger')
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.bokeh_figures.logger')
     from bokeh.plotting import figure
     fig = figure(title='line', name='line_plot')
     fig.line([0, 1], [0, 1])

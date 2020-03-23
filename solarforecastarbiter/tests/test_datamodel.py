@@ -20,7 +20,8 @@ from solarforecastarbiter import datamodel
                         'timeofdayfilter', 'valuefilter', 'metricvalue',
                         'metricresult', 'validationresult',
                         'preprocessing_result', 'reportparameters',
-                        'reportfigure', 'reportmessage'])
+                        'plotlyreportfigure', 'reportmessage',
+                        'bokehreportfigure'])
 def pdid_params(request, many_sites, many_sites_text,
                 single_observation, single_observation_text,
                 single_site, single_forecast_text, single_forecast,
@@ -39,7 +40,8 @@ def pdid_params(request, many_sites, many_sites_text,
                 metric_result_dict, metric_result,
                 validation_result_dict, validation_result,
                 preprocessing_result_dict, preprocessing_result,
-                report_figure_dict, report_figure,
+                plotly_report_figure_dict, plotly_report_figure,
+                bokeh_report_figure_dict, bokeh_report_figure,
                 report_message_dict, report_message,
                 report_params_dict, report_params):
     if request.param == 'site':
@@ -132,8 +134,12 @@ def pdid_params(request, many_sites, many_sites_text,
     elif request.param == 'reportparameters':
         return (report_params, report_params_dict,
                 datamodel.ReportParameters)
-    elif request.param == 'reportfigure':
-        return (report_figure, report_figure_dict, datamodel.ReportFigure)
+    elif request.param == 'plotlyreportfigure':
+        return (plotly_report_figure, plotly_report_figure_dict,
+                datamodel.PlotlyReportFigure)
+    elif request.param == 'bokehreportfigure':
+        return (bokeh_report_figure, bokeh_report_figure_dict,
+                datamodel.BokehReportFigure)
     elif request.param == 'reportmessage':
         return (report_message, report_message_dict, datamodel.ReportMessage)
 
@@ -608,3 +614,120 @@ def test_aggregate_observation_sfp_invalid(
     aggobs_dict[key] = value
     with pytest.raises(TypeError):
         datamodel.AggregateObservation.from_dict(aggobs_dict)
+
+
+@pytest.mark.parametrize('spec', [
+    ('\"<script>alert("hello");</script>\"'),
+    ('<script>alert("hello");</script>'),
+    ('bad'),
+    ('\"bad\"'),
+    ('{"key": "value": "value"}'),
+    ('{"key": "value"});</script><script>parseInt(1'),  # noqa
+    ('{});</script><a onclick=alert("hello")></a><script>eval('),
+])
+def test_load_report_figure_invalid_spec(plotly_report_figure_dict, spec):
+    json_dict = plotly_report_figure_dict.copy()
+    json_dict.update(spec=spec)
+    with pytest.raises(ValueError):
+        datamodel.PlotlyReportFigure.from_dict(json_dict)
+
+
+@pytest.mark.parametrize('spec', [
+    ('\"<script>alert("hello");</script>\"'),
+    ('<script>alert("hello");</script>'),
+    ('bad'),
+    ('\"bad\"'),
+    ('{"key": "value": "value"}'),
+    ('{"key": "value"});</script><script>parseInt(1'),  # noqa
+    ('{});</script><a onclick=alert("hello")></a><script>eval('),
+])
+def test_update_report_figure_invalid_spec(plotly_report_figure_dict, spec):
+    fig = datamodel.PlotlyReportFigure.from_dict(plotly_report_figure_dict)
+    with pytest.raises(ValueError):
+        fig.replace(spec=spec)
+
+
+def test_invalid_empty_report_figure():
+    with pytest.raises(ValueError):
+        datamodel.ReportFigure()
+
+
+@pytest.mark.parametrize('plotly_version,bokeh_version,script', [
+    ('1.0.0', '1.0.0', '<script></script>'),
+    (None, None, '<script></script>'),
+    (None, '1.0.0', None),
+])
+def test_raw_report_plots_invalid_versions(
+        plotly_report_figure, plotly_version, bokeh_version, script):
+    with pytest.raises(KeyError):
+        datamodel.RawReportPlots(
+            figures=(plotly_report_figure,),
+            plotly_version=plotly_version,
+            bokeh_version=bokeh_version,
+            script=script
+        )
+
+
+@pytest.mark.parametrize('plotly_version,bokeh_version,script', [
+    ('1.0.0', None, None),
+    (None, '1.0.0', '<script></script>')
+])
+def test_raw_report_plots(
+        plotly_report_figure, plotly_version, bokeh_version, script):
+    dm_obj = datamodel.RawReportPlots(
+        figures=(plotly_report_figure,),
+        plotly_version=plotly_version,
+        bokeh_version=bokeh_version,
+        script=script
+    )
+    assert dm_obj.figures == (plotly_report_figure,)
+    assert dm_obj.plotly_version == plotly_version
+    assert dm_obj.bokeh_version == bokeh_version
+    assert dm_obj.script == script
+
+
+def test_bokeh_report_figure(bokeh_report_figure_dict):
+    dm_obj = datamodel.BokehReportFigure.from_dict(
+        bokeh_report_figure_dict)
+    for k, v in bokeh_report_figure_dict.items():
+        assert getattr(dm_obj, k) == v
+
+
+def test_plotly_report_figure(plotly_report_figure_dict):
+    dm_obj = datamodel.PlotlyReportFigure.from_dict(
+        plotly_report_figure_dict)
+    for k, v in plotly_report_figure_dict.items():
+        assert getattr(dm_obj, k) == v
+
+
+def test_bokeh_report_figure_plotly_dict(plotly_report_figure_dict):
+    with pytest.raises(KeyError):
+        datamodel.BokehReportFigure.from_dict(plotly_report_figure_dict)
+
+
+def test_plotly_report_figure_bokeh_dict(bokeh_report_figure_dict):
+    with pytest.raises(KeyError):
+        datamodel.PlotlyReportFigure.from_dict(bokeh_report_figure_dict)
+
+
+def test_report_figure_from_dict_with_bokeh(bokeh_report_figure_dict):
+    dm_obj = datamodel.ReportFigure.from_dict(bokeh_report_figure_dict)
+    for key, value in bokeh_report_figure_dict.items():
+        assert getattr(dm_obj, key) == value
+    assert isinstance(dm_obj, datamodel.BokehReportFigure)
+
+
+def test_report_figure_from_dict_with_plotly(plotly_report_figure_dict):
+    dm_obj = datamodel.ReportFigure.from_dict(plotly_report_figure_dict)
+    for key, value in plotly_report_figure_dict.items():
+        assert getattr(dm_obj, key) == value
+    assert isinstance(dm_obj, datamodel.PlotlyReportFigure)
+
+
+@pytest.mark.parametrize('fig_dict', [
+    {"no_class": "bad"},
+    {"non-implemented": "d3"},
+])
+def test_report_figure_from_dict_invalid(fig_dict):
+    with pytest.raises(NotImplementedError):
+        datamodel.ReportFigure.from_dict(fig_dict)

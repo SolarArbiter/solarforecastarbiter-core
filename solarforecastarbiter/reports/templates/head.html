@@ -13,3 +13,8 @@
 <script src="https://cdn.pydata.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
 <script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
 <script src="https://cdn.pydata.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
+{% if plotly_version %}
+{# plotly js and the python plotly library do not have matching versions #}
+{% include "insert_plots.html" %}
+<script src="https://cdn.plot.ly/plotly-1.52.3.min.js"></script>
+{% endif %}
