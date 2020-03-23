@@ -712,7 +712,6 @@ def test_plotly_report_figure_bokeh_dict(bokeh_report_figure_dict):
         datamodel.PlotlyReportFigure.from_dict(bokeh_report_figure_dict)
 
 
-
 def test_report_figure_from_dict_with_bokeh(bokeh_report_figure_dict):
     dm_obj = datamodel.ReportFigure.from_dict(bokeh_report_figure_dict)
     for key, value in bokeh_report_figure_dict.items():
@@ -720,7 +719,7 @@ def test_report_figure_from_dict_with_bokeh(bokeh_report_figure_dict):
     assert isinstance(dm_obj, datamodel.BokehReportFigure)
 
 
-def test_report_figure_from_dict_with_bokeh(plotly_report_figure_dict):
+def test_report_figure_from_dict_with_plotly(plotly_report_figure_dict):
     dm_obj = datamodel.ReportFigure.from_dict(plotly_report_figure_dict)
     for key, value in plotly_report_figure_dict.items():
         assert getattr(dm_obj, key) == value
