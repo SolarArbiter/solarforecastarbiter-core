@@ -40,7 +40,7 @@ PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
 _num_obs_colors = 3
 # drop white
-OBS_PALETTE = palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors]
+OBS_PALETTE = list(palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors])
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
     freq='10min', end='60min', periods=_num_obs_colors)
