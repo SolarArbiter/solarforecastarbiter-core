@@ -37,7 +37,7 @@ PLOT_LAYOUT_DEFAULTS = {
 
 def configure_axes(fig, x_axis_kwargs, y_axis_kwargs):
     """Applies plotly axes configuration to display zero line and grid, and the
-    configuration passed in x_axes_kwargs and y_axes kargs.
+    configuration passed in x_axis_kwargs and y_axis kwargs.
     Parameters
     ----------
     fig: plotly.graph_objects.Figure
