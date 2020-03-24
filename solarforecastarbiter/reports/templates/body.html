@@ -145,7 +145,7 @@ generate a new report after the data provider submits new data.
   {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
-      {% set plot_id = category+'_'+metric+'_'+rep_fig.name | replace(" ", "_") %}
+      {% set plot_id = (category+'_'+metric+'_'+rep_fig.name) | replace('^', '-') | replace(' ', '_') %}
     <div class="metric-block" id="{{ plot_id }}" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">
         <script>plot=JSON.parse('{{ rep_fig.spec | safe }}');
                 Object.assign(plot,{config: {responsive: true}});
