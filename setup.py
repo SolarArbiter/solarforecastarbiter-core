@@ -49,7 +49,10 @@ setup(
         'pvlib>=0.7.0',
         'scipy',
         'bokeh',
-        'statsmodels'
+        'statsmodels',
+        'jsonschema',
+        'plotly',
+        'psutil',
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
