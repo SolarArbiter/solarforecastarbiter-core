@@ -35,25 +35,27 @@ PLOT_LAYOUT_DEFAULTS = {
 }
 
 
-def configure_axes(fig, x_ticks, y_range):
-    """Applies plotly axes configuration to display zero line and grid.
+def configure_axes(fig, x_axis_kwargs, y_axis_kwargs):
+    """Applies plotly axes configuration to display zero line and grid, and the
+    configuration passed in x_axes_kwargs and y_axes kargs.
     Parameters
     ----------
     fig: plotly.graph_objects.Figure
 
-    x_range: list
-        List of values for the x axis, None will allow cause the plot to use
-        x values as labels and restrict to available data.
-    y_range: Tuple
-        Tuple of (min, max) to set the initial y range of the plot.
+    x_axis_kwargs: dict
+        Dictionary to expand as arguments to fig.update_xaxes.
+    y_axis_kwargs: dict
+        Dictionary to expand as arguments to fig.update_x_axes.
     """
-    fig.update_xaxes(showline=True, linewidth=1, linecolor='black')
-    if x_ticks is not None:
-        fig.update_xaxes(ticks='outside', tickvals=x_ticks,
-                         range=(-.5, len(x_ticks)))
+    fig.update_xaxes(showline=True, linewidth=1, linecolor='black',
+                     ticks='outside')
+    if x_axis_kwargs:
+        fig.update_xaxes(**x_axis_kwargs)
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#CCC')
-    fig.update_yaxes(showline=True, linewidth=1, linecolor='black')
-    fig.update_yaxes(ticks='outside', range=y_range)
+    fig.update_yaxes(showline=True, linewidth=1, linecolor='black',
+                     ticks='outside')
+    if y_axis_kwargs:
+        fig.update_yaxes(**y_axis_kwargs)
 
 
 def construct_metrics_dataframe(metrics, rename=None):
@@ -226,13 +228,20 @@ def bar_subdivisions(df, category, metric):
     # Special handling for x-axis with dates
     if category == 'weekday':
         x_ticks = calendar.day_abbr[0:]
-
+        x_axis_kwargs = {'tickvals': x_ticks,
+                         'range': (-.5, len(x_ticks))}
     elif category == 'hour':
         x_ticks = list(range(25))
+        x_axis_kwargs = {'tickvals': x_ticks,
+                         'range': (-.5, len(x_ticks))}
         # plotly's offset of 0, makes the bars left justified at the tick
         x_offset = 0
+    elif category == 'year':
+        x_axis_kwargs = {'dtick': 1}
+    elif category == 'date':
+        x_axis_kwargs = {'dtick': '1d'}
     else:
-        x_ticks = None
+        x_axis_kwargs = {}
 
     y_data = np.asarray(data['value'])
     if len(y_data) == 0:
@@ -241,7 +250,7 @@ def bar_subdivisions(df, category, metric):
         y_min = np.nanmin(y_data)
         y_max = np.nanmax(y_data)
         y_range = calc_y_start_end(y_min, y_max)
-
+    y_axis_kwargs = {'range': y_range}
     unique_names = np.unique(np.asarray(data['name']))
     palette = [next(palette) for _ in unique_names]
     for i, name in enumerate(unique_names):
@@ -270,7 +279,7 @@ def bar_subdivisions(df, category, metric):
             xaxis_title=x_axis_label,
             yaxis_title=y_axis_label,
             **PLOT_LAYOUT_DEFAULTS)
-        configure_axes(fig, x_ticks, y_range)
+        configure_axes(fig, x_axis_kwargs, y_axis_kwargs)
         figs[name] = fig
     return figs
 
