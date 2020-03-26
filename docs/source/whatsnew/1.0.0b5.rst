@@ -24,7 +24,7 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-* Metric plots are now created using Plotly. Bokeh figure generation moved to
+* Report plots are now created using Plotly. Bokeh figure generation moved to
   :py:mod:`solarforecastarbiter.reports.figures.bokeh_figures` for users
   still interested in bokeh figures.(:pull:`359`)
 * Clean up any PhantomJS drivers created to render SVGs (:issue:`344`)
