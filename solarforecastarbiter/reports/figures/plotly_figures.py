@@ -11,18 +11,22 @@ import logging
 from bokeh import palettes
 import pandas as pd
 from plotly import __version__ as plotly_version
+import plotly.graph_objects as go
 import numpy as np
 
 
 from solarforecastarbiter import datamodel
 
-import plotly.graph_objects as go
-
 
 logger = logging.getLogger(__name__)
 PALETTE = (
     palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
-
+_num_obs_colors = 3
+# drop white
+OBS_PALETTE = list(palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors])
+OBS_PALETTE.reverse()
+OBS_PALETTE_TD_RANGE = pd.timedelta_range(
+            freq='10min', end='60min', periods=_num_obs_colors)
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
@@ -33,6 +37,279 @@ PLOT_LAYOUT_DEFAULTS = {
     'plot_bgcolor': PLOT_BGCOLOR,
     'font': {'size': 14}
 }
+
+
+def construct_timeseries_df(report):
+    """Construct two standardized Dataframes for the timeseries and scatter
+    plot functions. One with timeseries data for all observations,
+    aggregates, and forecasts in the report, and the other with
+    associated metadata sharing a common `pair_index` key.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        Keys are an integer `pair_index` for pairing values with the metadata
+        in the metadata_cds, and two pandas.Series, `observation_values` and
+        `forecast_values`.
+
+    metadata : pandas.DataFrame
+        This dataframe has the following columns:
+
+        - `pair_index`: Integer for pairing metadata with the values in the data dataframe.
+        - `observation_name`: Observation name.
+        - `forecast_name`: Forecast name.
+        - `interval_label`: Interval label of the processed forecast and observation data.
+        - `observation_hash`: Hash of the original observation object and the `datamodel.ProcessedForecastObservations` metadata.
+        - `forecast_hash`: Hash of the original forecast object and the `datamodel.ProcessedForecastObservations` metadata.
+
+    """  # NOQA
+    value_frames = []
+    meta_rows = []
+    for idx, pfxobs in enumerate(
+            report.raw_report.processed_forecasts_observations):
+        value_frame_dict = {
+            'pair_index': idx,
+            'observation_values': pfxobs.observation_values,
+            'forecast_values': pfxobs.forecast_values,
+        }
+        meta_row_dict = {
+            'pair_index': idx,
+            'observation_name': _obs_name(pfxobs.original),
+            'forecast_name': _fx_name(pfxobs.original),
+            'interval_label': pfxobs.interval_label,
+            'observation_hash': str(hash(
+                (pfxobs.original.data_object,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'forecast_hash': str(hash(
+                (pfxobs.original.forecast,
+                 pfxobs.interval_length,
+                 pfxobs.interval_value_type,
+                 pfxobs.interval_label))),
+            'observation_color': _obs_color(
+                pfxobs.interval_length)
+        }
+        value_frames.append(pd.DataFrame(value_frame_dict))
+        meta_rows.append(meta_row_dict)
+    data = pd.concat(value_frames)
+    metadata = pd.DataFrame(meta_rows)
+    # drop tz info from localized times. GH164
+    data = data.tz_localize(None)
+    data = data.rename_axis('timestamp')
+    return data, metadata
+
+
+def _obs_name(fx_obs):
+    # TODO: add code to ensure obs names are unique
+    name = fx_obs.data_object.name
+    if fx_obs.forecast.name == fx_obs.data_object.name:
+        if isinstance(fx_obs.data_object, datamodel.Observation):
+            name += ' Observation'
+        else:
+            name += ' Aggregate'
+    return name
+
+
+def _fx_name(fx_obs):
+    # TODO: add code to ensure fx names are unique
+    name = fx_obs.forecast.name
+    if fx_obs.forecast.name == fx_obs.data_object.name:
+        name += ' Forecast'
+    return name
+
+
+def _obs_color(interval_length):
+    idx = np.searchsorted(OBS_PALETTE_TD_RANGE, interval_length)
+    obs_color = OBS_PALETTE[idx]
+    return obs_color
+
+
+def _boolean_filter_indices_by_pair(value_cds, pair_index):
+    return value_cds.data['pair_index'] == pair_index
+
+
+def _extract_metadata_from_df(metadata_df, hash_, hash_key):
+    # first_row = np.argwhere(metadata_df[hash_key] == hash_)[0][0]
+    metadata = metadata_df[metadata_df[hash_key] == hash_]
+    return {
+        'pair_index': metadata['pair_index'].values[0],
+        'observation_name': metadata['observation_name'].values[0],
+        'forecast_name': metadata['forecast_name'].values[0],
+        'interval_label': metadata['interval_label'].values[0],
+        'observation_color': metadata['observation_color'].values[0],
+    }
+
+
+def _legend_text(name, max_length=20):
+    """Inserts <br> tags in a name to mimic word-wrap behavior for long names
+    in the legend of timeseries plots.
+
+    Parameters
+    ----------
+    name: str
+        The name/string to apply word-wrap effect to.
+    max_length: int
+        The maximum length of any line of text. Note that this will not break
+        words across lines, but on the closest following space.
+
+    Returns
+    -------
+    str
+        The name after it is split appropriately.
+    """
+    if len(name) > max_length:
+        temp = []
+        new = []
+        for part in name.split(' '):
+            if len(' '.join(temp + [part])) > max_length:
+                new.append(' '.join(temp))
+                temp = [part]
+            else:
+                temp.append(part)
+        if temp:
+            new.append(' '.join(temp))
+        return '<br>'.join(new)
+    else:
+        return name
+
+
+def timeseries(timeseries_value_df, timeseries_meta_df,
+               start, end, units, timezone='UTC'):
+    """
+    Timeseries plot of one or more forecasts and observations.
+
+    Parameters
+    ----------
+    timeseries_value_df: pandas.DataFrame
+        DataFrame of timeseries data. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df` for format.
+    timeseries_meta_df: pandas.DataFrame
+        DataFrame of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df` for format.
+    start : pandas.Timestamp
+        Report start time
+    end : pandas.Timestamp
+        Report end time
+    timezone : str
+        Timezone consistent with the data in the timeseries_metadata_df.
+
+    Returns
+    -------
+    fig : bokeh.plotting.figure
+    """  # NOQA
+    palette = cycle(PALETTE)
+    fig = go.Figure()
+    plotted_objects = 0
+    for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, obs_hash, 'observation_hash')
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        data = timeseries_value_df[pair_idcs]
+        fig.add_trace(go.Scattergl(
+            y=data['observation_values'],
+            x=data.index,
+            name=_legend_text(metadata['observation_name']),
+            legendgroup=metadata['observation_name'],
+            marker=dict(color=metadata['observation_color']),
+            connectgaps=False),
+        )
+        plotted_objects += 1
+
+    palette = cycle(PALETTE)
+    for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, fx_hash, 'forecast_hash')
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        data = timeseries_value_df[pair_idcs]
+        fig.add_trace(go.Scattergl(
+            y=data['forecast_values'],
+            x=data.index,
+            name=_legend_text(metadata['forecast_name']),
+            legendgroup=metadata['forecast_name'],
+            marker=dict(color=next(palette)),
+            connectgaps=False),
+        )
+        plotted_objects += 1
+    fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    fig.update_yaxes(title_text=f'Data ({units})', showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside',
+                     fixedrange=True)
+    return fig
+
+
+def _get_scatter_limits(df):
+    extremes = [np.nan]
+    for kind in ('forecast_values', 'observation_values'):
+        arr = np.asarray(df[kind]).astype(float)
+        if len(arr) != 0:
+            extremes.append(np.nanmin(arr))
+            extremes.append(np.nanmax(arr))
+    min_ = np.nanmin(extremes)
+    if np.isnan(min_):
+        min_ = -999
+    max_ = np.nanmax(extremes)
+    if np.isnan(max_):
+        max_ = 999
+    return min_, max_
+
+
+def scatter(timeseries_value_df, timeseries_meta_df, units):
+    """
+    Adds Scatter plot traces of one or more forecasts and observations to
+    the figure.
+
+    Parameters
+    ----------
+    timeseries_value_df: pandas.DataFrame
+        DataFrame of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df`
+        for format.
+    timeseries_meta_df: pandas.DataFrame
+        DataFrame of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df`
+        for format.
+    """  # NOQA
+    xy_min, xy_max = _get_scatter_limits(timeseries_value_df)
+
+    palette = cycle(PALETTE)
+    fig = go.Figure()
+    # accumulate labels and plot objects for manual legend
+    for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, fxhash, 'forecast_hash')
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        data = timeseries_value_df[pair_idcs]
+
+        fig.add_trace(go.Scattergl(
+            x=data['observation_values'],
+            y=data['forecast_values'],
+            name=_legend_text(metadata['forecast_name']),
+            legendgroup=metadata['forecast_name'],
+            marker=dict(color=next(palette)),
+            mode='markers'),
+        )
+    # compute new plot width accounting for legend label text width.
+    # also considered using second figure for legend so it doesn't
+    # distort the first when text length/size changes. unfortunately,
+    # that doesn't work due to bokeh's inability to communicate legend
+    # information across figures.
+    # widest part of the legend
+    label = f'({units})'
+    x_label = 'Observed ' + label
+    y_label = 'Forecast ' + label
+    fig.update_xaxes(title_text=x_label, showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    fig.update_yaxes(title_text=y_label, showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    return fig
 
 
 def configure_axes(fig, x_axis_kwargs, y_axis_kwargs):
@@ -385,3 +662,42 @@ def raw_report_plots(report, metrics):
 
     out = datamodel.RawReportPlots(tuple(mplots), plotly_version)
     return out
+
+
+def timeseries_plots(report):
+    """Return the bokeh components (script and div element) for timeseries
+    and scatter plots of the processed forecasts and observations.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    script: str
+        A script element to insert into an html template
+    div: str
+        A div element to insert into an html template.
+    """
+    value_df, meta_df = construct_timeseries_df(report)
+    pfxobs = report.raw_report.processed_forecasts_observations
+    units = pfxobs[0].original.forecast.units
+    ts_fig = timeseries(
+        value_df, meta_df, report.report_parameters.start,
+        report.report_parameters.end, units,
+        report.raw_report.timezone)
+    scat_fig = scatter(value_df, meta_df, units)
+    ts_fig.update_layout(
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=dict(size=14),
+        margin=PLOT_MARGINS,
+
+    )
+    scat_fig.update_layout(
+        plot_bgcolor=PLOT_BGCOLOR,
+        font=dict(size=14),
+        width=600,
+        height=500,
+        autosize=False,
+    )
+    return ts_fig.to_json(), scat_fig.to_json()

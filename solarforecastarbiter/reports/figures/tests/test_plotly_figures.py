@@ -242,3 +242,13 @@ def test_bar_subdivisions_empty_df(metric_dataframe):
     out = figures.bar_subdivisions(df, 'hour', 's')
     assert isinstance(out, dict)
     assert len(out) == 0
+
+
+@pytest.mark.parametrize('input_str,expected', [
+    ('not long', 'not long'),
+    ('pretty long name and stuff', 'pretty long name and<br>stuff'),
+    ('long word in middlemiddlemiddlemiddle of it',
+     'long word in<br>middlemiddlemiddlemiddle<br>of it'),
+])
+def test_legend_text(input_str, expected):
+    assert figures._legend_text(input_str) == expected
