@@ -145,6 +145,128 @@ def forecast_values():
                                          name='timestamp')).tz_convert('UTC')
 
 
+@pytest.fixture()
+def prob_forecast_values_text_list():
+    return [b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "forecast_id": "CV25",
+  "values": [
+    {
+      "timestamp": "2019-01-01T06:00:00-0700",
+      "value": 0.0
+    },
+    {
+      "timestamp": "2019-01-01T07:00:00-0700",
+      "value": 1.0
+    },
+    {
+      "timestamp": "2019-01-01T08:00:00-0700",
+      "value": 2.0
+    },
+    {
+      "timestamp": "2019-01-01T09:00:00-0700",
+      "value": 3.0
+    },
+    {
+      "timestamp": "2019-01-01T10:00:00-0700",
+      "value": 4.0
+    },
+    {
+      "timestamp": "2019-01-01T11:00:00-0700",
+      "value": 5.0
+    }
+  ]
+}
+"""
+,
+b"""
+{
+"_links": {
+"metadata": ""
+},
+  "forecast_id": "CV50",
+  "values": [
+    {
+    "timestamp": "2019-01-01T06:00:00-0700",
+    "value": 1.0
+    },
+    {
+    "timestamp": "2019-01-01T07:00:00-0700",
+    "value": 2.0
+    },
+    {
+    "timestamp": "2019-01-01T08:00:00-0700",
+    "value": 3.0
+    },
+    {
+    "timestamp": "2019-01-01T09:00:00-0700",
+    "value": 4.0
+    },
+    {
+    "timestamp": "2019-01-01T10:00:00-0700",
+    "value": 5.0
+    },
+    {
+    "timestamp": "2019-01-01T11:00:00-0700",
+    "value": 6.0
+    }
+  ]
+}
+"""
+,
+b"""
+{
+"_links": {
+"metadata": ""
+},
+  "forecast_id": "CV75",
+  "values": [
+    {
+      "timestamp": "2019-01-01T06:00:00-0700",
+      "value": 2.0
+    },
+    {
+      "timestamp": "2019-01-01T07:00:00-0700",
+      "value": 3.0
+    },
+    {
+      "timestamp": "2019-01-01T08:00:00-0700",
+      "value": 4.0
+    },
+    {
+      "timestamp": "2019-01-01T09:00:00-0700",
+      "value": 5.0
+    },
+    {
+      "timestamp": "2019-01-01T10:00:00-0700",
+      "value": 6.0
+    },
+    {
+      "timestamp": "2019-01-01T11:00:00-0700",
+      "value": 7.0
+    }
+  ]
+}
+"""
+]
+
+
+@pytest.fixture()
+def prob_forecast_values():
+    return pd.DataFrame(
+        {'25': [0.0, 1, 2, 3, 4, 5],
+         '50': [1.0, 2, 3, 4, 5, 6],
+         '75': [2.0, 3, 4, 5, 6, 7]},
+         index=pd.date_range(start='20190101T0600',
+                             end='20190101T1100',
+                             freq='1h',
+                             tz='America/Denver',
+                             name='timestamp')).tz_convert('UTC')
+
+
 @pytest.fixture(scope='module')
 def site_metadata():
     """
@@ -1054,7 +1176,7 @@ def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
                                if pfx.variable == 'ghi' and pfx.axis == 'x']
     many_ghi_observations = [obs for obs in many_observations
                              if obs.variable == 'ghi']
-    car_prod = itertools.product(many_ghi_prob_forecasts,
+    cart_prod = itertools.product(many_ghi_prob_forecasts,
                                  many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
