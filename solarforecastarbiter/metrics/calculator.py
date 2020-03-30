@@ -56,8 +56,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
     * Support event metrics and forecasts
     """
     calc_metrics = []
-    all_pairs = None
-    const_value = None
     current_fx_id = -1
 
     for proc_fxobs in processed_pairs:
@@ -326,7 +324,8 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
                         'reference_probability': ref_fx_prob}, axis=1)
 
         # Force `groupby` to be consistent with `interval_label`, i.e., if
-        # `interval_label == ending`, then the last interval should be in the bin
+        # `interval_label == ending`, then the last interval should be in the
+        # bin
         if processed_fx_obs.interval_label == "ending":
             df.index -= pd.Timedelta("1ns")
 
@@ -346,7 +345,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
                     try:
                         ref_fx_vals = group.reference
                         ref_fx_prob_vals = group.reference_probability
-                    except:
+                    except AttributeError:
                         ref_fx_vals = None
                         ref_fx_prob_vals = None
 

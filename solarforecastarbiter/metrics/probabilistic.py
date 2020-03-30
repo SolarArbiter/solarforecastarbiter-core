@@ -402,7 +402,7 @@ _MAP = {
     'rel': (reliability, 'REL'),
     'res': (resolution, 'RES'),
     'unc': (uncertainty, 'UNC'),
-    #'sh': (sharpness, 'SH'),  # TODO
+    # 'sh': (sharpness, 'SH'),  # TODO
     'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
 

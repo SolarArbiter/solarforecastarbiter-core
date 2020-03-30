@@ -180,12 +180,11 @@ def prob_forecast_values_text_list():
     }
   ]
 }
-"""
-,
+""",  # NOQA
 b"""
 {
-"_links": {
-"metadata": ""
+  "_links": {
+    "metadata": ""
 },
   "forecast_id": "CV50",
   "values": [
@@ -215,12 +214,11 @@ b"""
     }
   ]
 }
-"""
-,
+""",  # NOQA
 b"""
 {
-"_links": {
-"metadata": ""
+  "_links": {
+    "metadata": ""
 },
   "forecast_id": "CV75",
   "values": [
@@ -260,11 +258,11 @@ def prob_forecast_values():
         {'25': [0.0, 1, 2, 3, 4, 5],
          '50': [1.0, 2, 3, 4, 5, 6],
          '75': [2.0, 3, 4, 5, 6, 7]},
-         index=pd.date_range(start='20190101T0600',
-                             end='20190101T1100',
-                             freq='1h',
-                             tz='America/Denver',
-                             name='timestamp')).tz_convert('UTC')
+        index=pd.date_range(start='20190101T0600',
+                            end='20190101T1100',
+                            freq='1h',
+                            tz='America/Denver',
+                            name='timestamp')).tz_convert('UTC')
 
 
 @pytest.fixture(scope='module')
@@ -1177,7 +1175,7 @@ def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
     many_ghi_observations = [obs for obs in many_observations
                              if obs.variable == 'ghi']
     cart_prod = itertools.product(many_ghi_prob_forecasts,
-                                 many_ghi_observations)
+                                  many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 

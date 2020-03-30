@@ -302,11 +302,9 @@ def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
     assert fx_list == many_prob_forecasts
 
 
-def test_apisession_list_prob_forecast_single(requests_mock, prob_forecasts,
-                                              prob_forecast_text,
-                                              mock_list_sites, mock_get_site,
-                                              prob_forecast_constant_value_text,
-                                              mock_get_agg):
+def test_apisession_list_prob_forecast_single(
+        requests_mock, prob_forecasts, prob_forecast_text, mock_list_sites,
+        mock_get_site, prob_forecast_constant_value_text, mock_get_agg):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
     requests_mock.register_uri(
