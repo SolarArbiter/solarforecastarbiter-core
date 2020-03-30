@@ -78,7 +78,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
             timeseries_specs = plotly_figures.timeseries_plots(report)
         except Exception:
             logger.exception(
-                'Failed to make Bokeh items for timeseries and scatterplot')
+                'Failed to make Plotly items for timeseries and scatterplot')
             timeseries_specs = ('{}', '{}')
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
