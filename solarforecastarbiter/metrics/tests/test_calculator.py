@@ -359,38 +359,101 @@ def test_calculate_deterministic_metrics(categories, metrics,
     verify_metric_result(result, pair, categories, metrics)
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_no_metrics():
-    raise NotImplementedError
+def test_calculate_probabilistic_metrics_no_metrics(
+        single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series(np.random.randn(10)))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, []
+        )
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_no_reference():
-    raise NotImplementedError
+def test_calculate_probabilistic_metrics_no_reference(
+    single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series(np.random.randn(10)))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+        )
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_no_reference_data():
-    raise NotImplementedError
+def test_calculate_probabilistic_metrics_no_reference_data(
+    single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series(np.random.randn(10)))
+    proc_ref = create_processed_fxobs(single_prob_forecast_observation,
+                                      pd.DataFrame(),
+                                      pd.Series([], dtype=float))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+        )
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_bad_reference_axis():
-    raise NotImplementedError
+def test_calculate_probabilistic_metrics_bad_reference_interval_label(
+    single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series(np.random.randn(10)))
+    proc_ref = create_processed_fxobs(single_prob_forecast_observation,
+                                      pd.DataFrame(np.random.randn(3,10)),
+                                      pd.Series(np.random.randn(10)))
+    proc_ref = proc_ref.replace(interval_label='ending')
+    with pytest.raises(ValueError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX,
+            proc_ref
+        )
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_missing_values():
-    raise NotImplementedError
+def test_calculate_probabilistic_metrics_bad_reference_axis(
+    single_prob_forecast_observation, prob_forecasts, single_observation,
+    create_processed_fxobs,
+    copy_prob_forecast_with_axis):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series(np.random.randn(10)))
+    conv_fx = copy_prob_forecast_with_axis(prob_forecasts, axis='y')
+    ref_fxobs = datamodel.ForecastObservation(conv_fx, single_observation)
+    proc_ref = create_processed_fxobs(ref_fxobs,
+                                      pd.DataFrame(np.random.randn(3,10)),
+                                      pd.Series(np.random.randn(10)))
+    with pytest.raises(ValueError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX,
+            proc_ref
+        )
+
+
+def test_calculate_probabilistic_metrics_missing_values(
+    single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(),
+                                        pd.Series(np.random.randn(10)))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+        )
+
+
+def test_calculate_probabilistic_metrics_missing_observation(
+    single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(3,10)),
+                                        pd.Series([], dtype=float))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+        )
 
 
 @pytest.mark.skip('')
 def test_calculate_probabilistic_metrics_reference():
-    raise NotImplementedError
-
-
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics_all_forecasts():
     raise NotImplementedError
 
 
