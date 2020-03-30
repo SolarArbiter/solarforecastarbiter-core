@@ -114,7 +114,7 @@ def _fill_timeseries(df, interval_length):
     ----------
     df: pandas.DataFrame
         Dataframe with timeseries data.
-    interval_length: timedelta-li
+    interval_length: timedelta-like
         Interval length of the data in minutes.
 
     Returns
