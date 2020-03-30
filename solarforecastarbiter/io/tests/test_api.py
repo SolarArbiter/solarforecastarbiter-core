@@ -572,6 +572,7 @@ def test_apisession_get_prob_forecast_values(
     out = session.get_probabilistic_forecast_values('', *fx_start_end)
     pdt.assert_frame_equal(out, prob_forecast_values)
 
+
 @pytest.mark.parametrize('label,theslice', [
     (None, slice(0, 10)),
     ('beginning', slice(0, -1)),
@@ -628,16 +629,19 @@ def test_apisession_post_prob_forecast_constant_value_values(
 @pytest.mark.parametrize('match, meth', [
     ('observations', 'get_observation_values'),
     ('forecasts/single', 'get_forecast_values'),
+    ('forecasts/cdf', 'get_probabilistic_forecast_values'),
     ('forecasts/cdf/single',
      'get_probabilistic_forecast_constant_value_values'),
     ('aggregates', 'get_aggregate_values'),
 ])
 def test_apisession_get_values(
         requests_mock, mocker, single_observation, single_forecast,
-        prob_forecast_constant_value, aggregate, match, meth, fx_start_end):
+        prob_forecasts, prob_forecast_constant_value, aggregate, match, meth,
+        fx_start_end):
     objs = {
         'observations': single_observation,
         'forecasts/single': single_forecast,
+        'forecasts/cdf': prob_forecasts,
         'forecasts/cdf/single': prob_forecast_constant_value,
         'aggregates': aggregate
     }
@@ -706,6 +710,16 @@ def test_apisession_list_reports(requests_mock, report_text, report_objects,
     session = api.APISession('')
     requests_mock.register_uri('GET', f'{session.base_url}/reports',
                                content=b'['+report_text+b']')
+    out = session.list_reports()
+    expected = [report_objects[0]]
+    assert out == expected
+
+
+def test_apisession_list_reports_single(requests_mock, report_text,
+                                        report_objects, mock_request_fxobs):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports',
+                               content=report_text)
     out = session.list_reports()
     expected = [report_objects[0]]
     assert out == expected
@@ -851,6 +865,16 @@ def test_apisession_list_aggregates(requests_mock, aggregate_text, aggregate,
     requests_mock.register_uri(
         'GET', re.compile(f'{session.base_url}/aggregates/'),
         content=b'[' + aggregate_text + b']')
+    aggs = session.list_aggregates()
+    assert aggs[0] == aggregate
+
+
+def test_apisession_list_aggregates_single(requests_mock, aggregate_text,
+                                           aggregate, mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/'),
+        content=aggregate_text)
     aggs = session.list_aggregates()
     assert aggs[0] == aggregate
 
