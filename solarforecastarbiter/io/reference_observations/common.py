@@ -235,12 +235,15 @@ def get_last_site_timestamp(api, site_observations, end):
     updated = False
     for obs in site_observations:
         maxt = api.get_observation_time_range(obs.observation_id)[1]
-        if pd.notna(maxt) and maxt < out:
+        # <= so that even if maxt == end updated -> true
+        # effectively ignores all NaT values unless all observations
+        # for the site are NaT, then use weekago
+        if pd.notna(maxt) and maxt <= out:
             out = maxt
             updated = True
 
     weekago = end - pd.Timedelta('7d')
-    if updated or out < weekago:
+    if not updated or out < weekago:
         out = weekago
     return out
 
@@ -274,6 +277,7 @@ def update_site_observations(api, fetch_func, site, observations,
         end = _utcnow()
     if start is None:
         start = get_last_site_timestamp(api, site_observations, end)
+    logger.debug('Fetching data for %s from %s to %s', site.name, start, end)
     obs_df = fetch_func(api, site, start, end)
     data_in_range = obs_df[start:end]
     if data_in_range.empty:

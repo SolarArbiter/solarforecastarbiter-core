@@ -401,6 +401,14 @@ def test_get_last_site_timestamp_none(mock_api, now, site_obs):
     assert ret == now - pd.Timedelta('7d')
 
 
+def test_get_last_site_timestamp_some_nat(mock_api, now, site_obs):
+    retvals = {site_obs[0].observation_id: (0, pd.Timestamp('20190105T0020Z')),
+               site_obs[1].observation_id: (0, pd.NaT)}
+    mock_api.get_observation_time_range.side_effect = lambda x: retvals[x]
+    ret = common.get_last_site_timestamp(mock_api, site_obs, now)
+    assert ret == pd.Timestamp('20190105T0020Z')
+
+
 def test_get_last_site_timestamp_uptodate(mock_api, now, site_obs):
     mock_api.get_observation_time_range.return_value = (0, now)
     ret = common.get_last_site_timestamp(mock_api, site_obs, now)
