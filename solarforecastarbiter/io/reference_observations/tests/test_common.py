@@ -383,7 +383,7 @@ def test_get_last_site_timestamp(mock_api, now, site_obs):
     retvals = {site_obs[0].observation_id: (0, pd.Timestamp('20190105T0020Z')),
                site_obs[1].observation_id: (0, now)}
     mock_api.get_observation_time_range.side_effect = lambda x: retvals[x]
-    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    ret = common.get_last_site_timestamp(mock_api, site_obs, now)
     assert ret == pd.Timestamp('20190105T0020Z')
 
 
@@ -391,18 +391,24 @@ def test_get_last_site_timestamp_small(mock_api, now, site_obs):
     retvals = {site_obs[0].observation_id: (0, pd.Timestamp('20181222T0020Z')),
                site_obs[1].observation_id: (0, pd.Timestamp('20190106T0020Z'))}
     mock_api.get_observation_time_range.side_effect = lambda x: retvals[x]
-    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    ret = common.get_last_site_timestamp(mock_api, site_obs, now)
     assert ret == now - pd.Timedelta('7d')
 
 
 def test_get_last_site_timestamp_none(mock_api, now, site_obs):
     mock_api.get_observation_time_range.return_value = (0, pd.NaT)
-    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    ret = common.get_last_site_timestamp(mock_api, site_obs, now)
     assert ret == now - pd.Timedelta('7d')
 
 
+def test_get_last_site_timestamp_uptodate(mock_api, now, site_obs):
+    mock_api.get_observation_time_range.return_value = (0, now)
+    ret = common.get_last_site_timestamp(mock_api, site_obs, now)
+    assert ret == now
+
+
 def test_get_last_site_timestamp_empty(mock_api, now):
-    ret = common.get_last_site_timestamp(mock_api, [])
+    ret = common.get_last_site_timestamp(mock_api, [], now)
     assert ret == now - pd.Timedelta('7d')
 
 
@@ -427,7 +433,7 @@ def test_update_site_observations_no_start(
     site = site_objects[0]
     start = None
     slimit = pd.Timestamp('20190101T1219Z')
-    end = pd.Timestamp('20190101T1225Z')
+    end = pd.Timestamp('20190108T1219Z')
     mock_api.get_observation_time_range.return_value = (0, slimit)
     common.update_site_observations(
         mock_api, mock_fetch, site, observation_objects_param, start, end)
@@ -453,6 +459,16 @@ def test_update_site_observations_no_end(
         args[1], fake_ghi_data.rename(
             columns={'ghi': 'value'})[start:].resample(
                 args[1].index.freq).first())
+
+
+def test_update_site_observations_uptodate(
+        mock_api, mock_fetch, observation_objects_param, fake_ghi_data,
+        now):
+    site = site_objects[0]
+    mock_api.get_observation_time_range.return_value = (0, now)
+    common.update_site_observations(
+        mock_api, mock_fetch, site, observation_objects_param, None, None)
+    mock_api.post_observation_values.assert_not_called
 
 
 def test_update_site_observations_no_data(

@@ -213,10 +213,10 @@ def _utcnow():
     return pd.Timestamp.now(tz='UTC')
 
 
-def get_last_site_timestamp(api, site_observations):
+def get_last_site_timestamp(api, site_observations, end):
     """Get the last value timestamp from the API for a site
     as the minimum of the last timestamp for each observation at
-    that site. A limit of now - 7 days is set to avoid excessive
+    that site. A limit of end - 7 days is set to avoid excessive
     queries to external sources.
 
     Parameters
@@ -225,20 +225,22 @@ def get_last_site_timestamp(api, site_observations):
         An active Reference user session.
     site_observations : list of solarforecastarbiter.datamodel.Observation
         A list of reference Observations for a site to search.
+    end : pd.Timestamp
 
     Returns
     -------
     pandas.Timestamp
     """
-    now = _utcnow()
-    out = now
+    out = end
+    updated = False
     for obs in site_observations:
         maxt = api.get_observation_time_range(obs.observation_id)[1]
         if pd.notna(maxt) and maxt < out:
             out = maxt
+            updated = True
 
-    weekago = now - pd.Timedelta('7d')
-    if out == now or out < weekago:
+    weekago = end - pd.Timedelta('7d')
+    if updated or out < weekago:
         out = weekago
     return out
 
@@ -262,16 +264,16 @@ def update_site_observations(api, fetch_func, site, observations,
         A full list of reference Observations to search.
     start : pandas.Timestamp or None
         Start time to get data for. If None, try finding the last
-        value in the API and use that time (with a limit of now - 7 days).
-        If None and no values in the API, use now - 7 day.
+        value in the API and use that time (with a limit of 7 days from start
+        to end). If None and no values in the API, use end - 7 day.
     end : pandas.Timestamp or None
         End time to get data for. If None, use now.
     """
     site_observations = [obs for obs in observations if obs.site == site]
-    if start is None:
-        start = get_last_site_timestamp(api, site_observations)
     if end is None:
         end = _utcnow()
+    if start is None:
+        start = get_last_site_timestamp(api, site_observations, end)
     obs_df = fetch_func(api, site, start, end)
     data_in_range = obs_df[start:end]
     if data_in_range.empty:
