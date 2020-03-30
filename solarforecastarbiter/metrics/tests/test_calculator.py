@@ -24,10 +24,23 @@ LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 @pytest.fixture()
 def create_processed_fxobs(create_datetime_index):
     def _create_processed_fxobs(fxobs, fx_values, obs_values,
+                                ref_values=None,
                                 interval_label=None):
 
         if not interval_label:
             interval_label = fxobs.forecast.interval_label
+
+        if (isinstance(fx_values, pd.Series) or
+            isinstance(fx_values, pd.DataFrame)):
+            conv_fx_values = fx_values
+        else:
+            conv_fx_values = pd.Series(fx_values,
+                index=create_datetime_index(len(fx_values)))
+        if isinstance(obs_values, pd.Series):
+            conv_obs_values = obs_values
+        else:
+            conv_obs_values = pd.Series(obs_values,
+                index=create_datetime_index(len(obs_values)))
 
         return datamodel.ProcessedForecastObservation(
             fxobs.forecast.name,
@@ -36,13 +49,8 @@ def create_processed_fxobs(create_datetime_index):
             fxobs.forecast.interval_length,
             interval_label,
             valid_point_count=len(fx_values),
-            forecast_values=(
-                fx_values if isinstance(fx_values, pd.Series) else pd.Series(
-                    fx_values, index=create_datetime_index(len(fx_values)))),
-            observation_values=(
-                obs_values if isinstance(obs_values, pd.Series) else pd.Series(
-                    obs_values, index=create_datetime_index(len(obs_values))))
-        )
+            forecast_values=conv_fx_values,
+            observation_values=conv_obs_values)
 
     return _create_processed_fxobs
 
@@ -54,6 +62,22 @@ def create_datetime_index():
                              tz='MST', name='timestamp')
 
     return _create_datetime_index
+
+
+@pytest.fixture()
+def copy_prob_forecast_with_axis():
+    def _copy_prob_forecast_with_axis(probfx, axis):
+        cvs = probfx.constant_values
+        new_cvs = []
+        new_probfx = probfx.replace(constant_values=())
+        new_probfx = new_probfx.replace(axis=axis)
+        for cv in cvs:
+            cv = cv.replace(axis=axis)
+            new_cvs.append(cv)
+        new_probfx = new_probfx.replace(constant_values=tuple(new_cvs))
+        return new_probfx
+
+    return _copy_prob_forecast_with_axis
 
 
 @pytest.fixture(params=['fxobs', 'fxagg'])
@@ -87,18 +111,6 @@ def proc_fx_obs(create_processed_fxobs, many_forecast_observation):
                                    np.random.randn(10)+10)
         )
     return proc_fx_obs
-
-
-@pytest.fixture()
-def proc_prob_fx_obs(create_processed_fxobs, many_prob_forecast_observation):
-    proc_pfx_obs = []
-
-    for pfx_obs in many_prob_forecast_observation:
-        proc_pfx.obs.append(
-            create_processed_fxobs(pfx_obs,
-                                   np.random.randn(10,10)+10,
-                                   np.random.randn(10,10)+10)
-        )
 
 
 @pytest.fixture()
@@ -172,22 +184,24 @@ def test_calculate_metrics_single(single_forecast_data_obj,
     assert len(result) == 1
 
 
+@pytest.mark.skip('')
 @pytest.mark.parametrize('categories,metrics', [
     ([], []),
-    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS)
+    (LIST_OF_CATEGORIES, DETERMINISTIC_METRICS),
+    (LIST_OF_CATEGORIES, PROBABILISTIC_METRICS)
 ])
 def test_calculate_metrics_with_probablistic(categories, metrics,
-                                             create_processed_fxobs,
-                                             single_observation,
-                                             prob_forecasts):
+                                        create_processed_fxobs,
+                                        single_observation,
+                                        prob_forecasts):
     prfxobs = datamodel.ForecastObservation(prob_forecasts, single_observation)
+    fx_values = [np.random.randn(10)+10 for _ in range(7)]
+    obs_values = np.random.randn(10)+10
     proc_prfx_obs = create_processed_fxobs(prfxobs,
-                                           np.random.randn(10)+10,
-                                           np.random.randn(10)+10)
-
-    pass
-    # calculator.calculate_metrics([proc_prfx_obs],
-    #                                 categories, metrics)
+                                           fx_values,
+                                           obs_values)
+    calculator.calculate_metrics(proc_prfx_obs,
+                                 categories, metrics)
 
 
 def test_calculate_deterministic_metrics_no_metrics(ref_fx_obs):
@@ -341,6 +355,46 @@ def test_calculate_deterministic_metrics(categories, metrics,
         )
 
 
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_no_metrics():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_no_reference():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_no_reference_data():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_bad_reference_axis():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_missing_values():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_reference():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics_all_forecasts():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_calculate_probabilistic_metrics():
+    raise NotImplementedError
+
+
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
     ('mae', [], [], None, None, np.NaN),
     ('mae', [1, 1, 1], [0, 1, -1], None, None, 1.0),
@@ -402,6 +456,16 @@ def test_apply_deterministic_bad_metric_func():
         calculator._apply_deterministic_metric_func('BAD METRIC',
                                                     pd.Series(dtype=float),
                                                     pd.Series(dtype=float))
+
+
+@pytest.mark.skip('')
+def test_apply_probabilistic_metric_func():
+    raise NotImplementedError
+
+
+@pytest.mark.skip('')
+def test_apply_probabilistic_bad_metric_func():
+    raise NotImplementedError
 
 
 @pytest.mark.parametrize('ts,tz,interval_label,category,result', [
@@ -559,3 +623,26 @@ def test_interval_label_match(site_metadata, label_fx, label_ref,
 
     assert isinstance(all_results, list)
     assert len(all_results) == len(proc_fx_obs)
+
+@pytest.mark.parametrize('prob_fx_df,axis,exp_fx_fx_prob', [
+    (pd.DataFrame({'25': [1.]*5, '50': [2.]*5, '75': [3.]*5}),
+     'y',
+     [(pd.Series([1.]*5, name='25'), pd.Series([25.]*5)),
+      (pd.Series([2.]*5, name='50'), pd.Series([50.]*5)),
+      (pd.Series([3.]*5, name='75'), pd.Series([75.]*5))]),
+])
+def test_transform_prob_forecast_value_and_prob(copy_prob_forecast_with_axis,
+                                                create_processed_fxobs,
+                                                prob_forecasts,
+                                                single_observation,
+                                                prob_fx_df, axis, exp_fx_fx_prob):
+    conv_prob_fx = copy_prob_forecast_with_axis(prob_forecasts, axis)
+    fxobs = datamodel.ForecastObservation(conv_prob_fx, single_observation)
+    proc_fxobs = create_processed_fxobs(fxobs, prob_fx_df,
+                                        pd.Series([0.]*prob_fx_df.shape[0]))
+    result = calculator._transform_prob_forecast_value_and_prob(proc_fxobs)
+    assert len(result) == len(exp_fx_fx_prob)
+    for res, exp in zip(result, exp_fx_fx_prob):
+        assert len(res) == len(res)
+        pd.testing.assert_series_equal(res[0], exp[0])
+        pd.testing.assert_series_equal(res[1], exp[1])
