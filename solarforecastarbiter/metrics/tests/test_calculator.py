@@ -458,14 +458,78 @@ def test_apply_deterministic_bad_metric_func():
                                                     pd.Series(dtype=float))
 
 
-@pytest.mark.skip('')
-def test_apply_probabilistic_metric_func():
-    raise NotImplementedError
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('metric,fx,fx_prob,obs,ref_fx,ref_fx_prob,expect', [
+    ('bs', [], [], [], None, None, np.NaN),
+    ('bs', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
+
+    # Briar Skill Score with no reference
+    ('bss', [1, 1, 1], [100, 100, 100], [0, 0, 0],
+            None, None, 1.),
+    ('bss', [1, 1, 1], [100, 100, 100], [1, 1, 1],
+            [0, 0, 0], [100, 100, 100], 1.),
+
+    ('rel', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
+    ('res', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
+    ('unc', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
+
+    # CRPS single forecast
+    ('crps', [1], [100], [0], None, None, 0.),
+    # CRPS mulitple forecasts
+    ('crps', [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
+             [[100, 100, 100], [100, 100, 100], [100, 100, 100]],
+             [0, 0, 0], None, None, 0.)
+])
+def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
+                                         ref_fx, ref_fx_prob, expect,
+                                         create_datetime_index):
+    if metric == 'crps':
+        fx_data = pd.DataFrame(fx,
+            index=create_datetime_index(len(fx)), dtype=float)
+        fx_prob_data = pd.DataFrame(fx_prob,
+            index=create_datetime_index(len(fx_prob)), dtype=float)
+    else:
+        fx_data = pd.Series(fx,
+            index=create_datetime_index(len(fx)), dtype=float)
+        fx_prob_data = pd.Series(fx_prob,
+            index=create_datetime_index(len(fx_prob)), dtype=float)
+    obs_series = pd.Series(obs,
+        index=create_datetime_index(len(obs)), dtype=float)
+
+    # Check metrics that require reference forecast kwarg
+    if metric in ['bss']:
+        if ref_fx is None or ref_fx_prob is None:
+            with pytest.raises(KeyError):
+                # Missing positional argument
+                calculator._apply_probabilistic_metric_func(
+                    metric, fx_data, fx_prob_data, obs_series)
+        else:
+            ref_fx_data = pd.Series(ref_fx,
+                index=create_datetime_index(len(ref_fx)))
+            ref_fx_prob_data = pd.Series(ref_fx_prob,
+                index=create_datetime_index(len(ref_fx_prob)))
+            metric_value = calculator._apply_probabilistic_metric_func(
+                metric, fx_data, fx_prob_data, obs_series,
+                ref_fx=ref_fx_data,
+                ref_fx_prob=ref_fx_prob_data)
+            np.testing.assert_approx_equal(metric_value, expect)
+
+    # Does not require kwarg
+    else:
+        metric_value = calculator._apply_probabilistic_metric_func(
+            metric, fx_data, fx_prob_data, obs_series)
+        if np.isnan(expect):
+            assert np.isnan(metric_value)
+        else:
+            np.testing.assert_approx_equal(metric_value, expect)
 
 
-@pytest.mark.skip('')
 def test_apply_probabilistic_bad_metric_func():
-    raise NotImplementedError
+    with pytest.raises(KeyError):
+        calculator._apply_probabilistic_metric_func('BAD METRIC',
+                                                    pd.Series(dtype=float),
+                                                    pd.Series(dtype=float),
+                                                    pd.Series(dtype=float))
 
 
 @pytest.mark.parametrize('ts,tz,interval_label,category,result', [
@@ -623,6 +687,7 @@ def test_interval_label_match(site_metadata, label_fx, label_ref,
 
     assert isinstance(all_results, list)
     assert len(all_results) == len(proc_fx_obs)
+
 
 @pytest.mark.parametrize('prob_fx_df,axis,exp_fx_fx_prob', [
     (pd.DataFrame({'25': [1.]*5, '50': [2.]*5, '75': [3.]*5}),

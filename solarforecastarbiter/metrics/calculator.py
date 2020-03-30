@@ -122,19 +122,8 @@ def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
     if metric in probabilistic._REQ_REF_FX:
         return metric_func(obs, fx, fx_prob,
                            kwargs['ref_fx'], kwargs['ref_fx_prob'])
-    elif metric in probabilistic._REQ_2DFX:
-        all_pairs = kwargs['all_pairs']
-        fx_2d = []
-        fx_prob_2d = []
-        i = 0
-        for pair in all_pairs:
-            cv = pair.original.forecast.constant_values[i]
-            i_fx, i_fx_prob = _extract_prob_forecast_value_and_prob(pair, cv)
-            fx_2d.append(i_fx)
-            fx_prob_2d.append(i_fx_prob)
-        return metric_func(obs, fx_2d, fx_prob_2d)
     else:
-        return metric_func(obs, fx)
+        return metric_func(obs, fx.to_numpy(), fx_prob.to_numpy())
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
@@ -364,8 +353,6 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
             # Group by category
             for cat, group in df.groupby(index_category):
 
-                import ipdb; ipdb.set_trace()
-
                 # Calculate
                 res = _apply_probabilistic_metric_func(
                     metric_, group.forecast, group.observation,
@@ -388,7 +375,8 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
 
 
 def _transform_prob_forecast_value_and_prob(proc_fx_obs):
-    """Helper function that returns the series of physical values and
+    """
+    Helper function that returns ordered list of series of physical values and
     probabilities for a datamodel.ProcessedForecastObservation
 
     Parameters
