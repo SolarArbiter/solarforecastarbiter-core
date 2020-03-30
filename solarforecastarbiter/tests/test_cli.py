@@ -167,8 +167,10 @@ def test_referencedata_update(cli_token, mocker):
     mocked = mocker.patch(
         'solarforecastarbiter.cli.reference_data.update_reference_observations')  # NOQA
     runner = CliRunner()
-    runner.invoke(cli.referencedata_update,
-                  ['-u user', '-p pass', '20190101T0000Z', '20190101T235959Z'])
+    res = runner.invoke(cli.referencedata_update,
+                        ['-u user', '-p pass', '--start=20190101T0000Z',
+                         '--end=20190101T235959Z'])
+    assert res.exit_code == 0
     assert mocked.called
     assert mocked.call_args[0][:3] == ('TOKEN', pd.Timestamp('20190101T0000Z'),
                                        pd.Timestamp('20190101T235959Z'))

@@ -20,7 +20,13 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.event.critical_success_index`,
   :py:func:`solarforecastarbiter.metrics.event.event_bias`, and
   :py:func:`solarforecastarbiter.metrics.event.event_accuracy`. (:issue:`347`) (:pull:`348`)
-
+* Add functions to get the time range of values available in the API:
+  :py:func:`solarforecastarbiter.io.api.get_observation_time_range`,
+  :py:func:`solarforecastarbiter.io.api.get_forecast_time_range`,
+  :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_constant_value_time_range`.
+  (:pull:`369`)
+* Start and end are now optional parameters for the
+  `solararbiter referencedata update` CLI command (:pull:`369`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -29,6 +35,8 @@ Enhancements
   still interested in bokeh figures.(:pull:`359`)
 * Clean up any PhantomJS drivers created to render SVGs (:issue:`344`)
   (:pull:`349`)
+* Reference data updates can now proceed from the last value in the API
+  to avoid any artificial data gaps (:pull:`369`) (:issue:`353`)
 
 Bug fixes
 ~~~~~~~~~
