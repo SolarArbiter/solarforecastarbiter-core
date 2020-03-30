@@ -1198,6 +1198,26 @@ def single_forecast_aggregate(aggregate, single_site):
 
 
 @pytest.fixture()
+def single_prob_forecast_aggregate(aggregate, single_site,
+                                   agg_prob_forecast_constant_value):
+    forecast_agg = datamodel.ProbabilisticForecast(
+        name="GHI Aggregate FX 60",
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=single_site,
+        axis='x',
+        constant_values=[agg_prob_forecast_constant_value],
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        extra_parameters='',
+    )
+    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+
+@pytest.fixture()
 def report_objects(aggregate):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)

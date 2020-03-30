@@ -93,13 +93,13 @@ def single_forecast_data_obj(
 
 
 @pytest.fixture(params=['probfxobs', 'probfxagg'])
-def probabilistic_forecasts_data_obj(
+def prob_forecasts_data_obj(
         request, single_prob_forecast_observation,
-        aggregate_prob_forecast):
+        single_prob_forecast_aggregate):
     if request.param == 'probfxobs':
         return single_prob_forecast_observation
     else:
-        return aggregate_prob_forecast
+        return single_prob_forecast_aggregate
 
 
 @pytest.fixture()
@@ -494,6 +494,27 @@ def test_calculate_probabilistic_metrics_missing_observation(
         calculator.calculate_probabilistic_metrics(
             proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
         )
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_calculate_metrics_with_probablistic_simple(prob_forecasts_data_obj,
+                                                    create_processed_fxobs,
+                                                    create_datetime_index):
+    pair = create_processed_fxobs(prob_forecasts_data_obj,
+                                  pd.DataFrame(np.random.randn(10, 1)+10,
+                                    index=create_datetime_index(10)),
+                                  pd.Series(np.random.randn(10)+10,
+                                    index=create_datetime_index(10)))
+    ref = create_processed_fxobs(prob_forecasts_data_obj,
+                                 pd.DataFrame(np.random.randn(10, 1)+10,
+                                    index=create_datetime_index(10)),
+                                 pd.Series(np.random.randn(10)+10,
+                                    index=create_datetime_index(10)))
+    results = calculator.calculate_probabilistic_metrics(
+        pair, LIST_OF_CATEGORIES, PROBABILISTIC_METRICS, ref_fx_obs=ref)
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert all(isinstance(r, datamodel.MetricResult) for r in results)
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
