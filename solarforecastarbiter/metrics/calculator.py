@@ -68,34 +68,28 @@ def calculate_metrics(processed_pairs, categories, metrics,
         # determine type of metrics to calculate
         if isinstance(proc_fxobs.original.forecast,
                       datamodel.ProbabilisticForecast):
-            const_value = proc_fxobs.original.forecast.constant_value[fx_iter]
-            if any(x in probabilistic._REQ_2DFX for x in metrics):
-                all_pairs = processed_pairs
             try:
-                metrics_ = calculate_probabilistic_metrics(
+                calc_metrics.append(calculate_probabilistic_metrics(
                     proc_fxobs,
                     categories,
                     metrics,
-                    ref_fx_obs=ref_pair,
-                    all_proc_fx_obs=all_pairs,
-                    constant_value=const_value)
+                    ref_fx_obs=ref_pair))
             except RuntimeError as e:
                 logger.error('Failed to calculate probabilistic metrics'
                              'for %s: %s',
                              proc_fxobs.name, e)
         else:
             try:
-                metrics_ = calculate_deterministic_metrics(
+                calc_metrics.append(calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
                     metrics,
                     ref_fx_obs=ref_pair,
-                    normalizer=normalizer)
+                    normalizer=normalizer))
             except RuntimeError as e:
                 logger.error('Failed to calculate deterministic metrics'
                              'for %s: %s',
                              proc_fxobs.name, e)
-        calc_metrics.append(metrics_)
 
         fx_iter += 1
 
