@@ -254,7 +254,7 @@ def update_site_observations(api, fetch_func, site, observations,
     for the period between start and end.
 
     Parameters
-    ---------
+    ----------
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     fetch_func : function
