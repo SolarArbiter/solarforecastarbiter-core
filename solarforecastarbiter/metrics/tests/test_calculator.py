@@ -428,7 +428,7 @@ def test_calculate_probabilistic_metrics_no_ref(
         )
 
 
-def test_calculate_probabilistic_metrics_no_reference_data(
+def test_calculate_probabilistic_metrics_no_reference(
         single_prob_forecast_observation, create_processed_fxobs):
     proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
                                         pd.DataFrame(np.random.randn(10, 3)),
@@ -436,6 +436,21 @@ def test_calculate_probabilistic_metrics_no_reference_data(
     with pytest.raises(RuntimeError):
         calculator.calculate_probabilistic_metrics(
             proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX,
+        )
+
+
+def test_calculate_probabilistic_metrics_no_reference_data(
+        single_prob_forecast_observation, create_processed_fxobs):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(10, 3)),
+                                        pd.Series(np.random.randn(10)))
+    proc_ref = create_processed_fxobs(single_prob_forecast_observation,
+                                      pd.DataFrame(),
+                                      pd.Series(np.random.randn(10)))
+    with pytest.raises(RuntimeError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX,
+            proc_ref
         )
 
 
@@ -452,6 +467,21 @@ def test_calculate_probabilistic_metrics_bad_reference_interval_label(
         calculator.calculate_probabilistic_metrics(
             proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX,
             proc_ref
+        )
+
+
+def test_calculate_probabilistic_metrics_interval_label_ending(
+        single_prob_forecast_observation, create_processed_fxobs,
+        create_datetime_index):
+    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
+                                        pd.DataFrame(np.random.randn(10, 3),
+                                            index=create_datetime_index(10)),
+                                        pd.Series(np.random.randn(10),
+                                            index=create_datetime_index(10)))
+    proc_fxobs = proc_fxobs.replace(interval_label='ending')
+    with pytest.raises(ValueError):
+        calculator.calculate_probabilistic_metrics(
+            proc_fxobs, LIST_OF_CATEGORIES, PROB_NO_REF,
         )
 
 
@@ -481,7 +511,7 @@ def test_calculate_probabilistic_metrics_missing_values(
                                         pd.Series(np.random.randn(10)))
     with pytest.raises(RuntimeError):
         calculator.calculate_probabilistic_metrics(
-            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+            proc_fxobs, LIST_OF_CATEGORIES, PROB_NO_REF
         )
 
 
@@ -492,7 +522,7 @@ def test_calculate_probabilistic_metrics_missing_observation(
                                         pd.Series([], dtype=float))
     with pytest.raises(RuntimeError):
         calculator.calculate_probabilistic_metrics(
-            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+            proc_fxobs, LIST_OF_CATEGORIES, PROB_NO_REF
         )
 
 
