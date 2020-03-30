@@ -60,14 +60,17 @@ def create_datetime_index():
     def _create_datetime_index(n_periods):
         return pd.date_range(start='20190801', periods=n_periods, freq='1h',
                              tz='MST', name='timestamp')
-
     return _create_datetime_index
 
 
 @pytest.fixture()
 def copy_prob_forecast_with_axis():
-    def _copy_prob_forecast_with_axis(probfx, axis):
-        cvs = probfx.constant_values
+    def _copy_prob_forecast_with_axis(probfx, axis, constant_values=None):
+        if constant_values:
+            cvs = [probfx.constant_values[0].replace(constant_value=cv)
+                   for cv in constant_values]
+        else:
+            cvs = probfx.constant_values
         new_cvs = []
         new_probfx = probfx.replace(constant_values=())
         new_probfx = new_probfx.replace(axis=axis)
@@ -76,7 +79,6 @@ def copy_prob_forecast_with_axis():
             new_cvs.append(cv)
         new_probfx = new_probfx.replace(constant_values=tuple(new_cvs))
         return new_probfx
-
     return _copy_prob_forecast_with_axis
 
 
@@ -92,12 +94,12 @@ def single_forecast_data_obj(
 
 @pytest.fixture(params=['probfxobs', 'probfxagg'])
 def probabilistic_forecasts_data_obj(
-        request, prob_forecasts,
-        many_prob_forecasts):
+        request, single_prob_forecast_observation,
+        aggregate_prob_forecast):
     if request.param == 'probfxobs':
-        return prob_forecasts
+        return single_prob_forecast_observation
     else:
-        return many_prob_forecasts
+        return aggregate_prob_forecast
 
 
 @pytest.fixture()
@@ -285,39 +287,8 @@ def test_calculate_deterministic_metrics_reference(
     assert s0 != s1
 
 
-# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
-# don't handle single values well
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.parametrize('categories', [
-    [],
-    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
-    LIST_OF_CATEGORIES[0:1],
-    LIST_OF_CATEGORIES[0:2],
-    LIST_OF_CATEGORIES
-])
-@pytest.mark.parametrize('metrics', [
-    *list(itertools.combinations(DETERMINISTIC_METRICS, 1)),
-    DETERMINISTIC_METRICS[0:1],
-    DETERMINISTIC_METRICS[0:2],
-    DETERMINISTIC_METRICS
-])
-def test_calculate_deterministic_metrics(categories, metrics,
-                                         single_forecast_data_obj,
-                                         single_forecast_observation,
-                                         create_processed_fxobs):
-    pair = create_processed_fxobs(single_forecast_data_obj,
-                                  np.random.randn(10)+10,
-                                  np.random.randn(10)+10)
-    ref = create_processed_fxobs(single_forecast_observation,
-                                 np.random.randn(10)+10,
-                                 np.random.randn(10)+10)
-    result = calculator.calculate_deterministic_metrics(
-        pair, categories, metrics, ref_fx_obs=ref)
-    # Check results
-    assert isinstance(result, datamodel.MetricResult)
-    assert result.forecast_id == pair.original.forecast.forecast_id
+def verify_metric_result(result, pair, categories, metrics):
     assert result.name == pair.original.forecast.name
-    assert len(result.values) % len(metrics) == 0
     cats = {val.category for val in result.values}
     assert cats == set(categories)
     fx_values = pair.forecast_values
@@ -355,6 +326,39 @@ def test_calculate_deterministic_metrics(categories, metrics,
         )
 
 
+# Suppress RuntimeWarnings b/c in some metrics will divide by zero or
+# don't handle single values well
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(DETERMINISTIC_METRICS, 1)),
+    DETERMINISTIC_METRICS[0:1],
+    DETERMINISTIC_METRICS[0:2],
+    DETERMINISTIC_METRICS
+])
+def test_calculate_deterministic_metrics(categories, metrics,
+                                         single_forecast_data_obj,
+                                         single_forecast_observation,
+                                         create_processed_fxobs):
+    pair = create_processed_fxobs(single_forecast_data_obj,
+                                  np.random.randn(10)+10,
+                                  np.random.randn(10)+10)
+    ref = create_processed_fxobs(single_forecast_observation,
+                                 np.random.randn(10)+10,
+                                 np.random.randn(10)+10)
+    result = calculator.calculate_deterministic_metrics(
+        pair, categories, metrics, ref_fx_obs=ref)
+    # Check results
+    assert isinstance(result, datamodel.MetricResult)
+    verify_metric_result(result, pair, categories, metrics)
+
+
 @pytest.mark.skip('')
 def test_calculate_probabilistic_metrics_no_metrics():
     raise NotImplementedError
@@ -390,9 +394,71 @@ def test_calculate_probabilistic_metrics_all_forecasts():
     raise NotImplementedError
 
 
-@pytest.mark.skip('')
-def test_calculate_probabilistic_metrics():
-    raise NotImplementedError
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(PROBABILISTIC_METRICS, 1)),
+    PROBABILISTIC_METRICS[0:1],
+    PROBABILISTIC_METRICS[0:2],
+    PROBABILISTIC_METRICS
+])
+@pytest.mark.parametrize('axis,prob_fx_df,ref_fx_df,obs', [
+    ('y',
+     pd.DataFrame({'25': np.random.randn(10)*np.sqrt(20)+20,
+                   '50': np.random.randn(10)*np.sqrt(20)+20,
+                   '75': np.random.randn(10)*np.sqrt(20)+20}, dtype=float),
+     pd.DataFrame({'25': np.random.randn(10)*np.sqrt(20)+20,
+                   '50': np.random.randn(10)*np.sqrt(20)+20,
+                   '75': np.random.randn(10)*np.sqrt(20)+20}, dtype=float),
+     pd.Series(np.random.randn(10)*np.sqrt(20)+20, dtype=float)),
+    ('x',
+     pd.DataFrame({'10': np.random.randn(10)*5+25,
+                   '20': np.random.randn(10)*5+50,
+                   '30': np.random.randn(10)*5+75}, dtype=float),
+     pd.DataFrame({'10': np.random.randn(10)*5+25,
+                   '20': np.random.randn(10)*5+50,
+                   '30': np.random.randn(10)*5+75}, dtype=float),
+     pd.Series(np.random.randn(10)*np.sqrt(20)+20, dtype=float))
+])
+def test_calculate_probabilistic_metrics(categories, metrics,
+                                         axis, prob_fx_df, ref_fx_df, obs,
+                                         prob_forecasts, single_observation,
+                                         copy_prob_forecast_with_axis,
+                                         create_processed_fxobs,
+                                         create_datetime_index):
+    # add index to data
+    dt_index = create_datetime_index(len(prob_fx_df))
+    prob_fx_df.index = dt_index
+    ref_fx_df.index = dt_index
+    obs.index = dt_index
+
+    # create processed pairs
+    conv_prob_fx = copy_prob_forecast_with_axis(
+        prob_forecasts, axis, prob_fx_df.columns.tolist())
+    conv_ref_fx = copy_prob_forecast_with_axis(
+        prob_forecasts, axis, prob_fx_df.columns.tolist())
+    prob_fxobs = datamodel.ForecastObservation(conv_prob_fx, single_observation)
+    ref_fxobs = datamodel.ForecastObservation(conv_ref_fx, single_observation)
+    pair = create_processed_fxobs(prob_fxobs, prob_fx_df, obs)
+    ref = create_processed_fxobs(ref_fxobs, ref_fx_df, obs)
+
+    results = calculator.calculate_probabilistic_metrics(
+        pair, categories, metrics, ref_fx_obs=ref)
+
+    # Check results
+    assert len(results) == len(prob_fx_df.columns)
+    assert all([isinstance(x, datamodel.MetricResult) for x in results])
+    cvs = pair.original.forecast.constant_values
+    assert set([r.forecast_id for r in results]) == \
+           set([p.forecast_id for p in cvs])
+    for r in results:
+        verify_metric_result(r, pair, categories, metrics)
 
 
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
@@ -562,8 +628,6 @@ def test_apply_probabilistic_bad_metric_func():
         'hour',
         {('5', -0.5), ('6', 1.0)}
     ),
-
-
 
     # category: month
     (
