@@ -39,7 +39,7 @@ PLOT_LAYOUT_DEFAULTS = {
 }
 
 
-def construct_timeseries_df(report):
+def construct_timeseries_dataframe(report):
     """Construct two standardized Dataframes for the timeseries and scatter
     plot functions. One with timeseries data for all observations,
     aggregates, and forecasts in the report, and the other with
@@ -212,9 +212,9 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
     Parameters
     ----------
     timeseries_value_df: pandas.DataFrame
-        DataFrame of timeseries data. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df` for format.
+        DataFrame of timeseries data. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe` for format.
     timeseries_meta_df: pandas.DataFrame
-        DataFrame of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df` for format.
+        DataFrame of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe` for format.
     start : pandas.Timestamp
         Report start time
     end : pandas.Timestamp
@@ -224,7 +224,7 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
 
     Returns
     -------
-    fig : bokeh.plotting.figure
+    plotly.Figure
     """  # NOQA
     palette = cycle(PALETTE)
     fig = go.Figure()
@@ -300,12 +300,16 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     ----------
     timeseries_value_df: pandas.DataFrame
         DataFrame of timeseries data. See
-        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df`
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
         for format.
     timeseries_meta_df: pandas.DataFrame
         DataFrame of metadata for each Observation Forecast pair. See
-        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_df`
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
         for format.
+
+    Returns
+    -------
+    plotly.Figure
     """  # NOQA
     xy_min, xy_max = _get_scatter_limits(timeseries_value_df)
 
@@ -346,7 +350,9 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
 
 def configure_axes(fig, x_axis_kwargs, y_axis_kwargs):
     """Applies plotly axes configuration to display zero line and grid, and the
-    configuration passed in x_axis_kwargs and y_axis kwargs.
+    configuration passed in x_axis_kwargs and y_axis kwargs. Currently
+    configured to supply base layout for metric plots.
+
     Parameters
     ----------
     fig: plotly.graph_objects.Figure
@@ -443,7 +449,9 @@ def bar(df, metric):
 
     Returns
     -------
-    data_table : bokeh.widgets.DataTable
+    plotly.Figure
+        A bar chart representing the total category of the metric for each
+        forecast.
     """  # NOQA
     data = df[(df['category'] == 'total') & (df['metric'] == metric)]
     y_range = None
@@ -515,6 +523,8 @@ def bar_subdivisions(df, category, metric):
         Fields must be kind and the names of the forecasts
     category : str
         One of the available metrics grouping categories (e.g., total)
+    metric : str
+        One of the available metrics (e.g. mae)
 
     Returns
     -------
@@ -706,12 +716,12 @@ def timeseries_plots(report):
 
     Returns
     -------
-    script: str
-        A script element to insert into an html template
-    div: str
-        A div element to insert into an html template.
+    tuple of str
+        Tuple of string json specifications of plotly figures. The first member
+        of the tuple is the specification for the timeseries plot, and the
+        second is the specification of the scatter plot.
     """
-    value_df, meta_df = construct_timeseries_df(report)
+    value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
     ts_fig = timeseries(

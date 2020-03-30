@@ -9,7 +9,9 @@ This is the fifth 1.0 beta release.
 API Changes
 ~~~~~~~~~~~
 * Added :py:mod:`solarforecastarbiter.reports.figures` which contains modules
-  for creating Bokeh and Plotly metric figures.
+  for creating Bokeh and Plotly report figures.
+* Added :py:mod:`solarforecastarbiter.reports.figures.plotly_figures` to create
+  report figures using plotly (:pull:`359`)
 * :py:func:`solarforecastarbiter.reports.figures.bokeh_figures.output_svg`
   now takes a :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an
   optional argument (:pull:`345`)
@@ -27,6 +29,10 @@ Enhancements
 * Report plots are now created using Plotly. Bokeh figure generation moved to
   :py:mod:`solarforecastarbiter.reports.figures.bokeh_figures` for users
   still interested in bokeh figures.(:pull:`359`)
+* Report timeseries plots no longer draw lines over missing data points
+  (:issue:`351`). 
+* Double clicking a forecast or observation in the legend of report timeseries
+  plots will toggle the display of all other timeseries. (:issue:`253`)
 * Clean up any PhantomJS drivers created to render SVGs (:issue:`344`)
   (:pull:`349`)
 

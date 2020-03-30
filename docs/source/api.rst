@@ -523,10 +523,14 @@ Functions for generating Plotly report metric figures.
    :toctree: generated/
 
    reports.figures.plotly_figures.construct_metrics_dataframe
+   reports.figures.plotly_figures.construct_timeseries_dataframe
    reports.figures.plotly_figures.bar
    reports.figures.plotly_figures.bar_subdivisions
    reports.figures.plotly_figures.output_svg
    reports.figures.plotly_figures.raw_report_plots
+   reports.figures.plotly_figures.timeseries_plots
+   reports.figures.plotly_figures.timeseries
+   reports.figures.plotly_figures.scatter
 
 
 Functions for generating Bokeh plots.
