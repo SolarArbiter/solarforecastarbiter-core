@@ -24,7 +24,7 @@ API Changes
   :py:func:`solarforecastarbiter.io.api.get_observation_time_range`,
   :py:func:`solarforecastarbiter.io.api.get_forecast_time_range`,
   :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_constant_value_time_range`.
-  (:pul.l:`369`)
+  (:pull:`369`)
 * Start and end are now optional parameters for the
   `solararbiter referencedata update` CLI command (:pull:`369`)
 
