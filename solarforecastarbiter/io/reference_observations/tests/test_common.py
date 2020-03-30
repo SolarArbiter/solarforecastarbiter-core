@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import uuid
 
 
 import numpy as np
@@ -353,6 +354,58 @@ def test_post_observation_data_all_nans(
     assert ret is None
 
 
+@pytest.fixture()
+def now(mocker):
+    now = pd.Timestamp('20190108T11:32:00Z')
+    mocker.patch(
+        'solarforecastarbiter.io.reference_observations.common._utcnow',
+        return_value=now)
+    return now
+
+
+@pytest.fixture()
+def site_obs():
+    return [
+        Observation.from_dict({
+            'name': 'site ghi',
+            'observation_id': str(uuid.uuid1()),
+            'variable': 'ghi',
+            'interval_label': 'ending',
+            'interval_value_type': 'interval_mean',
+            'interval_length': '5',
+            'site': site,
+            'uncertainty': 0,
+            'extra_parameters': site.extra_parameters
+        }) for site in site_objects[:2]]
+
+
+def test_get_last_site_timestamp(mock_api, now, site_obs):
+    retvals = {site_obs[0].observation_id: (0, pd.Timestamp('20190105T0020Z')),
+               site_obs[1].observation_id: (0, now)}
+    mock_api.get_observation_time_range.side_effect = lambda x: retvals[x]
+    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    assert ret == pd.Timestamp('20190105T0020Z')
+
+
+def test_get_last_site_timestamp_small(mock_api, now, site_obs):
+    retvals = {site_obs[0].observation_id: (0, pd.Timestamp('20181222T0020Z')),
+               site_obs[1].observation_id: (0, pd.Timestamp('20190106T0020Z'))}
+    mock_api.get_observation_time_range.side_effect = lambda x: retvals[x]
+    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    assert ret == now - pd.Timedelta('7d')
+
+
+def test_get_last_site_timestamp_none(mock_api, now, site_obs):
+    mock_api.get_observation_time_range.return_value = (0, pd.NaT)
+    ret = common.get_last_site_timestamp(mock_api, site_obs)
+    assert ret == now - pd.Timedelta('7d')
+
+
+def test_get_last_site_timestamp_empty(mock_api, now):
+    ret = common.get_last_site_timestamp(mock_api, [])
+    assert ret == now - pd.Timedelta('7d')
+
+
 @pytest.mark.parametrize('site', site_objects)
 def test_update_site_observations(
         mock_api, mock_fetch, site, observation_objects_param, fake_ghi_data):
@@ -365,6 +418,40 @@ def test_update_site_observations(
     pd.testing.assert_frame_equal(
         args[1], fake_ghi_data.rename(
             columns={'ghi': 'value'})[start:end].resample(
+                args[1].index.freq).first())
+
+
+def test_update_site_observations_no_start(
+        mock_api, mock_fetch, observation_objects_param, fake_ghi_data,
+        now):
+    site = site_objects[0]
+    start = None
+    slimit = pd.Timestamp('20190101T1219Z')
+    end = pd.Timestamp('20190101T1225Z')
+    mock_api.get_observation_time_range.return_value = (0, slimit)
+    common.update_site_observations(
+        mock_api, mock_fetch, site, observation_objects_param, start, end)
+    args, _ = mock_api.post_observation_values.call_args
+    assert args[0] == ''
+    pd.testing.assert_frame_equal(
+        args[1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[slimit:end].resample(
+                args[1].index.freq).first())
+
+
+def test_update_site_observations_no_end(
+        mock_api, mock_fetch, observation_objects_param, fake_ghi_data,
+        now):
+    site = site_objects[0]
+    start = pd.Timestamp('20190101T1210Z')
+    end = None
+    common.update_site_observations(
+        mock_api, mock_fetch, site, observation_objects_param, start, end)
+    args, _ = mock_api.post_observation_values.call_args
+    assert args[0] == ''
+    pd.testing.assert_frame_equal(
+        args[1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[start:].resample(
                 args[1].index.freq).first())
 
 

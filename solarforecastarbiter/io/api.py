@@ -584,7 +584,8 @@ class APISession(requests.Session):
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
-    def get_probabilistic_forecast_constant_value_time_range(self, forecast_id):
+    def get_probabilistic_forecast_constant_value_time_range(
+            self, forecast_id):
         """
         Get the miniumum and maximum timestamps for forecast values.
 
