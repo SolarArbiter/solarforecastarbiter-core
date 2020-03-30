@@ -252,3 +252,65 @@ def test_bar_subdivisions_empty_df(metric_dataframe):
 ])
 def test_legend_text(input_str, expected):
     assert figures._legend_text(input_str) == expected
+
+
+ts_df_data = [
+    {'timestamp': '2020-01-01T00:00Z',
+     'value': 5},
+    {'timestamp': '2020-01-01T00:05Z',
+     'value': 5},
+    {'timestamp': '2020-01-01T00:10Z',
+     'value': 5},
+    {'timestamp': '2020-01-01T00:25Z',
+     'value': 5},
+    {'timestamp': '2020-01-01T00:30Z',
+     'value': 5},
+]
+
+
+def test_fill_timeseries():
+    data = pd.DataFrame(ts_df_data)
+    data = data.set_index('timestamp')
+    filled = figures._fill_timeseries(data, np.timedelta64(5, 'm'))
+    assert filled.index.size == 7
+    assert pd.isnull(filled.iloc[-4].value)
+    assert pd.isnull(filled.iloc[-3].value)
+
+
+meta_df_data = [
+    {
+        'pair_index': 0,
+        'observation_name': 'obs one',
+        'forecast_name': 'fx one',
+        'observation_hash': str(hash('obs one')),
+        'forecast_hash': str(hash('fx one')),
+        'interval_label': 'beginning',
+        'interval_length': np.timedelta64(1, 'm'),
+        'observation_color': '#abc',
+    }, {
+        'pair_index': 1,
+        'observation_name': 'obs two',
+        'forecast_name': 'fx two',
+        'observation_hash': str(hash('obs two')),
+        'forecast_hash': str(hash('fx two')),
+        'interval_label': 'beginning',
+        'interval_length': np.timedelta64(5, 'm'),
+        'observation_color': '#ccc',
+    },
+]
+
+
+@pytest.fixture(params=[0, 1])
+def meta_entries(request):
+    return meta_df_data[request.param]
+
+
+@pytest.mark.parametrize('hash_key', [
+    'observation_hash', 'forecast_hash'
+])
+def test_extract_metadata(hash_key, meta_entries):
+    meta_df = pd.DataFrame(meta_df_data)
+    extracted = figures._extract_metadata_from_df(
+        meta_df, meta_entries[hash_key], hash_key)
+    for k, v in extracted.items():
+        assert meta_entries[k] == v

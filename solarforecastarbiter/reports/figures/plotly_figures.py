@@ -81,6 +81,7 @@ def construct_timeseries_df(report):
             'observation_name': _obs_name(pfxobs.original),
             'forecast_name': _fx_name(pfxobs.original),
             'interval_label': pfxobs.interval_label,
+            'interval_length': pfxobs.interval_length,
             'observation_hash': str(hash(
                 (pfxobs.original.data_object,
                  pfxobs.interval_length,
@@ -102,6 +103,30 @@ def construct_timeseries_df(report):
     data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
     return data, metadata
+
+
+def _fill_timeseries(df, interval_length):
+    """Returns a dataframe with a datetimeindex with regular frequency of
+    interval_length minutes. Previously missing values will be filled with
+    nans. Useful for creating gaps in plotted timeseries data.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe with timeseries data.
+    interval_length: timedelta-li
+        Interval length of the data in minutes.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with filled datetime index data.
+    """
+    start = df.index[0]
+    end = df.index[-1]
+    freq_mins = int(interval_length / np.timedelta64(1, 'm'))
+    filled_idx = pd.date_range(start, end, freq=f'{freq_mins}min')
+    return df.reindex(filled_idx)
 
 
 def _obs_name(fx_obs):
@@ -141,6 +166,7 @@ def _extract_metadata_from_df(metadata_df, hash_, hash_key):
         'observation_name': metadata['observation_name'].values[0],
         'forecast_name': metadata['forecast_name'].values[0],
         'interval_label': metadata['interval_label'].values[0],
+        'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
 
@@ -207,7 +233,10 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        data = timeseries_value_df[pair_idcs]
+        data = _fill_timeseries(
+            timeseries_value_df[pair_idcs],
+            metadata['interval_length'],
+        )
         fig.add_trace(go.Scattergl(
             y=data['observation_values'],
             x=data.index,
@@ -223,7 +252,10 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        data = timeseries_value_df[pair_idcs]
+        data = _fill_timeseries(
+            timeseries_value_df[pair_idcs],
+            metadata['interval_length'],
+        )
         fig.add_trace(go.Scattergl(
             y=data['forecast_values'],
             x=data.index,
