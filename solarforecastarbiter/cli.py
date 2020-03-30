@@ -194,7 +194,7 @@ def referencedata_init(verbose, user, password, base_url, network, site_file):
               help='End time (ISO8601) to fetch data for. Default is now')
 @click.option('--start', type=UTCTIMESTAMP,
               help=('Start time (ISO8601) to fetch data for. Default is'
-                    ' max of Last timestamp in API and end - 7 days'))
+                    ' max of last timestamp in API and end - 7 days'))
 def referencedata_update(verbose, user, password, base_url, network, start,
                          end):
     """

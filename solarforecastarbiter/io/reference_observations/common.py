@@ -213,11 +213,12 @@ def _utcnow():
     return pd.Timestamp.now(tz='UTC')
 
 
-def get_last_site_timestamp(api, site_observations, end):
-    """Get the last value timestamp from the API for a site
-    as the minimum of the last timestamp for each observation at
-    that site. A limit of end - 7 days is set to avoid excessive
-    queries to external sources.
+def get_last_site_timestamp(api, observations, end):
+    """Get the last value timestamp from the API as the minimum of the
+    last timestamp for each observation at that site. The result of
+    this function is often used to make new data queries, so a limit
+    of end - 7 days is set to avoid excessive queries to external
+    sources.
 
     Parameters
     ---------
@@ -226,14 +227,17 @@ def get_last_site_timestamp(api, site_observations, end):
     site_observations : list of solarforecastarbiter.datamodel.Observation
         A list of reference Observations for a site to search.
     end : pd.Timestamp
+        Typically, set to now.
 
     Returns
     -------
     pandas.Timestamp
+
     """
+    # update cli.py as appropriate if behaviour is changed
     out = end
     updated = False
-    for obs in site_observations:
+    for obs in observations:
         maxt = api.get_observation_time_range(obs.observation_id)[1]
         # <= so that even if maxt == end updated -> true
         # effectively ignores all NaT values unless all observations
