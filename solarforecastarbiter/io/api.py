@@ -7,6 +7,9 @@ import requests
 from urllib3 import Retry
 
 
+import pandas as pd
+
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io.utils import (
     json_payload_to_observation_df,
@@ -458,6 +461,32 @@ class APISession(requests.Session):
         new_id = req.text
         return self.get_probabilistic_forecast(new_id)
 
+    def get_observation_time_range(self, observation_id):
+        """
+        Get the miniumum and maximum timestamps for observation values.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation object.
+
+        Returns
+        -------
+        tuple of (pandas.Timestamp, pandas.Timestamp)
+            The minimum and maximum timestamps for values of the observation.
+            Values without an explicit timezone from the API are assumed to be
+            UTC.
+        """
+        req = self.get(f'/observations/{observation_id}/values/timerange')
+        data = req.json()
+        mint = pd.Timestamp(data['min_timestamp'])
+        if mint.tzinfo is None and pd.notna(mint):
+            mint = mint.tz_localize('UTC')
+        maxt = pd.Timestamp(data['max_timestamp'])
+        if maxt.tzinfo is None and pd.notna(maxt):
+            maxt = maxt.tz_localize('UTC')
+        return mint, maxt
+
     @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
@@ -494,6 +523,32 @@ class APISession(requests.Session):
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
+    def get_forecast_time_range(self, forecast_id):
+        """
+        Get the miniumum and maximum timestamps for forecast values.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object.
+
+        Returns
+        -------
+        tuple of (pandas.Timestamp, pandas.Timestamp)
+            The minimum and maximum timestamps for values of the forecast.
+            Values without an explicit timezone from the API are assumed to be
+            UTC.
+        """
+        req = self.get(f'/forecasts/single/{forecast_id}/values/timerange')
+        data = req.json()
+        mint = pd.Timestamp(data['min_timestamp'])
+        if mint.tzinfo is None and pd.notna(mint):
+            mint = mint.tz_localize('UTC')
+        maxt = pd.Timestamp(data['max_timestamp'])
+        if maxt.tzinfo is None and pd.notna(maxt):
+            maxt = maxt.tz_localize('UTC')
+        return mint, maxt
+
     @ensure_timestamps('start', 'end')
     def get_forecast_values(self, forecast_id, start, end,
                             interval_label=None):
@@ -528,6 +583,32 @@ class APISession(requests.Session):
         out = json_payload_to_forecast_series(req.json())
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
+
+    def get_probabilistic_forecast_constant_value_time_range(self, forecast_id):
+        """
+        Get the miniumum and maximum timestamps for forecast values.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the constant value forecast object.
+
+        Returns
+        -------
+        tuple of (pandas.Timestamp, pandas.Timestamp)
+            The minimum and maximum timestamps for values of the forecast.
+            Values without an explicit timezone from the API are assumed to be
+            UTC.
+        """
+        req = self.get(f'/forecasts/cdf/single/{forecast_id}/values/timerange')
+        data = req.json()
+        mint = pd.Timestamp(data['min_timestamp'])
+        if mint.tzinfo is None and pd.notna(mint):
+            mint = mint.tz_localize('UTC')
+        maxt = pd.Timestamp(data['max_timestamp'])
+        if maxt.tzinfo is None and pd.notna(maxt):
+            maxt = maxt.tz_localize('UTC')
+        return mint, maxt
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_constant_value_values(
