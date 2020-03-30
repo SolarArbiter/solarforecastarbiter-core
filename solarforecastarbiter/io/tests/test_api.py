@@ -537,8 +537,14 @@ def test_apisession_get_prob_forecast_constant_value_values(
     pdt.assert_series_equal(out, forecast_values)
 
 
+def _df_with_float64_columns(df):
+    df.columns = df.columns.astype(float)
+    return df
+
+
+@pytest.mark.parametrize('col_values', [['25', '50', '75'], [25., 50., 75.]])
 def test_apisession_get_prob_forecast_values(
-        requests_mock, mock_get_site,
+        requests_mock, mock_get_site, col_values,
         prob_forecast_values, prob_forecast_values_text_list,
         prob_forecast_text, prob_forecast_constant_value_text, fx_start_end):
     session = api.APISession('')
@@ -549,10 +555,10 @@ def test_apisession_get_prob_forecast_values(
     probfx_json['axis'] = 'y'
     cvs_json = json.loads(prob_forecast_constant_value_text)
     cvs = []
-    for col in prob_forecast_values:
+    for col in col_values:
         new_cv = copy.deepcopy(cvs_json)
         new_cv['constant_value'] = col
-        new_cv['forecast_id'] = 'CV' + col
+        new_cv['forecast_id'] = 'CV' + str(int(col))
         new_cv['axis'] = 'y'
         cvs.append(new_cv)
     probfx_json['constant_values'] = cvs
@@ -570,6 +576,8 @@ def test_apisession_get_prob_forecast_values(
         requests_mock.register_uri(
             'GET', f'/forecasts/cdf/single/{id}/values', content=cvv)
     out = session.get_probabilistic_forecast_values('', *fx_start_end)
+    if not isinstance(col_values[0], str):
+        prob_forecast_values = _df_with_float64_columns(prob_forecast_values)
     pdt.assert_frame_equal(out, prob_forecast_values)
 
 

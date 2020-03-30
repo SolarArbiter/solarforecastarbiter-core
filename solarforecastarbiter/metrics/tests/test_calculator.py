@@ -22,7 +22,7 @@ LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 
 @pytest.fixture()
-def create_processed_fxobs(create_datetime_index):
+def create_processed_fxobs(create_dt_index):
     def _create_processed_fxobs(fxobs, fx_values, obs_values,
                                 ref_values=None,
                                 interval_label=None):
@@ -35,12 +35,12 @@ def create_processed_fxobs(create_datetime_index):
             conv_fx_values = fx_values
         else:
             conv_fx_values = pd.Series(
-                fx_values, index=create_datetime_index(len(fx_values)))
+                fx_values, index=create_dt_index(len(fx_values)))
         if isinstance(obs_values, pd.Series):
             conv_obs_values = obs_values
         else:
             conv_obs_values = pd.Series(
-                obs_values, index=create_datetime_index(len(obs_values)))
+                obs_values, index=create_dt_index(len(obs_values)))
 
         return datamodel.ProcessedForecastObservation(
             fxobs.forecast.name,
@@ -56,11 +56,11 @@ def create_processed_fxobs(create_datetime_index):
 
 
 @pytest.fixture()
-def create_datetime_index():
-    def _create_datetime_index(n_periods):
+def create_dt_index():
+    def _create_dt_index(n_periods):
         return pd.date_range(start='20190801', periods=n_periods, freq='1h',
                              tz='MST', name='timestamp')
-    return _create_datetime_index
+    return _create_dt_index
 
 
 @pytest.fixture()
@@ -189,7 +189,7 @@ def test_calculate_metrics_single(single_forecast_data_obj,
 def test_calculate_metrics_with_probablistic(single_observation,
                                              prob_forecasts,
                                              create_processed_fxobs,
-                                             create_datetime_index,
+                                             create_dt_index,
                                              copy_prob_forecast_with_axis):
     const_values = [10, 20, 30]
     conv_prob_fx = copy_prob_forecast_with_axis(
@@ -197,9 +197,9 @@ def test_calculate_metrics_with_probablistic(single_observation,
     prfxobs = datamodel.ForecastObservation(
         conv_prob_fx, single_observation)
     fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
-                             index=create_datetime_index(10))
+                             index=create_dt_index(10))
     obs_values = pd.Series(np.random.randn(10)+10,
-                           index=create_datetime_index(10))
+                           index=create_dt_index(10))
     proc_prfx_obs = create_processed_fxobs(prfxobs, fx_values,
                                            obs_values)
 
@@ -214,7 +214,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
     # With reference
     ref_fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
-                                 index=create_datetime_index(10))
+                                 index=create_dt_index(10))
     conv_ref_prob_fx = copy_prob_forecast_with_axis(
         prob_forecasts, prob_forecasts.axis, constant_values=const_values)
     ref_prfxobs = datamodel.ForecastObservation(conv_ref_prob_fx,
@@ -236,7 +236,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
 def test_calculate_metrics_with_probablistic_no_ref(single_observation,
                                                     prob_forecasts,
                                                     create_processed_fxobs,
-                                                    create_datetime_index,
+                                                    create_dt_index,
                                                     copy_prob_forecast_with_axis):  # NOQA
     const_values = [10, 20, 30]
     conv_prob_fx = copy_prob_forecast_with_axis(
@@ -244,9 +244,9 @@ def test_calculate_metrics_with_probablistic_no_ref(single_observation,
     prfxobs = datamodel.ForecastObservation(conv_prob_fx, single_observation)
 
     fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
-                             index=create_datetime_index(10))
+                             index=create_dt_index(10))
     obs_values = pd.Series(np.random.randn(10)+10,
-                           index=create_datetime_index(10))
+                           index=create_dt_index(10))
     proc_prfx_obs = create_processed_fxobs(prfxobs, fx_values, obs_values)
     result = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
                                           probabilistic._REQ_REF_FX)
@@ -472,12 +472,12 @@ def test_calculate_probabilistic_metrics_bad_reference_interval_label(
 
 def test_calculate_probabilistic_metrics_interval_label_ending(
         single_prob_forecast_observation, create_processed_fxobs,
-        create_datetime_index):
-    proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
-                                        pd.DataFrame(np.random.randn(10, 3),
-                                            index=create_datetime_index(10)),
-                                        pd.Series(np.random.randn(10),
-                                            index=create_datetime_index(10)))
+        create_dt_index):
+    proc_fxobs = create_processed_fxobs(
+        single_prob_forecast_observation,
+        pd.DataFrame(np.random.randn(10, 3), index=create_dt_index(10)),
+        pd.Series(np.random.randn(10), index=create_dt_index(10))
+    )
     proc_fxobs = proc_fxobs.replace(interval_label='ending')
     with pytest.raises(ValueError):
         calculator.calculate_probabilistic_metrics(
@@ -529,17 +529,15 @@ def test_calculate_probabilistic_metrics_missing_observation(
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_calculate_metrics_with_probablistic_simple(prob_forecasts_data_obj,
                                                     create_processed_fxobs,
-                                                    create_datetime_index):
-    pair = create_processed_fxobs(prob_forecasts_data_obj,
-                                  pd.DataFrame(np.random.randn(10, 1)+10,
-                                    index=create_datetime_index(10)),
-                                  pd.Series(np.random.randn(10)+10,
-                                    index=create_datetime_index(10)))
-    ref = create_processed_fxobs(prob_forecasts_data_obj,
-                                 pd.DataFrame(np.random.randn(10, 1)+10,
-                                    index=create_datetime_index(10)),
-                                 pd.Series(np.random.randn(10)+10,
-                                    index=create_datetime_index(10)))
+                                                    create_dt_index):
+    pair = create_processed_fxobs(
+        prob_forecasts_data_obj,
+        pd.DataFrame(np.random.randn(10, 1)+10, index=create_dt_index(10)),
+        pd.Series(np.random.randn(10)+10, index=create_dt_index(10)))
+    ref = create_processed_fxobs(
+        prob_forecasts_data_obj,
+        pd.DataFrame(np.random.randn(10, 1)+10, index=create_dt_index(10)),
+        pd.Series(np.random.randn(10)+10, index=create_dt_index(10)))
     results = calculator.calculate_probabilistic_metrics(
         pair, LIST_OF_CATEGORIES, PROBABILISTIC_METRICS, ref_fx_obs=ref)
     assert isinstance(results, list)
@@ -584,9 +582,9 @@ def test_calculate_probabilistic_metrics(categories, metrics,
                                          prob_forecasts, single_observation,
                                          copy_prob_forecast_with_axis,
                                          create_processed_fxobs,
-                                         create_datetime_index):
+                                         create_dt_index):
     # add index to data
-    dt_index = create_datetime_index(len(prob_fx_df))
+    dt_index = create_dt_index(len(prob_fx_df))
     prob_fx_df.index = dt_index
     ref_fx_df.index = dt_index
     obs.index = dt_index
@@ -631,10 +629,10 @@ def test_calculate_probabilistic_metrics(categories, metrics,
     ('crmse', [1, 1, 1], [0, 1, 2], None, None, np.sqrt(2/3))
 ])
 def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
-                                         create_datetime_index):
-    fx_series = pd.Series(fx, index=create_datetime_index(len(fx)),
+                                         create_dt_index):
+    fx_series = pd.Series(fx, index=create_dt_index(len(fx)),
                           dtype=float)
-    obs_series = pd.Series(obs, index=create_datetime_index(len(obs)),
+    obs_series = pd.Series(obs, index=create_dt_index(len(obs)),
                            dtype=float)
     # Check require reference forecast kwarg
     if metric in ['s']:
@@ -645,7 +643,7 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
                     metric, fx_series, obs_series)
         else:
             ref_fx_series = pd.Series(ref_fx,
-                                      index=create_datetime_index(len(ref_fx)))
+                                      index=create_dt_index(len(ref_fx)))
             metric_value = calculator._apply_deterministic_metric_func(
                 metric, fx_series, obs_series, ref_fx=ref_fx_series)
             np.testing.assert_approx_equal(metric_value, expect)
@@ -703,19 +701,19 @@ def test_apply_deterministic_bad_metric_func():
 ])
 def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
                                          ref_fx, ref_fx_prob, expect,
-                                         create_datetime_index):
+                                         create_dt_index):
     if metric == 'crps':
         fx_data = pd.DataFrame(
-            fx, index=create_datetime_index(len(fx)), dtype=float)
+            fx, index=create_dt_index(len(fx)), dtype=float)
         fx_prob_data = pd.DataFrame(
-            fx_prob, index=create_datetime_index(len(fx_prob)), dtype=float)
+            fx_prob, index=create_dt_index(len(fx_prob)), dtype=float)
     else:
         fx_data = pd.Series(
-            fx, index=create_datetime_index(len(fx)), dtype=float)
+            fx, index=create_dt_index(len(fx)), dtype=float)
         fx_prob_data = pd.Series(
-            fx_prob, index=create_datetime_index(len(fx_prob)), dtype=float)
+            fx_prob, index=create_dt_index(len(fx_prob)), dtype=float)
     obs_series = pd.Series(
-        obs, index=create_datetime_index(len(obs)), dtype=float)
+        obs, index=create_dt_index(len(obs)), dtype=float)
 
     # Check metrics that require reference forecast kwarg
     if metric in ['bss']:
@@ -726,9 +724,9 @@ def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
                     metric, fx_data, fx_prob_data, obs_series)
         else:
             ref_fx_data = pd.Series(
-                ref_fx, index=create_datetime_index(len(ref_fx)))
+                ref_fx, index=create_dt_index(len(ref_fx)))
             ref_fx_prob_data = pd.Series(
-                ref_fx_prob, index=create_datetime_index(len(ref_fx_prob)))
+                ref_fx_prob, index=create_dt_index(len(ref_fx_prob)))
             metric_value = calculator._apply_probabilistic_metric_func(
                 metric, fx_data, fx_prob_data, obs_series,
                 ref_fx=ref_fx_data,

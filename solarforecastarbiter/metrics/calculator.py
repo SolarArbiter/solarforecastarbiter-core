@@ -286,7 +286,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         ref_fx_fx_prob = _transform_prob_forecast_value_and_prob(ref_fx_obs)
         out['reference_forecast_id'] = ref_fx_obs.original.forecast.forecast_id
         if (not ref_fx_fx_prob or
-            any([rfx[0].empty or rfx[1].empty for rfx in ref_fx_fx_prob])):
+                any([rfx[0].empty or rfx[1].empty for rfx in ref_fx_fx_prob])):
             raise RuntimeError("Missing reference probabilistic forecast "
                                "timeseries data.")
         elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
@@ -300,7 +300,8 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         ref_fx_fx_prob = [(None, None)]*len(fx_fx_prob)
 
     # No data or metrics
-    if not fx_fx_prob or any([fx[0].empty or fx[1].empty for fx in fx_fx_prob]):
+    if (not fx_fx_prob or
+            any([fx[0].empty or fx[1].empty for fx in fx_fx_prob])):
         raise RuntimeError("Missing probabilistic forecast timeseries data.")
     elif obs.empty:
         raise RuntimeError("No observation timeseries data.")

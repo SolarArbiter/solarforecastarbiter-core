@@ -1217,6 +1217,7 @@ def single_prob_forecast_aggregate(aggregate, single_site,
     )
     return datamodel.ForecastAggregate(forecast_agg, aggregate)
 
+
 @pytest.fixture()
 def report_objects(aggregate):
     tz = 'America/Phoenix'
