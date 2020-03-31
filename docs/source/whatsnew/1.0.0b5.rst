@@ -18,6 +18,11 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.event.critical_success_index`,
   :py:func:`solarforecastarbiter.metrics.event.event_bias`, and
   :py:func:`solarforecastarbiter.metrics.event.event_accuracy`. (:issue:`347`) (:pull:`348`)
+* Added support for probabilistic forecasts with
+  :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modifications and
+  :py:func:`solarforecastarbiter.metrics.calculator.calculate_probabilistic_metrics` addition. (:issue:`315`) (:issue:`266`) (:pull:`367`)
+* Added api function to get all values of a :py:class:`solarforecastarbiter.datamodel.ProbabilisticForecast` with addition of
+  :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_values`. (:pull:`367`)
 
 
 Enhancements
@@ -32,6 +37,8 @@ Bug fixes
   (:issue:`341`) (:pull:`342`)
 * Fix CLI report generation when status not set in report metadata
   (:pull:`345`)
+* Fix bug with APISession list functions when only a single value is available.
+  (:pull:`367`)
 
 
 Contributors
