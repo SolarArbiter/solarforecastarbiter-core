@@ -339,6 +339,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             x=data['observation_values'],
             y=data['forecast_values'],
             name=_legend_text(metadata['forecast_name']),
+            showlegend=True,
             legendgroup=metadata['forecast_name'],
             marker=dict(color=next(palette)),
             mode='markers'),
