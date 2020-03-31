@@ -8,7 +8,6 @@ from itertools import cycle
 import logging
 
 
-from bokeh import palettes
 import pandas as pd
 from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
@@ -19,11 +18,25 @@ from solarforecastarbiter import datamodel
 
 
 logger = logging.getLogger(__name__)
-PALETTE = (
-    palettes.d3['Category20'][20][::2] + palettes.d3['Category20'][20][1::2])
+D3_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
+              '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#aec7e8', '#ffbb78',
+              '#98df8a', '#ff9896', '#c5b0d5', '#c49c94', '#f7b6d2', '#c7c7c7',
+              '#dbdb8d', '#9edae5']
+PALETTE = (D3_PALETTE[::2] + D3_PALETTE[1::2])
+
+
+def gen_grays(num_colors):
+    """Generate a grayscale color list of length num_colors.
+    """
+    rgb_delta = int(255/num_colors + 1)
+    color_list = ["#{h}{h}{h}".format(h=hex(i*rgb_delta)[2:])
+                  for i in range(num_colors)]
+    return color_list
+
+
 _num_obs_colors = 3
 # drop white
-OBS_PALETTE = list(palettes.grey(_num_obs_colors + 1)[0:_num_obs_colors])
+OBS_PALETTE = gen_grays(_num_obs_colors)
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
             freq='10min', end='60min', periods=_num_obs_colors)
