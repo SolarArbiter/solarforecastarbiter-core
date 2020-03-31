@@ -15,14 +15,14 @@ expected_metrics_json = """[{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","ca
 @pytest.fixture
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
-    mocked.return_value = ('<script></script>', '<div></div>')
+        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
+    mocked.return_value = ('{}', '{}')
 
 
 @pytest.fixture
 def mocked_timeseries_plots_exception(mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.reports.figures.bokeh_figures.timeseries_plots')
+        'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
     mocked.side_effect = Exception
 
 
@@ -53,8 +53,8 @@ def expected_kwargs(dash_url):
         kwargs['bokeh_version'] = bokeh_version
         kwargs['plotly_version'] = plotly_version
         if with_series:
-            kwargs['timeseries_script'] = '<script></script>'
-            kwargs['timeseries_div'] = '<div></div>'
+            kwargs['timeseries_spec'] = '{}'
+            kwargs['scatter_spec'] = '{}'
         return kwargs
     return fn
 
@@ -90,11 +90,8 @@ def test__get_render_kwargs_with_series_exception(
         dash_url,
         True
     )
-    assert kwargs['timeseries_div'] == """<div class="alert alert-warning">
-  <strong>Warning</strong> Failed to make timeseries and scatter plots
-  from stored data.
-</div>"""
-    assert kwargs['timeseries_script'] == ''
+    assert kwargs['timeseries_spec'] == '{}'
+    assert kwargs['scatter_spec'] == '{}'
 
 
 @pytest.fixture(params=[0, 1, 2])
