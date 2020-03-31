@@ -100,7 +100,6 @@ def construct_timeseries_dataframe(report):
     data = pd.concat(value_frames)
     metadata = pd.DataFrame(meta_rows)
     # drop tz info from localized times. GH164
-    data = data.tz_localize(None)
     data = data.rename_axis('timestamp')
     return data, metadata
 
@@ -114,8 +113,8 @@ def _fill_timeseries(df, interval_length):
     ----------
     df: pandas.DataFrame
         Dataframe with timeseries data.
-    interval_length: timedelta-like
-        Interval length of the data in minutes.
+    interval_length: numpy.timedelta64
+        Interval length of the processed forecast observation.
 
     Returns
     -------
@@ -159,7 +158,6 @@ def _boolean_filter_indices_by_pair(value_cds, pair_index):
 
 
 def _extract_metadata_from_df(metadata_df, hash_, hash_key):
-    # first_row = np.argwhere(metadata_df[hash_key] == hash_)[0][0]
     metadata = metadata_df[metadata_df[hash_key] == hash_]
     return {
         'pair_index': metadata['pair_index'].values[0],
@@ -226,7 +224,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
     -------
     plotly.Figure
     """  # NOQA
-    palette = cycle(PALETTE)
     fig = go.Figure()
     plotted_objects = 0
     for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
@@ -311,7 +308,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     -------
     plotly.Figure
     """  # NOQA
-    xy_min, xy_max = _get_scatter_limits(timeseries_value_df)
+    scatter_range = _get_scatter_limits(timeseries_value_df)
 
     palette = cycle(PALETTE)
     fig = go.Figure()
@@ -341,10 +338,12 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     y_label = 'Forecast ' + label
     fig.update_xaxes(title_text=x_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
-                     linewidth=1, linecolor='black', ticks='outside')
+                     linewidth=1, linecolor='black', ticks='outside',
+                     range=scatter_range)
     fig.update_yaxes(title_text=y_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
-                     linewidth=1, linecolor='black', ticks='outside')
+                     linewidth=1, linecolor='black', ticks='outside',
+                     range=scatter_range)
     return fig
 
 
