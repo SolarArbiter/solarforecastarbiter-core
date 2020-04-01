@@ -94,7 +94,7 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None):
+                                    ref_fx_obs=None, deadband=None):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
@@ -191,7 +191,11 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
+<<<<<<< HEAD
                     ref_fx=ref_fx, normalization=normalization)
+=======
+                    ref_fx=ref_fx, normalizer=normalizer, deadband=deadband)
+>>>>>>> add deadband
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday

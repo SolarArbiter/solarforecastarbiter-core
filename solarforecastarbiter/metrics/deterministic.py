@@ -5,7 +5,37 @@ import scipy as sp
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
-def mean_absolute(obs, fx):
+def deadband_mask(obs, fx, deadband):
+    """Calculate deadband mask.
+
+    .. math:: \\text{mask_i} = | fx_i - obs_i | <= deadband * | obs_i |
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observed values.
+    fx : (n,) array_like
+        Forecasted values.
+    deadband : float
+        Number between 0 and 1
+
+    Returns
+    -------
+    mask : array_like
+        1 if a point is within the deadband, 0 if not
+    """
+    return np.isclose(fx, obs, atol=0, rtol=deadband)
+
+
+def _error_deadband(obs, fx, deadband):
+    error = fx - obs
+    if deadband is not None:
+        mask = deadband_mask(obs, fx, deadband)
+        error = np.where(mask, 0, error)
+    return error
+
+
+def mean_absolute(obs, fx, deadband=None):
     """Mean absolute error (MAE).
 
     .. math:: \\text{MAE} = 1/n \\sum_{i=1}^n |\\text{fx}_i - \\text{obs}_i|
@@ -23,11 +53,11 @@ def mean_absolute(obs, fx):
         The MAE of the forecast.
 
     """
+    error = _error_deadband(obs, fx, deadband)
+    return np.mean(np.abs(error))
 
-    return np.mean(np.abs(fx - obs))
 
-
-def mean_bias(obs, fx):
+def mean_bias(obs, fx, deadband=None):
     """Mean bias error (MBE).
 
     .. math:: \\text{MBE} = 1/n \\sum_{i=1}^n (\\text{fx}_i - \\text{obs}_i)
@@ -45,11 +75,11 @@ def mean_bias(obs, fx):
         The MBE of the forecast.
 
     """
+    error = _error_deadband(obs, fx, deadband)
+    return np.mean(error)
 
-    return np.mean(fx - obs)
 
-
-def root_mean_square(obs, fx):
+def root_mean_square(obs, fx, deadband=None):
     """Root mean square error (RMSE).
 
     .. math::
@@ -69,11 +99,11 @@ def root_mean_square(obs, fx):
         The RMSE of the forecast.
 
     """
+    error = _error_deadband(obs, fx, deadband)
+    return np.sqrt(np.mean(error * error))
 
-    return np.sqrt(np.mean((fx - obs) ** 2))
 
-
-def mean_absolute_percentage(obs, fx):
+def mean_absolute_percentage(obs, fx, deadband=None):
     """Mean absolute percentage error (MAPE).
 
     .. math::
@@ -94,11 +124,11 @@ def mean_absolute_percentage(obs, fx):
         The MAPE [%] of the forecast.
 
     """
+    error = _error_deadband(obs, fx, deadband)
+    return np.mean(np.abs(error / obs)) * 100.0
 
-    return np.mean(np.abs((obs - fx) / obs)) * 100.0
 
-
-def normalized_mean_absolute(obs, fx, norm):
+def normalized_mean_absolute(obs, fx, norm, deadband=None):
     """Normalized mean absolute error (NMAE).
 
     .. math:: \\text{NMAE} = \\text{MAE} / \\text{norm} * 100%
@@ -119,10 +149,10 @@ def normalized_mean_absolute(obs, fx, norm):
 
     """
 
-    return mean_absolute(obs, fx) / norm * 100.0
+    return mean_absolute(obs, fx, deadband) / norm * 100.0
 
 
-def normalized_mean_bias(obs, fx, norm):
+def normalized_mean_bias(obs, fx, norm, deadband=None):
     """Normalized mean bias error (NMBE).
 
     .. math:: \\text{NMBE} = \\text{MBE} / \\text{norm} * 100%
@@ -143,10 +173,10 @@ def normalized_mean_bias(obs, fx, norm):
 
     """
 
-    return mean_bias(obs, fx) / norm * 100.0
+    return mean_bias(obs, fx, deadband) / norm * 100.0
 
 
-def normalized_root_mean_square(obs, fx, norm):
+def normalized_root_mean_square(obs, fx, norm, deadband=None):
     """Normalized root mean square error (NRMSE).
 
     .. math:: \\text{NRMSE} = \\text{RMSE} / \\text{norm} * 100%
@@ -167,10 +197,10 @@ def normalized_root_mean_square(obs, fx, norm):
 
     """
 
-    return root_mean_square(obs, fx) / norm * 100.0
+    return root_mean_square(obs, fx, deadband) / norm * 100.0
 
 
-def forecast_skill(obs, fx, ref):
+def forecast_skill(obs, fx, ref, deadband=None):
     """Forecast skill (s).
 
     .. math:: s = 1 - \\text{RMSE}_\\text{fx} / \\text{RMSE}_\\text{ref}
@@ -195,8 +225,8 @@ def forecast_skill(obs, fx, ref):
 
     """
 
-    rmse_fx = root_mean_square(obs, fx)
-    rmse_ref = root_mean_square(obs, ref)
+    rmse_fx = root_mean_square(obs, fx, deadband)
+    rmse_ref = root_mean_square(obs, ref, deadband)
     return 1.0 - rmse_fx / rmse_ref
 
 
@@ -464,3 +494,5 @@ _REQ_REF_FX = ['s']
 
 # Functions that require normalized factor
 _REQ_NORM = ['nmae', 'nmbe', 'nrmse']
+
+_DEADBAND_ALLOWED = ['mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse']
