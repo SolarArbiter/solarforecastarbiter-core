@@ -1147,6 +1147,8 @@ def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
     EVENT_METRICS[0:1],
     EVENT_METRICS[0:2],
     EVENT_METRICS,
+    pytest.param([],
+                 marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
 ])
 def test_calculate_event_metrics(categories, metrics):
 
@@ -1172,7 +1174,7 @@ def test_calculate_event_metrics(categories, metrics):
         site=site,
         name="dummy obs",
         uncertainty=1,
-        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
         variable="event",
         interval_label="event",
@@ -1181,7 +1183,7 @@ def test_calculate_event_metrics(categories, metrics):
     fx = datamodel.EventForecast(
         site=site,
         name="dummy fx",
-        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
         issue_time_of_day=datetime.time(hour=5),
         lead_time_to_start=pd.Timedelta("1h"),
@@ -1248,6 +1250,70 @@ def test_calculate_event_metrics(categories, metrics):
         assert (
             np.isnan(val.value) or
             np.issubdtype(type(val.value), np.number)
+        )
+
+
+@pytest.mark.parametrize('obs_values,fx_values', [
+    ([], [True, False]),
+    ([False, True], []),
+])
+def test_calculate_event_metrics_no_data(obs_values, fx_values):
+
+    categories = LIST_OF_CATEGORIES
+    metrics = EVENT_METRICS
+    obs_series = pd.Series(obs_values, dtype=bool)
+    fx_series = pd.Series(fx_values, dtype=bool)
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+
+    obs = datamodel.Observation(
+        site=site,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta("1h"),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx = datamodel.EventForecast(
+        site=site,
+        name="dummy fx",
+        interval_length=pd.Timedelta("1h"),
+        interval_value_type="instantaneous",
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    # fx-obs pair
+    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+
+    # processed fx-obs pair
+    proc_fx_obs = datamodel.ProcessedForecastObservation(
+        name=fxobs.forecast.name,
+        original=fxobs,
+        interval_value_type=fxobs.forecast.interval_value_type,
+        interval_length=fxobs.forecast.interval_length,
+        interval_label="event",
+        valid_point_count=len(fx_series),
+        forecast_values=fx_series,
+        observation_values=obs_series,
+    )
+
+    with pytest.raises(RuntimeError):
+        calculator.calculate_event_metrics(
+            proc_fx_obs, categories, metrics
         )
 
 
