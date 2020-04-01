@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair=None):
+                      ref_pair=None, deadband=None):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
@@ -42,6 +42,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
         solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
+    deadband : None, float, or 'observation_uncertainty'
 
     Returns
     -------
@@ -65,12 +66,15 @@ def calculate_metrics(processed_pairs, categories, metrics,
             raise NotImplementedError
         else:
             # calculate_deterministic_metrics
+            if deadband == 'observation_uncertainty':
+                deadband = proc_fxobs.original.observation.uncertainty
             try:
                 metrics_ = calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
                     metrics,
                     ref_fx_obs=ref_pair,
+                    deadband=deadband
                 )
             except RuntimeError as e:
                 logger.error('Failed to calculate metrics for %s: %s',
@@ -85,12 +89,15 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     metric functions. """
     metric_func = deterministic._MAP[metric][0]
+    _kw = {}
+    if metric in deterministic._DEADBAND_ALLOWED:
+        _kw['deadband'] = kwargs.get('deadband', None)
     if metric in deterministic._REQ_REF_FX:
-        return metric_func(obs, fx, kwargs['ref_fx'])
+        return metric_func(obs, fx, kwargs['ref_fx'], **_kw)
     elif metric in deterministic._REQ_NORM:
-        return metric_func(obs, fx, kwargs['normalization'])
+        return metric_func(obs, fx, kwargs['normalization'], **_kw)
     else:
-        return metric_func(obs, fx)
+        return metric_func(obs, fx, **_kw)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
@@ -191,11 +198,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
-<<<<<<< HEAD
-                    ref_fx=ref_fx, normalization=normalization)
-=======
-                    ref_fx=ref_fx, normalizer=normalizer, deadband=deadband)
->>>>>>> add deadband
+                    ref_fx=ref_fx, normalization=normalization,
+                    deadband=deadband)
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday

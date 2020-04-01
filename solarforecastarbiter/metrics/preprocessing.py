@@ -215,9 +215,10 @@ def process_forecast_observations(forecast_observations, filters, data,
                     data[fxobs.data_object],
                     qfilter,
                     exclude)
-            except Exception:
+            except Exception as e:
                 logger.error(
-                    'Failed to validate data for %s', fxobs.data_object.name)
+                    'Failed to validate data for %s. %s',
+                    fxobs.data_object.name, e)
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
                     count=-1), )

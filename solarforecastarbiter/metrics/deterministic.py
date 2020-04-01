@@ -17,7 +17,7 @@ def deadband_mask(obs, fx, deadband):
     fx : (n,) array_like
         Forecasted values.
     deadband : float
-        Number between 0 and 1
+        Fractional tolerance
 
     Returns
     -------
@@ -29,7 +29,8 @@ def deadband_mask(obs, fx, deadband):
 
 def _error_deadband(obs, fx, deadband):
     error = fx - obs
-    if deadband is not None:
+    # only apply deadband if deadband != 0 and is not None
+    if deadband:
         mask = deadband_mask(obs, fx, deadband)
         error = np.where(mask, 0, error)
     return error
