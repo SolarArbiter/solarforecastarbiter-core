@@ -645,12 +645,14 @@ class APISession(requests.Session):
         pairs = []
         for o in rep_params['object_pairs']:
             fx = self.get_forecast(o['forecast'])
+            norm = o.get('normalization')
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
-                pair = datamodel.ForecastObservation(fx, obs)
+                pair = datamodel.ForecastObservation(
+                    fx, obs, normalization=norm)
             elif 'aggregate' in o:
                 agg = self.get_aggregate(o['aggregate'])
-                pair = datamodel.ForecastAggregate(fx, agg)
+                pair = datamodel.ForecastAggregate(fx, agg, normalization=norm)
             else:
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')
