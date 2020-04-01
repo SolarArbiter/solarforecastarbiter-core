@@ -134,11 +134,14 @@ def _fill_timeseries(df, interval_length):
     pandas.DataFrame
         DataFrame with filled datetime index data.
     """
-    start = df.index[0]
-    end = df.index[-1]
-    freq_mins = int(interval_length / np.timedelta64(1, 'm'))
-    filled_idx = pd.date_range(start, end, freq=f'{freq_mins}min')
-    return df.reindex(filled_idx)
+    if not df.index.empty:
+        start = df.index[0]
+        end = df.index[-1]
+        freq_mins = int(interval_length / np.timedelta64(1, 'm'))
+        filled_idx = pd.date_range(start, end, freq=f'{freq_mins}min')
+        return df.reindex(filled_idx)
+    else:
+        return df
 
 
 def _obs_name(fx_obs):
@@ -336,6 +339,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             x=data['observation_values'],
             y=data['forecast_values'],
             name=_legend_text(metadata['forecast_name']),
+            showlegend=True,
             legendgroup=metadata['forecast_name'],
             marker=dict(color=next(palette)),
             mode='markers'),

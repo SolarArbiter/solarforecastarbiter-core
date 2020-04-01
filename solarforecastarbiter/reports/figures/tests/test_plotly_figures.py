@@ -277,6 +277,12 @@ def test_fill_timeseries():
     assert pd.isnull(filled.iloc[-3].value)
 
 
+def test_fill_timeseries_empty():
+    data = pd.DataFrame()
+    filled = figures._fill_timeseries(data, np.timedelta64(5, 'm'))
+    assert filled.empty
+
+
 meta_df_data = [
     {
         'pair_index': 0,
