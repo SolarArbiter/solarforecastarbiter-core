@@ -1184,10 +1184,6 @@ def __check_metrics__(fx, metrics):
     ValueError
         If the selected metrics are not valid for the given forecast type.
 
-    TODO
-    ----
-    * validate event forecast metrics
-
     """
 
     if isinstance(fx, (ProbabilisticForecast,
