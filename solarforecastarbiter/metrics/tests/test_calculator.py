@@ -1150,12 +1150,11 @@ def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
 ])
 def test_calculate_event_metrics(categories, metrics):
 
-    # data
     index = pd.DatetimeIndex(
         ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
     )
-    obs_series = pd.Series([True, False, True], index=index)
-    fx_series = pd.Series([True, True, False], index=index)
+    obs_series = pd.Series([True, True, False], index=index)
+    fx_series = pd.Series([False, True, False], index=index)
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
@@ -1248,3 +1247,88 @@ def test_calculate_event_metrics(categories, metrics):
             np.isnan(val.value) or
             np.issubdtype(type(val.value), np.number)
         )
+
+
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES,
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(EVENT_METRICS, 1)),
+    EVENT_METRICS[0:1],
+    EVENT_METRICS[0:2],
+    EVENT_METRICS,
+])
+def test_calculate_metrics_with_event(categories, metrics):
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+    obs_series = pd.Series([True, True, False], index=index)
+    fx_series = pd.Series([False, True, False], index=index)
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+
+    obs = datamodel.Observation(
+        site=site,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx = datamodel.EventForecast(
+        site=site,
+        name="dummy fx",
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_value_type="instantaneous",
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+
+    # processed fx-obs pairs
+    proc_fx_obs = []
+    for i in range(4):
+        obs_values = np.random.randint(0, 2, size=len(index)).astype(bool)
+        fx_values = np.random.randint(0, 2, size=len(index)).astype(bool)
+        obs_series = pd.Series(obs_values, index=index)
+        fx_series = pd.Series(fx_values, index=index)
+
+        proc_fx_obs.append(
+            datamodel.ProcessedForecastObservation(
+                name=fxobs.forecast.name,
+                original=fxobs,
+                interval_value_type=fxobs.forecast.interval_value_type,
+                interval_length=fxobs.forecast.interval_length,
+                interval_label="event",
+                valid_point_count=len(fx_series),
+                forecast_values=fx_series,
+                observation_values=obs_series,
+            )
+        )
+
+    # compute metrics
+    result = calculator.calculate_metrics(
+        proc_fx_obs, categories, metrics
+    )
+
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == len(proc_fx_obs)
