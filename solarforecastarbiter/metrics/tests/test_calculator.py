@@ -1153,8 +1153,10 @@ def test_calculate_event_metrics(categories, metrics):
     index = pd.DatetimeIndex(
         ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
     )
-    obs_series = pd.Series([True, True, False], index=index)
-    fx_series = pd.Series([False, True, False], index=index)
+    obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    fx_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=index)
+    fx_series = pd.Series(fx_values, index=index)
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
@@ -1266,8 +1268,6 @@ def test_calculate_metrics_with_event(categories, metrics):
     index = pd.DatetimeIndex(
         ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
     )
-    obs_series = pd.Series([True, True, False], index=index)
-    fx_series = pd.Series([False, True, False], index=index)
 
     # Custom metadata to keep all timestamps in UTC for tests
     site = datamodel.Site(
@@ -1283,7 +1283,7 @@ def test_calculate_metrics_with_event(categories, metrics):
         site=site,
         name="dummy obs",
         uncertainty=1,
-        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
         variable="event",
         interval_label="event",
@@ -1292,7 +1292,7 @@ def test_calculate_metrics_with_event(categories, metrics):
     fx = datamodel.EventForecast(
         site=site,
         name="dummy fx",
-        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
         issue_time_of_day=datetime.time(hour=5),
         lead_time_to_start=pd.Timedelta("1h"),
@@ -1306,8 +1306,8 @@ def test_calculate_metrics_with_event(categories, metrics):
     # processed fx-obs pairs
     proc_fx_obs = []
     for i in range(4):
-        obs_values = np.random.randint(0, 2, size=len(index)).astype(bool)
-        fx_values = np.random.randint(0, 2, size=len(index)).astype(bool)
+        obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+        fx_values = np.random.randint(0, 2, size=len(index), dtype=bool)
         obs_series = pd.Series(obs_values, index=index)
         fx_series = pd.Series(fx_values, index=index)
 
