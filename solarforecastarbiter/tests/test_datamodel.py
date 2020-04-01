@@ -473,6 +473,7 @@ def test___check_metrics__(metrics, single_forecast):
 
 @pytest.mark.parametrize('metrics', [
     (["far"]),
+    (list(datamodel.ALLOWED_EVENT_METRICS.keys())),
     pytest.param(
         ["rmse"],
         marks=pytest.mark.xfail(raises=ValueError, strict=True)
