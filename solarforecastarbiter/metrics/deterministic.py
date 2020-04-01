@@ -27,16 +27,39 @@ def deadband_mask(obs, fx, deadband):
     return np.isclose(fx, obs, atol=0, rtol=deadband)
 
 
-def _error_deadband(obs, fx, deadband):
+def error(obs, fx):
+    """The difference ..math:: fx - obs"""
+    return fx - obs
+
+
+def error_deadband(obs, fx, deadband):
+    """Error accounting for a deadband.
+
+    error = 0 for points where error <= deadband * obs
+
+    error = fx - obs for points where error > deadband * obs
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observed values.
+    fx : (n,) array_like
+        Forecasted values.
+    deadband : float
+        Fractional tolerance
+
+    Returns
+    -------
+    error : array_like
+        The error accounting for a deadband.
+    """
     error = fx - obs
-    # only apply deadband if deadband != 0 and is not None
-    if deadband:
-        mask = deadband_mask(obs, fx, deadband)
-        error = np.where(mask, 0, error)
+    mask = deadband_mask(obs, fx, deadband)
+    error = np.where(mask, 0, error)
     return error
 
 
-def mean_absolute(obs, fx, deadband=None):
+def mean_absolute(obs, fx, error_fnc=error):
     """Mean absolute error (MAE).
 
     .. math:: \\text{MAE} = 1/n \\sum_{i=1}^n |\\text{fx}_i - \\text{obs}_i|
@@ -47,14 +70,28 @@ def mean_absolute(obs, fx, deadband=None):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        First argument is obs, second argument is fx.
 
     Returns
     -------
     mae : float
         The MAE of the forecast.
 
+    Examples
+    --------
+    Standard MAE:
+    >>> obs = np.array([1, 2, 3, 4])
+    >>> fx = np.array([2, 2.04, 1, 3.96])
+    >>> mean_absolute(obs, fx)
+    0.52
+
+    MAE with a deadband:
+    >>> error_fnc = partial(error_deadband, deadband=0.05)
+    >>> mean_absolute(obs, fx, error_fnc=error_fnc)
+    0.5
     """
-    error = _error_deadband(obs, fx, deadband)
+    error = error_fnc(obs, fx)
     return np.mean(np.abs(error))
 
 
