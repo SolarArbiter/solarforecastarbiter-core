@@ -695,6 +695,11 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     criteria are roughly scaled to the window length. Here, the threshold
     values are based on [1] with the scaling indicated in [2].
 
+    Warns
+    -----
+    RuntimeWarning
+        If `pvlib.clearsky.detect_clearsky` cannot be applied to the input.
+
     References
     ----------
     [1] Reno, M.J. and C.W. Hansen, "Identification of periods of clear
@@ -706,6 +711,10 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
     """
     if len(ghi) < 2:
+        warnings.warn(
+            'At least two datapoints are required for detect_clearsky_ghi',
+            RuntimeWarning
+        )
         return pd.Series(0, index=ghi.index)
     # determine window length in minutes, 10 x interval for intervals <= 15m
     delta = ghi.index.to_series(keep_tz=True).diff()

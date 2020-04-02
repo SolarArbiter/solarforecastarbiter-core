@@ -378,5 +378,6 @@ def test_detect_clearsky_ghi_warn_regular_interval(ghi_clearsky):
 def test_detect_clearsky_ghi_one_val(ghi_clearsky):
     ser = ghi_clearsky[:1]
     assert len(ser) == 1
-    flags = validator.detect_clearsky_ghi(ser, ser)
+    with pytest.warns(RuntimeWarning):
+        flags = validator.detect_clearsky_ghi(ser, ser)
     assert (flags == 0).all()
