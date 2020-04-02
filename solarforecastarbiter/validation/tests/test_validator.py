@@ -361,7 +361,22 @@ def test_detect_clearsky_ghi(ghi_clearsky):
     assert all(flags[7:12]) and all(flags[15:-6])
 
 
-def test_detect_clearsky_ghi_error(ghi_clearsky):
-    with pytest.raises(ValueError):
-        validator.detect_clearsky_ghi(ghi_clearsky[::4],
-                                      ghi_clearsky[::4])
+def test_detect_clearsky_ghi_warn_interval_length(ghi_clearsky):
+    with pytest.warns(RuntimeWarning):
+        flags = validator.detect_clearsky_ghi(ghi_clearsky[::4],
+                                              ghi_clearsky[::4])
+    assert (flags == 0).all()
+
+
+def test_detect_clearsky_ghi_warn_regular_interval(ghi_clearsky):
+    with pytest.warns(RuntimeWarning):
+        ser = ghi_clearsky[:-2].append(ghi_clearsky[-1:])
+        flags = validator.detect_clearsky_ghi(ser, ser)
+    assert (flags == 0).all()
+
+
+def test_detect_clearsky_ghi_one_val(ghi_clearsky):
+    ser = ghi_clearsky[:1]
+    assert len(ser) == 1
+    flags = validator.detect_clearsky_ghi(ser, ser)
+    assert (flags == 0).all()

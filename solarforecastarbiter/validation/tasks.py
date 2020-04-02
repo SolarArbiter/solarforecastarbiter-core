@@ -1,7 +1,6 @@
 import logging
 
 
-import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
@@ -62,10 +61,10 @@ def validate_ghi(observation, values):
         _return_mask=True)
     ghi_clearsky_flag = validator.check_ghi_clearsky(values, clearsky['ghi'],
                                                      _return_mask=True)
-    cloudy_flag = validator.detect_clearsky_ghi(values, clearsky['ghi'],
-                                                _return_mask=True)
+    cloud_free_flag = validator.detect_clearsky_ghi(values, clearsky['ghi'],
+                                                    _return_mask=True)
     return (timestamp_flag, night_flag, ghi_limit_flag,
-            ghi_clearsky_flag, cloudy_flag)
+            ghi_clearsky_flag, cloud_free_flag)
 
 
 def validate_dni(observation, values):
