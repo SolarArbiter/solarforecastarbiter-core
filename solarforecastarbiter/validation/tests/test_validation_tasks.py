@@ -64,7 +64,7 @@ def test_validate_ghi(mocker, make_observation, default_index):
                 pd.Series([0, 1, 0, 1, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
                 pd.Series(0, index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUD FREE'])
+                DESCRIPTION_MASK_MAPPING['CLEARSKY'])
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
                             check_names=False)
@@ -98,7 +98,7 @@ def test_validate_mostly_clear(mocker, make_observation):
                 pd.Series(0, index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
                 pd.Series([1] * 10 + [0], index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUD FREE'])
+                DESCRIPTION_MASK_MAPPING['CLEARSKY'])
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
                             check_names=False)
@@ -520,7 +520,7 @@ def test_validate_daily_ghi(mocker, make_observation, daily_index):
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
                 pd.Series(0, index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUD FREE'],
+                DESCRIPTION_MASK_MAPPING['CLEARSKY'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],

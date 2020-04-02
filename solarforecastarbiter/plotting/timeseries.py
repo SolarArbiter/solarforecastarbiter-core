@@ -26,7 +26,7 @@ FLAG_COLORS = {
     'NOT VALIDATED': '#ff7f0e',
     'USER FLAGGED': '#d62728',
     'NIGHTTIME': None,
-    'CLOUD FREE': None,
+    'CLEARSKY': None,
     'SHADED': None,
     'UNEVEN FREQUENCY': None,
     'LIMITS EXCEEDED': None,
