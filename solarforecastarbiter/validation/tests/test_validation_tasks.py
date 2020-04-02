@@ -63,8 +63,8 @@ def test_validate_ghi(mocker, make_observation, default_index):
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
                 pd.Series([0, 1, 0, 1, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
-                pd.Series([1, 1, 1, 1, 1], index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUDY'])
+                pd.Series(0, index=data.index) *
+                DESCRIPTION_MASK_MAPPING['CLOUD FREE'])
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
                             check_names=False)
@@ -97,8 +97,8 @@ def test_validate_mostly_clear(mocker, make_observation):
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
                 pd.Series(0, index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
-                pd.Series([0] * 10 + [1], index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUDY'])
+                pd.Series([1] * 10 + [0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['CLOUD FREE'])
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
                             check_names=False)
@@ -125,18 +125,14 @@ def test_immediate_observation_validation_ghi(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-        DESCRIPTION_MASK_MAPPING['CLOUDY']]
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']
+    ]
     assert post_mock.called_once
     assert_frame_equal(post_mock.call_args[0][1], out)
 
@@ -523,8 +519,8 @@ def test_validate_daily_ghi(mocker, make_observation, daily_index):
                 pd.Series([0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'],
-                pd.Series(1, index=data.index) *
-                DESCRIPTION_MASK_MAPPING['CLOUDY'],
+                pd.Series(0, index=data.index) *
+                DESCRIPTION_MASK_MAPPING['CLOUD FREE'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
@@ -560,43 +556,30 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-        LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-        LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-        LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY'],
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-        LATEST_VERSION_FLAG |
-        DESCRIPTION_MASK_MAPPING['CLOUDY']
+        LATEST_VERSION_FLAG
     ]
     assert post_mock.called_once
     assert_frame_equal(post_mock.call_args[0][1], out)

@@ -29,7 +29,7 @@ BITMASK_DESCRIPTION_DICT = {1: {
     'VERSION IDENTIFIER 1': 1 << 2,
     'VERSION IDENTIFIER 2': 1 << 3,
     'NIGHTTIME': 1 << 4,
-    'CLOUDY': 1 << 5,
+    'CLOUD FREE': 1 << 5,
     'SHADED': 1 << 6,
     'UNEVEN FREQUENCY': 1 << 7,
     'LIMITS EXCEEDED': 1 << 8,

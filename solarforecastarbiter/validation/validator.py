@@ -665,7 +665,7 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
     return flags
 
 
-@mask_flags('CLOUDY', invert=True)
+@mask_flags('CLOUD FREE', invert=False)
 def detect_clearsky_ghi(ghi, ghi_clearsky):
     """ Identifies times when GHI is consistent with clear sky conditions.
 
@@ -684,10 +684,6 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     -------
     flags : Series
         True when clear sky conditions are indicated.
-
-    Raises
-    ------
-    ValueError if time intervals are greater than 15m
 
     Notes
     -----
