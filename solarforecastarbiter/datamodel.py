@@ -941,7 +941,7 @@ def __set_normalization__(self):
     if self.observation.variable == 'ac_power':
         norm = self.observation.site.modeling_parameters.ac_capacity
     elif self.observation.variable == 'dc_power':
-        norm = self.observation.site.modeling_parameters.ac_capacity
+        norm = self.observation.site.modeling_parameters.dc_capacity
     elif self.observation.units == 'W/m^2':
         norm = 1000
     else:
@@ -950,7 +950,7 @@ def __set_normalization__(self):
 
 
 def __set_aggregate_normalization__(self):
-    # recommend a follow up issue for this
+    # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/381
     norm = 1
     object.__setattr__(self, 'normalization', norm)
 
