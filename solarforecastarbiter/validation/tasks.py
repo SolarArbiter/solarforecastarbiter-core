@@ -165,30 +165,6 @@ def validate_poa_global(observation, values):
     return timestamp_flag, night_flag, poa_clearsky_flag
 
 
-def validate_defaults(observation, values):
-    """
-    Run default validation checks on an observation.
-
-    Parameters
-    ----------
-    observation : solarforecastarbiter.datamodel.Observation
-       Observation object that the data is associated with
-    values : pandas.Series
-       Series of observation values
-
-    Returns
-    -------
-    tuple
-        Tuple of integer bitmask series of flags from the following tests, in
-        order,
-        `validator.check_timestamp_spacing`
-        `validator.check_irradiance_day_night`
-    """
-    timestamp_flag = _validate_timestamp(observation, values)
-    _, night_flag = _solpos_night(observation, values)
-    return timestamp_flag, night_flag
-
-
 def validate_air_temperature(observation, values):
     """
     Run validation checks on an air temperature observation.
@@ -264,6 +240,30 @@ def validate_relative_humidity(observation, values):
     timestamp_flag, night_flag = validate_defaults(observation, values)
     rh_limit_flag = validator.check_rh_limits(values, _return_mask=True)
     return timestamp_flag, night_flag, rh_limit_flag
+
+
+def validate_defaults(observation, values):
+    """
+    Run default validation checks on an observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
+    """
+    timestamp_flag = _validate_timestamp(observation, values)
+    _, night_flag = _solpos_night(observation, values)
+    return timestamp_flag, night_flag
 
 
 def validate_daily_ghi(observation, values):
