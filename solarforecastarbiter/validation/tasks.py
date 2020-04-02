@@ -1,6 +1,7 @@
 import logging
 
 
+import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
@@ -47,7 +48,8 @@ def validate_ghi(observation, values):
         `validator.check_timestamp_spacing`,
         `validator.check_irradiance_day_night`,
         `validator.check_ghi_limits_QCRad`,
-        `validator.check_ghi_clearsky`
+        `validator.check_ghi_clearsky`,
+        `validator.detect_clearsky_ghi`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
@@ -60,7 +62,10 @@ def validate_ghi(observation, values):
         _return_mask=True)
     ghi_clearsky_flag = validator.check_ghi_clearsky(values, clearsky['ghi'],
                                                      _return_mask=True)
-    return timestamp_flag, night_flag, ghi_limit_flag, ghi_clearsky_flag
+    cloudy_flag = validator.detect_clearsky_ghi(values, clearsky['ghi'],
+                                                _return_mask=True)
+    return (timestamp_flag, night_flag, ghi_limit_flag,
+            ghi_clearsky_flag, cloudy_flag)
 
 
 def validate_dni(observation, values):

@@ -4,6 +4,8 @@ Created on Fri Feb 15 14:08:20 2019
 
 @author: cwhanse
 """
+import warnings
+
 
 import numpy as np
 import pandas as pd
@@ -663,6 +665,7 @@ def detect_clipping(ac_power, window=4, fraction_in_window=0.75, rtol=5e-3,
     return flags
 
 
+@mask_flags('CLOUDY', invert=True)
 def detect_clearsky_ghi(ghi, ghi_clearsky):
     """ Identifies times when GHI is consistent with clear sky conditions.
 
@@ -706,10 +709,13 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     Clear-Sky Periods From Irradiance Data," in IEEE Journal of Photovoltaics,
     vol. 9, no. 4, pp. 998-1005, July 2019. doi: 10.1109/JPHOTOV.2019.2914444
     """
+    if len(ghi) < 2:
+        return pd.Series(0, index=ghi.index)
     # determine window length in minutes, 10 x interval for intervals <= 15m
     delta = ghi.index.to_series(keep_tz=True).diff()
     delta_minutes = delta[1] / np.timedelta64(1, '60s')
-    if delta_minutes <= 15:
+    deltas_same = (delta[1:] == delta[1]).all()
+    if delta_minutes <= 15 and deltas_same:
         window_length = np.minimum(10*delta_minutes, 60.0)
         scale_factor = window_length / 10
         flags = _detect_clearsky(ghi, ghi_clearsky, ghi.index, window_length,
@@ -718,5 +724,8 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
                                  slope_dev=8*scale_factor)
         return flags
     else:
-        raise ValueError('detect_clearsky requires regular time intervals of'
-                         ' 15m or less')
+        warnings.warn(
+            'detect_clearsky requires regular time intervals of 15m or less',
+            RuntimeWarning
+        )
+        return pd.Series(0, index=ghi.index)
