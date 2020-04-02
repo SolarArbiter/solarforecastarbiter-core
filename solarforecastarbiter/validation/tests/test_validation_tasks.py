@@ -157,7 +157,7 @@ def test_immediate_observation_validation_not_listed(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
         LATEST_VERSION_FLAG,
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
@@ -336,6 +336,7 @@ def test_validate_air_temp(mocker, make_observation, default_index):
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
                        'check_temperature_limits']]
     obs = make_observation('air_temperature')
     data = pd.Series([10, 1000, -400, 30, 20], index=default_index)
@@ -345,6 +346,8 @@ def test_validate_air_temp(mocker, make_observation, default_index):
 
     expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 0, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
     for flag, exp in zip(flags, expected):
@@ -373,7 +376,9 @@ def test_immediate_observation_validation_air_temperature(
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
@@ -388,6 +393,7 @@ def test_validate_wind_speed(mocker, make_observation, default_index):
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
                        'check_wind_limits']]
     obs = make_observation('wind_speed')
     data = pd.Series([10, 1000, -400, 3, 20], index=default_index)
@@ -397,6 +403,8 @@ def test_validate_wind_speed(mocker, make_observation, default_index):
 
     expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 0, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
     for flag, exp in zip(flags, expected):
@@ -425,7 +433,9 @@ def test_immediate_observation_validation_wind_speed(
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
@@ -440,6 +450,7 @@ def test_validate_relative_humidity(mocker, make_observation, default_index):
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
                        'check_rh_limits']]
     obs = make_observation('relative_humidity')
     data = pd.Series([10, 101, -400, 60, 20], index=default_index)
@@ -449,6 +460,8 @@ def test_validate_relative_humidity(mocker, make_observation, default_index):
 
     expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 0, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
     for flag, exp in zip(flags, expected):
@@ -477,7 +490,9 @@ def test_immediate_observation_validation_relative_humidity(
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
@@ -590,6 +605,7 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
                        'detect_stale_values',
                        'detect_interpolation']]
     obs = make_observation('dc_power')
@@ -604,6 +620,9 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                          index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
@@ -639,25 +658,33 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
+        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
+        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
-         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-         LATEST_VERSION_FLAG),
-        (DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
-         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-         LATEST_VERSION_FLAG),
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
-         LATEST_VERSION_FLAG),
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-         LATEST_VERSION_FLAG)
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG
     ]
     assert post_mock.called_once
     assert_frame_equal(post_mock.call_args[0][1], out)
@@ -668,6 +695,7 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
                        'detect_stale_values',
                        'detect_interpolation',
                        'detect_clipping']]
@@ -683,6 +711,9 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                          index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
@@ -721,27 +752,35 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
-         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
-         LATEST_VERSION_FLAG),
-        (DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
-         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
-         LATEST_VERSION_FLAG),
+        DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
+        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
+        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
+        LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
-         LATEST_VERSION_FLAG),
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        (DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-         LATEST_VERSION_FLAG)
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        LATEST_VERSION_FLAG
     ]
     assert post_mock.called_once
     assert_frame_equal(post_mock.call_args[0][1], out)

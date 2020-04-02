@@ -17,14 +17,19 @@ def _validate_timestamp(observation, values):
         values.index, observation.interval_length, _return_mask=True)
 
 
-def _solpos_dni_extra(observation, values):
+def _solpos_night(observation, values):
     solar_position = pvmodel.calculate_solar_position(
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, values.index)
-    dni_extra = get_extra_radiation(values.index)
-    timestamp_flag = _validate_timestamp(observation, values)
     night_flag = validator.check_irradiance_day_night(solar_position['zenith'],
                                                       _return_mask=True)
+    return solar_position, night_flag
+
+
+def _solpos_dni_extra(observation, values):
+    solar_position, night_flag = _solpos_night(observation, values)
+    dni_extra = get_extra_radiation(values.index)
+    timestamp_flag = _validate_timestamp(observation, values)
     return solar_position, dni_extra, timestamp_flag, night_flag
 
 
@@ -160,6 +165,30 @@ def validate_poa_global(observation, values):
     return timestamp_flag, night_flag, poa_clearsky_flag
 
 
+def validate_defaults(observation, values):
+    """
+    Run default validation checks on an observation.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    tuple
+        Tuple of integer bitmask series of flags from the following tests, in
+        order,
+        `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
+    """
+    timestamp_flag = _validate_timestamp(observation, values)
+    _, night_flag = _solpos_night(observation, values)
+    return timestamp_flag, night_flag
+
+
 def validate_air_temperature(observation, values):
     """
     Run validation checks on an air temperature observation.
@@ -176,13 +205,14 @@ def validate_air_temperature(observation, values):
     tuple
         Tuple of integer bitmask series of flags from the following tests, in
         order,
-        `validator.check_timestamp_spacing`,
+        `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
         `validator.check_temperature_limits`
     """
-    timestamp_flag = _validate_timestamp(observation, values)
+    timestamp_flag, night_flag = validate_defaults(observation, values)
     temp_limit_flag = validator.check_temperature_limits(
         values, _return_mask=True)
-    return timestamp_flag, temp_limit_flag
+    return timestamp_flag, night_flag, temp_limit_flag
 
 
 def validate_wind_speed(observation, values):
@@ -201,13 +231,14 @@ def validate_wind_speed(observation, values):
     tuple
         Tuple of integer bitmask series of flags from the following tests, in
         order,
-        `validator.check_timestamp_spacing`,
+        `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
         `validator.check_wind_limits`
     """
-    timestamp_flag = _validate_timestamp(observation, values)
+    timestamp_flag, night_flag = validate_defaults(observation, values)
     wind_limit_flag = validator.check_wind_limits(values,
                                                   _return_mask=True)
-    return timestamp_flag, wind_limit_flag
+    return timestamp_flag, night_flag, wind_limit_flag
 
 
 def validate_relative_humidity(observation, values):
@@ -226,33 +257,13 @@ def validate_relative_humidity(observation, values):
     tuple
         Tuple of integer bitmask series of flags from the following tests, in
         order,
-        `validator.check_timestamp_spacing`,
+        `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
         `validator.check_rh_limits`
     """
-    timestamp_flag = _validate_timestamp(observation, values)
+    timestamp_flag, night_flag = validate_defaults(observation, values)
     rh_limit_flag = validator.check_rh_limits(values, _return_mask=True)
-    return timestamp_flag, rh_limit_flag
-
-
-def validate_timestamp(observation, values):
-    """
-    Run validation checks on an observation.
-
-    Parameters
-    ----------
-    observation : solarforecastarbiter.datamodel.Observation
-       Observation object that the data is associated with
-    values : pandas.Series
-       Series of observation values
-
-    Returns
-    -------
-    tuple
-        Tuple of integer bitmask series of flags from the following tests, in
-        order,
-        `validator.check_timestamp_spacing`
-    """
-    return (_validate_timestamp(observation, values),)
+    return timestamp_flag, night_flag, rh_limit_flag
 
 
 def validate_daily_ghi(observation, values):
@@ -301,14 +312,15 @@ def validate_daily_dc_power(observation, values):
         Tuple of integer bitmask series of flags from the following tests, in
         order,
         `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
         `validator.detect_stale_values`
         `validator.detect_interpolation`
     """
-    timestamp_flag = _validate_timestamp(observation, values)
+    timestamp_flag, night_flag = validate_defaults(observation, values)
     stale_flag = validator.detect_stale_values(values, _return_mask=True)
     interpolation_flag = validator.detect_interpolation(values,
                                                         _return_mask=True)
-    return (timestamp_flag, stale_flag, interpolation_flag)
+    return (timestamp_flag, night_flag, stale_flag, interpolation_flag)
 
 
 def validate_daily_ac_power(observation, values):
@@ -328,16 +340,18 @@ def validate_daily_ac_power(observation, values):
         Tuple of integer bitmask series of flags from the following tests, in
         order,
         `validator.check_timestamp_spacing`
+        `validator.check_irradiance_day_night`
         `validator.detect_stale_values`
         `validator.detect_interpolation`
         `validator.detect_clipping`
     """
-    timestamp_flag = _validate_timestamp(observation, values)
+    timestamp_flag, night_flag = validate_defaults(observation, values)
     stale_flag = validator.detect_stale_values(values, _return_mask=True)
     interpolation_flag = validator.detect_interpolation(values,
                                                         _return_mask=True)
     clipping_flag = validator.detect_clipping(values, _return_mask=True)
-    return (timestamp_flag, stale_flag, interpolation_flag, clipping_flag)
+    return (timestamp_flag, night_flag, stale_flag, interpolation_flag,
+            clipping_flag)
 
 
 IMMEDIATE_VALIDATION_FUNCS = {
@@ -365,7 +379,7 @@ def immediate_observation_validation(access_token, observation_id, start, end,
     quality_flags = observation_values['quality_flag'].copy()
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
-        observation.variable, validate_timestamp)
+        observation.variable, validate_defaults)
     validation_flags = validation_func(observation, value_series)
 
     for flag in validation_flags:
@@ -399,7 +413,7 @@ def _daily_validation(session, observation, start, end, base_url):
     # immediate validation, else validate timestamps
     validation_func = DAILY_VALIDATION_FUNCS.get(
         observation.variable, IMMEDIATE_VALIDATION_FUNCS.get(
-            observation.variable, validate_timestamp))
+            observation.variable, validate_defaults))
     validation_flags = validation_func(observation, value_series)
 
     for flag in validation_flags:
