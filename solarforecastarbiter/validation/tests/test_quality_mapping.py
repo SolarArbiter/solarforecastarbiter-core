@@ -160,14 +160,14 @@ def test_has_data_been_validated():
     (3, 'OK', False),
     (0, 'USER FLAGGED', False),
     (3, 'USER FLAGGED', True),
-    (0, 'CLOUDY', False),
+    (0, 'CLEARSKY', False),
     (16, 'OK', False),
     (1, 'USER FLAGGED', True),
     (16, 'NIGHTTIME', True),
-    (33, 'CLOUDY', True),
+    (33, 'CLEARSKY', True),
     (33, 'NIGHTTIME', False),
     (33, ['OK', 'NIGHTTIME'], False),
-    (33, ('OK', 'CLOUDY', 'USER FLAGGED'), True),
+    (33, ('OK', 'CLEARSKY', 'USER FLAGGED'), True),
     (2, ('OK', 'NIGHTTIME'), True),
     (9297, 'USER FLAGGED', True)
 ])
@@ -206,7 +206,7 @@ def test_which_data_is_ok(flags, expected):
     assert_series_equal(out, expected)
 
 
-DESCRIPTIONS = ['USER FLAGGED', 'NIGHTTIME', 'CLOUDY',
+DESCRIPTIONS = ['USER FLAGGED', 'NIGHTTIME', 'CLEARSKY',
                 'SHADED', 'UNEVEN FREQUENCY', 'LIMITS EXCEEDED',
                 'CLEARSKY EXCEEDED', 'STALE VALUES', 'INTERPOLATED VALUES',
                 'CLIPPED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS']
@@ -277,7 +277,7 @@ def test_convert_flag_frame_to_strings():
     (pd.Series([1, 0, 0, 0], dtype=bool), 'OK'),
     (pd.Series([0, 1, 0, 1], dtype=bool), 'USER FLAGGED'),
     (pd.Series([0, 0, 1, 0], dtype=bool), 'CLEARSKY EXCEEDED'),
-    (pd.Series([0, 0, 0, 1], dtype=bool), 'CLOUDY'),
+    (pd.Series([0, 0, 0, 1], dtype=bool), 'CLEARSKY'),
     (pd.Series([0, 0, 0, 1], dtype=bool), 'CLIPPED VALUES'),
     (pd.Series([0, 0, 0, 0], dtype=bool), 'STALE VALUES'),
 ])
@@ -295,7 +295,7 @@ def test_check_if_series_flagged_validated_fail():
 def test_check_if_series_flagged_type_fail():
     with pytest.raises(TypeError):
         quality_mapping.check_if_series_flagged(pd.Series([2, 3, 35]),
-                                                ['OK', b'CLOUDY', []])
+                                                ['OK', b'CLEARSKY', []])
 
 
 def test_check_if_series_flagged_key_fail():

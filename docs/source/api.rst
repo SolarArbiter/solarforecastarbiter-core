@@ -601,10 +601,10 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_dni
    validation.tasks.validate_dhi
    validation.tasks.validate_poa_global
+   validation.tasks.validate_defaults
    validation.tasks.validate_air_temperature
    validation.tasks.validate_wind_speed
    validation.tasks.validate_relative_humidity
-   validation.tasks.validate_timestamp
    validation.tasks.validate_daily_ghi
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power
