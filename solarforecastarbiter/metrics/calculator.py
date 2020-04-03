@@ -88,6 +88,10 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     if metric in deterministic._REQ_REF_FX:
         return metric_func(obs, fx, kwargs['ref_fx'])
     elif metric in deterministic._REQ_NORM:
+        try:
+            normalization = kwargs['normalization']
+        except KeyError:
+            raise KeyError('normalization must be provided for %s', metric)
         return metric_func(obs, fx, kwargs['normalization'])
     else:
         return metric_func(obs, fx)

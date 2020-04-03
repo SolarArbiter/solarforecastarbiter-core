@@ -58,7 +58,8 @@ Enhancements
   (:issue:`293`) (:pull:`382`)
 * Metrics automatically determine normalization based on Observation type.
   AC power observations are normalized by AC capacity; DC power by DC
-  capacity, and irradiance by 1000 W/m^2. (:issue:`370`) (:pull:`379`)
+  capacity. Normalized metrics set to ``nan`` for all other variables.
+  (:issue:`370`) (:pull:`379`)
 
 Bug fixes
 ~~~~~~~~~

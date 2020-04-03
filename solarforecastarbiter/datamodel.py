@@ -13,6 +13,7 @@ from jsonschema.exceptions import ValidationError
 from typing import Tuple, Union
 
 
+import numpy as np
 import pandas as pd
 
 
@@ -943,16 +944,19 @@ def __set_normalization__(self):
     elif self.observation.variable == 'dc_power':
         norm = self.observation.site.modeling_parameters.dc_capacity
     elif self.observation.units == 'W/m^2':
-        norm = 1000
+        # normalizing by 1000 W/m^2 was considered and rejected
+        # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/379#discussion_r402434134
+        # keep W/m^2 as separate item for likely future improvements
+        norm = np.nan
     else:
-        norm = 1
+        norm = np.nan
     norm = float(norm)  # from_dict only checks for floats, chokes on ints
     object.__setattr__(self, 'normalization', norm)
 
 
 def __set_aggregate_normalization__(self):
     # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/381
-    norm = 1.
+    norm = np.nan
     object.__setattr__(self, 'normalization', norm)
 
 
