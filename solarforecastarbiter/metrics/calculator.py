@@ -92,7 +92,7 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
             normalization = kwargs['normalization']
         except KeyError:
             raise KeyError('normalization must be provided for %s', metric)
-        return metric_func(obs, fx, kwargs['normalization'])
+        return metric_func(obs, fx, normalization)
     else:
         return metric_func(obs, fx)
 
