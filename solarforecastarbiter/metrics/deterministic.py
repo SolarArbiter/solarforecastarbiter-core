@@ -95,7 +95,7 @@ def mean_absolute(obs, fx, error_fnc=error):
     return np.mean(np.abs(error))
 
 
-def mean_bias(obs, fx, deadband=None):
+def mean_bias(obs, fx, error_fnc=error):
     """Mean bias error (MBE).
 
     .. math:: \\text{MBE} = 1/n \\sum_{i=1}^n (\\text{fx}_i - \\text{obs}_i)
@@ -113,11 +113,11 @@ def mean_bias(obs, fx, deadband=None):
         The MBE of the forecast.
 
     """
-    error = _error_deadband(obs, fx, deadband)
+    error = error_fnc(obs, fx)
     return np.mean(error)
 
 
-def root_mean_square(obs, fx, deadband=None):
+def root_mean_square(obs, fx, error_fnc=error):
     """Root mean square error (RMSE).
 
     .. math::
@@ -137,11 +137,11 @@ def root_mean_square(obs, fx, deadband=None):
         The RMSE of the forecast.
 
     """
-    error = _error_deadband(obs, fx, deadband)
+    error = error_fnc(obs, fx)
     return np.sqrt(np.mean(error * error))
 
 
-def mean_absolute_percentage(obs, fx, deadband=None):
+def mean_absolute_percentage(obs, fx, error_fnc=error):
     """Mean absolute percentage error (MAPE).
 
     .. math::
@@ -162,11 +162,11 @@ def mean_absolute_percentage(obs, fx, deadband=None):
         The MAPE [%] of the forecast.
 
     """
-    error = _error_deadband(obs, fx, deadband)
+    error = error_fnc(obs, fx)
     return np.mean(np.abs(error / obs)) * 100.0
 
 
-def normalized_mean_absolute(obs, fx, norm, deadband=None):
+def normalized_mean_absolute(obs, fx, norm, error_fnc=error):
     """Normalized mean absolute error (NMAE).
 
     .. math:: \\text{NMAE} = \\text{MAE} / \\text{norm} * 100%
@@ -187,10 +187,10 @@ def normalized_mean_absolute(obs, fx, norm, deadband=None):
 
     """
 
-    return mean_absolute(obs, fx, deadband) / norm * 100.0
+    return mean_absolute(obs, fx, error_fnc=error) / norm * 100.0
 
 
-def normalized_mean_bias(obs, fx, norm, deadband=None):
+def normalized_mean_bias(obs, fx, norm, error_fnc=error):
     """Normalized mean bias error (NMBE).
 
     .. math:: \\text{NMBE} = \\text{MBE} / \\text{norm} * 100%
@@ -211,10 +211,10 @@ def normalized_mean_bias(obs, fx, norm, deadband=None):
 
     """
 
-    return mean_bias(obs, fx, deadband) / norm * 100.0
+    return mean_bias(obs, fx, error_fnc=error) / norm * 100.0
 
 
-def normalized_root_mean_square(obs, fx, norm, deadband=None):
+def normalized_root_mean_square(obs, fx, norm, error_fnc=error):
     """Normalized root mean square error (NRMSE).
 
     .. math:: \\text{NRMSE} = \\text{RMSE} / \\text{norm} * 100%
@@ -235,10 +235,10 @@ def normalized_root_mean_square(obs, fx, norm, deadband=None):
 
     """
 
-    return root_mean_square(obs, fx, deadband) / norm * 100.0
+    return root_mean_square(obs, fx, error_fnc=error) / norm * 100.0
 
 
-def forecast_skill(obs, fx, ref, deadband=None):
+def forecast_skill(obs, fx, ref, error_fnc=error):
     """Forecast skill (s).
 
     .. math:: s = 1 - \\text{RMSE}_\\text{fx} / \\text{RMSE}_\\text{ref}
@@ -263,8 +263,8 @@ def forecast_skill(obs, fx, ref, deadband=None):
 
     """
 
-    rmse_fx = root_mean_square(obs, fx, deadband)
-    rmse_ref = root_mean_square(obs, ref, deadband)
+    rmse_fx = root_mean_square(obs, fx, error_fnc=error)
+    rmse_ref = root_mean_square(obs, ref, error_fnc=error)
     return 1.0 - rmse_fx / rmse_ref
 
 

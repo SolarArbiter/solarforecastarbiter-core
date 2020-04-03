@@ -9,6 +9,7 @@ Todo
 * Support probabilistic metrics and forecasts with new functions
 * Support event metrics and forecasts with new functions
 """
+from functools import partial
 import calendar
 import logging
 
@@ -90,8 +91,10 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     metric functions. """
     metric_func = deterministic._MAP[metric][0]
     _kw = {}
-    if metric in deterministic._DEADBAND_ALLOWED:
-        _kw['deadband'] = kwargs.get('deadband', None)
+    deadband = kwargs.get('deadband', None)
+    if metric in deterministic._DEADBAND_ALLOWED and deadband:
+        _kw['error_fnc'] = partial(
+            deterministic.error_deadband, deadband=deadband)
     if metric in deterministic._REQ_REF_FX:
         return metric_func(obs, fx, kwargs['ref_fx'], **_kw)
     elif metric in deterministic._REQ_NORM:
