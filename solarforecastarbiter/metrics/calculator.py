@@ -90,17 +90,24 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     metric functions. """
     metric_func = deterministic._MAP[metric][0]
+
+    # the keyword arguments that will be passed to the functions
     _kw = {}
+
+    # deadband could be supplied as None, so this is a little cleaner
+    # than a try/except pattern
     deadband = kwargs.get('deadband', None)
     if metric in deterministic._DEADBAND_ALLOWED and deadband:
         _kw['error_fnc'] = partial(
             deterministic.error_deadband, deadband=deadband)
+
     if metric in deterministic._REQ_REF_FX:
-        return metric_func(obs, fx, kwargs['ref_fx'], **_kw)
-    elif metric in deterministic._REQ_NORM:
-        return metric_func(obs, fx, kwargs['normalization'], **_kw)
-    else:
-        return metric_func(obs, fx, **_kw)
+        _kw['ref'] = kwargs['ref_fx']
+
+    if metric in deterministic._REQ_NORM:
+        _kw['norm'] = kwargs['normalization']
+
+    return metric_func(obs, fx, **_kw)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
