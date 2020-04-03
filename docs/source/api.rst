@@ -523,10 +523,14 @@ Functions for generating Plotly report metric figures.
    :toctree: generated/
 
    reports.figures.plotly_figures.construct_metrics_dataframe
+   reports.figures.plotly_figures.construct_timeseries_dataframe
    reports.figures.plotly_figures.bar
    reports.figures.plotly_figures.bar_subdivisions
    reports.figures.plotly_figures.output_svg
    reports.figures.plotly_figures.raw_report_plots
+   reports.figures.plotly_figures.timeseries_plots
+   reports.figures.plotly_figures.timeseries
+   reports.figures.plotly_figures.scatter
 
 
 Functions for generating Bokeh plots.
@@ -597,10 +601,10 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_dni
    validation.tasks.validate_dhi
    validation.tasks.validate_poa_global
+   validation.tasks.validate_defaults
    validation.tasks.validate_air_temperature
    validation.tasks.validate_wind_speed
    validation.tasks.validate_relative_humidity
-   validation.tasks.validate_timestamp
    validation.tasks.validate_daily_ghi
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power

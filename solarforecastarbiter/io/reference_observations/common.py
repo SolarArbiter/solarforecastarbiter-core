@@ -209,16 +209,58 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         return created
 
 
+def _utcnow():
+    return pd.Timestamp.now(tz='UTC')
+
+
+def get_last_site_timestamp(api, observations, end):
+    """Get the last value timestamp from the API as the minimum of the
+    last timestamp for each observation at that site. The result of
+    this function is often used to make new data queries, so a limit
+    of end - 7 days is set to avoid excessive queries to external
+    sources.
+
+    Parameters
+    ---------
+    api : solarforecastarbiter.io.api.APISession
+        An active Reference user session.
+    site_observations : list of solarforecastarbiter.datamodel.Observation
+        A list of reference Observations for a site to search.
+    end : pd.Timestamp
+        Typically, set to now.
+
+    Returns
+    -------
+    pandas.Timestamp
+
+    """
+    # update cli.py as appropriate if behaviour is changed
+    out = end
+    updated = False
+    for obs in observations:
+        maxt = api.get_observation_time_range(obs.observation_id)[1]
+        # <= so that even if maxt == end updated -> true
+        # effectively ignores all NaT values unless all observations
+        # for the site are NaT, then use weekago
+        if pd.notna(maxt) and maxt <= out:
+            out = maxt
+            updated = True
+
+    weekago = end - pd.Timedelta('7d')
+    if not updated or out < weekago:
+        out = weekago
+    return out
+
+
 def update_site_observations(api, fetch_func, site, observations,
                              start, end):
     """Updates data for all reference observations at a given site
     for the period between start and end.
 
-    Prameters
-    ---------
+    Parameters
+    ----------
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
-
     fetch_func : function
         A function that requests data and returns a DataFrame for a given site.
         The function should accept the parameters (api, site, start end) as
@@ -227,12 +269,23 @@ def update_site_observations(api, fetch_func, site, observations,
         The Site with observations to update.
     observations : list of solarforecastarbiter.datamodel.Observation
         A full list of reference Observations to search.
+    start : pandas.Timestamp or None
+        Start time to get data for. If None, try finding the last
+        value in the API and use that time (with a limit of 7 days from start
+        to end). If None and no values in the API, use end - 7 day.
+    end : pandas.Timestamp or None
+        End time to get data for. If None, use now.
     """
+    site_observations = [obs for obs in observations if obs.site == site]
+    if end is None:
+        end = _utcnow()
+    if start is None:
+        start = get_last_site_timestamp(api, site_observations, end)
+    logger.debug('Fetching data for %s from %s to %s', site.name, start, end)
     obs_df = fetch_func(api, site, start, end)
     data_in_range = obs_df[start:end]
     if data_in_range.empty:
         return
-    site_observations = [obs for obs in observations if obs.site == site]
     for obs in site_observations:
         post_observation_data(api, obs, data_in_range, start, end)
 
@@ -243,7 +296,7 @@ def _prepare_data_to_post(data, variable, observation, start, end):
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
     # remove all future values, some files have forward filled nightly data
-    data = data[start:min(end, pd.Timestamp.now(tz='UTC'))]
+    data = data[start:min(end, _utcnow())]
     # we assume any reference data is given at the proper intervals
     # and already averaged if appropriate
     # so just reindex the data to put nans where required

@@ -1,18 +1,6 @@
 <meta charset="utf-8">
 <!-- Bootstrap core CSS -->
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" type="text/css" rel="stylesheet">
-<link
-    href="https://cdn.pydata.org/bokeh/release/bokeh-{{ bokeh_version }}.min.css"
-    rel="stylesheet" type="text/css">
-<link
-    href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.css"
-    rel="stylesheet" type="text/css">
-<link
-    href="https://cdn.pydata.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.css"
-    rel="stylesheet" type="text/css">
-<script src="https://cdn.pydata.org/bokeh/release/bokeh-{{ bokeh_version }}.min.js"></script>
-<script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-{{ bokeh_version }}.min.js"></script>
-<script src="https://cdn.pydata.org/bokeh/release/bokeh-tables-{{ bokeh_version }}.min.js"></script>
 {% if plotly_version %}
 {# plotly js and the python plotly library do not have matching versions #}
 {% include "insert_plots.html" %}

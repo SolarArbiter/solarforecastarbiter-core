@@ -1,7 +1,9 @@
+from functools import partial
 import logging
 import os
 
 
+import pandas as pd
 from requests.exceptions import HTTPError
 
 
@@ -79,6 +81,47 @@ def initialize_site_forecasts(api, site):
                             default_forecasts.TEMPLATE_FORECASTS)
 
 
+def fetch(api, site, start, end, *, doe_rtc_api_key):
+    """Retrieve observation data for a DOE RTC site between start and end.
+
+    Parameters
+    ----------
+    api : io.APISession
+        Unused but conforms to common.update_site_observations call
+    site : datamodel.Site
+        Site object with the appropriate metadata.
+    start : datetime
+        The beginning of the period to request data for.
+    end : datetime
+        The end of the period to request data for.
+    doe_rtc_api_key : str
+        API key to access the DOE RTC api
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        All of the requested data concatenated into a single DataFrame.
+    """
+    try:
+        site_extra_params = common.decode_extra_parameters(site)
+    except ValueError:
+        return pd.DataFrame()
+    doe_rtc_site_id = site_extra_params['network_api_id']
+    obs_df = rtc.fetch_doe_rtc(
+        doe_rtc_site_id, doe_rtc_api_key,
+        start.tz_convert(site.timezone), end.tz_convert(site.timezone))
+    if obs_df.empty:
+        logger.warning(f'Data for site {site.name} contained no '
+                       f'entries from {start} to {end}.')
+        return pd.DataFrame()
+    obs_df = obs_df.rename(columns=DOE_RTC_VARIABLE_MAP).tz_localize(
+        site.timezone)
+    # W to MW
+    if 'ac_power' in obs_df:
+        obs_df['ac_power'] = obs_df['ac_power'] / 1e6
+    return obs_df
+
+
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of DOE RTC Observations
     from start to end.
@@ -100,24 +143,6 @@ def update_observation_data(api, sites, observations, start, end):
                        'set to update DOE RTC observation data.')
     doe_rtc_sites = common.filter_by_networks(sites, 'DOE RTC')
     for site in doe_rtc_sites:
-        try:
-            site_extra_params = common.decode_extra_parameters(site)
-        except ValueError:
-            continue
-        doe_rtc_site_id = site_extra_params['network_api_id']
-        obs_df = rtc.fetch_doe_rtc(
-            doe_rtc_site_id, doe_rtc_api_key,
-            start.tz_convert(site.timezone), end.tz_convert(site.timezone))
-        obs_df = obs_df.rename(columns=DOE_RTC_VARIABLE_MAP).tz_localize(
-            site.timezone)
-        # W to MW
-        if 'ac_power' in obs_df:
-            obs_df['ac_power'] = obs_df['ac_power'] / 1e6
-        data_in_range = obs_df[start:end]
-        if data_in_range.empty:
-            logger.warning(f'Data for site {site.name} contained no '
-                           f'entries from {start} to {end}.')
-            continue
-        site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            common.post_observation_data(api, obs, data_in_range, start, end)
+        common.update_site_observations(
+            api, partial(fetch, doe_rtc_api_key=doe_rtc_api_key), site,
+            observations, start, end)

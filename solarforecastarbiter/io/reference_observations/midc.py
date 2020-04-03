@@ -1,6 +1,7 @@
 import logging
 
 
+import pandas as pd
 from pvlib import iotools
 
 
@@ -59,6 +60,45 @@ def initialize_site_forecasts(api, site):
         default_forecasts.TEMPLATE_FORECASTS)
 
 
+def fetch(api, site, start, end):
+    """Retrieve observation data for a MIDC site between start and end.
+
+    Parameters
+    ----------
+    api : io.APISession
+        Unused but conforms to common.update_site_observations call
+    site : datamodel.Site
+        Site object with the appropriate metadata.
+    start : datetime
+        The beginning of the period to request data for.
+    end : datetime
+        The end of the period to request data for.
+
+    Returns
+    -------
+    data : pandas.DataFrame
+        All of the requested data concatenated into a single DataFrame.
+    """
+    try:
+        site_extra_params = common.decode_extra_parameters(site)
+    except ValueError:
+        return pd.DataFrame()
+    try:
+        obs_df = iotools.read_midc_raw_data_from_nrel(
+            site_extra_params['network_api_id'], start, end)
+    except IndexError:
+        # The MIDC api returns a text file on 404 that is parsed as a
+        # 1-column csv and causes an index error.
+        logger.warning(f'Could not retrieve data for site {site.name}'
+                       f' between {start} and {end}.')
+        return pd.DataFrame()
+    except ValueError as e:
+        logger.error(f'Error retrieving data for site {site.name}'
+                     f' between {start} and {end}: %s', e)
+        return pd.DataFrame()
+    return obs_df
+
+
 def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to all MIDC observations from
     start to end.
@@ -74,23 +114,5 @@ def update_observation_data(api, sites, observations, start, end):
     """
     midc_sites = common.filter_by_networks(sites, ['NREL MIDC'])
     for site in midc_sites:
-        try:
-            site_extra_params = common.decode_extra_parameters(site)
-        except ValueError:
-            continue
-        try:
-            obs_df = iotools.read_midc_raw_data_from_nrel(
-                site_extra_params['network_api_id'], start, end)
-        except IndexError:
-            # The MIDC api returns a text file on 404 that is parsed as a
-            # 1-column csv and causes an index error.
-            logger.warning(f'Could not retrieve data for site {site.name}'
-                           f' between {start} and {end}.')
-            continue
-        except ValueError as e:
-            logger.error(f'Error retrieving data for site {site.name}'
-                         f' between {start} and {end}: %s', e)
-            continue
-        site_observations = [obs for obs in observations if obs.site == site]
-        for obs in site_observations:
-            common.post_observation_data(api, obs, obs_df, start, end)
+        common.update_site_observations(
+            api, fetch, site, observations, start, end)

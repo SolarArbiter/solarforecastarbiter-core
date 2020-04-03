@@ -190,14 +190,15 @@ def referencedata_init(verbose, user, password, base_url, network, site_file):
 @referencedata.command(name='update')
 @common_options
 @network_opt
-@click.argument('start', type=UTCTIMESTAMP)
-@click.argument('end', type=UTCTIMESTAMP)
+@click.option('--end', type=UTCTIMESTAMP,
+              help='End time (ISO8601) to fetch data for. Default is now')
+@click.option('--start', type=UTCTIMESTAMP,
+              help=('Start time (ISO8601) to fetch data for. Default is'
+                    ' max of last timestamp in API and end - 7 days'))
 def referencedata_update(verbose, user, password, base_url, network, start,
                          end):
     """
-    Updates reference data for the given period. START and END should be given
-    as ISO8601 datetime strings. If no timezone is defined, UTC will be
-    assumed.
+    Updates reference data for the given period.
     """
     set_log_level(verbose)
     token = cli_access_token(user, password)

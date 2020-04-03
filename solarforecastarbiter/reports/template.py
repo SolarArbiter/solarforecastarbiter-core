@@ -8,7 +8,7 @@ from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
 from plotly import __version__ as plotly_version
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports.figures import bokeh_figures, plotly_figures
+from solarforecastarbiter.reports.figures import plotly_figures
 
 
 logger = logging.getLogger(__name__)
@@ -75,17 +75,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
     if with_timeseries:
         try:
-            script, div = bokeh_figures.timeseries_plots(report)
+            timeseries_specs = plotly_figures.timeseries_plots(report)
         except Exception:
             logger.exception(
-                'Failed to make Bokeh items for timeseries and scatterplot')
-            script = ''
-            div = """<div class="alert alert-warning">
-  <strong>Warning</strong> Failed to make timeseries and scatter plots
-  from stored data.
-</div>"""
-        kwargs['timeseries_script'] = script
-        kwargs['timeseries_div'] = div
+                'Failed to make Plotly items for timeseries and scatterplot')
+            timeseries_specs = ('{}', '{}')
+        kwargs['timeseries_spec'] = timeseries_specs[0]
+        kwargs['scatter_spec'] = timeseries_specs[1]
     return kwargs
 
 
