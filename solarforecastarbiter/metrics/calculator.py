@@ -28,6 +28,8 @@ def calculate_metrics(processed_pairs, categories, metrics,
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
+    Normalization is determined by the attributes of the input objects.
+
     Parameters
     ----------
     processed_pairs :
@@ -96,6 +98,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
+
+    Normalization is determined by the attributes of the input objects.
 
     Parameters
     ----------
