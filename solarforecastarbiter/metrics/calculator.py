@@ -24,9 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair=None, normalizer=1.0):
+                      ref_pair=None):
     """
     Loop through the forecast-observation pairs and calculate metrics.
+
+    Normalization is determined by the attributes of the input objects.
 
     Parameters
     ----------
@@ -40,9 +42,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
         solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
-    normalizer : float
-        Normalized factor (should be in the same units as data). Default is
-        1.0 and only needed for normalized metrics.
 
     Returns
     -------
@@ -72,7 +71,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
                     categories,
                     metrics,
                     ref_fx_obs=ref_pair,
-                    normalizer=normalizer
                 )
             except RuntimeError as e:
                 logger.error('Failed to calculate metrics for %s: %s',
@@ -90,16 +88,18 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     if metric in deterministic._REQ_REF_FX:
         return metric_func(obs, fx, kwargs['ref_fx'])
     elif metric in deterministic._REQ_NORM:
-        return metric_func(obs, fx, kwargs['normalizer'])
+        return metric_func(obs, fx, kwargs['normalization'])
     else:
         return metric_func(obs, fx)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None, normalizer=1.0):
+                                    ref_fx_obs=None):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
+
+    Normalization is determined by the attributes of the input objects.
 
     Parameters
     ----------
@@ -112,9 +112,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
-    normalizer : float
-        Normalized factor (should be in the same units as data). Default is
-        1.0 and only needed for normalized metrics.
 
     Returns
     -------
@@ -169,6 +166,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                     'observation': obs,
                     'reference': ref_fx}, axis=1)
 
+    # get normalization factor
+    normalization = processed_fx_obs.normalization_factor
+
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin
     if processed_fx_obs.interval_label == "ending":
@@ -184,14 +184,14 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             index_category = getattr(df.index, category)
 
         # Calculate each metric
-        for metric_ in set(metrics):
+        for metric_ in metrics:
             # Group by category
             for cat, group in df.groupby(index_category):
 
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
-                    ref_fx=ref_fx, normalizer=normalizer)
+                    ref_fx=ref_fx, normalization=normalization)
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday

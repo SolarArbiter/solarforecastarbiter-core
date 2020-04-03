@@ -406,6 +406,26 @@ def ac_power_observation_metadata(powerplant_metadata):
     return ac_power_meta
 
 
+@pytest.fixture(scope='module')
+def dc_power_observation_metadata(powerplant_metadata):
+    dc_power_meta = datamodel.Observation(
+        name='Albuquerque Baseline DC Power', variable='dc_power',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+    return dc_power_meta
+
+
+@pytest.fixture(scope='module')
+def wind_speed_observation_metadata(powerplant_metadata):
+    wind_speed_meta = datamodel.Observation(
+        name='Albuquerque Baseline Wind Speed', variable='wind_speed',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+    return wind_speed_meta
+
+
 @pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
 def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
@@ -481,6 +501,38 @@ def ac_power_forecast_metadata(site_metadata):
         site=site_metadata
     )
     return ac_power_fx_meta
+
+
+@pytest.fixture(scope='module')
+def dc_power_forecast_metadata(site_metadata):
+    dc_power_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline DC Power forecast 1',
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h'),
+        interval_label='beginning',
+        interval_value_type='mean',
+        variable='dc_power',
+        site=site_metadata
+    )
+    return dc_power_fx_meta
+
+
+@pytest.fixture(scope='module')
+def wind_speed_forecast_metadata(site_metadata):
+    wind_speed_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline Wind Speed forecast 1',
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h'),
+        interval_label='beginning',
+        interval_value_type='mean',
+        variable='wind_speed',
+        site=site_metadata
+    )
+    return wind_speed_fx_meta
 
 
 @pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
@@ -1041,6 +1093,27 @@ def many_forecast_observation(many_forecasts, many_observations):
                              if obs.variable == 'ghi']
     cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
+
+
+@pytest.fixture()
+def single_forecast_ac_observation(
+        ac_power_forecast_metadata, ac_power_observation_metadata):
+    return datamodel.ForecastObservation(
+        ac_power_forecast_metadata, ac_power_observation_metadata)
+
+
+@pytest.fixture()
+def single_forecast_dc_observation(
+        dc_power_forecast_metadata, dc_power_observation_metadata):
+    return datamodel.ForecastObservation(
+        dc_power_forecast_metadata, dc_power_observation_metadata)
+
+
+@pytest.fixture()
+def single_forecast_wind_speed_observation(
+        wind_speed_forecast_metadata, wind_speed_observation_metadata):
+    return datamodel.ForecastObservation(
+        wind_speed_forecast_metadata, wind_speed_observation_metadata)
 
 
 @pytest.fixture()

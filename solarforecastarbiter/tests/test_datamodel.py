@@ -3,6 +3,7 @@ import json
 from typing import Union
 
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -198,7 +199,14 @@ def test_from_dict_into_datamodel_no_extra(pdid_params):
     for field in fields(model):
         if field.name == 'extra_parameters':
             continue
-        assert getattr(out, field.name) == getattr(expected, field.name)
+        expected_value = getattr(expected, field.name)
+        out_value = getattr(out, field.name)
+        # normalization can be nan. isinstance ensures that isnan doesn't
+        # try to coerce random strings or objects to a float and then error
+        if isinstance(expected_value, float) and np.isnan(expected_value):
+            assert np.isnan(out_value)
+        else:
+            assert out_value == expected_value
 
 
 def test_from_dict_no_extra(pdid_params):
@@ -480,7 +488,7 @@ def test___check_metrics__probabilistic(metrics, prob_forecast_constant_value):
 
 @pytest.fixture
 def objects_from_attrs(mocker):
-    """Takes a list of lists with tupples of (attr_name, value)
+    """Takes a list of lists with tuples of (attr_name, value)
        and creates a listed of Mock objects with their attributes
        set to those values
     """
@@ -731,3 +739,16 @@ def test_report_figure_from_dict_with_plotly(plotly_report_figure_dict):
 def test_report_figure_from_dict_invalid(fig_dict):
     with pytest.raises(NotImplementedError):
         datamodel.ReportFigure.from_dict(fig_dict)
+
+
+def test_ForecastObservation_normalization_ac(single_forecast_ac_observation):
+    assert single_forecast_ac_observation.normalization == 0.003
+
+
+def test_ForecastObservation_normalization_dc(single_forecast_dc_observation):
+    assert single_forecast_dc_observation.normalization == 0.0035
+
+
+def test_ForecastObservation_normalization_wind_speed(
+        single_forecast_wind_speed_observation):
+    assert np.isnan(single_forecast_wind_speed_observation.normalization)

@@ -33,6 +33,11 @@ API Changes
   replaced with
   :py:func:`solarforecastarbiter.vavlidation.tasks.validate_defaults` which
   also adds a nighttime flag (:pull:`382`)
+* Removed ``normalizer`` keyword argument from
+  :py:func:`solarforecastarbiter.metrics.calculate_metrics` and
+  :py:func:`solarforecastarbiter.metrics.calculate_deterministic_metrics`.
+  Normalization is now determined by the attributes of the datamodel objects.
+  (:pull:`379`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -51,6 +56,10 @@ Enhancements
   flagged with CLEARSKY (:issue:`210`) (:pull:`382`)
 * All data validation now includes the generation of the NIGHTTIME flag
   (:issue:`293`) (:pull:`382`)
+* Metrics automatically determine normalization based on Observation type.
+  AC power observations are normalized by AC capacity; DC power by DC
+  capacity. Normalized metrics set to ``nan`` for all other variables.
+  (:issue:`370`) (:pull:`379`)
 
 Bug fixes
 ~~~~~~~~~

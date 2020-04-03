@@ -13,6 +13,7 @@ from jsonschema.exceptions import ValidationError
 from typing import Tuple, Union
 
 
+import numpy as np
 import pandas as pd
 
 
@@ -914,23 +915,49 @@ class ForecastObservation(BaseModel):
     forecast: :py:class:`solarforecastarbiter.datamodel.Forecast`
     observation: :py:class:`solarforecastarbiter.datamodel.Observation`
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
-    normalization: float
+    normalization: float or None
+        If None, determined by __set_normalization__
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
     observation: Observation
     reference_forecast: Union[Forecast, None] = None
-    # for now, some function applied to observation (e.g. mean per day)
-    # possible in future
-    normalization: float = 1.0
+    # some function applied to observation (e.g. mean per day)
+    # possible in future. maybe add pd.Series like for
+    # ProcessedForecastObservation
+    normalization: Union[float, None] = None
     # cost: Cost
     cost_per_unit_error: float = 0.0
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
+        if self.normalization is None:
+            __set_normalization__(self)
         object.__setattr__(self, 'data_object', self.observation)
         __check_units__(self.forecast, self.data_object)
         __check_interval_compatibility__(self.forecast, self.data_object)
+
+
+def __set_normalization__(self):
+    if self.observation.variable == 'ac_power':
+        norm = self.observation.site.modeling_parameters.ac_capacity
+    elif self.observation.variable == 'dc_power':
+        norm = self.observation.site.modeling_parameters.dc_capacity
+    elif self.observation.units == 'W/m^2':
+        # normalizing by 1000 W/m^2 was considered and rejected
+        # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/379#discussion_r402434134
+        # keep W/m^2 as separate item for likely future improvements
+        norm = np.nan
+    else:
+        norm = np.nan
+    norm = float(norm)  # from_dict only checks for floats, chokes on ints
+    object.__setattr__(self, 'normalization', norm)
+
+
+def __set_aggregate_normalization__(self):
+    # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/381
+    norm = np.nan
+    object.__setattr__(self, 'normalization', norm)
 
 
 @dataclass(frozen=True)
@@ -943,17 +970,20 @@ class ForecastAggregate(BaseModel):
     forecast: :py:class:`solarforecastarbiter.datamodel.Forecast`
     aggregate: :py:class:`solarforecastarbiter.datamodel.Aggregate`
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
-    normalization: float
+    normalization: float or None
+        If None, assigned 1.
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
     aggregate: Aggregate
     reference_forecast: Union[Forecast, None] = None
-    normalization: float = 1.0
+    normalization: Union[float, None] = None
     cost_per_unit_error: float = 0.0
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
+        if self.normalization is None:
+            __set_aggregate_normalization__(self)
         object.__setattr__(self, 'data_object', self.aggregate)
         __check_units__(self.forecast, self.data_object)
         __check_interval_compatibility__(self.forecast, self.data_object)
