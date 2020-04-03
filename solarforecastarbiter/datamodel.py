@@ -946,12 +946,13 @@ def __set_normalization__(self):
         norm = 1000
     else:
         norm = 1
+    norm = float(norm)  # from_dict only checks for floats, chokes on ints
     object.__setattr__(self, 'normalization', norm)
 
 
 def __set_aggregate_normalization__(self):
     # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/381
-    norm = 1
+    norm = 1.
     object.__setattr__(self, 'normalization', norm)
 
 

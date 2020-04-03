@@ -180,7 +180,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
             index_category = getattr(df.index, category)
 
         # Calculate each metric
-        for metric_ in set(metrics):
+        for metric_ in metrics:
             # Group by category
             for cat, group in df.groupby(index_category):
 
