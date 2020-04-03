@@ -419,7 +419,7 @@ def dc_power_observation_metadata(powerplant_metadata):
 @pytest.fixture(scope='module')
 def wind_speed_observation_metadata(powerplant_metadata):
     wind_speed_meta = datamodel.Observation(
-        name='Albuquerque Baseline DC Power', variable='wind_speed',
+        name='Albuquerque Baseline Wind Speed', variable='wind_speed',
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta('5min'),
         interval_label='instant', site=powerplant_metadata, uncertainty=1)
@@ -522,7 +522,7 @@ def dc_power_forecast_metadata(site_metadata):
 @pytest.fixture(scope='module')
 def wind_speed_forecast_metadata(site_metadata):
     wind_speed_fx_meta = datamodel.Forecast(
-        name='Albuquerque Baseline DC Power forecast 1',
+        name='Albuquerque Baseline Wind Speed forecast 1',
         issue_time_of_day=dt.time(hour=5),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
