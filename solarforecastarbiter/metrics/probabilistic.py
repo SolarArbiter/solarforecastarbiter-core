@@ -414,8 +414,8 @@ _REQ_REF_FX = ['bss']
 # Functions that require normalized factor
 _REQ_NORM = []
 
-# Functions that require multiple forecasts (as 2dim)
-_REQ_2DFX = ['crps']
+# Functions that require full distribution forecasts (as 2dim)
+_REQ_DIST = ['crps']
 
 # TODO: Functions that require two forecasts (e.g., sharpness)
 # _REQ_FX_FX = ['sh']

@@ -464,6 +464,3 @@ _REQ_REF_FX = ['s']
 
 # Functions that require normalized factor
 _REQ_NORM = ['nmae', 'nmbe', 'nrmse']
-
-# Functions that require multiple forecasts (as 2dim)
-_REQ_2DFX = ['crps']

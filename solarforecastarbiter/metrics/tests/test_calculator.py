@@ -17,7 +17,8 @@ DET_NO_REF_NO_NORM = (set(DET_NO_NORM) - set(deterministic._REQ_REF_FX))
 PROBABILISTIC_METRICS = list(probabilistic._MAP.keys())
 # PROB_NO_NORM = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_NORM))
 PROB_NO_REF = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_REF_FX))
-PROB_NO_2DFX = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_2DFX))
+PROB_NO_DIST = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_DIST))
+PROB_NO_REF_NO_DIST = (set(PROB_NO_REF) - set(probabilistic._REQ_DIST))
 LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
 
 
@@ -141,10 +142,8 @@ def ref_fx_obs(create_processed_fxobs, many_forecast_observation):
     (LIST_OF_CATEGORIES, DET_NO_REF),
     (LIST_OF_CATEGORIES, DET_NO_REF_NO_NORM)
 ])
-def test_calculate_metrics_no_reference(
-        categories, metrics, proc_fx_obs):
-    result = calculator.calculate_metrics(proc_fx_obs,
-                                          categories, metrics)
+def test_calculate_metrics_no_reference(categories, metrics, proc_fx_obs):
+    result = calculator.calculate_metrics(proc_fx_obs, categories, metrics)
     assert isinstance(result, list)
     assert isinstance(result[0], datamodel.MetricResult)
     assert len(result) == len(proc_fx_obs)
@@ -204,13 +203,15 @@ def test_calculate_metrics_with_probablistic(single_observation,
                                            obs_values)
 
     # Without reference
-    result = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
-                                          PROB_NO_REF)
-    assert isinstance(result, list)
-    assert len(result) == 1
-    assert isinstance(result[0], list)
-    assert len(result[0]) == len(const_values)
-    assert isinstance(result[0][0], datamodel.MetricResult)
+    results = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
+                                           PROB_NO_REF)
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert isinstance(results[0], tuple)
+    single_results, dist_results = results[0]
+    assert len(single_results) == len(const_values)
+    assert all(isinstance(r, datamodel.MetricResult) for r in single_results)
+    assert isinstance(dist_results, datamodel.MetricResult)
 
     # With reference
     ref_fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
@@ -222,14 +223,16 @@ def test_calculate_metrics_with_probablistic(single_observation,
     proc_ref_prfx_obs = create_processed_fxobs(ref_prfxobs,
                                                ref_fx_values,
                                                obs_values)
-    result = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
-                                          PROBABILISTIC_METRICS,
-                                          ref_pair=proc_ref_prfx_obs)
-    assert isinstance(result, list)
-    assert len(result) == 1
-    assert isinstance(result[0], list)
-    assert len(result[0]) == len(const_values)
-    assert isinstance(result[0][0], datamodel.MetricResult)
+    results = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
+                                           PROBABILISTIC_METRICS,
+                                           ref_pair=proc_ref_prfx_obs)
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert isinstance(results[0], tuple)
+    single_results, dist_results = results[0]
+    assert len(single_results) == len(const_values)
+    assert all(isinstance(r, datamodel.MetricResult) for r in single_results)
+    assert isinstance(dist_results, datamodel.MetricResult)
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -479,10 +482,8 @@ def test_calculate_probabilistic_metrics_interval_label_ending(
         pd.Series(np.random.randn(10), index=create_dt_index(10))
     )
     proc_fxobs = proc_fxobs.replace(interval_label='ending')
-    with pytest.raises(ValueError):
-        calculator.calculate_probabilistic_metrics(
-            proc_fxobs, LIST_OF_CATEGORIES, PROB_NO_REF,
-        )
+    calculator.calculate_probabilistic_metrics(proc_fxobs, LIST_OF_CATEGORIES,
+                                               PROB_NO_REF)
 
 
 def test_calculate_probabilistic_metrics_bad_reference_axis(
@@ -532,17 +533,19 @@ def test_calculate_metrics_with_probablistic_simple(prob_forecasts_data_obj,
                                                     create_dt_index):
     pair = create_processed_fxobs(
         prob_forecasts_data_obj,
-        pd.DataFrame(np.random.randn(10, 1)+10, index=create_dt_index(10)),
+        pd.DataFrame(np.random.randn(10, 3)+10, index=create_dt_index(10)),
         pd.Series(np.random.randn(10)+10, index=create_dt_index(10)))
     ref = create_processed_fxobs(
         prob_forecasts_data_obj,
-        pd.DataFrame(np.random.randn(10, 1)+10, index=create_dt_index(10)),
+        pd.DataFrame(np.random.randn(10, 3)+10, index=create_dt_index(10)),
         pd.Series(np.random.randn(10)+10, index=create_dt_index(10)))
     results = calculator.calculate_probabilistic_metrics(
         pair, LIST_OF_CATEGORIES, PROBABILISTIC_METRICS, ref_fx_obs=ref)
-    assert isinstance(results, list)
-    assert len(results) == 1
-    assert all(isinstance(r, datamodel.MetricResult) for r in results)
+    assert isinstance(results, tuple)
+    single_results, dist_results = results
+    assert len(single_results) == len(pair.original.forecast.constant_values)
+    assert all(isinstance(r, datamodel.MetricResult) for r in single_results)
+    assert isinstance(dist_results, datamodel.MetricResult)
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -601,19 +604,97 @@ def test_calculate_probabilistic_metrics(categories, metrics,
     pair = create_processed_fxobs(prob_fxobs, prob_fx_df, obs)
     ref = create_processed_fxobs(ref_fxobs, ref_fx_df, obs)
 
-    results = calculator.calculate_probabilistic_metrics(
+    single_results, dist_result = calculator.calculate_probabilistic_metrics(
         pair, categories, metrics, ref_fx_obs=ref)
 
-    # Check results
-    assert len(results) == len(prob_fx_df.columns)
-    assert all([isinstance(x, datamodel.MetricResult) for x in results])
-    cvs = pair.original.forecast.constant_values
-    assert (set([r.forecast_id for r in results]) ==
-            set([p.forecast_id for p in cvs]))
-    for r in results:
-        verify_metric_result(r, pair, categories, metrics)
+    # Check single forecast results
+    if any(x for x in PROB_NO_DIST if x in set(metrics)):
+        assert len(single_results) == len(prob_fx_df.columns)
+        assert all([isinstance(x, datamodel.MetricResult)
+                   for x in single_results])
+        cvs = pair.original.forecast.constant_values
+        assert (set([r.forecast_id for r in single_results]) ==
+                set([p.forecast_id for p in cvs]))
+        assert (set([r.observation_id for r in single_results]) ==
+                set([single_observation.observation_id]))
+        metrics_sans_dist = list(set(metrics) - set(probabilistic._REQ_DIST))
+        for r in single_results:
+            verify_metric_result(r, pair, categories, metrics_sans_dist)
+    else:
+        assert len(single_results) == 0
+
+    # Check distribution forecast results
+    if any(x for x in probabilistic._REQ_DIST if x in set(metrics)):
+        assert isinstance(dist_result, datamodel.MetricResult)
+        assert dist_result.forecast_id == prob_forecasts.forecast_id
+        assert dist_result.observation_id == single_observation.observation_id
+        metrics_dist_only = list(set(metrics) - set(PROB_NO_DIST))
+        verify_metric_result(dist_result, pair, categories, metrics_dist_only)
+    else:
+        assert dist_result is None
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES
+])
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
+@pytest.mark.parametrize('df,metrics', [
+    (pd.DataFrame({
+        ('50', 'forecast'): np.random.randn(10),
+        ('50', 'probability'): np.random.randn(10),
+        ('50', 'reference_forecast'): np.random.randn(10),
+        ('50', 'reference_probability'): np.random.randn(10),
+        (None, 'observation'): np.random.randn(10)
+        }),
+     PROB_NO_DIST),
+    (pd.DataFrame({
+        ('50', 'forecast'): np.random.randn(10),
+        ('50', 'probability'): np.random.randn(10),
+        (None, 'observation'): np.random.randn(10)
+        }),
+     PROB_NO_REF_NO_DIST),
+    (pd.DataFrame({
+        ('25', 'forecast'): np.random.randn(10),
+        ('50', 'forecast'): np.random.randn(10),
+        ('75', 'forecast'): np.random.randn(10),
+        ('25', 'probability'): np.random.randn(10),
+        ('50', 'probability'): np.random.randn(10),
+        ('75', 'probability'): np.random.randn(10),
+        ('25', 'reference_forecast'): np.random.randn(10),
+        ('50', 'reference_forecast'): np.random.randn(10),
+        ('75', 'reference_forecast'): np.random.randn(10),
+        ('25', 'reference_probability'): np.random.randn(10),
+        ('50', 'reference_probability'): np.random.randn(10),
+        ('75', 'reference_probability'): np.random.randn(10),
+        (None, 'observation'): np.random.randn(10)
+        }),
+     probabilistic._REQ_DIST),
+    (pd.DataFrame({
+        ('25', 'forecast'): np.random.randn(10),
+        ('50', 'forecast'): np.random.randn(10),
+        ('75', 'forecast'): np.random.randn(10),
+        ('25', 'probability'): np.random.randn(10),
+        ('50', 'probability'): np.random.randn(10),
+        ('75', 'probability'): np.random.randn(10),
+        (None, 'observation'): np.random.randn(10)
+        }),
+     probabilistic._REQ_DIST)
+])
+def test_calculate_probabilistic_metrics_from_df(categories, df, metrics,
+                                                 interval_label,
+                                                 create_dt_index):
+    df.index = create_dt_index(len(df))
+    results = calculator._calculate_probabilistic_metrics_from_df(
+        df, categories, metrics, interval_label)
+    assert all(isinstance(r, datamodel.MetricValue) for r in results)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
     ('mae', [], [], None, None, np.NaN),
     ('mae', [1, 1, 1], [0, 1, -1], None, None, 1.0),
@@ -630,10 +711,8 @@ def test_calculate_probabilistic_metrics(categories, metrics,
 ])
 def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
                                          create_dt_index):
-    fx_series = pd.Series(fx, index=create_dt_index(len(fx)),
-                          dtype=float)
-    obs_series = pd.Series(obs, index=create_dt_index(len(obs)),
-                           dtype=float)
+    fx_series = np.array(fx)
+    obs_series = np.array(obs)
     # Check require reference forecast kwarg
     if metric in ['s']:
         if ref_fx is None:
@@ -642,8 +721,7 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
                 calculator._apply_deterministic_metric_func(
                     metric, fx_series, obs_series)
         else:
-            ref_fx_series = pd.Series(ref_fx,
-                                      index=create_dt_index(len(ref_fx)))
+            ref_fx_series = np.array(ref_fx)
             metric_value = calculator._apply_deterministic_metric_func(
                 metric, fx_series, obs_series, ref_fx=ref_fx_series)
             np.testing.assert_approx_equal(metric_value, expect)
@@ -673,8 +751,8 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
 def test_apply_deterministic_bad_metric_func():
     with pytest.raises(KeyError):
         calculator._apply_deterministic_metric_func('BAD METRIC',
-                                                    pd.Series(dtype=float),
-                                                    pd.Series(dtype=float))
+                                                    np.array([]),
+                                                    np.array([]))
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -693,7 +771,7 @@ def test_apply_deterministic_bad_metric_func():
     ('unc', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
 
     # CRPS single forecast
-    ('crps', [1], [100], [0], None, None, 0.),
+    ('crps', [[1]], [[100]], [[0]], None, None, 0.),
     # CRPS mulitple forecasts
     ('crps', [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
              [[100, 100, 100], [100, 100, 100], [100, 100, 100]],
@@ -703,30 +781,23 @@ def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
                                          ref_fx, ref_fx_prob, expect,
                                          create_dt_index):
     if metric == 'crps':
-        fx_data = pd.DataFrame(
-            fx, index=create_dt_index(len(fx)), dtype=float)
-        fx_prob_data = pd.DataFrame(
-            fx_prob, index=create_dt_index(len(fx_prob)), dtype=float)
+        fx_data = np.array(fx)
+        fx_prob_data = np.array(fx_prob)
     else:
-        fx_data = pd.Series(
-            fx, index=create_dt_index(len(fx)), dtype=float)
-        fx_prob_data = pd.Series(
-            fx_prob, index=create_dt_index(len(fx_prob)), dtype=float)
-    obs_series = pd.Series(
-        obs, index=create_dt_index(len(obs)), dtype=float)
+        fx_data = np.array(fx)
+        fx_prob_data = np.array(fx_prob)
+    obs_series = np.array(obs)
 
     # Check metrics that require reference forecast kwarg
-    if metric in ['bss']:
+    if metric in probabilistic._REQ_REF_FX:
         if ref_fx is None or ref_fx_prob is None:
             with pytest.raises(KeyError):
                 # Missing positional argument
                 calculator._apply_probabilistic_metric_func(
                     metric, fx_data, fx_prob_data, obs_series)
         else:
-            ref_fx_data = pd.Series(
-                ref_fx, index=create_dt_index(len(ref_fx)))
-            ref_fx_prob_data = pd.Series(
-                ref_fx_prob, index=create_dt_index(len(ref_fx_prob)))
+            ref_fx_data = np.array(ref_fx)
+            ref_fx_prob_data = np.array(ref_fx_prob)
             metric_value = calculator._apply_probabilistic_metric_func(
                 metric, fx_data, fx_prob_data, obs_series,
                 ref_fx=ref_fx_data,
@@ -746,9 +817,9 @@ def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
 def test_apply_probabilistic_bad_metric_func():
     with pytest.raises(KeyError):
         calculator._apply_probabilistic_metric_func('BAD METRIC',
-                                                    pd.Series(dtype=float),
-                                                    pd.Series(dtype=float),
-                                                    pd.Series(dtype=float))
+                                                    np.array([]),
+                                                    np.array([]),
+                                                    np.array([]))
 
 
 @pytest.mark.parametrize('ts,tz,interval_label,category,result', [
@@ -909,9 +980,9 @@ def test_interval_label_match(site_metadata, label_fx, label_ref,
 @pytest.mark.parametrize('prob_fx_df,axis,exp_fx_fx_prob', [
     (pd.DataFrame({'25': [1.]*5, '50': [2.]*5, '75': [3.]*5}),
      'y',
-     [(pd.Series([1.]*5, name='25'), pd.Series([25.]*5)),
-      (pd.Series([2.]*5, name='50'), pd.Series([50.]*5)),
-      (pd.Series([3.]*5, name='75'), pd.Series([75.]*5))]),
+     [(pd.Series([1.]*5, name='25'), pd.Series([25.]*5, name='25')),
+      (pd.Series([2.]*5, name='50'), pd.Series([50.]*5, name='50')),
+      (pd.Series([3.]*5, name='75'), pd.Series([75.]*5, name='75'))]),
 ])
 def test_transform_prob_forecast_value_and_prob(prob_forecasts,
                                                 single_observation,
@@ -926,6 +997,34 @@ def test_transform_prob_forecast_value_and_prob(prob_forecasts,
     result = calculator._transform_prob_forecast_value_and_prob(proc_fxobs)
     assert len(result) == len(exp_fx_fx_prob)
     for res, exp in zip(result, exp_fx_fx_prob):
-        assert len(res) == len(res)
+        assert len(res) == len(exp)
         pd.testing.assert_series_equal(res[0], exp[0])
         pd.testing.assert_series_equal(res[1], exp[1])
+
+
+@pytest.mark.parametrize('obs,fx_fx_prob,ref_fx_fx_prob,exp_df', [
+    (pd.Series([0.]*5),
+     [(pd.Series([1.]*5, name='25'), pd.Series([25.]*5, name='25')),
+      (pd.Series([2.]*5, name='50'), pd.Series([50.]*5, name='50')),
+      (pd.Series([3.]*5, name='75'), pd.Series([75.]*5, name='75'))],
+     [(pd.Series([4.]*5, name='25'), pd.Series([25.]*5, name='25')),
+      (pd.Series([5.]*5, name='50'), pd.Series([50.]*5, name='50')),
+      (pd.Series([6.]*5, name='75'), pd.Series([75.]*5, name='75'))],
+     pd.DataFrame({
+        (None, 'observation'): pd.Series([0.]*5),
+        ('25', 'forecast'): pd.Series([1.]*5),
+        ('25', 'probability'): pd.Series([25.]*5),
+        ('25', 'reference_forecast'): pd.Series([4.]*5),
+        ('25', 'reference_probability'): pd.Series([25.]*5),
+        ('50', 'forecast'): pd.Series([2.]*5),
+        ('50', 'probability'): pd.Series([50.]*5),
+        ('50', 'reference_forecast'): pd.Series([5.]*5),
+        ('50', 'reference_probability'): pd.Series([50.]*5),
+        ('75', 'forecast'): pd.Series([3.]*5),
+        ('75', 'probability'): pd.Series([75.]*5),
+        ('75', 'reference_forecast'): pd.Series([6.]*5),
+        ('75', 'reference_probability'): pd.Series([75.]*5)}))
+])
+def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
+    result = calculator._create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob)
+    pd.testing.assert_frame_equal(result, exp_df)

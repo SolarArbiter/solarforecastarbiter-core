@@ -11,6 +11,7 @@ Todo
 """
 import calendar
 import logging
+import copy
 
 import pandas as pd
 
@@ -56,12 +57,8 @@ def calculate_metrics(processed_pairs, categories, metrics,
     * Support event metrics and forecasts
     """
     calc_metrics = []
-    current_fx_id = -1
 
     for proc_fxobs in processed_pairs:
-        if proc_fxobs.original.forecast.forecast_id != current_fx_id:
-            fx_iter = 0
-            current_fx_id = proc_fxobs.original.forecast.forecast_id
 
         # determine type of metrics to calculate
         if isinstance(proc_fxobs.original.forecast,
@@ -89,8 +86,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
                              'for %s: %s',
                              proc_fxobs.name, e)
 
-        fx_iter += 1
-
     return calc_metrics
 
 
@@ -114,7 +109,7 @@ def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
         return metric_func(obs, fx, fx_prob,
                            kwargs['ref_fx'], kwargs['ref_fx_prob'])
     else:
-        return metric_func(obs, fx.to_numpy(), fx_prob.to_numpy())
+        return metric_func(obs, fx, fx_prob)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
@@ -251,8 +246,11 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
 
     Returns
     -------
-    datamodel.MetricsResult
-        Contains all the computed metrics by categories.
+    tuple of (list of datamodel.MetricsResult, datamodel.MetricsResult)
+        First value is a list of metric results calculated per
+        datamodel.ProbabilisticForecastConstantValue, and
+        the second value are the metrics calculated per
+        datamodel.ProbabilisticForecast.
 
     Raises
     ------
@@ -264,14 +262,15 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         do not match.
 
     """
-    out = {
-        'name': processed_fx_obs.name,
-    }
+    single_cv_results = []
+    dist_result = None
 
+    shared_dict = {'name': processed_fx_obs.name}
     try:
-        out['observation_id'] = processed_fx_obs.original.observation.observation_id  # NOQA
+        obs_dict = {'observation_id': processed_fx_obs.original.observation.observation_id}  # NOQA
     except AttributeError:
-        out['aggregate_id'] = processed_fx_obs.original.aggregate.aggregate_id
+        obs_dict = {'aggregate_id': processed_fx_obs.original.aggregate.aggregate_id}  # NOQA
+    shared_dict.update(obs_dict)
 
     # Determine forecast physical and probabiltity values by axis
     fx_fx_prob = _transform_prob_forecast_value_and_prob(processed_fx_obs)
@@ -284,7 +283,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
                                "required for desired metrics.")
 
         ref_fx_fx_prob = _transform_prob_forecast_value_and_prob(ref_fx_obs)
-        out['reference_forecast_id'] = ref_fx_obs.original.forecast.forecast_id
+        shared_dict.update({'reference_forecast_id': ref_fx_obs.original.forecast.forecast_id})  # NOQA
         if (not ref_fx_fx_prob or
                 any([rfx[0].empty or rfx[1].empty for rfx in ref_fx_fx_prob])):
             raise RuntimeError("Missing reference probabilistic forecast "
@@ -308,75 +307,149 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
 
-    cv_metrics = []
-    cvs = processed_fx_obs.original.forecast.constant_values
-    # For each probabilistic forecast interval/CV
-    for comp, ref, cv in zip(fx_fx_prob, ref_fx_fx_prob, cvs):
-        (fx, fx_prob) = comp
-        (ref_fx, ref_fx_prob) = ref
+    # Separate metrics by type
+    single_metrics = list(set(metrics) - set(probabilistic._REQ_DIST))
+    dist_metrics = list(set(metrics) & set(probabilistic._REQ_DIST))
 
-        out['forecast_id'] = cv.forecast_id
-        metric_vals = []
+    # Single (per ProbabilisticForecastConstantValue) forecast metrics
+    if single_metrics:
+        cvs = processed_fx_obs.original.forecast.constant_values
+        for orig, ref, cv in zip(fx_fx_prob, ref_fx_fx_prob, cvs):
+            single_out = copy.deepcopy(shared_dict)
+            single_out['forecast_id'] = cv.forecast_id
+            results = _calculate_probabilistic_metrics_from_df(
+                _create_prob_dataframe(obs, [orig], [ref]),
+                categories, single_metrics, cv.interval_label)
+            single_out['values'] = tuple(results)
+            single_cv_results.append(datamodel.MetricResult.from_dict(
+                single_out))
 
-        # Dataframe for grouping
-        df = pd.concat({'forecast': fx,
-                        'forecast_probability': fx_prob,
-                        'observation': obs,
-                        'reference': ref_fx,
-                        'reference_probability': ref_fx_prob}, axis=1)
+    # Distribution (per ProbabilisticForecast) forecast metrics
+    if dist_metrics:
+        dist_out = copy.deepcopy(shared_dict)
+        dist_out['forecast_id'] = processed_fx_obs.original.forecast.forecast_id  # NOQA
+        dist_out['values'] = _calculate_probabilistic_metrics_from_df(
+            _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob),
+            categories,
+            dist_metrics,
+            processed_fx_obs.original.forecast.interval_label)
+        dist_result = datamodel.MetricResult.from_dict(dist_out)
 
-        # Force `groupby` to be consistent with `interval_label`, i.e., if
-        # `interval_label == ending`, then the last interval should be in the
-        # bin
-        if processed_fx_obs.interval_label == "ending":
-            df.index -= pd.Timedelta("1ns")
+    return (single_cv_results, dist_result)
 
-        # Calculate metrics
-        for category in set(categories):
-            # total (special category)
-            if category == 'total':
-                index_category = lambda x: 0  # NOQA
-            else:
-                index_category = getattr(df.index, category)
 
-            # Calculate each metric
-            for metric_ in set(metrics):
-                # Group by category
-                for cat, group in df.groupby(index_category):
+def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
+                                             interval_label):
+    """
+    Calculate probabilistic metrics for the processed data using the provided
+    categories and metric types.
 
-                    try:
-                        ref_fx_vals = group.reference
-                        ref_fx_prob_vals = group.reference_probability
-                    except AttributeError:
-                        ref_fx_vals = None
-                        ref_fx_prob_vals = None
+    Parameters
+    ----------
+    data_df : pandas.DataFrame
+        DataFrame that contains all timeseries values on the same index.
+    categories : list of str
+        List of categories to compute metrics over.
+    metrics : list of str
+        List of metrics to be computed.
+    interval_label : str
 
-                    if metric_ in probabilistic._REQ_2DFX:
-                        fx_vals = pd.concat([x[0] for x in fx_fx_prob], axis=1)
-                        fx_prob_vals = pd.concat([x[1] for x in fx_fx_prob], axis=1) # NOQA
-                    else:
-                        fx_vals = group.forecast
-                        fx_prob_vals = group.forecast_probability
+    Returns
+    -------
+    list of tuples of datamodel.MetricValue
+        Contains all the computed metrics by categories. Each tuple is
+        associated with a datamodel.ProbabilisticForecastConstantValue.
 
-                    # Calculate
-                    res = _apply_probabilistic_metric_func(
-                        metric_, fx_vals, fx_prob_vals, group.observation,
-                        ref_fx=ref_fx_vals, ref_fx_prob=ref_fx_prob_vals)
+    """
+    metric_values = []
 
-                    # Change category label of the group from numbers
-                    # to e.g. January or Monday
-                    if category == 'month':
-                        cat = calendar.month_abbr[cat]
-                    elif category == 'weekday':
-                        cat = calendar.day_abbr[cat]
+    # Force `groupby` to be consistent with `interval_label`, i.e., if
+    # `interval_label == ending`, then the last interval should be in the
+    # bin
+    if interval_label == "ending":
+        data_df.index -= pd.Timedelta("1ns")
 
-                    metric_vals.append(datamodel.MetricValue(
-                        category, metric_, str(cat), res))
+    # Calculate metrics
+    for category in set(categories):
+        # total (special category)
+        if category == 'total':
+            index_category = lambda x: 0  # NOQA
+        else:
+            index_category = getattr(data_df.index, category)
 
-        out['values'] = tuple(metric_vals)
-        cv_metrics.append(datamodel.MetricResult.from_dict(out))
+        # Calculate each metric
+        for metric_ in set(metrics):
+            # Group by category
+            for cat, group in data_df.groupby(index_category):
 
-    return cv_metrics
+                try:
+                    ref_fx_vals = group.xs('reference_forecast', level=1, axis=1).to_numpy()  # NOQA
+                    ref_fx_prob_vals = group.xs('reference_probability', level=1, axis=1).to_numpy()  # NOQA
+                    if ref_fx_vals.size == ref_fx_vals.shape[0]:
+                        ref_fx_vals = ref_fx_vals.T[0]
+                        ref_fx_prob_vals = ref_fx_prob_vals.T[0]
+                except KeyError:
+                    ref_fx_vals = None
+                    ref_fx_prob_vals = None
+
+                fx_vals = group.xs('forecast', level=1, axis=1).to_numpy()
+                fx_prob_vals = group.xs('probability', level=1, axis=1).to_numpy()  # NOQA
+                if fx_vals.size == fx_vals.shape[0]:
+                    fx_vals = fx_vals.T[0]
+                    fx_prob_vals = fx_prob_vals.T[0]
+                obs_vals = group[(None, 'observation')].to_numpy()
+
+                # Calculate
+                res = _apply_probabilistic_metric_func(
+                    metric_, fx_vals, fx_prob_vals, obs_vals,
+                    ref_fx=ref_fx_vals, ref_fx_prob=ref_fx_prob_vals)
+
+                # Change category label of the group from numbers
+                # to e.g. January or Monday
+                if category == 'month':
+                    cat = calendar.month_abbr[cat]
+                elif category == 'weekday':
+                    cat = calendar.day_abbr[cat]
+
+                metric_values.append(datamodel.MetricValue(
+                    category, metric_, str(cat), res))
+
+    return metric_values
+
+
+def _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob):
+    """
+    Creates a DataFrame for grouping for the probabilistic forecasts.
+
+    Parameters
+    ----------
+    obs : pandas.Series
+    fx_fx_prob : list of tuple of pandas.Series
+    ref_fx_fx_prob : list of tuple of pandas.Series
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame combining all data with column names being tuples of
+        constant_value and one of 'observation', 'forecast', 'probability',
+        'reference_forecast' or 'reference_probability'. For 'observation' the
+        constant_value is None.
+
+    """
+    data_dict = {(None, 'observation'): obs}
+
+    for orig, ref in zip(fx_fx_prob, ref_fx_fx_prob):
+        fx, fx_prob = orig
+        ref_fx, ref_fx_prob = ref
+        data_dict[(fx.name, 'forecast')] = fx
+        data_dict[(fx_prob.name, 'probability')] = fx_prob
+        try:
+            data_dict[(ref_fx.name, 'reference_forecast')] = ref_fx
+            data_dict[(ref_fx_prob.name, 'reference_probability')] = ref_fx_prob  # NOQA
+        except AttributeError:
+            pass
+
+    return pd.DataFrame(data_dict)
 
 
 def _transform_prob_forecast_value_and_prob(proc_fx_obs):
@@ -391,7 +464,7 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
     Returns
     -------
     fx_fx_prob : list of tuples of (n,) array_like
-        Forecast physical values.
+        Forecast physical values and forecast probabilities.
     """
     fx_fx_prob = []
     df = proc_fx_obs.forecast_values
@@ -399,9 +472,11 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
     for col in proc_fx_obs.forecast_values.columns:
         if proc_fx_obs.original.forecast.axis == 'x':
             fx_prob = df[col]
-            fx = pd.Series([float(col)]*fx_prob.size, index=fx_prob.index)
+            fx = pd.Series([float(col)]*fx_prob.size, index=fx_prob.index,
+                           name=col)
         else:  # 'y'
             fx = df[col]
-            fx_prob = pd.Series([float(col)]*fx.size, index=fx.index)
+            fx_prob = pd.Series([float(col)]*fx.size, index=fx.index,
+                                name=col)
         fx_fx_prob.append((fx, fx_prob))
     return fx_fx_prob
