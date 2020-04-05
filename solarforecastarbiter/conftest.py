@@ -526,6 +526,26 @@ def ac_power_observation_metadata(powerplant_metadata):
     return ac_power_meta
 
 
+@pytest.fixture(scope='module')
+def dc_power_observation_metadata(powerplant_metadata):
+    dc_power_meta = datamodel.Observation(
+        name='Albuquerque Baseline DC Power', variable='dc_power',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+    return dc_power_meta
+
+
+@pytest.fixture(scope='module')
+def wind_speed_observation_metadata(powerplant_metadata):
+    wind_speed_meta = datamodel.Observation(
+        name='Albuquerque Baseline Wind Speed', variable='wind_speed',
+        interval_value_type='instantaneous',
+        interval_length=pd.Timedelta('5min'),
+        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+    return wind_speed_meta
+
+
 @pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
 def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
@@ -601,6 +621,38 @@ def ac_power_forecast_metadata(site_metadata):
         site=site_metadata
     )
     return ac_power_fx_meta
+
+
+@pytest.fixture(scope='module')
+def dc_power_forecast_metadata(site_metadata):
+    dc_power_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline DC Power forecast 1',
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h'),
+        interval_label='beginning',
+        interval_value_type='mean',
+        variable='dc_power',
+        site=site_metadata
+    )
+    return dc_power_fx_meta
+
+
+@pytest.fixture(scope='module')
+def wind_speed_forecast_metadata(site_metadata):
+    wind_speed_fx_meta = datamodel.Forecast(
+        name='Albuquerque Baseline Wind Speed forecast 1',
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('12h'),
+        interval_label='beginning',
+        interval_value_type='mean',
+        variable='wind_speed',
+        site=site_metadata
+    )
+    return wind_speed_fx_meta
 
 
 @pytest.fixture(scope='module', params=['instant', 'beginning', 'ending'])
@@ -1180,6 +1232,27 @@ def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
 
 
 @pytest.fixture()
+def single_forecast_ac_observation(
+        ac_power_forecast_metadata, ac_power_observation_metadata):
+    return datamodel.ForecastObservation(
+        ac_power_forecast_metadata, ac_power_observation_metadata)
+
+
+@pytest.fixture()
+def single_forecast_dc_observation(
+        dc_power_forecast_metadata, dc_power_observation_metadata):
+    return datamodel.ForecastObservation(
+        dc_power_forecast_metadata, dc_power_observation_metadata)
+
+
+@pytest.fixture()
+def single_forecast_wind_speed_observation(
+        wind_speed_forecast_metadata, wind_speed_observation_metadata):
+    return datamodel.ForecastObservation(
+        wind_speed_forecast_metadata, wind_speed_observation_metadata)
+
+
+@pytest.fixture()
 def single_forecast_aggregate(aggregate, single_site):
     forecast_agg = datamodel.Forecast(
         name="GHI Aggregate FX 60",
@@ -1564,17 +1637,18 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             observation_values=ser(ilagg) if with_series else agg.aggregate_id
         )
         figs = datamodel.RawReportPlots(
-            '1.4.0', '<script></script', (
-                datamodel.ReportFigure.from_dict(
+            (
+                datamodel.PlotlyReportFigure.from_dict(
                     {
                         'name': 'mae tucson ghi',
-                        'div': '<div></div>',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
                         'svg': '<svg></svg>',
-                        'figure_type': 'plot?',
+                        'figure_type': 'bar',
                         'category': 'total',
-                        'metric': 'mae'
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
                     }
-                ),)
+                ),), '4.5.3',
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -1926,20 +2000,39 @@ def report_metadata_dict():
 
 
 @pytest.fixture
-def report_figure_dict():
+def plotly_report_figure_dict():
     return {
         'name': 'mae tucson ghi',
-        'div': '<div></div>',
+        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
         'svg': '<svg></svg>',
-        'figure_type': 'plot?',
+        'figure_type': 'bar',
         'category': 'total',
-        'metric': 'mae'
+        'metric': 'mae',
+        'figure_class': 'plotly',
     }
 
 
 @pytest.fixture
-def report_figure(report_figure_dict):
-    return datamodel.ReportFigure.from_dict(report_figure_dict)
+def bokeh_report_figure_dict():
+    return{
+        'name': 'mae tucson ghi',
+        'div': '<div></div>',
+        'svg': '<svg></svg>',
+        'figure_type': 'bar',
+        'category': 'total',
+        'metric': 'mae',
+        'figure_class': 'bokeh',
+    }
+
+
+@pytest.fixture
+def plotly_report_figure(plotly_report_figure_dict):
+    return datamodel.PlotlyReportFigure.from_dict(plotly_report_figure_dict)
+
+
+@pytest.fixture
+def bokeh_report_figure(bokeh_report_figure_dict):
+    return datamodel.BokehReportFigure.from_dict(bokeh_report_figure_dict)
 
 
 @pytest.fixture

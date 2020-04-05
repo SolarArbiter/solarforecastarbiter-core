@@ -6,11 +6,35 @@ import logging
 
 from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
+from plotly import __version__ as plotly_version
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.reports import figures
+from solarforecastarbiter.reports.figures import plotly_figures
 
 
 logger = logging.getLogger(__name__)
+
+
+def build_metrics_json(report):
+    """Creates a dict from the metrics results in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The json representing the report metrics. The string will be a string
+        representing an empty json array if the report does not have a
+        computed raw_report.
+    """
+    if getattr(report, 'raw_report') is not None:
+        df = plotly_figures.construct_metrics_dataframe(
+            report.raw_report.metrics,
+            rename=plotly_figures.abbreviate)
+        return df.to_json(orient="records")
+    else:
+        return "[]"
 
 
 def _get_render_kwargs(report, dash_url, with_timeseries):
@@ -39,25 +63,25 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
-        # get bokeh version used when plots were generated.
-        # if plot generation failed, fallback to the curent version
-        bokeh_version=getattr(
-            getattr(report.raw_report, 'plots', None),
-            'bokeh_version', bokeh_version)
+        metrics_json=build_metrics_json(report),
     )
+    report_plots = getattr(report.raw_report, 'plots', None)
+    # get plotting library versions used when plots were generated.
+    # if plot generation failed, fallback to the curent version
+    plot_bokeh = getattr(report_plots, 'bokeh_version', None)
+    kwargs['bokeh_version'] = plot_bokeh if plot_bokeh else bokeh_version
+
+    plot_plotly = getattr(report_plots, 'plotly_version', None)
+    kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
     if with_timeseries:
         try:
-            script, div = figures.timeseries_plots(report)
+            timeseries_specs = plotly_figures.timeseries_plots(report)
         except Exception:
             logger.exception(
-                'Failed to make Bokeh items for timeseries and scatterplot')
-            script = ''
-            div = """<div class="alert alert-warning">
-  <strong>Warning</strong> Failed to make timeseries and scatter plots
-  from stored data.
-</div>"""
-        kwargs['timeseries_script'] = script
-        kwargs['timeseries_div'] = div
+                'Failed to make Plotly items for timeseries and scatterplot')
+            timeseries_specs = ('{}', '{}')
+        kwargs['timeseries_spec'] = timeseries_specs[0]
+        kwargs['scatter_spec'] = timeseries_specs[1]
     return kwargs
 
 

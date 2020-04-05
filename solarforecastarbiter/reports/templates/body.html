@@ -66,7 +66,7 @@
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
 {% include "obsfx_table.html" %}
 
-{% if timeseries_script is defined %}
+{% if timeseries_spec is defined %}
 <p>The plots below show the realigned and resampled time series of
 observation and forecast data as well as a scatter plot of forecast vs
 observation data.</p>
@@ -74,8 +74,17 @@ observation data.</p>
 <p>Controls to pan, zoom, and save the plot are shown on the
 right. Clicking on an item in the legend will hide/show it.</p>
 
-{{ timeseries_div | safe }}
-{{ timeseries_script | safe}}
+<div id="timeseries-div"></div>
+<div id="scatter-div"></div>
+
+<script>
+ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
+Object.assign(ts_plot,{config: {responsive: true}});
+Plotly.newPlot("timeseries-div", ts_plot);
+scat_plot = JSON.parse('{{ scatter_spec | safe }}');
+Object.assign(scat_plot,{config: {responsive: true}});
+Plotly.newPlot("scatter-div", scat_plot);
+</script>
 {% endif %}
 {% endblock %}
 
@@ -134,6 +143,7 @@ generate a new report after the data provider submits new data.
 
 {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
 
+<script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">
 {% for category in report.report_parameters.categories %}
 <h3 id="{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</h3>
@@ -144,13 +154,17 @@ generate a new report after the data provider submits new data.
   {% for metric in report.report_parameters.metrics %}
     {% for rep_fig in report.raw_report.plots.figures %}
       {% if rep_fig.category == category and rep_fig.metric == metric %}
-<div class="metric-block" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">{{ rep_fig.div | safe }}</div>
+      {% set plot_id = (category+'_'+metric+'_'+rep_fig.name) | replace('^', '-') | replace(' ', '_') %}
+    <div class="metric-block" id="{{ plot_id }}" data-category="{{ rep_fig.category }}" data-metric="{{ rep_fig.metric }}" data-forecast="{{ rep_fig.name }}">
+        <script>plot=JSON.parse('{{ rep_fig.spec | safe }}');
+                Object.assign(plot,{config: {responsive: true}});
+                metric_plots['{{plot_id}}'] = plot;</script></div>
       {% endif %}
     {% endfor %}
   {% endfor %}
 {% endfor %}
 </div>
-{{ report.raw_report.plots.script | safe }}
+{% include "load_metrics.html" %}
 {{ macros.download_csv_script () | safe }}
 {% endblock %}
 

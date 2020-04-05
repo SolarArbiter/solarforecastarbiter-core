@@ -306,16 +306,13 @@ def test_calculate_deterministic_metrics_normalizer(
         create_processed_fxobs, single_forecast_observation):
     pair = create_processed_fxobs(single_forecast_observation,
                                   np.random.randn(10), np.random.randn(10))
-    s0 = calculator.calculate_deterministic_metrics(
-        pair, ['total'], deterministic._REQ_NORM, normalizer=1.0)
-    s1 = calculator.calculate_deterministic_metrics(
-        pair, ['total'], deterministic._REQ_NORM, normalizer=1.0)
-    s2 = calculator.calculate_deterministic_metrics(
-        pair, ['total'], deterministic._REQ_NORM, normalizer=2.0)
-    for s in [s0, s1, s2]:
-        assert isinstance(s, datamodel.MetricResult)
-    assert s0 == s1
-    assert s1 != s2
+    s_normed = calculator.calculate_deterministic_metrics(
+        pair, ['total'], deterministic._REQ_NORM)
+    unnormed = [x.lstrip('n') for x in deterministic._REQ_NORM]
+    s_unnormed = calculator.calculate_deterministic_metrics(
+        pair, ['total'], unnormed)
+    for v_normed, v_unnormed in zip(s_normed.values, s_unnormed.values):
+        assert v_normed.value == v_unnormed.value * 100
 
 
 def test_calculate_deterministic_metrics_reference(
@@ -709,8 +706,8 @@ def test_calculate_probabilistic_metrics_from_df(categories, df, metrics,
     ('r^2', [3, 2, 1], [1, 2, 3], None, None, -3.0),
     ('crmse', [1, 1, 1], [0, 1, 2], None, None, np.sqrt(2/3))
 ])
-def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
-                                         create_dt_index):
+def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm,
+                                         expect):
     fx_series = np.array(fx)
     obs_series = np.array(obs)
     # Check require reference forecast kwarg
@@ -735,7 +732,7 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm, expect,
                     metric, fx_series, obs_series)
         else:
             metric_value = calculator._apply_deterministic_metric_func(
-                metric, fx_series, obs_series, normalizer=norm)
+                metric, fx_series, obs_series, normalization=norm)
             np.testing.assert_approx_equal(metric_value, expect)
 
     # Does not require kwarg

@@ -519,20 +519,36 @@ Functions to compute the report.
 Figures
 -------
 
-Functions to generate report figures
+Functions for generating Plotly report metric figures.
 
 .. autosummary::
    :toctree: generated/
 
-   reports.figures.construct_timeseries_cds
-   reports.figures.construct_metrics_cds
-   reports.figures.timeseries
-   reports.figures.scatter
-   reports.figures.bar
-   reports.figures.bar_subdivisions
-   reports.figures.output_svg
-   reports.figures.raw_report_plots
-   reports.figures.timeseries_plots
+   reports.figures.plotly_figures.construct_metrics_dataframe
+   reports.figures.plotly_figures.construct_timeseries_dataframe
+   reports.figures.plotly_figures.bar
+   reports.figures.plotly_figures.bar_subdivisions
+   reports.figures.plotly_figures.output_svg
+   reports.figures.plotly_figures.raw_report_plots
+   reports.figures.plotly_figures.timeseries_plots
+   reports.figures.plotly_figures.timeseries
+   reports.figures.plotly_figures.scatter
+
+
+Functions for generating Bokeh plots.
+
+.. autosummary::
+   :toctree: generated/
+
+   reports.figures.bokeh_figures.construct_timeseries_cds
+   reports.figures.bokeh_figures.construct_metrics_cds
+   reports.figures.bokeh_figures.timeseries
+   reports.figures.bokeh_figures.scatter
+   reports.figures.bokeh_figures.bar
+   reports.figures.bokeh_figures.bar_subdivisions
+   reports.figures.bokeh_figures.output_svg
+   reports.figures.bokeh_figures.raw_report_plots
+   reports.figures.bokeh_figures.timeseries_plots
 
 Template
 --------
@@ -587,10 +603,10 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_dni
    validation.tasks.validate_dhi
    validation.tasks.validate_poa_global
+   validation.tasks.validate_defaults
    validation.tasks.validate_air_temperature
    validation.tasks.validate_wind_speed
    validation.tasks.validate_relative_humidity
-   validation.tasks.validate_timestamp
    validation.tasks.validate_daily_ghi
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power

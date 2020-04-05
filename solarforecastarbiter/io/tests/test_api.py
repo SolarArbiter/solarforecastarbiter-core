@@ -934,6 +934,60 @@ def test_apisession_get_user_info(requests_mock):
     assert out['test'] == 'key'
 
 
+time_range_params = pytest.mark.parametrize('mint,maxt,expected', [
+    ('"2020-03-03T11:34:23+00:00"', '"2020-03-04T13:00:00+00:00"',
+     (pd.Timestamp(year=2020, month=3, day=3, hour=11, minute=34, second=23,
+                   tz='UTC'),
+      pd.Timestamp(year=2020, month=3, day=4, hour=13, tz='UTC'))),
+    ('null', 'null', (pd.NaT, pd.NaT)),
+    ('"2020-03-03T11:34:23"', '"2020-03-04T13:00:00+00:00"',
+     (pd.Timestamp(year=2020, month=3, day=3, hour=11, minute=34, second=23,
+                   tz='UTC'),
+      pd.Timestamp(year=2020, month=3, day=4, hour=13, tz='UTC'))),
+    ('"2020-03-03T11:00:00+00:00"', '"2020-03-11T23:01:00"',
+     (pd.Timestamp(year=2020, month=3, day=3, hour=11, tz='UTC'),
+      pd.Timestamp(year=2020, month=3, day=11, hour=23, minute=1,
+                   tz='UTC')))
+])
+
+
+@time_range_params
+def test_get_observation_time_range(requests_mock, mint, maxt, expected):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/timerange',
+        content=(
+            '{"observation_id": "obsid", "min_timestamp": '
+            f'{mint}, "max_timestamp": {maxt}' + '}').encode())
+    out = session.get_observation_time_range('obsid')
+    assert out == expected
+
+
+@time_range_params
+def test_get_cdf_forecast_time_range(requests_mock, mint, maxt, expected):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET',
+        f'{session.base_url}/forecasts/cdf/single/fxid/values/timerange',
+        content=(
+            '{"forecast_id": "fxid", "min_timestamp": '
+            f'{mint}, "max_timestamp": {maxt}' + '}').encode())
+    out = session.get_probabilistic_forecast_constant_value_time_range('fxid')
+    assert out == expected
+
+
+@time_range_params
+def test_get_forecast_time_range(requests_mock, mint, maxt, expected):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/forecasts/single/fxid/values/timerange',
+        content=(
+            '{"forecast_id": "fxid", "min_timestamp": '
+            f'{mint}, "max_timestamp": {maxt}' + '}').encode())
+    out = session.get_forecast_time_range('fxid')
+    assert out == expected
+
+
 @pytest.fixture(scope='session')
 def auth_token():
     try:
@@ -1240,3 +1294,27 @@ def test_real_apisession_get_aggregate_values(real_session):
 def test_real_apisession_get_user_info(real_session):
     user_info = real_session.get_user_info()
     assert user_info['organization'] == 'Organization 1'
+
+
+def test_real_apisession_get_observation_time_range(real_session):
+    out = real_session.get_observation_time_range(
+        '123e4567-e89b-12d3-a456-426655440000')
+    assert out == (
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-17T06:55:00Z'))
+
+
+def test_real_apisession_get_forecast_time_range(real_session):
+    out = real_session.get_forecast_time_range(
+        'f8dd49fa-23e2-48a0-862b-ba0af6dec276')
+    assert out == (
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-17T06:59:00Z'))
+
+
+def test_real_apisession_get_cdf_forecast_time_range(real_session):
+    out = real_session.get_probabilistic_forecast_constant_value_time_range(
+        '633f9b2a-50bb-11e9-8647-d663bd873d93')
+    assert out == (
+        pd.Timestamp('2019-04-14T00:00:00Z'),
+        pd.Timestamp('2019-04-17T06:55:00Z'))

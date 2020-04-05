@@ -8,9 +8,13 @@ This is the fifth 1.0 beta release.
 
 API Changes
 ~~~~~~~~~~~
-* :py:func:`solarforecastarbiter.reports.figures.output_svg` now takes a
-  :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an optional
-  argument (:pull:`345`)
+* Added :py:mod:`solarforecastarbiter.reports.figures` which contains modules
+  for creating Bokeh and Plotly report figures.
+* Added :py:mod:`solarforecastarbiter.reports.figures.plotly_figures` to create
+  report figures using plotly (:pull:`359`)
+* :py:func:`solarforecastarbiter.reports.figures.bokeh_figures.output_svg`
+  now takes a :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an
+  optional argument (:pull:`345`)
 * Add metrics for deterministic event forecasts
   :py:func:`solarforecastarbiter.metrics.event.probability_of_detection`,
   :py:func:`solarforecastarbiter.metrics.event.false_alarm_ratio`,
@@ -18,6 +22,22 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.event.critical_success_index`,
   :py:func:`solarforecastarbiter.metrics.event.event_bias`, and
   :py:func:`solarforecastarbiter.metrics.event.event_accuracy`. (:issue:`347`) (:pull:`348`)
+* Add functions to get the time range of values available in the API:
+  :py:func:`solarforecastarbiter.io.api.get_observation_time_range`,
+  :py:func:`solarforecastarbiter.io.api.get_forecast_time_range`,
+  :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_constant_value_time_range`.
+  (:pull:`369`)
+* Start and end are now optional parameters for the
+  `solararbiter referencedata update` CLI command (:pull:`369`)
+* :py:func:`solarforecastarbiter.vavlidation.tasks.validate_timestamp` has been
+  replaced with
+  :py:func:`solarforecastarbiter.vavlidation.tasks.validate_defaults` which
+  also adds a nighttime flag (:pull:`382`)
+* Removed ``normalizer`` keyword argument from
+  :py:func:`solarforecastarbiter.metrics.calculate_metrics` and
+  :py:func:`solarforecastarbiter.metrics.calculate_deterministic_metrics`.
+  Normalization is now determined by the attributes of the datamodel objects.
+  (:pull:`379`)
 * Added support for probabilistic forecasts with
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modifications and
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_probabilistic_metrics` addition. (:issue:`315`) (:issue:`266`) (:pull:`367`)
@@ -27,8 +47,26 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
+* Report plots are now created using Plotly. Bokeh figure generation moved to
+  :py:mod:`solarforecastarbiter.reports.figures.bokeh_figures` for users
+  still interested in bokeh figures.(:pull:`359`)
+* Report timeseries plots no longer draw lines over missing data points
+  (:issue:`351`).
+* Double clicking a forecast or observation in the legend of report timeseries
+  plots will toggle the display of all other timeseries. (:issue:`253`)
 * Clean up any PhantomJS drivers created to render SVGs (:issue:`344`)
   (:pull:`349`)
+* Reference data updates can now proceed from the last value in the API
+  to avoid any artificial data gaps (:pull:`369`) (:issue:`353`)
+* GHI validation now includes checks on if a period is cloud-free and will be
+  flagged with CLEARSKY (:issue:`210`) (:pull:`382`)
+* All data validation now includes the generation of the NIGHTTIME flag
+  (:issue:`293`) (:pull:`382`)
+* Metrics automatically determine normalization based on Observation type.
+  AC power observations are normalized by AC capacity; DC power by DC
+  capacity. Normalized metrics set to ``nan`` for all other variables.
+  (:issue:`370`) (:pull:`379`)
+
 
 Bug fixes
 ~~~~~~~~~
