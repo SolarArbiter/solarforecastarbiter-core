@@ -101,9 +101,11 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
         _kw['error_fnc'] = partial(
             deterministic.error_deadband, deadband=deadband)
 
+    # ref is an arg, but seems cleaner to handle as a kwarg here
     if metric in deterministic._REQ_REF_FX:
         _kw['ref'] = kwargs['ref_fx']
 
+    # same arg/kwarg comment as for ref
     if metric in deterministic._REQ_NORM:
         _kw['norm'] = kwargs['normalization']
 
