@@ -10,6 +10,11 @@ def deadband_mask(obs, fx, deadband):
 
     .. math:: \\text{mask_i} = | fx_i - obs_i | <= deadband * | obs_i |
 
+    Floating point arithmetic makes the equality difficult to guarantee
+    so do not rely on it.
+
+    Equality
+
     Parameters
     ----------
     obs : (n,) array_like
@@ -24,7 +29,7 @@ def deadband_mask(obs, fx, deadband):
     mask : array_like
         1 if a point is within the deadband, 0 if not
     """
-    return np.isclose(fx, obs, atol=0, rtol=deadband)
+    return np.isclose(fx, obs, rtol=deadband)
 
 
 def error(obs, fx):
@@ -33,7 +38,7 @@ def error(obs, fx):
 
 
 def error_deadband(obs, fx, deadband):
-    """Error accounting for a deadband.
+    """Error fx - obs, accounting for a deadband.
 
     error = 0 for points where error <= deadband * obs
 
@@ -71,7 +76,8 @@ def mean_absolute(obs, fx, error_fnc=error):
     fx : (n,) array-like
         Forecasted values.
     error_fnc : function
-        First argument is obs, second argument is fx.
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -82,7 +88,7 @@ def mean_absolute(obs, fx, error_fnc=error):
     --------
     Standard MAE:
     >>> obs = np.array([1, 2, 3, 4])
-    >>> fx = np.array([2, 2.04, 1, 3.96])
+    >>> fx = np.array([2, 2.04, 2, 3.96])
     >>> mean_absolute(obs, fx)
     0.52
 
@@ -106,6 +112,9 @@ def mean_bias(obs, fx, error_fnc=error):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -130,6 +139,9 @@ def root_mean_square(obs, fx, error_fnc=error):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -155,6 +167,9 @@ def mean_absolute_percentage(obs, fx, error_fnc=error):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -179,6 +194,9 @@ def normalized_mean_absolute(obs, fx, norm, error_fnc=error):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -187,7 +205,7 @@ def normalized_mean_absolute(obs, fx, norm, error_fnc=error):
 
     """
 
-    return mean_absolute(obs, fx, error_fnc=error) / norm * 100.0
+    return mean_absolute(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
 def normalized_mean_bias(obs, fx, norm, error_fnc=error):
@@ -203,6 +221,9 @@ def normalized_mean_bias(obs, fx, norm, error_fnc=error):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -211,7 +232,7 @@ def normalized_mean_bias(obs, fx, norm, error_fnc=error):
 
     """
 
-    return mean_bias(obs, fx, error_fnc=error) / norm * 100.0
+    return mean_bias(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
 def normalized_root_mean_square(obs, fx, norm, error_fnc=error):
@@ -227,6 +248,9 @@ def normalized_root_mean_square(obs, fx, norm, error_fnc=error):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -235,7 +259,7 @@ def normalized_root_mean_square(obs, fx, norm, error_fnc=error):
 
     """
 
-    return root_mean_square(obs, fx, error_fnc=error) / norm * 100.0
+    return root_mean_square(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
 def forecast_skill(obs, fx, ref, error_fnc=error):
@@ -254,6 +278,9 @@ def forecast_skill(obs, fx, ref, error_fnc=error):
         Forecasted values.
     ref : (n,) array_like
         Reference forecast values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -263,8 +290,8 @@ def forecast_skill(obs, fx, ref, error_fnc=error):
 
     """
 
-    rmse_fx = root_mean_square(obs, fx, error_fnc=error)
-    rmse_ref = root_mean_square(obs, ref, error_fnc=error)
+    rmse_fx = root_mean_square(obs, fx, error_fnc=error_fnc)
+    rmse_ref = root_mean_square(obs, ref, error_fnc=error_fnc)
     return 1.0 - rmse_fx / rmse_ref
 
 
