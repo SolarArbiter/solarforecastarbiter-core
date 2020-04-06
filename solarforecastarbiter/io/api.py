@@ -5,7 +5,6 @@ import json
 import logging
 import requests
 from urllib3 import Retry
-import pandas as pd
 
 
 import pandas as pd

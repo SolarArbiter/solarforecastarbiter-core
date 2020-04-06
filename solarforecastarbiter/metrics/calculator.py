@@ -70,7 +70,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                     ref_fx_obs=ref_pair))
             except RuntimeError as e:
                 logger.error('Failed to calculate probabilistic metrics'
-                             'for %s: %s',
+                             ' for %s: %s',
                              proc_fxobs.name, e)
         else:
             try:
@@ -81,7 +81,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                     ref_fx_obs=ref_pair))
             except RuntimeError as e:
                 logger.error('Failed to calculate deterministic metrics'
-                             'for %s: %s',
+                             ' for %s: %s',
                              proc_fxobs.name, e)
 
     return calc_metrics

@@ -4,6 +4,8 @@ import pytest
 import itertools
 import calendar
 import datetime
+import re
+
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic,
@@ -142,11 +144,28 @@ def ref_fx_obs(create_processed_fxobs, many_forecast_observation):
     (LIST_OF_CATEGORIES, DET_NO_REF),
     (LIST_OF_CATEGORIES, DET_NO_REF_NO_NORM)
 ])
-def test_calculate_metrics_no_reference(categories, metrics, proc_fx_obs):
+def test_calculate_metrics_no_reference(categories, metrics, proc_fx_obs,
+                                        caplog):
     result = calculator.calculate_metrics(proc_fx_obs, categories, metrics)
     assert isinstance(result, list)
     assert isinstance(result[0], datamodel.MetricResult)
     assert len(result) == len(proc_fx_obs)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize('categories,metrics', [
+    (LIST_OF_CATEGORIES, deterministic._REQ_REF_FX)
+])
+def test_calculate_metrics_ref_metric_no_ref(categories, metrics, proc_fx_obs,
+                                             caplog):
+    result = calculator.calculate_metrics(
+        [proc_fx_obs[0]], categories, metrics)
+    assert len(result) == 0
+    assert "ERROR" == caplog.text[0:5]
+    failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
+    assert ("Failed to calculate deterministic metrics for "
+            f"{proc_fx_obs[0].name}: No reference forecast provided but it is "
+            "required for desired metrics.\n") == failure_log_text
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -237,10 +256,8 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_calculate_metrics_with_probablistic_no_ref(single_observation,
-                                                    prob_forecasts,
-                                                    create_processed_fxobs,
-                                                    create_dt_index,
-                                                    copy_prob_forecast_with_axis):  # NOQA
+    prob_forecasts, create_processed_fxobs, create_dt_index,
+    copy_prob_forecast_with_axis, caplog):  # NOQA
     const_values = [10, 20, 30]
     conv_prob_fx = copy_prob_forecast_with_axis(
         prob_forecasts, prob_forecasts.axis, constant_values=const_values)
@@ -254,6 +271,11 @@ def test_calculate_metrics_with_probablistic_no_ref(single_observation,
     result = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
                                           probabilistic._REQ_REF_FX)
     assert len(result) == 0
+    assert "ERROR" == caplog.text[0:5]
+    failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
+    assert ("Failed to calculate probabilistic metrics for "
+            f"{proc_prfx_obs.name}: No reference forecast provided but it is "
+            "required for desired metrics.\n") == failure_log_text
 
 
 def test_calculate_deterministic_metrics_no_metrics(ref_fx_obs):
@@ -455,13 +477,19 @@ def test_calculate_probabilistic_metrics_no_reference_data(
 
 
 def test_calculate_probabilistic_metrics_bad_reference_interval_label(
-        single_prob_forecast_observation, create_processed_fxobs):
+        single_prob_forecast_observation, create_processed_fxobs,
+        create_dt_index):
     proc_fxobs = create_processed_fxobs(single_prob_forecast_observation,
-                                        pd.DataFrame(np.random.randn(10, 3)),
-                                        pd.Series(np.random.randn(10)))
+                                        pd.DataFrame(np.random.randn(10, 3),
+                                                     index=create_dt_index(10)),  # NOQA
+                                        pd.Series(np.random.randn(10),
+                                                  index=create_dt_index(10)))
     proc_ref = create_processed_fxobs(single_prob_forecast_observation,
-                                      pd.DataFrame(np.random.randn(10, 3)),
-                                      pd.Series(np.random.randn(10)))
+                                      pd.DataFrame(np.random.randn(10, 3),
+                                                   index=create_dt_index(10)),
+                                      pd.Series(np.random.randn(10),
+                                                index=create_dt_index(10)))
+    proc_fxobs = proc_fxobs.replace(interval_label='beginning')
     proc_ref = proc_ref.replace(interval_label='ending')
     with pytest.raises(ValueError):
         calculator.calculate_probabilistic_metrics(
@@ -777,12 +805,8 @@ def test_apply_deterministic_bad_metric_func():
 def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
                                          ref_fx, ref_fx_prob, expect,
                                          create_dt_index):
-    if metric == 'crps':
-        fx_data = np.array(fx)
-        fx_prob_data = np.array(fx_prob)
-    else:
-        fx_data = np.array(fx)
-        fx_prob_data = np.array(fx_prob)
+    fx_data = np.array(fx)
+    fx_prob_data = np.array(fx_prob)
     obs_series = np.array(obs)
 
     # Check metrics that require reference forecast kwarg
