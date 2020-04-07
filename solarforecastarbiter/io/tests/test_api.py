@@ -1,6 +1,7 @@
 import json
 from random import randint
 import re
+import copy
 
 
 import numpy as np
@@ -172,6 +173,16 @@ def test_apisession_list_observations(requests_mock, many_observations,
     assert obs_list == many_observations
 
 
+def test_apisession_list_observation_single(requests_mock, single_observation,
+                                            single_observation_text,
+                                            mock_list_sites):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/observations/.*')
+    requests_mock.register_uri('GET', matcher, content=single_observation_text)
+    obs_list = session.list_observations()
+    assert obs_list == [single_observation]
+
+
 def test_apisession_list_observations_empty(requests_mock):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/observations/.*')
@@ -212,6 +223,16 @@ def test_apisession_list_forecasts(requests_mock, many_forecasts,
     requests_mock.register_uri('GET', matcher, content=many_forecasts_text)
     fx_list = session.list_forecasts()
     assert fx_list == many_forecasts
+
+
+def test_apisession_list_forecast_single(requests_mock, single_forecast,
+                                         single_forecast_text, mock_get_site,
+                                         mock_get_agg):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/.*')
+    requests_mock.register_uri('GET', matcher, content=single_forecast_text)
+    fx_list = session.list_forecasts()
+    assert fx_list == [single_forecast]
 
 
 def test_apisession_create_forecast(requests_mock, single_forecast,
@@ -281,6 +302,20 @@ def test_apisession_list_prob_forecasts(requests_mock, many_prob_forecasts,
         'GET', matcher, content=many_prob_forecasts_text)
     fx_list = session.list_probabilistic_forecasts()
     assert fx_list == many_prob_forecasts
+
+
+def test_apisession_list_prob_forecast_single(
+        requests_mock, prob_forecasts, prob_forecast_text, mock_list_sites,
+        mock_get_site, prob_forecast_constant_value_text, mock_get_agg):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/forecasts/cdf/single/.*')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_constant_value_text)
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/$')
+    requests_mock.register_uri(
+        'GET', matcher, content=prob_forecast_text)
+    fx_list = session.list_probabilistic_forecasts()
+    assert fx_list == [prob_forecasts]
 
 
 def test_apisession_list_prob_forecasts_empty(requests_mock):
@@ -502,6 +537,50 @@ def test_apisession_get_prob_forecast_constant_value_values(
     pdt.assert_series_equal(out, forecast_values)
 
 
+def _df_with_float64_columns(df):
+    df.columns = df.columns.astype(float)
+    return df
+
+
+@pytest.mark.parametrize('col_values', [['25', '50', '75'], [25., 50., 75.]])
+def test_apisession_get_prob_forecast_values(
+        requests_mock, mock_get_site, col_values,
+        prob_forecast_values, prob_forecast_values_text_list,
+        prob_forecast_text, prob_forecast_constant_value_text, fx_start_end):
+    session = api.APISession('')
+
+    # modify ProbabilisticForecast json text
+    probfx_json = json.loads(prob_forecast_text)
+    probfx_json['forecast_id'] = 'FXID'
+    probfx_json['axis'] = 'y'
+    cvs_json = json.loads(prob_forecast_constant_value_text)
+    cvs = []
+    for col in col_values:
+        new_cv = copy.deepcopy(cvs_json)
+        new_cv['constant_value'] = col
+        new_cv['forecast_id'] = 'CV' + str(int(col))
+        new_cv['axis'] = 'y'
+        cvs.append(new_cv)
+    probfx_json['constant_values'] = cvs
+
+    matcher = re.compile(session.base_url + r'/forecasts/cdf/[\w-]*$')
+    requests_mock.register_uri(
+        'GET', matcher, content=json.dumps(probfx_json).encode('utf-8'))
+    for cv in cvs:
+        id = cv['forecast_id']
+        cv = json.dumps(copy.deepcopy(cv))
+        requests_mock.register_uri(
+            'GET', f'/forecasts/cdf/single/{id}', content=cv.encode('utf-8'))
+    for cvv in prob_forecast_values_text_list:
+        id = json.loads(cvv)['forecast_id']
+        requests_mock.register_uri(
+            'GET', f'/forecasts/cdf/single/{id}/values', content=cvv)
+    out = session.get_probabilistic_forecast_values('', *fx_start_end)
+    if not isinstance(col_values[0], str):
+        prob_forecast_values = _df_with_float64_columns(prob_forecast_values)
+    pdt.assert_frame_equal(out, prob_forecast_values)
+
+
 @pytest.mark.parametrize('label,theslice', [
     (None, slice(0, 10)),
     ('beginning', slice(0, -1)),
@@ -558,16 +637,19 @@ def test_apisession_post_prob_forecast_constant_value_values(
 @pytest.mark.parametrize('match, meth', [
     ('observations', 'get_observation_values'),
     ('forecasts/single', 'get_forecast_values'),
+    ('forecasts/cdf', 'get_probabilistic_forecast_values'),
     ('forecasts/cdf/single',
      'get_probabilistic_forecast_constant_value_values'),
     ('aggregates', 'get_aggregate_values'),
 ])
 def test_apisession_get_values(
         requests_mock, mocker, single_observation, single_forecast,
-        prob_forecast_constant_value, aggregate, match, meth, fx_start_end):
+        prob_forecasts, prob_forecast_constant_value, aggregate, match, meth,
+        fx_start_end):
     objs = {
         'observations': single_observation,
         'forecasts/single': single_forecast,
+        'forecasts/cdf': prob_forecasts,
         'forecasts/cdf/single': prob_forecast_constant_value,
         'aggregates': aggregate
     }
@@ -636,6 +718,16 @@ def test_apisession_list_reports(requests_mock, report_text, report_objects,
     session = api.APISession('')
     requests_mock.register_uri('GET', f'{session.base_url}/reports',
                                content=b'['+report_text+b']')
+    out = session.list_reports()
+    expected = [report_objects[0]]
+    assert out == expected
+
+
+def test_apisession_list_reports_single(requests_mock, report_text,
+                                        report_objects, mock_request_fxobs):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports',
+                               content=report_text)
     out = session.list_reports()
     expected = [report_objects[0]]
     assert out == expected
@@ -781,6 +873,16 @@ def test_apisession_list_aggregates(requests_mock, aggregate_text, aggregate,
     requests_mock.register_uri(
         'GET', re.compile(f'{session.base_url}/aggregates/'),
         content=b'[' + aggregate_text + b']')
+    aggs = session.list_aggregates()
+    assert aggs[0] == aggregate
+
+
+def test_apisession_list_aggregates_single(requests_mock, aggregate_text,
+                                           aggregate, mockobs):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', re.compile(f'{session.base_url}/aggregates/'),
+        content=aggregate_text)
     aggs = session.list_aggregates()
     assert aggs[0] == aggregate
 

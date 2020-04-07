@@ -145,6 +145,126 @@ def forecast_values():
                                          name='timestamp')).tz_convert('UTC')
 
 
+@pytest.fixture()
+def prob_forecast_values_text_list():
+    return [b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "forecast_id": "CV25",
+  "values": [
+    {
+      "timestamp": "2019-01-01T06:00:00-0700",
+      "value": 0.0
+    },
+    {
+      "timestamp": "2019-01-01T07:00:00-0700",
+      "value": 1.0
+    },
+    {
+      "timestamp": "2019-01-01T08:00:00-0700",
+      "value": 2.0
+    },
+    {
+      "timestamp": "2019-01-01T09:00:00-0700",
+      "value": 3.0
+    },
+    {
+      "timestamp": "2019-01-01T10:00:00-0700",
+      "value": 4.0
+    },
+    {
+      "timestamp": "2019-01-01T11:00:00-0700",
+      "value": 5.0
+    }
+  ]
+}
+""",  # NOQA
+b"""
+{
+  "_links": {
+    "metadata": ""
+},
+  "forecast_id": "CV50",
+  "values": [
+    {
+    "timestamp": "2019-01-01T06:00:00-0700",
+    "value": 1.0
+    },
+    {
+    "timestamp": "2019-01-01T07:00:00-0700",
+    "value": 2.0
+    },
+    {
+    "timestamp": "2019-01-01T08:00:00-0700",
+    "value": 3.0
+    },
+    {
+    "timestamp": "2019-01-01T09:00:00-0700",
+    "value": 4.0
+    },
+    {
+    "timestamp": "2019-01-01T10:00:00-0700",
+    "value": 5.0
+    },
+    {
+    "timestamp": "2019-01-01T11:00:00-0700",
+    "value": 6.0
+    }
+  ]
+}
+""",  # NOQA
+b"""
+{
+  "_links": {
+    "metadata": ""
+},
+  "forecast_id": "CV75",
+  "values": [
+    {
+      "timestamp": "2019-01-01T06:00:00-0700",
+      "value": 2.0
+    },
+    {
+      "timestamp": "2019-01-01T07:00:00-0700",
+      "value": 3.0
+    },
+    {
+      "timestamp": "2019-01-01T08:00:00-0700",
+      "value": 4.0
+    },
+    {
+      "timestamp": "2019-01-01T09:00:00-0700",
+      "value": 5.0
+    },
+    {
+      "timestamp": "2019-01-01T10:00:00-0700",
+      "value": 6.0
+    },
+    {
+      "timestamp": "2019-01-01T11:00:00-0700",
+      "value": 7.0
+    }
+  ]
+}
+"""
+]
+
+
+@pytest.fixture()
+def prob_forecast_values():
+    return pd.DataFrame(
+        {'25': [0.0, 1, 2, 3, 4, 5],
+         '50': [1.0, 2, 3, 4, 5, 6],
+         '75': [2.0, 3, 4, 5, 6, 7]},
+        index=pd.date_range(start='20190101T0600',
+                            end='20190101T1100',
+                            freq='1h',
+                            tz='America/Denver',
+                            name='timestamp')).tz_convert('UTC')
+
+
 @pytest.fixture(scope='module')
 def site_metadata():
     """
@@ -1086,12 +1206,28 @@ def single_forecast_observation(single_forecast, single_observation):
 
 
 @pytest.fixture()
+def single_prob_forecast_observation(prob_forecasts, single_observation):
+    return datamodel.ForecastObservation(prob_forecasts, single_observation)
+
+
+@pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
     many_ghi_forecasts = [fx for fx in many_forecasts
                           if fx.variable == 'ghi']
     many_ghi_observations = [obs for obs in many_observations
                              if obs.variable == 'ghi']
     cart_prod = itertools.product(many_ghi_forecasts, many_ghi_observations)
+    return [datamodel.ForecastObservation(*c) for c in cart_prod]
+
+
+@pytest.fixture()
+def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
+    many_ghi_prob_forecasts = [pfx for pfx in many_prob_forecasts
+                               if pfx.variable == 'ghi' and pfx.axis == 'x']
+    many_ghi_observations = [obs for obs in many_observations
+                             if obs.variable == 'ghi']
+    cart_prod = itertools.product(many_ghi_prob_forecasts,
+                                  many_ghi_observations)
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
@@ -1128,6 +1264,27 @@ def single_forecast_aggregate(aggregate, single_site):
         interval_value_type="interval_mean",
         variable="ghi",
         site=single_site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        extra_parameters='',
+    )
+    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+
+
+@pytest.fixture()
+def single_prob_forecast_aggregate(aggregate, single_site,
+                                   agg_prob_forecast_constant_value):
+    forecast_agg = datamodel.ProbabilisticForecast(
+        name="GHI Aggregate FX 60",
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=single_site,
+        axis='x',
+        constant_values=[agg_prob_forecast_constant_value],
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
