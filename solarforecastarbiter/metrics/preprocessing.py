@@ -263,7 +263,8 @@ def process_forecast_observations(forecast_observations, filters, data,
                 preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values,
-                normalization_factor=fxobs.normalization
+                normalization_factor=fxobs.normalization,
+                uncertainty=fxobs.uncertainty
                 )
             processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())

@@ -25,11 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair=None, deadband=None):
+                      ref_pair=None):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
     Normalization is determined by the attributes of the input objects.
+
+    If ``processed_fx_obs.uncertainty`` is not ``None``, a deadband
+    equal to the uncertainty will be used by the metrics that support it.
 
     Parameters
     ----------
@@ -43,7 +46,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
         solarforecastarbiter.datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
-    deadband : None, float, or 'observation_uncertainty'
 
     Returns
     -------
@@ -67,15 +69,12 @@ def calculate_metrics(processed_pairs, categories, metrics,
             raise NotImplementedError
         else:
             # calculate_deterministic_metrics
-            if deadband == 'observation_uncertainty':
-                deadband = proc_fxobs.original.observation.uncertainty
             try:
                 metrics_ = calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
                     metrics,
-                    ref_fx_obs=ref_pair,
-                    deadband=deadband
+                    ref_fx_obs=ref_pair
                 )
             except RuntimeError as e:
                 logger.error('Failed to calculate metrics for %s: %s',
@@ -113,12 +112,15 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None, deadband=None):
+                                    ref_fx_obs=None):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
 
     Normalization is determined by the attributes of the input objects.
+
+    If ``processed_fx_obs.uncertainty`` is not ``None``, a deadband
+    equal to the uncertainty will be used by the metrics that support it.
 
     Parameters
     ----------
@@ -187,6 +189,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
     # get normalization factor
     normalization = processed_fx_obs.normalization_factor
+
+    # get uncertainty
+    deadband = processed_fx_obs.uncertainty
 
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin

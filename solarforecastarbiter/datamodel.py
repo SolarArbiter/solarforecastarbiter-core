@@ -917,6 +917,11 @@ class ForecastObservation(BaseModel):
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
     normalization: float or None
         If None, determined by __set_normalization__
+    uncertainty: None, float, or str
+        If None, uncertainty is not accounted for. Float specifies the
+        uncertainty as a percentage from 0 to 100%. If str, must be
+        'observation_uncertainty' to indicate that the value should be
+        set to ``observation.uncertainty``.
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
@@ -926,6 +931,7 @@ class ForecastObservation(BaseModel):
     # possible in future. maybe add pd.Series like for
     # ProcessedForecastObservation
     normalization: Union[float, None] = None
+    uncertainty: Union[None, float, str] = None
     # cost: Cost
     cost_per_unit_error: float = 0.0
     data_object: Observation = field(init=False)
@@ -933,6 +939,7 @@ class ForecastObservation(BaseModel):
     def __post_init__(self):
         if self.normalization is None:
             __set_normalization__(self)
+        __set_uncertainty__(self)
         object.__setattr__(self, 'data_object', self.observation)
         __check_units__(self.forecast, self.data_object)
         __check_interval_compatibility__(self.forecast, self.data_object)
@@ -958,6 +965,18 @@ def __set_aggregate_normalization__(self):
     # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/381
     norm = np.nan
     object.__setattr__(self, 'normalization', norm)
+
+
+def __set_uncertainty__(self):
+    if isinstance(self.uncertainty, str):
+        if self.uncertainty == 'observation_uncertainty':
+            object.__setattr__(
+                self, 'uncertainty', self.observation.uncertainty)
+        else:
+            # easy to mistype 'observation_uncertainty', so be helpful
+            raise ValueError(
+                ('Invalid uncertainty %s. uncertainty must be set to None, a '
+                 '"observation_uncertainty"') % self.uncertainty)
 
 
 @dataclass(frozen=True)
@@ -1172,6 +1191,9 @@ class ProcessedForecastObservation(BaseModel):
     validation_results: tuple of :py:class:`solarforecastarbiter.datamodel.ValidationResult`
     preprocessing_results: tuple of :py:class:`solarforecastarbiter.datamodel.PreprocessingResult`
     normalization_factor: pandas.Series or Float
+    uncertainty: None or float
+        If None, uncertainty is not accounted for. Float specifies the
+        uncertainty as a percentage from 0 to 100%.
     cost_per_unit_error: float
     """  # NOQA
     name: str
@@ -1190,6 +1212,7 @@ class ProcessedForecastObservation(BaseModel):
     # observed value per day. Hence, repeat here instead of
     # only in original
     normalization_factor: Union[pd.Series, float] = 1.0
+    uncertainty: Union[None, float] = None
     # For now only, a single $/unit error cost is allowed.
     # This is defined along with each ForecastObservation, but
     # in the future this might also be a series
