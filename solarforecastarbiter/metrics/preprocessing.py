@@ -96,23 +96,32 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     fx = fx_obs.forecast
     obs = fx_obs.data_object
 
-    # Resample observation, checking for invalid interval_length and that the
-    # Series has data:
-    if fx.interval_length > obs.interval_length and not obs_series.empty:
-        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-        obs_resampled = obs_series.resample(
-            fx.interval_length,
-            label=closed,
-            closed=closed
-        ).agg(["mean", "count"])
+    # Resample based on forecast type
+    if isinstance(fx, datamodel.EventForecast):            # event fx
+        # check that all values are boolean (fx and obs)
+        # check that at the same freq (fx and obs)
+        # raise errors otherwise
+        raise NotImplementedError
+    elif isinstance(fx, datamodel.ProbabilisticForecast):  # prob fx
+        raise NotImplementedError
+    else:                                                  # det fx
+        # Resample observation, checking for invalid interval_length and that
+        # the Series has data:
+        if fx.interval_length > obs.interval_length and not obs_series.empty:
+            closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+            obs_resampled = obs_series.resample(
+                fx.interval_length,
+                label=closed,
+                closed=closed
+            ).agg(["mean", "count"])
 
-        # Drop intervals if too many samples missing
-        count_threshold = int(fx.interval_length / obs.interval_length * 0.1)
-        obs_resampled = obs_resampled["mean"].where(
-            obs_resampled["count"] >= count_threshold
-        )
-    else:
-        obs_resampled = obs_series
+            # Drop intervals if too many samples missing
+            count_threshold = int(fx.interval_length / obs.interval_length * 0.1)
+            obs_resampled = obs_resampled["mean"].where(
+                obs_resampled["count"] >= count_threshold
+            )
+        else:
+            obs_resampled = obs_series
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
