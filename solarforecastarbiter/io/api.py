@@ -775,13 +775,15 @@ class APISession(requests.Session):
         for o in rep_params['object_pairs']:
             fx = self.get_forecast(o['forecast'])
             norm = o.get('normalization')
+            unc = o.get('uncertainty')
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
-                    fx, obs, normalization=norm)
+                    fx, obs, normalization=norm, uncertainty=unc)
             elif 'aggregate' in o:
                 agg = self.get_aggregate(o['aggregate'])
-                pair = datamodel.ForecastAggregate(fx, agg, normalization=norm)
+                pair = datamodel.ForecastAggregate(
+                    fx, agg, normalization=norm, uncertainty=unc)
             else:
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')

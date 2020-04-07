@@ -991,12 +991,16 @@ class ForecastAggregate(BaseModel):
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
     normalization: float or None
         If None, assigned 1.
+    uncertainty: None or float
+        If None, uncertainty is not accounted for. Float specifies the
+        uncertainty as a percentage from 0 to 100%.
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
     aggregate: Aggregate
     reference_forecast: Union[Forecast, None] = None
     normalization: Union[float, None] = None
+    uncertainty: Union[float, None] = None
     cost_per_unit_error: float = 0.0
     data_object: Aggregate = field(init=False)
 
