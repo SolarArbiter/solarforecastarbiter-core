@@ -352,6 +352,7 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast
    io.api.APISession.list_probabilistic_forecasts
    io.api.APISession.create_probabilistic_forecast
+   io.api.APISession.get_probabilistic_forecast_values
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
@@ -420,6 +421,7 @@ Entry points for calculating metrics for
 
    metrics.calculator.calculate_metrics
    metrics.calculator.calculate_deterministic_metrics
+   metrics.calculator.calculate_probabilistic_metrics
 
 Preprocessing
 -------------

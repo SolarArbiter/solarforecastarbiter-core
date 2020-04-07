@@ -199,6 +199,8 @@ class APISession(requests.Session):
         """
         req = self.get('/observations/')
         obs_dicts = req.json()
+        if isinstance(obs_dicts, dict):
+            obs_dicts = [obs_dicts]
         if len(obs_dicts) == 0:
             return []
         sites = {site.site_id: site for site in self.list_sites()}
@@ -271,6 +273,8 @@ class APISession(requests.Session):
         """
         req = self.get('/forecasts/single/')
         fx_dicts = req.json()
+        if isinstance(fx_dicts, dict):
+            fx_dicts = [fx_dicts]
         if len(fx_dicts) == 0:
             return []
         sites = {site.site_id: site for site in self.list_sites()}
@@ -340,6 +344,8 @@ class APISession(requests.Session):
         """
         req = self.get('/forecasts/cdf/')
         fx_dicts = req.json()
+        if isinstance(fx_dicts, dict):
+            fx_dicts = [fx_dicts]
         if len(fx_dicts) == 0:
             return []
         sites = {site.site_id: site for site in self.list_sites()}
@@ -621,6 +627,8 @@ class APISession(requests.Session):
         ----------
         forecast_id : string
             UUID of the forecast object
+        constant_value : string
+            The variable value or percentile.
         start : timelike object
             Start of the interval to retrieve values for
         end : timelike object
@@ -645,6 +653,45 @@ class APISession(requests.Session):
         out = json_payload_to_forecast_series(req.json())
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
+
+    @ensure_timestamps('start', 'end')
+    def get_probabilistic_forecast_values(
+            self, forecast_id, start, end, interval_label=None):
+        """
+        Get all probabilistic forecast values for each from start to end for
+        forecast_id
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object
+        start : timelike object
+            Start of the interval to retrieve values for
+        end : timelike object
+            End of the interval
+        interval_label : str or None
+            If beginning, ending, adjust the data to return only data that is
+            valid between start and end. If None or instant, return any data
+            between start and end inclusive of the endpoints.
+
+        Returns
+        -------
+        pandas.DataFrame
+           With the forecast values in each column with column names as the
+           constant value and a datetime index
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """
+        df_dict = {}
+        prob_fx = self.get_probabilistic_forecast(forecast_id)
+        for cv in prob_fx.constant_values:
+            df_dict[cv.constant_value] = self.get_probabilistic_forecast_constant_value_values(  # NOQA
+                forecast_id=cv.forecast_id, start=start, end=end,
+                interval_label=interval_label)
+        return pd.DataFrame(df_dict)
 
     def post_observation_values(self, observation_id, observation_df,
                                 params=None):
@@ -781,6 +828,8 @@ class APISession(requests.Session):
         """
         req = self.get('/reports')
         rep_dicts = req.json()
+        if isinstance(rep_dicts, dict):
+            rep_dicts = [rep_dicts]
         if len(rep_dicts) == 0:
             return []
         out = []
@@ -958,6 +1007,8 @@ class APISession(requests.Session):
         """
         req = self.get('/aggregates/')
         agg_dicts = req.json()
+        if isinstance(agg_dicts, dict):
+            agg_dicts = [agg_dicts]
         if len(agg_dicts) == 0:
             return []
         observations = {obs.observation_id: obs
@@ -1075,6 +1126,9 @@ class APISession(requests.Session):
         # order avoids possible issues with inheritance
         if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
             f = self.get_probabilistic_forecast_constant_value_values
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.ProbabilisticForecast):
+            f = self.get_probabilistic_forecast_values
             obj_id = obj.forecast_id
         elif isinstance(obj, datamodel.Forecast):
             f = self.get_forecast_values

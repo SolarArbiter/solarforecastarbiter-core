@@ -402,7 +402,7 @@ _MAP = {
     'rel': (reliability, 'REL'),
     'res': (resolution, 'RES'),
     'unc': (uncertainty, 'UNC'),
-    'sh': (sharpness, 'SH'),
+    # 'sh': (sharpness, 'SH'),  # TODO
     'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
 
@@ -413,3 +413,9 @@ _REQ_REF_FX = ['bss']
 
 # Functions that require normalized factor
 _REQ_NORM = []
+
+# Functions that require full distribution forecasts (as 2dim)
+_REQ_DIST = ['crps']
+
+# TODO: Functions that require two forecasts (e.g., sharpness)
+# _REQ_FX_FX = ['sh']
