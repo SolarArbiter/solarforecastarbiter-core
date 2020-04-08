@@ -392,7 +392,7 @@ def _daily_validation(session, observation, start, end, base_url):
                 observation.name, start, end)
     observation_values = session.get_observation_values(
         observation.observation_id, start, end)
-    value_series = observation_values['value']
+    value_series = observation_values['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
             'Data series does not have at least 10 datapoints to validate')
