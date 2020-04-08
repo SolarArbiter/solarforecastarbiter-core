@@ -22,7 +22,7 @@ def deadband_mask(obs, fx, deadband):
     fx : (n,) array_like
         Forecasted values.
     deadband : float
-        Fractional tolerance
+        Fractional tolerance relative to the observed values.
 
     Returns
     -------
