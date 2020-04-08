@@ -77,6 +77,9 @@ Bug fixes
   (:pull:`345`)
 * Fix bug with APISession list functions when only a single value is available.
   (:pull:`367`)
+* Fix type errors in observation validation by ensuring all values from
+  :py:mod:`solarforecastaribter.io.api` functions are coerced to float
+  and converting to float before validation (:issue:`252`) (:pull:`384`)
 
 
 Contributors
