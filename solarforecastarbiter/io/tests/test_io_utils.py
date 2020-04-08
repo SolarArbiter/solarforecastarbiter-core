@@ -89,6 +89,68 @@ def test_empty_payload_to_forecast_series():
     assert isinstance(out.index, pd.DatetimeIndex)
 
 
+def test_null_json_payload_to_observation_df():
+    observation_values_text = b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "observation_id": "OBSID",
+  "values": [
+    {
+      "quality_flag": 1,
+      "timestamp": "2019-01-01T12:00:00-0700",
+      "value": null
+    },
+    {
+      "quality_flag": 1,
+      "timestamp": "2019-01-01T12:05:00-0700",
+      "value": null
+    }
+  ]
+}"""
+    ind = pd.DatetimeIndex([
+        pd.Timestamp("2019-01-01T19:00:00Z"),
+        pd.Timestamp("2019-01-01T19:05:00Z")
+    ], name='timestamp')
+    observation_values = pd.DataFrame({
+        'value': pd.Series([None, None], index=ind, dtype=float),
+        'quality_flag': pd.Series([1, 1], index=ind)
+    })
+    out = utils.json_payload_to_observation_df(
+        json.loads(observation_values_text))
+    pdt.assert_frame_equal(out, observation_values)
+
+
+def test_null_json_payload_to_forecast_series():
+    forecast_values_text = b"""
+{
+  "_links": {
+    "metadata": ""
+  },
+  "forecast_id": "OBSID",
+  "values": [
+    {
+      "timestamp": "2019-01-01T12:00:00-0700",
+      "value": null
+    },
+    {
+      "timestamp": "2019-01-01T12:05:00-0700",
+      "value": null
+    }
+  ]
+}"""
+    ind = pd.DatetimeIndex([
+        pd.Timestamp("2019-01-01T19:00:00Z"),
+        pd.Timestamp("2019-01-01T19:05:00Z")
+    ], name='timestamp')
+    forecast_values = pd.Series([None, None], index=ind, dtype=float,
+                                name='value')
+    out = utils.json_payload_to_forecast_series(
+        json.loads(forecast_values_text))
+    pdt.assert_series_equal(out, forecast_values)
+
+
 @pytest.mark.parametrize('label,exp,start,end', [
     ('instant', TEST_DATA, None, None),
     (None, TEST_DATA, None, None),

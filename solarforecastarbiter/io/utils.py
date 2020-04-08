@@ -123,9 +123,11 @@ def json_payload_to_observation_df(json_payload):
     -------
     pandas.DataFrame
        With a tz-aware DatetimeIndex and ['value', 'quality_flag'] columns
+       and dtypes {'value': float, 'quality_flag': int}
     """
     df = _json_to_dataframe(json_payload)
-    return df[['value', 'quality_flag']]
+    return df[['value', 'quality_flag']].astype(
+        {'value': float, 'quality_flag': int})
 
 
 def json_payload_to_forecast_series(json_payload):
@@ -142,11 +144,11 @@ def json_payload_to_forecast_series(json_payload):
     Returns
     -------
     pandas.Series
-       With a tz-aware DatetimeIndex
+       With a tz-aware DatetimeIndex and float dtype
     """
 
     df = _json_to_dataframe(json_payload)
-    return df['value']
+    return df['value'].astype(float)
 
 
 def adjust_start_end_for_interval_label(interval_label, start, end,
