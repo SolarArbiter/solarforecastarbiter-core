@@ -752,3 +752,10 @@ def test_ForecastObservation_normalization_dc(single_forecast_dc_observation):
 def test_ForecastObservation_normalization_wind_speed(
         single_forecast_wind_speed_observation):
     assert np.isnan(single_forecast_wind_speed_observation.normalization)
+
+
+def test_ForecastObservation_uncertainty_invalid(
+        single_forecast, single_observation):
+    with pytest.raises(ValueError):
+        datamodel.ForecastObservation(
+            single_forecast, single_observation, uncertainty='nope')

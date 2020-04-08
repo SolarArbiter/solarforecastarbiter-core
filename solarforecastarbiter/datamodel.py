@@ -937,8 +937,7 @@ class ForecastObservation(BaseModel):
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
-        if self.normalization is None:
-            __set_normalization__(self)
+        __set_normalization__(self)
         __set_uncertainty__(self)
         object.__setattr__(self, 'data_object', self.observation)
         __check_units__(self.forecast, self.data_object)
@@ -946,17 +945,22 @@ class ForecastObservation(BaseModel):
 
 
 def __set_normalization__(self):
-    if self.observation.variable == 'ac_power':
-        norm = self.observation.site.modeling_parameters.ac_capacity
-    elif self.observation.variable == 'dc_power':
-        norm = self.observation.site.modeling_parameters.dc_capacity
-    elif self.observation.units == 'W/m^2':
-        # normalizing by 1000 W/m^2 was considered and rejected
-        # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/379#discussion_r402434134
-        # keep W/m^2 as separate item for likely future improvements
-        norm = np.nan
+    if self.normalization is None:
+        if self.observation.variable == 'ac_power':
+            norm = self.observation.site.modeling_parameters.ac_capacity
+        elif self.observation.variable == 'dc_power':
+            norm = self.observation.site.modeling_parameters.dc_capacity
+        elif self.observation.units == 'W/m^2':
+            # normalizing by 1000 W/m^2 was considered and rejected
+            # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/379#discussion_r402434134
+            # keep W/m^2 as separate item for likely future improvements
+            norm = np.nan
+        else:
+            norm = np.nan
     else:
-        norm = np.nan
+        # norm was supplied, but we're going to make sure it can coerced
+        # to a float
+        norm = self.normalization
     norm = float(norm)  # from_dict only checks for floats, chokes on ints
     object.__setattr__(self, 'normalization', norm)
 
@@ -969,6 +973,14 @@ def __set_aggregate_normalization__(self):
 
 def __set_uncertainty__(self):
     if isinstance(self.uncertainty, str):
+        try:
+            unc = float(self.uncertainty)
+        except ValueError:
+            # not something we can coerce to a float
+            pass
+        else:
+            object.__setattr__(self, 'uncertainty', unc)
+            return
         if self.uncertainty == 'observation_uncertainty':
             object.__setattr__(
                 self, 'uncertainty', self.observation.uncertainty)
@@ -976,7 +988,7 @@ def __set_uncertainty__(self):
             # easy to mistype 'observation_uncertainty', so be helpful
             raise ValueError(
                 ('Invalid uncertainty %s. uncertainty must be set to None, a '
-                 '"observation_uncertainty"') % self.uncertainty)
+                 'float, or "observation_uncertainty"') % self.uncertainty)
 
 
 @dataclass(frozen=True)
