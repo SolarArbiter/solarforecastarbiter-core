@@ -1365,7 +1365,10 @@ def report_objects(aggregate):
         observation,
         normalization=1000.,
         uncertainty=15.)
-    fxagg0 = datamodel.ForecastAggregate(forecast_agg, aggregate)
+    fxagg0 = datamodel.ForecastAggregate(
+        forecast_agg,
+        aggregate,
+        uncertainty=5.)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1467,7 +1470,8 @@ def report_params_dict(report_objects, quality_filter_dict,
              'normalization': 1000.,
              'uncertainty': 15.},
             {'forecast': forecast_agg.to_dict(),
-             'aggregate': aggregate.to_dict()},
+             'aggregate': aggregate.to_dict(),
+             'uncertainty': 5.},
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
@@ -1522,7 +1526,8 @@ def report_text():
               "normalization": "1000",
               "uncertainty": "15"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
-              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
+              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+              "uncertainty": "5"}
          ]
      },
      "raw_report": null,

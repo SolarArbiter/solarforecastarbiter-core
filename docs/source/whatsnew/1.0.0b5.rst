@@ -74,10 +74,13 @@ Enhancements
   now be calculated using a deadband. The deadband is specified as a
   percentage of the observations. The error forecast - observation is
   set to 0 within the deadband. The deadband is controlled using the
-  :py:class:`solarforecastarbiter.datamodel.ForecastObservation`
-  ``uncertainty`` argument. ``None`` implies no deadband, a float sets
-  the deadband, or the string ``'observation_uncertainty'`` may be
-  supplied to set the deadband equal to
+  :py:class:`solarforecastarbiter.datamodel.ForecastObservation` and
+  :py:class:`solarforecastarbiter.datamodel.ForecastAggregate`
+  ``uncertainty`` argument. ``None`` implies no deadband and a float
+  sets the deadband. Additionally, for
+  :py:class:`solarforecastarbiter.datamodel.ForecastObservation`,
+  the string ``'observation_uncertainty'`` may be supplied to set the
+  deadband equal to
   :py:attr:`solarforecastarbiter.datamodel.Observation.uncertainty`.
   (:issue:`358`, :pull:`378`)
 

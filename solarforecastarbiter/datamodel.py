@@ -1019,6 +1019,8 @@ class ForecastAggregate(BaseModel):
     def __post_init__(self):
         if self.normalization is None:
             __set_aggregate_normalization__(self)
+        if self.uncertainty is not None:
+            object.__setattr__(self, 'uncertainty', float(self.uncertainty))
         object.__setattr__(self, 'data_object', self.aggregate)
         __check_units__(self.forecast, self.data_object)
         __check_interval_compatibility__(self.forecast, self.data_object)
