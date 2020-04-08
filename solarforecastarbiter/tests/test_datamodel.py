@@ -754,8 +754,40 @@ def test_ForecastObservation_normalization_wind_speed(
     assert np.isnan(single_forecast_wind_speed_observation.normalization)
 
 
+@pytest.mark.parametrize('uncertainty,expected', [
+    (5, 5.),
+    ('5', 5.),
+    ('observation_uncertainty', 0.1),
+    (None, None)
+])
+def test_ForecastObservation_uncertainty(
+        single_forecast, single_observation, uncertainty, expected):
+    fxobs = datamodel.ForecastObservation(
+        single_forecast, single_observation, uncertainty=uncertainty)
+    assert fxobs.uncertainty == expected
+
+
 def test_ForecastObservation_uncertainty_invalid(
         single_forecast, single_observation):
     with pytest.raises(ValueError):
         datamodel.ForecastObservation(
             single_forecast, single_observation, uncertainty='nope')
+
+
+@pytest.mark.parametrize('uncertainty,expected', [
+    (5, 5.),
+    ('5', 5.),
+    (None, None)
+])
+def test_ForecastAggregate_uncertainty(
+        aggregateforecast, aggregate, uncertainty, expected):
+    fxobs = datamodel.ForecastAggregate(
+        aggregateforecast, aggregate, uncertainty=uncertainty)
+    assert fxobs.uncertainty == expected
+
+
+def test_ForecastAggregate_uncertainty_invalid(
+        aggregateforecast, aggregate):
+    with pytest.raises(ValueError):
+        datamodel.ForecastAggregate(
+            aggregateforecast, aggregate, uncertainty='anystring')

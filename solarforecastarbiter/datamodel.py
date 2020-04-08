@@ -919,9 +919,10 @@ class ForecastObservation(BaseModel):
         If None, determined by __set_normalization__
     uncertainty: None, float, or str
         If None, uncertainty is not accounted for. Float specifies the
-        uncertainty as a percentage from 0 to 100%. If str, must be
+        uncertainty as a percentage from 0 to 100%. If str, may be
         'observation_uncertainty' to indicate that the value should be
-        set to ``observation.uncertainty``.
+        set to ``observation.uncertainty``, or may be coerceable to a
+        float.
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
@@ -976,19 +977,18 @@ def __set_uncertainty__(self):
         try:
             unc = float(self.uncertainty)
         except ValueError:
-            # not something we can coerce to a float
-            pass
+            if self.uncertainty == 'observation_uncertainty':
+                object.__setattr__(
+                    self, 'uncertainty', self.observation.uncertainty)
+            else:
+                # easy to mistype 'observation_uncertainty', so be helpful
+                raise ValueError(
+                    ('Invalid uncertainty %s. uncertainty must be set to None,'
+                     ' a float, or "observation_uncertainty"') %
+                    self.uncertainty)
         else:
             object.__setattr__(self, 'uncertainty', unc)
-            return
-        if self.uncertainty == 'observation_uncertainty':
-            object.__setattr__(
-                self, 'uncertainty', self.observation.uncertainty)
-        else:
-            # easy to mistype 'observation_uncertainty', so be helpful
-            raise ValueError(
-                ('Invalid uncertainty %s. uncertainty must be set to None, a '
-                 'float, or "observation_uncertainty"') % self.uncertainty)
+
 
 
 @dataclass(frozen=True)
@@ -1003,9 +1003,10 @@ class ForecastAggregate(BaseModel):
     reference_forecast: :py:class:`solarforecastarbiter.datamodel.Forecast` or None
     normalization: float or None
         If None, assigned 1.
-    uncertainty: None or float
+    uncertainty: None, float, or str
         If None, uncertainty is not accounted for. Float specifies the
-        uncertainty as a percentage from 0 to 100%.
+        uncertainty as a percentage from 0 to 100%. Strings must be
+        coerceable to a float.
     cost_per_unit_error: float
     """  # NOQA
     forecast: Forecast
