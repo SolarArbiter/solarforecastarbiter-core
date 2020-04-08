@@ -73,13 +73,12 @@ Enhancements
 * Metrics ``'mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse'`` may
   now be calculated using a deadband. The deadband is specified as a
   percentage of the observations. The error forecast - observation is
-  set to 0 within the deadband. A user-specified deadband may be supplied to
-  :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics`,
-  or a string 'observation_uncertainty' may be supplied to direct the
-  function to set the deadband equal to
+  set to 0 within the deadband. The deadband is controlled using the
+  :py:class:`solarforecastarbiter.datamodel.ForecastObservation`
+  ``uncertainty`` argument. ``None`` implies no deadband, a float sets
+  the deadband, or the string ``'observation_uncertainty'`` may be
+  supplied to set the deadband equal to
   :py:attr:`solarforecastarbiter.datamodel.Observation.uncertainty`.
-  Actually this calculator change won't work if deadband could be user supplied for one
-  `ForecastObservation` but observation-supplied for another.
   (:issue:`358`, :pull:`378`)
 
 
