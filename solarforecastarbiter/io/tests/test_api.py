@@ -489,8 +489,10 @@ def test_apisession_get_obs_agg_values_interval_label(
 
 @pytest.fixture()
 def empty_df():
-    return pd.DataFrame([], columns=['value', 'quality_flag'],
-                        index=pd.DatetimeIndex([], name='timestamp', tz='UTC'))
+    return pd.DataFrame(
+        [], columns=['value', 'quality_flag'],
+        index=pd.DatetimeIndex([], name='timestamp', tz='UTC')
+    ).astype({'value': float, 'quality_flag': int})
 
 
 @pytest.mark.parametrize('func', ['get_observation_values',

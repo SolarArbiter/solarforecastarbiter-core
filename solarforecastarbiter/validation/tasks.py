@@ -364,7 +364,7 @@ def immediate_observation_validation(access_token, observation_id, start, end,
     observation = session.get_observation(observation_id)
     observation_values = session.get_observation_values(observation_id, start,
                                                         end)
-    value_series = observation_values['value']
+    value_series = observation_values['value'].astype(float)
     quality_flags = observation_values['quality_flag'].copy()
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(

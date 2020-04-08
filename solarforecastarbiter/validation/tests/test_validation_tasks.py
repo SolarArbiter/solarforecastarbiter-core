@@ -137,6 +137,42 @@ def test_immediate_observation_validation_ghi(mocker, make_observation,
     assert_frame_equal(post_mock.call_args[0][1], out)
 
 
+def test_immediate_observation_validation_ghi_nones(
+        mocker, make_observation, default_index):
+    obs = make_observation('ghi')
+    data = pd.DataFrame(
+        [(None, 1)] * 5, index=default_index,
+        columns=['value', 'quality_flag'])
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        return_value=data)
+
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+
+    tasks.immediate_observation_validation(
+        '', obs.observation_id, data.index[0], data.index[-1])
+
+    out = data.copy()
+    base = (
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
+        LATEST_VERSION_FLAG
+    )
+    out['quality_flag'] = [
+        base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+        base,
+        base,
+        base,
+        base | DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']
+    ]
+    assert post_mock.called_once
+    assert_frame_equal(post_mock.call_args[0][1], out)
+
+
 def test_immediate_observation_validation_not_listed(mocker, make_observation,
                                                      default_index):
     obs = make_observation('curtailment')
