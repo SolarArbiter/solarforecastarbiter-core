@@ -1231,6 +1231,24 @@ def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
+@pytest.fixture(params=[None, 1000])
+def single_forecast_observation_norm(
+        request, single_forecast, single_observation):
+    return datamodel.ForecastObservation(
+        single_forecast,
+        single_observation,
+        normalization=request.param)
+
+
+@pytest.fixture(params=[None, 100, 'observation_uncertainty'])
+def single_forecast_observation_uncert(
+        request, single_forecast, single_observation):
+    return datamodel.ForecastObservation(
+        single_forecast,
+        single_observation,
+        uncertainty=request.param)
+
+
 @pytest.fixture()
 def single_forecast_ac_observation(
         ac_power_forecast_metadata, ac_power_observation_metadata):
@@ -1313,7 +1331,7 @@ def report_objects(aggregate):
         interval_length=pd.Timedelta("15min"),
         interval_label="ending",
         site=site,
-        uncertainty=0.0,
+        uncertainty=1.0,
         observation_id="9f657636-7e49-11e9-b77f-0a580a8003e9",
         extra_parameters='{"network": "NREL MIDC", "network_api_id": "UAT", "network_api_abbreviation": "UA OASIS", "observation_interval_length": 1, "network_data_label": "Global Horiz (platform) [W/m^2]"}',  # NOQA
     )
@@ -1355,9 +1373,20 @@ def report_objects(aggregate):
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
-    fxobs0 = datamodel.ForecastObservation(forecast_0, observation)
-    fxobs1 = datamodel.ForecastObservation(forecast_1, observation)
-    fxagg0 = datamodel.ForecastAggregate(forecast_agg, aggregate)
+    fxobs0 = datamodel.ForecastObservation(
+        forecast_0,
+        observation,
+        # report_text parsing will ensure unc can be done dynamically too
+        uncertainty=observation.uncertainty)
+    fxobs1 = datamodel.ForecastObservation(
+        forecast_1,
+        observation,
+        normalization=1000.,
+        uncertainty=15.)
+    fxagg0 = datamodel.ForecastAggregate(
+        forecast_agg,
+        aggregate,
+        uncertainty=5.)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1452,11 +1481,15 @@ def report_params_dict(report_objects, quality_filter_dict,
         'end': report_params.end,
         'object_pairs': (
             {'forecast': forecast_0.to_dict(),
-             'observation': observation.to_dict()},
+             'observation': observation.to_dict(),
+             'uncertainty': observation.uncertainty},
             {'forecast': forecast_1.to_dict(),
-             'observation': observation.to_dict()},
+             'observation': observation.to_dict(),
+             'normalization': 1000.,
+             'uncertainty': 15.},
             {'forecast': forecast_agg.to_dict(),
-             'aggregate': aggregate.to_dict()},
+             'aggregate': aggregate.to_dict(),
+             'uncertainty': 5.},
         ),
         'metrics': ('mae', 'rmse', 'mbe'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
@@ -1504,11 +1537,15 @@ def report_text():
          "categories": ["total", "date", "hour"],
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
-              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+              "uncertainty": "observation_uncertainty"},
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+              "normalization": "1000",
+              "uncertainty": "15"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
-              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
+              "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+              "uncertainty": "5"}
          ]
      },
      "raw_report": null,

@@ -9,6 +9,7 @@ Todo
 * Support probabilistic metrics and forecasts with new functions
 * Support event metrics and forecasts with new functions
 """
+from functools import partial
 import calendar
 import logging
 import copy
@@ -29,6 +30,9 @@ def calculate_metrics(processed_pairs, categories, metrics,
     Loop through the forecast-observation pairs and calculate metrics.
 
     Normalization is determined by the attributes of the input objects.
+
+    If ``processed_fx_obs.uncertainty`` is not ``None``, a deadband
+    equal to the uncertainty will be used by the metrics that support it.
 
     Parameters
     ----------
@@ -91,12 +95,28 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     deterministic metric functions."""
     metric_func = deterministic._MAP[metric][0]
+
+    # the keyword arguments that will be passed to the functions
+    _kw = {}
+
+    # deadband could be supplied as None, so this is a little cleaner
+    # than a try/except pattern
+    deadband = kwargs.get('deadband', None)
+    if metric in deterministic._DEADBAND_ALLOWED and deadband:
+        # metrics assumes fractional deadband, datamodel assumes %, so / 100
+        deadband_frac = deadband / 100
+        _kw['error_fnc'] = partial(
+            deterministic.error_deadband, deadband=deadband_frac)
+
+    # ref is an arg, but seems cleaner to handle as a kwarg here
     if metric in deterministic._REQ_REF_FX:
-        return metric_func(obs, fx, kwargs['ref_fx'])
-    elif metric in deterministic._REQ_NORM:
-        return metric_func(obs, fx, kwargs['normalization'])
-    else:
-        return metric_func(obs, fx)
+        _kw['ref'] = kwargs['ref_fx']
+
+    # same arg/kwarg comment as for ref
+    if metric in deterministic._REQ_NORM:
+        _kw['norm'] = kwargs['normalization']
+
+    return metric_func(obs, fx, **_kw)
 
 
 def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
@@ -117,6 +137,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     categories and metric types.
 
     Normalization is determined by the attributes of the input objects.
+
+    If ``processed_fx_obs.uncertainty`` is not ``None``, a deadband
+    equal to the uncertainty will be used by the metrics that support it.
 
     Parameters
     ----------
@@ -188,6 +211,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # get normalization factor
     normalization = processed_fx_obs.normalization_factor
 
+    # get uncertainty.
+    deadband = processed_fx_obs.uncertainty
+
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin
     if processed_fx_obs.interval_label == "ending":
@@ -210,7 +236,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
-                    ref_fx=ref_fx, normalization=normalization)
+                    ref_fx=ref_fx, normalization=normalization,
+                    deadband=deadband)
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday

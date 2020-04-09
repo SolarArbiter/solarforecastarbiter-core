@@ -73,6 +73,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # pyenv
 .python-version
@@ -110,3 +111,10 @@ venv.bak/
 *.swo
 
 .vscode/
+
+*.json
+*.html
+!solarforecastarbiter/reports/templates/*.html
+*.md
+
+*.csv

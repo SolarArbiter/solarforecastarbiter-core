@@ -1,6 +1,48 @@
+from functools import partial
+
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose
 from solarforecastarbiter.metrics import deterministic
+
+
+@pytest.fixture
+def error_func_deadband():
+    return partial(deterministic.error_deadband, deadband=0.05)
+
+
+@pytest.mark.parametrize('deadband,expected', [
+    (0., [1, 0, 0, 0, 0]),
+    (0.1, [1, 0, 0, 0, 1]),
+    (1., [1, 0, 1, 0, 1]),
+])
+def test_deadband_mask(deadband, expected):
+    obs = np.array([0, 0, 1, 0, 1.])
+    fx = np.array([0, 1, 0, 1.05, 0.95])
+    expected = np.array(expected, dtype=bool)
+    out = deterministic.deadband_mask(obs, fx, deadband)
+    assert_allclose(out, expected)
+
+
+def test_error():
+    obs = np.array([2, 1, 0.])
+    fx = np.array([1, 2, 0.])
+    expected = np.array([-1, 1, 0.])
+    out = deterministic.error(obs, fx)
+    assert_allclose(out, expected)
+
+
+@pytest.mark.parametrize('deadband,expected', [
+    (0., [0, 1, -1, 1.05, -0.05]),
+    (0.1, [0, 1, -1, 1.05, 0]),
+    (1., [0, 1, 0, 1.05, 0]),
+])
+def test_error_deadband(deadband, expected):
+    obs = np.array([0, 0, 1, 0, 1.])
+    fx = np.array([0, 1, 0, 1.05, 0.95])
+    expected = np.array(expected)
+    out = deterministic.error_deadband(obs, fx, deadband)
+    assert_allclose(out, expected)
 
 
 @pytest.mark.parametrize("obs,fx,value", [
@@ -173,3 +215,34 @@ def test_over(obs, fx, value):
 def test_cpi(obs, fx, value):
     cpi = deterministic.combined_performance_index(obs, fx)
     assert pytest.approx(cpi) == value
+
+
+@pytest.fixture
+def deadband_obs_fx():
+    obs = np.array([1, 2, 3, 4])
+    # 2.1 and 3.8 are outside the 5% deadband on some platforms due to
+    # floating point arithmetic errors
+    fx = np.array([2, 2.09, 2, 3.81])
+    return obs, fx
+
+
+@pytest.mark.parametrize('func,expect,expect_deadband,args', [
+    (deterministic.mean_absolute, 0.57, 0.5, []),
+    (deterministic.mean_bias, -0.025, 0., []),
+    (deterministic.root_mean_square,
+     0.7148776119029046, 0.7071067811865476, []),
+    (deterministic.mean_absolute_percentage,
+     35.64583333333333, 33.33333333333333, []),
+    (deterministic.normalized_mean_absolute, 5.7, 5.0, [10.]),
+    (deterministic.normalized_mean_bias, -0.25, 0., [10.]),
+    (deterministic.normalized_root_mean_square,
+     7.148776119029046, 7.071067811865476, [10.]),
+]
+)
+def test_deadband(func, error_func_deadband, deadband_obs_fx, expect,
+                  expect_deadband, args):
+    obs, fx = deadband_obs_fx
+    out = func(obs, fx, *args)
+    out_deadband = func(obs, fx, *args, error_fnc=error_func_deadband)
+    assert_allclose(out, expect)
+    assert_allclose(out_deadband, expect_deadband)

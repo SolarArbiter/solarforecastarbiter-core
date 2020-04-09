@@ -38,6 +38,10 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.calculate_deterministic_metrics`.
   Normalization is now determined by the attributes of the datamodel objects.
   (:pull:`379`)
+* Many functions in :py:mod:`solarforecastarbiter.metrics.deterministic` gain
+  a keyword argument ``error_fnc`` for specifying a function that calculates
+  the nominal difference forecast - observation. Among other things, this
+  is useful for specifying a deadband. (:pull:`378`)
 * Added support for probabilistic forecasts with
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modifications and
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_probabilistic_metrics` addition. (:issue:`315`) (:issue:`266`) (:pull:`367`)
@@ -66,6 +70,19 @@ Enhancements
   AC power observations are normalized by AC capacity; DC power by DC
   capacity. Normalized metrics set to ``nan`` for all other variables.
   (:issue:`370`) (:pull:`379`)
+* Metrics ``'mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse'`` may
+  now be calculated using a deadband. The deadband is specified as a
+  percentage of the observations. The error forecast - observation is
+  set to 0 within the deadband. The deadband is controlled using the
+  :py:class:`solarforecastarbiter.datamodel.ForecastObservation` and
+  :py:class:`solarforecastarbiter.datamodel.ForecastAggregate`
+  ``uncertainty`` argument. ``None`` implies no deadband and a float
+  sets the deadband. Additionally, for
+  :py:class:`solarforecastarbiter.datamodel.ForecastObservation`,
+  the string ``'observation_uncertainty'`` may be supplied to set the
+  deadband equal to
+  :py:attr:`solarforecastarbiter.datamodel.Observation.uncertainty`.
+  (:issue:`358`, :pull:`378`)
 
 
 Bug fixes

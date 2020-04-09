@@ -5,7 +5,66 @@ import scipy as sp
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
-def mean_absolute(obs, fx):
+def deadband_mask(obs, fx, deadband):
+    """Calculate deadband mask.
+
+    .. math:: \\text{mask_i} = | fx_i - obs_i | <= deadband * | obs_i |
+
+    Floating point arithmetic makes the equality difficult to guarantee
+    so do not rely on it.
+
+    Equality
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observed values.
+    fx : (n,) array_like
+        Forecasted values.
+    deadband : float
+        Fractional tolerance relative to the observed values.
+
+    Returns
+    -------
+    mask : array_like
+        1 if a point is within the deadband, 0 if not
+    """
+    return np.isclose(fx, obs, rtol=deadband)
+
+
+def error(obs, fx):
+    """The difference ..math:: fx - obs"""
+    return fx - obs
+
+
+def error_deadband(obs, fx, deadband):
+    """Error fx - obs, accounting for a deadband.
+
+    error = 0 for points where error <= deadband * obs
+
+    error = fx - obs for points where error > deadband * obs
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observed values.
+    fx : (n,) array_like
+        Forecasted values.
+    deadband : float
+        Fractional tolerance
+
+    Returns
+    -------
+    error : array_like
+        The error accounting for a deadband.
+    """
+    error = fx - obs
+    mask = deadband_mask(obs, fx, deadband)
+    error = np.where(mask, 0, error)
+    return error
+
+
+def mean_absolute(obs, fx, error_fnc=error):
     """Mean absolute error (MAE).
 
     .. math:: \\text{MAE} = 1/n \\sum_{i=1}^n |\\text{fx}_i - \\text{obs}_i|
@@ -16,18 +75,33 @@ def mean_absolute(obs, fx):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
     mae : float
         The MAE of the forecast.
 
+    Examples
+    --------
+    Standard MAE:
+    >>> obs = np.array([1, 2, 3, 4])
+    >>> fx = np.array([2, 2.04, 2, 3.96])
+    >>> mean_absolute(obs, fx)
+    0.52
+
+    MAE with a deadband:
+    >>> error_fnc = partial(error_deadband, deadband=0.05)
+    >>> mean_absolute(obs, fx, error_fnc=error_fnc)
+    0.5
     """
+    error = error_fnc(obs, fx)
+    return np.mean(np.abs(error))
 
-    return np.mean(np.abs(fx - obs))
 
-
-def mean_bias(obs, fx):
+def mean_bias(obs, fx, error_fnc=error):
     """Mean bias error (MBE).
 
     .. math:: \\text{MBE} = 1/n \\sum_{i=1}^n (\\text{fx}_i - \\text{obs}_i)
@@ -38,6 +112,9 @@ def mean_bias(obs, fx):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -45,11 +122,11 @@ def mean_bias(obs, fx):
         The MBE of the forecast.
 
     """
+    error = error_fnc(obs, fx)
+    return np.mean(error)
 
-    return np.mean(fx - obs)
 
-
-def root_mean_square(obs, fx):
+def root_mean_square(obs, fx, error_fnc=error):
     """Root mean square error (RMSE).
 
     .. math::
@@ -62,6 +139,9 @@ def root_mean_square(obs, fx):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -69,11 +149,11 @@ def root_mean_square(obs, fx):
         The RMSE of the forecast.
 
     """
+    error = error_fnc(obs, fx)
+    return np.sqrt(np.mean(error * error))
 
-    return np.sqrt(np.mean((fx - obs) ** 2))
 
-
-def mean_absolute_percentage(obs, fx):
+def mean_absolute_percentage(obs, fx, error_fnc=error):
     """Mean absolute percentage error (MAPE).
 
     .. math::
@@ -87,6 +167,9 @@ def mean_absolute_percentage(obs, fx):
         Observed values.
     fx : (n,) array-like
         Forecasted values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -94,11 +177,11 @@ def mean_absolute_percentage(obs, fx):
         The MAPE [%] of the forecast.
 
     """
+    error = error_fnc(obs, fx)
+    return np.mean(np.abs(error / obs)) * 100.0
 
-    return np.mean(np.abs((obs - fx) / obs)) * 100.0
 
-
-def normalized_mean_absolute(obs, fx, norm):
+def normalized_mean_absolute(obs, fx, norm, error_fnc=error):
     """Normalized mean absolute error (NMAE).
 
     .. math:: \\text{NMAE} = \\text{MAE} / \\text{norm} * 100%
@@ -111,6 +194,9 @@ def normalized_mean_absolute(obs, fx, norm):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -119,10 +205,10 @@ def normalized_mean_absolute(obs, fx, norm):
 
     """
 
-    return mean_absolute(obs, fx) / norm * 100.0
+    return mean_absolute(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
-def normalized_mean_bias(obs, fx, norm):
+def normalized_mean_bias(obs, fx, norm, error_fnc=error):
     """Normalized mean bias error (NMBE).
 
     .. math:: \\text{NMBE} = \\text{MBE} / \\text{norm} * 100%
@@ -135,6 +221,9 @@ def normalized_mean_bias(obs, fx, norm):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -143,10 +232,10 @@ def normalized_mean_bias(obs, fx, norm):
 
     """
 
-    return mean_bias(obs, fx) / norm * 100.0
+    return mean_bias(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
-def normalized_root_mean_square(obs, fx, norm):
+def normalized_root_mean_square(obs, fx, norm, error_fnc=error):
     """Normalized root mean square error (NRMSE).
 
     .. math:: \\text{NRMSE} = \\text{RMSE} / \\text{norm} * 100%
@@ -159,6 +248,9 @@ def normalized_root_mean_square(obs, fx, norm):
         Forecasted values.
     norm : float
         Normalized factor, in the same units as obs and fx.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -167,10 +259,10 @@ def normalized_root_mean_square(obs, fx, norm):
 
     """
 
-    return root_mean_square(obs, fx) / norm * 100.0
+    return root_mean_square(obs, fx, error_fnc=error_fnc) / norm * 100.0
 
 
-def forecast_skill(obs, fx, ref):
+def forecast_skill(obs, fx, ref, error_fnc=error):
     """Forecast skill (s).
 
     .. math:: s = 1 - \\text{RMSE}_\\text{fx} / \\text{RMSE}_\\text{ref}
@@ -186,6 +278,9 @@ def forecast_skill(obs, fx, ref):
         Forecasted values.
     ref : (n,) array_like
         Reference forecast values.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
 
     Returns
     -------
@@ -195,8 +290,8 @@ def forecast_skill(obs, fx, ref):
 
     """
 
-    rmse_fx = root_mean_square(obs, fx)
-    rmse_ref = root_mean_square(obs, ref)
+    rmse_fx = root_mean_square(obs, fx, error_fnc=error_fnc)
+    rmse_ref = root_mean_square(obs, ref, error_fnc=error_fnc)
     return 1.0 - rmse_fx / rmse_ref
 
 
@@ -464,3 +559,5 @@ _REQ_REF_FX = ['s']
 
 # Functions that require normalized factor
 _REQ_NORM = ['nmae', 'nmbe', 'nrmse']
+
+_DEADBAND_ALLOWED = ['mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse']
