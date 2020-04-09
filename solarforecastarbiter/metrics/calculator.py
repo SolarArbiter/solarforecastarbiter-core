@@ -103,8 +103,10 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     # than a try/except pattern
     deadband = kwargs.get('deadband', None)
     if metric in deterministic._DEADBAND_ALLOWED and deadband:
+        # metrics assumes fractional deadband, datamodel assumes %, so / 100
+        deadband_frac = deadband / 100
         _kw['error_fnc'] = partial(
-            deterministic.error_deadband, deadband=deadband)
+            deterministic.error_deadband, deadband=deadband_frac)
 
     # ref is an arg, but seems cleaner to handle as a kwarg here
     if metric in deterministic._REQ_REF_FX:
@@ -209,7 +211,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     # get normalization factor
     normalization = processed_fx_obs.normalization_factor
 
-    # get uncertainty
+    # get uncertainty.
     deadband = processed_fx_obs.uncertainty
 
     # Force `groupby` to be consistent with `interval_label`, i.e., if

@@ -53,7 +53,10 @@ def create_processed_fxobs(create_dt_index):
             interval_label,
             valid_point_count=len(fx_values),
             forecast_values=conv_fx_values,
-            observation_values=conv_obs_values)
+            observation_values=conv_obs_values,
+            normalization_factor=fxobs.normalization,
+            uncertainty=fxobs.uncertainty
+            )
 
     return _create_processed_fxobs
 
@@ -201,6 +204,19 @@ def test_calculate_metrics_single(single_forecast_data_obj,
     assert isinstance(result, list)
     assert isinstance(result[0], datamodel.MetricResult)
     assert len(result) == 1
+
+
+def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
+                                         create_processed_fxobs):
+    inp = [create_processed_fxobs(single_forecast_observation_uncert,
+                                  np.array([1.9, 1, 1.0005]), np.array([1, 1, 1]))]
+    result = calculator.calculate_metrics(inp, ['total'], ['mae'])
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
+    expected_values = {None: (0.9 + 0.0005)/3, 100.: 0., 0.1: 0.3}
+    expected = expected_values[single_forecast_observation_uncert.uncertainty]
+    assert result[0].values[0].value == expected
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -720,22 +736,27 @@ def test_calculate_probabilistic_metrics_from_df(categories, df, metrics,
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,expect', [
-    ('mae', [], [], None, None, np.NaN),
-    ('mae', [1, 1, 1], [0, 1, -1], None, None, 1.0),
-    ('mbe', [1, 1, 1], [0, 1, -1], None, None, 1.0),
-    ('rmse', [1, 0, 1], [0, -1, 2], None, None, 1.0),
-    ('nrmse', [1, 0, 1], [0, -1, 2], None, None, None),
-    ('nrmse', [1, 0, 1], [0, -1, 2], None, 2.0, 100/2),
-    ('mape', [2, 3, 1], [4, 2, 2], None, None, 50.0),
-    ('s', [1, 0, 1], [0, -1, 2], None, None, None),
-    ('s', [1, 0, 1], [0, -1, 2], [2, 1, 0], None, 0.5),
-    ('r', [3, 2, 1], [1, 2, 3], None, None, -1.0),
-    ('r^2', [3, 2, 1], [1, 2, 3], None, None, -3.0),
-    ('crmse', [1, 1, 1], [0, 1, 2], None, None, np.sqrt(2/3))
+@pytest.mark.parametrize('metric,fx,obs,ref_fx,norm,dead,expect', [
+    ('mae', [], [], None, None, None, np.NaN),
+    ('mae', [], [], None, None, 1, np.NaN),
+    ('mae', [1, 1, 1], [0, 1, -1], None, None, None, 1.0),
+    ('mae', [0, 1, 4], [1, 1, 1], None, None, 100, 1.),
+    ('mbe', [1, 1, 1], [0, 1, -1], None, None, None, 1.0),
+    ('rmse', [1, 0, 1], [0, -1, 2], None, None, None, 1.0),
+    ('nrmse', [1, 0, 1], [0, -1, 2], None, None, None, None),
+    ('nrmse', [1, 0, 1], [0, -1, 2], None, 2.0, None, 100/2),
+    ('nrmse', [0.9, 1, 0.1], [1, 0, 1], None, 2.0, 100, 100*np.sqrt(1/3)/2),
+    ('mape', [2, 3, 1], [4, 2, 2], None, None, None, 50.0),
+    ('s', [1, 0, 1], [0, -1, 2], None, None, None, None),
+    ('s', [1, 0, 1], [0, -1, 2], [2, 1, 0], None, None, 0.5),
+    # unc shouldn't effect s result since it isn't supported
+    ('s', [1, 0, 1], [0, -1, 2], [2, 1, 0], None, 100, 0.5),
+    ('r', [3, 2, 1], [1, 2, 3], None, None, None, -1.0),
+    ('r^2', [3, 2, 1], [1, 2, 3], None, None, None, -3.0),
+    ('crmse', [1, 1, 1], [0, 1, 2], None, None, None, np.sqrt(2/3))
 ])
 def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm,
-                                         expect):
+                                         dead, expect):
     fx_series = np.array(fx)
     obs_series = np.array(obs)
     # Check require reference forecast kwarg
@@ -748,7 +769,8 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm,
         else:
             ref_fx_series = np.array(ref_fx)
             metric_value = calculator._apply_deterministic_metric_func(
-                metric, fx_series, obs_series, ref_fx=ref_fx_series)
+                metric, fx_series, obs_series, ref_fx=ref_fx_series,
+                deadband=dead)
             np.testing.assert_approx_equal(metric_value, expect)
 
     # Check requires normalization kwarg
@@ -760,13 +782,14 @@ def test_apply_deterministic_metric_func(metric, fx, obs, ref_fx, norm,
                     metric, fx_series, obs_series)
         else:
             metric_value = calculator._apply_deterministic_metric_func(
-                metric, fx_series, obs_series, normalization=norm)
+                metric, fx_series, obs_series, normalization=norm,
+                deadband=dead)
             np.testing.assert_approx_equal(metric_value, expect)
 
     # Does not require kwarg
     else:
         metric_value = calculator._apply_deterministic_metric_func(
-            metric, fx_series, obs_series)
+            metric, fx_series, obs_series, deadband=dead)
         if np.isnan(expect):
             assert np.isnan(metric_value)
         else:
