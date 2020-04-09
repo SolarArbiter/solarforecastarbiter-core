@@ -79,6 +79,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     -------
     forecast_values : pandas.Series
     observation_values : pandas.Series
+    results : dict
 
     Notes
     -----
@@ -97,13 +98,15 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     obs = fx_obs.data_object
 
     # Resample based on forecast type
-    if isinstance(fx, datamodel.EventForecast):            # event fx
+    if isinstance(fx, datamodel.EventForecast):
         # check that all values are boolean (fx and obs)
+
         # check that at the same freq (fx and obs)
-        # raise errors otherwise
-        raise NotImplementedError
-    elif isinstance(fx, datamodel.ProbabilisticForecast):  # prob fx
-        raise NotImplementedError
+        if fx.interval_length != obs.interval_length:
+            raise RuntimeError("Event observation and forecast time-series "
+                               "must have matching interval length.")
+        else:
+            obs_resampled = obs_series
     else:                                                  # det fx
         # Resample observation, checking for invalid interval_length and that
         # the Series has data:

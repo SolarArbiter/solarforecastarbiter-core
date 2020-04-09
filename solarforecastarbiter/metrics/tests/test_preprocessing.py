@@ -460,3 +460,64 @@ def test_name_pfxobs_recursion_limit():
     cn = [name]
     cn += [f'{name}-{i:02d}' for i in range(129)]
     assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'
+
+
+@pytest.mark.parametrize("obs_index,fx_index,expected_dt", [
+    (THREE_HOURS, THREE_HOURS, THREE_HOURS),
+    (THIRTEEN_10MIN, THIRTEEN_10MIN, THIRTEEN_10MIN),
+
+    # mismatch interval_length
+    pytest.param(THREE_HOURS, THIRTEEN_10MIN, [],
+                 marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+    pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
+                 marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+])
+def test_resample_and_align_event(site_metadata, obs_index, fx_index, expected_dt):
+
+    obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
+    fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=obs_index)
+    fx_series = pd.Series(fx_values, index=fx_index)
+
+    obs = datamodel.Observation(
+        site=site_metadata,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta(obs_series.index.freq),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx = datamodel.EventForecast(
+        site=site_metadata,
+        name="dummy fx",
+        interval_length=pd.Timedelta(fx_series.index.freq),
+        interval_value_type="instantaneous",
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+
+    # Use local tz
+    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+
+    fx_values, obs_values, results = preprocessing.resample_and_align(
+        fxobs, fx_series, obs_series, local_tz
+    )
+
+    assert isinstance(results, dict)
+
+    # Localize datetimeindex
+    expected_dt = expected_dt.tz_convert(local_tz)
+
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  expected_dt,
+                                  check_categorical=False)
