@@ -459,6 +459,15 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
 
+Functions to compute errors and deadbands:
+
+.. autosummary::
+   :toctree: generated/
+
+   metrics.deterministic.deadband_mask
+   metrics.deterministic.error
+   metrics.deterministic.error_deadband
+
 Probabilistic
 -------------
 
