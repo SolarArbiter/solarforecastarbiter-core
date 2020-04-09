@@ -209,7 +209,8 @@ def test_calculate_metrics_single(single_forecast_data_obj,
 def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
                                          create_processed_fxobs):
     inp = [create_processed_fxobs(single_forecast_observation_uncert,
-                                  np.array([1.9, 1, 1.0005]), np.array([1, 1, 1]))]
+                                  np.array([1.9, 1, 1.0005]),
+                                  np.array([1, 1, 1]))]
     result = calculator.calculate_metrics(inp, ['total'], ['mae'])
     assert isinstance(result, list)
     assert isinstance(result[0], datamodel.MetricResult)
