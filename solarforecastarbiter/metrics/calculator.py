@@ -24,8 +24,7 @@ from solarforecastarbiter.metrics import deterministic, probabilistic
 logger = logging.getLogger(__name__)
 
 
-def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair=None):
+def calculate_metrics(processed_pairs, categories, metrics):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
@@ -42,10 +41,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
-    ref_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation
-        Reference forecast to be used when calculating skill metrics. Default
-        is None and no skill metrics will be calculated.
 
     Returns
     -------
@@ -56,7 +51,6 @@ def calculate_metrics(processed_pairs, categories, metrics,
     ----
     * validate categories are supported
     * validate metrics are supported
-    * Support probabilistic metrics and forecasts
     * Support event metrics and forecasts
     """
     calc_metrics = []
@@ -70,8 +64,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                 calc_metrics.append(calculate_probabilistic_metrics(
                     proc_fxobs,
                     categories,
-                    metrics,
-                    ref_fx_obs=ref_pair))
+                    metrics))
             except RuntimeError as e:
                 logger.error('Failed to calculate probabilistic metrics'
                              ' for %s: %s',
@@ -81,8 +74,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                 calc_metrics.append(calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
-                    metrics,
-                    ref_fx_obs=ref_pair))
+                    metrics))
             except RuntimeError as e:
                 logger.error('Failed to calculate deterministic metrics'
                              ' for %s: %s',
@@ -130,8 +122,7 @@ def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
         return metric_func(obs, fx, fx_prob)
 
 
-def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None):
+def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
@@ -148,10 +139,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
-    ref_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation
-        Reference forecast to be used when calculating skill metrics. Default
-        is None and no skill metrics will be calculated.
 
     Returns
     -------
@@ -181,19 +168,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     obs = processed_fx_obs.observation_values
 
     # Check reference forecast is from processed pair, if needed
-    ref_fx = None
-    if any(m in deterministic._REQ_REF_FX for m in metrics):
-        if not ref_fx_obs:
-            raise RuntimeError("No reference forecast provided but it is "
-                               "required for desired metrics.")
-
-        ref_fx = ref_fx_obs.forecast_values
-        out['reference_forecast_id'] = ref_fx_obs.original.forecast.forecast_id
-        if ref_fx.empty:
-            raise RuntimeError("No reference forecast timeseries data.")
-        elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
-            raise ValueError("Mismatched `interval_label` between "
-                             "observation and reference forecast.")
+    ref_fx = processed_fx_obs.reference_forecast_values
 
     # No data or metrics
     if fx.empty:
@@ -204,9 +179,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         raise RuntimeError("No metrics specified.")
 
     # Dataframe for grouping
-    df = pd.concat({'forecast': fx,
-                    'observation': obs,
-                    'reference': ref_fx}, axis=1)
+    df = pd.DataFrame({'forecast': fx,
+                       'observation': obs,
+                       'reference': ref_fx})
 
     # get normalization factor
     normalization = processed_fx_obs.normalization_factor
@@ -230,13 +205,22 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
 
         # Calculate each metric
         for metric_ in metrics:
+            # # don't calculate skill metric for any categories if the data
+            # # does not exist
+            # # actually, don't skip this b/c we want nans
+            # if (metric_ in deterministic._REQ_REF_FX and
+            #         (ref_fx is None or ref_fx.empty)):
+            #     logger.warning("No reference forecast timeseries data for %s",
+            #                    processed_fx_obs.name)
+            #     continue
+
             # Group by category
             for cat, group in df.groupby(index_category):
 
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
-                    ref_fx=ref_fx, normalization=normalization,
+                    ref_fx=group.reference, normalization=normalization,
                     deadband=deadband)
 
                 # Change category label of the group from numbers

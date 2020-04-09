@@ -776,14 +776,19 @@ class APISession(requests.Session):
             fx = self.get_forecast(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
+            ref_fx = o.get('reference_forecast')
+            if ref_fx is not None:
+                ref_fx = self.get_forecast(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
-                    fx, obs, normalization=norm, uncertainty=unc)
+                    fx, obs, normalization=norm, uncertainty=unc,
+                    reference_forecast=ref_fx)
             elif 'aggregate' in o:
                 agg = self.get_aggregate(o['aggregate'])
                 pair = datamodel.ForecastAggregate(
-                    fx, agg, normalization=norm, uncertainty=unc)
+                    fx, agg, normalization=norm, uncertainty=unc,
+                    reference_forecast=ref_fx)
             else:
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')

@@ -134,6 +134,21 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     obs_resampled = obs_resampled.dropna(how="any")
     obs_aligned, fx_aligned = obs_resampled.align(fx_series.dropna(how="any"),
                                                   'inner')
+    # another alignment step if reference forecast exists.
+    # here we drop points that don't exist in all 3 series.
+    # could set reference forecast to NaN where missing instead.
+    # could set to 0 instead.
+    # could build a DataFrame (implicit outer-join), then perform
+    # alignment using ['forecast', 'observation'] or
+    # ['forecast', 'observation', 'reference'] selections
+    if ref_series is not None:
+        obs_aligned, ref_fx_aligned = obs_resampled.align(
+            ref_series.dropna(how="any"), 'inner')
+        fx_aligned = fx_aligned.loc[obs_aligned.index]
+        ref_values = ref_fx_aligned.tz_convert(tz)
+    else:
+        ref_values = None
+
     # Determine series with timezone conversion
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
@@ -150,7 +165,11 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
             int(obs_series.isna().sum())
     }
 
-    return forecast_values, observation_values, results
+    if ref_series is not None:
+        k = type(ref_fx).__name__ + " " + UNDEFINED_DATA_STRING
+        results[k] = int(ref_values.isna().sum())
+
+    return forecast_values, observation_values, ref_values, results
 
 
 def _check_ref_fx(fx, ref_fx, ref_series):
@@ -282,9 +301,13 @@ def process_forecast_observations(forecast_observations, filters, data,
         # resample and align observations to forecast, create
         # ProcessedForecastObservation
         fx_ser = data[fxobs.forecast]
+        if fxobs.reference_forecast is not None:
+            ref_ser = data[fxobs.reference_forecast]
+        else:
+            ref_ser = None
         try:
-            forecast_values, observation_values, results = resample_and_align(
-                fxobs, fx_ser, obs_ser, timezone)
+            forecast_values, observation_values, ref_fx_values, results = \
+                resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)
             preproc_results += tuple(datamodel.PreprocessingResult(
                 name=k, count=v) for k, v in results.items())
         except Exception as e:
@@ -307,7 +330,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values,
-                reference_forecast_values=reference_forecast_values,
+                reference_forecast_values=ref_fx_values,
                 normalization_factor=fxobs.normalization,
                 uncertainty=fxobs.uncertainty
                 )
