@@ -537,10 +537,15 @@ def bar(df, metric):
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
+    # remove height limit when long abbreviations are used or there are more
+    # than 5 pairs to problems with labels being cutt off.
+    plot_layout_args = PLOT_LAYOUT_DEFAULTS.copy()
+    if x_values.map(len).max() > 15 or x_values.size > 6:
+        plot_layout_args.pop('height')
     fig.update_layout(
         title=f'<b>{metric_name}</b>',
         xaxis_title=metric_name,
-        **PLOT_LAYOUT_DEFAULTS)
+        **plot_layout_args)
     configure_axes(fig, None, y_range)
     return fig
 
