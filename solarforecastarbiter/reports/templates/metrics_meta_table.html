@@ -1,11 +1,19 @@
 <p>The table below shows the normalization and deadband parameters
 used in calculating the metrics. The <em>normalization</em> factor
-is applied when calculating metrics such as NMAE and NRMSE. The
-normalization is in the same units as the forecast and observation. The
-<em>deadband</em> accounts for observation uncertainty by setting
+is applied when calculating the metrics NMAE, NMBE, and NRMSE. The
+normalization is in the same units as the forecast and observation. By
+default, AC power forecasts are normalized by AC capacity and DC power
+forecasts are normalized by DC capacity. Normalization for all other
+forecasts is undefined, and the metric values are set to <code>nan</code>.
+The <em>deadband</em> accounts for observation uncertainty by setting
 the error (forecast - observation) equal to 0 for any point that is
-within the deadband. The deadband is specified as a percentage of the
-observation value at each time. </p>
+within the deadband. The error is unchanged for any point that is outside
+the deadband. The deadband is specified as a percentage of the
+observation value at each time. A value of <code>None</code>
+indicates that no deadband was applied for that observation/forecast pair.
+The deadband is accounted for in the following metrics:
+MAE, MBE, RMSE, MAPE, NMAE, NMBE, NRMSE. It is ignored for all other metrics.
+</p>
 <table class="table table-striped table-borderless" style="width:100%; ">
     <caption style="caption-side: top; text-align: center;">
     Table of metrics metadata
