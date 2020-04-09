@@ -58,7 +58,7 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
-def resample_and_align(fx_obs, fx_series, obs_series, tz):
+def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     """
     Resample the observation to the forecast interval length and align to
     remove overlap.
@@ -72,6 +72,8 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     obs_series : pandas.Series
         Timeseries data of the observation/aggregate after processing the quality
         flag column.
+    ref_series : pandas.Series or None
+        Timeseries data of the reference forecast.
     tz : str
         Timezone to which processed data will be converted.
 
@@ -79,6 +81,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     -------
     forecast_values : pandas.Series
     observation_values : pandas.Series
+    reference_forecast_values : pandas.Series or None
 
     Notes
     -----
@@ -87,14 +90,25 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     with a `interval_label` the same as the `fx`, regardless of whether the
     `interval_length` of the `fx` and `obs` are the same or different.
 
+    Raises
+    ------
+    ValueError
+        If fx_obs.reference_forecast is not None but ref_series is None
+        or vice versa
+    ValueError
+        If fx_obs.reference_forecast.interval_label or interval_length
+        does not match fx_obs.forecast.interval_label or interval_length
+
     Todo
     ----
       * Add other resampling functions (besides mean like first, last, median)
-
-
     """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
+    ref_fx = fx_obs.reference_forecast
+
+    # raise ValueError if intervals don't match
+    _check_ref_fx(fx, ref_fx, ref_series)
 
     # Resample observation, checking for invalid interval_length and that the
     # Series has data:
@@ -137,6 +151,28 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     }
 
     return forecast_values, observation_values, results
+
+
+def _check_ref_fx(fx, ref_fx, ref_series):
+    if ref_fx is not None and ref_series is None:
+        raise ValueError(
+            'ref_series must be supplied if fx_obs.reference_forecast is not'
+            'None')
+    elif ref_fx is None and ref_series is not None:
+        raise ValueError(
+            'ref_series was supplied but fx_obs.reference_forecast is None')
+
+    if ref_fx is not None:
+        if fx.interval_length != ref_fx.interval_length:
+            raise ValueError(
+                'forecast.interval_length %s must match '
+                'reference_forecast.interval_length %s',
+                fx.interval_length, ref_fx.interval_length)
+        if fx.interval_label != ref_fx.interval_label:
+            raise ValueError(
+                'forecast.interval_label %s must match '
+                'reference_forecast.interval_label %s',
+                fx.interval_label, ref_fx.interval_label)
 
 
 def exclude(values, quality_flags=None):
@@ -193,7 +229,9 @@ def process_forecast_observations(forecast_observations, filters, data,
     data : dict
         Dict with keys that are the Forecast/Observation/Aggregate object
         and values that are the corresponding pandas.Series/DataFrame for
-        the object.
+        the object. Keys must also include all Forecast objects assigned
+        to the ``reference_forecast`` attributes of the
+        ``forecast_observations``.
     timezone : str
         Timezone that data should be converted to
 
@@ -209,6 +247,7 @@ def process_forecast_observations(forecast_observations, filters, data,
     validated_observations = {}
     processed_fxobs = {}
     for fxobs in forecast_observations:
+        # validate observation or aggregate data
         if fxobs.data_object not in validated_observations:
             try:
                 obs_ser, counts = apply_validation(
@@ -219,6 +258,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 logger.error(
                     'Failed to validate data for %s. %s',
                     fxobs.data_object.name, e)
+                # store empty data in validated_observations
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
                     count=-1), )
@@ -227,6 +267,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                         [], name='timestamp', tz='UTC'), dtype=float),
                     (), preproc_results)
             else:
+                # store validated data in validated_observations
                 val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
                                     for k, v in counts.items())
                 preproc_results = (datamodel.PreprocessingResult(
@@ -237,6 +278,9 @@ def process_forecast_observations(forecast_observations, filters, data,
 
         obs_ser, val_results, preproc_results = (
             validated_observations[fxobs.data_object])
+
+        # resample and align observations to forecast, create
+        # ProcessedForecastObservation
         fx_ser = data[fxobs.forecast]
         try:
             forecast_values, observation_values, results = resample_and_align(
@@ -263,6 +307,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 preprocessing_results=preproc_results,
                 forecast_values=forecast_values,
                 observation_values=observation_values,
+                reference_forecast_values=reference_forecast_values,
                 normalization_factor=fxobs.normalization,
                 uncertainty=fxobs.uncertainty
                 )
