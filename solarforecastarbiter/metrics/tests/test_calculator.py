@@ -1150,7 +1150,7 @@ def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
     pytest.param([],
                  marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
 ])
-def test_calculate_event_metrics(categories, metrics):
+def test_calculate_event_metrics(site_metadata, categories, metrics):
 
     index = pd.DatetimeIndex(
         ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
@@ -1160,18 +1160,8 @@ def test_calculate_event_metrics(categories, metrics):
     obs_series = pd.Series(obs_values, index=index)
     fx_series = pd.Series(fx_values, index=index)
 
-    # Custom metadata to keep all timestamps in UTC for tests
-    site = datamodel.Site(
-        name='Albuquerque Baseline',
-        latitude=35.05,
-        longitude=-106.54,
-        elevation=1657.0,
-        timezone="UTC",
-        provider='Sandia'
-    )
-
     obs = datamodel.Observation(
-        site=site,
+        site=site_metadata,
         name="dummy obs",
         uncertainty=1,
         interval_length=pd.Timedelta("1h"),
@@ -1181,7 +1171,7 @@ def test_calculate_event_metrics(categories, metrics):
     )
 
     fx = datamodel.EventForecast(
-        site=site,
+        site=site_metadata,
         name="dummy fx",
         interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
@@ -1330,23 +1320,13 @@ def test_calculate_event_metrics_no_data(obs_values, fx_values):
     EVENT_METRICS[0:2],
     EVENT_METRICS,
 ])
-def test_calculate_metrics_with_event(categories, metrics):
+def test_calculate_metrics_with_event(site_metadata, categories, metrics):
     index = pd.DatetimeIndex(
         ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
     )
 
-    # Custom metadata to keep all timestamps in UTC for tests
-    site = datamodel.Site(
-        name='Albuquerque Baseline',
-        latitude=35.05,
-        longitude=-106.54,
-        elevation=1657.0,
-        timezone="UTC",
-        provider='Sandia'
-    )
-
     obs = datamodel.Observation(
-        site=site,
+        site=site_metadata,
         name="dummy obs",
         uncertainty=1,
         interval_length=pd.Timedelta("1h"),
@@ -1356,7 +1336,7 @@ def test_calculate_metrics_with_event(categories, metrics):
     )
 
     fx = datamodel.EventForecast(
-        site=site,
+        site=site_metadata,
         name="dummy fx",
         interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
@@ -1398,3 +1378,63 @@ def test_calculate_metrics_with_event(categories, metrics):
     assert isinstance(result, list)
     assert isinstance(result[0], datamodel.MetricResult)
     assert len(result) == len(proc_fx_obs)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize("categories,metrics", [
+    (LIST_OF_CATEGORIES, EVENT_METRICS),
+])
+def test_calculate_metrics_with_event_empty(site_metadata, categories,
+                                            metrics, caplog):
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+
+    obs = datamodel.Observation(
+        site=site_metadata,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta("1h"),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx = datamodel.EventForecast(
+        site=site_metadata,
+        name="dummy fx",
+        interval_length=pd.Timedelta("1h"),
+        interval_value_type="instantaneous",
+        issue_time_of_day=datetime.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+
+    # processed fx-obs pairs
+    proc_fx_obs = []
+    obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=index)
+    fx_series = pd.Series(dtype=bool)
+
+    proc_fx_obs.append(
+        datamodel.ProcessedForecastObservation(
+            name=fxobs.forecast.name,
+            original=fxobs,
+            interval_value_type=fxobs.forecast.interval_value_type,
+            interval_length=fxobs.forecast.interval_length,
+            interval_label="event",
+            valid_point_count=len(fx_series),
+            forecast_values=fx_series,
+            observation_values=obs_series,
+        )
+    )
+
+    result = calculator.calculate_metrics(proc_fx_obs, categories, metrics)
+    assert len(result) == 0
+    assert "ERROR" == caplog.text[0:5]
+    failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
+    assert f"Failed to calculate event metrics for {proc_fx_obs[0].name}: No Forecast timeseries data.\n" == failure_log_text
