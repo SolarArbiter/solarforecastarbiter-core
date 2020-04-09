@@ -990,7 +990,6 @@ def __set_uncertainty__(self):
             object.__setattr__(self, 'uncertainty', unc)
 
 
-
 @dataclass(frozen=True)
 class ForecastAggregate(BaseModel):
     """

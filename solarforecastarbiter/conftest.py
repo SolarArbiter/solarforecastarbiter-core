@@ -1231,6 +1231,15 @@ def many_prob_forecasts_observation(many_prob_forecasts, many_observations):
     return [datamodel.ForecastObservation(*c) for c in cart_prod]
 
 
+@pytest.fixture(params=[None, 1000])
+def single_forecast_observation_norm(
+        request, single_forecast, single_observation):
+    return datamodel.ForecastObservation(
+        single_forecast,
+        single_observation,
+        normalization=request.param)
+
+
 @pytest.fixture(params=[None, 100, 'observation_uncertainty'])
 def single_forecast_observation_uncert(
         request, single_forecast, single_observation):

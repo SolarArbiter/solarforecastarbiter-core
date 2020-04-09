@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_allclose
 import pandas as pd
 import pytest
 import itertools
@@ -342,16 +343,20 @@ def test_calculate_deterministic_metrics_missing_values(
 
 
 def test_calculate_deterministic_metrics_normalizer(
-        create_processed_fxobs, single_forecast_observation):
-    pair = create_processed_fxobs(single_forecast_observation,
+        create_processed_fxobs, single_forecast_observation_norm):
+    pair = create_processed_fxobs(single_forecast_observation_norm,
                                   np.random.randn(10), np.random.randn(10))
     s_normed = calculator.calculate_deterministic_metrics(
         pair, ['total'], deterministic._REQ_NORM)
     unnormed = [x.lstrip('n') for x in deterministic._REQ_NORM]
     s_unnormed = calculator.calculate_deterministic_metrics(
         pair, ['total'], unnormed)
+    norm = single_forecast_observation_norm.normalization
     for v_normed, v_unnormed in zip(s_normed.values, s_unnormed.values):
-        assert v_normed.value == v_unnormed.value * 100
+        if np.isnan(norm):
+            assert np.isnan(v_normed.value)
+        else:
+            assert_allclose(v_normed.value, v_unnormed.value * 100 / norm)
 
 
 def test_calculate_deterministic_metrics_reference(
