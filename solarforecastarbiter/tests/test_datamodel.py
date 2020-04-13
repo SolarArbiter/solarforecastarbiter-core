@@ -479,19 +479,11 @@ def test___check_metrics__(metrics, single_forecast):
         marks=pytest.mark.xfail(raises=ValueError, strict=True)
     ),
 ])
-def test___check_metrics___event(metrics):
-    index = pd.DatetimeIndex(["20200301T0000Z", "20200301T0100Z"])
+def test___check_metrics___event(site_metadata, metrics):
+    index = pd.DatetimeIndex(["20200301T0000", "20200301T0100"])
     fx_series = pd.Series([True, False], index=index)
-    site = datamodel.Site(
-        name='Albuquerque Baseline',
-        latitude=35.05,
-        longitude=-106.54,
-        elevation=1657.0,
-        timezone="UTC",
-        provider='Sandia'
-    )
     fx = datamodel.EventForecast(
-        site=site,
+        site=site_metadata,
         name="dummy fx",
         interval_length=pd.Timedelta(fx_series.index.freq),
         interval_value_type="instantaneous",
