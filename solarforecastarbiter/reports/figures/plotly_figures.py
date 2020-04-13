@@ -551,7 +551,7 @@ def bar_subdivisions(df, category, metric):
     figs = {}
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
-    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
+    metric_name = datamodel.ALLOWED_METRICS[metric]
 
     x_axis_label = human_category
     y_axis_label = metric_name
