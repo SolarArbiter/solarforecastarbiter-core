@@ -318,6 +318,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
     ref_fx_obs : datamodel.ProcessedForecastObservation
         Reference forecast to be used when calculating skill metrics. Default
         is None and no skill metrics will be calculated.
+
     Returns
     -------
     tuple of (list of datamodel.MetricsResult, datamodel.MetricsResult)
