@@ -472,7 +472,8 @@ def test_name_pfxobs_recursion_limit():
     pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
                  marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
 ])
-def test_resample_and_align_event(site_metadata, obs_index, fx_index, expected_dt):
+def test_resample_and_align_event(site_metadata, obs_index, fx_index, 
+                                  expected_dt):
 
     obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
     fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)

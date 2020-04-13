@@ -1437,4 +1437,5 @@ def test_calculate_metrics_with_event_empty(site_metadata, categories,
     assert len(result) == 0
     assert "ERROR" == caplog.text[0:5]
     failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
-    assert f"Failed to calculate event metrics for {proc_fx_obs[0].name}: No Forecast timeseries data.\n" == failure_log_text
+    assert (f"Failed to calculate event metrics for {proc_fx_obs[0].name}: "
+            "No Forecast timeseries data.\n") == failure_log_text
