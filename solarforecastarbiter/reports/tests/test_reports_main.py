@@ -3,6 +3,7 @@ import re
 import uuid
 
 
+import datetime as dt
 import pandas as pd
 import pytest
 
@@ -141,6 +142,80 @@ def test_create_raw_report_from_data_no_obs(mocker, report_objects,
 
 def test_create_raw_report_from_data_no_data(mocker, report_objects):
     report = report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = EMPTY_DF['value']
+        data[fxobs.data_object] = EMPTY_DF
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_create_raw_report_from_data_event(site_metadata):
+
+    tz = "America/Phoenix"
+    start = pd.Timestamp("20200401T00", tz=tz)
+    end = pd.Timestamp("20200404T2359", tz=tz)
+
+    obs = datamodel.Observation(
+        site=site_metadata,
+        name="dummy obs",
+        uncertainty=1,
+        interval_length=pd.Timedelta("15min"),
+        interval_value_type="instantaneous",
+        variable="event",
+        interval_label="event",
+    )
+
+    fx0 = datamodel.EventForecast(
+        site=site_metadata,
+        name="dummy fx",
+        interval_length=pd.Timedelta("15min"),
+        interval_value_type="instantaneous",
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    fx1 = datamodel.EventForecast(
+        site=site_metadata,
+        name="dummy fx 2",
+        interval_length=pd.Timedelta("15min"),
+        interval_value_type="instantaneous",
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable="event",
+        interval_label="event",
+    )
+
+    fxobs0 = datamodel.ForecastObservation(observation=obs, forecast=fx0)
+    fxobs1 = datamodel.ForecastObservation(observation=obs, forecast=fx1)
+
+    quality_flag_filter = datamodel.QualityFlagFilter(
+        ("USER FLAGGED", "NIGHTTIME")
+    )
+
+    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(12, 0),
+                                                 dt.time(14, 0)))
+
+    report_params = datamodel.ReportParameters(
+        name="",
+        start=start,
+        end=end,
+        object_pairs=(fxobs0, fxobs1),
+        metrics=("pod", "far", "pofd"),
+        categories=("total", "hour"),
+        filters=(quality_flag_filter, timeofdayfilter),
+    )
+
+    report = datamodel.Report(
+        report_id="f00-ba7",
+        report_parameters=report_params
+    )
+
     data = {}
     for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = EMPTY_DF['value']
