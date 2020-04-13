@@ -18,7 +18,7 @@
         {% for metric in metric_ordering %}
           {% for mval in fx_result.values %}
             {% if mval.category == category  and mval.metric == metric %}
-              {% if -1 < mval.value < 1 %}
+              {% if -0.01 < mval.value < 0.01 %}
                 <td>{{ '%.2e' | format(mval.value) }}</td>
               {% else %}
                 <td>{{ '%0.3g' | format(mval.value) }}</td>
