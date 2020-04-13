@@ -1247,25 +1247,15 @@ def test_calculate_event_metrics(site_metadata, categories, metrics):
     ([], [True, False]),
     ([False, True], []),
 ])
-def test_calculate_event_metrics_no_data(obs_values, fx_values):
+def test_calculate_event_metrics_no_data(site_metadata, obs_values, fx_values):
 
     categories = LIST_OF_CATEGORIES
     metrics = EVENT_METRICS
     obs_series = pd.Series(obs_values, dtype=bool)
     fx_series = pd.Series(fx_values, dtype=bool)
 
-    # Custom metadata to keep all timestamps in UTC for tests
-    site = datamodel.Site(
-        name='Albuquerque Baseline',
-        latitude=35.05,
-        longitude=-106.54,
-        elevation=1657.0,
-        timezone="UTC",
-        provider='Sandia'
-    )
-
     obs = datamodel.Observation(
-        site=site,
+        site=site_metadata,
         name="dummy obs",
         uncertainty=1,
         interval_length=pd.Timedelta("1h"),
@@ -1275,7 +1265,7 @@ def test_calculate_event_metrics_no_data(obs_values, fx_values):
     )
 
     fx = datamodel.EventForecast(
-        site=site,
+        site=site_metadata,
         name="dummy fx",
         interval_length=pd.Timedelta("1h"),
         interval_value_type="instantaneous",
