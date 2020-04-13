@@ -141,7 +141,7 @@ def _apply_event_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     event metric functions."""
     metric_func = event._MAP[metric][0]
-    return metric_func(obs, fx.to_numpy())
+    return metric_func(obs, fx)
 
 
 def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
