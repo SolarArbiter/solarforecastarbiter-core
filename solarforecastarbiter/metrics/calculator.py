@@ -326,6 +326,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         datamodel.ProbabilisticForecastConstantValue, and
         the second value are the metrics calculated per
         datamodel.ProbabilisticForecast.
+
     Raises
     ------
     RuntimeError
@@ -419,6 +420,7 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
     """
     Calculate probabilistic metrics for the processed data using the provided
     categories and metric types.
+
     Parameters
     ----------
     data_df : pandas.DataFrame
@@ -428,6 +430,7 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
     metrics : list of str
         List of metrics to be computed.
     interval_label : str
+
     Returns
     -------
     list of tuples of datamodel.MetricValue
@@ -493,11 +496,13 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
 def _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob):
     """
     Creates a DataFrame for grouping for the probabilistic forecasts.
+
     Parameters
     ----------
     obs : pandas.Series
     fx_fx_prob : list of tuple of pandas.Series
     ref_fx_fx_prob : list of tuple of pandas.Series
+
     Returns
     -------
     pandas.DataFrame
@@ -526,9 +531,11 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
     """
     Helper function that returns ordered list of series of physical values and
     probabilities for a datamodel.ProcessedForecastObservation
+
     Parameters
     ----------
     proc_fx_obs : datamodel.ProcessedForecastObservation
+
     Returns
     -------
     fx_fx_prob : list of tuples of (n,) array_like
@@ -554,6 +561,7 @@ def calculate_event_metrics(proc_fx_obs, categories, metrics):
     """
     Calculate event metrics for the processed data using the provided
     categories and metric types.
+
     Parameters
     ----------
     proc_fx_obs : datamodel.ProcessedForecastObservation
@@ -561,10 +569,12 @@ def calculate_event_metrics(proc_fx_obs, categories, metrics):
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
+
     Returns
     -------
     solarforecastarbiter.datamodel.MetricResult
         Contains all the computed metrics by categories.
+
     Raises
     ------
     RuntimeError
