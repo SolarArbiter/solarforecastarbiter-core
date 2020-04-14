@@ -482,8 +482,8 @@ class Observation(BaseModel):
         1 hour.
     interval_label : str
         Indicates if a time labels the beginning or the ending of an interval
-        average, or indicates an instantaneous value, e.g. beginning, ending,
-        instant
+        average ("beginning" or "ending"), indicates an instantaneous value
+        ("instant") or indicates an event ("event").
     site : Site
         The site that this Observation was generated for.
     uncertainty : float
@@ -700,8 +700,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     interval_value_type : str
         The type of the data in the forecast, e.g. mean, max, 95th percentile.
     variable : str
-        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
-        associated with a standard unit.
+        The variable in the forecast, e.g. power, GHI, DNI, event. Each
+        variable is associated with a standard unit.
     site : Site or None
         The predefined site that the forecast is for, e.g. Power Plant X.
     aggregate : Aggregate or None
