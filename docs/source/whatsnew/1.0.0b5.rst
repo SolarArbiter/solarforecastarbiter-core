@@ -57,7 +57,7 @@ API Changes
 * Added support for evaluating event forecasts with
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modification,
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_event_metrics` addition and
-  :py:func:`solarforecastarbiter.metrics.preprocessing.resample_and_align` modifications. (:issue:`357`) (:pull:`361`)
+  :py:func:`solarforecastarbiter.metrics.preprocessing.resample_and_align` modifications. (:issue:`357`) (:issue:`380`) (:pull:`361`)
 
 
 Enhancements
