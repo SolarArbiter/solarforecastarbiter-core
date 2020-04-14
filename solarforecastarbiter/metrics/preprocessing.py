@@ -58,7 +58,6 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
-
 def _resample_event_obs(obs, fx, obs_series):
     """
     Resample the event observation.
