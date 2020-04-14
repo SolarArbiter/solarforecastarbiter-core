@@ -14,6 +14,7 @@ import calendar
 import logging
 import copy
 
+import numpy as np
 import pandas as pd
 
 
@@ -169,6 +170,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
 
     # Check reference forecast is from processed pair, if needed
     ref_fx = processed_fx_obs.reference_forecast_values
+    if ref_fx is None:
+        ref_fx = np.nan  # avoids issues with None and deadband masking
 
     # No data or metrics
     if fx.empty:
@@ -210,8 +213,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
             # # actually, don't skip this b/c we want nans
             # if (metric_ in deterministic._REQ_REF_FX and
             #         (ref_fx is None or ref_fx.empty)):
-            #     logger.warning("No reference forecast timeseries data for %s",
-            #                    processed_fx_obs.name)
+            #     logger.warning("No reference forecast timeseries data "
+            #                    "for %s", processed_fx_obs.name)
             #     continue
 
             # Group by category

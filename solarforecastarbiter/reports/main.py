@@ -97,7 +97,7 @@ def get_data_for_report(session, report):
             data[fxobs.data_object] = session.get_values(
                 fxobs.data_object, start, end)
         if fxobs.reference_forecast is not None:
-            if fxobs.reference_forecast.forecast_id not in data:
+            if fxobs.reference_forecast not in data:
                 data[fxobs.reference_forecast] = session.get_forecast_values(
                     fxobs.reference_forecast.forecast_id, start, end)
 

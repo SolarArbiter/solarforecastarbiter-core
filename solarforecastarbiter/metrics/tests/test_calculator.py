@@ -55,6 +55,7 @@ def create_processed_fxobs(create_dt_index):
             valid_point_count=len(fx_values),
             forecast_values=conv_fx_values,
             observation_values=conv_obs_values,
+            reference_forecast_values=ref_values,
             normalization_factor=fxobs.normalization,
             uncertainty=fxobs.uncertainty
             )
