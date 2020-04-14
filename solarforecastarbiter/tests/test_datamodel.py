@@ -791,3 +791,14 @@ def test_ForecastAggregate_uncertainty_invalid(
     with pytest.raises(ValueError):
         datamodel.ForecastAggregate(
             aggregateforecast, aggregate, uncertainty='anystring')
+
+
+def test_ForecastObservation_reffx(single_forecast_observation_reffx):
+    assert isinstance(single_forecast_observation_reffx.reference_forecast,
+                      datamodel.Forecast)
+
+
+def test_ForecastAggregate_reffx(aggregateforecast, aggregate):
+    fxobs = datamodel.ForecastAggregate(
+        aggregateforecast, aggregate, reference_forecast=aggregateforecast)
+    assert isinstance(fxobs.reference_forecast, datamodel.Forecast)

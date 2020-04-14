@@ -6,7 +6,7 @@ import logging
 import requests
 from urllib3 import Retry
 
-
+import numpy as np
 import pandas as pd
 
 
@@ -868,6 +868,14 @@ class APISession(requests.Session):
                 d['aggregate'] = _fo['aggregate']['aggregate_id']
             else:
                 d['observation'] = _fo['observation']['observation_id']
+            if _fo['reference_forecast'] is not None:
+                d['reference_forecast'] = \
+                    _fo['reference_forecast']['forecast_id']
+            if (_fo['normalization'] is not None and
+                    ~np.isnan(_fo['normalization'])):
+                d['normalization'] = str(_fo['normalization'])
+            if _fo['uncertainty'] is not None:
+                d['uncertainty'] = str(_fo['uncertainty'])
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
         params = {'report_parameters': report_params}

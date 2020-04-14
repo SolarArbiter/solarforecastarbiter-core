@@ -1250,6 +1250,15 @@ def single_forecast_observation_uncert(
 
 
 @pytest.fixture()
+def single_forecast_observation_reffx(
+        single_forecast, single_observation):
+    return datamodel.ForecastObservation(
+        single_forecast,
+        single_observation,
+        reference_forecast=single_forecast)
+
+
+@pytest.fixture()
 def single_forecast_ac_observation(
         ac_power_forecast_metadata, ac_power_observation_metadata):
     return datamodel.ForecastObservation(
@@ -1382,7 +1391,8 @@ def report_objects(aggregate):
         forecast_1,
         observation,
         normalization=1000.,
-        uncertainty=15.)
+        uncertainty=15.,
+        reference_forecast=forecast_0)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
@@ -1404,7 +1414,7 @@ def report_objects(aggregate):
         start=start,
         end=end,
         object_pairs=(fxobs0, fxobs1, fxagg0),
-        metrics=("mae", "rmse", "mbe"),
+        metrics=("mae", "rmse", "mbe", "s"),
         categories=("total", "date", "hour"),
         filters=(quality_flag_filter, timeofdayfilter)
     )
@@ -1533,7 +1543,7 @@ def report_text():
              ]},
              {"time_of_day_range": ["12:00", "14:00"]}
          ],
-         "metrics": ["mae", "rmse", "mbe"],
+         "metrics": ["mae", "rmse", "mbe", "s"],
          "categories": ["total", "date", "hour"],
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
@@ -1542,7 +1552,8 @@ def report_text():
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
-              "uncertainty": "15"},
+              "uncertainty": "15",
+              "reference_forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
               "uncertainty": "5"}
