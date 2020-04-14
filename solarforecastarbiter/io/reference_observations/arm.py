@@ -100,8 +100,9 @@ def initialize_site_forecasts(api, site):
         logger.error('Failed to initialize reference forecasts for '
                      f'{site.name} extra parameters could not be loaded.')
         return
-    site_vars = _determine_site_vars(site_extra_params['network_api_id'])
-    common.create_forecasts(api, site, site_vars,
+    site_arm_vars = _determine_site_vars(site_extra_params['network_api_id'])
+    sfa_vars = [DOE_ARM_VARIABLE_MAP[v] for v in site_arm_vars]
+    common.create_forecasts(api, site, sfa_vars,
                             default_forecasts.TEMPLATE_FORECASTS)
 
 
@@ -141,8 +142,7 @@ def fetch(api, site, start, end, *, doe_arm_user_id, doe_arm_api_key):
         logger.warning(f'Data for site {site.name} contained no '
                        f'entries from {start} to {end}.')
         return pd.DataFrame()
-    obs_df = obs_df.rename(columns=DOE_ARM_VARIABLE_MAP).tz_localize(
-        site.timezone)
+    obs_df = obs_df.rename(columns=DOE_ARM_VARIABLE_MAP)
     return obs_df
 
 
