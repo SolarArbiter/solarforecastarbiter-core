@@ -362,3 +362,48 @@ def _check_intervals_times(interval_label, data_start, data_end,
                              'interval_length. ' + strvals)
     else:
         raise ValueError('invalid interval_label')
+
+
+def persistence_hourofday_dayofweek(observation, data_start, data_end,
+                                    forecast_start, forecast_end,
+                                    interval_length, interval_label,
+                                    load_data):
+    r"""
+    Calculate a persistence forecast adjusted for hour of day (HOD) and day of
+    week (DOW) trends. The HOD and DOW trends are computing using a rolling
+    window based on lagged observations and do not require any exongeous
+    information about the forecasted variable. Therefore, this persistence
+    forecast is well suited for reference load forecasts.
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    data_start : pd.Timestamp
+        Observation data start. Forecast is inclusive of this instant if
+        observation.interval_label is *beginning* or *instant*.
+    data_end : pd.Timestamp
+        Observation data end. Forecast is inclusive of this instant if
+        observation.interval_label is *ending* or *instant*.
+    forecast_start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* or *instant*.
+    forecast_end : pd.Timestamp
+        Forecast end. Forecast is inclusive of this instant if
+        interval_label is *ending* or *instant*.
+    interval_length : pd.Timedelta
+        Forecast interval length
+    interval_label : str
+        instant, beginning, or ending
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
+
+    Returns
+    -------
+    forecast : pd.Series
+        The persistence forecast. The forecast interval label is the
+        same as the observation interval label.
+    """
+
+    return pd.Series()
