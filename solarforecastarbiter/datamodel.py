@@ -54,7 +54,8 @@ COMMON_NAMES = {
     'ac_power': 'AC Power',
     'dc_power': 'DC Power',
     'availability': 'Availability',
-    'curtailment': 'Curtailment'
+    'curtailment': 'Curtailment',
+    'event': 'Event'
 }
 
 
