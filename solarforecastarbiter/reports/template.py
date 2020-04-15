@@ -83,7 +83,6 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
 
-
     return kwargs
 
 
@@ -118,13 +117,6 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         trim_blocks=True
     )
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
-
-    # omit scatter plot for event forecasts
-    pfxobs = report.raw_report.processed_forecasts_observations
-    fx = pfxobs[0].original.forecast
-    if isinstance(fx, datamodel.EventForecast):
-        kwargs.pop("scatter_spec")
-
     if report.status == 'complete':
         template = env.get_template('body.html')
     elif report.status == 'failed':

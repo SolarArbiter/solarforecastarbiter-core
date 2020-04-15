@@ -66,9 +66,9 @@
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
 {% include "obsfx_table.html" %}
 
-{% if timeseries_spec is defined and scatter_spec is defined %}
+{% if timeseries_spec is defined %}
 <p>The plots below show the realigned and resampled time series of
-observation and forecast data as well as a scatter plot of forecast vs
+observation and forecast data as well as the distribution of forecast vs
 observation data.</p>
 
 <p>Controls to pan, zoom, and save the plot are shown on the
@@ -84,20 +84,6 @@ Plotly.newPlot("timeseries-div", ts_plot);
 scat_plot = JSON.parse('{{ scatter_spec | safe }}');
 Object.assign(scat_plot,{config: {responsive: true}});
 Plotly.newPlot("scatter-div", scat_plot);
-</script>
-{% elif timeseries_spec is defined %}
-<p>The plots below show the realigned and resampled time series of
-observation and forecast data.</p>
-
-<p>Controls to pan, zoom, and save the plot are shown on the
-right. Clicking on an item in the legend will hide/show it.</p>
-
-<div id="timeseries-div"></div>
-
-<script>
-ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
-Object.assign(ts_plot,{config: {responsive: true}});
-Plotly.newPlot("timeseries-div", ts_plot);
 </script>
 {% endif %}
 {% endblock %}
