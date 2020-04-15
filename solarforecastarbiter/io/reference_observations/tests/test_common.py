@@ -34,7 +34,8 @@ site_test_observation = Observation.from_dict({
     'interval_length': 1,
     'site': site_objects[0],
     'uncertainty': 0,
-    'extra_parameters': ('{"network": "ARM", "observation_interval_length": 1,'
+    'extra_parameters': ('{"network": "DOE ARM", '
+                         '"observation_interval_length": 1,'
                          '"network_api_id": "api_id", '
                          '"network_api_abbreviation": "siteghi"}')
 })
@@ -58,7 +59,7 @@ no_params = {
 def test_decode_extra_parameters():
     metadata = Site.from_dict(site_string_dicts[0])
     params = common.decode_extra_parameters(metadata)
-    assert params['network'] == 'ARM'
+    assert params['network'] == 'DOE ARM'
     assert params['observation_interval_length'] == 1
 
 
@@ -94,11 +95,11 @@ bad_network = expected_site(bad_network)
 
 
 @pytest.mark.parametrize('networks,site,expected', [
-    (['ARM'], site_string_dicts[0], True),
-    ('ARM', site_string_dicts[0], True),
-    (['ARM', 'NREL MIDC'], site_string_dicts[1], False),
-    (['NOAA SURFRAD', 'ARM'], site_string_dicts[3], False),
-    (['NOAA SURFRAD', 'ARM'], bad_network, False),
+    (['DOE ARM'], site_string_dicts[0], True),
+    ('DOE ARM', site_string_dicts[0], True),
+    (['DOE ARM', 'NREL MIDC'], site_string_dicts[1], False),
+    (['NOAA SURFRAD', 'DOE ARM'], site_string_dicts[3], False),
+    (['NOAA SURFRAD', 'DOE ARM'], bad_network, False),
     (['ARMS'], site_string_dicts[0], False),
 ])
 def test_check_network(networks, site, expected):
@@ -107,8 +108,8 @@ def test_check_network(networks, site, expected):
 
 
 @pytest.mark.parametrize('networks,expected', [
-    (['ARM'], site_objects[:1]),
-    ('ARM', site_objects[:1]),
+    (['DOE ARM'], site_objects[:1]),
+    ('DOE ARM', site_objects[:1]),
     (['NOAA SURFRAD', 'NOAA SOLRAD'], site_objects[1:3])
 ])
 def test_filter_by_network(networks, expected):
@@ -141,7 +142,7 @@ long_site_name = Site.from_dict({
     'longitude': 1,
     'elevation': 5,
     'timezone': 'Etc/GMT+8',
-    'extra_parameters': ('{"network": "ARM", "network_api_abbreviation": '
+    'extra_parameters': ('{"network": "DOE ARM", "network_api_abbreviation": '
                          '"site_abbrev", "network_api_id": "thing", '
                          '"observation_interval_length": 1}'),
 })
@@ -153,7 +154,7 @@ observation_long_site_name = Observation.from_dict({
     'interval_length': 1,
     'site': long_site_name,
     'uncertainty': 0,
-    'extra_parameters': ('{"network": "ARM", "network_api_abbreviation": '
+    'extra_parameters': ('{"network": "DOE ARM", "network_api_abbreviation": '
                          '"site_abbrev", "network_api_id": "thing", '
                          '"observation_interval_length": 1}'),
 })
@@ -204,7 +205,8 @@ test_kwarg_observation = Observation.from_dict({
     'interval_length': 1,
     'site': site_objects[0],
     'uncertainty': 2,
-    'extra_parameters': ('{"network": "ARM", "network_api_id": "some_id", '
+    'extra_parameters': ('{"network": "DOE ARM", '
+                         '"network_api_id": "qcradlong1", '
                          '"network_api_abbreviation": "abbrv", '
                          '"observation_interval_length": 1}')
 })

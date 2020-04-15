@@ -16,8 +16,8 @@ def site_dicts():
             'longitude': 1,
             'elevation': 5,
             'timezone': 'Etc/GMT+8',
-            'extra_parameters': {"network": "ARM",
-                                 "network_api_id": 'some_id',
+            'extra_parameters': {"network": "DOE ARM",
+                                 "network_api_id": 'qcradlong1',
                                  "network_api_abbreviation": 'abbrv',
                                  "observation_interval_length": 1},
         },
@@ -51,6 +51,17 @@ def site_dicts():
             'timezone': 'Etc/GMT+8',
             'extra_parameters': {"observation_interval_length": 1,
                                  "network": 'NREL MIDC',
+                                 "network_api_id": 'BMS',
+                                 "network_api_abbreviation": 'abbrv'},
+        },
+        {
+            'name': 'site4',
+            'latitude': 4,
+            'longitude': -5,
+            'elevation': 12,
+            'timezone': 'Etc/GMT+8',
+            'extra_parameters': {"observation_interval_length": 1,
+                                 "network": 'Unincorportated',
                                  "network_api_id": 'BMS',
                                  "network_api_abbreviation": 'abbrv'},
         }
@@ -101,7 +112,7 @@ def observation_objects_param(site_objects_param):
 
 @pytest.fixture
 def networks():
-    return ['ARM', 'NOAA SURFRAD', 'NOAA SOLRAD']
+    return ['DOE ARM', 'NOAA SURFRAD', 'NOAA SOLRAD', 'Unincorporated']
 
 
 @pytest.fixture
