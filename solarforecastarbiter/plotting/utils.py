@@ -65,9 +65,15 @@ def line_or_step(interval_label):
         hover_kwargs = dict(line_policy='next',
                             attachment='right',
                             add_line=True)
+    elif interval_label == 'event':
+        plot_method = 'step'
+        plot_kwargs = dict(mode='before')
+        hover_kwargs = dict(line_policy='next',
+                            attachment='right',
+                            add_line=True)
     else:
         raise ValueError(
             'interval_label must be one of "instant", "beginning", '
-            'or "ending"')
+            '"event", or "ending"')
 
     return plot_method, plot_kwargs, hover_kwargs

@@ -209,6 +209,9 @@ def make_basic_timeseries(source, object_name, variable, interval_label,
                               **plot_kwargs)
     fig.yaxis.axis_label = plot_utils.format_variable_name(variable)
     fig.xaxis.axis_label = 'Time (UTC)'
+    if variable == 'event':
+        fig.yaxis.ticker = [0, 1]
+        fig.yaxis.major_label_overrides = {1: 'True', 0: 'False'}
     add_hover_tool(fig, source, **hover_kwargs)
     return fig
 
