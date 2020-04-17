@@ -5,7 +5,6 @@ import pytest
 import itertools
 import calendar
 import datetime
-import re
 
 
 from solarforecastarbiter import datamodel

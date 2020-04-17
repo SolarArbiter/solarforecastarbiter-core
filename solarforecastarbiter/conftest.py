@@ -969,6 +969,11 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 
 
 @pytest.fixture()
+def single_reference_forecast(single_forecast, ref_forecast_id):
+    return single_forecast.replace(forecast_id=ref_forecast_id)
+
+
+@pytest.fixture()
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
@@ -1259,11 +1264,11 @@ def single_forecast_observation_uncert(
 
 @pytest.fixture()
 def single_forecast_observation_reffx(
-        single_forecast, single_observation):
+        single_forecast, single_reference_forecast, single_observation):
     return datamodel.ForecastObservation(
         single_forecast,
         single_observation,
-        reference_forecast=single_forecast)
+        reference_forecast=single_reference_forecast)
 
 
 @pytest.fixture()
@@ -1355,7 +1360,7 @@ def single_prob_forecast_aggregate_reffx(single_prob_aggregate_forecast,
 
 
 @pytest.fixture()
-def report_objects(aggregate):
+def report_objects(aggregate, ref_forecast_id):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)
     end = pd.Timestamp('20190404 2359', tz=tz)
@@ -1423,12 +1428,13 @@ def report_objects(aggregate):
         observation,
         # report_text parsing will ensure unc can be done dynamically too
         uncertainty=observation.uncertainty)
+    forecast_ref = forecast_0.replace(forecast_id=ref_forecast_id)
     fxobs1 = datamodel.ForecastObservation(
         forecast_1,
         observation,
         normalization=1000.,
         uncertainty=15.,
-        reference_forecast=forecast_0)
+        reference_forecast=forecast_ref)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
@@ -1515,12 +1521,19 @@ def valuefilter_dict(single_forecast):
     }
 
 
+@pytest.fixture
+def ref_forecast_id():
+    return "refbc386-8712-11e9-a1c7-0a580a8200ae"
+
+
 @pytest.fixture()
 def report_params_dict(report_objects, quality_filter_dict,
-                       timeofdayfilter_dict):
+                       timeofdayfilter_dict, ref_forecast_id):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     report_params = report.report_parameters
+    ref_dict = forecast_0.to_dict()
+    ref_dict.update(forecast_id=ref_forecast_id)
     return {
         'name': report_params.name,
         'start': report_params.start,
@@ -1533,7 +1546,7 @@ def report_params_dict(report_objects, quality_filter_dict,
              'observation': observation.to_dict(),
              'normalization': 1000.,
              'uncertainty': 15.,
-             'reference_forecast': forecast_0.to_dict()},
+             'reference_forecast': ref_dict},
             {'forecast': forecast_agg.to_dict(),
              'aggregate': aggregate.to_dict(),
              'uncertainty': 5.},
@@ -1590,7 +1603,7 @@ def report_text():
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
               "uncertainty": "15",
-              "reference_forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae"},
+              "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
               "uncertainty": "5"}

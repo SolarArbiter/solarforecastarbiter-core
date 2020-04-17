@@ -391,6 +391,7 @@ def test_merge_quality_filters():
 def test_process_forecast_observations(report_objects, quality_filter,
                                        timeofdayfilter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -405,6 +406,7 @@ def test_process_forecast_observations(report_objects, quality_filter,
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -431,11 +433,13 @@ def test_process_forecast_observations(report_objects, quality_filter,
 def test_process_forecast_observations_no_data(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     agg_df = THREE_HOUR_SERIES.to_frame('value')
     agg_df['quality_flag'] = NT_UF
     data = {
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -457,6 +461,7 @@ def test_process_forecast_observations_no_data(
 def test_process_forecast_observations_resample_fail(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -471,6 +476,7 @@ def test_process_forecast_observations_resample_fail(
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -488,6 +494,7 @@ def test_process_forecast_observations_resample_fail(
 def test_process_forecast_observations_same_name(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -502,6 +509,7 @@ def test_process_forecast_observations_same_name(
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
