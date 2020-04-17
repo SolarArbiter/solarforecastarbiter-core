@@ -192,6 +192,11 @@ def _check_ref_fx(fx, ref_fx, ref_series):
                 'forecast.interval_label %s must match '
                 'reference_forecast.interval_label %s',
                 fx.interval_label, ref_fx.interval_label)
+        if isinstance(fx, datamodel.ProbabilisticForecast):
+            if fx.axis != ref_fx.axis:
+                raise ValueError(
+                    'forecast.axis %s must match reference_forecast.axis %s',
+                    fx.axis, ref_fx.axis)
 
 
 def exclude(values, quality_flags=None):

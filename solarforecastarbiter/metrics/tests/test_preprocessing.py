@@ -236,6 +236,67 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
                                   check_categorical=False)
 
 
+def test_resample_and_align_ref_error_None(
+        single_forecast_observation, single_forecast_observation_reffx):
+    tz = 'UTC'
+
+    # no ref_fx object, but supplied ref_fx series
+    fx_obs = single_forecast_observation
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+    # ref_fx object, but no supplied ref_fx series
+    fx_obs = single_forecast_observation_reffx
+    fx_series = THREE_HOUR_SERIES
+    ref_series = None
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+
+@pytest.mark.parametrize('attr,value', [
+    ('interval_label', 'ending'),
+    ('interval_length', pd.Timedelta('20min')),
+])
+def test_resample_and_align_ref_error(
+        single_forecast_observation_reffx, attr, value):
+    tz = 'UTC'
+
+    changes = {attr: value}
+    # ref_fx object parameters are inconsistent with fx object parameters
+    ref_fx = single_forecast_observation_reffx.reference_forecast.replace(
+        **changes)
+    fx_obs = single_forecast_observation_reffx.replace(
+        reference_forecast=ref_fx)
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+
+def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
+    tz = 'UTC'
+    cv = prob_forecasts.constant_values[0].replace(axis='y')
+    ref_fx = prob_forecasts.replace(axis='y', constant_values=(cv,))
+    fx_obs = datamodel.ForecastObservation(
+        prob_forecasts,
+        single_observation,
+        reference_forecast=ref_fx)
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+
 @pytest.mark.parametrize('obs,somecounts', [
     (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                   columns=['value', 'quality_flag']),
