@@ -106,16 +106,16 @@ def test_resample_and_align(
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, local_tz)
+    fx_vals, obs_vals, ref_vals, res_dict = preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, None, local_tz)
 
     # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
+    pd.testing.assert_index_equal(fx_vals.index,
+                                  obs_vals.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(obs_values.index,
+    pd.testing.assert_index_equal(obs_vals.index,
                                   expected_dt,
                                   check_categorical=False)
 
@@ -126,8 +126,8 @@ def test_resample_and_align(
 def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-        single_forecast_aggregate, fx_series, obs_series, 'UTC')
+    fx_values, obs_values, ref, res_dict = preprocessing.resample_and_align(
+        single_forecast_aggregate, fx_series, obs_series, None, 'UTC')
 
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -184,8 +184,8 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_out, obs_out, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, local_tz)
+    fx_out, obs_out, ref_out, res_dict = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, local_tz)
 
     assert obs_out.index.freq == freq
 
@@ -225,8 +225,8 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, local_tz)
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, local_tz)
 
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,

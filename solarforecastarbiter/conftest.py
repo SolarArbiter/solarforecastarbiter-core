@@ -1211,6 +1211,14 @@ def single_prob_forecast_observation(prob_forecasts, single_observation):
 
 
 @pytest.fixture()
+def single_prob_forecast_observation_reffx(prob_forecasts, single_observation):
+    return datamodel.ForecastObservation(
+        prob_forecasts,
+        single_observation,
+        reference_forecast=prob_forecasts)
+
+
+@pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
     many_ghi_forecasts = [fx for fx in many_forecasts
                           if fx.variable == 'ghi']
@@ -1280,7 +1288,7 @@ def single_forecast_wind_speed_observation(
 
 
 @pytest.fixture()
-def single_forecast_aggregate(aggregate, single_site):
+def single_aggregate_forecast(single_site):
     forecast_agg = datamodel.Forecast(
         name="GHI Aggregate FX 60",
         issue_time_of_day=dt.time(0, 0),
@@ -1294,11 +1302,24 @@ def single_forecast_aggregate(aggregate, single_site):
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
-    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+    return forecast_agg
 
 
 @pytest.fixture()
-def single_prob_forecast_aggregate(aggregate, single_site,
+def single_forecast_aggregate(aggregate, single_aggregate_forecast):
+    return datamodel.ForecastAggregate(single_aggregate_forecast, aggregate)
+
+
+@pytest.fixture()
+def single_forecast_aggregate_reffx(aggregate, single_aggregate_forecast):
+    return datamodel.ForecastAggregate(
+        single_aggregate_forecast,
+        aggregate,
+        reference_forecast=single_aggregate_forecast)
+
+
+@pytest.fixture()
+def single_prob_aggregate_forecast(single_site,
                                    agg_prob_forecast_constant_value):
     forecast_agg = datamodel.ProbabilisticForecast(
         name="GHI Aggregate FX 60",
@@ -1315,7 +1336,22 @@ def single_prob_forecast_aggregate(aggregate, single_site,
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
-    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+    return forecast_agg
+
+
+@pytest.fixture()
+def single_prob_forecast_aggregate(single_prob_aggregate_forecast,
+                                   aggregate):
+    return datamodel.ForecastAggregate(
+        single_prob_aggregate_forecast, aggregate)
+
+
+@pytest.fixture()
+def single_prob_forecast_aggregate_reffx(single_prob_aggregate_forecast,
+                                         aggregate):
+    return datamodel.ForecastAggregate(
+        single_prob_aggregate_forecast, aggregate,
+        reference_forecast=single_prob_aggregate_forecast)
 
 
 @pytest.fixture()
