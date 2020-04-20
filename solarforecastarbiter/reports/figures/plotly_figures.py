@@ -365,7 +365,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     return fig
 
 
-def event_histogram(timeseries_value_df, timeseries_meta_df, units):
+def event_histogram(timeseries_value_df, timeseries_meta_df):
     """
     Adds histogram plot traces of the event outcomes of one or more event
     forecasts and observations to the figure.
@@ -813,7 +813,7 @@ def timeseries_plots(report):
     pfxobs = report.raw_report.processed_forecasts_observations
     fx = pfxobs[0].original.forecast
     if isinstance(fx, datamodel.EventForecast):
-        scat_fig = event_histogram(value_df, meta_df, units)
+        scat_fig = event_histogram(value_df, meta_df)
         scat_fig.update_layout(
             plot_bgcolor=PLOT_BGCOLOR,
             font=dict(size=14),
