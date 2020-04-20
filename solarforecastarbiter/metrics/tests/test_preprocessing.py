@@ -1,4 +1,5 @@
 import time
+import json
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -499,4 +500,36 @@ def test_resample_and_align_event(single_event_forecast_observation,
                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   expected_dt,
+                                  check_categorical=False)
+
+
+@pytest.mark.parametrize("fx_interval_length, obs_interval_length", [
+    (60, 60),
+    (5, 5),
+    pytest.param(30, 10,
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+    pytest.param(10, 15,
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+])
+def test__resample_event_obs(single_site, single_event_forecast_text,
+                             single_event_observation_text,
+                             fx_interval_length, obs_interval_length):
+
+    fx_dict = json.loads(single_event_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict.update({"interval_length": fx_interval_length})
+    fx = datamodel.EventForecast.from_dict(fx_dict)
+
+    obs_dict = json.loads(single_event_observation_text)
+    obs_dict['site'] = single_site
+    obs_dict.update({"interval_length": obs_interval_length})
+    obs = datamodel.Observation.from_dict(obs_dict)
+
+    freq = pd.Timedelta(f"{obs_interval_length}min")
+    index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
+    obs_series = pd.Series(np.random.randint(0, 2, len(index), dtype=bool),
+                           index=index)
+
+    obs_resampled = preprocessing._resample_event_obs(fx, obs, obs_series)
+    pd.testing.assert_index_equal(obs_series.index, obs_resampled.index,
                                   check_categorical=False)
