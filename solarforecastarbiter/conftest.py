@@ -976,6 +976,34 @@ def many_forecasts(many_forecasts_text, _forecast_from_dict):
 
 
 @pytest.fixture()
+def single_event_observation_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/991d15ce-7f66-11ea-96ae-0242ac150002"
+  },
+  "name": "Weather Station Event Observation",
+  "variable": "event",
+  "interval_value_type": "instantaneous",
+  "interval_length": 5,
+  "interval_label": "event",
+  "site_id": "123e4567-e89b-12d3-a456-426655440001",
+  "observation_id": "991d15ce-7f66-11ea-96ae-0242ac150002",
+  "provider": "Organization 1",
+  "uncertainty": 1.0,
+  "extra_parameters": "",
+  "created_at": "2019-03-01T12:01:48+00:00",
+  "modified_at": "2019-03-01T12:01:48+00:00"
+}
+"""
+
+
+@pytest.fixture()
+def single_event_observation(single_event_observation_text, _observation_from_dict):
+    return _observation_from_dict(json.loads(single_event_observation_text))
+
+
+@pytest.fixture()
 def _event_forecast_from_dict(single_site, get_site, get_aggregate):
     def f(fx_dict):
         return datamodel.EventForecast(
@@ -1023,7 +1051,8 @@ def single_event_forecast_text():
 
 
 @pytest.fixture()
-def single_event_forecast(single_event_forecast_text, _event_forecast_from_dict):
+def single_event_forecast(single_event_forecast_text,
+                          _event_forecast_from_dict):
     return _event_forecast_from_dict(json.loads(single_event_forecast_text))
 
 
@@ -1256,6 +1285,13 @@ def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
 @pytest.fixture()
 def single_forecast_observation(single_forecast, single_observation):
     return datamodel.ForecastObservation(single_forecast, single_observation)
+
+
+@pytest.fixture()
+def single_event_forecast_observation(single_event_forecast,
+                                      single_event_observation):
+    return datamodel.ForecastObservation(single_event_forecast,
+                                         single_event_observation)
 
 
 @pytest.fixture()
