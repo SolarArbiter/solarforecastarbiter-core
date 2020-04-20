@@ -14,6 +14,7 @@ from solarforecastarbiter import datamodel
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
                         'forecastaggregate',
+                        'eventobservation', 'eventforecast',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
@@ -26,6 +27,8 @@ from solarforecastarbiter import datamodel
 def pdid_params(request, many_sites, many_sites_text,
                 single_observation, single_observation_text,
                 single_site, single_forecast_text, single_forecast,
+                single_event_observation_text, single_event_observation,
+                single_event_forecast_text, single_event_forecast,
                 prob_forecast_constant_value,
                 prob_forecast_constant_value_text, prob_forecasts,
                 prob_forecast_text, aggregate, aggregate_observations,
@@ -65,6 +68,14 @@ def pdid_params(request, many_sites, many_sites_text,
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
         return (single_forecast, fx_dict, datamodel.Forecast)
+    elif request.param == 'eventobservation':
+        obs_dict = json.loads(single_event_observation_text)
+        obs_dict['site'] = single_site
+        return (single_event_observation, obs_dict, datamodel.Observation)
+    elif request.param == 'eventforecast':
+        fx_dict = json.loads(single_event_forecast_text)
+        fx_dict['site'] = single_site
+        return (single_event_forecast, fx_dict, datamodel.EventForecast)
     elif request.param == 'probabilisticforecastconstantvalue':
         fx_dict = json.loads(prob_forecast_constant_value_text)
         fx_dict['site'] = single_site
