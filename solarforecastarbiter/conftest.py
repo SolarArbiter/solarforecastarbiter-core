@@ -1051,9 +1051,65 @@ def single_event_forecast_text():
 
 
 @pytest.fixture()
+def many_event_forecast_text():
+    return b"""
+[
+    {
+      "_links": {
+        "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+        "aggregate": null
+      },
+      "name": "Weather Station Event Forecast",
+      "issue_time_of_day": "05:00",
+      "lead_time_to_start": 60,
+      "interval_length": 5,
+      "run_length": 60,
+      "interval_label": "event",
+      "interval_value_type": "instantaneous",
+      "variable": "event",
+      "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+      "site_id": "123e4567-e89b-12d3-a456-426655440001",
+      "aggregate_id": null,
+      "provider": "Organization 1",
+      "extra_parameters": "",
+      "created_at": "2020-04-17T11:55:37+00:00",
+      "modified_at": "2020-04-17T11:55:37+00:00"
+    },
+    {
+      "_links": {
+        "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+        "aggregate": null
+      },
+      "name": "Solar Power Plant Event Forecast",
+      "issue_time_of_day": "05:00",
+      "lead_time_to_start": 60,
+      "interval_length": 5,
+      "run_length": 60,
+      "interval_label": "event",
+      "interval_value_type": "instantaneous",
+      "variable": "event",
+      "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+      "site_id": "123e4567-e89b-12d3-a456-426655440001",
+      "aggregate_id": null,
+      "provider": "Organization 2",
+      "extra_parameters": "",
+      "created_at": "2020-04-17T11:55:37+00:00",
+      "modified_at": "2020-04-17T11:55:37+00:00"
+    }
+]
+"""
+
+
+@pytest.fixture()
 def single_event_forecast(single_event_forecast_text,
                           _event_forecast_from_dict):
     return _event_forecast_from_dict(json.loads(single_event_forecast_text))
+
+
+@pytest.fixture()
+def many_event_forecasts(many_event_forecasts_text, _event_forecast_from_dict):
+    return [_event_forecast_from_dict(fx) for fx
+            in json.loads(many_event_forecasts_text)]
 
 
 @pytest.fixture()
