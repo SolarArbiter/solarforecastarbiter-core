@@ -963,6 +963,7 @@ def _forecast_from_dict(single_site, get_site, get_aggregate):
     return f
 
 
+
 @pytest.fixture()
 def single_forecast(single_forecast_text, _forecast_from_dict):
     return _forecast_from_dict(json.loads(single_forecast_text))
@@ -972,6 +973,58 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
+
+
+@pytest.fixture()
+def _event_forecast_from_dict(single_site, get_site, get_aggregate):
+    def f(fx_dict):
+        return datamodel.EventForecast(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''))
+    return f
+
+
+@pytest.fixture()
+def single_event_forecast_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+    "aggregate": null
+  },
+  "name": "Weather Station Event Forecast",
+  "issue_time_of_day": "05:00",
+  "lead_time_to_start": 60,
+  "interval_length": 5,
+  "run_length": 60,
+  "interval_label": "event",
+  "interval_value_type": "instantaneous",
+  "variable": "event",
+  "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+  "site_id": "123e4567-e89b-12d3-a456-426655440001",
+  "aggregate_id": null,
+  "provider": "Organization 1",
+  "extra_parameters": "",
+  "created_at": "2020-04-17T11:55:37+00:00",
+  "modified_at": "2020-04-17T11:55:37+00:00"
+}
+"""
+
+
+@pytest.fixture()
+def single_event_forecast(single_event_forecast_text, _event_forecast_from_dict):
+    return _event_forecast_from_dict(json.loads(single_event_forecast_text))
 
 
 @pytest.fixture()
