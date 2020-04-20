@@ -84,8 +84,8 @@ def _resample_event_obs(obs, fx, obs_series):
     """
 
     if fx.interval_length != obs.interval_length:
-        raise RuntimeError("Event observation and forecast time-series "
-                           "must have matching interval length.")
+        raise ValueError("Event observation and forecast time-series "
+                         "must have matching interval length.")
     else:
         obs_resampled = obs_series
 
