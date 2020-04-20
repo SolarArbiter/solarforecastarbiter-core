@@ -1231,16 +1231,14 @@ def test_calculate_event_metrics_no_data(single_event_forecast_observation,
     obs_series = pd.Series(obs_values, dtype=bool)
     fx_series = pd.Series(fx_values, dtype=bool)
 
-    # fx-obs pair
-    fxobs = single_event_forecast_observation
-
     # processed fx-obs pair
+    fxobs = single_event_forecast_observation
     proc_fx_obs = datamodel.ProcessedForecastObservation(
         name=fxobs.forecast.name,
         original=fxobs,
         interval_value_type=fxobs.forecast.interval_value_type,
         interval_length=fxobs.forecast.interval_length,
-        interval_label="event",
+        interval_label=fxobs.forecast.interval_label,
         valid_point_count=len(fx_series),
         forecast_values=fx_series,
         observation_values=obs_series,
@@ -1287,7 +1285,7 @@ def test_calculate_metrics_with_event(single_event_forecast_observation,
                 original=fxobs,
                 interval_value_type=fxobs.forecast.interval_value_type,
                 interval_length=fxobs.forecast.interval_length,
-                interval_label="event",
+                interval_label=fxobs.forecast.interval_label,
                 valid_point_count=len(fx_series),
                 forecast_values=fx_series,
                 observation_values=obs_series,
