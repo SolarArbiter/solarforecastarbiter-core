@@ -50,7 +50,7 @@ API Changes
 * Added capability to import reference data from DOE ARM sites in the
   :py:mod:`solarforecastarbiter.io.reference_observations.arm` module. Data can
   be initialized and updated via the Solar Forecast Arbiter CLI
-  `referencedata` command.(:pull:`390`)
+  ``referencedata`` command.(:pull:`390`)
 
 Enhancements
 ~~~~~~~~~~~~
