@@ -479,21 +479,8 @@ def test___check_metrics__(metrics, single_forecast):
         marks=pytest.mark.xfail(raises=ValueError, strict=True)
     ),
 ])
-def test___check_metrics___event(site_metadata, metrics):
-    index = pd.DatetimeIndex(["20200301T0000", "20200301T0100"])
-    fx_series = pd.Series([True, False], index=index)
-    fx = datamodel.EventForecast(
-        site=site_metadata,
-        name="dummy fx",
-        interval_length=pd.Timedelta(fx_series.index.freq),
-        interval_value_type="instantaneous",
-        issue_time_of_day=datetime.time(hour=5),
-        lead_time_to_start=pd.Timedelta("1h"),
-        run_length=pd.Timedelta("1h"),
-        variable="event",
-        interval_label="event",
-    )
-    datamodel.__check_metrics__(fx, metrics)
+def test___check_metrics___event(single_event_forecast, metrics):
+    datamodel.__check_metrics__(single_event_forecast, metrics)
 
 
 @pytest.mark.parametrize('metrics', [
