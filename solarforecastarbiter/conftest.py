@@ -963,7 +963,6 @@ def _forecast_from_dict(single_site, get_site, get_aggregate):
     return f
 
 
-
 @pytest.fixture()
 def single_forecast(single_forecast_text, _forecast_from_dict):
     return _forecast_from_dict(json.loads(single_forecast_text))
@@ -999,7 +998,8 @@ def single_event_observation_text():
 
 
 @pytest.fixture()
-def single_event_observation(single_event_observation_text, _observation_from_dict):
+def single_event_observation(single_event_observation_text,
+                             _observation_from_dict):
     return _observation_from_dict(json.loads(single_event_observation_text))
 
 
