@@ -61,7 +61,7 @@ def site_dicts():
             'elevation': 12,
             'timezone': 'Etc/GMT+8',
             'extra_parameters': {"observation_interval_length": 1,
-                                 "network": 'Unincorportated',
+                                 "network": 'Unincorporated',
                                  "network_api_id": 'BMS',
                                  "network_api_abbreviation": 'abbrv'},
         }
