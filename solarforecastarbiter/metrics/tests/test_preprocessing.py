@@ -468,41 +468,19 @@ def test_name_pfxobs_recursion_limit():
 
     # mismatch interval_length
     pytest.param(THREE_HOURS, THIRTEEN_10MIN, [],
-                 marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
     pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
-                 marks=pytest.mark.xfail(strict=True, type=RuntimeError)),
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
 ])
-def test_resample_and_align_event(site_metadata, obs_index, fx_index,
-                                  expected_dt):
+def test_resample_and_align_event(single_event_forecast_observation,
+                                  obs_index, fx_index, expected_dt):
 
     obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
     fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)
     obs_series = pd.Series(obs_values, index=obs_index)
     fx_series = pd.Series(fx_values, index=fx_index)
 
-    obs = datamodel.Observation(
-        site=site_metadata,
-        name="dummy obs",
-        uncertainty=1,
-        interval_length=pd.Timedelta(obs_series.index.freq),
-        interval_value_type="instantaneous",
-        variable="event",
-        interval_label="event",
-    )
-
-    fx = datamodel.EventForecast(
-        site=site_metadata,
-        name="dummy fx",
-        interval_length=pd.Timedelta(fx_series.index.freq),
-        interval_value_type="instantaneous",
-        issue_time_of_day=dt.time(hour=5),
-        lead_time_to_start=pd.Timedelta("1h"),
-        run_length=pd.Timedelta("1h"),
-        variable="event",
-        interval_label="event",
-    )
-
-    fxobs = datamodel.ForecastObservation(observation=obs, forecast=fx)
+    fxobs = single_event_forecast_observation
 
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
