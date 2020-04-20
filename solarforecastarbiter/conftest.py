@@ -1097,7 +1097,7 @@ def many_event_forecast_text():
       "modified_at": "2020-04-17T11:55:37+00:00"
     }
 ]
-"""
+"""  # NOQA
 
 
 @pytest.fixture()
