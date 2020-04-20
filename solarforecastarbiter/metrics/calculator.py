@@ -208,14 +208,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
 
         # Calculate each metric
         for metric_ in metrics:
-            # # don't calculate skill metric for any categories if the data
-            # # does not exist
-            # # actually, don't skip this b/c we want nans
-            # if (metric_ in deterministic._REQ_REF_FX and
-            #         (ref_fx is None or ref_fx.empty)):
-            #     logger.warning("No reference forecast timeseries data "
-            #                    "for %s", processed_fx_obs.name)
-            #     continue
 
             # Group by category
             for cat, group in df.groupby(index_category):
