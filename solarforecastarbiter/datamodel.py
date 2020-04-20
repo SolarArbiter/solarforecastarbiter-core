@@ -481,10 +481,9 @@ class Observation(BaseModel):
     interval_length : pandas.Timedelta
         The length of time between consecutive data points, e.g. 5 minutes,
         1 hour.
-    interval_label : str
+    interval_label : {'beginning', 'ending', 'instant', 'event'}
         Indicates if a time labels the beginning or the ending of an interval
-        average ("beginning" or "ending"), indicates an instantaneous value
-        ("instant") or indicates an event ("event").
+        average, indicates an instantaneous value , or indicates an event.
     site : Site
         The site that this Observation was generated for.
     uncertainty : float
@@ -694,7 +693,7 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         The total length of a single issued forecast run, e.g. 1 hour.
         To enforce a continuous, non-overlapping sequence, this is equal
         to the forecast run issue frequency.
-    interval_label : str
+    interval_label : {"beginning", "ending", "instant"}
         Indicates if a time labels the beginning or the ending of an interval
         average, or indicates an instantaneous value, e.g. beginning, ending,
         instant.
@@ -749,15 +748,10 @@ class EventForecast(Forecast):
         The total length of a single issued forecast run, e.g. 1 hour.
         To enforce a continuous, non-overlapping sequence, this is equal
         to the forecast run issue frequency.
-    interval_label : str
-        Indicates if a time labels the beginning or the ending of an interval
-        average, or indicates an instantaneous value, e.g. beginning, ending,
-        instant.
+    interval_label : {'event'}
     interval_value_type : str
         The type of the data in the forecast, e.g. mean, max, 95th percentile.
-    variable : str
-        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
-        associated with a standard unit.
+    variable : {'event'}
     site : Site or None
         The predefined site that the forecast is for, e.g. Power Plant X.
     aggregate : Aggregate or None
@@ -775,6 +769,11 @@ class EventForecast(Forecast):
     """
     def __post_init__(self):
         super().__post_init__()
+
+        if self.interval_label != "event":
+            raise ValueError("Interval label must be 'event'")
+        elif self.variable != "event":
+            raise ValueError("Variable must be 'event'")
 
 
 @dataclass(frozen=True)

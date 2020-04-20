@@ -14,6 +14,9 @@ from solarforecastarbiter import datamodel
 @pytest.fixture(params=['site', 'fixed', 'single', 'observation',
                         'forecast', 'forecastobservation',
                         'forecastaggregate',
+                        #'eventobservation',
+                        #'eventforecast',
+                        #'eventforecastobservation',
                         'probabilisticforecastconstantvalue',
                         'probabilisticforecast', 'aggregate',
                         'aggregateforecast', 'aggregateprobforecast',
@@ -26,6 +29,8 @@ from solarforecastarbiter import datamodel
 def pdid_params(request, many_sites, many_sites_text,
                 single_observation, single_observation_text,
                 single_site, single_forecast_text, single_forecast,
+                #single_event_observation_text, single_event_observation,
+                #single_event_forecast_text, single_event_forecast,
                 prob_forecast_constant_value,
                 prob_forecast_constant_value_text, prob_forecasts,
                 prob_forecast_text, aggregate, aggregate_observations,
@@ -65,6 +70,25 @@ def pdid_params(request, many_sites, many_sites_text,
         fx_dict = json.loads(single_forecast_text)
         fx_dict['site'] = single_site
         return (single_forecast, fx_dict, datamodel.Forecast)
+    elif request.param == 'eventobservation':
+        obs_dict = json.loads(single_event_observation_text)
+        obs_dict['site'] = single_site
+        return (single_event_observation, obs_dict, datamodel.Observation)
+    elif request.param == 'eventforecast':
+        fx_dict = json.loads(single_event_forecast_text)
+        fx_dict['site'] = single_site
+        return (single_event_forecast, fx_dict, datamodel.EventForecast)
+    #elif request.param == 'eventforecastobservation':
+    #    fx_dict = json.loads(single_event_forecast_text)
+    #    fx_dict['site'] = single_site
+    #    obs_dict = json.loads(single_event_observation_text)
+    #    obs_dict['site'] = single_site
+    #    fxobs_dict = {'forecast': fx_dict, 'observation': obs_dict}
+    #    fxobs = datamodel.ForecastObservation(
+    #        forecast=single_event_forecast,
+    #        observation=single_event_observation
+    #    )
+    #    return (fxobs, fxobs_dict, datamodel.ForecastObservation)
     elif request.param == 'probabilisticforecastconstantvalue':
         fx_dict = json.loads(prob_forecast_constant_value_text)
         fx_dict['site'] = single_site
@@ -803,3 +827,29 @@ def test_ForecastAggregate_uncertainty_invalid(
     with pytest.raises(ValueError):
         datamodel.ForecastAggregate(
             aggregateforecast, aggregate, uncertainty='anystring')
+
+
+@pytest.mark.parametrize("interval_label,variable", [
+    ("event", "event"),
+    pytest.param("event", "ghi",
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+    pytest.param("beginning", "event",
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+    pytest.param("beginning", "dni",
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+])
+def test_EventForecast_parameters(site_metadata, interval_label, variable):
+    fx = datamodel.EventForecast(
+        site=site_metadata,
+        name="dummy fx",
+        interval_length=pd.Timedelta("1h"),
+        interval_value_type="instantaneous",
+        issue_time_of_day='0500',
+        lead_time_to_start=pd.Timedelta("1h"),
+        run_length=pd.Timedelta("1h"),
+        variable=variable,
+        interval_label=interval_label,
+    )
+
+    assert fx.interval_label == "event"
+    assert fx.variable == "event"
