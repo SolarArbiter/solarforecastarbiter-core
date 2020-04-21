@@ -381,7 +381,8 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
             results = _calculate_probabilistic_metrics_from_df(
                 _create_prob_dataframe(obs, [orig], [ref]),
                 categories, single_metrics, cv.interval_label)
-            single_out['values'] = tuple(results)
+            single_out['values'] = _sort_metrics_vals(
+                results, datamodel.ALLOWED_PROBABILISTIC_METRICS)
             single_cv_results.append(datamodel.MetricResult.from_dict(
                 single_out))
 
@@ -389,11 +390,13 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
     if dist_metrics:
         dist_out = copy.deepcopy(shared_dict)
         dist_out['forecast_id'] = processed_fx_obs.original.forecast.forecast_id  # NOQA
-        dist_out['values'] = _calculate_probabilistic_metrics_from_df(
+        results = _calculate_probabilistic_metrics_from_df(
             _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob),
             categories,
             dist_metrics,
             processed_fx_obs.original.forecast.interval_label)
+        dist_out['values'] = _sort_metrics_vals(
+            results, datamodel.ALLOWED_PROBABILISTIC_METRICS)
         dist_result = datamodel.MetricResult.from_dict(dist_out)
 
     return (single_cv_results, dist_result)

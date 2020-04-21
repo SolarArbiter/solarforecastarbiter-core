@@ -257,10 +257,14 @@ def test_calculate_metrics_with_probablistic(single_observation,
         prob_forecasts, prob_forecasts.axis, constant_values=const_values)
     prfxobs = datamodel.ForecastObservation(
         conv_prob_fx, single_observation)
-    fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
-                             index=create_dt_index(10))
-    obs_values = pd.Series(np.random.randn(10)+10,
-                           index=create_dt_index(10))
+    fx_values = pd.DataFrame(np.array((
+        np.linspace(0, 9., 10),
+        np.linspace(1, 10., 10),
+        np.linspace(2, 11., 10))).T,
+        index=create_dt_index(10))
+    obs_values = pd.Series(
+        np.linspace(1.5, 10.5, 10),
+        index=create_dt_index(10))
     proc_prfx_obs = create_processed_fxobs(prfxobs, fx_values,
                                            obs_values)
 
@@ -276,8 +280,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
     assert isinstance(dist_results, datamodel.MetricResult)
 
     # With reference
-    ref_fx_values = pd.DataFrame(np.random.randn(10, 3)+10,
-                                 index=create_dt_index(10))
+    ref_fx_values = fx_values + .5
     conv_ref_prob_fx = copy_prob_forecast_with_axis(
         prob_forecasts, prob_forecasts.axis, constant_values=const_values)
     ref_prfxobs = datamodel.ForecastObservation(conv_ref_prob_fx,
@@ -285,9 +288,11 @@ def test_calculate_metrics_with_probablistic(single_observation,
     proc_ref_prfx_obs = create_processed_fxobs(ref_prfxobs,
                                                ref_fx_values,
                                                obs_values)
-    results = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
-                                           PROBABILISTIC_METRICS,
-                                           ref_pair=proc_ref_prfx_obs)
+    results = calculator.calculate_metrics(
+        [proc_prfx_obs], LIST_OF_CATEGORIES,
+        # reverse to ensure order output is independent
+        PROBABILISTIC_METRICS[::-1],
+        ref_pair=proc_ref_prfx_obs)
     assert isinstance(results, list)
     assert len(results) == 1
     assert isinstance(results[0], tuple)
@@ -295,6 +300,30 @@ def test_calculate_metrics_with_probablistic(single_observation,
     assert len(single_results) == len(const_values)
     assert all(isinstance(r, datamodel.MetricResult) for r in single_results)
     assert isinstance(dist_results, datamodel.MetricResult)
+    result = single_results[0]
+    expected = {
+        0: ('total', 'bs', '0', 0.00285),
+        1: ('total', 'bss', '0', 0.1428571428571429),
+        5: ('year', 'bs', '2019', 0.00285),
+        9: ('year', 'unc', '2019', 0.),
+        10: ('month', 'bs', 'Aug', 0.00285)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+    result = dist_results
+    expected = {
+        0: ('total', 'crps', '0', 0.0067),
+        1: ('year', 'crps', '2019', 0.0067),
+        2: ('month', 'crps', 'Aug', 0.0067),
+        3: ('hour', 'crps', '0', 0.0001),
+        4: ('hour', 'crps', '1', 0.0005)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
