@@ -1561,6 +1561,79 @@ def report_objects(aggregate):
 
 
 @pytest.fixture()
+def event_report_objects():
+    tz = 'America/Phoenix'
+    start = pd.Timestamp('20190401T0000', tz=tz)
+    end = pd.Timestamp('20190404T2359', tz=tz)
+    site = datamodel.Site(
+        name="NREL MIDC University of Arizona OASIS",
+        latitude=32.22969,
+        longitude=-110.95534,
+        elevation=786.0,
+        timezone="Etc/GMT+7",
+        site_id="9f61b880-7e49-11e9-9624-0a580a8003e9",
+        provider="Reference",
+        extra_parameters=''
+    )
+    obs = datamodel.Observation(
+        name="Example Event Observation",
+        variable="event",
+        interval_value_type="instantaneous",
+        interval_length=pd.Timedelta("15min"),
+        interval_label="event",
+        site=site,
+        uncertainty=1.0,
+        observation_id="9f657636-7e49-11e9-b77f-0a580a8003e9",
+        extra_parameters='',
+    )
+    fx0 = datamodel.EventForecast(
+        name="Example Event Forecast",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="event",
+        interval_value_type="instantaneous",
+        variable="event",
+        site=site,
+        forecast_id="da2bc386-8712-11e9-a1c7-0a580a8200ae",
+        extra_parameters='',
+    )
+    fx1 = datamodel.EventForecast(
+        name="Alternative Example Event Forecast",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("1 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="event",
+        interval_value_type="instantaneous",
+        variable="event",
+        site=site,
+        forecast_id="68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+        extra_parameters='',
+    )
+
+    fxobs0 = datamodel.ForecastObservation(fx0, obs)
+    fxobs1 = datamodel.ForecastObservation(fx1, obs)
+
+    report_params = datamodel.ReportParameters(
+        name="Example Event Report",
+        start=start,
+        end=end,
+        object_pairs=(fxobs0, fxobs1),
+        metrics=("pod", "far", "pofd", "csi", "ebias", "ea"),
+        categories=("total", "date", "hour"),
+    )
+
+    report = datamodel.Report(
+        report_id="",
+        report_parameters=report_params
+    )
+
+    return report, obs, fx0, fx1
+
+
+@pytest.fixture()
 def quality_filter():
     return datamodel.QualityFlagFilter(
         (
