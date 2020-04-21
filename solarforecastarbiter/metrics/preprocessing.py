@@ -92,6 +92,36 @@ def _resample_event_obs(obs, fx, obs_series):
     return obs_resampled
 
 
+def _validate_event_dtype(ser):
+    """
+    Validate the event data dtype, converting to boolean values if possible.
+
+    Parameter
+    ---------
+    ser : pandas.Series
+        The event time-series data (observation or forecast).
+
+    Returns
+    -------
+    ser : pandas.Series
+        The event time-series data as boolean values.
+
+    Raises
+    ------
+    TypeError
+        If the event time-series data dtype cannot be converted to boolean.
+
+    """
+
+    if ser.dtype == bool:
+        return ser
+    elif ser.dtype == int:
+        return ser.astype(bool)
+    else:
+        raise TypeError("Invalid data type for event time-series; unable to "
+                        "convert {} to boolean.".format(ser.dtype))
+
+
 def _resample_obs(obs, fx, obs_series):
     """
 
@@ -177,6 +207,8 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
 
     # Resample based on forecast type
     if isinstance(fx, datamodel.EventForecast):
+        fx_series = _validate_event_dtype(fx_series)
+        obs_series = _validate_event_dtype(obs_series)
         obs_resampled = _resample_event_obs(obs, fx, obs_series)
     else:
         obs_resampled = _resample_obs(obs, fx, obs_series)

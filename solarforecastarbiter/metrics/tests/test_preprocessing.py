@@ -533,3 +533,19 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     obs_resampled = preprocessing._resample_event_obs(fx, obs, obs_series)
     pd.testing.assert_index_equal(obs_series.index, obs_resampled.index,
                                   check_categorical=False)
+
+
+@pytest.mark.parametrize("dtype", [
+    bool,
+    int,
+    pytest.param(float,
+                 marks=pytest.mark.xfail(strict=True, type=TypeError)),
+])
+def test__validate_event_dtype(dtype):
+    data = np.random.randint(0, 2, 10).astype(dtype)
+    ser = pd.Series(data)
+    ser_conv = preprocessing._validate_event_dtype(ser)
+
+    pd.testing.assert_index_equal(ser.index, ser_conv.index,
+                                  check_categorical=False)
+    assert ser_conv.dtype == bool
