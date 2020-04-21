@@ -97,6 +97,7 @@ Bug fixes
 * Fix type errors in observation validation by ensuring all time series values from
   :py:mod:`solarforecastaribter.io.api` functions are coerced to float
   and converting to float before validation (:issue:`252`) (:pull:`384`)
+* Enforce metric order consistency. (:issue:`352`) (:pull:`396`)
 
 
 Contributors
