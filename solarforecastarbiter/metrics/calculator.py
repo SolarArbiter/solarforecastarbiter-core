@@ -267,7 +267,11 @@ def _sort_metrics_vals(metrics_vals, mapping):
     Returns
     -------
     tuple
-        Sorted elements.
+        Sorted elements. Sorting order is:
+            * Category
+            * Metric
+            * Index
+            * Value
     """
     metric_ordering = list(mapping.keys())
     category_ordering = list(datamodel.ALLOWED_CATEGORIES.keys())
