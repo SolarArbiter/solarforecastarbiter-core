@@ -536,8 +536,9 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
 
 
 @pytest.mark.parametrize("data", [
-    [False, True, True],
-    [0, 1, 1, 0],
+    [True, True, False],
+    [1, 1, 0],
+    [1.0, 1.0, 0.0],
     pytest.param([0, 1, 2],
                  marks=pytest.mark.xfail(strict=True, type=TypeError)),
     pytest.param([0.0, 1.0, 2.0],
