@@ -631,6 +631,7 @@ def calculate_event_metrics(proc_fx_obs, categories, metrics):
                 metric_vals.append(datamodel.MetricValue(
                     category, metric_, str(cat), res))
 
-    out['values'] = tuple(metric_vals)
+    out['values'] = _sort_metrics_vals(metric_vals,
+                                       datamodel.ALLOWED_EVENT_METRICS)
     calc_metrics = datamodel.MetricResult.from_dict(out)
     return calc_metrics

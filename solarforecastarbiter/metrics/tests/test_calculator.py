@@ -231,7 +231,6 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
         pd.Series([1, 1, 1], index=create_dt_index(3)))
     categories = ('hour', 'total', 'date')
     metrics = ('rmse', 'ksi', 'mbe', 'mae')
-    proc_fx_obs
     result = calculator.calculate_deterministic_metrics(
         inp, categories, metrics)
     expected = {
@@ -240,6 +239,34 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
         4: ('hour', 'mae', '0', 1.),
         6: ('hour', 'mae', '2', 1.),
         10: ('hour', 'rmse', '0', 1.)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
+def test_calculate_event_metrics_sorting(single_event_forecast_observation,
+                                         create_processed_fxobs,
+                                         create_dt_index):
+    inp = create_processed_fxobs(
+        single_event_forecast_observation,
+        pd.Series([True, False, True], index=create_dt_index(3)),  # fx
+        pd.Series([True, True, True], index=create_dt_index(3)))   # obs
+    categories = ('hour', 'total')
+    metrics = ('far', 'pod', 'ea', 'pofd')
+    result = calculator.calculate_event_metrics(
+        inp, categories, metrics)
+    expected = {
+        0: ('total', 'pod', '0', 2 / 3),
+        1: ('total', 'far', '0', 0.0),
+        2: ('total', 'pofd', '0', 0.0),
+        3: ('total', 'ea', '0', 2 / 3),
+        4: ('hour', 'pod', '0', 1.0),
+        6: ('hour', 'pod', '2', 1.0),
+        8: ('hour', 'far', '1', 0.0),
+        10: ('hour', 'pofd', '0', 0.0),
+        15: ('hour', 'ea', '2', 1.0),
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
