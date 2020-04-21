@@ -483,7 +483,7 @@ class Observation(BaseModel):
         1 hour.
     interval_label : {'beginning', 'ending', 'instant', 'event'}
         Indicates if a time labels the beginning or the ending of an interval
-        average, indicates an instantaneous value , or indicates an event.
+        average, indicates an instantaneous value, or indicates an event.
     site : Site
         The site that this Observation was generated for.
     uncertainty : float
