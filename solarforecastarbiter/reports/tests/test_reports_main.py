@@ -132,7 +132,6 @@ def test_get_data_for_report_event(mock_event_data, event_report_objects):
     assert get_observation_values.call_count == 1
 
 
-
 def test_get_version():
     vers = main.get_versions()
     assert {v[0] for v in vers} > {'solarforecastarbiter', 'python'}
