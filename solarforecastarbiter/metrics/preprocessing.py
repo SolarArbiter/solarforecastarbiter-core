@@ -3,7 +3,7 @@ Provides preprocessing steps to be performed on the timeseries data.
 """
 import logging
 
-
+import numpy as np
 import pandas as pd
 
 
@@ -115,8 +115,10 @@ def _validate_event_dtype(ser):
 
     if ser.dtype == bool:
         return ser
-    elif ser.dtype == int:
+    elif ser.dtype == int and np.all(np.isin(ser.unique(), [0, 1])):
         return ser.astype(bool)
+    elif ser.dtype == float and np.all(np.isin(ser.unique(), [0.0, 1.0])):
+        return ser.astype(int).astype(bool)
     else:
         raise TypeError("Invalid data type for event time-series; unable to "
                         "convert {} to boolean.".format(ser.dtype))
