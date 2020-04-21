@@ -249,9 +249,39 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 metric_vals.append(datamodel.MetricValue(
                     category, metric_, str(cat), res))
 
-    out['values'] = tuple(metric_vals)
+    out['values'] = _sort_metrics_vals(
+        metric_vals, datamodel.ALLOWED_DETERMINISTIC_METRICS)
     calc_metrics = datamodel.MetricResult.from_dict(out)
     return calc_metrics
+
+
+def _sort_metrics_vals(metrics_vals, mapping):
+    """
+    Parameters
+    ----------
+    metrics_vals : list
+        Elements are datamodel.MetricValue
+    mapping : dict
+        Metrics mapping defined in datamodel.
+
+    Returns
+    -------
+    tuple
+        Sorted elements.
+    """
+    metric_ordering = list(mapping.keys())
+    category_ordering = list(datamodel.ALLOWED_CATEGORIES.keys())
+
+    def sorter(metricval):
+        return (
+            category_ordering.index(metricval.category),
+            metric_ordering.index(metricval.metric),
+            metricval.index,
+            metricval.value
+            )
+
+    metrics_sorted = tuple(sorted(metrics_vals, key=sorter))
+    return metrics_sorted
 
 
 def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,

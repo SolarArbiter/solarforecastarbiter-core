@@ -221,6 +221,31 @@ def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
     assert result[0].values[0].value == expected
 
 
+def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
+                                                 create_processed_fxobs,
+                                                 create_dt_index):
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series([2, 1, 0], index=create_dt_index(3)),
+        pd.Series([1, 1, 1], index=create_dt_index(3)))
+    categories = ('hour', 'total', 'date')
+    metrics = ('rmse', 'ksi', 'mbe', 'mae')
+    proc_fx_obs
+    result = calculator.calculate_deterministic_metrics(
+        inp, categories, metrics)
+    expected = {
+        0: ('total', 'mae', '0', 2/3),
+        1: ('total', 'mbe', '0', 0.),
+        4: ('hour', 'mae', '0', 1.),
+        6: ('hour', 'mae', '2', 1.),
+        10: ('hour', 'rmse', '0', 1.)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_calculate_metrics_with_probablistic(single_observation,
                                              prob_forecasts,
