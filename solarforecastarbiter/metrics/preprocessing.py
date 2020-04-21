@@ -118,7 +118,7 @@ def _validate_event_dtype(ser):
     elif ser.dtype == int and np.all(np.isin(ser.unique(), [0, 1])):
         return ser.astype(bool)
     elif ser.dtype == float and np.all(np.isin(ser.unique(), [0.0, 1.0])):
-        return ser.astype(int).astype(bool)
+        return ser.astype(bool)
     else:
         raise TypeError("Invalid data type for event time-series; unable to "
                         "convert {} to boolean.".format(ser.dtype))
