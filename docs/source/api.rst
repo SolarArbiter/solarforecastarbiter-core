@@ -287,6 +287,7 @@ Reference observations
    io.reference_observations.solrad
    io.reference_observations.srml
    io.reference_observations.surfrad
+   io.reference_observations.arm
 
 SFA API
 =======

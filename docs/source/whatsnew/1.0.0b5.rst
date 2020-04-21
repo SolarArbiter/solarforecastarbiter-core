@@ -47,7 +47,10 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_probabilistic_metrics` addition. (:issue:`315`) (:issue:`266`) (:pull:`367`)
 * Added api function to get all values of a :py:class:`solarforecastarbiter.datamodel.ProbabilisticForecast` with addition of
   :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_values`. (:pull:`367`)
-
+* Added capability to import reference data from DOE ARM sites in the
+  :py:mod:`solarforecastarbiter.io.reference_observations.arm` module. Data can
+  be initialized and updated via the Solar Forecast Arbiter CLI
+  ``referencedata`` command.(:pull:`390`)
 
 Enhancements
 ~~~~~~~~~~~~

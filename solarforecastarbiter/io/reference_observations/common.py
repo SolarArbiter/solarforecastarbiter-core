@@ -373,7 +373,7 @@ def clean_name(string):
     """Removes all disallowed characters from a string and converts
     underscores to spaces.
     """
-    return string.translate(string.maketrans('_', ' ', '(){}/\\[]@-.'))
+    return string.translate(string.maketrans('_', ' ', ':(){}/\\[]@-.'))
 
 
 def site_name_no_network(site):
