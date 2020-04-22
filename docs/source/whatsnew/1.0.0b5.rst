@@ -67,7 +67,7 @@ API Changes
   ``referencedata`` command.(:pull:`390`)
 * Added support for event observations and forecasts with
   :py:func:`solarforecastarbiter.datamodel.Observation` modifications and
-  :py:func:`solarforecastarbiter.datamodel.EventForecast` addition. (:issue:`357`) (:pull:`361`)
+  :py:func:`solarforecastarbiter.datamodel.EventForecast` addition. (:issue:`357`) (:pull:`361`) (:pull:`399`)
 * Added support for evaluating event forecasts with
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modification,
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_event_metrics` addition and

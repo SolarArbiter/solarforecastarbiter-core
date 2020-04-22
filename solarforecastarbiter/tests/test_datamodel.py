@@ -851,3 +851,18 @@ def test_EventForecast_parameters(site_metadata, interval_label, variable):
 
     assert fx.interval_label == "event"
     assert fx.variable == "event"
+
+
+@pytest.mark.parametrize('model', [
+    datamodel.Forecast,
+    datamodel.EventForecast,
+])
+def test_event_forecast_from_dict(model, single_event_forecast):
+    event_fx_dict = single_event_forecast.to_dict()
+    assert isinstance(model.from_dict(event_fx_dict), datamodel.EventForecast)
+
+
+def test_raw_report_event_forecast_loading(raw_report_dict_with_event):
+    raw_report = datamodel.RawReport.from_dict(raw_report_dict_with_event)
+    for fxobs in raw_report.processed_forecasts_observations:
+        assert isinstance(fxobs.original.forecast, datamodel.EventForecast)
