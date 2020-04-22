@@ -1,5 +1,5 @@
 {% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
-<table class="table table-striped" style="width:100%;">
+<table class="table table-striped metric-table-fx-vert" style="width:100%;">
   <caption style="caption-side:top; text-align:center">
     Table of {{ category }} metrics
   </caption>
@@ -87,7 +87,7 @@
 
 
 {% macro validation_table(proc_fxobs_list, quality_filters) %}
-<table class="table table-striped" style="width:100%;">
+<table class="table table-striped validation-table" style="width:100%;">
   <caption style="caption-side:top; text-align:center">
     Table of data validation results
   </caption>
@@ -128,7 +128,7 @@
     {% endif %}
   {% endfor %}
 {% endfor %}
-<table class="table table-striped" style="width:100%;">
+<table class="table table-striped preprocessing-table" style="width:100%;">
   <caption style="caption-side:top; text-align:center">
     Table of data preprocessing results
   </caption>
