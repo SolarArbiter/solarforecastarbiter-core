@@ -121,6 +121,7 @@ def test_nrmse(obs, fx, norm, value):
 
 
 @pytest.mark.parametrize("obs,fx,ref,value", [
+    (np.array([0, 1]), np.array([0, 1]), np.array([0, 1]), 0.0),
     (np.array([0, 1]), np.array([0, 2]), np.array([0, 2]), 0.0),
     (np.array([0, 1]), np.array([0, 2]), np.array([0, 3]), 0.5),
 ])

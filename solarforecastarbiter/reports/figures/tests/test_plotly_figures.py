@@ -213,7 +213,7 @@ def test_bar_no_metric(metric_dataframe):
 
 
 def test_bar_empty_df(metric_dataframe):
-    df = pd.DataFrame({k: [] for k in metric_dataframe.columns})
+    df = pd.DataFrame(columns=metric_dataframe.columns)
     out = figures.bar(df, 's')
     assert isinstance(out, graph_objects.Figure)
 
@@ -238,7 +238,7 @@ def test_bar_subdivisions_no_metric(metric_dataframe):
 
 
 def test_bar_subdivisions_empty_df(metric_dataframe):
-    df = pd.DataFrame({k: [] for k in metric_dataframe.columns})
+    df = pd.DataFrame(columns=metric_dataframe.columns)
     out = figures.bar_subdivisions(df, 'hour', 's')
     assert isinstance(out, dict)
     assert len(out) == 0

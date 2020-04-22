@@ -486,7 +486,7 @@ def check_timestamp_spacing(times, freq):
     if not isinstance(freq, pd.Timedelta):
         freq = pd.Timedelta(freq)
     # first value is NaT, rest are timedeltas
-    delta = times.to_series(keep_tz=True).diff()
+    delta = times.to_series().diff()
     flags = delta == freq
     flags.iloc[0] = True
     return flags
@@ -717,7 +717,7 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
         )
         return pd.Series(0, index=ghi.index)
     # determine window length in minutes, 10 x interval for intervals <= 15m
-    delta = ghi.index.to_series(keep_tz=True).diff()
+    delta = ghi.index.to_series().diff()
     delta_minutes = delta[1] / np.timedelta64(1, '60s')
     deltas_same = (delta[1:] == delta[1]).all()
     if delta_minutes <= 15 and deltas_same:
