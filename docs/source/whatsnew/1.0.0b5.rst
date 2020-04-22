@@ -47,6 +47,17 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_probabilistic_metrics` addition. (:issue:`315`) (:issue:`266`) (:pull:`367`)
 * Added api function to get all values of a :py:class:`solarforecastarbiter.datamodel.ProbabilisticForecast` with addition of
   :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_values`. (:pull:`367`)
+* Added capability to import reference data from DOE ARM sites in the
+  :py:mod:`solarforecastarbiter.io.reference_observations.arm` module. Data can
+  be initialized and updated via the Solar Forecast Arbiter CLI
+  ``referencedata`` command.(:pull:`390`)
+* Added support for event observations and forecasts with
+  :py:func:`solarforecastarbiter.datamodel.Observation` modifications and
+  :py:func:`solarforecastarbiter.datamodel.EventForecast` addition. (:issue:`357`) (:pull:`361`)
+* Added support for evaluating event forecasts with
+  :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modification,
+  :py:func:`solarforecastarbiter.metrics.calculator.calculate_event_metrics` addition and
+  :py:func:`solarforecastarbiter.metrics.preprocessing.resample_and_align` modifications. (:issue:`357`) (:issue:`380`) (:pull:`361`)
 
 
 Enhancements
@@ -83,6 +94,7 @@ Enhancements
   deadband equal to
   :py:attr:`solarforecastarbiter.datamodel.Observation.uncertainty`.
   (:issue:`358`, :pull:`378`)
+* Reports now support evaluating event forecasts. (:issue:`380`) (:pull:`361`)
 
 
 Bug fixes
@@ -97,6 +109,7 @@ Bug fixes
 * Fix type errors in observation validation by ensuring all time series values from
   :py:mod:`solarforecastaribter.io.api` functions are coerced to float
   and converting to float before validation (:issue:`252`) (:pull:`384`)
+* Enforce metric order consistency. (:issue:`352`) (:pull:`396`)
 
 
 Contributors

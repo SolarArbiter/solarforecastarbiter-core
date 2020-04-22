@@ -36,7 +36,8 @@ from solarforecastarbiter.io.reference_observations import (
     midc,
     srml,
     rtc,
-    common
+    common,
+    arm,
 )
 
 
@@ -48,11 +49,12 @@ NETWORKHANDLER_MAP = {
     'UO SRML': srml,
     'NREL MIDC': midc,
     'DOE RTC': rtc,
+    'DOE ARM': arm,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'DOE RTC']
+                   'UO SRML', 'DOE RTC', 'DOE ARM']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -84,6 +86,9 @@ http://solardat.uoregon.edu/
 
 DOE RTC: DOE Regional Test Centers for Solar Technologies
 https://pv-dashboard.sandia.gov/
+
+DOE ARM: DOE Atmospheric Radiation Measurement
+https://www.arm.gov/
 """  # noqa: E501
 
 

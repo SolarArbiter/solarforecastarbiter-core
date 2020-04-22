@@ -3,7 +3,7 @@ Provides preprocessing steps to be performed on the timeseries data.
 """
 import logging
 
-
+import numpy as np
 import pandas as pd
 
 
@@ -58,6 +58,116 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
+def _resample_event_obs(obs, fx, obs_series):
+    """
+    Resample the event observation.
+
+    Parameters
+    ----------
+    obs : datamodel.Observation
+        The Observation being resampled.
+    fx : datamodel.EventForecast
+        The corresponding Forecast.
+    obs_series : pd.Series
+        Timeseries data of the event observation.
+
+    Returns
+    -------
+    obs_resampled : pandas.Series
+        Timeseries data of the Observation resampled to match the Forecast.
+
+    Raises
+    ------
+    RuntimeError
+        If the Forecast and Observation do not have the same interval length.
+
+    """
+
+    if fx.interval_length != obs.interval_length:
+        raise ValueError("Event observation and forecast time-series "
+                         "must have matching interval length.")
+    else:
+        obs_resampled = obs_series
+
+    return obs_resampled
+
+
+def _validate_event_dtype(ser):
+    """
+    Validate the event data dtype, converting to boolean values if possible.
+
+    Parameter
+    ---------
+    ser : pandas.Series
+        The event time-series data (observation or forecast).
+
+    Returns
+    -------
+    ser : pandas.Series
+        The event time-series data as boolean values.
+
+    Raises
+    ------
+    TypeError
+        If the event time-series data dtype cannot be converted to boolean.
+
+    """
+
+    if ser.dtype == bool:
+        return ser
+    elif ser.dtype == int and np.all(np.isin(ser.unique(), [0, 1])):
+        return ser.astype(bool)
+    elif ser.dtype == float and np.all(np.isin(ser.unique(), [0.0, 1.0])):
+        return ser.astype(bool)
+    else:
+        raise TypeError("Invalid data type for event time-series; unable to "
+                        "convert {} to boolean.".format(ser.dtype))
+
+
+def _resample_obs(obs, fx, obs_series):
+    """
+
+    Parameters
+    ----------
+    obs : datamodel.Observation
+        The Observation being resampled.
+    fx : datamodel.Forecast
+        The corresponding Forecast.
+    obs_series : pandas.Series
+        Timeseries data of the observation/aggregate after processing the
+        quality flag column.
+
+    Returns
+    -------
+    obs_resampled : pandas.Series
+        The observation time-series resampled to match the forecast
+        time-series.
+
+    """
+
+    # Resample observation, checking for invalid interval_length and that
+    # the Series has data:
+    if fx.interval_length > obs.interval_length and not obs_series.empty:
+        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
+        obs_resampled = obs_series.resample(
+            fx.interval_length,
+            label=closed,
+            closed=closed
+        ).agg(["mean", "count"])
+
+        # Drop intervals if too many samples missing
+        count_threshold = int(
+            fx.interval_length / obs.interval_length * 0.1
+        )
+        obs_resampled = obs_resampled["mean"].where(
+            obs_resampled["count"] >= count_threshold
+        )
+    else:
+        obs_resampled = obs_series
+
+    return obs_resampled
+
+
 def resample_and_align(fx_obs, fx_series, obs_series, tz):
     """
     Resample the observation to the forecast interval length and align to
@@ -79,6 +189,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     -------
     forecast_values : pandas.Series
     observation_values : pandas.Series
+    results : dict
 
     Notes
     -----
@@ -96,23 +207,13 @@ def resample_and_align(fx_obs, fx_series, obs_series, tz):
     fx = fx_obs.forecast
     obs = fx_obs.data_object
 
-    # Resample observation, checking for invalid interval_length and that the
-    # Series has data:
-    if fx.interval_length > obs.interval_length and not obs_series.empty:
-        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-        obs_resampled = obs_series.resample(
-            fx.interval_length,
-            label=closed,
-            closed=closed
-        ).agg(["mean", "count"])
-
-        # Drop intervals if too many samples missing
-        count_threshold = int(fx.interval_length / obs.interval_length * 0.1)
-        obs_resampled = obs_resampled["mean"].where(
-            obs_resampled["count"] >= count_threshold
-        )
+    # Resample based on forecast type
+    if isinstance(fx, datamodel.EventForecast):
+        fx_series = _validate_event_dtype(fx_series)
+        obs_series = _validate_event_dtype(obs_series)
+        obs_resampled = _resample_event_obs(obs, fx, obs_series)
     else:
-        obs_resampled = obs_series
+        obs_resampled = _resample_obs(obs, fx, obs_series)
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and

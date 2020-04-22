@@ -695,6 +695,32 @@ def test_apisession_get_report(requests_mock, report_text, report_objects,
     assert out == expected
 
 
+@pytest.fixture()
+def mock_request_event_fxobs(event_report_objects, mocker):
+    _, obs, fx0, fx1 = event_report_objects
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+
+    def returnone(fxid):
+        if fxid == "da2bc386-8712-11e9-a1c7-0a580a8200ae":
+            return fx0
+        else:
+            return fx1
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_forecast',
+                 side_effect=returnone)
+
+
+def test_apisession_get_report_event(requests_mock, event_report_text,
+                                     event_report_objects,
+                                     mock_request_event_fxobs):
+    session = api.APISession('')
+    requests_mock.register_uri('GET', f'{session.base_url}/reports/',
+                               content=event_report_text)
+    out = session.get_report('')
+    expected = event_report_objects[0]
+    assert out == expected
+
+
 def test_apisession_get_report_with_raw(
         requests_mock, report_text, report_objects, mock_request_fxobs,
         raw_report, mocker):

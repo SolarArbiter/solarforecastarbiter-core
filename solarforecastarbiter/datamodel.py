@@ -19,6 +19,7 @@ import pandas as pd
 
 from solarforecastarbiter.metrics.deterministic import \
     _MAP as deterministic_mapping
+from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
@@ -38,6 +39,7 @@ ALLOWED_VARIABLES = {
     'dc_power': 'MW',
     'availability': '%',
     'curtailment': 'MW',
+    'event': 'boolean'
 }
 
 
@@ -52,7 +54,8 @@ COMMON_NAMES = {
     'ac_power': 'AC Power',
     'dc_power': 'DC Power',
     'availability': 'Availability',
-    'curtailment': 'Curtailment'
+    'curtailment': 'Curtailment',
+    'event': 'Event'
 }
 
 
@@ -90,11 +93,14 @@ CATEGORY_BLURBS = {
 ALLOWED_DETERMINISTIC_METRICS = {
     k: v[1] for k, v in deterministic_mapping.items()}
 
+ALLOWED_EVENT_METRICS = {k: v[1] for k, v in event_mapping.items()}
+
 ALLOWED_PROBABILISTIC_METRICS = {
     k: v[1] for k, v in probabilistic_mapping.items()}
 
 ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
+ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
 
 
 def _time_conv(inp):
@@ -475,10 +481,9 @@ class Observation(BaseModel):
     interval_length : pandas.Timedelta
         The length of time between consecutive data points, e.g. 5 minutes,
         1 hour.
-    interval_label : str
+    interval_label : {'beginning', 'ending', 'instant', 'event'}
         Indicates if a time labels the beginning or the ending of an interval
-        average, or indicates an instantaneous value, e.g. beginning, ending,
-        instant
+        average, indicates an instantaneous value, or indicates an event.
     site : Site
         The site that this Observation was generated for.
     uncertainty : float
@@ -688,15 +693,15 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         The total length of a single issued forecast run, e.g. 1 hour.
         To enforce a continuous, non-overlapping sequence, this is equal
         to the forecast run issue frequency.
-    interval_label : str
+    interval_label : {"beginning", "ending", "instant"}
         Indicates if a time labels the beginning or the ending of an interval
         average, or indicates an instantaneous value, e.g. beginning, ending,
         instant.
     interval_value_type : str
         The type of the data in the forecast, e.g. mean, max, 95th percentile.
     variable : str
-        The variable in the forecast, e.g. power, GHI, DNI. Each variable is
-        associated with a standard unit.
+        The variable in the forecast, e.g. power, GHI, DNI, event. Each
+        variable is associated with a standard unit.
     site : Site or None
         The predefined site that the forecast is for, e.g. Power Plant X.
     aggregate : Aggregate or None
@@ -716,6 +721,59 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
+
+
+@dataclass(frozen=True)
+class EventForecast(Forecast):
+    """
+    Extends Forecast dataclass to include event forecast attributes.
+
+    Parameters
+    ----------
+    name : str
+        Name of the Forecast
+    issue_time_of_day : datetime.time
+        The time of day that a forecast run is issued, e.g. 00:30. For
+        forecast runs issued multiple times within one day (e.g. hourly),
+        this specifies the first issue time of day. Additional issue times
+        are uniquely determined by the first issue time and the run length &
+        issue frequency attribute.
+    lead_time_to_start : pandas.Timedelta
+        The difference between the issue time and the start of the first
+        forecast interval, e.g. 1 hour.
+    interval_length : pandas.Timedelta
+        The length of time between consecutive data points, e.g. 5 minutes,
+        1 hour.
+    run_length : pandas.Timedelta
+        The total length of a single issued forecast run, e.g. 1 hour.
+        To enforce a continuous, non-overlapping sequence, this is equal
+        to the forecast run issue frequency.
+    interval_label : {'event'}
+    interval_value_type : str
+        The type of the data in the forecast, e.g. mean, max, 95th percentile.
+    variable : {'event'}
+    site : Site or None
+        The predefined site that the forecast is for, e.g. Power Plant X.
+    aggregate : Aggregate or None
+        The predefined aggregate that the forecast is for, e.g. Aggregate Y.
+    forecast_id : str, optional
+        UUID of the forecast in the API
+    provider : str, optional
+        Provider of the Forecast information.
+    extra_parameters : str, optional
+        Extra configuration parameters of forecast.
+
+    See also
+    --------
+    :py:class:`solarforecastarbiter.datamodel.Forecast`
+    """
+    def __post_init__(self):
+        super().__post_init__()
+
+        if self.interval_label != "event":
+            raise ValueError("Interval label must be 'event'")
+        elif self.variable != "event":
+            raise ValueError("Variable must be 'event'")
 
 
 @dataclass(frozen=True)
@@ -1127,10 +1185,6 @@ def __check_metrics__(fx, metrics):
     ValueError
         If the selected metrics are not valid for the given forecast type.
 
-    TODO
-    ----
-    * validate event forecast metrics
-
     """
 
     if isinstance(fx, (ProbabilisticForecast,
@@ -1138,6 +1192,10 @@ def __check_metrics__(fx, metrics):
         if not set(metrics) <= ALLOWED_PROBABILISTIC_METRICS.keys():
             raise ValueError("Metrics must be in "
                              "ALLOWED_PROBABILISTIC_METRICS.")
+    elif isinstance(fx, EventForecast):
+        if not set(metrics) <= ALLOWED_EVENT_METRICS.keys():
+            raise ValueError("Metrics must be in "
+                             "ALLOWED_EVENT_METRICS.")
     elif isinstance(fx, Forecast):
         if not set(metrics) <= ALLOWED_DETERMINISTIC_METRICS.keys():
             raise ValueError("Metrics must be in "

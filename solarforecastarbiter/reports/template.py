@@ -82,6 +82,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
             timeseries_specs = ('{}', '{}')
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
+
     return kwargs
 
 
