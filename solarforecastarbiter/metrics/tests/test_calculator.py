@@ -1,10 +1,12 @@
+import calendar
+import datetime
+import itertools
+import re
+
 import numpy as np
 from numpy.testing import assert_allclose
 import pandas as pd
 import pytest
-import itertools
-import calendar
-import datetime
 
 
 from solarforecastarbiter import datamodel
