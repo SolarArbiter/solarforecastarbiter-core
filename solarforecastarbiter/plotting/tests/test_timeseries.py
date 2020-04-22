@@ -91,6 +91,21 @@ def test_make_basic_timeseries(label, df):
     assert 'OBJECT'in fig.title.text
 
 
+def test_make_basic_event_timeseries():
+    df = pd.DataFrame(
+        index=pd.date_range(start='now', freq='1min',
+                            periods=2, tz='UTC', name='timestamp'))
+    source = bokeh.models.ColumnDataSource(df)
+    fig = timeseries.make_basic_timeseries(source, 'OBJECT', 'event',
+                                           'event', 800)
+
+    assert fig.yaxis.ticker.ticks == [0, 1]
+    assert list(fig.yaxis.major_label_overrides.values()) == ['True', 'False']
+    assert 'Time' in fig.xaxis[0].axis_label
+    assert 'Event' in fig.yaxis[0].axis_label
+    assert 'OBJECT'in fig.title.text
+
+
 def test_generate_forecast_figure(ac_power_forecast_metadata,
                                   forecast_values):
     # not great, just testing that script and div are returned

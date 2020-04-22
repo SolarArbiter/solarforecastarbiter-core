@@ -72,7 +72,8 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_metrics` modification,
   :py:func:`solarforecastarbiter.metrics.calculator.calculate_event_metrics` addition and
   :py:func:`solarforecastarbiter.metrics.preprocessing.resample_and_align` modifications. (:issue:`357`) (:issue:`380`) (:pull:`361`)
-
+* Added support for plotting timeseries of event observations and forecasts to
+  :py:func:`solararbiter.plotting.timeseries.make_basic_timeseries`. (:pull:`394`)
 
 Enhancements
 ~~~~~~~~~~~~
