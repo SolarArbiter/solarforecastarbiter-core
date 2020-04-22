@@ -1,4 +1,5 @@
 import time
+import json
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -460,3 +461,94 @@ def test_name_pfxobs_recursion_limit():
     cn = [name]
     cn += [f'{name}-{i:02d}' for i in range(129)]
     assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'
+
+
+@pytest.mark.parametrize("obs_index,fx_index,expected_dt", [
+    (THREE_HOURS, THREE_HOURS, THREE_HOURS),
+    (THIRTEEN_10MIN, THIRTEEN_10MIN, THIRTEEN_10MIN),
+
+    # mismatch interval_length
+    pytest.param(THREE_HOURS, THIRTEEN_10MIN, [],
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+    pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+])
+def test_resample_and_align_event(single_event_forecast_observation,
+                                  obs_index, fx_index, expected_dt):
+
+    obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
+    fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=obs_index)
+    fx_series = pd.Series(fx_values, index=fx_index)
+
+    fxobs = single_event_forecast_observation
+
+    # Use local tz
+    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+
+    fx_values, obs_values, results = preprocessing.resample_and_align(
+        fxobs, fx_series, obs_series, local_tz
+    )
+
+    assert isinstance(results, dict)
+
+    # Localize datetimeindex
+    expected_dt = expected_dt.tz_convert(local_tz)
+
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  expected_dt,
+                                  check_categorical=False)
+
+
+@pytest.mark.parametrize("fx_interval_length, obs_interval_length", [
+    (60, 60),
+    (5, 5),
+    pytest.param(30, 10,
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+    pytest.param(10, 15,
+                 marks=pytest.mark.xfail(strict=True, type=ValueError)),
+])
+def test__resample_event_obs(single_site, single_event_forecast_text,
+                             single_event_observation_text,
+                             fx_interval_length, obs_interval_length):
+
+    fx_dict = json.loads(single_event_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict.update({"interval_length": fx_interval_length})
+    fx = datamodel.EventForecast.from_dict(fx_dict)
+
+    obs_dict = json.loads(single_event_observation_text)
+    obs_dict['site'] = single_site
+    obs_dict.update({"interval_length": obs_interval_length})
+    obs = datamodel.Observation.from_dict(obs_dict)
+
+    freq = pd.Timedelta(f"{obs_interval_length}min")
+    index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
+    obs_series = pd.Series(np.random.randint(0, 2, len(index), dtype=bool),
+                           index=index)
+
+    obs_resampled = preprocessing._resample_event_obs(fx, obs, obs_series)
+    pd.testing.assert_index_equal(obs_series.index, obs_resampled.index,
+                                  check_categorical=False)
+
+
+@pytest.mark.parametrize("data", [
+    [True, True, False],
+    [1, 1, 0],
+    [1.0, 1.0, 0.0],
+    pytest.param([0, 1, 2],
+                 marks=pytest.mark.xfail(strict=True, type=TypeError)),
+    pytest.param([0.0, 1.0, 2.0],
+                 marks=pytest.mark.xfail(strict=True, type=TypeError)),
+])
+def test__validate_event_dtype(data):
+    ser = pd.Series(data)
+    print(ser.head())
+    ser_conv = preprocessing._validate_event_dtype(ser)
+
+    pd.testing.assert_index_equal(ser.index, ser_conv.index,
+                                  check_categorical=False)
+    assert ser_conv.dtype == bool

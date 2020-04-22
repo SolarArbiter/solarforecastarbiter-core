@@ -10,7 +10,7 @@ import re
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic,
-                                          probabilistic)
+                                          probabilistic, event)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
@@ -23,6 +23,7 @@ PROB_NO_REF = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_REF_FX))
 PROB_NO_DIST = (set(PROBABILISTIC_METRICS) - set(probabilistic._REQ_DIST))
 PROB_NO_REF_NO_DIST = (set(PROB_NO_REF) - set(probabilistic._REQ_DIST))
 LIST_OF_CATEGORIES = list(datamodel.ALLOWED_CATEGORIES.keys())
+EVENT_METRICS = list(event._MAP.keys())
 
 
 @pytest.fixture()
@@ -230,7 +231,6 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
         pd.Series([1, 1, 1], index=create_dt_index(3)))
     categories = ('hour', 'total', 'date')
     metrics = ('rmse', 'ksi', 'mbe', 'mae')
-    proc_fx_obs
     result = calculator.calculate_deterministic_metrics(
         inp, categories, metrics)
     expected = {
@@ -239,6 +239,34 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
         4: ('hour', 'mae', '0', 1.),
         6: ('hour', 'mae', '2', 1.),
         10: ('hour', 'rmse', '0', 1.)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
+def test_calculate_event_metrics_sorting(single_event_forecast_observation,
+                                         create_processed_fxobs,
+                                         create_dt_index):
+    inp = create_processed_fxobs(
+        single_event_forecast_observation,
+        pd.Series([True, False, True], index=create_dt_index(3)),  # fx
+        pd.Series([True, True, True], index=create_dt_index(3)))   # obs
+    categories = ('hour', 'total')
+    metrics = ('far', 'pod', 'ea', 'pofd')
+    result = calculator.calculate_event_metrics(
+        inp, categories, metrics)
+    expected = {
+        0: ('total', 'pod', '0', 2 / 3),
+        1: ('total', 'far', '0', 0.0),
+        2: ('total', 'pofd', '0', 0.0),
+        3: ('total', 'ea', '0', 2 / 3),
+        4: ('hour', 'pod', '0', 1.0),
+        6: ('hour', 'pod', '2', 1.0),
+        8: ('hour', 'far', '1', 0.0),
+        10: ('hour', 'pofd', '0', 0.0),
+        15: ('hour', 'ea', '2', 1.0),
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -1132,3 +1160,209 @@ def test_transform_prob_forecast_value_and_prob(prob_forecasts,
 def test_create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob, exp_df):
     result = calculator._create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob)
     pd.testing.assert_frame_equal(result, exp_df)
+
+
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES,
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(EVENT_METRICS, 1)),
+    EVENT_METRICS[0:1],
+    EVENT_METRICS[0:2],
+    EVENT_METRICS,
+    pytest.param([],
+                 marks=pytest.mark.xfail(raises=RuntimeError, strict=True)),
+])
+def test_calculate_event_metrics(single_event_forecast_observation, categories,
+                                 metrics):
+
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+    obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    fx_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=index)
+    fx_series = pd.Series(fx_values, index=index)
+
+    fxobs = single_event_forecast_observation
+    proc_fx_obs = datamodel.ProcessedForecastObservation(
+        name=fxobs.forecast.name,
+        original=fxobs,
+        interval_value_type=fxobs.forecast.interval_value_type,
+        interval_length=fxobs.forecast.interval_length,
+        interval_label=fxobs.forecast.interval_label,
+        valid_point_count=len(fx_series),
+        forecast_values=fx_series,
+        observation_values=obs_series,
+    )
+
+    result = calculator.calculate_event_metrics(
+        proc_fx_obs, categories, metrics
+    )
+
+    # Check results
+    assert isinstance(result, datamodel.MetricResult)
+    assert result.forecast_id == proc_fx_obs.original.forecast.forecast_id
+    assert result.name == proc_fx_obs.original.forecast.name
+    assert len(result.values) % len(metrics) == 0
+    cats = {val.category for val in result.values}
+    assert cats == set(categories)
+    fx_values = proc_fx_obs.forecast_values
+    for cat in categories:
+        cat_grps = {v.index for v in result.values if v.category == cat}
+        assert len(
+            {v.metric for v in result.values if v.category == cat}
+        ) == len(metrics)
+
+        # has expected groupings
+        if cat == 'month':
+            grps = fx_values.groupby(
+                fx_values.index.month).groups
+            grps = [calendar.month_abbr[g] for g in grps]
+        elif cat == 'hour':
+            grps = fx_values.groupby(
+                fx_values.index.hour).groups
+        elif cat == 'year':
+            grps = fx_values.groupby(
+                fx_values.index.year).groups
+        elif cat == 'date':
+            grps = fx_values.groupby(
+                fx_values.index.date).groups
+        elif cat == 'weekday':
+            grps = fx_values.groupby(
+                fx_values.index.weekday).groups
+            grps = [calendar.day_abbr[g] for g in grps]
+        elif cat == 'total':
+            grps = ['0']
+        assert {str(g) for g in grps} == cat_grps
+    for val in result.values:
+        assert (
+            np.isnan(val.value) or
+            np.issubdtype(type(val.value), np.number)
+        )
+
+
+@pytest.mark.parametrize('obs_values,fx_values', [
+    ([], [True, False]),
+    ([False, True], []),
+])
+def test_calculate_event_metrics_no_data(single_event_forecast_observation,
+                                         obs_values, fx_values):
+
+    categories = LIST_OF_CATEGORIES
+    metrics = EVENT_METRICS
+    obs_series = pd.Series(obs_values, dtype=bool)
+    fx_series = pd.Series(fx_values, dtype=bool)
+
+    # processed fx-obs pair
+    fxobs = single_event_forecast_observation
+    proc_fx_obs = datamodel.ProcessedForecastObservation(
+        name=fxobs.forecast.name,
+        original=fxobs,
+        interval_value_type=fxobs.forecast.interval_value_type,
+        interval_length=fxobs.forecast.interval_length,
+        interval_label=fxobs.forecast.interval_label,
+        valid_point_count=len(fx_series),
+        forecast_values=fx_series,
+        observation_values=obs_series,
+    )
+
+    with pytest.raises(RuntimeError):
+        calculator.calculate_event_metrics(
+            proc_fx_obs, categories, metrics
+        )
+
+
+@pytest.mark.parametrize('categories', [
+    [],
+    *list(itertools.combinations(LIST_OF_CATEGORIES, 1)),
+    LIST_OF_CATEGORIES[0:1],
+    LIST_OF_CATEGORIES[0:2],
+    LIST_OF_CATEGORIES,
+])
+@pytest.mark.parametrize('metrics', [
+    *list(itertools.combinations(EVENT_METRICS, 1)),
+    EVENT_METRICS[0:1],
+    EVENT_METRICS[0:2],
+    EVENT_METRICS,
+])
+def test_calculate_metrics_with_event(single_event_forecast_observation,
+                                      categories, metrics):
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+
+    fxobs = single_event_forecast_observation
+
+    # processed fx-obs pairs
+    proc_fx_obs = []
+    for i in range(4):
+        obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+        fx_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+        obs_series = pd.Series(obs_values, index=index)
+        fx_series = pd.Series(fx_values, index=index)
+
+        proc_fx_obs.append(
+            datamodel.ProcessedForecastObservation(
+                name=fxobs.forecast.name,
+                original=fxobs,
+                interval_value_type=fxobs.forecast.interval_value_type,
+                interval_length=fxobs.forecast.interval_length,
+                interval_label=fxobs.forecast.interval_label,
+                valid_point_count=len(fx_series),
+                forecast_values=fx_series,
+                observation_values=obs_series,
+            )
+        )
+
+    # compute metrics
+    result = calculator.calculate_metrics(
+        proc_fx_obs, categories, metrics
+    )
+
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == len(proc_fx_obs)
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.parametrize("categories,metrics", [
+    (LIST_OF_CATEGORIES, EVENT_METRICS),
+])
+def test_calculate_metrics_with_event_empty(single_event_forecast_observation,
+                                            categories, metrics, caplog):
+    index = pd.DatetimeIndex(
+        ["20200301T0000Z", "20200301T0100Z", "20200301T0200Z"]
+    )
+
+    fxobs = single_event_forecast_observation
+
+    # processed fx-obs pairs
+    proc_fx_obs = []
+    obs_values = np.random.randint(0, 2, size=len(index), dtype=bool)
+    obs_series = pd.Series(obs_values, index=index)
+    fx_series = pd.Series(dtype=bool)
+
+    proc_fx_obs.append(
+        datamodel.ProcessedForecastObservation(
+            name=fxobs.forecast.name,
+            original=fxobs,
+            interval_value_type=fxobs.forecast.interval_value_type,
+            interval_length=fxobs.forecast.interval_length,
+            interval_label=fxobs.forecast.interval_label,
+            valid_point_count=len(fx_series),
+            forecast_values=fx_series,
+            observation_values=obs_series,
+        )
+    )
+
+    result = calculator.calculate_metrics(proc_fx_obs, categories, metrics)
+    assert len(result) == 0
+    assert "ERROR" == caplog.text[0:5]
+    failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
+    assert (f"Failed to calculate event metrics for {proc_fx_obs[0].name}: "
+            "No Forecast timeseries data.\n") == failure_log_text

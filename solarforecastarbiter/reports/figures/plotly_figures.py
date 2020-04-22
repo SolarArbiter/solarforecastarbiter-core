@@ -15,6 +15,7 @@ import numpy as np
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.metrics.event import _event2count
 
 
 logger = logging.getLogger(__name__)
@@ -364,6 +365,63 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     return fig
 
 
+def event_histogram(timeseries_value_df, timeseries_meta_df):
+    """
+    Adds histogram plot traces of the event outcomes of one or more event
+    forecasts and observations to the figure.
+
+    Parameters
+    ----------
+    timeseries_value_df: pandas.DataFrame
+        DataFrame of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
+    timeseries_meta_df: pandas.DataFrame
+        DataFrame of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
+
+    Returns
+    -------
+    plotly.Figure
+    """  # NOQA
+
+    fig = go.Figure()
+    palette = cycle(PALETTE)
+    # accumulate labels and plot objects for manual legend
+    for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, fxhash, 'forecast_hash')
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        data = timeseries_value_df[pair_idcs]
+
+        tp, fp, tn, fn = _event2count(data["observation_values"],
+                                      data["forecast_values"])
+        x = ["True Pos.", "False Pos.", "True Neg.", "False Neg."]
+        y = [tp, fp, tn, fn]
+
+        fig.add_trace(go.Bar(
+            x=x,
+            y=y,
+            name=_legend_text(metadata['forecast_name']),
+            showlegend=True,
+            legendgroup=metadata['forecast_name'],
+            marker_color=next(palette),
+        ))
+
+    # update axes
+    x_label = "Outcome"
+    y_label = "Count"
+    fig.update_xaxes(title_text=x_label, showgrid=True,
+                     gridwidth=0, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    fig.update_yaxes(title_text=y_label, showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+
+    return fig
+
+
 def configure_axes(fig, x_axis_kwargs, y_axis_kwargs):
     """Applies plotly axes configuration to display zero line and grid, and the
     configuration passed in x_axis_kwargs and y_axis kwargs. Currently
@@ -551,7 +609,7 @@ def bar_subdivisions(df, category, metric):
     figs = {}
 
     human_category = datamodel.ALLOWED_CATEGORIES[category]
-    metric_name = datamodel.ALLOWED_DETERMINISTIC_METRICS[metric]
+    metric_name = datamodel.ALLOWED_METRICS[metric]
 
     x_axis_label = human_category
     y_axis_label = metric_name
@@ -744,18 +802,30 @@ def timeseries_plots(report):
         value_df, meta_df, report.report_parameters.start,
         report.report_parameters.end, units,
         report.raw_report.timezone)
-    scat_fig = scatter(value_df, meta_df, units)
     ts_fig.update_layout(
         plot_bgcolor=PLOT_BGCOLOR,
         font=dict(size=14),
         margin=PLOT_MARGINS,
 
     )
-    scat_fig.update_layout(
-        plot_bgcolor=PLOT_BGCOLOR,
-        font=dict(size=14),
-        width=600,
-        height=500,
-        autosize=False,
-    )
+
+    # switch secondary plot based on forecast type
+    pfxobs = report.raw_report.processed_forecasts_observations
+    fx = pfxobs[0].original.forecast
+    if isinstance(fx, datamodel.EventForecast):
+        scat_fig = event_histogram(value_df, meta_df)
+        scat_fig.update_layout(
+            plot_bgcolor=PLOT_BGCOLOR,
+            font=dict(size=14),
+            margin=PLOT_MARGINS,
+        )
+    else:
+        scat_fig = scatter(value_df, meta_df, units)
+        scat_fig.update_layout(
+            plot_bgcolor=PLOT_BGCOLOR,
+            font=dict(size=14),
+            width=600,
+            height=500,
+            autosize=False,
+        )
     return ts_fig.to_json(), scat_fig.to_json()

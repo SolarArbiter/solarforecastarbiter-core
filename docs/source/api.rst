@@ -47,6 +47,13 @@ Probabilistic forecasts:
    datamodel.ProbabilisticForecast
    datamodel.ProbabilisticForecastConstantValue
 
+Event forecasts:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.EventForecast
+
 Aggregates:
 
 .. autosummary::
@@ -423,6 +430,7 @@ Entry points for calculating metrics for
    metrics.calculator.calculate_metrics
    metrics.calculator.calculate_deterministic_metrics
    metrics.calculator.calculate_probabilistic_metrics
+   metrics.calculator.calculate_event_metrics
 
 Preprocessing
 -------------
