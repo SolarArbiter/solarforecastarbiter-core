@@ -438,6 +438,7 @@ def test_bar_subdivisions_no_metric(metric_cds):
     assert len(out) == 0
 
 
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_bar_subdivisions_empty_cds(metric_cds):
     cds = ColumnDataSource(data={k: [] for k in metric_cds.data.keys()})
     out = figures.bar_subdivisions(cds, 'hour', 's')
