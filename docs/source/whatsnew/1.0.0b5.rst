@@ -128,6 +128,9 @@ Bug fixes
   :py:mod:`solarforecastaribter.io.api` functions are coerced to float
   and converting to float before validation (:issue:`252`) (:pull:`384`)
 * Enforce metric order consistency. (:issue:`352`) (:pull:`396`)
+* Eliminate most warnings from test suite. (:issue:`385`) (:pull:`395`)
+* :py:func:`solarforecastarbiter.metrics.deterministic.forecast_skill` now
+  returns 0 if both forecast and reference forecast errors are 0. (:pull:`395`)
 
 
 Contributors
