@@ -11,7 +11,7 @@ API Changes
 * Added :py:mod:`solarforecastarbiter.reports.figures` which contains modules
   for creating Bokeh and Plotly report figures.
 * Added :py:mod:`solarforecastarbiter.reports.figures.plotly_figures` to create
-  report figures using plotly (:pull:`359`)
+  report figures using plotly (:pull:`359`)(:pull:`388`)
 * :py:func:`solarforecastarbiter.reports.figures.bokeh_figures.output_svg`
   now takes a :py:class:`selenium.webdriver.remote.webdriver.WebDriver` as an
   optional argument (:pull:`345`)
