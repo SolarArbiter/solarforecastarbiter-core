@@ -969,6 +969,11 @@ def single_forecast(single_forecast_text, _forecast_from_dict):
 
 
 @pytest.fixture()
+def single_reference_forecast(single_forecast, ref_forecast_id):
+    return single_forecast.replace(forecast_id=ref_forecast_id)
+
+
+@pytest.fixture()
 def many_forecasts(many_forecasts_text, _forecast_from_dict):
     return [_forecast_from_dict(fx) for fx
             in json.loads(many_forecasts_text)]
@@ -1356,6 +1361,14 @@ def single_prob_forecast_observation(prob_forecasts, single_observation):
 
 
 @pytest.fixture()
+def single_prob_forecast_observation_reffx(prob_forecasts, single_observation):
+    return datamodel.ForecastObservation(
+        prob_forecasts,
+        single_observation,
+        reference_forecast=prob_forecasts)
+
+
+@pytest.fixture()
 def many_forecast_observation(many_forecasts, many_observations):
     many_ghi_forecasts = [fx for fx in many_forecasts
                           if fx.variable == 'ghi']
@@ -1395,6 +1408,15 @@ def single_forecast_observation_uncert(
 
 
 @pytest.fixture()
+def single_forecast_observation_reffx(
+        single_forecast, single_reference_forecast, single_observation):
+    return datamodel.ForecastObservation(
+        single_forecast,
+        single_observation,
+        reference_forecast=single_reference_forecast)
+
+
+@pytest.fixture()
 def single_forecast_ac_observation(
         ac_power_forecast_metadata, ac_power_observation_metadata):
     return datamodel.ForecastObservation(
@@ -1416,7 +1438,7 @@ def single_forecast_wind_speed_observation(
 
 
 @pytest.fixture()
-def single_forecast_aggregate(aggregate, single_site):
+def single_aggregate_forecast(single_site):
     forecast_agg = datamodel.Forecast(
         name="GHI Aggregate FX 60",
         issue_time_of_day=dt.time(0, 0),
@@ -1430,11 +1452,24 @@ def single_forecast_aggregate(aggregate, single_site):
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
-    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+    return forecast_agg
 
 
 @pytest.fixture()
-def single_prob_forecast_aggregate(aggregate, single_site,
+def single_forecast_aggregate(aggregate, single_aggregate_forecast):
+    return datamodel.ForecastAggregate(single_aggregate_forecast, aggregate)
+
+
+@pytest.fixture()
+def single_forecast_aggregate_reffx(aggregate, single_aggregate_forecast):
+    return datamodel.ForecastAggregate(
+        single_aggregate_forecast,
+        aggregate,
+        reference_forecast=single_aggregate_forecast)
+
+
+@pytest.fixture()
+def single_prob_aggregate_forecast(single_site,
                                    agg_prob_forecast_constant_value):
     forecast_agg = datamodel.ProbabilisticForecast(
         name="GHI Aggregate FX 60",
@@ -1451,11 +1486,26 @@ def single_prob_forecast_aggregate(aggregate, single_site,
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
-    return datamodel.ForecastAggregate(forecast_agg, aggregate)
+    return forecast_agg
 
 
 @pytest.fixture()
-def report_objects(aggregate):
+def single_prob_forecast_aggregate(single_prob_aggregate_forecast,
+                                   aggregate):
+    return datamodel.ForecastAggregate(
+        single_prob_aggregate_forecast, aggregate)
+
+
+@pytest.fixture()
+def single_prob_forecast_aggregate_reffx(single_prob_aggregate_forecast,
+                                         aggregate):
+    return datamodel.ForecastAggregate(
+        single_prob_aggregate_forecast, aggregate,
+        reference_forecast=single_prob_aggregate_forecast)
+
+
+@pytest.fixture()
+def report_objects(aggregate, ref_forecast_id):
     tz = 'America/Phoenix'
     start = pd.Timestamp('20190401 0000', tz=tz)
     end = pd.Timestamp('20190404 2359', tz=tz)
@@ -1523,11 +1573,13 @@ def report_objects(aggregate):
         observation,
         # report_text parsing will ensure unc can be done dynamically too
         uncertainty=observation.uncertainty)
+    forecast_ref = forecast_0.replace(forecast_id=ref_forecast_id)
     fxobs1 = datamodel.ForecastObservation(
         forecast_1,
         observation,
         normalization=1000.,
-        uncertainty=15.)
+        uncertainty=15.,
+        reference_forecast=forecast_ref)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
@@ -1549,7 +1601,7 @@ def report_objects(aggregate):
         start=start,
         end=end,
         object_pairs=(fxobs0, fxobs1, fxagg0),
-        metrics=("mae", "rmse", "mbe"),
+        metrics=("mae", "rmse", "mbe", "s"),
         categories=("total", "date", "hour"),
         filters=(quality_flag_filter, timeofdayfilter)
     )
@@ -1712,12 +1764,19 @@ def valuefilter_dict(single_forecast):
     }
 
 
+@pytest.fixture
+def ref_forecast_id():
+    return "refbc386-8712-11e9-a1c7-0a580a8200ae"
+
+
 @pytest.fixture()
 def report_params_dict(report_objects, quality_filter_dict,
-                       timeofdayfilter_dict):
+                       timeofdayfilter_dict, ref_forecast_id):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     report_params = report.report_parameters
+    ref_dict = forecast_0.to_dict()
+    ref_dict.update(forecast_id=ref_forecast_id)
     return {
         'name': report_params.name,
         'start': report_params.start,
@@ -1729,12 +1788,13 @@ def report_params_dict(report_objects, quality_filter_dict,
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict(),
              'normalization': 1000.,
-             'uncertainty': 15.},
+             'uncertainty': 15.,
+             'reference_forecast': ref_dict},
             {'forecast': forecast_agg.to_dict(),
              'aggregate': aggregate.to_dict(),
              'uncertainty': 5.},
         ),
-        'metrics': ('mae', 'rmse', 'mbe'),
+        'metrics': ('mae', 'rmse', 'mbe', 's'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
     }
 
@@ -1776,7 +1836,7 @@ def report_text():
              ]},
              {"time_of_day_range": ["12:00", "14:00"]}
          ],
-         "metrics": ["mae", "rmse", "mbe"],
+         "metrics": ["mae", "rmse", "mbe", "s"],
          "categories": ["total", "date", "hour"],
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
@@ -1785,7 +1845,8 @@ def report_text():
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
-              "uncertainty": "15"},
+              "uncertainty": "15",
+              "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
               "uncertainty": "5"}
@@ -2328,3 +2389,119 @@ def report_message_dict():
 @pytest.fixture
 def report_message(report_message_dict):
     return datamodel.ReportMessage.from_dict(report_message_dict)
+
+
+@pytest.fixture
+def raw_report_dict_with_event():
+    return {
+        'data_checksum': None,
+        'generated_at': '2020-04-22T20:02:40+00:00',
+        'messages': [],
+        'metrics': [{
+            'aggregate_id': None,
+            'forecast_id': '24cbae4e-7ea6-11ea-86b1-0242ac150002',
+            'name': 'Weather Station Event Forecast',
+            'observation_id': '991d15ce-7f66-11ea-96ae-0242ac150002',
+            'values': [{
+                'category': 'total',
+                'index': '0',
+                'metric': 'pod',
+                'value': 0.3333333333333333}],
+        }],
+        'plots': {
+            'bokeh_version': None,
+            'figures': [{
+                'category': 'total',
+                'figure_class': 'plotly',
+                'figure_type': 'bar',
+                'metric': 'pod',
+                'name': 'all',
+                'spec': "{}",
+                'svg': '<svg></svg>'}],
+            'plotly_version': '4.5.3',
+            'script': None},
+        'processed_forecasts_observations': [{
+            'cost_per_unit_error': 0.0,
+            'forecast_values': '3907ab36-84d4-11ea-8bc4-54bf64606445',
+            'interval_label': 'event',
+            'interval_length': 5.0,
+            'interval_value_type': 'instantaneous',
+            'name': 'Weather Station Event Forecast',
+            'normalization_factor': np.nan,
+            'observation_values': '391820f6-84d4-11ea-8b57-54bf64606445',
+            'original': {
+                'cost_per_unit_error': 0.0,
+                'forecast': {
+                    'aggregate': None,
+                    'extra_parameters': '',
+                    'forecast_id': '24cbae4e-7ea6-11ea-86b1-0242ac150002',
+                    'interval_label': 'event',
+                    'interval_length': 5.0,
+                    'interval_value_type': 'instantaneous',
+                    'issue_time_of_day': '05:00',
+                    'lead_time_to_start': 60.0,
+                    'name': 'Weather Station Event Forecast',
+                    'provider': 'Organization 1',
+                    'run_length': 60.0,
+                    'site': {
+                        'elevation': 595.0,
+                        'extra_parameters': "",
+                        'latitude': 42.19,
+                        'longitude': -122.7,
+                        'name': 'Weather Station',
+                        'provider': 'Organization 1',
+                        'site_id': '123e4567-e89b-12d3-a456-426655440001',
+                        'timezone': 'Etc/GMT+8'},
+                    'variable': 'event'},
+                'normalization': np.nan,
+                'observation': {
+                    'extra_parameters': '',
+                    'interval_label': 'event',
+                    'interval_length': 5.0,
+                    'interval_value_type': 'instantaneous',
+                    'name': 'Weather Station Event Observation',
+                    'observation_id': '991d15ce-7f66-11ea-96ae-0242ac150002',
+                    'provider': 'Organization 1',
+                    'site': {
+                        'elevation': 595.0,
+                        'extra_parameters': "",
+                        'latitude': 42.19,
+                        'longitude': -122.7,
+                        'name': 'Weather Station',
+                        'provider': 'Organization 1',
+                        'site_id': '123e4567-e89b-12d3-a456-426655440001',
+                        'timezone': 'Etc/GMT+8'},
+                    'uncertainty': 1.0,
+                    'variable': 'event'},
+                'reference_forecast': None,
+                'uncertainty': None},
+            'preprocessing_results': [
+                {'count': 0,
+                 'name': 'TOTAL FLAGGED VALUES DISCARDED'},
+                {'count': 0,
+                 'name': 'EventForecast Values Discarded by Alignment'},
+                {'count': 0,
+                 'name': 'Observation Values Discarded by Alignment'},
+                {'count': 0,
+                 'name': 'EventForecast Undefined Values'},
+                {'count': 0,
+                 'name': 'Observation Undefined Values'}],
+            'reference_forecast_values': None,
+            'uncertainty': None,
+            'valid_point_count': 7,
+            'validation_results': []}],
+        'timezone': 'Etc/GMT+8',
+        'versions': [['solarforecastarbiter', '1.0b4+32.gc77b43d'],
+                     ['pvlib', '0.7.1'],
+                     ['pandas', '1.0.3'],
+                     ['numpy', '1.18.1'],
+                     ['bokeh', '1.4.0'],
+                     ['netcdf4', '1.5.3'],
+                     ['xarray', '0.15.0'],
+                     ['tables', '3.6.1'],
+                     ['numexpr', '2.6.9'],
+                     ['bottleneck', 'None'],
+                     ['jinja2', '2.10.3'],
+                     ['statsmodels', '0.11.0'],
+                     ['python', '3.7.1'],
+                     ['platform', 'A-Computer']]}

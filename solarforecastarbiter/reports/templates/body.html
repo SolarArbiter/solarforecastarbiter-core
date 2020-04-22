@@ -116,12 +116,26 @@ the metrics were computed.</p>
 
 {% block dataresampleandalign %}
 <h3 id="data-alignment">Data Resampling and Alignment</h3>
-<p>The Solar Forecast Arbiter's preprocessing applies the above validation and
-excludes (other options to be added in the future) the data. The preprocessing
-then resamples the observations to the forecast using the mean. Then it checks
-for undefined values, such as not-a-number (nan) values and removes them.
-Finally the observations and forecasts are aligned and non-overlapping data
-ignored. The table below summarizes the data preprocessing results:
+<p>The Solar Forecast Arbiter's preprocessing applies the following
+operations to the data:
+
+<ol>
+  <li>Apply the <a href="#data-validation">data validation tests</a> and exclude
+    the matched data.</li>
+  <li>For deterministic forecasts with interval lengths that are longer than
+    the observations interval lengths,
+    <ol>
+      <li>Resample the observations to the forecast using the mean.</li>
+      <li>Remove resampled observation data if more than 10% of the
+        points in the resampled interval are missing. For example, if 1-minute
+        observations are resampled to 60-minute means, then a 60 minute period must
+        have no more than 6 minutes of missing data.</li>
+    </ol>
+  <li>Remove times that do not exist in both the resampled observations,
+    the forecasts, and, if selected, the reference forecasts.
+  </li>
+</ol>
+The table below summarizes the data preprocessing results:
 </p>
 {{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
 <br>

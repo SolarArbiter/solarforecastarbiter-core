@@ -668,7 +668,7 @@ def test_apisession_get_values(
 
 @pytest.fixture()
 def mock_request_fxobs(report_objects, mocker):
-    _, obs, fx0, fx1, agg, fxagg = report_objects
+    report, obs, fx0, fx1, agg, fxagg = report_objects
     mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
                  return_value=obs)
     mocker.patch('solarforecastarbiter.io.api.APISession.get_aggregate',
@@ -679,6 +679,8 @@ def mock_request_fxobs(report_objects, mocker):
             return fx0
         elif fxid == "49220780-76ae-4b11-bef1-7a75bdc784e3":
             return fxagg
+        elif fxid == "refbc386-8712-11e9-a1c7-0a580a8200ae":
+            return report.report_parameters.object_pairs[1].reference_forecast
         else:
             return fx1
     mocker.patch('solarforecastarbiter.io.api.APISession.get_forecast',
@@ -790,15 +792,20 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                     "INCONSISTENT IRRADIANCE COMPONENTS",
                 ]},
                 {'time_of_day_range': ['12:00', '14:00']}],
-            "metrics": ["mae", "rmse", "mbe"],
+            "metrics": ["mae", "rmse", "mbe", "s"],
             "categories": ["total", "date", "hour"],
             "object_pairs": [
                 {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
-                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "uncertainty": "1.0"},
                 {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
-                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "normalization": "1000.0",
+                 "uncertainty": "15.0",
+                 "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
                 {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
-                 "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0"}
+                 "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+                 "uncertainty": "5.0"}
             ]
         }}
     session.create_report(report)

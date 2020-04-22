@@ -18,7 +18,7 @@ EMPTY_DF = pd.DataFrame(columns=['value', 'quality_flag'],
 
 
 @pytest.fixture()
-def _test_data(report_objects):
+def _test_data(report_objects, ref_forecast_id):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     base = Path(__file__).resolve().parent
@@ -39,6 +39,7 @@ def _test_data(report_objects):
             base / 'forecast_0_values.csv', header=None, parse_dates=True,
             names=['timestamp', 'value'], index_col='timestamp')['value'],
     }
+    data[ref_forecast_id] = data[forecast_0.forecast_id] + 1
     return data
 
 
@@ -72,7 +73,7 @@ def test_get_data_for_report(mock_data, report_objects):
     assert isinstance(data[forecast_agg], pd.Series)
     get_forecast_values, get_observation_values, get_aggregate_values = \
         mock_data
-    assert get_forecast_values.call_count == 3
+    assert get_forecast_values.call_count == 4
     assert get_observation_values.call_count == 1
     assert get_aggregate_values.call_count == 1
 
@@ -155,6 +156,9 @@ def test_create_raw_report_from_data(mocker, report_objects, _test_data):
     data = {}
     for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
+        if fxobs.reference_forecast is not None:
+            data[fxobs.reference_forecast] = _test_data[
+                fxobs.reference_forecast.forecast_id]
         if isinstance(fxobs, datamodel.ForecastAggregate):
             data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
         else:
@@ -171,6 +175,9 @@ def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
     data = {}
     for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = EMPTY_DF['value']
+        if fxobs.reference_forecast is not None:
+            data[fxobs.reference_forecast] = _test_data[
+                fxobs.reference_forecast.forecast_id]
         if isinstance(fxobs, datamodel.ForecastAggregate):
             data[fxobs.aggregate] = _test_data[fxobs.aggregate.aggregate_id]
         else:
@@ -188,6 +195,9 @@ def test_create_raw_report_from_data_no_obs(mocker, report_objects,
     data = {}
     for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = _test_data[fxobs.forecast.forecast_id]
+        if fxobs.reference_forecast is not None:
+            data[fxobs.reference_forecast] = _test_data[
+                fxobs.reference_forecast.forecast_id]
         data[fxobs.data_object] = EMPTY_DF
 
     raw = main.create_raw_report_from_data(report, data)
@@ -200,6 +210,8 @@ def test_create_raw_report_from_data_no_data(mocker, report_objects):
     data = {}
     for fxobs in report.report_parameters.object_pairs:
         data[fxobs.forecast] = EMPTY_DF['value']
+        if fxobs.reference_forecast is not None:
+            data[fxobs.reference_forecast] = EMPTY_DF['value']
         data[fxobs.data_object] = EMPTY_DF
     raw = main.create_raw_report_from_data(report, data)
     assert isinstance(raw, datamodel.RawReport)

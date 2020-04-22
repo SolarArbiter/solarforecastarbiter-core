@@ -6,7 +6,7 @@ import logging
 import requests
 from urllib3 import Retry
 
-
+import numpy as np
 import pandas as pd
 
 
@@ -780,14 +780,19 @@ class APISession(requests.Session):
             fx = self.get_forecast(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
+            ref_fx = o.get('reference_forecast')
+            if ref_fx is not None:
+                ref_fx = self.get_forecast(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
-                    fx, obs, normalization=norm, uncertainty=unc)
+                    fx, obs, normalization=norm, uncertainty=unc,
+                    reference_forecast=ref_fx)
             elif 'aggregate' in o:
                 agg = self.get_aggregate(o['aggregate'])
                 pair = datamodel.ForecastAggregate(
-                    fx, agg, normalization=norm, uncertainty=unc)
+                    fx, agg, normalization=norm, uncertainty=unc,
+                    reference_forecast=ref_fx)
             else:
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')
@@ -867,6 +872,14 @@ class APISession(requests.Session):
                 d['aggregate'] = _fo['aggregate']['aggregate_id']
             else:
                 d['observation'] = _fo['observation']['observation_id']
+            if _fo['reference_forecast'] is not None:
+                d['reference_forecast'] = \
+                    _fo['reference_forecast']['forecast_id']
+            if (_fo['normalization'] is not None and
+                    ~np.isnan(_fo['normalization'])):
+                d['normalization'] = str(_fo['normalization'])
+            if _fo['uncertainty'] is not None:
+                d['uncertainty'] = str(_fo['uncertainty'])
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
         params = {'report_parameters': report_params}

@@ -80,7 +80,8 @@ def get_data_for_report(session, report):
     -------
     data : dict
         Keys are Forecast and Observation objects, values are
-        the corresponding data.
+        the corresponding data. Keys also include any reference
+        forecasts that exist in the report.
     """
     data = {}
     start = report.report_parameters.start
@@ -95,6 +96,11 @@ def get_data_for_report(session, report):
         if fxobs.data_object not in data:
             data[fxobs.data_object] = session.get_values(
                 fxobs.data_object, start, end)
+        if fxobs.reference_forecast is not None:
+            if fxobs.reference_forecast not in data:
+                data[fxobs.reference_forecast] = session.get_forecast_values(
+                    fxobs.reference_forecast.forecast_id, start, end)
+
     return data
 
 

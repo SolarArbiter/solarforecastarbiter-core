@@ -722,6 +722,18 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         __set_units__(self)
         __site_or_agg__(self)
 
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        if model != Forecast:
+            return super().from_dict(dict_, raise_on_extra)
+        # allow loading EventForecasts from this method.
+        variable = dict_.get('variable')
+        if variable == 'event':
+            return EventForecast.from_dict(dict_, raise_on_extra)
+        else:
+            return super().from_dict(dict_, raise_on_extra)
+
 
 @dataclass(frozen=True)
 class EventForecast(Forecast):

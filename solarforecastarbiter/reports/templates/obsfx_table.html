@@ -1,32 +1,40 @@
-<p>The table below shows the observation, forecast pairs analyzed in
-this report. The table includes the unprocessed observation and
-forecast <em>interval label</em> (beginning, ending, instantaneous)
+<p>The table below shows the observation, forecast, and reference forecast
+triplets analyzed in this report. The reference forecast is listed as
+<em>None</em> if it was not selected during the report configuration. The table
+includes the unprocessed observation, forecast, and reference forecast
+<em>interval label</em> (beginning, ending, instantaneous)
 and <em>interval length</em>. If these quantities do not match, the
 Solar Forecast Arbiter must align and/or resample the data before
 computing error statistics. The Solar Forecast Arbiter aligns the
-observation data to the forecast data. The aligned and resampled
-parameters are also shown below, including a unique name for the
+observation data to the forecast data. Reference forecasts must have the same
+interval label, length, and type as the associated forecasts. The aligned
+and resampled parameters are also shown below, including a unique name for the
 aligned and resampled observation/forecast pair that appears in
 the metrics plots, tables, and CSV download.</p>
-<table class="table table-striped table-borderless" style="width:100%; ">
+<table class="table table-striped table-borderless obsfx-table" style="width:100%; ">
   <caption style="caption-side: top; text-align: center;">
     Table of data alignment parameters
   </caption>
   <colgroup>
-    <col style="width: 17%">
-    <col style="width: 17%">
-    <col style="width: 17%">
-    <col style="width: 17%">
-    <col style="width: 17%">
-    <col style="width: 17%">
+    <col style="width: 16%">
+    <col style="width: 9%">
+    <col style="width: 16%">
+    <col style="width: 9%">
+    <col style="width: 16%">
+    <col style="width: 9%">
+    <col style="width: 16%">
+    <col style="width: 9%">
   </colgroup>
   <thead style="text-align: left;">
     <tr class="header" style="text-align: center;">
       <th colspan="2">Aligned Pairs</th>
       <th colspan="2">Observations</th>
       <th colspan="2">Forecasts</th>
+      <th colspan="2">Reference Forecasts</th>
     </tr>
     <tr>
+      <th>Name</th>
+      <th>Interval Label<br>Interval Length</th>
       <th>Name</th>
       <th>Interval Label<br>Interval Length</th>
       <th>Name</th>
@@ -69,6 +77,22 @@ the metrics plots, tables, and CSV download.</p>
         {{ pfxobs.original.forecast.interval_label }}
         <br>
         {{ (pfxobs.original.forecast.interval_length.total_seconds() // 60) | int }} min
+      </td>
+      <td>
+        {% if pfxobs.original.reference_forecast != none %}
+        <a href="{{ dash_url }}/forecasts/single/{{ pfxobs.original.reference_forecast.forecast_id }}">
+          {{ pfxobs.original.reference_forecast.name if pfxobs.original.reference_forecast != none else 'None' }}
+        </a>
+        {% else %}
+          None
+        {% endif %}
+      </td>
+      <td>
+        {{ pfxobs.original.reference_forecast.interval_label if pfxobs.original.reference_forecast != none }}
+        <br>
+        {% if pfxobs.original.reference_forecast != none %}
+          {{ (pfxobs.original.reference_forecast.interval_length.total_seconds() // 60) | int }} min
+        {% endif %}
       </td>
     </tr>
     {% endfor %}

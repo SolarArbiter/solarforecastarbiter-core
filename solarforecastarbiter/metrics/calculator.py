@@ -1,19 +1,12 @@
 """
 Metric calculation functions.
-
-Right now placeholder so we can delete report.metrics.py.
-Needs to cleaned up and expanded.
-
-Todo
-----
-* Support probabilistic metrics and forecasts with new functions
-* Support event metrics and forecasts with new functions
 """
-from functools import partial
 import calendar
-import logging
 import copy
+from functools import partial
+import logging
 
+import numpy as np
 import pandas as pd
 
 
@@ -24,8 +17,7 @@ from solarforecastarbiter.metrics import deterministic, probabilistic, event
 logger = logging.getLogger(__name__)
 
 
-def calculate_metrics(processed_pairs, categories, metrics,
-                      ref_pair=None):
+def calculate_metrics(processed_pairs, categories, metrics):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
@@ -42,22 +34,11 @@ def calculate_metrics(processed_pairs, categories, metrics,
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
-    ref_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation
-        Reference forecast to be used when calculating skill metrics. Default
-        is None and no skill metrics will be calculated.
 
     Returns
     -------
     list
         List of solarforecastarbiter.datamodel.MetricResult
-
-    Todo
-    ----
-    * validate categories are supported
-    * validate metrics are supported
-    * Support probabilistic metrics and forecasts
-    * Support event metrics and forecasts
     """
     calc_metrics = []
 
@@ -70,8 +51,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                 calc_metrics.append(calculate_probabilistic_metrics(
                     proc_fxobs,
                     categories,
-                    metrics,
-                    ref_fx_obs=ref_pair))
+                    metrics))
             except RuntimeError as e:
                 logger.error('Failed to calculate probabilistic metrics'
                              ' for %s: %s', proc_fxobs.name, e)
@@ -88,8 +68,7 @@ def calculate_metrics(processed_pairs, categories, metrics,
                 calc_metrics.append(calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
-                    metrics,
-                    ref_fx_obs=ref_pair))
+                    metrics))
             except RuntimeError as e:
                 logger.error('Failed to calculate deterministic metrics'
                              ' for %s: %s',
@@ -144,8 +123,7 @@ def _apply_event_metric_func(metric, fx, obs, **kwargs):
     return metric_func(obs, fx)
 
 
-def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None):
+def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
@@ -162,10 +140,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
-    ref_fx_obs :
-        solarforecastarbiter.datamodel.ProcessedForecastObservation
-        Reference forecast to be used when calculating skill metrics. Default
-        is None and no skill metrics will be calculated.
 
     Returns
     -------
@@ -177,9 +151,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     RuntimeError
         If there is no forecast, observation timeseries data or no metrics
         are specified.
-    ValueError
-        If original and reference forecast `interval_label`s do not match.
-
     """
     out = {
         'name': processed_fx_obs.name,
@@ -187,7 +158,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     }
 
     try:
-        out['observation_id'] = processed_fx_obs.original.observation.observation_id  # NOQA
+        out['observation_id'] = processed_fx_obs.original.observation.observation_id  # NOQA: E501
     except AttributeError:
         out['aggregate_id'] = processed_fx_obs.original.aggregate.aggregate_id
 
@@ -195,19 +166,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     obs = processed_fx_obs.observation_values
 
     # Check reference forecast is from processed pair, if needed
-    ref_fx = None
-    if any(m in deterministic._REQ_REF_FX for m in metrics):
-        if not ref_fx_obs:
-            raise RuntimeError("No reference forecast provided but it is "
-                               "required for desired metrics.")
-
-        ref_fx = ref_fx_obs.forecast_values
-        out['reference_forecast_id'] = ref_fx_obs.original.forecast.forecast_id
-        if ref_fx.empty:
-            raise RuntimeError("No reference forecast timeseries data.")
-        elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
-            raise ValueError("Mismatched `interval_label` between "
-                             "observation and reference forecast.")
+    ref_fx = processed_fx_obs.reference_forecast_values
+    if ref_fx is None:
+        ref_fx = np.nan  # avoids issues with None and deadband masking
 
     # No data or metrics
     if fx.empty:
@@ -218,9 +179,9 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
         raise RuntimeError("No metrics specified.")
 
     # Dataframe for grouping
-    df = pd.concat({'forecast': fx,
-                    'observation': obs,
-                    'reference': ref_fx}, axis=1)
+    df = pd.DataFrame({'forecast': fx,
+                       'observation': obs,
+                       'reference': ref_fx})
 
     # get normalization factor
     normalization = processed_fx_obs.normalization_factor
@@ -238,19 +199,20 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
     for category in set(categories):
         # total (special category)
         if category == 'total':
-            index_category = lambda x: 0  # NOQA
+            index_category = lambda x: 0  # NOQA: E731
         else:
             index_category = getattr(df.index, category)
 
         # Calculate each metric
         for metric_ in metrics:
+
             # Group by category
             for cat, group in df.groupby(index_category):
 
                 # Calculate
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
-                    ref_fx=ref_fx, normalization=normalization,
+                    ref_fx=group.reference, normalization=normalization,
                     deadband=deadband)
 
                 # Change category label of the group from numbers
@@ -302,8 +264,7 @@ def _sort_metrics_vals(metrics_vals, mapping):
     return metrics_sorted
 
 
-def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
-                                    ref_fx_obs=None):
+def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
     """
     Calculate probabilistic metrics for the processed data using the provided
     categories and metric types.
@@ -315,9 +276,6 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         List of categories to compute metrics over.
     metrics : list of str
         List of metrics to be computed.
-    ref_fx_obs : datamodel.ProcessedForecastObservation
-        Reference forecast to be used when calculating skill metrics. Default
-        is None and no skill metrics will be calculated.
 
     Returns
     -------
@@ -333,44 +291,35 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics,
         If there is no forecast, observation timeseries data or no metrics
         are specified.
     ValueError
-        If original and reference forecast `interval_label` or `axis` values
-        do not match.
+        If original and reference forecast ``axis`` values do not match.
     """
     single_cv_results = []
     dist_result = None
 
     shared_dict = {'name': processed_fx_obs.name}
     try:
-        obs_dict = {'observation_id': processed_fx_obs.original.observation.observation_id}  # NOQA
+        obs_dict = {'observation_id':
+                    processed_fx_obs.original.observation.observation_id}
     except AttributeError:
-        obs_dict = {'aggregate_id': processed_fx_obs.original.aggregate.aggregate_id}  # NOQA
+        obs_dict = {'aggregate_id':
+                    processed_fx_obs.original.aggregate.aggregate_id}
     shared_dict.update(obs_dict)
 
     # Determine forecast physical and probabiltity values by axis
     fx_fx_prob = _transform_prob_forecast_value_and_prob(processed_fx_obs)
     obs = processed_fx_obs.observation_values
 
-    # Check reference forecast is from processed pair, if needed
-    if any(m in probabilistic._REQ_REF_FX for m in metrics):
-        if not ref_fx_obs:
-            raise RuntimeError("No reference forecast provided but it is "
-                               "required for desired metrics.")
-
-        ref_fx_fx_prob = _transform_prob_forecast_value_and_prob(ref_fx_obs)
-        shared_dict.update({'reference_forecast_id': ref_fx_obs.original.forecast.forecast_id})  # NOQA
-        if (not ref_fx_fx_prob or
-                any([rfx[0].empty or rfx[1].empty for rfx in ref_fx_fx_prob])):
-            raise RuntimeError("Missing reference probabilistic forecast "
-                               "timeseries data.")
-        elif ref_fx_obs.interval_label != processed_fx_obs.interval_label:
-            raise ValueError("Mismatched `interval_label` between "
-                             "observation and reference forecast.")
-        elif (ref_fx_obs.original.forecast.axis !=
-              processed_fx_obs.original.forecast.axis):
-            raise ValueError("Mismatched `axis` between "
-                             "observation and reference forecast.")
+    if processed_fx_obs.reference_forecast_values is None:
+        ref_fx_fx_prob = [(np.nan, np.nan)]*len(fx_fx_prob)
     else:
-        ref_fx_fx_prob = [(None, None)]*len(fx_fx_prob)
+        if (processed_fx_obs.original.forecast.axis !=
+                processed_fx_obs.original.reference_forecast.axis):
+            # could put this check in datamodel (and others from preprocessing)
+            raise ValueError("Mismatched `axis` between "
+                             "forecast and reference forecast.")
+        ref_fx_fx_prob = _transform_prob_forecast_value_and_prob(
+            processed_fx_obs, attr='reference_forecast_values')
+        shared_dict.update({'reference_forecast_id': processed_fx_obs.original.reference_forecast.forecast_id})  # NOQA: E501
 
     # No data or metrics
     if (not fx_fx_prob or
@@ -449,7 +398,7 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
     for category in set(categories):
         # total (special category)
         if category == 'total':
-            index_category = lambda x: 0  # NOQA
+            index_category = lambda x: 0  # NOQA: E731
         else:
             index_category = getattr(data_df.index, category)
 
@@ -459,17 +408,17 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
             for cat, group in data_df.groupby(index_category):
 
                 try:
-                    ref_fx_vals = group.xs('reference_forecast', level=1, axis=1).to_numpy()  # NOQA
-                    ref_fx_prob_vals = group.xs('reference_probability', level=1, axis=1).to_numpy()  # NOQA
+                    ref_fx_vals = group.xs('reference_forecast', level=1, axis=1).to_numpy()  # NOQA: E501
+                    ref_fx_prob_vals = group.xs('reference_probability', level=1, axis=1).to_numpy()  # NOQA E501
                     if ref_fx_vals.size == ref_fx_vals.shape[0]:
                         ref_fx_vals = ref_fx_vals.T[0]
                         ref_fx_prob_vals = ref_fx_prob_vals.T[0]
                 except KeyError:
-                    ref_fx_vals = None
-                    ref_fx_prob_vals = None
+                    ref_fx_vals = np.nan
+                    ref_fx_prob_vals = np.nan
 
                 fx_vals = group.xs('forecast', level=1, axis=1).to_numpy()
-                fx_prob_vals = group.xs('probability', level=1, axis=1).to_numpy()  # NOQA
+                fx_prob_vals = group.xs('probability', level=1, axis=1).to_numpy()  # NOQA: E501
                 if fx_vals.size == fx_vals.shape[0]:
                     fx_vals = fx_vals.T[0]
                     fx_prob_vals = fx_prob_vals.T[0]
@@ -520,14 +469,15 @@ def _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob):
         data_dict[(fx_prob.name, 'probability')] = fx_prob
         try:
             data_dict[(ref_fx.name, 'reference_forecast')] = ref_fx
-            data_dict[(ref_fx_prob.name, 'reference_probability')] = ref_fx_prob  # NOQA
+            data_dict[(ref_fx_prob.name, 'reference_probability')] = ref_fx_prob  # NOQA: E501
         except AttributeError:
             pass
 
     return pd.DataFrame(data_dict)
 
 
-def _transform_prob_forecast_value_and_prob(proc_fx_obs):
+def _transform_prob_forecast_value_and_prob(proc_fx_obs,
+                                            attr='forecast_values'):
     """
     Helper function that returns ordered list of series of physical values and
     probabilities for a datamodel.ProcessedForecastObservation
@@ -535,6 +485,10 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
     Parameters
     ----------
     proc_fx_obs : datamodel.ProcessedForecastObservation
+    attr : str
+        The attribute of proc_fx_obs that contains the forecast value of
+        interest. Typically forecast_values or
+        reference_forecast_values.
 
     Returns
     -------
@@ -542,9 +496,9 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs):
         Forecast physical values and forecast probabilities.
     """
     fx_fx_prob = []
-    df = proc_fx_obs.forecast_values
+    df = getattr(proc_fx_obs, attr)
     assert isinstance(df, pd.DataFrame)
-    for col in proc_fx_obs.forecast_values.columns:
+    for col in df.columns:
         if proc_fx_obs.original.forecast.axis == 'x':
             fx_prob = df[col]
             fx = pd.Series([float(col)]*fx_prob.size, index=fx_prob.index,
