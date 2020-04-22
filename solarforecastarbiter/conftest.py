@@ -1626,11 +1626,36 @@ def event_report_objects():
     )
 
     report = datamodel.Report(
-        report_id="",
+        report_id="56c67770-9832-11e9-a535-f4939feddd82",
         report_parameters=report_params
     )
 
     return report, obs, fx0, fx1
+
+
+@pytest.fixture()
+def event_report_text():
+    return b"""
+    {"created_at": "2019-06-26T16:49:18+00:00",
+     "modified_at": "2019-06-26T16:49:18+00:00",
+     "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+     "report_parameters": {
+         "name": "Example Event Report",
+         "start": "2019-04-01T00:00:00-07:00",
+         "end": "2019-04-04T23:59:00-07:00",
+         "metrics": ["pod", "far", "pofd", "csi", "ebias", "ea"],
+         "categories": ["total", "date", "hour"],
+         "object_pairs": [
+             {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"}
+         ]
+     },
+     "raw_report": null,
+     "values": [],
+     "status": "pending"}
+    """
 
 
 @pytest.fixture()
