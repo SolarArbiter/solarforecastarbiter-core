@@ -230,7 +230,7 @@ def test_report(cli_token, mocker, report_objects):
     index = pd.date_range(
         start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
         freq='1h')
-    data = pd.Series(0, index=index)
+    data = pd.Series(1., index=index)
     obs = pd.DataFrame({'value': data, 'quality_flag': 2})
     ref_fx = \
         report_objects[0].report_parameters.object_pairs[1].reference_forecast

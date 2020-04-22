@@ -637,7 +637,7 @@ def bar_subdivisions(df, category, metric):
         x_axis_kwargs = {}
 
     y_data = np.asarray(data['value'])
-    if len(y_data) == 0:
+    if len(y_data) == 0 or np.isnan(y_data).all():
         y_range = (None, None)
     else:
         y_min = np.nanmin(y_data)

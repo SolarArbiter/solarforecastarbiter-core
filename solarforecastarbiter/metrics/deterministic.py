@@ -288,11 +288,18 @@ def forecast_skill(obs, fx, ref, error_fnc=error):
         The forecast skill [-] of the forecast relative to a reference
         forecast.
 
+    Notes
+    -----
+    This function returns 0 if RMSE_fx and RMSE_ref are both 0.
     """
 
     rmse_fx = root_mean_square(obs, fx, error_fnc=error_fnc)
     rmse_ref = root_mean_square(obs, ref, error_fnc=error_fnc)
-    return 1.0 - rmse_fx / rmse_ref
+    # avoid 0 / 0 --> nan
+    if rmse_fx == rmse_ref:
+        return 0.
+    else:
+        return 1.0 - rmse_fx / rmse_ref
 
 
 def pearson_correlation_coeff(obs, fx):
