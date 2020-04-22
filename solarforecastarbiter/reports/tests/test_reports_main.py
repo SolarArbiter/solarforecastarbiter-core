@@ -3,6 +3,7 @@ import re
 import uuid
 
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -75,6 +76,61 @@ def test_get_data_for_report(mock_data, report_objects):
     assert get_forecast_values.call_count == 4
     assert get_observation_values.call_count == 1
     assert get_aggregate_values.call_count == 1
+
+
+@pytest.fixture()
+def _test_event_data(event_report_objects):
+    report, observation, forecast_0, forecast_1 = event_report_objects
+
+    tz = "US/Pacific"
+    index = pd.date_range(start="20200401T0000", end="20200404T2359",
+                          freq="1h", tz=tz)
+    obs_series = pd.DataFrame(data={
+        "value": np.random.randint(0, 2, len(index), dtype=bool),
+        "quality_flag": 2
+    }, index=index)
+
+    fx0_series = pd.Series(
+        index=index, data=np.random.randint(0, 2, len(index), dtype=bool)
+    )
+
+    fx1_series = pd.Series(
+        index=index, data=np.random.randint(0, 2, len(index), dtype=bool)
+    )
+
+    data = {
+        observation.observation_id: obs_series,
+        forecast_0.forecast_id: fx0_series,
+        forecast_1.forecast_id: fx1_series,
+    }
+    return data
+
+
+@pytest.fixture()
+def mock_event_data(mocker, _test_event_data):
+    def get_data(id_, start, end, interval_label=None):
+        return _test_event_data[id_].loc[start:end]
+
+    get_forecast_values = mocker.patch(
+        'solarforecastarbiter.reports.main.APISession.get_forecast_values',
+        side_effect=get_data)
+    get_observation_values = mocker.patch(
+        'solarforecastarbiter.reports.main.APISession.get_observation_values',
+        side_effect=get_data)
+
+    return get_forecast_values, get_observation_values
+
+
+def test_get_data_for_report_event(mock_event_data, event_report_objects):
+    report, observation, forecast_0, forecast_1 = event_report_objects
+    session = api.APISession('nope')
+    data = main.get_data_for_report(session, report)
+    assert isinstance(data[observation], pd.DataFrame)
+    assert isinstance(data[forecast_0], pd.Series)
+    assert isinstance(data[forecast_1], pd.Series)
+    get_forecast_values, get_observation_values = mock_event_data
+    assert get_forecast_values.call_count == 2
+    assert get_observation_values.call_count == 1
 
 
 def test_get_version():
@@ -157,6 +213,21 @@ def test_create_raw_report_from_data_no_data(mocker, report_objects):
         if fxobs.reference_forecast is not None:
             data[fxobs.reference_forecast] = EMPTY_DF['value']
         data[fxobs.data_object] = EMPTY_DF
+    raw = main.create_raw_report_from_data(report, data)
+    assert isinstance(raw, datamodel.RawReport)
+    assert len(raw.plots.figures) > 0
+
+
+def test_create_raw_report_from_data_event(mocker, event_report_objects,
+                                           _test_event_data):
+    report = event_report_objects[0]
+    data = {}
+    for fxobs in report.report_parameters.object_pairs:
+        data[fxobs.forecast] = _test_event_data[fxobs.forecast.forecast_id]
+        data[fxobs.observation] = _test_event_data[
+            fxobs.observation.observation_id
+        ]
+
     raw = main.create_raw_report_from_data(report, data)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0

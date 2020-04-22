@@ -47,6 +47,13 @@ Probabilistic forecasts:
    datamodel.ProbabilisticForecast
    datamodel.ProbabilisticForecastConstantValue
 
+Event forecasts:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.EventForecast
+
 Aggregates:
 
 .. autosummary::
@@ -287,6 +294,7 @@ Reference observations
    io.reference_observations.solrad
    io.reference_observations.srml
    io.reference_observations.surfrad
+   io.reference_observations.arm
 
 SFA API
 =======
@@ -422,6 +430,7 @@ Entry points for calculating metrics for
    metrics.calculator.calculate_metrics
    metrics.calculator.calculate_deterministic_metrics
    metrics.calculator.calculate_probabilistic_metrics
+   metrics.calculator.calculate_event_metrics
 
 Preprocessing
 -------------

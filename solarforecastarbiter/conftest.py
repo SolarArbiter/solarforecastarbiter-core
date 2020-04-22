@@ -980,6 +980,144 @@ def many_forecasts(many_forecasts_text, _forecast_from_dict):
 
 
 @pytest.fixture()
+def single_event_observation_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/991d15ce-7f66-11ea-96ae-0242ac150002"
+  },
+  "name": "Weather Station Event Observation",
+  "variable": "event",
+  "interval_value_type": "instantaneous",
+  "interval_length": 5,
+  "interval_label": "event",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "observation_id": "991d15ce-7f66-11ea-96ae-0242ac150002",
+  "provider": "Organization 1",
+  "uncertainty": 1.0,
+  "extra_parameters": "",
+  "created_at": "2019-03-01T12:01:48+00:00",
+  "modified_at": "2019-03-01T12:01:48+00:00"
+}
+"""
+
+
+@pytest.fixture()
+def single_event_observation(single_event_observation_text,
+                             _observation_from_dict):
+    return _observation_from_dict(json.loads(single_event_observation_text))
+
+
+@pytest.fixture()
+def _event_forecast_from_dict(single_site, get_site, get_aggregate):
+    def f(fx_dict):
+        return datamodel.EventForecast(
+            name=fx_dict['name'], variable=fx_dict['variable'],
+            interval_value_type=fx_dict['interval_value_type'],
+            interval_length=pd.Timedelta(f"{fx_dict['interval_length']}min"),
+            interval_label=fx_dict['interval_label'],
+            site=get_site(fx_dict.get('site_id')),
+            aggregate=get_aggregate(fx_dict.get('aggregate_id')),
+            issue_time_of_day=dt.time(int(fx_dict['issue_time_of_day'][:2]),
+                                      int(fx_dict['issue_time_of_day'][3:])),
+            lead_time_to_start=pd.Timedelta(f"{fx_dict['lead_time_to_start']}min"),  # NOQA
+            run_length=pd.Timedelta(f"{fx_dict['run_length']}min"),
+            forecast_id=fx_dict.get('forecast_id', ''),
+            provider=fx_dict.get('provider', ''),
+            extra_parameters=fx_dict.get('extra_parameters', ''))
+    return f
+
+
+@pytest.fixture()
+def single_event_forecast_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+    "aggregate": null
+  },
+  "name": "Weather Station Event Forecast",
+  "issue_time_of_day": "05:00",
+  "lead_time_to_start": 60,
+  "interval_length": 5,
+  "run_length": 60,
+  "interval_label": "event",
+  "interval_value_type": "instantaneous",
+  "variable": "event",
+  "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
+  "provider": "Organization 1",
+  "extra_parameters": "",
+  "created_at": "2020-04-17T11:55:37+00:00",
+  "modified_at": "2020-04-17T11:55:37+00:00"
+}
+"""
+
+
+@pytest.fixture()
+def many_event_forecast_text():
+    return b"""
+[
+    {
+      "_links": {
+        "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+        "aggregate": null
+      },
+      "name": "Weather Station Event Forecast",
+      "issue_time_of_day": "05:00",
+      "lead_time_to_start": 60,
+      "interval_length": 5,
+      "run_length": 60,
+      "interval_label": "event",
+      "interval_value_type": "instantaneous",
+      "variable": "event",
+      "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+      "site_id": "123e4567-e89b-12d3-a456-426655440002",
+      "aggregate_id": null,
+      "provider": "Organization 1",
+      "extra_parameters": "",
+      "created_at": "2020-04-17T11:55:37+00:00",
+      "modified_at": "2020-04-17T11:55:37+00:00"
+    },
+    {
+      "_links": {
+        "site": "http://127.0.0.1:5000/sites/24cbae4e-7ea6-11ea-86b1-0242ac150002",
+        "aggregate": null
+      },
+      "name": "Solar Power Plant Event Forecast",
+      "issue_time_of_day": "05:00",
+      "lead_time_to_start": 60,
+      "interval_length": 5,
+      "run_length": 60,
+      "interval_label": "event",
+      "interval_value_type": "instantaneous",
+      "variable": "event",
+      "forecast_id": "24cbae4e-7ea6-11ea-86b1-0242ac150002",
+      "site_id": "123e4567-e89b-12d3-a456-426655440002",
+      "aggregate_id": null,
+      "provider": "Organization 2",
+      "extra_parameters": "",
+      "created_at": "2020-04-17T11:55:37+00:00",
+      "modified_at": "2020-04-17T11:55:37+00:00"
+    }
+]
+"""  # NOQA
+
+
+@pytest.fixture()
+def single_event_forecast(single_event_forecast_text,
+                          _event_forecast_from_dict):
+    return _event_forecast_from_dict(json.loads(single_event_forecast_text))
+
+
+@pytest.fixture()
+def many_event_forecasts(many_event_forecasts_text, _event_forecast_from_dict):
+    return [_event_forecast_from_dict(fx) for fx
+            in json.loads(many_event_forecasts_text)]
+
+
+@pytest.fixture()
 def prob_forecast_constant_value_text():
     return b"""
 {
@@ -1208,6 +1346,13 @@ def many_prob_forecasts(many_prob_forecasts_text, _prob_forecast_from_dict):
 @pytest.fixture()
 def single_forecast_observation(single_forecast, single_observation):
     return datamodel.ForecastObservation(single_forecast, single_observation)
+
+
+@pytest.fixture()
+def single_event_forecast_observation(single_event_forecast,
+                                      single_event_observation):
+    return datamodel.ForecastObservation(single_event_forecast,
+                                         single_event_observation)
 
 
 @pytest.fixture()
@@ -1465,6 +1610,104 @@ def report_objects(aggregate, ref_forecast_id):
         report_parameters=report_params
     )
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
+
+
+@pytest.fixture()
+def event_report_objects():
+    tz = 'America/Phoenix'
+    start = pd.Timestamp('20190401T0000', tz=tz)
+    end = pd.Timestamp('20190404T2359', tz=tz)
+    site = datamodel.Site(
+        name="NREL MIDC University of Arizona OASIS",
+        latitude=32.22969,
+        longitude=-110.95534,
+        elevation=786.0,
+        timezone="Etc/GMT+7",
+        site_id="9f61b880-7e49-11e9-9624-0a580a8003e9",
+        provider="Reference",
+        extra_parameters=''
+    )
+    obs = datamodel.Observation(
+        name="Example Event Observation",
+        variable="event",
+        interval_value_type="instantaneous",
+        interval_length=pd.Timedelta("15min"),
+        interval_label="event",
+        site=site,
+        uncertainty=1.0,
+        observation_id="9f657636-7e49-11e9-b77f-0a580a8003e9",
+        extra_parameters='',
+    )
+    fx0 = datamodel.EventForecast(
+        name="Example Event Forecast",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="event",
+        interval_value_type="instantaneous",
+        variable="event",
+        site=site,
+        forecast_id="da2bc386-8712-11e9-a1c7-0a580a8200ae",
+        extra_parameters='',
+    )
+    fx1 = datamodel.EventForecast(
+        name="Alternative Example Event Forecast",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("1 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="event",
+        interval_value_type="instantaneous",
+        variable="event",
+        site=site,
+        forecast_id="68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+        extra_parameters='',
+    )
+
+    fxobs0 = datamodel.ForecastObservation(fx0, obs)
+    fxobs1 = datamodel.ForecastObservation(fx1, obs)
+
+    report_params = datamodel.ReportParameters(
+        name="Example Event Report",
+        start=start,
+        end=end,
+        object_pairs=(fxobs0, fxobs1),
+        metrics=("pod", "far", "pofd", "csi", "ebias", "ea"),
+        categories=("total", "date", "hour"),
+    )
+
+    report = datamodel.Report(
+        report_id="56c67770-9832-11e9-a535-f4939feddd82",
+        report_parameters=report_params
+    )
+
+    return report, obs, fx0, fx1
+
+
+@pytest.fixture()
+def event_report_text():
+    return b"""
+    {"created_at": "2019-06-26T16:49:18+00:00",
+     "modified_at": "2019-06-26T16:49:18+00:00",
+     "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+     "report_parameters": {
+         "name": "Example Event Report",
+         "start": "2019-04-01T00:00:00-07:00",
+         "end": "2019-04-04T23:59:00-07:00",
+         "metrics": ["pod", "far", "pofd", "csi", "ebias", "ea"],
+         "categories": ["total", "date", "hour"],
+         "object_pairs": [
+             {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
+             {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+              "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"}
+         ]
+     },
+     "raw_report": null,
+     "values": [],
+     "status": "pending"}
+    """
 
 
 @pytest.fixture()

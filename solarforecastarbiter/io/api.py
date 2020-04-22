@@ -244,7 +244,11 @@ class APISession(requests.Session):
                 fx_dict['site'] = self.get_site(fx_dict['site_id'])
         elif fx_dict['aggregate_id'] is not None:
             fx_dict['aggregate'] = self.get_aggregate(fx_dict['aggregate_id'])
-        return datamodel.Forecast.from_dict(fx_dict)
+
+        if fx_dict['variable'] == "event":
+            return datamodel.EventForecast.from_dict(fx_dict)
+        else:
+            return datamodel.Forecast.from_dict(fx_dict)
 
     def get_forecast(self, forecast_id):
         """

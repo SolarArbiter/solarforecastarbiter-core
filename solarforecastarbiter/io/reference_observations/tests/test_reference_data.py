@@ -19,7 +19,7 @@ def log(mocker):
     return logger
 
 
-site_object_pairs = list(zip(site_dicts(), site_objects))[1:]
+site_object_pairs = list(zip(site_dicts(), site_objects))[:-1]
 
 
 def test_getapisession(mocker):
@@ -65,9 +65,13 @@ def test_update_reference_observations(
     solrad = mocker.patch(
         'solarforecastarbiter.io.reference_observations.solrad.'
         'update_observation_data')
+    arm = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.arm.'
+        'update_observation_data')
     reference_data.update_reference_observations('TOKEN', start, end, networks)
     surfrad.assert_called()
     solrad.assert_called()
+    arm.assert_called()
     assert log.info.call_count == 1
 
 
@@ -117,6 +121,6 @@ def test_initialize_reference_metadata_objects(
     api.return_value = mock_api
     reference_data.initialize_reference_metadata_objects('TOKEN', site_dicts())
     api.assert_called_once()
-    assert mock_api.create_site.call_count == 3
-    for site in site_objects_param[1:]:
+    assert mock_api.create_site.call_count == 4
+    for site in site_objects_param[:-1]:
         mock_api.create_site.assert_any_call(site)
