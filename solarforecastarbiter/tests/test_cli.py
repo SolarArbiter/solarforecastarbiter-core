@@ -232,9 +232,12 @@ def test_report(cli_token, mocker, report_objects):
         freq='1h')
     data = pd.Series(0, index=index)
     obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    ref_fx = \
+        report_objects[0].report_parameters.object_pairs[1].reference_forecast
     mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
+                               ref_fx: data,
                                report_objects[1]: obs,
                                report_objects[4]: obs,
                                report_objects[5]: data})

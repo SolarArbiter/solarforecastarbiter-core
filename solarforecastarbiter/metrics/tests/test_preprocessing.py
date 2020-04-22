@@ -107,16 +107,16 @@ def test_resample_and_align(
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, local_tz)
+    fx_vals, obs_vals, ref_vals, res_dict = preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, None, local_tz)
 
     # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
+    pd.testing.assert_index_equal(fx_vals.index,
+                                  obs_vals.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(obs_values.index,
+    pd.testing.assert_index_equal(obs_vals.index,
                                   expected_dt,
                                   check_categorical=False)
 
@@ -127,8 +127,8 @@ def test_resample_and_align(
 def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-        single_forecast_aggregate, fx_series, obs_series, 'UTC')
+    fx_values, obs_values, ref, res_dict = preprocessing.resample_and_align(
+        single_forecast_aggregate, fx_series, obs_series, None, 'UTC')
 
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -185,8 +185,8 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_out, obs_out, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, local_tz)
+    fx_out, obs_out, ref_out, res_dict = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, local_tz)
 
     assert obs_out.index.freq == freq
 
@@ -226,8 +226,8 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    fx_values, obs_values, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, local_tz)
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, local_tz)
 
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -235,6 +235,67 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     pd.testing.assert_index_equal(obs_values.index,
                                   expected_dt,
                                   check_categorical=False)
+
+
+def test_resample_and_align_ref_error_None(
+        single_forecast_observation, single_forecast_observation_reffx):
+    tz = 'UTC'
+
+    # no ref_fx object, but supplied ref_fx series
+    fx_obs = single_forecast_observation
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+    # ref_fx object, but no supplied ref_fx series
+    fx_obs = single_forecast_observation_reffx
+    fx_series = THREE_HOUR_SERIES
+    ref_series = None
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+
+@pytest.mark.parametrize('attr,value', [
+    ('interval_label', 'ending'),
+    ('interval_length', pd.Timedelta('20min')),
+])
+def test_resample_and_align_ref_error(
+        single_forecast_observation_reffx, attr, value):
+    tz = 'UTC'
+
+    changes = {attr: value}
+    # ref_fx object parameters are inconsistent with fx object parameters
+    ref_fx = single_forecast_observation_reffx.reference_forecast.replace(
+        **changes)
+    fx_obs = single_forecast_observation_reffx.replace(
+        reference_forecast=ref_fx)
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
+
+
+def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
+    tz = 'UTC'
+    cv = prob_forecasts.constant_values[0].replace(axis='y')
+    ref_fx = prob_forecasts.replace(axis='y', constant_values=(cv,))
+    fx_obs = datamodel.ForecastObservation(
+        prob_forecasts,
+        single_observation,
+        reference_forecast=ref_fx)
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    with pytest.raises(ValueError):
+        preprocessing.resample_and_align(
+            fx_obs, fx_series, obs_series, ref_series, tz)
 
 
 @pytest.mark.parametrize('obs,somecounts', [
@@ -331,6 +392,7 @@ def test_merge_quality_filters():
 def test_process_forecast_observations(report_objects, quality_filter,
                                        timeofdayfilter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -345,6 +407,7 @@ def test_process_forecast_observations(report_objects, quality_filter,
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -371,11 +434,13 @@ def test_process_forecast_observations(report_objects, quality_filter,
 def test_process_forecast_observations_no_data(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     agg_df = THREE_HOUR_SERIES.to_frame('value')
     agg_df['quality_flag'] = NT_UF
     data = {
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -397,6 +462,7 @@ def test_process_forecast_observations_no_data(
 def test_process_forecast_observations_resample_fail(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -411,6 +477,7 @@ def test_process_forecast_observations_resample_fail(
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -428,6 +495,7 @@ def test_process_forecast_observations_resample_fail(
 def test_process_forecast_observations_same_name(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-03-31T12:00:00',
                                             periods=8,
@@ -442,6 +510,7 @@ def test_process_forecast_observations_same_name(
         observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
@@ -486,8 +555,8 @@ def test_resample_and_align_event(single_event_forecast_observation,
     # Use local tz
     local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
 
-    fx_values, obs_values, results = preprocessing.resample_and_align(
-        fxobs, fx_series, obs_series, local_tz
+    fx_vals, obs_vals, ref_vals, results = preprocessing.resample_and_align(
+        fxobs, fx_series, obs_series, None, local_tz
     )
 
     assert isinstance(results, dict)
@@ -495,10 +564,10 @@ def test_resample_and_align_event(single_event_forecast_observation,
     # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
+    pd.testing.assert_index_equal(fx_vals.index,
+                                  obs_vals.index,
                                   check_categorical=False)
-    pd.testing.assert_index_equal(obs_values.index,
+    pd.testing.assert_index_equal(obs_vals.index,
                                   expected_dt,
                                   check_categorical=False)
 

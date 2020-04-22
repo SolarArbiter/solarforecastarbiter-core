@@ -560,4 +560,5 @@ _REQ_REF_FX = ['s']
 # Functions that require normalized factor
 _REQ_NORM = ['nmae', 'nmbe', 'nrmse']
 
-_DEADBAND_ALLOWED = ['mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse']
+_DEADBAND_ALLOWED = [
+    'mae', 'mbe', 'rmse', 'mape', 'nmae', 'nmbe', 'nrmse', 's']

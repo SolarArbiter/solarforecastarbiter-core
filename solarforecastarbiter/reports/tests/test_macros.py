@@ -30,11 +30,13 @@ metric_table_fx_vert_format = """<table class="table table-striped metric-table-
         <th style="text-align: left;">MAE</th>
         <th style="text-align: left;">RMSE</th>
         <th style="text-align: left;">MBE</th>
+        <th style="text-align: left;">Skill</th>
     </tr>
   </thead>
   <tbody>
       <tr>
         <td>{}</td>
+                <td>2</td>
                 <td>2</td>
                 <td>2</td>
                 <td>2</td>
@@ -73,11 +75,13 @@ metric_table_fx_horz_format = """<table class="table table-striped" style="width
           <th style="test-align: center;">MAE</th>
           <th style="test-align: center;">RMSE</th>
           <th style="test-align: center;">MBE</th>
+          <th style="test-align: center;">Skill</th>
     </tr>
   </thead>
   <tbody>
       <tr>
         <td>1</td>
+                  <td>2</td>
                   <td>2</td>
                   <td>2</td>
                   <td>2</td>
@@ -99,7 +103,7 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
             metric_ordering=report_with_raw.report_parameters.metrics,
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_table_fx_horz_format.format(
-            category, len(metrics), expected_metric[0].name)
+            category, 4, expected_metric[0].name)
 
 
 validation_table_format = """<table class="table table-striped validation-table" style="width:100%;">
