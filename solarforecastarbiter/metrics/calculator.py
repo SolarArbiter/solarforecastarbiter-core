@@ -1,18 +1,10 @@
 """
 Metric calculation functions.
-
-Right now placeholder so we can delete report.metrics.py.
-Needs to cleaned up and expanded.
-
-Todo
-----
-* Support probabilistic metrics and forecasts with new functions
-* Support event metrics and forecasts with new functions
 """
-from functools import partial
 import calendar
-import logging
 import copy
+from functools import partial
+import logging
 
 import numpy as np
 import pandas as pd
@@ -47,12 +39,6 @@ def calculate_metrics(processed_pairs, categories, metrics):
     -------
     list
         List of solarforecastarbiter.datamodel.MetricResult
-
-    Todo
-    ----
-    * validate categories are supported
-    * validate metrics are supported
-    * Support event metrics and forecasts
     """
     calc_metrics = []
 
@@ -165,9 +151,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     RuntimeError
         If there is no forecast, observation timeseries data or no metrics
         are specified.
-    ValueError
-        If original and reference forecast `interval_label`s do not match.
-
     """
     out = {
         'name': processed_fx_obs.name,
@@ -308,8 +291,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
         If there is no forecast, observation timeseries data or no metrics
         are specified.
     ValueError
-        If original and reference forecast `interval_label` or `axis` values
-        do not match.
+        If original and reference forecast ``axis`` values do not match.
     """
     single_cv_results = []
     dist_result = None
