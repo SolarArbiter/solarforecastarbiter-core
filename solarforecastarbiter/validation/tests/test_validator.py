@@ -349,6 +349,7 @@ def test_detect_clipping(ghi_clipped):
     assert_series_equal(flags, expected)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_detect_clearsky_ghi(ghi_clearsky):
     flags = validator.detect_clearsky_ghi(ghi_clearsky, ghi_clearsky)
     # first 7 and last 6 values are judged not clear due to night (ghi=0)
