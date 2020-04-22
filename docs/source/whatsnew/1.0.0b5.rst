@@ -94,6 +94,7 @@ Enhancements
   deadband equal to
   :py:attr:`solarforecastarbiter.datamodel.Observation.uncertainty`.
   (:issue:`358`, :pull:`378`)
+* Reports now support evaluating event forecasts. (:issue:`380`) (:pull:`361`)
 
 
 Bug fixes
