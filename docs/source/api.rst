@@ -231,6 +231,7 @@ Persistence
    reference_forecasts.persistence.persistence_scalar
    reference_forecasts.persistence.persistence_interval
    reference_forecasts.persistence.persistence_scalar_index
+   reference_forecasts.persistence.persistence_dayofweek
 
 
 Fetching external data
