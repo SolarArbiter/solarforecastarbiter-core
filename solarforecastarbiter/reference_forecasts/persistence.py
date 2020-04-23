@@ -364,26 +364,23 @@ def _check_intervals_times(interval_label, data_start, data_end,
         raise ValueError('invalid interval_label')
 
 
-def persistence_hourofday_dayofweek(observation, data_start, data_end,
-                                    forecast_start, forecast_end,
-                                    interval_length, interval_label,
-                                    load_data):
+def persistence_dayofweek(observation, forecast_start, forecast_end,
+                          interval_length, interval_label, load_data):
     r"""
-    Calculate a persistence forecast adjusted for hour of day (HOD) and day of
-    week (DOW) trends. The HOD and DOW trends are computing using a rolling
-    window based on lagged observations and do not require any exongeous
-    information about the forecasted variable. Therefore, this persistence
-    forecast is well suited for reference load forecasts.
+    Make a persistence forecast for an *observation* using the mean values of
+    each *interval_length* bin from the same day of the week from the prior
+    week, e.g., use data from Saturday April 4th 2020 to predict Saturday April
+    11th 2020.
+
+    This type of persistence forecast is useful as a baseline for load
+    forecasting as most regions exhibit clear trends in load for each day of
+    the week. For example, the load on a Monday tends to look more similar to
+    the load from the prior Monday than it does to the load from either the
+    prior day (Sunday) or the next day (Tuesday).
 
     Parameters
     ----------
     observation : datamodel.Observation
-    data_start : pd.Timestamp
-        Observation data start. Forecast is inclusive of this instant if
-        observation.interval_label is *beginning* or *instant*.
-    data_end : pd.Timestamp
-        Observation data end. Forecast is inclusive of this instant if
-        observation.interval_label is *ending* or *instant*.
     forecast_start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
         interval_label is *beginning* or *instant*.
@@ -402,8 +399,30 @@ def persistence_hourofday_dayofweek(observation, data_start, data_end,
     Returns
     -------
     forecast : pd.Series
-        The persistence forecast. The forecast interval label is the
-        same as the observation interval label.
+        The persistence forecast.
+
+    See Also
+    --------
+    :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_interval`
+
+    Notes
+    -----
+    This function requires that observation data exists from 1 week (7 days)
+    prior to the *forecast_start*. It therefore is not suitable for forecast
+    horizons greater than 7 days. Additionally, this function does not correct
+    for shorter timescale trends and therefore will be less accurate in
+    situations where there are signficiant changes week-to-week, e.g., a week
+    of moderate temperature followed by a heatwave that drives up demand from
+    increased A/C usage.
+
     """
 
-    return pd.Series()
+    # use data from the same day of week from the prior week
+    data_start = forecast_start - pd.Timedelta("7D")
+    data_end = forecast_end - pd.Timedelta("7D")
+    print(type(data_start), type(data_end), type(forecast_start))
+
+    fx = persistence_interval(observation, data_start, data_end,
+                              forecast_start, interval_length, interval_label,
+                              load_data)
+    return fx
