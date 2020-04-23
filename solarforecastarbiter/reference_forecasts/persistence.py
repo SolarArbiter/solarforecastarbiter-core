@@ -420,7 +420,6 @@ def persistence_dayofweek(observation, forecast_start, forecast_end,
     # use data from the same day of week from the prior week
     data_start = forecast_start - pd.Timedelta("7D")
     data_end = forecast_end - pd.Timedelta("7D")
-    print(type(data_start), type(data_end), type(forecast_start))
 
     fx = persistence_interval(observation, data_start, data_end,
                               forecast_start, interval_length, interval_label,
