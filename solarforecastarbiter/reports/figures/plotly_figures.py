@@ -113,7 +113,8 @@ def construct_timeseries_dataframe(report):
         meta_rows.append(meta_row_dict)
     data = pd.concat(value_frames)
     metadata = pd.DataFrame(meta_rows)
-    # drop tz info from localized times. GH164
+    # convert data to report timezone
+    data = data.tz_convert(report.raw_report.timezone)
     data = data.rename_axis('timestamp')
     return data, metadata
 
