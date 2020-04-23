@@ -320,3 +320,12 @@ def test_extract_metadata(hash_key, meta_entries):
         meta_df, meta_entries[hash_key], hash_key)
     for k, v in extracted.items():
         assert meta_entries[k] == v
+
+
+def test_construct_timeseries_dataframe_timeseries(report_with_raw):
+    ts_df, _ = figures.construct_timeseries_dataframe(report_with_raw)
+    assert str(ts_df.index.tz) == report_with_raw.raw_report.timezone
+    assert (ts_df.count() == 288).all()
+    assert list(np.unique(ts_df['pair_index'])) == [0, 1, 2]
+    assert (ts_df['observation_values'] == 100).all()
+    assert (ts_df['forecast_values'] == 100).all()
