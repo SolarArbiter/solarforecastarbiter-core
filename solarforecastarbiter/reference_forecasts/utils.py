@@ -142,6 +142,26 @@ def _dayahead_start_end(run_time):
     return data_start, data_end
 
 
+def _dayofweek_start_end(run_time, run_length):
+    """
+    Day of week matched start and end times.
+
+    Parameters
+    ----------
+    run_time : pd.Timestamp
+    run_length : pd.Timedelta
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+
+    """
+    data_start = run_time - pd.Timedelta('7d')
+    data_end = data_start + run_length
+    return data_start, data_end
+
+
 def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     # instantaneous observations require care.
     # persistence models return forecasts with same closure as obs
@@ -163,12 +183,23 @@ def get_data_start_end(observation, forecast, run_time):
     Determine the data start and data end times for a persistence
     forecast.
 
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    forecast : datamodel.Forecast
+    run_time : pd.Timestamp
+
     Returns
     -------
     data_start : pd.Timestamp
     data_end : pd.Timestamp
     """
-    if _is_intraday(forecast):
+
+    if forecast.variable in ["load"]:
+        data_start, data_end = _dayofweek_start_end(
+            run_time, forecast.run_length
+        )
+    elif _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     else:
