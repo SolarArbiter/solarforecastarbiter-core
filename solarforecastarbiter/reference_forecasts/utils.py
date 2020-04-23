@@ -115,7 +115,27 @@ def _check_midnight_to_midnight(forecast_start, forecast_end):
             'Day ahead persistence requires midnight to midnight periods')
 
 
+def _is_weekahead(forecast):
+    """Is the forecast weekahead?"""
+    return forecast.run_length > pd.Timedelta('1d')
+
+
 def _intraday_start_end(observation, forecast, run_time):
+    """
+    Time range of data to be used for intra-day persistence forecast.
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    forecast : datamodel.Forecast
+    run_time : pd.Timestamp
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+    """
+
     # time window over which observation data will be used to create
     # persistence forecast.
     if (observation.interval_length > forecast.run_length or
@@ -131,20 +151,36 @@ def _intraday_start_end(observation, forecast, run_time):
 
 
 def _dayahead_start_end(run_time):
-    # day ahead persistence: tomorrow's forecast is equal to yesterday's
-    # observations. So, forecast always uses obs > 24 hr old at each valid
-    # time. Smarter approach might be to use today's observations up
-    # until issue_time, and use yesterday's observations for issue_time
-    # until end of day. So, forecast *never* uses obs > 24 hr old at each
-    # valid time. Arguably too much for a reference forecast.
+    """
+    Time range of data to be used for day-ahead persistence forecast.
+
+    Parameters
+    ----------
+    run_time : pd.Timestamp
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+
+    Notes
+    -----
+    Day-ahead persistence: tomorrow's forecast is equal to yesterday's
+    observations. So, forecast always uses obs > 24 hr old at each valid
+    time. Smarter approach might be to use today's observations up
+    until issue_time, and use yesterday's observations for issue_time
+    until end of day. So, forecast *never* uses obs > 24 hr old at each
+    valid time. Arguably too much for a reference forecast.
+    """
+
     data_end = run_time.floor('1d')
     data_start = data_end - pd.Timedelta('1d')
     return data_start, data_end
 
 
-def _dayofweek_start_end(run_time, run_length):
+def _weekahead_start_end(run_time):
     """
-    Day of week matched start and end times.
+    Time range of data to be used for week-ahead persistence forecast.
 
     Parameters
     ----------
@@ -157,8 +193,8 @@ def _dayofweek_start_end(run_time, run_length):
     data_end : pd.Timestamp
 
     """
-    data_start = run_time - pd.Timedelta('7d')
-    data_end = data_start + run_length
+    data_end = run_time.ceil('1d') - pd.Timedelta('7d')
+    data_start = data_end - pd.Timedelta('1d')
     return data_start, data_end
 
 
@@ -195,13 +231,11 @@ def get_data_start_end(observation, forecast, run_time):
     data_end : pd.Timestamp
     """
 
-    if forecast.variable in ["load"]:
-        data_start, data_end = _dayofweek_start_end(
-            run_time, forecast.run_length
-        )
-    elif _is_intraday(forecast):
+    if _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
+    elif _is_weekahead(forecast):
+        data_start, data_end = _weekahead_start_end(run_time)
     else:
         data_start, data_end = _dayahead_start_end(run_time)
 
