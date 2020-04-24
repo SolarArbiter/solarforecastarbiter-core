@@ -934,7 +934,8 @@ class APISession(requests.Session):
                         fxobs.reference_forecast_values)}
                 ref_fx_post = self.post(
                     f'/reports/{report_id}/values',
-                    json=ref_fx_data)
+                    json=ref_fx_data,
+                    headers={'Content-Type': 'application/json'})
                 processed_ref_fx_id = ref_fx_post.text
             else:
                 processed_ref_fx_id = None
