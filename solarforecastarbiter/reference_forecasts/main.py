@@ -221,6 +221,14 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         lengths do not match.
     ValueError
         If average observations are used to make instantaneous forecast.
+
+    Notes
+    -----
+    For non-intraday load forecasts, this function will use a weekahead
+    persistence due to the fact that load tends to exhibit stronger correlation
+    week-to-week than day-to-day. For example, the load on a Monday tends to
+    look more similar to the previous Monday that it does to the previous day
+    (Sunday).
     """
     forecast_start, forecast_end = utils.get_forecast_start_end(
         forecast, issue_time, False)
@@ -239,10 +247,6 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         df = df.tz_convert(observation.site.timezone)
         return df['value']
 
-    if forecast.variable in ["load"]:
-        fx = persistence.persistence_interval(
-            observation, data_start, data_end, forecast_start,
-            forecast.interval_length, forecast.interval_label, load_data)
     if intraday and index:
         fx = persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
