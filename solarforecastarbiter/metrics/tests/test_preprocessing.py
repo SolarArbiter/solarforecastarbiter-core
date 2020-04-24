@@ -237,6 +237,50 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
                                   check_categorical=False)
 
 
+def test_resample_and_align_with_ref(
+        single_forecast_observation_reffx):
+    tz = 'UTC'
+    fx_obs = single_forecast_observation_reffx
+    fx_series = THREE_HOUR_SERIES
+    ref_series = THIRTEEN_10MIN_SERIES
+    obs_series = THREE_HOUR_SERIES
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, ref_series, tz)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  ref_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  THREE_HOURS,
+                                  check_categorical=False)
+
+
+def test_resample_and_align_ref_less_fx(
+        single_forecast_observation_reffx):
+    tz = 'UTC'
+    fx_obs = single_forecast_observation_reffx
+    nine_hour_series = pd.concat([
+        THREE_HOUR_SERIES.shift(periods=3, freq='1h'),
+        THREE_HOUR_SERIES,
+        THREE_HOUR_SERIES.shift(periods=3, freq='-1h')])
+    fx_series = THREE_HOUR_SERIES
+    ref_series = nine_hour_series
+    obs_series = nine_hour_series
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, ref_series, tz)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  ref_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  THREE_HOURS,
+                                  check_categorical=False)
+
+
 def test_resample_and_align_ref_error_None(
         single_forecast_observation, single_forecast_observation_reffx):
     tz = 'UTC'
