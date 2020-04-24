@@ -242,7 +242,7 @@ def test_resample_and_align_with_ref(
     tz = 'UTC'
     fx_obs = single_forecast_observation_reffx
     fx_series = THREE_HOUR_SERIES
-    ref_series = THIRTEEN_10MIN_SERIES
+    ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, ref_series, tz)
