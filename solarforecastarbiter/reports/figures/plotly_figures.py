@@ -290,7 +290,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
             **plot_kwargs),
         )
         plotted_objects += 1
-    fig.update_traces(mode='lines+markers', marker=dict(size=6))
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside')

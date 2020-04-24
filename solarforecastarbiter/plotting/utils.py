@@ -67,9 +67,9 @@ def line_or_step(interval_label):
                             add_line=True)
     elif interval_label == 'event':
         plot_method = 'step'
-        plot_kwargs = dict(mode='before')
-        hover_kwargs = dict(line_policy='next',
-                            attachment='right',
+        plot_kwargs = dict(mode='after')
+        hover_kwargs = dict(line_policy='prev',
+                            attachment='left',
                             add_line=True)
     else:
         raise ValueError(
@@ -90,7 +90,7 @@ def line_or_step_plotly(interval_label):
     elif interval_label == 'ending':
         plot_kwargs = dict(line_shape='vh')
     elif interval_label == 'event':
-        plot_kwargs = dict(line_shape='vh')
+        plot_kwargs = dict(line_shape='hv', mode='lines+markers')
     else:
         raise ValueError(
             'interval_label must be one of "instant", "beginning", '
