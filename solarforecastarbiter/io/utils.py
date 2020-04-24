@@ -444,7 +444,11 @@ def load_report_values(raw_report, values):
         obs_vals = val_dict.get(fxobs.observation_values, None)
         if obs_vals is not None:
             obs_vals = deserialize_timeseries(obs_vals)
+        ref_fx_vals = val_dict.get(fxobs.reference_forecast_values)
+        if ref_fx_vals is not None:
+            ref_fx_vals = deserialize_timeseries(ref_fx_vals)
         new_fxobs = fxobs.replace(forecast_values=fx_vals,
-                                  observation_values=obs_vals)
+                                  observation_values=obs_vals,
+                                  reference_forecast_values=ref_fx_vals)
         out.append(new_fxobs)
     return tuple(out)

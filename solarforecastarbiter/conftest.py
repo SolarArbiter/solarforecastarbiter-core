@@ -1913,7 +1913,8 @@ def report_metrics(metric_index):
 
 
 @pytest.fixture()
-def raw_report(report_objects, report_metrics, preprocessing_result_types):
+def raw_report(report_objects, report_metrics, preprocessing_result_types,
+               ref_forecast_id):
     report, obs, fx0, fx1, agg, fxagg = report_objects
 
     def gen(with_series):
@@ -1935,7 +1936,10 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
         qflags = list(qflags[0])
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,
-            datamodel.ForecastObservation(fx0, obs),
+            datamodel.ForecastObservation(
+                fx0,
+                obs,
+                uncertainty=obs.uncertainty),
             fx0.interval_value_type,
             il0,
             fx0.interval_label,
@@ -1945,12 +1949,18 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             preprocessing_results=tuple(datamodel.PreprocessingResult(
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il0) if with_series else fx0.forecast_id,
-            observation_values=ser(il0) if with_series else obs.observation_id
+            observation_values=ser(il0) if with_series else obs.observation_id,
+            uncertainty=1.
         )
         il1 = fx1.interval_length
         fxobs1 = datamodel.ProcessedForecastObservation(
             fx1.name,
-            datamodel.ForecastObservation(fx1, obs),
+            datamodel.ForecastObservation(
+                fx1,
+                obs,
+                normalization=1000.,
+                uncertainty=15.,
+                reference_forecast=fx0.replace(forecast_id=ref_forecast_id)),
             fx1.interval_value_type,
             il1,
             fx1.interval_label,
@@ -1961,11 +1971,18 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il1) if with_series else fx1.forecast_id,
             observation_values=ser(il1) if with_series else obs.observation_id,
+            reference_forecast_values=(
+                ser(il0) if with_series else ref_forecast_id),
+            normalization_factor=1000.,
+            uncertainty=15.,
         )
         ilagg = fxagg.interval_length
         fxagg_ = datamodel.ProcessedForecastObservation(
             fxagg.name,
-            datamodel.ForecastAggregate(fxagg, agg),
+            datamodel.ForecastAggregate(
+                fxagg,
+                agg,
+                uncertainty=5.),
             fxagg.interval_value_type,
             ilagg,
             fxagg.interval_label,
@@ -1975,7 +1992,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types):
             preprocessing_results=tuple(datamodel.PreprocessingResult(
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
-            observation_values=ser(ilagg) if with_series else agg.aggregate_id
+            observation_values=ser(ilagg) if with_series else agg.aggregate_id,
+            uncertainty=5.
         )
         figs = datamodel.RawReportPlots(
             (
