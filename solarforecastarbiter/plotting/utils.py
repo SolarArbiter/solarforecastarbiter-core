@@ -77,3 +77,23 @@ def line_or_step(interval_label):
             '"event", or "ending"')
 
     return plot_method, plot_kwargs, hover_kwargs
+
+
+def line_or_step_plotly(interval_label):
+    """
+    For a given interval_label, determine any kwargs for the plot.
+    """
+    if 'instant' in interval_label:
+        plot_kwargs = dict()
+    elif interval_label == 'beginning':
+        plot_kwargs = dict(line_shape='hv')
+    elif interval_label == 'ending':
+        plot_kwargs = dict(line_shape='vh')
+    elif interval_label == 'event':
+        plot_kwargs = dict(line_shape='vh')
+    else:
+        raise ValueError(
+            'interval_label must be one of "instant", "beginning", '
+            '"event", or "ending"')
+
+    return plot_kwargs
