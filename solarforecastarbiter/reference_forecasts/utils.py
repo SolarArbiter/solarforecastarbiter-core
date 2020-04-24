@@ -115,11 +115,6 @@ def _check_midnight_to_midnight(forecast_start, forecast_end):
             'Day ahead persistence requires midnight to midnight periods')
 
 
-def _is_weekahead(forecast):
-    """Is the forecast weekahead?"""
-    return forecast.run_length > pd.Timedelta('1d')
-
-
 def _intraday_start_end(observation, forecast, run_time):
     """
     Time range of data to be used for intra-day persistence forecast.
@@ -180,7 +175,8 @@ def _dayahead_start_end(run_time):
 
 def _weekahead_start_end(run_time):
     """
-    Time range of data to be used for week-ahead persistence forecast.
+    Time range of data to be used for week-ahead persistence, aka, day of week
+    persistence.
 
     Parameters
     ----------
@@ -193,7 +189,7 @@ def _weekahead_start_end(run_time):
     data_end : pd.Timestamp
 
     """
-    data_end = run_time.ceil('1d') - pd.Timedelta('7d')
+    data_end = run_time.ceil('1d') - pd.Timedelta('6d')
     data_start = data_end - pd.Timedelta('1d')
     return data_start, data_end
 
@@ -234,7 +230,7 @@ def get_data_start_end(observation, forecast, run_time):
     if _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
-    elif _is_weekahead(forecast):
+    elif forecast.variable in ["load"]:
         data_start, data_end = _weekahead_start_end(run_time)
     else:
         data_start, data_end = _dayahead_start_end(run_time)
@@ -248,4 +244,5 @@ def get_data_start_end(observation, forecast, run_time):
         if 'instant' in forecast.interval_label:
             raise ValueError('Instantaneous forecast cannot be made from '
                              'interval average observations')
+
     return data_start, data_end
