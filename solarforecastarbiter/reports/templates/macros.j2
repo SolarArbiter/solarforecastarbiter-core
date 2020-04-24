@@ -93,10 +93,18 @@
   </caption>
   <thead>
     <tr class="header">
-      <th style="text-align: left;">Validation Flag</th>
+      <th style="text-align: left;">Aligned Pair</th>
       {% for proc_fxobs in proc_fxobs_list %}
       <th style="text-align: center;">
-        {{ proc_fxobs.name }} <br>Number of Points
+        {{ proc_fxobs.name }}
+      </th>
+      {% endfor %}
+    </tr>
+    <tr class="header">
+      <th style="text-align: left;">Observation</th>
+      {% for proc_fxobs in proc_fxobs_list %}
+      <th style="text-align: center;">
+        {{ proc_fxobs.original.data_object.name }}
       </th>
       {% endfor %}
     </tr>
