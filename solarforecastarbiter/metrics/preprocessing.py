@@ -243,9 +243,9 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     # alignment using ['forecast', 'observation'] or
     # ['forecast', 'observation', 'reference'] selections
     if ref_series is not None:
-        obs_aligned, ref_fx_aligned = obs_resampled.align(
+        obs_aligned, ref_fx_aligned = obs_aligned.align(
             ref_series.dropna(how="any"), 'inner')
-        fx_aligned = fx_aligned.loc[obs_aligned.index]
+        fx_aligned = fx_aligned.reindex(obs_aligned.index)
         ref_values = ref_fx_aligned.tz_convert(tz)
     else:
         ref_values = None
