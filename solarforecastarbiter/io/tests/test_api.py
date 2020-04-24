@@ -835,7 +835,7 @@ def test_apisession_post_raw_report_processed_data(
 
 
 def test_apisession_get_raw_report_processed_data(
-        requests_mock, raw_report, report_objects):
+        requests_mock, raw_report, report_objects, ref_forecast_id):
     _, obs, fx0, fx1, agg, fxagg = report_objects
     session = api.APISession('')
     ser = pd.Series(name='value', index=pd.DatetimeIndex(
@@ -845,12 +845,14 @@ def test_apisession_get_raw_report_processed_data(
         'GET', re.compile(f'{session.base_url}/reports/.*/values'),
         json=[{'id': id_, 'processed_values': val} for id_ in
               (fx0.forecast_id, fx1.forecast_id, obs.observation_id,
-               agg.aggregate_id, fxagg.forecast_id)])
+               ref_forecast_id, agg.aggregate_id, fxagg.forecast_id)])
     inp = raw_report(False)
     out = session.get_raw_report_processed_data('', inp)
     for fxo in out:
         pdt.assert_series_equal(fxo.forecast_values, ser)
         pdt.assert_series_equal(fxo.observation_values, ser)
+        if fxo.reference_forecast_values is not None:
+            pdt.assert_series_equal(fxo.reference_forecast_values, ser)
 
 
 def test_apisession_post_raw_report(requests_mock, raw_report, mocker,
