@@ -1,6 +1,6 @@
 .. _whatsnew_100b5:
 
-1.0.0b5 (April 24, 2020)
+1.0.0b5 (April 27, 2020)
 ------------------------
 
 This is the fifth 1.0 beta release.
