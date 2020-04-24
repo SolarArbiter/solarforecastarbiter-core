@@ -927,10 +927,23 @@ class APISession(requests.Session):
             obs_post = self.post(
                 f'/reports/{report_id}/values',
                 json=obs_data, headers={'Content-Type': 'application/json'})
+            if fxobs.original.reference_forecast is not None:
+                ref_fx_data = {
+                    'object_id': fxobs.original.reference_forecast.forecast_id,
+                    'processed_values': serialize_timeseries(
+                        fxobs.reference_forecast_values)}
+                ref_fx_post = self.post(
+                    f'/reports/{report_id}/values',
+                    json=ref_fx_data)
+                processed_ref_fx_id = ref_fx_post.text
+            else:
+                processed_ref_fx_id = None
             processed_fx_id = fx_post.text
             processed_obs_id = obs_post.text
-            new_fxobs = fxobs.replace(forecast_values=processed_fx_id,
-                                      observation_values=processed_obs_id)
+            new_fxobs = fxobs.replace(
+                forecast_values=processed_fx_id,
+                observation_values=processed_obs_id,
+                reference_forecast_values=processed_ref_fx_id)
             posted_fxobs.append(new_fxobs)
         return tuple(posted_fxobs)
 
