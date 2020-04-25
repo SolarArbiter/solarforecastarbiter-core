@@ -90,9 +90,10 @@ Plotly.newPlot("scatter-div", scat_plot);
 
 {% block datavalidation %}
 <h3 id="data-validation">Data Validation</h3>
-<p>The Solar Forecast Arbiter’s data validation toolkit using the selected
-filters identified the following issues with the unprocessed observation
-data:</p>
+<p>The Solar Forecast Arbiter applied its data validation toolkit to the
+observation data. The table below shows the selected filters and the number
+of observations that were removed from each forecast/observation pair.
+</p>
 {% for filter in report.report_parameters.filters %}
   {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
     {% set valtable = True %}
@@ -106,7 +107,8 @@ data:</p>
 <p>These intervals were removed from the raw time series before
 resampling and realignment. For more details on the data validation
 results for each observation, please see the observation page linked
-to in the table above. Data providers may elect to reupload data to
+to in the table above.</p>
+<p>Data providers may elect to reupload data to
 fix issues identified by the validation toolkit. The metrics computed
 in this report will remain unchanged, however, a user may generate a
 new report after the data provider submits new data. The online
