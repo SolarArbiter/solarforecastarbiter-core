@@ -131,6 +131,8 @@ Bug fixes
 * Eliminate most warnings from test suite. (:issue:`385`) (:pull:`395`)
 * :py:func:`solarforecastarbiter.metrics.deterministic.forecast_skill` now
   returns 0 if both forecast and reference forecast errors are 0. (:pull:`395`)
+* Clarify report data validation section text and table. (:issue:`413`)
+  (:pull:`422`)
 
 
 Contributors
