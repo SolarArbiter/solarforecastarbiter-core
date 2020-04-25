@@ -272,7 +272,7 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
 def test_get_forecast_start_end_time_weekahead(site_metadata, variable,
                                                expected_start, expected_end):
     observation = default_observation(
-        site_metadata, variable='load',
+        site_metadata, variable=variable,
         interval_length=pd.Timedelta('5min'), interval_label='beginning'
     )
 
