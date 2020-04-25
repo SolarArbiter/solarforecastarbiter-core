@@ -230,7 +230,7 @@ def get_data_start_end(observation, forecast, run_time):
     if _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
-    elif forecast.variable in ["load"]:
+    elif forecast.variable == 'net_load':
         data_start, data_end = _weekahead_start_end(run_time)
     else:
         data_start, data_end = _dayahead_start_end(run_time)

@@ -154,13 +154,14 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
 
 
 def test_run_persistence_weekahead(session, site_metadata, mocker):
+    variable = 'net_load'
     observation = default_observation(
-        site_metadata, variable="load",
+        site_metadata, variable=variable,
         interval_length=pd.Timedelta('5min'), interval_label='beginning')
 
     run_time = pd.Timestamp('20190110T1945Z')
     forecast = default_forecast(
-        site_metadata, variable="load",
+        site_metadata, variable=variable,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),

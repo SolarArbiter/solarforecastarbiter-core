@@ -40,7 +40,7 @@ ALLOWED_VARIABLES = {
     'availability': '%',
     'curtailment': 'MW',
     'event': 'boolean',
-    'load': 'MW'
+    'net_load': 'MW'
 }
 
 
@@ -57,7 +57,7 @@ COMMON_NAMES = {
     'availability': 'Availability',
     'curtailment': 'Curtailment',
     'event': 'Event',
-    'load': 'Load',
+    'net_load': 'Net Load',
 }
 
 

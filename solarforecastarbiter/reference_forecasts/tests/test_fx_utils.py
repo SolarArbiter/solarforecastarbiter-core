@@ -263,7 +263,7 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
 @pytest.mark.parametrize("variable,expected_start,expected_end", [
     # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
     # data from the previous Thursday (4/4)
-    ("load", "20190404T0000Z", "20190405T0000Z"),
+    ("net_load", "20190404T0000Z", "20190405T0000Z"),
 
     # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
     # data from the previous day (Tuesday 4/9)

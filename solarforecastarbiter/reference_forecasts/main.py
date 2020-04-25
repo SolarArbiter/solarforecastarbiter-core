@@ -174,7 +174,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
       * Intraday persistence forecasts:
            *window = forecast.run_length*.
            No longer than 1 hour.
-      * Day ahead forecasts:
+      * Day ahead forecasts (all but net load) and week ahead forecasts (net load only):
           *window = forecast.interval_length*.
 
     Users that would like more flexibility may use the lower-level
@@ -224,11 +224,11 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
 
     Notes
     -----
-    For non-intraday load forecasts, this function will use a weekahead
-    persistence due to the fact that load exhibits stronger correlation
-    week-to-week than day-to-day. For example, the load on a Monday tends to
-    look more similar to the previous Monday that it does to the previous day
-    (Sunday).
+    For non-intraday net load forecasts, this function will use a weekahead
+    persistence due to the fact that net load exhibits stronger correlation
+    week-to-week than day-to-day. For example, the net load on a Monday tends
+    to look more similar to the previous Monday that it does to the previous
+    day (Sunday).
     """
     forecast_start, forecast_end = utils.get_forecast_start_end(
         forecast, issue_time, False)
