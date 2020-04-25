@@ -225,7 +225,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     Notes
     -----
     For non-intraday load forecasts, this function will use a weekahead
-    persistence due to the fact that load tends to exhibit stronger correlation
+    persistence due to the fact that load exhibits stronger correlation
     week-to-week than day-to-day. For example, the load on a Monday tends to
     look more similar to the previous Monday that it does to the previous day
     (Sunday).
