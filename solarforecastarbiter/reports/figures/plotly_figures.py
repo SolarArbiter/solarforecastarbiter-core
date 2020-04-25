@@ -17,6 +17,8 @@ import numpy as np
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics.event import _event2count
 
+from solarforecastarbiter.plotting.utils import line_or_step_plotly
+
 
 logger = logging.getLogger(__name__)
 D3_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
@@ -228,9 +230,13 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
     Parameters
     ----------
     timeseries_value_df: pandas.DataFrame
-        DataFrame of timeseries data. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe` for format.
+        DataFrame of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
     timeseries_meta_df: pandas.DataFrame
-        DataFrame of metadata for each Observation Forecast pair. See :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe` for format.
+        DataFrame of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
     start : pandas.Timestamp
         Report start time
     end : pandas.Timestamp
@@ -248,6 +254,7 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
@@ -258,7 +265,8 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
             name=_legend_text(metadata['observation_name']),
             legendgroup=metadata['observation_name'],
             marker=dict(color=metadata['observation_color']),
-            connectgaps=False),
+            connectgaps=False,
+            **plot_kwargs),
         )
         plotted_objects += 1
 
@@ -267,6 +275,7 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
@@ -277,7 +286,8 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
             name=_legend_text(metadata['forecast_name']),
             legendgroup=metadata['forecast_name'],
             marker=dict(color=next(palette)),
-            connectgaps=False),
+            connectgaps=False,
+            **plot_kwargs),
         )
         plotted_objects += 1
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,

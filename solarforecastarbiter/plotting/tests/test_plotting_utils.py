@@ -61,3 +61,15 @@ def test_line_or_step(label, method):
     assert out[0] == method
     assert isinstance(out[1], dict)
     assert isinstance(out[2], dict)
+
+
+@pytest.mark.parametrize('label', [
+    'instant',
+    'beginning',
+    'ending',
+    'event',
+    pytest.param('other', marks=pytest.mark.xfail(raises=ValueError))
+])
+def test_line_or_step_plotly(label):
+    out = utils.line_or_step_plotly(label)
+    assert isinstance(out, dict)
