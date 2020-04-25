@@ -174,7 +174,8 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
       * Intraday persistence forecasts:
            *window = forecast.run_length*.
            No longer than 1 hour.
-      * Day ahead forecasts (all but net load) and week ahead forecasts (net load only):
+      * Day ahead forecasts (all but net load) and week ahead forecasts (net
+        load only):
           *window = forecast.interval_length*.
 
     Users that would like more flexibility may use the lower-level
