@@ -576,7 +576,7 @@ def calc_y_start_end(y_min, y_max, pad_factor=1.03):
     -------
     start, end : float, float
     """
-    # bokeh does not play well with nans
+    # limits cannot be nans or infs
     y_min = np.nan_to_num(y_min)
     y_max = np.nan_to_num(y_max)
 
@@ -592,7 +592,11 @@ def calc_y_start_end(y_min, y_max, pad_factor=1.03):
         start = y_min
         end = y_max
 
-    start, end = pad_factor * start, pad_factor * end
+    # if y_max or min was +/- inf then padding will result in overflow
+    # that can be ignored
+    with np.errstate(over='ignore'):
+        start, end = pad_factor * start, pad_factor * end
+
     return start, end
 
 

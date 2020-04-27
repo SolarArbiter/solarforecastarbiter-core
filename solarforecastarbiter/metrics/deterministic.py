@@ -298,6 +298,10 @@ def forecast_skill(obs, fx, ref, error_fnc=error):
     # avoid 0 / 0 --> nan
     if rmse_fx == rmse_ref:
         return 0.
+    elif rmse_ref == 0.:
+        # avoid divide by 0.
+        # typically caused by deadbands and short time periods
+        return np.NINF
     else:
         return 1.0 - rmse_fx / rmse_ref
 

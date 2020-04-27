@@ -110,6 +110,9 @@ def get_versions():
         'pvlib',
         'pandas',
         'numpy',
+        'scipy',
+        'statsmodels',
+        'plotly',
         'bokeh',
         'netcdf4',
         'xarray',
@@ -117,7 +120,6 @@ def get_versions():
         'numexpr',
         'bottleneck',
         'jinja2',
-        'statsmodels'
     ]
     versions = []
     for p in packages:
