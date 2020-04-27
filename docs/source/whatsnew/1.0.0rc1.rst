@@ -1,0 +1,28 @@
+.. _whatsnew_100rc1:
+
+1.0.0rc1 (????)
+---------------
+
+This is the first 1.0 release candidate.
+
+
+API Changes
+~~~~~~~~~~~
+
+Enhancements
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

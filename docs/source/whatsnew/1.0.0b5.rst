@@ -1,9 +1,19 @@
 .. _whatsnew_100b5:
 
-1.0.0b5 (????)
---------------
+1.0.0b5 (April 27, 2020)
+------------------------
 
 This is the fifth 1.0 beta release.
+
+Highlights include:
+
+* support for event forecasts and reports
+* using plotly to generate report figures
+* support for normalized metrics in the reports
+* an option to account for uncertainty using a deadband in reports
+* support for forecast skill in reports
+
+See below for the full list of changes.
 
 
 API Changes
