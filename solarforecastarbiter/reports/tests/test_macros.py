@@ -112,12 +112,21 @@ validation_table_format = """<table class="table table-striped validation-table"
   </caption>
   <thead>
     <tr class="header">
-      <th style="text-align: left;">Validation Flag</th>
+      <th style="text-align: left;">Aligned Pair</th>
       <th style="text-align: center;">
-        {} <br>Number of Points
+        {}
       </th>
       <th style="text-align: center;">
-        {} <br>Number of Points
+        {}
+      </th>
+    </tr>
+    <tr class="header">
+      <th style="text-align: left;">Observation</th>
+      <th style="text-align: center;">
+        {}
+      </th>
+      <th style="text-align: center;">
+        {}
       </th>
     </tr>
   </thead>
@@ -154,6 +163,8 @@ def test_validation_table(report_with_raw, macro_test_template):
     assert rendered_validation_table == validation_table_format.format(
         proc_fxobs_list[0].name,
         proc_fxobs_list[1].name,
+        proc_fxobs_list[0].original.observation.name,
+        proc_fxobs_list[1].original.observation.name,
         *qfilters)
 
 
