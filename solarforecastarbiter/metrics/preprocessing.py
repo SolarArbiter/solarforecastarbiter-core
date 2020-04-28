@@ -254,6 +254,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
 
+    # prob fx DataFrame needs to be summed across both dimensions
     if isinstance(fx_series, pd.DataFrame):
         undefined_fx = fx_series.isna().sum().sum()
     else:

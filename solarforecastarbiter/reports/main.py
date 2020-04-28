@@ -90,6 +90,8 @@ def get_data_for_report(session, report):
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
         if fxobs.forecast not in data:
+            # use get_values instead of get_forecast_values so that api module
+            # can handle determ., prob constant value, or prob group values
             data[fxobs.forecast] = session.get_values(
                 fxobs.forecast, start, end)
         if fxobs.data_object not in data:
