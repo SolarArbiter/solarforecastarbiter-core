@@ -39,7 +39,8 @@ ALLOWED_VARIABLES = {
     'dc_power': 'MW',
     'availability': '%',
     'curtailment': 'MW',
-    'event': 'boolean'
+    'event': 'boolean',
+    'net_load': 'MW'
 }
 
 
@@ -55,7 +56,8 @@ COMMON_NAMES = {
     'dc_power': 'DC Power',
     'availability': 'Availability',
     'curtailment': 'Curtailment',
-    'event': 'Event'
+    'event': 'Event',
+    'net_load': 'Net Load',
 }
 
 

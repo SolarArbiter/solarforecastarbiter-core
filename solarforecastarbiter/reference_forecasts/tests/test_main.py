@@ -75,7 +75,7 @@ def observation_values_text():
     """JSON text representation of test data"""
     tz = 'UTC'
     data_index = pd.date_range(
-        start='20190101', end='20190102', freq='5min', tz=tz, closed='left')
+        start='20190101', end='20190112', freq='5min', tz=tz, closed='left')
     # each element of data is equal to the hour value of its label
     data = pd.DataFrame({'value': data_index.hour, 'quality_flag': 0},
                         index=data_index)
@@ -147,6 +147,29 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
     issue_time = pd.Timestamp('20190102T2300Z')
     mocker.spy(main.persistence, 'persistence_interval')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                               issue_time)
+    assert isinstance(out, pd.Series)
+    assert len(out) == 24
+    assert main.persistence.persistence_interval.call_count == 1
+
+
+def test_run_persistence_weekahead(session, site_metadata, mocker):
+    variable = 'net_load'
+    observation = default_observation(
+        site_metadata, variable=variable,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning')
+
+    run_time = pd.Timestamp('20190110T1945Z')
+    forecast = default_forecast(
+        site_metadata, variable=variable,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190111T2300Z')
+    mocker.spy(main.persistence, 'persistence_interval')
+    out = main.run_persistence(session, observation, forecast, run_time,
                                issue_time)
     assert isinstance(out, pd.Series)
     assert len(out) == 24
