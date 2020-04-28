@@ -84,9 +84,6 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.preprocessing.resample_and_align` modifications. (:issue:`357`) (:issue:`380`) (:pull:`361`)
 * Added support for plotting timeseries of event observations and forecasts to
   :py:func:`solararbiter.plotting.timeseries.make_basic_timeseries`. (:pull:`394`)
-* Added support for week-ahead persistence load forecasts with
-  :py:func:`solarforecastarbiter.utils.get_data_start_end` and
-  :py:func:`solarforecastarbiter.main.run_persistence` modifications. (:issue:`55`) (:pull:`392`)
 
 
 Enhancements
