@@ -85,7 +85,6 @@ API Changes
 * Added support for plotting timeseries of event observations and forecasts to
   :py:func:`solararbiter.plotting.timeseries.make_basic_timeseries`. (:pull:`394`)
 
-
 Enhancements
 ~~~~~~~~~~~~
 * Report plots are now created using Plotly. Bokeh figure generation moved to
