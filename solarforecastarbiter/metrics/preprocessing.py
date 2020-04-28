@@ -254,6 +254,11 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
 
+    if isinstance(fx_series, pd.DataFrame):
+        undefined_fx = fx_series.isna().sum().sum()
+    else:
+        undefined_fx = fx_series.isna().sum()
+
     # Return dict summarizing results
     results = {
         type(fx).__name__ + " " + DISCARD_DATA_STRING:
@@ -261,7 +266,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
         type(obs).__name__ + " " + DISCARD_DATA_STRING:
             len(obs_resampled) - len(observation_values),
         type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
-            int(fx_series.isna().sum()),
+            int(undefined_fx),
         type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
             int(obs_series.isna().sum())
     }

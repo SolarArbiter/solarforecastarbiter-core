@@ -46,7 +46,8 @@ def calculate_metrics(processed_pairs, categories, metrics):
 
         # determine type of metrics to calculate
         if isinstance(proc_fxobs.original.forecast,
-                      datamodel.ProbabilisticForecast):
+                      (datamodel.ProbabilisticForecast,
+                       datamodel.ProbabilisticForecastConstantValue)):
             try:
                 calc_metrics.append(calculate_probabilistic_metrics(
                     proc_fxobs,
@@ -497,6 +498,7 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs,
     """
     fx_fx_prob = []
     df = getattr(proc_fx_obs, attr)
+    # failure here for a ProbabilisticForecastConstantValue
     assert isinstance(df, pd.DataFrame)
     for col in df.columns:
         if proc_fx_obs.original.forecast.axis == 'x':
