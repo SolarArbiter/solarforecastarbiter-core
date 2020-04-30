@@ -197,20 +197,28 @@ def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
 def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
                                                  create_processed_fxobs,
                                                  create_dt_index):
+    index = pd.DatetimeIndex(
+        # sunday, monday, tuesday
+        ['20200531 1900Z', '20200601 2000Z', '20200602 2100Z'])
     inp = create_processed_fxobs(
         single_forecast_observation,
-        pd.Series([2, 1, 0], index=create_dt_index(3)),
-        pd.Series([1, 1, 1], index=create_dt_index(3)))
-    categories = ('hour', 'total', 'date')
+        pd.Series([2, 1, 0], index=index),
+        pd.Series([1, 1, 1], index=index))
+    categories = ('hour', 'total', 'date', 'month', 'weekday')
     metrics = ('rmse', 'ksi', 'mbe', 'mae')
     result = calculator.calculate_deterministic_metrics(
         inp, categories, metrics)
     expected = {
         0: ('total', 'mae', '0', 2/3),
         1: ('total', 'mbe', '0', 0.),
-        4: ('hour', 'mae', '0', 1.),
-        6: ('hour', 'mae', '2', 1.),
-        10: ('hour', 'rmse', '0', 1.)
+        4: ('month', 'mae', 'May', 1.),
+        5: ('month', 'mae', 'Jun', 0.5),
+        12: ('hour', 'mae', '19', 1.),
+        14: ('hour', 'mae', '21', 1.),
+        18: ('hour', 'rmse', '19', 1.),
+        39: ('weekday', 'mbe', 'Mon', 0.),
+        40: ('weekday', 'mbe', 'Tue', -1.),
+        41: ('weekday', 'mbe', 'Sun', 1.),
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():

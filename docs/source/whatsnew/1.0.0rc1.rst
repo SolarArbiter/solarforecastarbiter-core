@@ -20,6 +20,9 @@ Enhancements
 
 Bug fixes
 ~~~~~~~~~
+* Fix incorrect ordering of months and weekdays in metrics plots.
+  (:issue:`428`) (:pull:`430`)
+
 
 Contributors
 ~~~~~~~~~~~~
