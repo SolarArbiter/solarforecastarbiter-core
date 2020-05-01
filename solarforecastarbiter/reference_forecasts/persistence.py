@@ -362,3 +362,38 @@ def _check_intervals_times(interval_label, data_start, data_end,
                              'interval_length. ' + strvals)
     else:
         raise ValueError('invalid interval_label')
+
+
+def probabilistic_persistence(observation, data_start, data_end,
+                             forecast_start, forecast_end,
+                             interval_length, interval_label,
+                             load_data, prob_intervals=[0.25, 0.50, 0.75]):
+    """
+    Calculate a probabilistic persistence based on historical estimates of the
+    distribution.
+
+    Method: Persistence Ensemble (PeEn)
+        1. get lagged measurements
+        2. from lagged measurements, estimate CDF
+        3. propogate estimated CDF forward to the forecast interval
+           (possibly with clear-sky index or maybe just for each time of day)
+
+    Questions:
+    - user-specified prob intervals vs constant?
+    - multiple prob intervals or on at a time? or maybe require one or more
+      prob intervals (e.g. one interval = [0.5], multiple = [0.25, 0.50, 0.75])
+    - minimum number of samples?
+    - restrict to only day-ahead or allow for any horizon?
+    - single function or multiple (eg one by HOD and another using clear-sky
+      index)?
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    fx :
+    fx_prob :
+
+    """
+    pass
