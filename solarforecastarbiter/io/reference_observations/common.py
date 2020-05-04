@@ -283,7 +283,8 @@ def update_site_observations(api, fetch_func, site, observations,
         start = get_last_site_timestamp(api, site_observations, end)
     logger.debug('Fetching data for %s from %s to %s', site.name, start, end)
     obs_df = fetch_func(api, site, start, end)
-    data_in_range = obs_df[start:end]
+    # must be sorted for proper inexact start:end slicing
+    data_in_range = obs_df.sort_index()[start:end]
     if data_in_range.empty:
         return
     for obs in site_observations:
