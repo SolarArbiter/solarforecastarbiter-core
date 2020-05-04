@@ -277,7 +277,7 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     ----------
     dc_capacity : float
     temperature_coefficient : float
-       Specified in units of %/C to be converted to 1/C
+        Specified in units of %/C to be converted to 1/C
     dc_loss_factor : float
     ac_capacity : float
     ac_loss_factor : float
