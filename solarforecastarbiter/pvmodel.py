@@ -277,6 +277,7 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     ----------
     dc_capacity : float
     temperature_coefficient : float
+       Specified in units of %/C to be converted to 1/C
     dc_loss_factor : float
     ac_capacity : float
     ac_loss_factor : float
@@ -291,7 +292,7 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     pvtemps = pvlib.temperature.pvsyst_cell(poa_effective, temp_air,
                                             wind_speed=wind_speed)
     dc = pvlib.pvsystem.pvwatts_dc(poa_effective, pvtemps, dc_capacity,
-                                   temperature_coefficient)
+                                   temperature_coefficient / 100)
     dc *= (1 - dc_loss_factor / 100)
     # set eta values to turn off clipping in pvwatts_ac
     ac = pvlib.pvsystem.pvwatts_ac(dc, dc_capacity, eta_inv_nom=1,
