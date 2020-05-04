@@ -296,6 +296,9 @@ def _prepare_data_to_post(data, variable, observation, start, end):
     to prepare for posting"""
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
+    # ensure data is sorted before slicing and for optimal order in the
+    # database
+    data = data.sort_index()
     # remove all future values, some files have forward filled nightly data
     data = data[start:min(end, _utcnow())]
     # we assume any reference data is given at the proper intervals
