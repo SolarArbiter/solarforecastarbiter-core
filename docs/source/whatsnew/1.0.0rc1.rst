@@ -11,6 +11,9 @@ API Changes
 * Added support for week-ahead persistence forecasts with
   :py:func:`solarforecastarbiter.utils.get_data_start_end` and
   :py:func:`solarforecastarbiter.main.run_persistence` modifications. (:issue:`55`) (:pull:`392`)
+* :py:func:`solarforecastarbiter.pvmodel.calculate_power` and
+  :py:func:`solarforecastarbiter.datamodel.Site` expect a ``temperature_coefficient``
+  with units of % of DC capacity/C instead of 1/C (:issue:`350`) (:pull:`433`)
 
 Enhancements
 ~~~~~~~~~~~~
