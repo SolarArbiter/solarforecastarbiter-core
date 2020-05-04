@@ -632,8 +632,9 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         LATEST_VERSION_FLAG
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.called
+    posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
+    assert_frame_equal(posted_df, out)
 
 
 def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
@@ -677,8 +678,9 @@ def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
         base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.called
+    posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
+    assert_frame_equal(posted_df, out)
 
 
 def test_validate_daily_dc_power(mocker, make_observation, daily_index):
@@ -767,8 +769,9 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.called
+    posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
+    assert_frame_equal(posted_df, out)
 
 
 def test_validate_daily_ac_power(mocker, make_observation, daily_index):
@@ -863,8 +866,9 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.called
+    posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
+    assert_frame_equal(posted_df, out)
 
 
 @pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
@@ -885,13 +889,14 @@ def test_daily_observation_validation_other(var, mocker, make_observation,
         return_value=data)
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
-    validate_mock = mocker.MagicMock()
+    validated = pd.Series(2, index=daily_index)
+    validate_mock = mocker.MagicMock(return_value=validated)
     mocker.patch.dict(
         'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
         {var: validate_mock})
     tasks.daily_single_observation_validation(
         '', obs.observation_id, data.index[0], data.index[-1])
-    assert post_mock.called_once
+    assert post_mock.called
     assert validate_mock.called
 
 
@@ -914,13 +919,14 @@ def test_daily_observation_validation_many(mocker, make_observation,
         return_value=data)
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
-    validate_mock = mocker.MagicMock()
+    validated = pd.Series(2, index=daily_index)
+    validate_mock = mocker.MagicMock(return_value=validated)
     mocker.patch.dict(
         'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
         {'dhi': validate_mock, 'dni': validate_mock})
     tasks.daily_observation_validation(
         '', data.index[0], data.index[-1])
-    assert post_mock.called_once
+    assert post_mock.called
     assert validate_mock.call_count == 2
 
 
@@ -967,3 +973,49 @@ def test_daily_observation_validation_not_enough(mocker, make_observation):
         '', data.index[0], data.index[-1])
     assert out is None
     assert log.called
+
+
+def test__group_continuous_week_post(mocker, make_observation):
+    split_dfs = [
+        pd.DataFrame([(0, LATEST_VERSION_FLAG)],
+                     columns=['value', 'quality_flag'],
+                     index=pd.date_range(
+                         start='2020-05-03T00:00',
+                         end='2020-05-03T23:59',
+                         tz='UTC',
+                         freq='1h')),
+        # new week split
+        pd.DataFrame([(0, LATEST_VERSION_FLAG)],
+                     columns=['value', 'quality_flag'],
+                     index=pd.date_range(
+                         start='2020-05-04T00:00',
+                         end='2020-05-04T11:59',
+                         tz='UTC',
+                         freq='1h')),
+        # missing 12
+        pd.DataFrame(
+            [(0, LATEST_VERSION_FLAG | DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'])] +  # NOQA
+            [(1, LATEST_VERSION_FLAG)] * 7,
+            columns=['value', 'quality_flag'],
+            index=pd.date_range(
+                start='2020-05-04T13:00',
+                end='2020-05-04T20:00',
+                tz='UTC',
+                freq='1h')),
+        # missing a week+
+        pd.DataFrame(
+            [(9, LATEST_VERSION_FLAG | DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'])] +  # NOQA
+            [(3, LATEST_VERSION_FLAG)] * 7,
+            columns=['value', 'quality_flag'],
+            index=pd.date_range(
+                start='2020-05-13T09:00',
+                end='2020-05-13T16:59',
+                tz='UTC',
+                freq='1h')),
+    ]
+    ov = pd.concat(split_dfs, axis=0)
+    obs = make_observation('ghi')
+    session = mocker.MagicMock()
+    tasks._group_continuous_week_post(session, obs, ov)
+    for i, cal in enumerate(session.post_observation_values.call_arg_list):
+        assert_frame_equal(split_dfs[i], cal[0][1])
