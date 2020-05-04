@@ -77,7 +77,7 @@ def run_nwp(forecast, model, run_time, issue_time):
     >>> modeling_parameters = datamodel.FixedTiltModelingParameters(
     ...     surface_tilt=30, surface_azimuth=180,
     ...     ac_capacity=10, dc_capacity=15,
-    ...     temperature_coefficient=-0.004, dc_loss_factor=0,
+    ...     temperature_coefficient=-0.4, dc_loss_factor=0,
     ...     ac_loss_factor=0)
     >>> power_plant = datamodel.SolarPowerPlant(
     ...     name='Test plant', latitude=32.2, longitude=-110.9,

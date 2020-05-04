@@ -180,11 +180,11 @@ def test_calculate_poa_effective(aoi_func_system_type, apparent_zenith,
 @pytest.mark.parametrize(
     'dc_capacity,temperature_coefficient,dc_loss_factor,'
     'ac_capacity,ac_loss_factor,expected', (
-        (10, -0.005, 0, 10, 0, (0., 7.58301313763377)),
-        (5, 0.005, 0, 10, 0, (0., 5.)),  # pvwatts_ac max out is pdc0
+        (10, -0.5, 0, 10, 0, (0., 7.58301313763377)),
+        (5, 0.5, 0, 10, 0, (0., 5.)),  # pvwatts_ac max out is pdc0
         (10, 0.000, 20, 10, 20, (0., 6.1789760000000005)),
         (10, 0.000, -20, 10, -20, (0., 12.)),
-        (15, -0.005, 0, 10, 0, (0., 10.)),
+        (15, -0.5, 0, 10, 0, (0., 10.)),
     ),
     ids=[
         '10:10 DC:AC, neg temp co, no loss',

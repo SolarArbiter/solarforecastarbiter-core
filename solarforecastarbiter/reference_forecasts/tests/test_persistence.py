@@ -27,7 +27,7 @@ def load_data_base(data, observation, data_start, data_end):
 def powerplant_metadata():
     """1:1 AC:DC"""
     modeling_params = datamodel.FixedTiltModelingParameters(
-        ac_capacity=200, dc_capacity=200, temperature_coefficient=-0.003,
+        ac_capacity=200, dc_capacity=200, temperature_coefficient=-0.3,
         dc_loss_factor=3, ac_loss_factor=0,
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.SolarPowerPlant(

@@ -33,7 +33,7 @@ def adjust_site_parameters(site):
     modeling_params = {
         'ac_capacity': 0.00324,  # no clipping
         'dc_capacity': 0.00324,
-        'temperature_coefficient': -0.00420,
+        'temperature_coefficient': -0.420,
         'dc_loss_factor': 0,
         'ac_loss_factor': 0,
         'surface_tilt': 35,
