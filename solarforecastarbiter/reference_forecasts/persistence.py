@@ -27,6 +27,8 @@ import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
 
+from statsmodels.distributions.empirical_distribution import ECDF
+
 
 def persistence_scalar(observation, data_start, data_end, forecast_start,
                        forecast_end, interval_length, interval_label,
@@ -364,36 +366,83 @@ def _check_intervals_times(interval_label, data_start, data_end,
         raise ValueError('invalid interval_label')
 
 
-def probabilistic_persistence(observation, data_start, data_end,
-                             forecast_start, forecast_end,
-                             interval_length, interval_label,
-                             load_data, prob_intervals=[0.25, 0.50, 0.75]):
-    """
-    Calculate a probabilistic persistence based on historical estimates of the
-    distribution.
+def persistence_probabilistic(observation, data_start, data_end,
+                              forecast_start, forecast_end,
+                              interval_length, interval_label,
+                              load_data, prob_intervals=[25, 50, 75]):
+    r"""
+    Make a probabilistic persistence forecast using the empirical CDF of the
+    *observation* from *data_start* to *data_end*. In the forecast literature,
+    this method is typically referred to as Persistence Ensemble (PeEn). [1]
 
-    Method: Persistence Ensemble (PeEn)
-        1. get lagged measurements
-        2. from lagged measurements, estimate CDF
-        3. propogate estimated CDF forward to the forecast interval
-           (possibly with clear-sky index or maybe just for each time of day)
+    In the example below, we use GHI to be concrete but the concept applies to
+    any kind of observation data. The probabilistic persistence forecast
 
-    Questions:
-    - user-specified prob intervals vs constant?
-    - multiple prob intervals or on at a time? or maybe require one or more
-      prob intervals (e.g. one interval = [0.5], multiple = [0.25, 0.50, 0.75])
-    - minimum number of samples?
-    - restrict to only day-ahead or allow for any horizon?
-    - single function or multiple (eg one by HOD and another using clear-sky
-      index)?
+    .. math::
+
+       F_{t_f} = CDF{GHI_{t_{start}} \ldots GHI_{t_{end}}
+       GHI_{t_f}(10%) = F_{t_f}(10%)
+       GHI_{t_f}(20%) = F_{t_f}(20%)
+       ...
+       GHI_{t_f}(100%) = F_{t_f}(100%)
+
+    where :math:`t_f` is a forecast time, :math:`F` is the empirical CDF
+    from all observations that occur between :math:`t_{start}` = *data_start*
+    and :math:`t_{end}` = *data_end*.
 
     Parameters
     ----------
+    observation : datamodel.Observation
+    data_start : pd.Timestamp
+        Observation data start. Forecast is inclusive of this instant if
+        observation.interval_label is *beginning* or *instant*.
+    data_end : pd.Timestamp
+        Observation data end. Forecast is inclusive of this instant if
+        observation.interval_label is *ending* or *instant*.
+    forecast_start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* or *instant*.
+    forecast_end : pd.Timestamp
+        Forecast end. Forecast is inclusive of this instant if
+        interval_label is *ending* or *instant*.
+    interval_length : pd.Timedelta
+        Forecast interval length
+    interval_label : str
+        instant, beginning, or ending
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
+    prob_intervals : array_like
+        The probability intervals [%] of the forecast.
 
     Returns
     -------
-    fx :
-    fx_prob :
+    forecasts : list of pd.Series
+        The persistence forecasts, ordered to match *prob_intervals*.
+
+    References
+    ----------
+    Allessandrini et al. (2015) "An analog ensemble for short-term
+    probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
+    doi: 10.1016/j.apenergy.2015.08.011
+
+    Notes
+    -----
 
     """
-    pass
+
+    # empirical CDF from observations
+    obs = load_data(observation, data_start, data_end)
+    cdf = ECDF(obs)
+
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+    fx_index = pd.date_range(start=forecast_start, end=forecast_end,
+                             freq=interval_length, closed=closed)
+
+    forecasts = []
+    for prob_interval in prob_intervals:
+        fx_values = cdf(prob_interval)
+        forecasts.append(pd.Series(fx_values, index=fx_index))
+
+    return forecasts
