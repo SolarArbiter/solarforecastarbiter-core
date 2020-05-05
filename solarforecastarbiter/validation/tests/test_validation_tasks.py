@@ -1017,5 +1017,7 @@ def test__group_continuous_week_post(mocker, make_observation):
     obs = make_observation('ghi')
     session = mocker.MagicMock()
     tasks._group_continuous_week_post(session, obs, ov)
-    for i, cal in enumerate(session.post_observation_values.call_arg_list):
+    call_list = session.post_observation_values.call_args_list
+    assert len(call_list) == 4
+    for i, cal in enumerate(call_list):
         assert_frame_equal(split_dfs[i], cal[0][1])
