@@ -1,7 +1,6 @@
 import logging
 
 
-import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
