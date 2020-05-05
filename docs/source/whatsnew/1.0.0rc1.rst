@@ -19,12 +19,16 @@ Enhancements
 ~~~~~~~~~~~~
 * Reference net load forecasts provided using week-ahead persistence. (:issue:`55`) (:pull:`392`)
 * Datamodel now supports ``'net_load'`` as an allowed variable. (:issue:`55`) (:pull:`392`)
+* Posting of daily validation now splits requests to avoid missing periods and
+  limit each request to one week of data (:issue:`424`) (:pull:`435`)
 
 
 Bug fixes
 ~~~~~~~~~
 * Fix incorrect ordering of months and weekdays in metrics plots.
   (:issue:`428`) (:pull:`430`)
+* Ensure data is sorted from reference data sources before slicing and
+  posting to the API (:pull:`435`)
 
 
 Contributors

@@ -492,6 +492,24 @@ def test_update_site_observations_no_data(
     mock_api.assert_not_called()
 
 
+def test_update_site_observations_out_of_order(
+        mock_api, site_objects_param, mocker,
+        observation_objects_param, fake_ghi_data):
+    start = pd.Timestamp('20190101T1200Z')
+    end = pd.Timestamp('20190101T1230Z')
+    fetch = mocker.MagicMock()
+    fetch.return_value = fake_ghi_data.sample(frac=1)
+    common.update_site_observations(
+        mock_api, fetch, site_objects[1], observation_objects_param,
+        start, end)
+    args, _ = mock_api.post_observation_values.call_args
+    assert args[0] == ''
+    pd.testing.assert_frame_equal(
+        args[1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[start:end].resample(
+                args[1].index.freq).first())
+
+
 @pytest.fixture()
 def template_fx(mock_api, mocker):
     mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)
