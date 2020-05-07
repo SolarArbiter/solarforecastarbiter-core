@@ -1,0 +1,76 @@
+%- set report_name = report.report_parameters.name
+\documentclass[12pt,letterpaper]{article}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{placeins}
+\graphicspath{{./figs/}}
+\hypersetup{colorlinks=true,linkcolor=black}
+\begin{document}
+\title{\VAR{report_name}}
+%# \date{\VAR{report.raw_report.generated_at}}
+\maketitle
+This report of solar forecast accuracy was automatically generated using the
+\href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
+our GitHub repository for
+\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports}{known issues}
+with the reports or to create a new issue.
+
+\tableofcontents
+\cleardoublepage
+\listoffigures
+\cleardoublepage
+\listoftables
+\cleardoublepage
+
+\section{Report Metadata}
+
+\section{Data}
+
+\subsection{Observations and Forecasts}
+
+\subsection{Data Validation}
+
+\subsection{Data Resampling and Alignment}
+
+\section{Metrics}
+\FloatBarrier
+%- for category in report.report_parameters.categories
+%- set human_category = human_categories[category]
+\subsection{\VAR{human_category.title()} Analysis}
+%- if category_blurbs is defined
+\VAR{category_blurbs[category]}
+%- endif
+%- for metric in report.report_parameters.metrics
+%- set human_metric = human_metrics[metric].replace('^', '\\textasciicircum')
+%- for rep_fig in report.raw_report.plots.figures
+%- if rep_fig.category == category and rep_fig.metric == metric
+%- set plot_id = (category+'_'+metric+'_'+rep_fig.name) | replace('^', '-') | replace(' ', '_')
+%- if category == 'total'
+%- set caption = 'Total ' + human_metric + ' for all forecasts.'
+%- else
+%- set caption = human_metric + ' by ' + human_category.lower() + ' for ' + rep_fig.name + '.'
+%- endif
+\begin{figure}[h]
+  \centering
+  \includegraphics[height=0.40\textheight]{\VAR{plot_id}}
+  \caption{\VAR{caption}}
+\end{figure}
+%- endif
+%- endfor
+%- endfor
+\FloatBarrier
+%- endfor
+
+\section{Versions}
+version text
+
+\begin{table}[h]
+  \caption{Table of Package Versions}
+  \begin{tabular}{ l | l }
+    Package & Version \\ \hline
+    %- for pkg_ver in report.raw_report.versions
+    \VAR{pkg_ver[0]} & \VAR{pkg_ver[1].replace('_', '\\_')} \\
+    %- endfor
+  \end{tabular}
+\end{table}
+\end{document}

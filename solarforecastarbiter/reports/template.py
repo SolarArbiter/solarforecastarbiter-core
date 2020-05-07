@@ -1,12 +1,18 @@
 """
 Inserts metadata and figures into the report template.
 """
+import base64
 import logging
+from pathlib import Path
+import subprocess
+import tempfile
 
 
 from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape
 from plotly import __version__ as plotly_version
+
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.reports.figures import plotly_figures
 
@@ -161,3 +167,70 @@ def render_html(report, dash_url=datamodel.DASH_URL,
         report, dash_url, with_timeseries, body_only)
     out = template.render(**kwargs)
     return out
+
+
+def render_pdf(report, dash_url, with_timeseries=True, max_runs=5):
+    env = Environment(
+        loader=PackageLoader('solarforecastarbiter.reports', 'templates/pdf'),
+        autoescape=False,
+        lstrip_blocks=True,
+        trim_blocks=True,
+        block_start_string='\\BLOCK{',
+        block_end_string='}',
+        variable_start_string='\\VAR{',
+        variable_end_string='}',
+        comment_start_string='\\#{',
+        comment_end_string='}',
+        line_statement_prefix='%-',
+        line_comment_prefix='%#'
+    )
+    kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
+    with tempfile.TemporaryDirectory() as _tmpdir:
+        tmpdir = Path(_tmpdir)
+        template = env.get_template('base.tex')
+        tex = template.render(**kwargs)
+        texfile = tmpdir / 'out.tex'
+        texfile.write_text(tex)
+        auxfile = tmpdir / 'out.aux'
+        logfile = tmpdir / 'out.log'
+
+        # save figures
+        figdir = tmpdir / 'figs'
+        figdir.mkdir()
+        for fig in report.raw_report.plots.figures:
+            name = (
+                fig.category + '_' + fig.metric + '_' +
+                fig.name.replace('^', '-').replace(' ', '_') +
+                '.pdf'
+            )
+            figpath = figdir / name
+            figpath.write_bytes(base64.a85decode(fig.pdf))
+
+        args = (
+            'pdflatex',
+            '-interaction=batchmode',
+            '-halt-on-error',
+            '-no-shell-escape',
+            '-file-line-error',
+            'out.tex'
+        )
+        runs_left = max_runs
+        prev_aux = ''
+        while runs_left > 0:
+            try:
+                subprocess.run(args, check=True, cwd=str(tmpdir.absolute()))
+            except subprocess.CalledProcessError:
+                logger.exception(logfile.read_text())
+                raise
+
+            aux = auxfile.read_text()
+            if aux == prev_aux:
+                break
+            else:
+                prev_aux = aux
+                runs_left -= 1
+        else:
+            raise RuntimeError(
+                f'PDF generation unstable after {max_runs} runs')
+
+        return (tmpdir / 'out.pdf').read_bytes()
