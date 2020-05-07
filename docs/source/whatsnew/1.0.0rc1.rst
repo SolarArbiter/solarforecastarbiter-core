@@ -24,6 +24,7 @@ Enhancements
 * PDF report figures are generated instead of SVG for easy integration into PDF
   reports (:issue:`360`) (:pull:`437`)
 
+
 Bug fixes
 ~~~~~~~~~
 * Fix incorrect ordering of months and weekdays in metrics plots.
