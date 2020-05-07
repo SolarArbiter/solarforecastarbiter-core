@@ -23,7 +23,7 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: apt-get update && apt-get install -y xvfb
+  - script: sudo apt-get update && sudo apt-get install -y xvfb
     displayName: 'Install xvfb'
 
   - task: Npm@1
