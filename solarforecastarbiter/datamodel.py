@@ -1418,10 +1418,12 @@ class PlotlyReportFigure(ReportFigure):
         A descriptive name for the figure.
     spec: str
         JSON string representation of the plotly plot.
-    svg: str
-        A static svg copy of the plot, for including in the pdf version.
     figure_type: str
         The type of plot, e.g. bar or scatter.
+    pdf: str
+        A static PDF copy of the plot, for including in PDF reports.
+    svg: str
+        DEPRECATED for pdf. A static svg copy of the plot.
     category: str
         The metric category. One of ALLOWED_CATEGORIES keys.
     metric: str
@@ -1429,8 +1431,9 @@ class PlotlyReportFigure(ReportFigure):
     """
     name: str
     spec: str
-    svg: str
     figure_type: str
+    pdf: str
+    svg: str = ''
     category: str = ''
     metric: str = ''
     figure_class: str = 'plotly'
