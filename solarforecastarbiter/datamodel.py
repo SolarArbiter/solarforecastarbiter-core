@@ -1432,7 +1432,7 @@ class PlotlyReportFigure(ReportFigure):
     name: str
     spec: str
     figure_type: str
-    pdf: str
+    pdf: str = ''
     svg: str = ''
     category: str = ''
     metric: str = ''
