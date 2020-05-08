@@ -292,7 +292,12 @@ def referencenwp(verbose, user, password, base_url, run_time,
 
 @cli.command()
 @common_options
-@click.option('--format', default='detect')
+@click.option(
+    '--format', default='detect',
+    help=('Format of output file. "detect" tries to infer from '
+          'the file extension of OUTPUT-FILE'),
+    type=click.Choice(['detect', 'pdf', 'html'], case_sensitive=False)
+)
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
 @click.argument(
@@ -327,14 +332,11 @@ def report(verbose, user, password, base_url, report_file, output_file,
             format == 'detect' and output_file.endswith('.pdf')
             or format == 'pdf'
     ):
-        import time; a=time.time()
-        pdf_report = template.render_pdf(full_report, dash_url,
-                                         with_timeseries=False)
+        pdf_report = template.render_pdf(full_report, dash_url)
         with open(output_file, 'wb') as f:
             f.write(pdf_report)
-        print(time.time() - a)
     else:
-        raise ValueError("--format must be 'detect', 'pdf', or 'html'")
+        raise ValueError("Unable to detect format")
 
 
 if __name__ == "__main__":  # pragma: no cover
