@@ -4,6 +4,7 @@ Inserts metadata and figures into the report template.
 import base64
 import logging
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
@@ -182,7 +183,13 @@ def html_to_tex(value):
              .replace('</code>', '|')
              .replace('<b>', '\\textbf{')
              .replace('</b>', '}')
+             .replace('<ol>', '\\begin{enumerate}')
+             .replace('</ol>', '\\end{enumerate}')
+             .replace('<li>', '\\item ')
+             .replace('</li>', '\n')
+             .replace('</a>', '')
     )
+    value = re.sub('\\<a.*\\>', '', value)
     return value
 
 

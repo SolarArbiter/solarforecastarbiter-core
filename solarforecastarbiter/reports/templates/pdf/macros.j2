@@ -18,6 +18,14 @@
 %- include 'obsfx_table_text'
 %- endmacro
 
+%- macro data_resampling_preamble()
+%- include 'data_resampling_preamble'
+%- endmacro
+
+%- macro data_resampling_postamble()
+%- include 'data_resampling_postamble'
+%- endmacro
+
 %- macro metrics_meta_table()
 \VAR{metrics_meta_table_text() | html_to_tex}
 \begin{table}[h]
@@ -147,8 +155,6 @@
 
 
 %- macro validation_table(proc_fxobs_list, quality_filters)
-\FloatBarrier
-\clearpage
 \begin{landscape}
   \pagestyle{empty}
   \small
@@ -188,6 +194,61 @@
     %- endfor
   \end{longtabu}
 \end{landscape}
-\FloatBarrier
+%- endmacro
+
+
+%- macro data_resampling_section()
+\VAR{data_resampling_preamble() | html_to_tex}
+\VAR{data_resampling_postamble() | html_to_tex}
+\VAR{data_preprocessing_table(report.raw_report.processed_forecasts_observations)}
+%- endmacro
+
+%- macro data_preprocessing_table(proc_fxobs_list)
+%- set preproc_steps = []
+%- for proc_fxobs in proc_fxobs_list
+%- for res in proc_fxobs.preprocessing_results
+%- if res.name not in preproc_steps
+%- set preproc_steps = preproc_steps.append(res.name)
+%- endif
+%- endfor
+%- endfor
 \clearpage
+\begin{landscape}
+  \pagestyle{empty}
+  \small
+  \begin{longtabu} to \linewidth {
+      X[2, l] *{\VAR{preproc_steps | length}}{ | X[1, l]}
+    }
+    \caption{Table of data preprocessing results.} \\
+    \toprule
+    & \multicolumn{\VAR{preproc_steps | length}}{c}{Number of points} \\
+    %- for step in preproc_steps
+    & \ccbr{\VAR{step}}
+    %- endfor
+    \\
+    \midrule
+    \endfirsthead
+    \caption{Table of data preprocessing results (cont.)} \\
+    %- for step in preproc_steps
+    & \ccbr{\VAR{step}}
+    %- endfor
+    \\
+    \midrule
+    \endhead
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    %- for pfxobs in proc_fxobs_list
+    \VAR{pfxobs.name}
+    %- for pstep in preproc_steps
+    %- for res in pfxobs.preprocessing_results
+    %- if res.name == pstep
+    & \VAR{res.count}
+    %- endif
+    %- endfor
+    %- endfor
+    \\
+    %- endfor
+  \end{longtabu}
+\end{landscape}
 %- endmacro
