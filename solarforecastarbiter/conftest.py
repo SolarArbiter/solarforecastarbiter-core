@@ -2001,7 +2001,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                     {
                         'name': 'mae tucson ghi',
                         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-                        'svg': '<svg></svg>',
+                        'pdf': ',u@!!/MSk7$7-ue:IY',
                         'figure_type': 'bar',
                         'category': 'total',
                         'metric': 'mae',
@@ -2363,7 +2363,7 @@ def plotly_report_figure_dict():
     return {
         'name': 'mae tucson ghi',
         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-        'svg': '<svg></svg>',
+        'pdf': ',u@!!/MSk7$7-ue:IY',
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
@@ -2435,7 +2435,7 @@ def raw_report_dict_with_event():
                 'metric': 'pod',
                 'name': 'all',
                 'spec': "{}",
-                'svg': '<svg></svg>'}],
+                'pdf': ',u@!!/MSk7$7-ue:IY'}],
             'plotly_version': '4.5.3',
             'script': None},
         'processed_forecasts_observations': [{
