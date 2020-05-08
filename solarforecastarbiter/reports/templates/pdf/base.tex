@@ -1,11 +1,17 @@
 %- set report_name = report.report_parameters.name
 %- import 'macros.j2' as macros with context
 \documentclass[12pt,letterpaper]{article}
+\usepackage[letterpaper, margin=1in]{geometry}
 \usepackage{hyperref}
-\usepackage{graphicx}
-\usepackage{placeins}
-\graphicspath{{./figs/}}
 \hypersetup{colorlinks=true,linkcolor=black}
+\usepackage{graphicx}
+\graphicspath{{./figs/}}
+\usepackage{placeins}
+\usepackage{tabularx}
+\usepackage{pdflscape}
+\usepackage{booktabs}
+\usepackage{caption}
+\captionsetup[table]{skip=10pt}
 \begin{document}
 \title{\VAR{report_name}}
 %# \date{\VAR{report.raw_report.generated_at}}
@@ -25,6 +31,23 @@ with the reports or to create a new issue.
 
 \section{Report Metadata}
 
+\begin{itemize}
+  \item Name: \VAR{report_name}
+  \item Start: \VAR{report.report_parameters.start}
+  \item End: \VAR{report.report_parameters.end}
+  \item Generated at: \VAR{report.raw_report.generated_at}
+\end{itemize}
+
+%- if report.raw_report.messages | length > 0
+\subsection{Errors}
+
+\begin{itemize}
+  %- for mesg in report.raw_report.messages
+  \item \VAR{mesg.message}
+  %- endfor
+\end{itemize}
+%- endif
+
 \section{Data}
 
 \subsection{Observations and Forecasts}
@@ -38,34 +61,11 @@ with the reports or to create a new issue.
 %- set report_url = dash_url + '/reports/' + report.report_id
 \VAR{macros.metrics_meta_table_text() | html_to_tex}
 
-%- set metric_ordering = report.report_parameters.metrics
-%- set human_category = human_categories['total']
-\begin{table}[h]
-  \centering
-  \caption{Table of \VAR{human_category} metrics.}
-  \begin{tabular}{ l\BLOCK{for m in metric_ordering} | l\BLOCK{endfor} }
-    Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m]}\BLOCK{endfor} \\ \hline
-    %- for fx_result in report.raw_report.metrics
-    \VAR{fx_result.name}
-    %- for metric in metric_ordering
-    %- for mval in fx_result.values
-    %- if mval.category == 'total' and mval.metric == metric
-    %- if -0.01 < mval.value < 0.01
-    & \VAR{'%.2e' | format(mval.value)}
-    %- else
-    & \VAR{'%0.3g' | format(mval.value)}
-    %- endif
-    %- endif
-    %- endfor
-    %- endfor
-    \\
-    %- endfor
-  \end{tabular}
-\end{table}
-
 A table of metrics over the entire study period and metric figures are shown below.
 Metrics may be downloaded in CSV format through the HTML version of this report
 available \href{\VAR{report_url}}{here}.
+
+\VAR{macros.metric_table(report.raw_report.metrics, 'total', report.report_parameters.metrics)}
 
 \FloatBarrier
 %- for category in report.report_parameters.categories

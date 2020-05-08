@@ -4,7 +4,6 @@ Inserts metadata and figures into the report template.
 import base64
 import logging
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 
@@ -222,9 +221,8 @@ def render_pdf(report, dash_url, with_timeseries=True, max_runs=5):
         for fig in report.raw_report.plots.figures:
             name = (
                 fig.category + '_' + fig.metric + '_' +
-                fig.name.replace('^', '-').replace(' ', '_') +
-                '.pdf'
-            )
+                fig.name + '.pdf'
+            ).replace('^', '-').replace(' ', '_')
             figpath = figdir / name
             figpath.write_bytes(base64.a85decode(fig.pdf))
 

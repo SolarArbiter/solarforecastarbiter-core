@@ -5,3 +5,40 @@
 %- macro metrics_meta_table_text()
 %- include 'metrics_meta_table_text'
 %- endmacro
+
+%- macro metric_table(report_metrics, category, metric_ordering)
+%- set human_category = human_categories[category]
+\FloatBarrier
+\clearpage
+\thispagestyle{empty}
+\begin{landscape}
+\begin{table}[h]
+  \centering
+  \caption{Table of \VAR{human_category} metrics.}
+  \small
+  \begin{tabularx}{\linewidth}{ X\BLOCK{for m in metric_ordering} | l\BLOCK{endfor} }
+    \toprule
+    Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m].replace('^', '\\textasciicircum')}\BLOCK{endfor} \\
+    \midrule
+    %- for fx_result in report_metrics
+    \VAR{fx_result.name}
+    %- for metric in metric_ordering
+    %- for mval in fx_result.values
+    %- if mval.category == category and mval.metric == metric
+    %- if -0.01 < mval.value < 0.01
+    & \VAR{'%.2e' | format(mval.value)}
+    %- else
+    & \VAR{'%0.3g' | format(mval.value)}
+    %- endif
+    %- endif
+    %- endfor
+    %- endfor
+    \\
+    %- endfor
+    \bottomrule
+  \end{tabularx}
+\end{table}
+\end{landscape}
+\clearpage
+\FloatBarrier
+%- endmacro
