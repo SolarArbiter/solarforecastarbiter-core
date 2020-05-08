@@ -159,11 +159,14 @@
   \pagestyle{empty}
   \small
   \begin{longtabu} to \linewidth {
-      X[2] X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
+      X[2] | X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
     }
     \caption{Table of data validation results.} \\
     \toprule
-    \ccbr{Aligned Pair} & \ccbr{Observation}
+    \multicolumn{1}{l}{} &  \multicolumn{1}{l ||}{} &
+    \multicolumn{\VAR{quality_filters | length}}{c}{Quality Flag} \\
+    \cline{3-\VAR{(quality_filters | length) + 2 }}
+    \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
     %- for qfilter in quality_filters
     & \ccbr{\VAR{qfilter}}
     %- endfor
@@ -171,7 +174,7 @@
     \midrule
     \endfirsthead
     \caption{Table of data validation results (cont.)} \\
-    \ccbr{Aligned Pair} & \ccbr{Observation}
+    \multicolumn{1}{l}{Aligned Pair} & \multicolumn{1}{l ||}{Observation}
     %- for qfilter in quality_filters
     & \ccbr{\VAR{qfilter}}
     %- endfor
