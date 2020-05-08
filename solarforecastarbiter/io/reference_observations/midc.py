@@ -103,6 +103,8 @@ def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to all MIDC observations from
     start to end.
 
+    Parameters
+    ----------
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     sites: list
