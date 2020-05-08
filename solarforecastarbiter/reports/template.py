@@ -4,12 +4,13 @@ Inserts metadata and figures into the report template.
 import base64
 import logging
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
 
 from bokeh import __version__ as bokeh_version
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader, select_autoescape, ChoiceLoader
 from plotly import __version__ as plotly_version
 
 
@@ -117,7 +118,10 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         template.render().
     """
     env = Environment(
-        loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
+        loader=ChoiceLoader([
+            PackageLoader('solarforecastarbiter.reports', 'templates/html'),
+            PackageLoader('solarforecastarbiter.reports', 'templates'),
+        ]),
         autoescape=select_autoescape(['html', 'xml']),
         lstrip_blocks=True,
         trim_blocks=True
@@ -169,9 +173,26 @@ def render_html(report, dash_url=datamodel.DASH_URL,
     return out
 
 
+def html_to_tex(value):
+    value = (value
+             .replace('<p>', '')
+             .replace('</p>', '\n')
+             .replace('<em>', '\\emph{')
+             .replace('</em>', '}')
+             .replace('<code>', '\\verb|')
+             .replace('</code>', '|')
+             .replace('<b>', '\\textbf{')
+             .replace('</b>', '}')
+    )
+    return value
+
+
 def render_pdf(report, dash_url, with_timeseries=True, max_runs=5):
     env = Environment(
-        loader=PackageLoader('solarforecastarbiter.reports', 'templates/pdf'),
+        loader=ChoiceLoader([
+            PackageLoader('solarforecastarbiter.reports', 'templates/pdf'),
+            PackageLoader('solarforecastarbiter.reports', 'templates'),
+        ]),
         autoescape=False,
         lstrip_blocks=True,
         trim_blocks=True,
@@ -184,6 +205,7 @@ def render_pdf(report, dash_url, with_timeseries=True, max_runs=5):
         line_statement_prefix='%-',
         line_comment_prefix='%#'
     )
+    env.filters['html_to_tex'] = html_to_tex
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)

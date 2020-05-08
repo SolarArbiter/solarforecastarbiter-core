@@ -1,4 +1,5 @@
 %- set report_name = report.report_parameters.name
+%- import 'macros.j2' as macros with context
 \documentclass[12pt,letterpaper]{article}
 \usepackage{hyperref}
 \usepackage{graphicx}
@@ -34,6 +35,39 @@ with the reports or to create a new issue.
 
 \section{Metrics}
 \FloatBarrier
+%- set report_url = dash_url + '/reports/' + report.report_id
+\VAR{macros.metrics_meta_table_text() | html_to_tex}
+
+%- set metric_ordering = report.report_parameters.metrics
+%- set human_category = human_categories['total']
+\begin{table}[h]
+  \centering
+  \caption{Table of \VAR{human_category} metrics.}
+  \begin{tabular}{ l\BLOCK{for m in metric_ordering} | l\BLOCK{endfor} }
+    Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m]}\BLOCK{endfor} \\ \hline
+    %- for fx_result in report.raw_report.metrics
+    \VAR{fx_result.name}
+    %- for metric in metric_ordering
+    %- for mval in fx_result.values
+    %- if mval.category == 'total' and mval.metric == metric
+    %- if -0.01 < mval.value < 0.01
+    & \VAR{'%.2e' | format(mval.value)}
+    %- else
+    & \VAR{'%0.3g' | format(mval.value)}
+    %- endif
+    %- endif
+    %- endfor
+    %- endfor
+    \\
+    %- endfor
+  \end{tabular}
+\end{table}
+
+A table of metrics over the entire study period and metric figures are shown below.
+Metrics may be downloaded in CSV format through the HTML version of this report
+available \href{\VAR{report_url}}{here}.
+
+\FloatBarrier
 %- for category in report.report_parameters.categories
 %- set human_category = human_categories[category]
 \subsection{\VAR{human_category.title()} Analysis}
@@ -62,7 +96,7 @@ with the reports or to create a new issue.
 %- endfor
 
 \section{Versions}
-version text
+\VAR{macros.version_description() | html_to_tex}
 
 \begin{table}[h]
   \caption{Table of Package Versions}

@@ -148,3 +148,16 @@ def test_render_html_full_html(report_with_raw, dash_url, with_series,
 
 def test_build_metrics_json():
     pass
+
+
+@pytest.mark.parametrize('val,expected', [
+    ('<p> paragraph</p>', ' paragraph\n'),
+    ('<em>italic</em>', '\\emph{italic}'),
+    ('<code>nan</code>', '\\verb|nan|'),
+    (('<p>paragraph one <em>important</em> code here <code>null</code>'
+      ' and more <b>bold</b><em> critical</em> <code>here</code></p>'),
+     ('paragraph one \\emph{important} code here \\verb|null|'
+      ' and more \\textbf{bold}\\emph{ critical} \\verb|here|\n'))
+])
+def test_html_to_tex(val, expected):
+    assert template.html_to_tex(val) == expected
