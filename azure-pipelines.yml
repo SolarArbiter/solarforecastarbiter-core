@@ -23,15 +23,6 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: sudo apt-get update && sudo apt-get install -y xvfb
-    displayName: 'Install xvfb'
-
-  - task: Npm@1
-    inputs:
-      command: 'custom'
-      customCommand: 'install electron orca'
-    displayName: 'Install orca'
-
   - script: python -m pip install --upgrade pip && pip install -r requirements.txt -r requirements-test.txt
     displayName: 'Install dependencies'
 
@@ -39,7 +30,7 @@ jobs:
     displayName: 'Install solarforecastarbiter with extras'
 
   - script: |
-      PATH=/home/vsts/work/node_modules/.bin:$PATH pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+      pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
