@@ -6,6 +6,14 @@
 %- include 'metrics_meta_table_text'
 %- endmacro
 
+%- macro data_validation_pre_text()
+%- include 'data_validation_pre_text'
+%- endmacro
+
+%- macro data_validation_post_text()
+%- include 'data_validation_post_text'
+%- endmacro
+
 %- macro obsfx_table_text()
 %- include 'obsfx_table_text'
 %- endmacro
@@ -78,7 +86,7 @@
   \pagestyle{empty}
   \small
   \begin{longtabu} to \linewidth {
-      X[l] X[l] X[l] *{3}{ | X[l] X[l] X[l]}
+      X[2, l] X[l] X[l] *{3}{ | X[2, l] X[l] X[l]}
     }
     \caption{Table of data alignment parameters.} \\
     \toprule
@@ -118,6 +126,64 @@
     %- else
     None &
     %- endif
+    \\
+    %- endfor
+  \end{longtabu}
+\end{landscape}
+\FloatBarrier
+\clearpage
+%- endmacro
+
+
+%- macro data_validation_table()
+\VAR{data_validation_pre_text() | html_to_tex}
+\VAR{data_validation_post_text() | html_to_tex}
+%- for filter in report.report_parameters.filters
+%- if filter.__class__.__name__ == 'QualityFlagFilter'
+\VAR{validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags)}
+%- endif
+%- endfor
+%- endmacro
+
+
+%- macro validation_table(proc_fxobs_list, quality_filters)
+\FloatBarrier
+\clearpage
+\begin{landscape}
+  \pagestyle{empty}
+  \small
+  \begin{longtabu} to \linewidth {
+      X[2] X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
+    }
+    \caption{Table of data validation results.} \\
+    \toprule
+    \ccbr{Aligned Pair} & \ccbr{Observation}
+    %- for qfilter in quality_filters
+    & \ccbr{\VAR{qfilter}}
+    %- endfor
+    \\
+    \midrule
+    \endfirsthead
+    \caption{Table of data validation results (cont.)} \\
+    \ccbr{Aligned Pair} & \ccbr{Observation}
+    %- for qfilter in quality_filters
+    & \ccbr{\VAR{qfilter}}
+    %- endfor
+    \\
+    \midrule
+    \endhead
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    %- for pfxobs in proc_fxobs_list
+    \VAR{pfxobs.name} & \VAR{pfxobs.original.data_object.name}
+    %- for res in pfxobs.validation_results
+    %- for qfilter in quality_filters
+    %- if res.flag == qfilter
+    & \VAR{res.count}
+    %- endif
+    %- endfor
+    %- endfor
     \\
     %- endfor
   \end{longtabu}

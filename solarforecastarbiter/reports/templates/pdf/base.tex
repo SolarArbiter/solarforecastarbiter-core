@@ -14,6 +14,9 @@
 \usepackage{caption}
 \usepackage{float}
 \captionsetup[table]{skip=10pt}
+
+\newcommand{\ccbr}{\allowbreak\hspace{0pt}}
+
 \begin{document}
 \title{\VAR{report_name}}
 %# \date{\VAR{report.raw_report.generated_at}}
@@ -67,6 +70,8 @@ data are available on the web version of this report available
 \VAR{macros.data_parameters_table()}
 
 \subsection{Data Validation}
+
+\VAR{macros.data_validation_table()}
 
 \subsection{Data Resampling and Alignment}
 
