@@ -188,7 +188,7 @@ def html_to_tex(value):
              .replace('<li>', '\\item ')
              .replace('</li>', '\n')
              .replace('</a>', '')
-    )
+             )
     value = re.sub('\\<a.*\\>', '', value)
     return value
 
