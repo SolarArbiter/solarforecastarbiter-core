@@ -1,0 +1,10 @@
+<p>These intervals were removed from the raw time series before
+resampling and realignment. For more details on the data validation
+results for each observation, please see the observation page linked
+to in the table above.</p>
+<p>Data providers may elect to reupload data to
+fix issues identified by the validation toolkit. The metrics computed
+in this report will remain unchanged, however, a user may generate a
+new report after the data provider submits new data. The online
+version of this report verifies that the data was not modified after
+the metrics were computed.</p>

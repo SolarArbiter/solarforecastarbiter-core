@@ -108,34 +108,10 @@ Plotly.newPlot("scatter-div", scat_plot);
 
 {% block dataresampleandalign %}
 <h3 id="data-alignment">Data Resampling and Alignment</h3>
-<p>The Solar Forecast Arbiter's preprocessing applies the following
-operations to the data:
-
-<ol>
-  <li>Apply the <a href="#data-validation">data validation tests</a> and exclude
-    the matched data.</li>
-  <li>For deterministic forecasts with interval lengths that are longer than
-    the observations interval lengths,
-    <ol>
-      <li>Resample the observations to the forecast using the mean.</li>
-      <li>Remove resampled observation data if more than 10% of the
-        points in the resampled interval are missing. For example, if 1-minute
-        observations are resampled to 60-minute means, then a 60 minute period must
-        have no more than 6 minutes of missing data.</li>
-    </ol>
-  <li>Remove times that do not exist in both the resampled observations,
-    the forecasts, and, if selected, the reference forecasts.
-  </li>
-</ol>
-The table below summarizes the data preprocessing results:
-</p>
+{% include "data_resampling_preamble" %}
 {{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
 <br>
-<p>
-Users may wish to fix the data issues by having new or missing data uploaded.
-The metrics computed in this report will remain unchanged, however, a user may
-generate a new report after the data provider submits new data.
-</p>
+{% include "data_resample_postamble" %}
 {% endblock %}
 
 {% block metrics %}
