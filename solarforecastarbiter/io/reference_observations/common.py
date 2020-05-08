@@ -263,7 +263,7 @@ def update_site_observations(api, fetch_func, site, observations,
         An active Reference user session.
     fetch_func : function
         A function that requests data and returns a DataFrame for a given site.
-        The function should accept the parameters (api, site, start end) as
+        The function should accept the parameters (api, site, start, end) as
         they appear in this function.
     site : solarforecastarbiter.datamodel.Site
         The Site with observations to update.
@@ -290,18 +290,23 @@ def update_site_observations(api, fetch_func, site, observations,
         post_observation_data(api, obs, data_in_range, start, end)
 
 
-def _prepare_data_to_post(data, variable, observation, start, end):
+def _prepare_data_to_post(data, variable, observation, start, end,
+                          resample_how):
     """Manipulate the data including reindexing to observation.interval_label
     to prepare for posting"""
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
+
+    if resample_how:
+        resampler = data.resample(observation.interval_length)
+        data = getattr(resampler, resample_how)()
+
     # remove all future values, some files have forward filled nightly data
     data = data[start:min(end, _utcnow())]
-    # we assume any reference data is given at the proper intervals
-    # and already averaged if appropriate
-    # so just reindex the data to put nans where required
+
     if data.empty:
         return data
+    # reindex the data to put nans where required
     # we don't extend the new index to start, end, since reference
     # data has some lag time from the end it was requested from
     # and it isn't necessary to keep the nans between uploads in db
@@ -345,13 +350,19 @@ def post_observation_data(api, observation, data, start, end):
     # check for a non-standard variable label in extra_parameters
     variable = extra_parameters.get('network_data_label',
                                     observation.variable)
+    # check if the raw observation needs to be resampled before posting
+    resample_how = extra_parameters.get('resample_how', None)
     try:
         var_df = _prepare_data_to_post(data, variable, observation,
-                                       start, end)
+                                       start, end, resample_how)
     except KeyError:
         logger.error(f'{variable} could not be found in the data file '
                      f'from {data.index[0]} to {data.index[-1]}'
                      f'for Observation {observation.name}')
+        return
+    except AttributeError:
+        logger.error(f'{variable} could not be resampled using method '
+                     f'{resample_how} for Observation {observation.name}')
         return
 
     # skip post id data is empty, if there are nans, should still post
