@@ -14,16 +14,25 @@
 %- set human_category = human_categories[category]
 \FloatBarrier
 \clearpage
-\thispagestyle{empty}
 \begin{landscape}
-\begin{table}[h]
-  \centering
-  \caption{Table of \VAR{human_category} metrics.}
+  \pagestyle{empty}
   \small
-  \begin{tabularx}{\linewidth}{ X\BLOCK{for m in metric_ordering} | l\BLOCK{endfor} }
+  \begin{longtabu} to \linewidth {
+      X *{\VAR{metric_ordering | length}}{| l}
+    }
+    \caption{Table of \VAR{human_category} metrics.} \\
     \toprule
     Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m].replace('^', '\\textasciicircum')}\BLOCK{endfor} \\
     \midrule
+    \endfirsthead
+    \caption{Table of \VAR{human_category} metrics (cont.)} \\
+    \toprule
+    Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m].replace('^', '\\textasciicircum')}\BLOCK{endfor} \\
+    \midrule
+    \endhead
+    \endfoot
+    \bottomrule
+    \endlastfoot
     %- for fx_result in report_metrics
     \VAR{fx_result.name}
     %- for metric in metric_ordering
@@ -39,9 +48,7 @@
     %- endfor
     \\
     %- endfor
-    \bottomrule
-  \end{tabularx}
-\end{table}
+  \end{longtabu}
 \end{landscape}
 \clearpage
 \FloatBarrier

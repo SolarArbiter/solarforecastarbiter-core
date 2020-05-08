@@ -70,10 +70,12 @@ data are available on the web version of this report available
 \clearpage
 \begin{landscape}
   \pagestyle{empty}
+  \small
   \begin{longtabu} to \linewidth {
       X[l] X[l] X[l] *{3}{ | X[l] X[l] X[l]}
     }
     \caption{Table of data alignment parameters.} \\
+    \toprule
     \multicolumn{3}{c}{Aligned Pairs} &
     \multicolumn{3}{c}{Observations} &
     \multicolumn{3}{c}{Forecasts} &
@@ -87,6 +89,7 @@ data are available on the web version of this report available
     \caption{Table of data alignment parameters (cont.)} \\
     \endhead
     \endfoot
+    \bottomrule
     \endlastfoot
     %- for pfxobs in report.raw_report.processed_forecasts_observations
     \VAR{pfxobs.name} &
