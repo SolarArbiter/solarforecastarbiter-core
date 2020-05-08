@@ -6,6 +6,10 @@
 %- include 'metrics_meta_table_text'
 %- endmacro
 
+%- macro obsfx_table_text()
+%- include 'obsfx_table_text'
+%- endmacro
+
 %- macro metric_table(report_metrics, category, metric_ordering)
 %- set human_category = human_categories[category]
 \FloatBarrier

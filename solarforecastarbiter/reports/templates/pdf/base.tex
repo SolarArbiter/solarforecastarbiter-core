@@ -1,4 +1,5 @@
 %- set report_name = report.report_parameters.name
+%- set report_url = dash_url + '/reports/' + report.report_id
 %- import 'macros.j2' as macros with context
 \documentclass[12pt,letterpaper]{article}
 \usepackage[letterpaper, margin=1in]{geometry}
@@ -7,10 +8,11 @@
 \usepackage{graphicx}
 \graphicspath{{./figs/}}
 \usepackage{placeins}
-\usepackage{tabularx}
+\usepackage{longtable,tabu,tabularx}
 \usepackage{pdflscape}
 \usepackage{booktabs}
 \usepackage{caption}
+\usepackage{float}
 \captionsetup[table]{skip=10pt}
 \begin{document}
 \title{\VAR{report_name}}
@@ -50,7 +52,69 @@ with the reports or to create a new issue.
 
 \section{Data}
 
+This report includes forecast and observation data available from
+\VAR{report.report_parameters.start} to \VAR{report.report_parameters.end}.
+
 \subsection{Observations and Forecasts}
+
+\VAR{macros.obsfx_table_text() | html_to_tex}
+
+Plots showing the realigned and resampled time series fo the observation and
+forecast data as well as the distribution of forecast vs observation
+data are available on the web version of this report available
+\href{\VAR{report_url}}{here}.
+
+\FloatBarrier
+
+\FloatBarrier
+\clearpage
+\begin{landscape}
+  \pagestyle{empty}
+  \begin{longtabu} to \linewidth {
+      X[l] X[l] X[l] *{3}{ | X[l] X[l] X[l]}
+    }
+    \caption{Table of data alignment parameters.} \\
+    \multicolumn{3}{c}{Aligned Pairs} &
+    \multicolumn{3}{c}{Observations} &
+    \multicolumn{3}{c}{Forecasts} &
+    \multicolumn{3}{c}{Reference Forecasts} \\
+    Name & Interval Label & Interval Length &
+    Name & Interval Label & Interval Length &
+    Name & Interval Label & Interval Length &
+    Name & Interval Label & Interval Length \\
+    \midrule
+    \endfirsthead
+    \caption{Table of data alignment parameters (cont.)} \\
+    \endhead
+    \endfoot
+    \endlastfoot
+    %- for pfxobs in report.raw_report.processed_forecasts_observations
+    \VAR{pfxobs.name} &
+    \VAR{pfxobs.interval_label} &
+    \VAR{pfxobs.interval_length.total_seconds()//60 | int} min &
+    %- if pfxobs.original.observation is defined
+    \href{\VAR{dash_url + '/observations/' + pfxobs.original.observation.observation_id}}{\VAR{pfxobs.original.observation.name}} &
+    %- else
+    \href{\VAR{dash_url + '/aggregates/' + pfxobs.original.aggregate.aggregate_id}}{\VAR{pfxobs.original.aggregate.name}} &
+    %- endif
+    \VAR{pfxobs.original.data_object.interval_label} &
+    \VAR{pfxobs.original.data_object.interval_length.total_seconds()//60 | int} min &
+    \href{\VAR{dash_url + '/forecasts/single/' + pfxobs.original.forecast.forecast_id}}{\VAR{pfxobs.original.forecast.name}} &
+    \VAR{pfxobs.original.forecast.interval_label} &
+    \VAR{pfxobs.original.forecast.interval_length.total_seconds()//60 | int} min &
+    %- if pfxobs.original.reference_forecast != none
+    \href{\VAR{dash_url + '/forecasts/single/' + pfxobs.original.reference_forecast.forecast_id}}{\VAR{pfxobs.original.reference_forecast.name}} &
+    \VAR{pfxobs.original.reference_forecast.interval_label} &
+    \VAR{pfxobs.original.reference_forecast.interval_length.total_seconds()//60 | int} min
+    %- else
+    None &
+    %- endif
+    \\
+    %- endfor
+  \end{longtabu}
+\end{landscape}
+\FloatBarrier
+\clearpage
 
 \subsection{Data Validation}
 
@@ -58,7 +122,7 @@ with the reports or to create a new issue.
 
 \section{Metrics}
 \FloatBarrier
-%- set report_url = dash_url + '/reports/' + report.report_id
+
 \VAR{macros.metrics_meta_table_text() | html_to_tex}
 
 A table of metrics over the entire study period and metric figures are shown below.
@@ -84,7 +148,7 @@ available \href{\VAR{report_url}}{here}.
 %- else
 %- set caption = human_metric + ' by ' + human_category.lower() + ' for ' + rep_fig.name + '.'
 %- endif
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
   \includegraphics[height=0.40\textheight]{\VAR{plot_id}}
   \caption{\VAR{caption}}
@@ -93,13 +157,14 @@ available \href{\VAR{report_url}}{here}.
 %- endfor
 %- endfor
 \FloatBarrier
+\clearpage
 %- endfor
 
 \section{Versions}
 \VAR{macros.version_description() | html_to_tex}
 
 \begin{table}[h]
-  \caption{Table of Package Versions}
+  \caption{Table of package versions}
   \begin{tabular}{ l | l }
     Package & Version \\ \hline
     %- for pkg_ver in report.raw_report.versions
