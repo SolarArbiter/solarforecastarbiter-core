@@ -39,7 +39,7 @@ jobs:
     displayName: 'Install solarforecastarbiter with extras'
 
   - script: |
-      pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+      PATH=/home/vsts/work/node_modules/.bin:$PATH pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
     displayName: 'pytest'
 
   - script: |
