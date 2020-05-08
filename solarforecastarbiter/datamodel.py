@@ -478,7 +478,7 @@ class Observation(BaseModel):
         Variable name, e.g. power, GHI. Each allowed variable has an
         associated pre-defined unit.
     interval_value_type : str
-        The type of the data in the observation. Typically interval mean or
+        The type of the data in the observation. Typically interval_mean or
         instantaneous, but additional types may be defined for events.
     interval_length : pandas.Timedelta
         The length of time between consecutive data points, e.g. 5 minutes,
