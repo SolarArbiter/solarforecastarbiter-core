@@ -180,7 +180,6 @@ def referencedata_init(verbose, user, password, base_url, network, site_file):
     set_log_level(verbose)
     token = cli_access_token(user, password)
     # click checks if path exists
-    breakpoint()
     all_sites = pd.read_csv(site_file, comment='#')
     network_filtered_sites = all_sites[all_sites['network'].isin(network)]
     site_dictionaries = reference_data.site_df_to_dicts(network_filtered_sites)

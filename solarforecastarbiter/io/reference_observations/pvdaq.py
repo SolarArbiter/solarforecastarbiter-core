@@ -38,13 +38,15 @@ def initialize_site_observations(api, site):
         logger.warning('Cannot create reference observations at PVDAQ site '
                        f'{site.name}, missing required parameters.')
         return
-    site_api_id = extra_params['network_api_id']
-    obs_metadata = json.load(DEFAULT_SITEFILE)['observations']
+    site_api_id = int(extra_params['network_api_id'])
+    with open(DEFAULT_SITEFILE) as fp:
+        obs_metadata = json.load(fp)['observations']
     site_obs_metadata = [
         obs for obs in obs_metadata if
-        obs['extra_parameters']['network_api_id'] == site_api_id]
+        obs['site']['extra_parameters']['network_api_id'] == site_api_id]
     for obs in site_obs_metadata:
         obs['site'] = site
+        obs['extra_parameters'] = str(obs['extra_parameters'])
         observation = Observation.from_dict(obs)
         common.check_and_post_observation(api, observation)
 
@@ -66,11 +68,12 @@ def initialize_site_forecasts(api, site):
         logger.warning('Cannot create reference observations at PVDAQ site '
                        f'{site.name}, missing required parameters.')
         return
-    site_api_id = extra_params['network_api_id']
-    obs_metadata = json.load(DEFAULT_SITEFILE)['observations']
+    site_api_id = int(extra_params['network_api_id'])
+    with open(DEFAULT_SITEFILE) as fp:
+        obs_metadata = json.load(fp)['observations']
     obs_vars = [
-        obs.variable for obs in obs_metadata if
-        obs['extra_parameters']['network_api_id'] == site_api_id]
+        obs['variable'] for obs in obs_metadata if
+        obs['site']['extra_parameters']['network_api_id'] == site_api_id]
     common.create_forecasts(
         api, site, obs_vars, default_forecasts.TEMPLATE_FORECASTS)
 
