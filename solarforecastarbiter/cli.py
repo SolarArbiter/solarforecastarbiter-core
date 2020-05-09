@@ -161,7 +161,7 @@ def referencedata():
 
 network_opt = click.option(
     '--network', multiple=True,
-    help="The Networks to act on. Defaults to all.",
+    help="The networks to act on. Defaults to all.",
     default=reference_data.NETWORK_OPTIONS,
     type=click.Choice(reference_data.NETWORK_OPTIONS))
 
@@ -180,6 +180,7 @@ def referencedata_init(verbose, user, password, base_url, network, site_file):
     set_log_level(verbose)
     token = cli_access_token(user, password)
     # click checks if path exists
+    breakpoint()
     all_sites = pd.read_csv(site_file, comment='#')
     network_filtered_sites = all_sites[all_sites['network'].isin(network)]
     site_dictionaries = reference_data.site_df_to_dicts(network_filtered_sites)
