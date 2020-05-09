@@ -8,17 +8,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 4,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SMA",
-                "inverter_model": "1800",
-                "module_mfg": "Sanyo",
-                "module_model": "HIP 200-BA3",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 4, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"1800\", \"module_mfg\": \"Sanyo\", \"module_model\": \"HIP 200-BA3\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "1000",
                 "dc_capacity": "1000",
@@ -38,17 +28,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 10,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SMA",
-                "inverter_model": "<NA>",
-                "module_mfg": "Shell Solar",
-                "module_model": "Eclipse 80",
-                "module_tech": "7"
-            },
+            "extra_parameters": "{\"network_api_id\": 10, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Shell Solar\", \"module_model\": \"Eclipse 80\", \"module_tech\": \"7\"}",
             "modeling_parameters": {
                 "ac_capacity": "1120",
                 "dc_capacity": "1120",
@@ -68,17 +48,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 33,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SMA",
-                "inverter_model": "Sunny Boy 3000US",
-                "module_mfg": "Silicor Materials",
-                "module_model": "240",
-                "module_tech": "9"
-            },
+            "extra_parameters": "{\"network_api_id\": 33, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"Sunny Boy 3000US\", \"module_mfg\": \"Silicor Materials\", \"module_model\": \"240\", \"module_tech\": \"9\"}",
             "modeling_parameters": {
                 "ac_capacity": "2400",
                 "dc_capacity": "2400",
@@ -98,17 +68,7 @@
             "timezone": "Etc/GMT+8",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 34,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "135kW",
-                "module_mfg": "Sharp ",
-                "module_model": "NU-U240F1",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "146640",
                 "dc_capacity": "146640",
@@ -128,17 +88,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 39,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "",
-                "inverter_model": "",
-                "module_mfg": "Mobil",
-                "module_model": "Ra 280-50H",
-                "module_tech": "4"
-            },
+            "extra_parameters": "{\"network_api_id\": 39, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"\", \"inverter_model\": \"\", \"module_mfg\": \"Mobil\", \"module_model\": \"Ra 280-50H\", \"module_tech\": \"4\"}",
             "modeling_parameters": {
                 "ac_capacity": "1400",
                 "dc_capacity": "1400",
@@ -158,17 +108,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 50,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "Fronius",
-                "inverter_model": "IG 4500-LV",
-                "module_mfg": "Siemens",
-                "module_model": "M55 c-SI",
-                "module_tech": "<NA>"
-            },
+            "extra_parameters": "{\"network_api_id\": 50, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-SI\", \"module_tech\": \"<NA>\"}",
             "modeling_parameters": {
                 "ac_capacity": "6000",
                 "dc_capacity": "6000",
@@ -188,17 +128,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 51,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "Fronius",
-                "inverter_model": "IG 4500-LV",
-                "module_mfg": "Siemens",
-                "module_model": "M55 c-Si",
-                "module_tech": "<NA>"
-            },
+            "extra_parameters": "{\"network_api_id\": 51, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-Si\", \"module_tech\": \"<NA>\"}",
             "modeling_parameters": {
                 "ac_capacity": "6000",
                 "dc_capacity": "6000",
@@ -218,17 +148,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 5,
-                "network_api_id": 1199,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "<NA>",
-                "module_model": "<NA>",
-                "module_tech": "2"
-            },
+            "extra_parameters": "{\"network_api_id\": 1199, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"2\"}",
             "modeling_parameters": {
                 "ac_capacity": "52920",
                 "dc_capacity": "52920",
@@ -248,17 +168,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 5,
-                "network_api_id": 1200,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "<NA>",
-                "module_model": "<NA>",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1200, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "51840",
                 "dc_capacity": "51840",
@@ -278,17 +188,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 5,
-                "network_api_id": 1201,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "<NA>",
-                "module_model": "<NA>",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1201, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "140140",
                 "dc_capacity": "140140",
@@ -308,17 +208,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 5,
-                "network_api_id": 1202,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "<NA>",
-                "module_model": "<NA>",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1202, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "51840",
                 "dc_capacity": "51840",
@@ -338,17 +228,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1208,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SMA America",
-                "inverter_model": "Sunny Central 250U",
-                "module_mfg": "SunPower",
-                "module_model": "SPR-315E",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1208, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"SunPower\", \"module_model\": \"SPR-315E\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "524160",
                 "dc_capacity": "524160",
@@ -368,17 +248,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 1232,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "Power Gate 50kW",
-                "module_mfg": "Suntech",
-                "module_model": "STP-270",
-                "module_tech": "2"
-            },
+            "extra_parameters": "{\"network_api_id\": 1232, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"Power Gate 50kW\", \"module_mfg\": \"Suntech\", \"module_model\": \"STP-270\", \"module_tech\": \"2\"}",
             "modeling_parameters": {
                 "ac_capacity": "50490",
                 "dc_capacity": "50490",
@@ -398,17 +268,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 1234,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "Power Gate Plus 500kW; Power Gate Plus 250kW",
-                "module_mfg": "Suntech",
-                "module_model": "STP-275",
-                "module_tech": "2"
-            },
+            "extra_parameters": "{\"network_api_id\": 1234, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"Power Gate Plus 500kW; Power Gate Plus 250kW\", \"module_mfg\": \"Suntech\", \"module_model\": \"STP-275\", \"module_tech\": \"2\"}",
             "modeling_parameters": {
                 "ac_capacity": "889150",
                 "dc_capacity": "889150",
@@ -428,17 +288,7 @@
             "timezone": "Etc/GMT+8",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 1276,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "50kW",
-                "module_mfg": "Sharp ",
-                "module_model": "NU-U240F1",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "68480",
                 "dc_capacity": "68480",
@@ -458,17 +308,7 @@
             "timezone": "Etc/GMT+8",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 1277,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "30kW",
-                "module_mfg": "Sharp ",
-                "module_model": "NU-U240F1",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "40560",
                 "dc_capacity": "40560",
@@ -488,17 +328,7 @@
             "timezone": "Etc/GMT+8",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 15,
-                "network_api_id": 1278,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SatCon Technology",
-                "inverter_model": "(1) 100kW, (1) 50kW",
-                "module_mfg": "Sharp ",
-                "module_model": "NU-U240F1",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "171360",
                 "dc_capacity": "171360",
@@ -518,17 +348,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1283,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "SMA America",
-                "inverter_model": "Sunny Central 250U",
-                "module_mfg": "Solon",
-                "module_model": "Solon Black 230/01",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "408240",
                 "dc_capacity": "408240",
@@ -548,17 +368,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1289,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "<NA>",
-                "module_model": "<NA>",
-                "module_tech": "6"
-            },
+            "extra_parameters": "{\"network_api_id\": 1289, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"6\"}",
             "modeling_parameters": {
                 "ac_capacity": "<NA>",
                 "dc_capacity": "<NA>",
@@ -578,17 +388,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1332,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "Satcon",
-                "inverter_model": "PVS-500(x2), PVS-135(x1)",
-                "module_mfg": "SunPower",
-                "module_model": "318W(x3136), 315W(496)",
-                "module_tech": "1"
-            },
+            "extra_parameters": "{\"network_api_id\": 1332, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Satcon\", \"inverter_model\": \"PVS-500(x2), PVS-135(x1)\", \"module_mfg\": \"SunPower\", \"module_model\": \"318W(x3136), 315W(496)\", \"module_tech\": \"1\"}",
             "modeling_parameters": {
                 "ac_capacity": "1153488",
                 "dc_capacity": "1153488",
@@ -608,17 +408,7 @@
             "timezone": "Etc/GMT+5",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1403,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "Suniva",
-                "module_model": "OPT270-60 BLK-BLK",
-                "module_tech": "<NA>"
-            },
+            "extra_parameters": "{\"network_api_id\": 1403, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
             "modeling_parameters": {
                 "ac_capacity": "6000",
                 "dc_capacity": "6000",
@@ -638,17 +428,7 @@
             "timezone": "Etc/GMT+8",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1423,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "<NA>",
-                "inverter_model": "<NA>",
-                "module_mfg": "Suniva",
-                "module_model": "OPT270-60 BLK-BLK",
-                "module_tech": "<NA>"
-            },
+            "extra_parameters": "{\"network_api_id\": 1423, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
             "modeling_parameters": {
                 "ac_capacity": "6000",
                 "dc_capacity": "6000",
@@ -668,17 +448,7 @@
             "timezone": "Etc/GMT+7",
             "site_id": "",
             "provider": "",
-            "extra_parameters": {
-                "interval_length": 1,
-                "network_api_id": 1426,
-                "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                "network": "PVDAQ",
-                "inverter_mfg": "ABB",
-                "inverter_model": "PVI 3k",
-                "module_mfg": "Suniva",
-                "module_model": "OPT270-60 BLK-BLK",
-                "module_tech": "<NA>"
-            },
+            "extra_parameters": "{\"network_api_id\": 1426, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"ABB\", \"inverter_model\": \"PVI 3k\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
             "modeling_parameters": {
                 "ac_capacity": "2700",
                 "dc_capacity": "2700",
@@ -706,17 +476,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 4,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "1800",
-                    "module_mfg": "Sanyo",
-                    "module_model": "HIP 200-BA3",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 4, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"1800\", \"module_mfg\": \"Sanyo\", \"module_model\": \"HIP 200-BA3\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1000",
                     "dc_capacity": "1000",
@@ -731,10 +491,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #1 dc_power",
@@ -750,17 +507,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 4,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "1800",
-                    "module_mfg": "Sanyo",
-                    "module_model": "HIP 200-BA3",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 4, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"1800\", \"module_mfg\": \"Sanyo\", \"module_model\": \"HIP 200-BA3\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1000",
                     "dc_capacity": "1000",
@@ -775,10 +522,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #1 ambient_temp",
@@ -794,17 +538,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 4,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "1800",
-                    "module_mfg": "Sanyo",
-                    "module_model": "HIP 200-BA3",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 4, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"1800\", \"module_mfg\": \"Sanyo\", \"module_model\": \"HIP 200-BA3\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1000",
                     "dc_capacity": "1000",
@@ -819,10 +553,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #1 poa_irradiance",
@@ -838,17 +569,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 4,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "1800",
-                    "module_mfg": "Sanyo",
-                    "module_model": "HIP 200-BA3",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 4, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"1800\", \"module_mfg\": \"Sanyo\", \"module_model\": \"HIP 200-BA3\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1000",
                     "dc_capacity": "1000",
@@ -863,10 +584,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIS #1 ac_power",
@@ -882,17 +600,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 10,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Shell Solar",
-                    "module_model": "Eclipse 80",
-                    "module_tech": "7"
-                },
+                "extra_parameters": "{\"network_api_id\": 10, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Shell Solar\", \"module_model\": \"Eclipse 80\", \"module_tech\": \"7\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1120",
                     "dc_capacity": "1120",
@@ -907,10 +615,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIS #1 dc_power",
@@ -926,17 +631,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 10,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Shell Solar",
-                    "module_model": "Eclipse 80",
-                    "module_tech": "7"
-                },
+                "extra_parameters": "{\"network_api_id\": 10, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Shell Solar\", \"module_model\": \"Eclipse 80\", \"module_tech\": \"7\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1120",
                     "dc_capacity": "1120",
@@ -951,10 +646,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIS #1 ambient_temp",
@@ -970,17 +662,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 10,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Shell Solar",
-                    "module_model": "Eclipse 80",
-                    "module_tech": "7"
-                },
+                "extra_parameters": "{\"network_api_id\": 10, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Shell Solar\", \"module_model\": \"Eclipse 80\", \"module_tech\": \"7\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1120",
                     "dc_capacity": "1120",
@@ -995,10 +677,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIS #1 poa_irradiance",
@@ -1014,17 +693,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 10,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Shell Solar",
-                    "module_model": "Eclipse 80",
-                    "module_tech": "7"
-                },
+                "extra_parameters": "{\"network_api_id\": 10, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Shell Solar\", \"module_model\": \"Eclipse 80\", \"module_tech\": \"7\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1120",
                     "dc_capacity": "1120",
@@ -1039,10 +708,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Silicor Materials ac_power",
@@ -1058,17 +724,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 33,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "Sunny Boy 3000US",
-                    "module_mfg": "Silicor Materials",
-                    "module_model": "240",
-                    "module_tech": "9"
-                },
+                "extra_parameters": "{\"network_api_id\": 33, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"Sunny Boy 3000US\", \"module_mfg\": \"Silicor Materials\", \"module_model\": \"240\", \"module_tech\": \"9\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2400",
                     "dc_capacity": "2400",
@@ -1083,10 +739,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Silicor Materials dc_power",
@@ -1102,17 +755,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 33,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "Sunny Boy 3000US",
-                    "module_mfg": "Silicor Materials",
-                    "module_model": "240",
-                    "module_tech": "9"
-                },
+                "extra_parameters": "{\"network_api_id\": 33, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"Sunny Boy 3000US\", \"module_mfg\": \"Silicor Materials\", \"module_model\": \"240\", \"module_tech\": \"9\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2400",
                     "dc_capacity": "2400",
@@ -1127,10 +770,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Silicor Materials ambient_temp",
@@ -1146,17 +786,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 33,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "Sunny Boy 3000US",
-                    "module_mfg": "Silicor Materials",
-                    "module_model": "240",
-                    "module_tech": "9"
-                },
+                "extra_parameters": "{\"network_api_id\": 33, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"Sunny Boy 3000US\", \"module_mfg\": \"Silicor Materials\", \"module_model\": \"240\", \"module_tech\": \"9\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2400",
                     "dc_capacity": "2400",
@@ -1171,10 +801,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Silicor Materials poa_irradiance",
@@ -1190,17 +817,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 33,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA",
-                    "inverter_model": "Sunny Boy 3000US",
-                    "module_mfg": "Silicor Materials",
-                    "module_model": "240",
-                    "module_tech": "9"
-                },
+                "extra_parameters": "{\"network_api_id\": 33, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA\", \"inverter_model\": \"Sunny Boy 3000US\", \"module_mfg\": \"Silicor Materials\", \"module_model\": \"240\", \"module_tech\": \"9\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2400",
                     "dc_capacity": "2400",
@@ -1215,10 +832,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building A ac_power",
@@ -1234,17 +848,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 34,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "135kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "146640",
                     "dc_capacity": "146640",
@@ -1259,10 +863,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building A dc_power",
@@ -1278,17 +879,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 34,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "135kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "146640",
                     "dc_capacity": "146640",
@@ -1303,10 +894,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building A ambient_temp",
@@ -1322,17 +910,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 34,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "135kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "146640",
                     "dc_capacity": "146640",
@@ -1347,10 +925,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building A poa_irradiance",
@@ -1366,17 +941,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 34,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "135kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "146640",
                     "dc_capacity": "146640",
@@ -1391,10 +956,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building A wind_speed",
@@ -1410,17 +972,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 34,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "135kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 34, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"135kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "146640",
                     "dc_capacity": "146640",
@@ -1435,10 +987,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "wind_speed",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Ribbon Si #1c ac_power",
@@ -1454,17 +1003,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 39,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "",
-                    "inverter_model": "",
-                    "module_mfg": "Mobil",
-                    "module_model": "Ra 280-50H",
-                    "module_tech": "4"
-                },
+                "extra_parameters": "{\"network_api_id\": 39, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"\", \"inverter_model\": \"\", \"module_mfg\": \"Mobil\", \"module_model\": \"Ra 280-50H\", \"module_tech\": \"4\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1400",
                     "dc_capacity": "1400",
@@ -1479,10 +1018,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Ribbon Si #1c dc_power",
@@ -1498,17 +1034,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 39,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "",
-                    "inverter_model": "",
-                    "module_mfg": "Mobil",
-                    "module_model": "Ra 280-50H",
-                    "module_tech": "4"
-                },
+                "extra_parameters": "{\"network_api_id\": 39, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"\", \"inverter_model\": \"\", \"module_mfg\": \"Mobil\", \"module_model\": \"Ra 280-50H\", \"module_tech\": \"4\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1400",
                     "dc_capacity": "1400",
@@ -1523,10 +1049,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Ribbon Si #1c ambient_temp",
@@ -1542,17 +1065,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 39,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "",
-                    "inverter_model": "",
-                    "module_mfg": "Mobil",
-                    "module_model": "Ra 280-50H",
-                    "module_tech": "4"
-                },
+                "extra_parameters": "{\"network_api_id\": 39, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"\", \"inverter_model\": \"\", \"module_mfg\": \"Mobil\", \"module_model\": \"Ra 280-50H\", \"module_tech\": \"4\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1400",
                     "dc_capacity": "1400",
@@ -1567,10 +1080,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Ribbon Si #1c poa_irradiance",
@@ -1586,17 +1096,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 39,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "",
-                    "inverter_model": "",
-                    "module_mfg": "Mobil",
-                    "module_model": "Ra 280-50H",
-                    "module_tech": "4"
-                },
+                "extra_parameters": "{\"network_api_id\": 39, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"\", \"inverter_model\": \"\", \"module_mfg\": \"Mobil\", \"module_model\": \"Ra 280-50H\", \"module_tech\": \"4\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1400",
                     "dc_capacity": "1400",
@@ -1611,10 +1111,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #6 ac_power",
@@ -1630,17 +1127,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 50,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-SI",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 50, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-SI\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1655,10 +1142,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #6 dc_power",
@@ -1674,17 +1158,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 50,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-SI",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 50, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-SI\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1699,10 +1173,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #6 ambient_temp",
@@ -1718,17 +1189,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 50,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-SI",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 50, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-SI\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1743,10 +1204,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #7 ac_power",
@@ -1762,17 +1220,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 51,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-Si",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 51, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-Si\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1787,10 +1235,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #7 dc_power",
@@ -1806,17 +1251,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 51,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-Si",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 51, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-Si\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1831,10 +1266,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #7 ambient_temp",
@@ -1850,17 +1282,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 51,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-Si",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 51, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-Si\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1875,10 +1297,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL x-Si #7 poa_irradiance",
@@ -1894,17 +1313,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 51,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Fronius",
-                    "inverter_model": "IG 4500-LV",
-                    "module_mfg": "Siemens",
-                    "module_model": "M55 c-Si",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 51, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Fronius\", \"inverter_model\": \"IG 4500-LV\", \"module_mfg\": \"Siemens\", \"module_model\": \"M55 c-Si\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -1919,10 +1328,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - Hunt Valley inv1_ac_power",
@@ -1938,17 +1344,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1199,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "2"
-                },
+                "extra_parameters": "{\"network_api_id\": 1199, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"2\"}",
                 "modeling_parameters": {
                     "ac_capacity": "52920",
                     "dc_capacity": "52920",
@@ -1963,10 +1359,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "inv1_ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"inv1_ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1199, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - Hunt Valley inv1_dc_power",
@@ -1982,17 +1375,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1199,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "2"
-                },
+                "extra_parameters": "{\"network_api_id\": 1199, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"2\"}",
                 "modeling_parameters": {
                     "ac_capacity": "52920",
                     "dc_capacity": "52920",
@@ -2007,10 +1390,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "inv1_dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"inv1_dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1199, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - BWI Hilton ac_power",
@@ -2026,17 +1406,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1200,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1200, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "51840",
                     "dc_capacity": "51840",
@@ -2051,10 +1421,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1200, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - 5 Executive Campus ac_power",
@@ -2070,17 +1437,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1201,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1201, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "140140",
                     "dc_capacity": "140140",
@@ -2095,10 +1452,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1201, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - 5 Executive Campus dc_power",
@@ -2114,17 +1468,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1201,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1201, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "140140",
                     "dc_capacity": "140140",
@@ -2139,10 +1483,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1201, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "Distributed Sun - 6 Executive Campus ac_power_metered",
@@ -2158,17 +1499,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 5,
-                    "network_api_id": 1202,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1202, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "51840",
                     "dc_capacity": "51840",
@@ -2183,10 +1514,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power_metered",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power_metered\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1202, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Visitor Parking Structure ac_power",
@@ -2202,17 +1530,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1208,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "SunPower",
-                    "module_model": "SPR-315E",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1208, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"SunPower\", \"module_model\": \"SPR-315E\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "524160",
                     "dc_capacity": "524160",
@@ -2227,10 +1545,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1208, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL Visitor Parking Structure dc_power",
@@ -2246,17 +1561,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1208,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "SunPower",
-                    "module_model": "SPR-315E",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1208, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"SunPower\", \"module_model\": \"SPR-315E\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "524160",
                     "dc_capacity": "524160",
@@ -2271,10 +1576,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1208, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "Integrator #2 - Site A ac_power",
@@ -2290,17 +1592,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1232,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "Power Gate 50kW",
-                    "module_mfg": "Suntech",
-                    "module_model": "STP-270",
-                    "module_tech": "2"
-                },
+                "extra_parameters": "{\"network_api_id\": 1232, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"Power Gate 50kW\", \"module_mfg\": \"Suntech\", \"module_model\": \"STP-270\", \"module_tech\": \"2\"}",
                 "modeling_parameters": {
                     "ac_capacity": "50490",
                     "dc_capacity": "50490",
@@ -2315,10 +1607,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1232, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Integrator #2 - Site C ac_power_metered_A",
@@ -2334,17 +1623,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1234,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "Power Gate Plus 500kW; Power Gate Plus 250kW",
-                    "module_mfg": "Suntech",
-                    "module_model": "STP-275",
-                    "module_tech": "2"
-                },
+                "extra_parameters": "{\"network_api_id\": 1234, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"Power Gate Plus 500kW; Power Gate Plus 250kW\", \"module_mfg\": \"Suntech\", \"module_model\": \"STP-275\", \"module_tech\": \"2\"}",
                 "modeling_parameters": {
                     "ac_capacity": "889150",
                     "dc_capacity": "889150",
@@ -2359,10 +1638,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power_metered_A",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power_metered_A\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1234, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building B ac_power",
@@ -2378,17 +1654,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1276,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "68480",
                     "dc_capacity": "68480",
@@ -2403,10 +1669,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building B dc_power",
@@ -2422,17 +1685,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1276,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "68480",
                     "dc_capacity": "68480",
@@ -2447,10 +1700,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building B ambient_temp",
@@ -2466,17 +1716,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1276,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "68480",
                     "dc_capacity": "68480",
@@ -2491,10 +1731,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building B poa_irradiance",
@@ -2510,17 +1747,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1276,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "68480",
                     "dc_capacity": "68480",
@@ -2535,10 +1762,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building B wind_speed",
@@ -2554,17 +1778,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1276,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1276, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "68480",
                     "dc_capacity": "68480",
@@ -2579,10 +1793,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "wind_speed",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building C ac_power",
@@ -2598,17 +1809,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1277,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "30kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "40560",
                     "dc_capacity": "40560",
@@ -2623,10 +1824,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building C dc_power",
@@ -2642,17 +1840,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1277,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "30kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "40560",
                     "dc_capacity": "40560",
@@ -2667,10 +1855,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building C ambient_temp",
@@ -2686,17 +1871,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1277,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "30kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "40560",
                     "dc_capacity": "40560",
@@ -2711,10 +1886,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building C poa_irradiance",
@@ -2730,17 +1902,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1277,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "30kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "40560",
                     "dc_capacity": "40560",
@@ -2755,10 +1917,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building C wind_speed",
@@ -2774,17 +1933,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1277,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "30kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1277, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"30kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "40560",
                     "dc_capacity": "40560",
@@ -2799,10 +1948,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "wind_speed",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building D inv1_ac_power",
@@ -2818,17 +1964,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1278,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "(1) 100kW, (1) 50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "171360",
                     "dc_capacity": "171360",
@@ -2843,10 +1979,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "inv1_ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"inv1_ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building D inv1_dc_power",
@@ -2862,17 +1995,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1278,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "(1) 100kW, (1) 50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "171360",
                     "dc_capacity": "171360",
@@ -2887,10 +2010,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "inv1_dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"inv1_dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building D ambient_temp",
@@ -2906,17 +2026,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1278,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "(1) 100kW, (1) 50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "171360",
                     "dc_capacity": "171360",
@@ -2931,10 +2041,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building D poa_irradiance",
@@ -2950,17 +2057,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1278,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "(1) 100kW, (1) 50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "171360",
                     "dc_capacity": "171360",
@@ -2975,10 +2072,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "Andre Agassi Preparatory Academy - Building D wind_speed",
@@ -2994,17 +2088,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 15,
-                    "network_api_id": 1278,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SatCon Technology",
-                    "inverter_model": "(1) 100kW, (1) 50kW",
-                    "module_mfg": "Sharp ",
-                    "module_model": "NU-U240F1",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1278, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"inverter_mfg\": \"SatCon Technology\", \"inverter_model\": \"(1) 100kW, (1) 50kW\", \"module_mfg\": \"Sharp \", \"module_model\": \"NU-U240F1\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "171360",
                     "dc_capacity": "171360",
@@ -3019,10 +2103,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "wind_speed",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Research Support Facility II poa_irradiance",
@@ -3038,17 +2119,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1283,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "Solon",
-                    "module_model": "Solon Black 230/01",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "408240",
                     "dc_capacity": "408240",
@@ -3063,10 +2134,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL Research Support Facility II ac_power",
@@ -3082,17 +2150,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1283,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "Solon",
-                    "module_model": "Solon Black 230/01",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "408240",
                     "dc_capacity": "408240",
@@ -3107,10 +2165,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL Research Support Facility II ambient_temp",
@@ -3126,17 +2181,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1283,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "Solon",
-                    "module_model": "Solon Black 230/01",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "408240",
                     "dc_capacity": "408240",
@@ -3151,10 +2196,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL Research Support Facility II dc_power",
@@ -3170,17 +2212,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1283,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "Solon",
-                    "module_model": "Solon Black 230/01",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "408240",
                     "dc_capacity": "408240",
@@ -3195,10 +2227,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL Research Support Facility II wind_speed",
@@ -3214,17 +2243,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1283,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "SMA America",
-                    "inverter_model": "Sunny Central 250U",
-                    "module_mfg": "Solon",
-                    "module_model": "Solon Black 230/01",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1283, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"SMA America\", \"inverter_model\": \"Sunny Central 250U\", \"module_mfg\": \"Solon\", \"module_model\": \"Solon Black 230/01\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "408240",
                     "dc_capacity": "408240",
@@ -3239,10 +2258,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "wind_speed",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "NREL CIGS#12 ac_power",
@@ -3258,17 +2274,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1289,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "6"
-                },
+                "extra_parameters": "{\"network_api_id\": 1289, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"6\"}",
                 "modeling_parameters": {
                     "ac_capacity": "<NA>",
                     "dc_capacity": "<NA>",
@@ -3283,10 +2289,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIGS#12 dc_power",
@@ -3302,17 +2305,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1289,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "6"
-                },
+                "extra_parameters": "{\"network_api_id\": 1289, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"6\"}",
                 "modeling_parameters": {
                     "ac_capacity": "<NA>",
                     "dc_capacity": "<NA>",
@@ -3327,10 +2320,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIGS#12 ambient_temp",
@@ -3346,17 +2336,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1289,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "6"
-                },
+                "extra_parameters": "{\"network_api_id\": 1289, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"6\"}",
                 "modeling_parameters": {
                     "ac_capacity": "<NA>",
                     "dc_capacity": "<NA>",
@@ -3371,10 +2351,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL CIGS#12 poa_irradiance",
@@ -3390,17 +2367,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1289,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "<NA>",
-                    "module_model": "<NA>",
-                    "module_tech": "6"
-                },
+                "extra_parameters": "{\"network_api_id\": 1289, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"<NA>\", \"module_model\": \"<NA>\", \"module_tech\": \"6\"}",
                 "modeling_parameters": {
                     "ac_capacity": "<NA>",
                     "dc_capacity": "<NA>",
@@ -3415,10 +2382,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "NREL Parking Garage ac_power_metered",
@@ -3434,17 +2398,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1332,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "Satcon",
-                    "inverter_model": "PVS-500(x2), PVS-135(x1)",
-                    "module_mfg": "SunPower",
-                    "module_model": "318W(x3136), 315W(496)",
-                    "module_tech": "1"
-                },
+                "extra_parameters": "{\"network_api_id\": 1332, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"Satcon\", \"inverter_model\": \"PVS-500(x2), PVS-135(x1)\", \"module_mfg\": \"SunPower\", \"module_model\": \"318W(x3136), 315W(496)\", \"module_tech\": \"1\"}",
                 "modeling_parameters": {
                     "ac_capacity": "1153488",
                     "dc_capacity": "1153488",
@@ -3459,10 +2413,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power_metered",
-                "resample_how": "mean"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power_metered\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1332, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
             "name": "RTC,FSEC,Baseline ac_power",
@@ -3478,17 +2429,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1403,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1403, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3503,10 +2444,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,FSEC,Baseline ambient_temp",
@@ -3522,17 +2460,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1403,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1403, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3547,10 +2475,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,FSEC,Baseline dc_power",
@@ -3566,17 +2491,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1403,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1403, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3591,10 +2506,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,FSEC,Baseline poa_irradiance",
@@ -3610,17 +2522,7 @@
                 "timezone": "Etc/GMT+5",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1403,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1403, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3635,10 +2537,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NV,Baseline ac_power",
@@ -3654,17 +2553,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1423,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1423, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3679,10 +2568,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ac_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NV,Baseline ambient_temp",
@@ -3698,17 +2584,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1423,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1423, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3723,10 +2599,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temp",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NV,Baseline dc_power",
@@ -3742,17 +2615,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1423,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1423, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3767,10 +2630,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NV,Baseline poa_irradiance",
@@ -3786,17 +2646,7 @@
                 "timezone": "Etc/GMT+8",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1423,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "<NA>",
-                    "inverter_model": "<NA>",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1423, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"<NA>\", \"inverter_model\": \"<NA>\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "6000",
                     "dc_capacity": "6000",
@@ -3811,10 +2661,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NREL,Baseline AC_PowerA",
@@ -3830,17 +2677,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1426,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "ABB",
-                    "inverter_model": "PVI 3k",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1426, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"ABB\", \"inverter_model\": \"PVI 3k\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2700",
                     "dc_capacity": "2700",
@@ -3855,10 +2692,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "AC_PowerA",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"AC_PowerA\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NREL,Baseline ambient_temperature",
@@ -3874,17 +2708,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1426,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "ABB",
-                    "inverter_model": "PVI 3k",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1426, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"ABB\", \"inverter_model\": \"PVI 3k\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2700",
                     "dc_capacity": "2700",
@@ -3899,10 +2723,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "ambient_temperature",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"ambient_temperature\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NREL,Baseline dc_power",
@@ -3918,17 +2739,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1426,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "ABB",
-                    "inverter_model": "PVI 3k",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1426, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"ABB\", \"inverter_model\": \"PVI 3k\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2700",
                     "dc_capacity": "2700",
@@ -3943,10 +2754,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "dc_power",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
             "name": "RTC,NREL,Baseline poa_irradiance",
@@ -3962,17 +2770,7 @@
                 "timezone": "Etc/GMT+7",
                 "site_id": "",
                 "provider": "",
-                "extra_parameters": {
-                    "interval_length": 1,
-                    "network_api_id": 1426,
-                    "attribution": "https://developer.nrel.gov/docs/solar/pvdaq-v3/",
-                    "network": "PVDAQ",
-                    "inverter_mfg": "ABB",
-                    "inverter_model": "PVI 3k",
-                    "module_mfg": "Suniva",
-                    "module_model": "OPT270-60 BLK-BLK",
-                    "module_tech": "<NA>"
-                },
+                "extra_parameters": "{\"network_api_id\": 1426, \"attribution\": \"https://developer.nrel.gov/docs/solar/pvdaq-v3/\", \"network\": \"NREL PVDAQ\", \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"inverter_mfg\": \"ABB\", \"inverter_model\": \"PVI 3k\", \"module_mfg\": \"Suniva\", \"module_model\": \"OPT270-60 BLK-BLK\", \"module_tech\": \"<NA>\"}",
                 "modeling_parameters": {
                     "ac_capacity": "2700",
                     "dc_capacity": "2700",
@@ -3987,10 +2785,7 @@
             "uncertainty": 0,
             "observation_id": "",
             "provider": "",
-            "extra_parameters": {
-                "network_data_label": "poa_irradiance",
-                "resample_how": "first"
-            }
+            "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         }
     ]
 }

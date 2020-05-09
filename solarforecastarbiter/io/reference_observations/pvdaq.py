@@ -1,5 +1,7 @@
+from functools import partial
 import json
 import logging
+import os
 from pkg_resources import resource_filename, Requirement
 
 
@@ -41,14 +43,13 @@ def initialize_site_observations(api, site):
     site_api_id = int(extra_params['network_api_id'])
     with open(DEFAULT_SITEFILE) as fp:
         obs_metadata = json.load(fp)['observations']
-    site_obs_metadata = [
-        obs for obs in obs_metadata if
-        obs['site']['extra_parameters']['network_api_id'] == site_api_id]
-    for obs in site_obs_metadata:
-        obs['site'] = site
-        obs['extra_parameters'] = str(obs['extra_parameters'])
-        observation = Observation.from_dict(obs)
-        common.check_and_post_observation(api, observation)
+
+    for obs in obs_metadata:
+        obs_extra_params = json.loads(obs['extra_parameters'])
+        if obs_extra_params['network_api_id'] == site_api_id:
+            obs['site'] = site
+            observation = Observation.from_dict(obs)
+            common.check_and_post_observation(api, observation)
 
 
 def initialize_site_forecasts(api, site):
@@ -71,14 +72,18 @@ def initialize_site_forecasts(api, site):
     site_api_id = int(extra_params['network_api_id'])
     with open(DEFAULT_SITEFILE) as fp:
         obs_metadata = json.load(fp)['observations']
-    obs_vars = [
-        obs['variable'] for obs in obs_metadata if
-        obs['site']['extra_parameters']['network_api_id'] == site_api_id]
+
+    obs_vars = []
+    for obs in obs_metadata:
+        obs_extra_params = json.loads(obs['extra_parameters'])
+        if obs_extra_params['network_api_id'] == site_api_id:
+            obs_vars.append(obs['variable'])
+
     common.create_forecasts(
         api, site, obs_vars, default_forecasts.TEMPLATE_FORECASTS)
 
 
-def fetch(api, site, start, end):
+def fetch(api, site, start, end, *, nrel_pvdaq_api_key):
     """Retrieve observation data for a PVDAQ site between start and end.
 
     Parameters
@@ -104,7 +109,8 @@ def fetch(api, site, start, end):
     try:
         years = list(range(start.year, end.year + 1))
         obs_df = pvdaq.get_pvdaq_data(
-            site_extra_params['network_api_id'], years)
+            site_extra_params['network_api_id'], years,
+            api_key=nrel_pvdaq_api_key)
     except Exception:
         # Not yet sure what kind of errors we might hit in production
         logger.warning(f'Could not retrieve data for site {site.name}'
@@ -124,12 +130,19 @@ def update_observation_data(api, sites, observations, start, end):
         An active Reference user session.
     sites: list
         List of all reference sites as Objects
+    observations: list of solarforecastarbiter.datamodel.Observation
+        List of all reference observations.
     start : datetime
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
     """
-    pvdaq_sites = common.filter_by_networks(sites, ['PVDAQ'])
+    nrel_pvdaq_api_key = os.getenv('NREL_PVDAQ_API_KEY')
+    if nrel_pvdaq_api_key is None:
+        raise KeyError('"NREL_PVDAQ_API_KEY" environment variable must be '
+                       'set to update PVDAQ observation data.')
+    pvdaq_sites = common.filter_by_networks(sites, ['NREL PVDAQ'])
     for site in pvdaq_sites:
         common.update_site_observations(
-            api, fetch, site, observations, start, end)
+            api, partial(fetch, nrel_pvdaq_api_key=nrel_pvdaq_api_key),
+            site, observations, start, end)
