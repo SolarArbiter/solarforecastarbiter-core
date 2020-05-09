@@ -2,6 +2,7 @@
 Functions to make all of the metrics figures for Solar Forecast Arbiter reports
 using Plotly.
 """
+import base64
 import calendar
 import datetime as dt
 from itertools import cycle
@@ -761,6 +762,39 @@ def output_svg(fig):
     return svg
 
 
+def output_pdf(fig):
+    """
+    Generates an PDF from the Plotly figure. Errors in the process are logged
+    and an PDF with error text is returned.
+
+    Parameters
+    ----------
+    fig : plotly.graph_objects.Figure
+
+    Returns
+    -------
+    pdf : str
+       An ASCII-85 encoded PDF
+
+    Notes
+    -----
+    Requires `Orca <https://plot.ly/python/orca-management/>`_ for generating
+    pdfs. If orca is not installed, an pdf with an error message will be
+    returned.
+    """
+    try:
+        pdf = base64.a85encode(fig.to_image(format='pdf')).decode('utf-8')
+    except Exception:
+        try:
+            name = fig.layout.title['text'][3:-4]
+        except Exception:
+            name = 'unnamed'
+        logger.error('Could not generate PDF for figure %s', name)
+        # should have same text as fail SVG
+        pdf = ',u@!!/MSk8$73+IY58P_+>=pV@VQ644<Q:NASu.&BHT/T0Ha7#+<Vd[7VQ[\\ATAnH7VlLTAOL*>De*Dd5!B<pFE1r$D$kNX1K6%.6<uqiV.X\\GOIXKoa;)c"!&3^A=pehYA92j5ARTE_ASu$s@VQ6-+>=pV@VQ5m+<WEu$>"*cDdmGg1E\\@oDdmGg4?Ns74pkk=A8bpl$8N_X+E(_($9UEn03!49AKWX&@:s-o,p4oL+<Vd[:gnBUDKI!U+>=p9$6UH6026"gBjj>HGT^350H`%l0J5:A+>>E,2\'?03+<Vd[6Z6jaASuU2+>b2p+ArOh+<W=-Ec6)>+?Van+<VdL+<W=:H#R=;01U&$F`7[1+<VdL+>6Y902ut#DKBc*Eb0,uGmYZ:+<VdL01d:.Eckq#+<VdL+<W=);]m_]AThctAPu#b$6UH65!B;r+<W=8ATMd4Ear[%+>Y,o+ArP14pkk=A8bpl$8EYW+E(_($9UEn03!49AKWX&@:s.m$6UH602$"iF!+[01*A7n;BT6P+<Vd[6Z7*bF<E:F5!B<bDIdZpC\'ljA0Hb:CC\'m\'c+>6Q3De+!#ATAnA@ps(lD]gbe0fCX<+=LoFFDu:^0/$gDBl\\-)Ea`p#Bk)3:DfTJ>.1.1?+>6*&ART[pDf.sOFCcRC6om(W1,(C>0K1^?0ebFC/MK+20JFp_5!B<bDIdZpC\'lmB0Hb:CC\'m\'c+>6]>E+L.F6Xb(FCi<qn+<Vd[:gn!JF!*1[0Ha7#5!B<bDIdZpC\'o3+AS)9\'+?0]^0JG170JG170H`822)@*4AfqF70JG170JG:B0d&/(0JG1\'DBK9?0JG170JG4>0d&/(0JG1\'DBK9?0JG170JG4<0H`&\'0JG1\'DBK9?0JG170JG182\'=S,0JG1\'DBK9?0JG170JG493?U"00JG1\'DBK9?0JG170JG=?2BX\\-0JG1\'DBK9?0JG170JG@B1*A8)0JG1\'DBK:.Ea`ZuATA,?4<Q:UBmO>53!pcN+>6W2Dfd*\\+>=p9$6UH601g%nD]gq\\0Ha7#5!B<pFCB33G]IA-$8sUq$7-ue:IYZ'  # NOQA
+    return pdf
+
+
 def raw_report_plots(report, metrics):
     """Create a RawReportPlots object from the metrics of a report.
 
@@ -791,10 +825,10 @@ def raw_report_plots(report, metrics):
     for k, v in figure_dict.items():
         cat, met, name = k.split('::', 2)
         figure_spec = v.to_json()
-        svg = output_svg(v)
+        pdf = output_pdf(v)
         mplots.append(datamodel.PlotlyReportFigure(
             name=name, category=cat, metric=met, spec=figure_spec,
-            svg=svg, figure_type='bar'))
+            pdf=pdf, figure_type='bar'))
 
     out = datamodel.RawReportPlots(tuple(mplots), plotly_version)
     return out

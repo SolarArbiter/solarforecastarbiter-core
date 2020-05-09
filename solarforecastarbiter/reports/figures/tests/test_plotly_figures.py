@@ -1,3 +1,4 @@
+import base64
 import shutil
 
 
@@ -164,11 +165,29 @@ def test_output_svg_with_plotly_figure(mocker):
         'solarforecastarbiter.reports.figures.plotly_figures.logger')
     if shutil.which('orca') is None:  # pragma: no cover
         pytest.skip('orca must be on PATH to make SVGs')
+    if shutil.which('xvfb-run') is None:  # pragma: no cover
+        pytest.skip('xvfb-run must be on PATH to make SVGs')
     values = list(range(5))
     fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
     svg = figures.output_svg(fig)
     assert svg.startswith('<svg')
     assert svg.endswith('</svg>')
+    assert not logger.error.called
+
+
+def test_output_pdf_with_plotly_figure(mocker):
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.plotly_figures.logger')
+    if shutil.which('orca') is None:  # pragma: no cover
+        pytest.skip('orca must be on PATH to make PDFs')
+    if shutil.which('xvfb-run') is None:  # pragma: no cover
+        pytest.skip('xvfb-run must be on PATH to make PDFs')
+    values = list(range(5))
+    fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
+    pdf = figures.output_pdf(fig)
+    pdf_bytes = base64.a85decode(pdf)
+    assert pdf_bytes.startswith(b'%PDF-')
+    assert pdf_bytes.rstrip(b'\n').endswith(b'%%EOF')
     assert not logger.error.called
 
 
@@ -187,6 +206,18 @@ def test_output_svg_with_plotly_figure_no_orca(mocker, remove_orca):
     assert svg.startswith('<svg')
     assert 'Unable' in svg
     assert svg.endswith('</svg>')
+    assert logger.error.called
+
+
+def test_output_pdf_with_plotly_figure_no_orca(mocker, remove_orca):
+    logger = mocker.patch(
+        'solarforecastarbiter.reports.figures.plotly_figures.logger')
+    values = list(range(5))
+    fig = graph_objects.Figure(data=graph_objects.Scatter(x=values, y=values))
+    pdf = figures.output_pdf(fig)
+    pdf_bytes = base64.a85decode(pdf)
+    assert pdf_bytes.startswith(b'%PDF-')
+    assert pdf_bytes.rstrip(b'\n').endswith(b'%%EOF')
     assert logger.error.called
 
 

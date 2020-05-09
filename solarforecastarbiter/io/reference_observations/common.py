@@ -288,7 +288,8 @@ def update_site_observations(api, fetch_func, site, observations,
         start = get_last_site_timestamp(api, site_observations, end)
     logger.debug('Fetching data for %s from %s to %s', site.name, start, end)
     obs_df = fetch_func(api, site, start, end)
-    data_in_range = obs_df[start:end]
+    # must be sorted for proper inexact start:end slicing
+    data_in_range = obs_df.sort_index()[start:end]
     if data_in_range.empty:
         return
     for obs in site_observations:
@@ -301,6 +302,9 @@ def _prepare_data_to_post(data, variable, observation, start, end,
     to prepare for posting"""
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
+    # ensure data is sorted before slicing and for optimal order in the
+    # database
+    data = data.sort_index()
 
     if resample_how:
         resampler = data.resample(observation.interval_length)
