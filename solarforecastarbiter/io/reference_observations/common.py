@@ -193,16 +193,21 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         'variable': variable,
         'extra_parameters': json.dumps(extra_parameters)
     })
+
+    return check_and_post_observation(api, observation)
+
+
+def check_and_post_observation(api, observation):
     existing = existing_observations(api)
     if observation.name in existing:
-        logger.info('Observation, %s, already exists', observation_name)
+        logger.info('Observation, %s, already exists', observation.name)
         return existing[observation.name]
 
     try:
         created = api.create_observation(observation)
     except HTTPError as e:
-        logger.error(f'Failed to create {variable} observation at Site '
-                     f'{site.name}.')
+        logger.error(f'Failed to create {observation.variable} observation '
+                     f'at Site {observation.site.name}.')
         logger.debug(f'HTTP Error: {e.response.text}')
     else:
         logger.info(f"Observation {created.name} created successfully.")
