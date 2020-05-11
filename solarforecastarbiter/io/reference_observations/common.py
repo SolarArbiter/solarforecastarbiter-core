@@ -281,9 +281,6 @@ def update_site_observations(api, fetch_func, site, observations,
     end : pandas.Timestamp or None
         End time to get data for. If None, use now.
     """
-    if 'Silicor' not in site.name:
-        return
-    breakpoint()
     site_observations = [obs for obs in observations if obs.site == site]
     if end is None:
         end = _utcnow()
