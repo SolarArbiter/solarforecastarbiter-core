@@ -127,6 +127,8 @@ def fetch(api, site, start, end, *, nrel_pvdaq_api_key):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    nrel_pvdaq_api_key : str
+        API key for developer.nrel.gov
 
     Returns
     -------
