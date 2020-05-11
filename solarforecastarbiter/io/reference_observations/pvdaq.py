@@ -23,6 +23,37 @@ DEFAULT_SITEFILE = resource_filename(
     'pvdaq_reference_sites.json')
 
 
+def adjust_site_parameters(site):
+    """Kludge the extra metadata in a json file into the metadata dict
+    derived from a csv file.
+
+    Parameters
+    ----------
+    site: dict
+
+    Returns
+    -------
+    dict
+        Copy of input plus a new key 'modeling_parameters' and more
+        metadata in extra_parameters.
+
+    See also
+    --------
+    solarforecastarbiter.io.reference_observations.site_df_to_dicts
+    """
+    with open(DEFAULT_SITEFILE) as fp:
+        sites_metadata = json.load(fp)['sites']
+    site_api_id = site['extra_parameters']['network_api_id']
+    for site_metadata in sites_metadata:
+        site_extra_params = json.loads(site_metadata['extra_parameters'])
+        if site_extra_params['network_api_id'] == site_api_id:
+            site_out = site.copy()
+            site_out['modeling_parameters'] = sites_metadata[
+                'modeling_parameters']
+            site_out['extra_parameters'].update(site_extra_params)
+            return site_out
+
+
 def initialize_site_observations(api, site):
     """Creates an observation at the site for each variable in the PVDAQ
     site's file.
