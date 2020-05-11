@@ -363,7 +363,7 @@ def post_observation_data(api, observation, data, start, end):
     resample_how = extra_parameters.get('resample_how', None)
     try:
         var_df = _prepare_data_to_post(data, variable, observation,
-                                       start, end, resample_how)
+                                       start, end, resample_how=resample_how)
     except KeyError:
         logger.error(f'{variable} could not be found in the data file '
                      f'from {data.index[0]} to {data.index[-1]}'
