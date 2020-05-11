@@ -29,7 +29,7 @@ def get_pvdaq_metadata(system_id, api_key):
 
     Returns
     -------
-    dict
+    list of dict
     """
 
     params = {'system_id': system_id, 'api_key': api_key}
