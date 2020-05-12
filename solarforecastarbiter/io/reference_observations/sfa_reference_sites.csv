@@ -224,3 +224,26 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1.0,"Southern Great Plains (SGP), Omega, Oklahoma",35.87969970703125,-98.17279815673828,373.0,sgpmetE38.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
 1.0,"Southern Great Plains (SGP), Ringwood, Oklahoma",36.430999755859375,-98.28399658203124,414.0,sgpmetE15.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
 1.0,"Southern Great Plains (SGP), Tryon, Oklahoma",35.86149978637695,-97.06950378417969,309.0,sgpmetE35.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
+1,NREL x-Si #1,39.7406,-105.1774,1785.050170898438,4,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL CIS #1,39.7404,-105.1774,1783.616333007812,10,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,Silicor Materials,39.7404,-105.1772,1782.188354492188,33,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Andre Agassi Preparatory Academy - Building A,36.1952,-115.1582,625.3253173828125,34,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL Ribbon Si #1c,39.7407,-105.1773,1784.211669921875,39,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL x-Si #6,39.742,-105.1727,1777.210815429688,50,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL x-Si #7,39.7416,-105.1734,1775.096069335938,51,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+5,Distributed Sun - Hunt Valley,39.4856,-76.6636,100.5236282348633,1199,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+5,Distributed Sun - BWI Hilton,39.1958,-76.6808,48.21525955200195,1200,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+5,Distributed Sun - 5 Executive Campus,39.9283,-75.0481,6.49128532409668,1201,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+5,Distributed Sun - 6 Executive Campus,39.9292,-75.0472,7.377955913543701,1202,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL Visitor Parking Structure,39.7407,-105.1694,1759.846923828125,1208,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Integrator #2 - Site A,40.8061,-73.8849,6.965095996856689,1232,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Integrator #2 - Site C,40.4335,-74.5106,35.21721267700195,1234,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Andre Agassi Preparatory Academy - Building B,36.1952,-115.1582,625.3253173828125,1276,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Andre Agassi Preparatory Academy - Building C,36.1952,-115.1582,625.3253173828125,1277,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+15,Andre Agassi Preparatory Academy - Building D,36.1952,-115.1582,625.3253173828125,1278,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL Research Support Facility II,39.7409,-105.1711,1764.8974609375,1283,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL CIGS#12,39.7405,-105.1774,1784.451416015625,1289,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,NREL Parking Garage,39.7388,-105.1732,1758.17724609375,1332,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,"RTC,FSEC,Baseline",28.405,-80.7709,10.27022838592529,1403,,Etc/GMT+5,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,"RTC,NV,Baseline",36.0275,-114.9215,695.5903930664062,1423,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
+1,"RTC,NREL,Baseline",39.7397,-105.174,1764.428344726562,1426,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ

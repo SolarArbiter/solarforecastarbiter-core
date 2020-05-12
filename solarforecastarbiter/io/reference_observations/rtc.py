@@ -33,7 +33,7 @@ def adjust_site_parameters(site):
     modeling_params = {
         'ac_capacity': 0.00324,  # no clipping
         'dc_capacity': 0.00324,
-        'temperature_coefficient': -0.00420,
+        'temperature_coefficient': -0.420,
         'dc_loss_factor': 0,
         'ac_loss_factor': 0,
         'surface_tilt': 35,
@@ -126,6 +126,8 @@ def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of DOE RTC Observations
     from start to end.
 
+    Parameters
+    ----------
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     sites: list of solarforecastarbiter.datamodel.Site

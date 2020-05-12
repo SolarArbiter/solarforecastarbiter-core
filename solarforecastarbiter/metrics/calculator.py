@@ -254,10 +254,17 @@ def _sort_metrics_vals(metrics_vals, mapping):
     category_ordering = list(datamodel.ALLOWED_CATEGORIES.keys())
 
     def sorter(metricval):
+        if metricval.category == 'month':
+            index_order = calendar.month_abbr[0:13].index(metricval.index)
+        elif metricval.category == 'weekday':
+            index_order = calendar.day_abbr[0:7].index(metricval.index)
+        else:
+            index_order = metricval.index
+
         return (
             category_ordering.index(metricval.category),
             metric_ordering.index(metricval.metric),
-            metricval.index,
+            index_order,
             metricval.value
             )
 

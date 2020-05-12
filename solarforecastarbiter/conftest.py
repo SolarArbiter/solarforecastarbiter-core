@@ -300,7 +300,7 @@ def site_text():
         "max_rotation_angle": null,
         "surface_azimuth": 180.0,
         "surface_tilt": 45.0,
-        "temperature_coefficient": -0.002,
+        "temperature_coefficient": -0.2,
         "tracking_type": "fixed"
     },
     "name": "Power Plant 1",
@@ -359,7 +359,7 @@ def many_sites_text():
             "max_rotation_angle": null,
             "surface_azimuth": 180.0,
             "surface_tilt": 45.0,
-            "temperature_coefficient": -0.002,
+            "temperature_coefficient": -0.2,
             "tracking_type": "fixed"
         },
         "name": "Power Plant 1",
@@ -386,7 +386,7 @@ def many_sites_text():
             "max_rotation_angle": 90.0,
             "surface_azimuth": null,
             "surface_tilt": null,
-            "temperature_coefficient": -0.002,
+            "temperature_coefficient": -0.2,
             "tracking_type": "single_axis"
         },
         "name": "Tracking plant",
@@ -498,7 +498,7 @@ def powerplant_metadata():
 
 def _powerplant_metadata():
     modeling_params = datamodel.FixedTiltModelingParameters(
-        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.3,
         dc_loss_factor=3, ac_loss_factor=0,
         surface_tilt=30, surface_azimuth=180)
     metadata = datamodel.SolarPowerPlant(
@@ -673,7 +673,7 @@ def ac_power_forecast_metadata_label(request, site_metadata):
 
 def fixed_modeling_parameters():
     modeling_params = datamodel.FixedTiltModelingParameters(
-        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.3,
         dc_loss_factor=3, ac_loss_factor=0,
         surface_tilt=30, surface_azimuth=180)
     return modeling_params
@@ -681,7 +681,7 @@ def fixed_modeling_parameters():
 
 def tracking_modeling_parameters():
     modeling_params = datamodel.SingleAxisModelingParameters(
-        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.003,
+        ac_capacity=.003, dc_capacity=.0035, temperature_coefficient=-0.3,
         dc_loss_factor=3, ac_loss_factor=0,
         axis_tilt=0, axis_azimuth=0, ground_coverage_ratio=2 / 7,
         backtrack=True, max_rotation_angle=45)
@@ -2001,7 +2001,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                     {
                         'name': 'mae tucson ghi',
                         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-                        'svg': '<svg></svg>',
+                        'pdf': ',u@!!/MSk7$7-ue:IY',
                         'figure_type': 'bar',
                         'category': 'total',
                         'metric': 'mae',
@@ -2363,7 +2363,7 @@ def plotly_report_figure_dict():
     return {
         'name': 'mae tucson ghi',
         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-        'svg': '<svg></svg>',
+        'pdf': ',u@!!/MSk7$7-ue:IY',
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
@@ -2435,7 +2435,7 @@ def raw_report_dict_with_event():
                 'metric': 'pod',
                 'name': 'all',
                 'spec': "{}",
-                'svg': '<svg></svg>'}],
+                'pdf': ',u@!!/MSk7$7-ue:IY'}],
             'plotly_version': '4.5.3',
             'script': None},
         'processed_forecasts_observations': [{

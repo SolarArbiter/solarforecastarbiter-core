@@ -8,12 +8,31 @@ This is the first 1.0 release candidate.
 
 API Changes
 ~~~~~~~~~~~
+* Added support for week-ahead persistence forecasts with
+  :py:func:`solarforecastarbiter.utils.get_data_start_end` and
+  :py:func:`solarforecastarbiter.main.run_persistence` modifications. (:issue:`55`) (:pull:`392`)
+* :py:func:`solarforecastarbiter.pvmodel.calculate_power` and
+  :py:func:`solarforecastarbiter.datamodel.Site` expect a ``temperature_coefficient``
+  with units of % of DC capacity/C instead of 1/C (:issue:`350`) (:pull:`433`)
 
 Enhancements
 ~~~~~~~~~~~~
+* Reference net load forecasts provided using week-ahead persistence. (:issue:`55`) (:pull:`392`)
+* Datamodel now supports ``'net_load'`` as an allowed variable. (:issue:`55`) (:pull:`392`)
+* Posting of daily validation now splits requests to avoid missing periods and
+  limit each request to one week of data (:issue:`424`) (:pull:`435`)
+* PDF report figures are generated instead of SVG for easy integration into PDF
+  reports (:issue:`360`) (:pull:`437`)
+* Added support for NREL PVDAQ sites to the reference database functions.
+  (:issue:`397`) (:pull:`438`)
 
 Bug fixes
 ~~~~~~~~~
+* Fix incorrect ordering of months and weekdays in metrics plots.
+  (:issue:`428`) (:pull:`430`)
+* Ensure data is sorted from reference data sources before slicing and
+  posting to the API (:pull:`435`)
+
 
 Contributors
 ~~~~~~~~~~~~

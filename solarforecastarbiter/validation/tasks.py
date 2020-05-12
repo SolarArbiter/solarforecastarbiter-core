@@ -6,7 +6,7 @@ from pvlib.irradiance import get_extra_radiation
 
 from solarforecastarbiter import pvmodel
 from solarforecastarbiter.io.api import APISession
-from solarforecastarbiter.validation import validator
+from solarforecastarbiter.validation import validator, quality_mapping
 
 
 logger = logging.getLogger(__name__)
@@ -391,7 +391,7 @@ def _daily_validation(session, observation, start, end, base_url):
     logger.info('Validating data for %s from %s to %s',
                 observation.name, start, end)
     observation_values = session.get_observation_values(
-        observation.observation_id, start, end)
+        observation.observation_id, start, end).sort_index()
     value_series = observation_values['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
@@ -410,9 +410,28 @@ def _daily_validation(session, observation, start, end, base_url):
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
-    session.post_observation_values(observation.observation_id,
-                                    observation_values,
-                                    params='donotvalidate')
+    return _group_continuous_week_post(
+        session, observation, observation_values)
+
+
+def _group_continuous_week_post(session, observation, observation_values):
+    # observation_values expected to be sorted
+    # observation values already have uneven frequency checked
+    gid = quality_mapping.check_if_series_flagged(
+        observation_values['quality_flag'], 'UNEVEN FREQUENCY').cumsum()
+    # make series of week + year integers to further
+    # split data to post at most one week at a time
+    # ~10,000 pts of 1min data
+    week_int = (gid.index.week + gid.index.year).values
+    # combine the continuous groups with groups of weeks
+    # gid is unique for each group since week_int and cumsum
+    # increase monotonically and are positive
+    gid += week_int
+    observation_values['gid'] = gid
+    for _, group in observation_values.groupby('gid'):
+        session.post_observation_values(observation.observation_id,
+                                        group[['value', 'quality_flag']],
+                                        params='donotvalidate')
 
 
 def daily_single_observation_validation(access_token, observation_id, start,

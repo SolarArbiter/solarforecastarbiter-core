@@ -39,7 +39,8 @@ ALLOWED_VARIABLES = {
     'dc_power': 'MW',
     'availability': '%',
     'curtailment': 'MW',
-    'event': 'boolean'
+    'event': 'boolean',
+    'net_load': 'MW'
 }
 
 
@@ -55,7 +56,8 @@ COMMON_NAMES = {
     'dc_power': 'DC Power',
     'availability': 'Availability',
     'curtailment': 'Curtailment',
-    'event': 'Event'
+    'event': 'Event',
+    'net_load': 'Net Load',
 }
 
 
@@ -359,8 +361,8 @@ class PVModelingParameters(BaseModel):
     dc_capacity : float
         Nameplate DC power rating in megawatts
     temperature_coefficient : float
-        The temperature coefficient of DC power in units of 1/C.
-        Typically -0.002 to -0.005 per degree C.
+        The temperature coefficient of DC power in units of %/C.
+        Typically -0.2 to -0.5 % per degree C.
     dc_loss_factor : float
         Applied to DC current in units of %. 0 = no loss.
     ac_loss_factor : float
@@ -476,7 +478,7 @@ class Observation(BaseModel):
         Variable name, e.g. power, GHI. Each allowed variable has an
         associated pre-defined unit.
     interval_value_type : str
-        The type of the data in the observation. Typically interval mean or
+        The type of the data in the observation. Typically interval_mean or
         instantaneous, but additional types may be defined for events.
     interval_length : pandas.Timedelta
         The length of time between consecutive data points, e.g. 5 minutes,
@@ -1416,10 +1418,12 @@ class PlotlyReportFigure(ReportFigure):
         A descriptive name for the figure.
     spec: str
         JSON string representation of the plotly plot.
-    svg: str
-        A static svg copy of the plot, for including in the pdf version.
     figure_type: str
         The type of plot, e.g. bar or scatter.
+    pdf: str
+        A static PDF copy of the plot, for including in PDF reports.
+    svg: str
+        DEPRECATED for pdf. A static svg copy of the plot.
     category: str
         The metric category. One of ALLOWED_CATEGORIES keys.
     metric: str
@@ -1427,8 +1431,9 @@ class PlotlyReportFigure(ReportFigure):
     """
     name: str
     spec: str
-    svg: str
     figure_type: str
+    pdf: str = ''
+    svg: str = ''
     category: str = ''
     metric: str = ''
     figure_class: str = 'plotly'

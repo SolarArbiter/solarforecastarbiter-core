@@ -260,6 +260,36 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
     assert 'made from interval average obs' in str(excinfo.value)
 
 
+@pytest.mark.parametrize("variable,expected_start,expected_end", [
+    # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
+    # data from the previous Thursday (4/4)
+    ("net_load", "20190404T0000Z", "20190405T0000Z"),
+
+    # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
+    # data from the previous day (Tuesday 4/9)
+    ("ghi", "20190409T0000Z", "20190410T0000Z"),
+])
+def test_get_forecast_start_end_time_weekahead(site_metadata, variable,
+                                               expected_start, expected_end):
+    observation = default_observation(
+        site_metadata, variable=variable,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning'
+    )
+
+    run_time = pd.Timestamp('20190410T0630Z')
+    forecast = default_forecast(
+        site_metadata, variable=variable,
+        issue_time_of_day=dt.time(hour=10),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
+        interval_label='beginning')
+    data_start, data_end = utils.get_data_start_end(
+        observation, forecast, run_time)
+    assert data_start == pd.Timestamp(expected_start)
+    assert data_end == pd.Timestamp(expected_end)
+
+
 @pytest.fixture
 def forecast_hr_begin(site_metadata):
     return default_forecast(

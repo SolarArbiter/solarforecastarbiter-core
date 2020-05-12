@@ -279,8 +279,25 @@ DOE RTC
    io.fetch.rtc.request_doe_rtc_data
    io.fetch.rtc.fetch_doe_rtc
 
+NREL PVDAQ
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.pvdaq.get_pvdaq_metadata
+   io.fetch.pvdaq.get_pvdaq_data
+
+
 Reference observations
-----------------------
+======================
+
+The following modules contain code for initializing the reference
+database, wrappers for fetching data, functions for processing (e.g.
+renaming and resampling) data, and wrapper functions for posting data.
+The pure fetch functions are found in ``pvlib.iotools`` and in
+``solarforecastarbiter.io.fetch``. See the source code for additional
+files with site and observation metadata.
 
 .. autosummary::
    :toctree: generated/
@@ -295,6 +312,7 @@ Reference observations
    io.reference_observations.srml
    io.reference_observations.surfrad
    io.reference_observations.arm
+   io.reference_observations.pvdaq
 
 SFA API
 =======
