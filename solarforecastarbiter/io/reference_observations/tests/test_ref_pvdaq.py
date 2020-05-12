@@ -39,6 +39,35 @@ def site():
             tracking_type='fixed'))
 
 
+@pytest.fixture
+def site_no_extra():
+    return SolarPowerPlant(
+        name='NREL x-Si #1',
+        latitude=39.7406,
+        longitude=-105.1774,
+        elevation=1785.050170898438,
+        timezone='Etc/GMT+7',
+        site_id='',
+        provider='',
+        extra_parameters='',
+        modeling_parameters=FixedTiltModelingParameters(
+            ac_capacity=0.001,
+            dc_capacity=0.001,
+            temperature_coefficient=0.3,
+            dc_loss_factor=0,
+            ac_loss_factor=0,
+            surface_tilt=40.0,
+            surface_azimuth=180.0,
+            tracking_type='fixed'))
+
+
+@pytest.fixture
+def log(mocker):
+    log = mocker.patch('solarforecastarbiter.io.reference_observations.'
+                       'pvdaq.logger')
+    return log
+
+
 @pytest.fixture()
 def mock_list_sites(mocker, many_sites):
     mocker.patch('solarforecastarbiter.io.api.APISession.list_sites',
@@ -58,6 +87,11 @@ def test_initialize_site_observations(
     assert status.called
 
 
+def test_initialize_site_observations_fail(session, site_no_extra, log):
+    pvdaq.initialize_site_observations(session, site_no_extra)
+    assert log.warning.call_count == 1
+
+
 def test_initialize_site_forecasts(
         requests_mock, mocker, session, site, single_forecast,
         single_forecast_text, mock_list_sites):
@@ -72,6 +106,11 @@ def test_initialize_site_forecasts(
     assert status.called
 
 
+def test_initialize_site_forecasts_fail(session, site_no_extra, log):
+    pvdaq.initialize_site_forecasts(session, site_no_extra)
+    assert log.warning.call_count == 1
+
+
 def test_fetch(mocker, session, site):
     status = mocker.patch(
         'solarforecastarbiter.io.fetch.pvdaq.get_pvdaq_data'
@@ -81,6 +120,29 @@ def test_fetch(mocker, session, site):
     api_key = 'nopethepope'
     pvdaq.fetch(session, site, start, end, nrel_pvdaq_api_key=api_key)
     assert status.called
+
+
+def test_fetch_fail(session, site_no_extra):
+    start = pd.Timestamp('2020-01-01T0000Z')
+    end = pd.Timestamp('2020-01-02T0000Z')
+    api_key = 'nopethepope'
+    out = pvdaq.fetch(session, site_no_extra, start, end,
+                      nrel_pvdaq_api_key=api_key)
+    assert out.empty
+
+
+def test_fetch_fail_except(session, site, mocker, log):
+    start = pd.Timestamp('2020-01-01T0000Z')
+    end = pd.Timestamp('2020-01-02T0000Z')
+    api_key = 'nopethepope'
+    status = mocker.patch(
+        'solarforecastarbiter.io.fetch.pvdaq.get_pvdaq_data'
+    )
+    status.side_effect = Exception
+    out = pvdaq.fetch(session, site, start, end,
+                      nrel_pvdaq_api_key=api_key)
+    assert log.warning.call_count == 1
+    assert out.empty
 
 
 @pytest.fixture
