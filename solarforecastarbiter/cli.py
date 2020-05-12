@@ -161,7 +161,7 @@ def referencedata():
 
 network_opt = click.option(
     '--network', multiple=True,
-    help="The Networks to act on. Defaults to all.",
+    help="The networks to act on. Defaults to all.",
     default=reference_data.NETWORK_OPTIONS,
     type=click.Choice(reference_data.NETWORK_OPTIONS))
 

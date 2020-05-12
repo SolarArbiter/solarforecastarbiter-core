@@ -126,6 +126,8 @@ def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of DOE RTC Observations
     from start to end.
 
+    Parameters
+    ----------
     api : solarforecastarbiter.io.api.APISession
         An active Reference user session.
     sites: list of solarforecastarbiter.datamodel.Site

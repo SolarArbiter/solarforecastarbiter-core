@@ -23,7 +23,8 @@ Enhancements
   limit each request to one week of data (:issue:`424`) (:pull:`435`)
 * PDF report figures are generated instead of SVG for easy integration into PDF
   reports (:issue:`360`) (:pull:`437`)
-
+* Added support for NREL PVDAQ sites to the reference database functions.
+  (:issue:`397`) (:pull:`438`)
 
 Bug fixes
 ~~~~~~~~~
