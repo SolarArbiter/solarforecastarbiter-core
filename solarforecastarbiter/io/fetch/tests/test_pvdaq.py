@@ -10,7 +10,7 @@ from solarforecastarbiter.io.fetch import pvdaq
 TEST_DATA_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
 SYSTEM_FILE = os.path.join(TEST_DATA_DIR, 'data', 'pvdaq_metadata.json')
-DATA_FILE = os.path.join(TEST_DATA_DIR, 'data', 'pvdaq_year_data.csv')
+DATA_FILE = os.path.join(TEST_DATA_DIR, 'data', 'pvdaq_2020_data.csv')
 DATA_FILE_2019 = os.path.join(TEST_DATA_DIR, 'data', 'pvdaq_2019_data.csv')
 
 
