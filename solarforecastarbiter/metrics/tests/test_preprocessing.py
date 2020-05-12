@@ -342,6 +342,47 @@ def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
             fx_obs, fx_series, obs_series, ref_series, tz)
 
 
+def test_resample_and_align_prob(prob_forecasts, single_observation):
+    tz = 'UTC'
+    fx_obs = datamodel.ForecastObservation(
+        prob_forecasts,
+        single_observation)
+    fx_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    proc_fx_obs = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, tz)
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, tz)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  THREE_HOURS,
+                                  check_categorical=False)
+    assert ref_values is None
+
+
+def test_resample_and_align_prob_constant_value(
+        prob_forecast_constant_value, single_observation):
+    tz = 'UTC'
+    fx_obs = datamodel.ForecastObservation(
+        prob_forecast_constant_value,
+        single_observation)
+    fx_series = THREE_HOUR_SERIES
+    obs_series = THREE_HOUR_SERIES
+    proc_fx_obs = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, tz)
+    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+        fx_obs, fx_series, obs_series, None, tz)
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
+                                  check_categorical=False)
+    pd.testing.assert_index_equal(obs_values.index,
+                                  THREE_HOURS,
+                                  check_categorical=False)
+    assert ref_values is None
+
+
 @pytest.mark.parametrize('obs,somecounts', [
     (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
                   columns=['value', 'quality_flag']),
