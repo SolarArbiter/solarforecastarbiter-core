@@ -1,8 +1,5 @@
-import os
-from pathlib import Path
 import shutil
 import subprocess
-import tempfile
 
 import pytest
 import jinja2
@@ -189,6 +186,7 @@ def test_render_pdf_not_settled(report_with_raw, dash_url):
 
 def test_render_pdf_process_error(report_with_raw, dash_url, mocker):
     mocker.patch('solarforecastarbiter.reports.template.subprocess.run',
-                 side_effect=subprocess.CalledProcessError(cmd='', returncode=1))
+                 side_effect=subprocess.CalledProcessError(
+                     cmd='', returncode=1))
     with pytest.raises(subprocess.CalledProcessError):
         template.render_pdf(report_with_raw, dash_url)
