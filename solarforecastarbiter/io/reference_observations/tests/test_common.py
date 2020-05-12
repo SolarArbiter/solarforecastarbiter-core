@@ -197,7 +197,7 @@ def test_create_observation_extra_parameters(
     mock_api.create_observation.assert_called_with(expected)
 
 
-test_kwarg_observation = Observation.from_dict({
+observation_dict = {
     'name': 'just observation',
     'variable': 'ghi',
     'interval_label': 'beginning',
@@ -209,13 +209,41 @@ test_kwarg_observation = Observation.from_dict({
                          '"network_api_id": "qcradlong1", '
                          '"network_api_abbreviation": "abbrv", '
                          '"observation_interval_length": 1}')
-})
+}
+test_kwarg_observation = Observation.from_dict(observation_dict)
 obs_kwargs = {
     'interval_label': 'beginning',
     'name': 'just observation',
     'interval_value_type': 'instantaneous',
     'uncertainty': 2,
 }
+
+observation_dict_resample_mean = observation_dict.copy()
+observation_dict_resample_mean['extra_parameters'] = (
+    '{"network": "DOE ARM", '
+    '"network_api_id": "qcradlong1", '
+    '"network_api_abbreviation": "abbrv", '
+    '"observation_interval_length": 1, '
+    '"resample_how": "mean"}')
+test_observation_mean = Observation.from_dict(observation_dict_resample_mean)
+
+observation_dict_resample_first = observation_dict.copy()
+observation_dict_resample_first['extra_parameters'] = (
+    '{"network": "DOE ARM", '
+    '"network_api_id": "qcradlong1", '
+    '"network_api_abbreviation": "abbrv", '
+    '"observation_interval_length": 1, '
+    '"resample_how": "first"}')
+test_observation_first = Observation.from_dict(observation_dict_resample_first)
+
+observation_dict_resample_fail = observation_dict.copy()
+observation_dict_resample_fail['extra_parameters'] = (
+    '{"network": "DOE ARM", '
+    '"network_api_id": "qcradlong1", '
+    '"network_api_abbreviation": "abbrv", '
+    '"observation_interval_length": 1, '
+    '"resample_how": "nopethepope"}')
+test_observation_fail = Observation.from_dict(observation_dict_resample_fail)
 
 
 @pytest.mark.parametrize('site,variable,expected,kwargs', [
@@ -228,6 +256,13 @@ def test_create_observation_with_kwargs(
     mock_api.create_observation.assert_called_with(expected)
 
 
+@pytest.mark.parametrize('observation,resample_how', [
+    # all test data has same freq as observation.interval_length,
+    # so resample method should not matter
+    (test_kwarg_observation, None),
+    (test_observation_mean, 'mean'),
+    (test_observation_first, 'first')
+])
 @pytest.mark.parametrize('inp,expected', [
     # nan kept
     (pd.DataFrame({'ghi': [0, 1, 4.0, None, 5, 6]}, dtype='float',
@@ -265,12 +300,62 @@ def test_create_observation_with_kwargs(
                   index=pd.DatetimeIndex(
                       ['2019-10-04T1201Z', '2019-10-04T1202Z']))),
 ])
-def test_prepare_data_to_post(inp, expected):
+def test_prepare_data_to_post(inp, expected, observation, resample_how):
     start = pd.Timestamp('2019-10-04T1200Z')
     end = pd.Timestamp('2019-10-04T1205Z')
     variable = 'ghi'
-    out = common._prepare_data_to_post(inp, variable, test_kwarg_observation,
-                                       start, end)
+    out = common._prepare_data_to_post(inp, variable, observation, start, end,
+                                       resample_how=resample_how)
+    pd.testing.assert_frame_equal(out, expected)
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (pd.DataFrame({'ghi': [0, 1, 4.0, None, 5, 6] * 2}, dtype='float',
+                  index=pd.date_range('2019-10-04T1200Z', freq='30s',
+                                      periods=12)),
+     pd.DataFrame({'value': [0.5, 4.0, 5.5, 0.5, 4.0, 5.5],
+                   'quality_flag': [0, 0, 0, 0, 0, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+    (pd.DataFrame({'ghi': [0, 1, None, None, 5, 6] * 2}, dtype='float',
+                  index=pd.date_range('2019-10-04T1200Z', freq='30s',
+                                      periods=12)),
+     pd.DataFrame({'value': [0.5, None, 5.5, 0.5, None, 5.5],
+                   'quality_flag': [0, 1, 0, 0, 1, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+])
+def test_prepare_data_to_post_mean(inp, expected):
+    start = pd.Timestamp('2019-10-04T1200Z')
+    end = pd.Timestamp('2019-10-04T1205Z')
+    variable = 'ghi'
+    out = common._prepare_data_to_post(inp, variable, test_observation_mean,
+                                       start, end, resample_how='mean')
+    pd.testing.assert_frame_equal(out, expected)
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (pd.DataFrame({'ghi': [0, 1, None, 4.0, 5, 6] * 2}, dtype='float',
+                  index=pd.date_range('2019-10-04T1200Z', freq='30s',
+                                      periods=12)),
+     pd.DataFrame({'value': [0.0, 4.0, 5.0, 0.0, 4.0, 5.0],
+                   'quality_flag': [0, 0, 0, 0, 0, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+    (pd.DataFrame({'ghi': [0, 1, None, None, 5, 6] * 2}, dtype='float',
+                  index=pd.date_range('2019-10-04T1200Z', freq='30s',
+                                      periods=12)),
+     pd.DataFrame({'value': [0.0, None, 5.0, 0.0, None, 5.0],
+                   'quality_flag': [0, 1, 0, 0, 1, 0]},
+                  index=pd.date_range('2019-10-04T1200Z', freq='1min',
+                                      periods=6))),
+])
+def test_prepare_data_to_post_first(inp, expected):
+    start = pd.Timestamp('2019-10-04T1200Z')
+    end = pd.Timestamp('2019-10-04T1205Z')
+    variable = 'ghi'
+    out = common._prepare_data_to_post(inp, variable, test_observation_first,
+                                       start, end, resample_how='first')
     pd.testing.assert_frame_equal(out, expected)
 
 
@@ -354,6 +439,13 @@ def test_post_observation_data_all_nans(
     # post the nans
     log.warning.assert_not_called()
     assert ret is None
+
+
+def test_post_observation_data_AttributeError(
+        mock_api, log, fake_ghi_data, start, end):
+    common.post_observation_data(mock_api, test_observation_fail,
+                                 fake_ghi_data, start, end)
+    log.error.assert_called()
 
 
 @pytest.fixture()

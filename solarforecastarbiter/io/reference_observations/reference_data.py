@@ -38,6 +38,7 @@ from solarforecastarbiter.io.reference_observations import (
     rtc,
     common,
     arm,
+    pvdaq
 )
 
 
@@ -50,11 +51,12 @@ NETWORKHANDLER_MAP = {
     'NREL MIDC': midc,
     'DOE RTC': rtc,
     'DOE ARM': arm,
+    'NREL PVDAQ': pvdaq
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'DOE RTC', 'DOE ARM']
+                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -89,6 +91,9 @@ https://pv-dashboard.sandia.gov/
 
 DOE ARM: DOE Atmospheric Radiation Measurement
 https://www.arm.gov/
+
+NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition
+https://developer.nrel.gov/docs/solar/pvdaq-v3/
 """  # noqa: E501
 
 
