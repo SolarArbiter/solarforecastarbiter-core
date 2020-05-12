@@ -112,6 +112,7 @@ venv.bak/
 .vscode/
 
 *.json
+!solarforecastarbiter/io/reference_observations/*.json
 *.html
 !solarforecastarbiter/reports/templates/*.html
 *.md
