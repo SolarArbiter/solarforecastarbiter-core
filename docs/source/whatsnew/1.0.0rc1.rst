@@ -25,6 +25,7 @@ Enhancements
   reports (:issue:`360`) (:pull:`437`)
 * Added support for NREL PVDAQ sites to the reference database functions.
   (:issue:`397`) (:pull:`438`)
+* Reports can now be rendered into PDF files via pdflatex (:issue:`319`) (:pull:`439`)
 
 Bug fixes
 ~~~~~~~~~
