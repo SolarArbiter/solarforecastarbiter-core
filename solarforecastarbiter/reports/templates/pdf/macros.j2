@@ -91,6 +91,7 @@
 \FloatBarrier
 \clearpage
 \begin{landscape}
+  \renewcommand{\arraystretch}{1.7}
   \pagestyle{empty}
   \small
   \begin{longtabu} to \linewidth {
@@ -132,7 +133,7 @@
     \VAR{pfxobs.original.reference_forecast.interval_label} &
     \VAR{pfxobs.original.reference_forecast.interval_length.total_seconds()//60 | int} min
     %- else
-    None &
+    -- &
     %- endif
     \\
     %- endfor
@@ -158,6 +159,7 @@
 \begin{landscape}
   \pagestyle{empty}
   \small
+  \renewcommand{\arraystretch}{1.7}
   \begin{longtabu} to \linewidth {
       X[2] | X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
     }
@@ -219,6 +221,7 @@
 \begin{landscape}
   \pagestyle{empty}
   \small
+  \renewcommand{\arraystretch}{1.7}
   \begin{longtabu} to \linewidth {
       X[2, l] *{\VAR{preproc_steps | length}}{ | X[1, l]}
     }
