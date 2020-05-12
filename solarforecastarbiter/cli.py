@@ -320,7 +320,7 @@ def report(verbose, user, password, base_url, report_file, output_file,
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
     if (
-            format == 'detect' and output_file.endswith('.html')
+            (format == 'detect' and output_file.endswith('.html'))
             or format == 'html'
     ):
         html_report = template.render_html(
@@ -329,7 +329,7 @@ def report(verbose, user, password, base_url, report_file, output_file,
         with open(output_file, 'w') as f:
             f.write(html_report)
     elif (
-            format == 'detect' and output_file.endswith('.pdf')
+            (format == 'detect' and output_file.endswith('.pdf'))
             or format == 'pdf'
     ):
         pdf_report = template.render_pdf(full_report, dash_url)
