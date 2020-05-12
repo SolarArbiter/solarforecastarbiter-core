@@ -18,6 +18,26 @@ srml_variable_map = {
     'dhi_': 'dhi',
     'wind_speed_': 'wind_speed',
     'temp_air_': 'air_temperature',
+    '5': 'power',
+}
+
+# SRMLs data element numbers use the second digit to indicate
+# surface tilt, this map assists in looking up the correct data
+# element number by the surface tilt of a station.
+srml_surface_tilt_map = {
+    15: 1,
+    25: 2,
+    30: 3,
+    45: 5,
+    60: 6,
+}
+
+# SRMLs data element numbers use the third digit to indicate
+# surface azimuth with a general direction e.g. south-facing
+srml_azimuth_map = {
+    270.0: 4,  # west-facing
+    180.0: 6,  # south-facing
+    90.0: 8,  # east-facing
 }
 
 # maps SolarForecastArbiter interval_label to the SRML infix which
@@ -36,6 +56,20 @@ FILE_TYPE_MAP = {
 logger = logging.getLogger('reference_data')
 
 
+def _site_power_prefix(tilt, azimuth):
+    """
+    Parameters
+    ----------
+    tilt: float
+        Site surface tilt.
+    azimuth: float
+        Site surface azimuth.
+
+    Returns
+    -------
+    str
+        The prefix to use when filtering srml data columns.
+    """
 def request_data(site, year, month):
     """Makes a request for each file type until successful or we
     run out of filetypes.
@@ -80,6 +114,8 @@ def request_data(site, year, month):
             continue
         else:
             return srml_month
+    logger.warning(f'Could not retrieve data for site {site.name} on '
+                   f'{year}/{month}.')
 
 
 def fetch(api, site, start, end):
@@ -154,8 +190,8 @@ def initialize_site_observations(api, site):
     labels to differentiate between measurements recorded by
     different instruments.
     """
-    start = pd.Timestamp.now()
-    end = pd.Timestamp.now()
+    start = pd.Timestamp.now() - pd.Timedelta('30 days')
+    end = start
     try:
         extra_params = common.decode_extra_parameters(site)
     except ValueError:
@@ -178,24 +214,61 @@ def initialize_site_observations(api, site):
                          f'for SRML site {site_name}.')
             return
         for variable in srml_variable_map.keys():
-            matches = [col for col in site_df.columns if variable in col]
-            for match in matches:
-                observation_extra_parameters = extra_params.copy()
-                observation_extra_parameters.update({
-                    'network_data_label': match})
-                try:
-                    # Here, we pass a name with match instead of variable
-                    # to differentiate between multiple observations of
-                    # the same variable
-                    common.create_observation(
-                        api, site, srml_variable_map[variable],
-                        name=f'{site_name} {match}',
-                        interval_label='beginning',
-                        extra_params=observation_extra_parameters)
-                except HTTPError as e:
-                    logger.error(
-                        f'Failed to create {variable} observation at Site '
-                        f'{site.name}. Error: {e.response.text}')
+            matches = [col for col in site_df.columns
+                       if col.startswith(variable)]
+            if variable == '5':
+                # create an aggregated power observations
+                if hasattr(site, "modeling_parameters"):
+                    site_power_prefix = _site_power_prefix(
+                        site.modeling_parameters.surface_tilt,
+                        site.modeling_parameters.surface_azimuth,
+                    )
+                    # limit power to data with matching surface_tilt/azimuth
+                    matches = [match for match in matches 
+                               if match.startswith(site_power_prefix)]
+                    if matches:
+                        # from matching raw data files against the 
+                        # comprehensive format, it appears that ac power
+                        # measurements are suffixed with a letter, while  
+                        # dc is suffixed with a number.
+                        dc_matches = [match for match in matches if isalpha(match[-1])]
+                        ac_matches = [match for match in matches if isnumeric(match[-1])]
+                        observation_extra_parameters = extra_params.copy()
+                        observation_extra_parameters.update({
+                            'network_data_label': ','.join(matches)})
+                        try:
+                            # Here, we pass a name with match instead of
+                            # variable to differentiate between multiple
+                            # observations of the same variable
+                            common.create_observation(
+                                api, site, srml_variable_map[variable],
+                                name=f'{site_name} {srml_variable_map[variable]}',
+                                interval_label='beginning',
+                                extra_params=observation_extra_parameters)
+                        except HTTPError as e:
+                            logger.error(
+                                f'Failed to create {variable} observation at '
+                                f'Site {site.name}. Error: {e.response.text}')
+                else:
+                    continue
+            else:
+                for match in matches:
+                    observation_extra_parameters = extra_params.copy()
+                    observation_extra_parameters.update({
+                        'network_data_label': match})
+                    try:
+                        # Here, we pass a name with match instead of variable
+                        # to differentiate between multiple observations of
+                        # the same variable
+                        common.create_observation(
+                            api, site, srml_variable_map[variable],
+                            name=f'{site_name} {match}',
+                            interval_label='beginning',
+                            extra_params=observation_extra_parameters)
+                    except HTTPError as e:
+                        logger.error(
+                            f'Failed to create {variable} observation at Site '
+                            f'{site.name}. Error: {e.response.text}')
 
 
 def initialize_site_forecasts(api, site):
