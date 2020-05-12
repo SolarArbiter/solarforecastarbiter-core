@@ -1,4 +1,5 @@
 %- set report_name = report.report_parameters.name
+%- set report_date_str = report.raw_report.generated_at.strftime('%B %d, %Y')
 %- set report_url = dash_url + '/reports/' + report.report_id
 %- import 'macros.j2' as macros with context
 \documentclass[12pt,letterpaper]{article}
@@ -19,7 +20,7 @@
 
 \begin{document}
 \title{\VAR{report_name}}
-%# \date{\VAR{report.raw_report.generated_at}}
+\date{\VAR{report_date_str}}
 \maketitle
 This report of solar forecast accuracy was automatically generated using the
 \href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
@@ -62,8 +63,8 @@ This report includes forecast and observation data available from
 
 \VAR{macros.obsfx_table_text() | html_to_tex}
 
-Plots showing the realigned and resampled time series fo the observation and
-forecast data as well as the distribution of forecast vs observation
+Plots showing the realigned and resampled time series for the observation and
+forecast data as well as the distribution of forecast versus observation
 data are available on the web version of this report available
 \href{\VAR{report_url}}{here}.
 
