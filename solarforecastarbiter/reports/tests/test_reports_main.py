@@ -17,13 +17,6 @@ EMPTY_DF = pd.DataFrame(columns=['value', 'quality_flag'],
                         index=pd.DatetimeIndex([], tz='UTC'))
 
 
-@pytest.fixture(scope='function')
-def remove_orca():
-    # otherwise generating all pdfs for tests can take ages
-    import plotly.io as pio
-    pio.orca.config.executable = '/dev/null'
-
-
 @pytest.fixture()
 def _test_data(report_objects, ref_forecast_id, remove_orca):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \

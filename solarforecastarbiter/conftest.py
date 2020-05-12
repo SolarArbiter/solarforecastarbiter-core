@@ -2535,3 +2535,10 @@ def raw_report_dict_with_event(fail_pdf):
                      ['statsmodels', '0.11.0'],
                      ['python', '3.7.1'],
                      ['platform', 'A-Computer']]}
+
+
+@pytest.fixture(scope='function')
+def remove_orca():
+    # otherwise generating all pdfs for tests can take ages
+    import plotly.io as pio
+    pio.orca.config.executable = '/dev/null'
