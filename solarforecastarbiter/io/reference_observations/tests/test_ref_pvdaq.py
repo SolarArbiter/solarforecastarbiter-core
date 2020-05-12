@@ -45,25 +45,9 @@ def mock_list_sites(mocker, many_sites):
                  return_value=many_sites)
 
 
-@pytest.fixture()
-def mock_get_site(requests_mock, site_text, many_sites_text):
-    def get_site_from_text(request, context):
-        site_id = request.url.split('/')[-1]
-        if site_id == '':
-            return many_sites_text
-        else:
-            sites = json.loads(many_sites_text)
-            for site in sites:
-                if site['site_id'] == site_id:
-                    return json.dumps(site).encode('utf-8')
-
-    matcher = re.compile(f'https://api.solarforecastarbiter.org/sites/.*')
-    requests_mock.register_uri('GET', matcher, content=get_site_from_text)
-
-
 def test_initialize_site_observations(
         requests_mock, mocker, session, site, single_observation,
-        single_observation_text, mock_list_sites, mock_get_site):
+        single_observation_text, mock_list_sites):
     matcher = re.compile(f'{session.base_url}/observations/.*')
     requests_mock.register_uri('POST', matcher,
                                text=single_observation.observation_id)
@@ -76,7 +60,7 @@ def test_initialize_site_observations(
 
 def test_initialize_site_forecasts(
         requests_mock, mocker, session, site, single_forecast,
-        single_forecast_text, mock_list_sites, mock_get_site):
+        single_forecast_text, mock_list_sites):
     matcher = re.compile(f'{session.base_url}/forecasts/.*')
     requests_mock.register_uri('POST', matcher,
                                text=single_forecast.forecast_id)

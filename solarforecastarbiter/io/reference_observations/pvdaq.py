@@ -169,6 +169,13 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+
+    Raises
+    ------
+    KeyError
+        If NREL_PVDAQ_API_KEY environmental variable is not set.
+        Abuse of KeyError - should probably be ValueError - but kept for
+        consistency with other reference_observations modules.
     """
     nrel_pvdaq_api_key = os.getenv('NREL_PVDAQ_API_KEY')
     if nrel_pvdaq_api_key is None:
