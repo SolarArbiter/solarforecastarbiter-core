@@ -2,6 +2,7 @@ import asyncio
 from functools import partial
 import logging
 from pathlib import Path
+import shutil
 import tempfile
 
 
@@ -253,6 +254,8 @@ def test_report(cli_token, mocker, report_objects):
 
 
 def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
+    if shutil.which('pdflatex') is None:
+        pytest.skip('PDF reports require pdflatex')
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report_objects[0].replace(status=''))
     index = pd.date_range(
@@ -277,12 +280,12 @@ def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
         outfile = tmpdir + '/test_out.pdf'
         res = runner.invoke(cli.report,
                             ['-u user', '-p pass', infile, outfile])
+        assert res.exit_code == 0
         with open(outfile, 'rb') as f:
             assert f.read(4) == b'%PDF'
-    assert res.exit_code == 0
 
 
-@pytest.mark.parametrize('format_,res_code,suffix,called',[
+@pytest.mark.parametrize('format_,res_code,suffix,called', [
     ('pdf', 0, '.pdf', 'pdf'),
     ('pdf', 0, '.pnotf', 'pdf'),
     ('detect', 0, '.pdf', 'pdf'),
