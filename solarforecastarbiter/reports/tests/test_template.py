@@ -1,7 +1,11 @@
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
 import pytest
 import jinja2
-
-
 from bokeh import __version__ as bokeh_version
 from plotly import __version__ as plotly_version
 
@@ -154,10 +158,37 @@ def test_build_metrics_json():
     ('<p> paragraph</p>', ' paragraph\n'),
     ('<em>italic</em>', '\\emph{italic}'),
     ('<code>nan</code>', '\\verb|nan|'),
+    ('<b>bold</b>', '\\textbf{bold}'),
+    ('<ol>\n<li>item one</li>\n</ol>',
+     '\\begin{enumerate}\n\\item item one\n\n\\end{enumerate}'),
+    ('<a href="tolink" class="what">stuff</a>', 'stuff'),
     (('<p>paragraph one <em>important</em> code here <code>null</code>'
-      ' and more <b>bold</b><em> critical</em> <code>here</code></p>'),
+      ' and more <b>bold</b><em> critical</em> <code>here</code></p>'
+      ' <b>masbold</b>'),
      ('paragraph one \\emph{important} code here \\verb|null|'
-      ' and more \\textbf{bold}\\emph{ critical} \\verb|here|\n'))
+      ' and more \\textbf{bold}\\emph{ critical} \\verb|here|\n'
+     ' \\textbf{masbold}'))
 ])
 def test_html_to_tex(val, expected):
     assert template.html_to_tex(val) == expected
+
+
+def test_render_pdf(report_with_raw, dash_url):
+    if shutil.which('pdflatex') is None:  # pragma: no cover
+        pytest.skip('pdflatex must be on PATH to generate PDF reports')
+    rendered = template.render_pdf(report_with_raw, dash_url)
+    assert rendered.startswith(b'%PDF')
+
+
+def test_render_pdf_not_settled(report_with_raw, dash_url):
+    if shutil.which('pdflatex') is None:  # pragma: no cover
+        pytest.skip('pdflatex must be on PATH to generate PDF reports')
+    with pytest.raises(RuntimeError):
+        template.render_pdf(report_with_raw, dash_url, 1)
+
+
+def test_render_pdf_process_error(report_with_raw, dash_url, mocker):
+    mocker.patch('solarforecastarbiter.reports.template.subprocess.run',
+                 side_effect=subprocess.CalledProcessError(cmd='', returncode=1))
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render_pdf(report_with_raw, dash_url)

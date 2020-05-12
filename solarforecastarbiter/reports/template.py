@@ -292,11 +292,15 @@ def render_pdf(report, dash_url, max_runs=5):
         )
         runs_left = max_runs
         prev_aux = ''
+        # run pdflatex until it settles
         while runs_left > 0:
             try:
                 subprocess.run(args, check=True, cwd=str(tmpdir.absolute()))
             except subprocess.CalledProcessError:
-                logger.exception(logfile.read_text())
+                try:
+                    logger.exception(logfile.read_text())
+                except Exception:
+                    logger.exception('Pdflatex failed and so did reading log')
                 raise
 
             aux = auxfile.read_text()
