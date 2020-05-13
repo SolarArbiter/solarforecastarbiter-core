@@ -314,18 +314,18 @@ def report(verbose, user, password, base_url, report_file, output_file,
     """
     set_log_level(verbose)
     token = cli_access_token(user, password)
-    session = APISession(token, base_url=base_url)
     with open(report_file) as f:
         metadata = json.load(f)
+    session = APISession(token, base_url=base_url)
     report = session.process_report_dict(metadata)
-    data = reports.get_data_for_report(session, report)
-    raw_report = reports.create_raw_report_from_data(report, data)
     if serialization_roundtrip:
         with mock_raw_report_endpoints(base_url):
             session.create_report(report)
-            session.post_raw_report('no_id', raw_report)
+            reports.compute_report(token, 'no_id', base_url)
             full_report = session.get_report('no_id')
     else:
+        data = reports.get_data_for_report(session, report)
+        raw_report = reports.create_raw_report_from_data(report, data)
         full_report = report.replace(raw_report=raw_report, status='complete')
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
