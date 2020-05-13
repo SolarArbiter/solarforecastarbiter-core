@@ -2,7 +2,6 @@
 Metric calculation functions.
 """
 import calendar
-import copy
 from functools import partial
 import logging
 
@@ -301,19 +300,16 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
     ValueError
         If original and reference forecast ``axis`` values do not match.
     """
-    single_cv_results = []
-    dist_result = None
-
-    shared_dict = {'name': processed_fx_obs.name}
+    out = {'name': processed_fx_obs.name}
     try:
         obs_dict = {'observation_id':
                     processed_fx_obs.original.observation.observation_id}
     except AttributeError:
         obs_dict = {'aggregate_id':
                     processed_fx_obs.original.aggregate.aggregate_id}
-    shared_dict.update(obs_dict)
+    out.update(obs_dict)
 
-    # Determine forecast physical and probabiltity values by axis
+    # Determine forecast physical and probability values by axis
     fx_fx_prob = _transform_prob_forecast_value_and_prob(processed_fx_obs)
     obs = processed_fx_obs.observation_values
 
@@ -327,7 +323,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
                              "forecast and reference forecast.")
         ref_fx_fx_prob = _transform_prob_forecast_value_and_prob(
             processed_fx_obs, attr='reference_forecast_values')
-        shared_dict.update({'reference_forecast_id': processed_fx_obs.original.reference_forecast.forecast_id})  # NOQA: E501
+        out.update({'reference_forecast_id': processed_fx_obs.original.reference_forecast.forecast_id})  # NOQA: E501
 
     # No data or metrics
     if (not fx_fx_prob or
@@ -338,38 +334,25 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
     elif len(metrics) == 0:
         raise RuntimeError("No metrics specified.")
 
-    # Separate metrics by type
-    single_metrics = list(set(metrics) - set(probabilistic._REQ_DIST))
-    dist_metrics = list(set(metrics) & set(probabilistic._REQ_DIST))
+    fx = processed_fx_obs.original.forecast
+    out['forecast_id'] = fx.forecast_id
 
-    # Single (per ProbabilisticForecastConstantValue) forecast metrics
-    if single_metrics:
-        cvs = processed_fx_obs.original.forecast.constant_values
-        for orig, ref, cv in zip(fx_fx_prob, ref_fx_fx_prob, cvs):
-            single_out = copy.deepcopy(shared_dict)
-            single_out['forecast_id'] = cv.forecast_id
-            results = _calculate_probabilistic_metrics_from_df(
-                _create_prob_dataframe(obs, [orig], [ref]),
-                categories, single_metrics, cv.interval_label)
-            single_out['values'] = _sort_metrics_vals(
-                results, datamodel.ALLOWED_PROBABILISTIC_METRICS)
-            single_cv_results.append(datamodel.MetricResult.from_dict(
-                single_out))
+    # Determine proper metrics by instance type
+    if isinstance(fx, datamodel.ProbabilisticForecastConstantValue):
+        _metrics = list(set(metrics) - set(probabilistic._REQ_DIST))
+    elif isinstance(fx, datamodel.ProbabilisticForecast):
+        _metrics = list(set(metrics) & set(probabilistic._REQ_DIST))
 
-    # Distribution (per ProbabilisticForecast) forecast metrics
-    if dist_metrics:
-        dist_out = copy.deepcopy(shared_dict)
-        dist_out['forecast_id'] = processed_fx_obs.original.forecast.forecast_id  # NOQA
-        results = _calculate_probabilistic_metrics_from_df(
-            _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob),
-            categories,
-            dist_metrics,
-            processed_fx_obs.original.forecast.interval_label)
-        dist_out['values'] = _sort_metrics_vals(
-            results, datamodel.ALLOWED_PROBABILISTIC_METRICS)
-        dist_result = datamodel.MetricResult.from_dict(dist_out)
-
-    return (single_cv_results, dist_result)
+    # Compute metrics and create MetricResult
+    results = _calculate_probabilistic_metrics_from_df(
+        _create_prob_dataframe(obs, fx_fx_prob, ref_fx_fx_prob),
+        categories,
+        _metrics,
+        processed_fx_obs.original.forecast.interval_label)
+    out['values'] = _sort_metrics_vals(
+        results, datamodel.ALLOWED_PROBABILISTIC_METRICS)
+    result = datamodel.MetricResult.from_dict(out)
+    return result
 
 
 def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
@@ -504,16 +487,17 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs,
         Forecast physical values and forecast probabilities.
     """
     fx_fx_prob = []
-    df = getattr(proc_fx_obs, attr)
-    # failure here for a ProbabilisticForecastConstantValue
-    assert isinstance(df, pd.DataFrame)
-    for col in df.columns:
+    data = getattr(proc_fx_obs, attr)
+    if isinstance(data, pd.Series):
+        data = data.to_frame()
+
+    for col in data.columns:
         if proc_fx_obs.original.forecast.axis == 'x':
-            fx_prob = df[col]
+            fx_prob = data[col]
             fx = pd.Series([float(col)]*fx_prob.size, index=fx_prob.index,
                            name=col)
         else:  # 'y'
-            fx = df[col]
+            fx = data[col]
             fx_prob = pd.Series([float(col)]*fx.size, index=fx.index,
                                 name=col)
         fx_fx_prob.append((fx, fx_prob))
