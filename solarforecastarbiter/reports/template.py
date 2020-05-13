@@ -264,53 +264,63 @@ def render_pdf(report, dash_url, max_runs=5):
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)
-        template = env.get_template('base.tex')
-        tex = template.render(**kwargs)
-        texfile = tmpdir / 'out.tex'
-        texfile.write_text(tex)
-        auxfile = tmpdir / 'out.aux'
-        logfile = tmpdir / 'out.log'
-
-        # save figures
-        figdir = tmpdir / 'figs'
-        figdir.mkdir()
-        for fig in report.raw_report.plots.figures:
-            name = (
-                fig.category + '_' + fig.metric + '_' +
-                fig.name + '.pdf'
-            ).replace('^', '-').replace(' ', '_')
-            figpath = figdir / name
-            figpath.write_bytes(base64.a85decode(fig.pdf))
-
-        args = (
-            'pdflatex',
-            '-interaction=batchmode',
-            '-halt-on-error',
-            '-no-shell-escape',
-            '-file-line-error',
-            'out.tex'
-        )
-        runs_left = max_runs
-        prev_aux = ''
-        # run pdflatex until it settles
-        while runs_left > 0:
-            try:
-                subprocess.run(args, check=True, cwd=str(tmpdir.absolute()))
-            except subprocess.CalledProcessError:
-                try:
-                    logger.exception(logfile.read_text())
-                except Exception:
-                    logger.exception('Pdflatex failed and so did reading log')
-                raise
-
-            aux = auxfile.read_text()
-            if aux == prev_aux:
-                break
-            else:
-                prev_aux = aux
-                runs_left -= 1
-        else:
-            raise RuntimeError(
-                f'PDF generation unstable after {max_runs} runs')
-
+        logfile, auxfile = _prepare_latex_support_files(tmpdir, env, kwargs)
+        _save_figures_to_pdf(tmpdir, report)
+        _compile_files_into_pdf(tmpdir, logfile, auxfile, max_runs)
         return (tmpdir / 'out.pdf').read_bytes()
+
+
+def _prepare_latex_support_files(tmpdir, env, kwargs):
+    template = env.get_template('base.tex')
+    tex = template.render(**kwargs)
+    texfile = tmpdir / 'out.tex'
+    texfile.write_text(tex)
+    auxfile = tmpdir / 'out.aux'
+    logfile = tmpdir / 'out.log'
+    return logfile, auxfile
+
+
+def _save_figures_to_pdf(tmpdir, report):
+    figdir = tmpdir / 'figs'
+    figdir.mkdir()
+    for fig in report.raw_report.plots.figures:
+        name = (
+            fig.category + '_' + fig.metric + '_' +
+            fig.name + '.pdf'
+        ).replace('^', '-').replace(' ', '_')
+        # handle characters that will cause problems for tex
+        figpath = figdir / name
+        figpath.write_bytes(base64.a85decode(fig.pdf))
+
+
+def _compile_files_into_pdf(tmpdir, logfile, auxfile, max_runs):
+    args = (
+        'pdflatex',
+        '-interaction=batchmode',
+        '-halt-on-error',
+        '-no-shell-escape',
+        '-file-line-error',
+        'out.tex'
+    )
+    runs_left = max_runs
+    prev_aux = ''
+    # run pdflatex until it settles
+    while runs_left > 0:
+        try:
+            subprocess.run(args, check=True, cwd=str(tmpdir.absolute()))
+        except subprocess.CalledProcessError:
+            try:
+                logger.exception(logfile.read_text())
+            except Exception:
+                logger.exception('Pdflatex failed and so did reading log')
+            raise
+
+        aux = auxfile.read_text()
+        if aux == prev_aux:
+            break
+        else:
+            prev_aux = aux
+            runs_left -= 1
+    else:
+        raise RuntimeError(
+            f'PDF generation unstable after {max_runs} runs')
