@@ -1,11 +1,14 @@
 """
 Functions to connect to and process data from SolarForecastArbiter API
 """
+from contextlib import contextmanager
 import json
 import logging
+import re
+
+
 import requests
 from urllib3 import Retry
-
 import numpy as np
 import pandas as pd
 
@@ -817,7 +820,7 @@ class APISession(requests.Session):
         """
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
-        raw = resp.pop('raw_report')
+        raw = resp.pop('raw_report', None)
         report = self.process_report_dict(resp)
         if raw is not None:
             raw_report = datamodel.RawReport.from_dict(raw)
@@ -1184,3 +1187,66 @@ class APISession(requests.Session):
         """
         req = self.get('/users/current')
         return req.json()
+
+
+@contextmanager
+def mock_raw_report_endpoints(base_url):
+    import requests_mock
+    value_dict = {}
+
+    def post_value_callback(request, context):
+        context.status_code = 200
+        rjson = request.json()
+        id_ = rjson['object_id']
+        value_dict[id_] = rjson['processed_values']
+        return id_
+
+    def get_value_callback(request, context):
+        context.status_code = 200
+        return [{'id': k, 'processed_values': v}
+                for k, v in value_dict.items()]
+
+    raw_dict = {}
+
+    def post_raw_callback(request, context):
+        context.status_code = 200
+        raw_dict.update(request.json())
+
+    def get_raw_callback(request, context):
+        context.status_code = 200
+        return raw_dict
+
+    report_dict = {}
+
+    def post_report_callback(request, context):
+        context.status_code = 200
+        report_dict.update(request.json())
+        return 'no_id'
+
+    def get_report_callback(request, context):
+        context.status_code = 200
+        out = report_dict.copy()
+        if raw_dict:
+            out['raw_report'] = raw_dict
+            out['values'] = [
+                {'id': k, 'processed_values': v}
+                for k, v in value_dict.items()]
+        out['status'] = 'complete'
+        return out
+
+    with requests_mock.Mocker(real_http=True) as m:
+        value_re = re.compile(f'{base_url}/reports/.*/values')
+        raw_re = re.compile(f'{base_url}/reports/.*/raw')
+        m.register_uri('GET', re.compile(
+            f'{base_url}/reports/.*'),
+                       json=get_report_callback)
+        m.register_uri('POST', re.compile(
+            f'{base_url}/reports/*'),
+                       text=post_report_callback)
+        m.register_uri('POST', re.compile(
+            f'{base_url}/reports/.*/status/.*'))
+        m.register_uri('POST', value_re, text=post_value_callback)
+        m.register_uri('GET', value_re, json=get_value_callback)
+        m.register_uri('POST', raw_re, json=post_raw_callback)
+        m.register_uri('GET', raw_re, json=get_raw_callback)
+        yield

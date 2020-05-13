@@ -15,7 +15,7 @@ import sentry_sdk
 
 from solarforecastarbiter import __version__
 from solarforecastarbiter.io import nwp
-from solarforecastarbiter.io.api import request_cli_access_token, APISession
+from solarforecastarbiter.io.api import request_cli_access_token, APISession, mock_raw_report_endpoints
 from solarforecastarbiter.io.fetch import start_cluster
 from solarforecastarbiter.io.reference_observations import reference_data
 import solarforecastarbiter.reference_forecasts.main as reference_forecasts
@@ -298,12 +298,16 @@ def referencenwp(verbose, user, password, base_url, run_time,
           'the file extension of OUTPUT-FILE'),
     type=click.Choice(['detect', 'pdf', 'html'], case_sensitive=False)
 )
+@click.option(
+    '--serialization-roundtrip', is_flag=True,
+    help='Run the raw report through a mock API with serialization'
+)
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
 @click.argument(
     'output-file', type=click.Path(resolve_path=True))
 def report(verbose, user, password, base_url, report_file, output_file,
-           format):
+           format, serialization_roundtrip):
     """
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
@@ -316,7 +320,13 @@ def report(verbose, user, password, base_url, report_file, output_file,
     report = session.process_report_dict(metadata)
     data = reports.get_data_for_report(session, report)
     raw_report = reports.create_raw_report_from_data(report, data)
-    full_report = report.replace(raw_report=raw_report, status='complete')
+    if serialization_roundtrip:
+        with mock_raw_report_endpoints(base_url):
+            session.create_report(report)
+            session.post_raw_report('no_id', raw_report)
+            full_report = session.get_report('no_id')
+    else:
+        full_report = report.replace(raw_report=raw_report, status='complete')
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
     if (
