@@ -14,33 +14,3 @@ indicates that no deadband was applied for that observation/forecast pair.
 The deadband is accounted for in the following metrics:
 MAE, MBE, RMSE, MAPE, NMAE, NMBE, NRMSE. It is ignored for all other metrics.
 </p>
-<table class="table table-striped table-borderless metrics-meta-table" style="width:100%; ">
-    <caption style="caption-side: top; text-align: center;">
-    Table of metrics metadata
-    </caption>
-    <colgroup>
-    <col style="width: 50%">
-    <col style="width: 25%">
-    <col style="width: 25%">
-    </colgroup>
-    <thead style="text-align: left;">
-    <tr class="header" style="text-align: center;">
-        <th colspan="1">Name</th>
-        <th colspan="1">Normalization</th>
-        <th colspan="1">Deadband (%)</th>
-    </tr>
-    </thead>
-    <tbody style="text-align: left; overflow-wrap: break-word;">
-    {% for pfxobs in report.raw_report.processed_forecasts_observations %}
-    <tr>
-        <td>{{ pfxobs.name }}</td>
-        <td>
-        {{ pfxobs.normalization_factor }}
-        </td>
-        <td>
-        {{ pfxobs.uncertainty }}
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>

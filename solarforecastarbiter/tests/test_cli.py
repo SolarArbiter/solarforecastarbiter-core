@@ -2,6 +2,7 @@ import asyncio
 from functools import partial
 import logging
 from pathlib import Path
+import shutil
 import tempfile
 
 
@@ -250,3 +251,65 @@ def test_report(cli_token, mocker, report_objects):
         res = runner.invoke(cli.report,
                             ['-u user', '-p pass', infile, outfile])
     assert res.exit_code == 0
+
+
+def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
+    if shutil.which('pdflatex') is None:
+        pytest.skip('PDF reports require pdflatex')
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report_objects[0].replace(status=''))
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series(1., index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    ref_fx = \
+        report_objects[0].report_parameters.object_pairs[1].reference_forecast
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value={report_objects[2]: data,
+                               report_objects[3]: data,
+                               ref_fx: data,
+                               report_objects[1]: obs,
+                               report_objects[4]: obs,
+                               report_objects[5]: data})
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + '/test_out.pdf'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', infile, outfile])
+        assert res.exit_code == 0
+        with open(outfile, 'rb') as f:
+            assert f.read(4) == b'%PDF'
+
+
+@pytest.mark.parametrize('format_,res_code,suffix,called', [
+    ('pdf', 0, '.pdf', 'pdf'),
+    ('pdf', 0, '.pnotf', 'pdf'),
+    ('detect', 0, '.pdf', 'pdf'),
+    ('detect', 1, '.json', ''),
+    ('html', 0, '.html', 'html'),
+    ('html', 0, '.pnotf', 'html'),
+    ('detect', 0, '.html', 'html'),
+])
+def test_report_format(cli_token, mocker, format_, res_code, suffix, called):
+    mocker.patch('solarforecastarbiter.cli.APISession')
+    html = mocker.patch('solarforecastarbiter.cli.template.render_html',
+                        return_value='html')
+    pdf = mocker.patch('solarforecastarbiter.cli.template.render_pdf',
+                       return_value=b'%PDF')
+    mocks = {'html': html, 'pdf': pdf}
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + '/test_out' + suffix
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', f'--format={format_}',
+                             infile, outfile])
+        assert res.exit_code == res_code
+        if called:
+            mocks[called].assert_called()

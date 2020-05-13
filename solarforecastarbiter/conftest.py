@@ -3,6 +3,7 @@ The current set of fixtures are primarily meant as examples of
 what metadata, observations, and forecasts might look like
 in terms of dataclass and pandas objects.
 """
+import base64
 import itertools
 import datetime as dt
 import json
@@ -11,6 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
+from pkg_resources import resource_filename, Requirement
 import pytest
 
 
@@ -1913,8 +1915,18 @@ def report_metrics(metric_index):
 
 
 @pytest.fixture()
+def fail_pdf():
+    with open(resource_filename(
+        Requirement.parse('solarforecastarbiter'),
+            'solarforecastarbiter/reports/figures/fail.pdf'),
+              'rb'
+    ) as f:
+        return base64.a85encode(f.read()).decode()
+
+
+@pytest.fixture()
 def raw_report(report_objects, report_metrics, preprocessing_result_types,
-               ref_forecast_id):
+               ref_forecast_id, fail_pdf):
     report, obs, fx0, fx1, agg, fxagg = report_objects
 
     def gen(with_series):
@@ -2001,7 +2013,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                     {
                         'name': 'mae tucson ghi',
                         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-                        'pdf': ',u@!!/MSk7$7-ue:IY',
+                        'pdf': fail_pdf,
                         'figure_type': 'bar',
                         'category': 'total',
                         'metric': 'mae',
@@ -2359,11 +2371,11 @@ def report_metadata_dict():
 
 
 @pytest.fixture
-def plotly_report_figure_dict():
+def plotly_report_figure_dict(fail_pdf):
     return {
         'name': 'mae tucson ghi',
         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-        'pdf': ',u@!!/MSk7$7-ue:IY',
+        'pdf': fail_pdf,
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
@@ -2410,7 +2422,7 @@ def report_message(report_message_dict):
 
 
 @pytest.fixture
-def raw_report_dict_with_event():
+def raw_report_dict_with_event(fail_pdf):
     return {
         'data_checksum': None,
         'generated_at': '2020-04-22T20:02:40+00:00',
@@ -2435,7 +2447,7 @@ def raw_report_dict_with_event():
                 'metric': 'pod',
                 'name': 'all',
                 'spec': "{}",
-                'pdf': ',u@!!/MSk7$7-ue:IY'}],
+                'pdf': fail_pdf}],
             'plotly_version': '4.5.3',
             'script': None},
         'processed_forecasts_observations': [{
@@ -2523,3 +2535,10 @@ def raw_report_dict_with_event():
                      ['statsmodels', '0.11.0'],
                      ['python', '3.7.1'],
                      ['platform', 'A-Computer']]}
+
+
+@pytest.fixture(scope='function')
+def remove_orca():
+    # otherwise generating all pdfs for tests can take ages
+    import plotly.io as pio
+    pio.orca.config.executable = '/dev/null'

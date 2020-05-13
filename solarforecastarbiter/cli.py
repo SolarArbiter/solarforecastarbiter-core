@@ -292,11 +292,18 @@ def referencenwp(verbose, user, password, base_url, run_time,
 
 @cli.command()
 @common_options
+@click.option(
+    '--format', default='detect',
+    help=('Format of output file. "detect" tries to infer from '
+          'the file extension of OUTPUT-FILE'),
+    type=click.Choice(['detect', 'pdf', 'html'], case_sensitive=False)
+)
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
 @click.argument(
     'output-file', type=click.Path(resolve_path=True))
-def report(verbose, user, password, base_url, report_file, output_file):
+def report(verbose, user, password, base_url, report_file, output_file,
+           format):
     """
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
@@ -312,11 +319,24 @@ def report(verbose, user, password, base_url, report_file, output_file):
     full_report = report.replace(raw_report=raw_report, status='complete')
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
-    html_report = template.render_html(
-        full_report, dash_url,
-        with_timeseries=True, body_only=False)
-    with open(output_file, 'w') as f:
-        f.write(html_report)
+    if (
+            (format == 'detect' and output_file.endswith('.html'))
+            or format == 'html'
+    ):
+        html_report = template.render_html(
+            full_report, dash_url,
+            with_timeseries=True, body_only=False)
+        with open(output_file, 'w') as f:
+            f.write(html_report)
+    elif (
+            (format == 'detect' and output_file.endswith('.pdf'))
+            or format == 'pdf'
+    ):
+        pdf_report = template.render_pdf(full_report, dash_url)
+        with open(output_file, 'wb') as f:
+            f.write(pdf_report)
+    else:
+        raise ValueError("Unable to detect format")
 
 
 if __name__ == "__main__":  # pragma: no cover

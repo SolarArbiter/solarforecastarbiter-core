@@ -596,6 +596,7 @@ Functions to generate output (HTML, PDF) for reports
 
    reports.template.render_html
    reports.template.get_template_and_kwargs
+   reports.template.render_pdf
 
 Validation
 ==========

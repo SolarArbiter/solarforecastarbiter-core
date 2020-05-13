@@ -1,0 +1,135 @@
+%- set report_name = report.report_parameters.name
+%- set report_date_str = report.raw_report.generated_at.strftime('%B %d, %Y')
+%- set report_url = dash_url + '/reports/' + report.report_id
+%- import 'macros.j2' as macros with context
+\documentclass[12pt,letterpaper]{article}
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black}
+\usepackage{graphicx}
+\graphicspath{{./figs/}}
+\usepackage{placeins}
+\usepackage{longtable,tabu,multirow}
+\usepackage{pdflscape}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{float}
+\captionsetup[table]{skip=10pt}
+
+\newcommand{\ccbr}{\allowbreak\hspace{0pt}}
+
+\begin{document}
+\title{\VAR{report_name}}
+\date{\VAR{report_date_str}}
+\maketitle
+This report of solar forecast accuracy was automatically generated using the
+\href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
+our GitHub repository for
+\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports}{known issues}
+with the reports or to create a new issue.
+
+\tableofcontents
+\cleardoublepage
+\listoffigures
+\cleardoublepage
+\listoftables
+\cleardoublepage
+
+\section{Report Metadata}
+
+\begin{itemize}
+  \item Name: \VAR{report_name}
+  \item Start: \VAR{report.report_parameters.start}
+  \item End: \VAR{report.report_parameters.end}
+  \item Generated at: \VAR{report.raw_report.generated_at}
+\end{itemize}
+
+%- if report.raw_report.messages | length > 0
+\subsection{Errors}
+
+\begin{itemize}
+  %- for mesg in report.raw_report.messages
+  \item \VAR{mesg.message}
+  %- endfor
+\end{itemize}
+%- endif
+
+\section{Data}
+
+This report includes forecast and observation data available from
+\VAR{report.report_parameters.start} to \VAR{report.report_parameters.end}.
+
+\subsection{Observations and Forecasts}
+
+\VAR{macros.obsfx_table_text() | html_to_tex}
+
+Plots showing the realigned and resampled time series for the observation and
+forecast data as well as the distribution of forecast versus observation
+data are available on the web version of this report available
+\href{\VAR{report_url}}{here}.
+
+\VAR{macros.data_parameters_table()}
+
+\subsection{Data Validation}
+
+\VAR{macros.data_validation_table()}
+
+\subsection{Data Resampling and Alignment}
+
+\VAR{macros.data_resampling_section()}
+
+\section{Metrics}
+\FloatBarrier
+
+\VAR{macros.metrics_meta_table()}
+
+A table of metrics over the entire study period and metric figures are shown below.
+Metrics may be downloaded in CSV format through the HTML version of this report
+available \href{\VAR{report_url}}{here}.
+
+\VAR{macros.metric_table(report.raw_report.metrics, 'total', report.report_parameters.metrics)}
+
+\FloatBarrier
+%- for category in report.report_parameters.categories
+%- set human_category = human_categories[category]
+\subsection{\VAR{human_category.title()} Analysis}
+%- if category_blurbs is defined
+\VAR{category_blurbs[category]}
+%- endif
+%- for metric in report.report_parameters.metrics
+%- set human_metric = human_metrics[metric].replace('^', '\\textasciicircum')
+%- for rep_fig in report.raw_report.plots.figures
+%- if rep_fig.category == category and rep_fig.metric == metric
+%- set plot_id = (category+'_'+metric+'_'+rep_fig.name) | replace('^', '-') | replace(' ', '_')
+%- if category == 'total'
+%- set caption = 'Total ' + human_metric + ' for all forecasts.'
+%- else
+%- set caption = human_metric + ' by ' + human_category.lower() + ' for ' + rep_fig.name + '.'
+%- endif
+\begin{figure}[H]
+  \centering
+  \includegraphics[height=0.40\textheight]{\VAR{plot_id}}
+  \caption{\VAR{caption}}
+\end{figure}
+%- endif
+%- endfor
+%- endfor
+\FloatBarrier
+\clearpage
+%- endfor
+
+\section{Versions}
+\VAR{macros.version_description() | html_to_tex}
+
+\begin{table}[h]
+  \caption{Table of package versions}
+  \begin{tabu}{ l | X }
+    Package & Version \\ \hline
+    %- for pkg_ver in report.raw_report.versions
+    \VAR{pkg_ver[0]} & \VAR{pkg_ver[1].replace('_', '\\_')} \\
+    %- endfor
+    LaTeX & \fmtversion \\
+    pdfTeX & \pdftexbanner \\
+  \end{tabu}
+\end{table}
+\end{document}
