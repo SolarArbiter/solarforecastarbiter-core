@@ -123,11 +123,12 @@ available \href{\VAR{report_url}}{here}.
 
 \begin{table}[h]
   \caption{Table of package versions}
-  \begin{tabular}{ l | l }
+  \begin{tabu}{ l | X }
     Package & Version \\ \hline
     %- for pkg_ver in report.raw_report.versions
     \VAR{pkg_ver[0]} & \VAR{pkg_ver[1].replace('_', '\\_')} \\
     %- endfor
-  \end{tabular}
+    pdfTeX & \pdftexbanner \\
+  \end{tabu}
 \end{table}
 \end{document}
