@@ -196,6 +196,7 @@ def initialize_site_observations(api, site):
     labels to differentiate between measurements recorded by
     different instruments.
     """
+    # Request ~month old data at initialization to ensure we get a response.
     start = pd.Timestamp.now() - pd.Timedelta('30 days')
     end = start
     try:

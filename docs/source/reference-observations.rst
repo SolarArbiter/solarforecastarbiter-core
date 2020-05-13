@@ -1,0 +1,128 @@
+.. curentmodule: solarforecastarbiter.io.reference_observations
+
+######################
+Reference Observations
+######################
+
+Overview
+========
+
+The Solar Forecast Arbiter imports reference observation data from multiple
+measurement networks. A list of these networks and their Solar Forecast Arbiter
+modules can be found in the `Available Network Handlers`_ section. A map of all
+of the sites available in the reference dataset can be found on the
+`Solar Forecast Arbiter project website <https://solarforecastarbiter.org/referencedata/>`_.
+
+The :py:mod:`solarforecastarbiter.io.reference_observations` subpackage
+contains code for instantiating reference sites and observations and
+updating reference observations.
+
+Structure
+=========
+
+The :py:mod:`solarforecastarbiter.io.reference_observations` subpackage
+contains python modules and metadata files in JSON and CSV format.
+
+Data Files
+----------
+* `sfa_reference_sites.csv`
+   The master list of reference sites. See the comment at the top of this file
+   for descriptions of its fields.
+
+* `<network>_reference_sites.json`
+   Network specific files containing site and observation metadata in the API's
+   JSON format. These are used when the master CSV does not contain all of
+   the columns needed to accurately define a site or observation.
+
+Modules
+-------
+* :py:mod:`solarforecastarbiter.io.reference_observations.reference_data`
+   This module coordinates the initialization and update process. It also 
+   contains the `NETWORKHANDLER_MAP` dictionary, which maps network names to
+   the correct Network Handler. The functions in the module are utilized by the
+   CLI `referencedata` command.
+
+* :py:mod:`solarforecastarbiter.io.reference_observations.common` 
+   A module containing network-agnostic utility functions. For things like
+   posting data to the Solar Forecast Arbiter API and filtering reference data
+   by network.
+
+Network Handlers
+****************
+Network Handlers are network specific modules that implement the following
+funtions. See :py:mod:`solarforecastarbiter.io.reference_observations.surfrad`
+for an example.
+
+* `initialize_site_observations(api, site)`
+   Create an observation at the site for each variable available from the
+   network.
+    * api: :py:class:`solarforecastarbiter.io.api.APISession`
+    * site: :py:class:`solarforecastarbiter.datamodel.Site`
+
+
+* `initialize_site_forecasts(api, site)`
+   Create a forecast fore each observation at the site.
+    * api: :py:class:`solarforecastarbiter.io.api.APISession`
+    * site: :py:class:`solarforecastarbiter.datamodel.Site`
+
+
+* `update_observation_data(api, sites, observations, start, end)`
+   Retrieve data from the network then format and post it to each observation
+   at the site.
+    * api: :py:class:`solarforecastarbiter.io.api.APISession`
+    * sites: :py:class:`solarforecastarbiter.datamodel.Site`
+    * sites: :py:class:`solarforecastarbiter.datamodel.Site`
+    * start: datetime
+    * end: datetime
+
+
+* (optional) `adjust_site_parameters(site)`
+   In instances where the master site CSV does not contain enough metadata about
+   the site, (e.g. when a PV plant requires `modeling_parameters`) this function
+   may be used to update the site metadata before it is posted to the API.
+    * site: dict
+
+
+Available Network Handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* NOAA (The National Oceanic and Atmospheric Administration)
+   * SURFRAD: Surface Radiation Budget Network
+      https://www.esrl.noaa.gov/gmd/grad/surfrad/
+
+	  :py:mod:`solarforecastarbiter.io.reference_observations.surfrad`
+
+   * SOLRAD:
+      https://www.esrl.noaa.gov/gmd/grad/solrad/index.html
+
+     :py:mod:`solarforecastarbiter.io.reference_observations.solrad`
+
+   * CRN: U.S. Climate Reference Network
+      https://www.ncdc.noaa.gov/crn/
+
+      :py:mod:`solarforecastarbiter.io.reference_observations.crn`
+
+* NREL MIDC: National Renewable Energy Laboratory Measurement and Instrumentation Data Center
+   https://midcdmz.nrel.gov/
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.midc`
+
+* UO SRML: University of Oregon Solar Radiation Monitoring Laboratory
+   http://solardat.uoregon.edu/
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.srml`
+
+* DOE RTC: DOE Regional Test Centers for Solar Technologies
+   https://pv-dashboard.sandia.gov/
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.rtc`
+
+* DOE ARM: DOE Atmospheric Radiation Measurement
+   https://www.arm.gov/
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.arm`
+
+* NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition
+   https://developer.nrel.gov/docs/solar/pvdaq-v3/
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.pvdaq`

@@ -49,6 +49,8 @@ Enhancements
   'DAYTIME INTERPOLATED VALUES'``. (:issue:`124`)
 * A public Docker image is available, and Github Actions use this image for
   continuous integration tests (:pull:`446`)
+* Adjusted University of Oregon Solar Radiation Measurment Laboratory (UO SRML)
+  to include available pv power data. (:pull:`442`)
 
 Bug fixes
 ~~~~~~~~~
@@ -56,6 +58,8 @@ Bug fixes
   (:issue:`428`) (:pull:`430`)
 * Ensure data is sorted from reference data sources before slicing and
   posting to the API (:pull:`435`)
+* Remove UO SMRL sites from reference dataset that have not reported recent
+  data. (:issue:`436`)
 
 
 Contributors
