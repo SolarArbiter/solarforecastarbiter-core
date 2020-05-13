@@ -167,7 +167,7 @@ def test_build_metrics_json():
      ' \\textbf{masbold}'))
 ])
 def test_html_to_tex(val, expected):
-    assert template.html_to_tex(val) == expected
+    assert template._html_to_tex(val) == expected
 
 
 def test_render_pdf(report_with_raw, dash_url):

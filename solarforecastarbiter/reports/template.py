@@ -173,7 +173,7 @@ def render_html(report, dash_url=datamodel.DASH_URL,
     return out
 
 
-def html_to_tex(value):
+def _html_to_tex(value):
     value = (value
              .replace('<p>', '')
              .replace('</p>', '\n')
@@ -260,7 +260,7 @@ def render_pdf(report, dash_url, max_runs=5):
         line_statement_prefix='%-',
         line_comment_prefix='%#'
     )
-    env.filters['html_to_tex'] = html_to_tex
+    env.filters['html_to_tex'] = _html_to_tex
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)
