@@ -54,6 +54,9 @@ PLOT_LAYOUT_DEFAULTS = {
     'plot_bgcolor': PLOT_BGCOLOR,
     'font': {'size': 14}
 }
+
+# If for some reason, the fail.pdf (just a pdf with some text that
+# pdf generation failed) is unavailable, use an empty pdf
 try:
     with open(Path(__file__).parent / 'fail.pdf', 'rb') as f:
         fail_pdf = base64.a85encode(f.read()).decode()
