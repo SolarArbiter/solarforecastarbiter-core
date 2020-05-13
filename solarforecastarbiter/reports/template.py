@@ -201,7 +201,7 @@ def render_pdf(report, dash_url, max_runs=5):
     ----------
     report: :py:class:`solarforecastarbiter.datamodel.Report`
     dash_url: str
-        URL of the Solar Forecast arbiter dashboard to use when building links.
+        URL of the Solar Forecast Arbiter dashboard to use when building links.
     max_runs: int, default 5
         Maximum number of times to run pdflatex
 
