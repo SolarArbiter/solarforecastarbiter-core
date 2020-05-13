@@ -1,7 +1,7 @@
 {
     "observations": [
         {
-            "extra_parameters": "{\"network_data_label\": \"516A\", \"network\": \"UO SRML\", \"module\": \"Unisolar 68W/ Fronius IG 2000\"}",
+            "extra_parameters": "{\"network_data_label\": \"516A\", \"module\": \"Unisolar 68W/ Fronius IG 2000\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -31,7 +31,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5161\", \"network\": \"UO SRML\", \"module\": \"Unisolar 68W/ Fronius IG 2000\"}",
+            "extra_parameters": "{\"network_data_label\": \"5161\", \"module\": \"Unisolar 68W/ Fronius IG 2000\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -61,7 +61,7 @@
             "variable": "ac_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536B\", \"network\": \"UO SRML\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\"}",
+            "extra_parameters": "{\"network_data_label\": \"536B\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -91,7 +91,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536B\", \"network\": \"UO SRML\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\"}",
+            "extra_parameters": "{\"network_data_label\": \"536B\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -121,7 +121,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536C\", \"network\": \"UO SRML\", \"module\": \"Photowatt 105W/ PVP 1100\"}",
+            "extra_parameters": "{\"network_data_label\": \"536C\", \"module\": \"Photowatt 105W/ PVP 1100\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -151,7 +151,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536C\", \"network\": \"UO SRML\", \"module\": \"Photowatt 105W/ PVP 1100\"}",
+            "extra_parameters": "{\"network_data_label\": \"536C\", \"module\": \"Photowatt 105W/ PVP 1100\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -181,7 +181,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536D\", \"network\": \"UO SRML\", \"module\": \"Kaneka 60W/SMA 700\"}",
+            "extra_parameters": "{\"network_data_label\": \"536D\", \"module\": \"Kaneka 60W/SMA 700\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -211,7 +211,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536D\", \"network\": \"UO SRML\", \"module\": \"Kaneka 60W/SMA 700\"}",
+            "extra_parameters": "{\"network_data_label\": \"536D\", \"module\": \"Kaneka 60W/SMA 700\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -241,11 +241,11 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5161\", \"network\": \"UO SRML\", \"module\": \"\"}",
+            "extra_parameters": "{\"network_data_label\": \"5161\", \"module\": \"5kw unspecified\", \"network_api_id\": \"94040.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"AS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power ",
+            "name": "Ashland OR dc_power 5kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -263,7 +263,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -271,11 +271,11 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5162\", \"network\": \"UO SRML\", \"module\": \"\"}",
+            "extra_parameters": "{\"network_data_label\": \"5162\", \"module\": \"15kw unspecified\", \"network_api_id\": \"94040.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"AS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power ",
+            "name": "Ashland OR dc_power 15kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -293,7 +293,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -301,7 +301,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5361\", \"network\": \"UO SRML\", \"module\": \"Sharp 175 1050W\"}",
+            "extra_parameters": "{\"network_data_label\": \"5361\", \"module\": \"Sharp 175 1050W\", \"network_api_id\": \"94259.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"KA\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -323,7 +323,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -331,7 +331,7 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536A\", \"network\": \"UO SRML\", \"module\": \"Sharp 175 1050W\"}",
+            "extra_parameters": "{\"network_data_label\": \"536A\", \"module\": \"Sharp 175 1050W\", \"network_api_id\": \"94259.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"KA\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
@@ -353,7 +353,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -361,11 +361,11 @@
             "variable": "ac_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5361\", \"network\": \"UO SRML\", \"module\": \"Sunpower 255, inverter: SPR-3300x 240 VAC Sunpower\"}",
+            "extra_parameters": "{\"network_data_label\": \"5361\", \"module\": \"Sunpower 255, inverter: SPR-3300x 240 VAC Sunpower\", \"network_api_id\": \"94807.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"BD\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) ac_power Sunpower",
+            "name": "Bend OR PV ac_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -383,7 +383,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -391,11 +391,11 @@
             "variable": "ac_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"5369\", \"network\": \"UO SRML\", \"module\": \"Sunpower 255, inverter: SPR-3300x 240 VAC Sunpower\"}",
+            "extra_parameters": "{\"network_data_label\": \"5369\", \"module\": \"Sunpower 255, inverter: SPR-3300x 240 VAC Sunpower\", \"network_api_id\": \"94807.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"BD\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) dc_power Sunpower",
+            "name": "Bend OR PV dc_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -413,7 +413,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": ""
             },
@@ -437,7 +437,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Ashland OR",
+            "name": "Ashland OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -456,7 +456,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Kalapuya High School OR",
+            "name": "Kalapuya High School OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -513,7 +513,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Bend OR (PV)",
+            "name": "Bend OR PV",
             "provider": "",
             "site_id": ""
         }

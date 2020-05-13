@@ -1,5 +1,7 @@
 import logging
+import json
 from urllib import error
+from pkg_resources import resource_filename, Requirement
 
 
 import pandas as pd
@@ -7,8 +9,15 @@ from pvlib import iotools
 from requests.exceptions import HTTPError
 
 
+from solarforecastarbiter.datamodel import Observation
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
+
+
+DEFAULT_SITEFILE = resource_filename(
+    Requirement.parse('solarforecastarbiter'),
+    'solarforecastarbiter/io/reference_observations/'
+    'srml_reference_sites.json')
 
 
 # maps the desired variable names to those returned by pvlib.iotools
@@ -18,27 +27,8 @@ srml_variable_map = {
     'dhi_': 'dhi',
     'wind_speed_': 'wind_speed',
     'temp_air_': 'air_temperature',
-    '5': 'power',
 }
 
-# SRMLs data element numbers use the second digit to indicate
-# surface tilt, this map assists in looking up the correct data
-# element number by the surface tilt of a station.
-srml_surface_tilt_map = {
-    15: 1,
-    25: 2,
-    30: 3,
-    45: 5,
-    60: 6,
-}
-
-# SRMLs data element numbers use the third digit to indicate
-# surface azimuth with a general direction e.g. south-facing
-srml_azimuth_map = {
-    270.0: 4,  # west-facing
-    180.0: 6,  # south-facing
-    90.0: 8,  # east-facing
-}
 
 # maps SolarForecastArbiter interval_label to the SRML infix which
 # designates the time resolution of each file. The list of file types
@@ -56,20 +46,31 @@ FILE_TYPE_MAP = {
 logger = logging.getLogger('reference_data')
 
 
-def _site_power_prefix(tilt, azimuth):
-    """
+def adjust_site_parameters(site):
+    """Inserts modeling parameters for sites with pv measurments
+
     Parameters
     ----------
-    tilt: float
-        Site surface tilt.
-    azimuth: float
-        Site surface azimuth.
+    site: dict
 
     Returns
     -------
-    str
-        The prefix to use when filtering srml data columns.
+    dict
+        Copy of inputs plus a new key 'modeling_parameters'.
     """
+    with open(DEFAULT_SITEFILE) as fp:
+        sites_metadata = json.load(fp)['sites']
+    site_api_id = site['extra_parameters']['network_api_id']
+    for site_metadata in sites_metadata:
+        site_extra_params = json.loads(site_metadata['extra_parameters'])
+        if site_extra_params['network_api_id'] == site_api_id:
+            site_out = site.copy()
+            site_out['modeling_parameters'] = site_metadata[
+                'modeling_parameters']
+            return site_out
+    return site
+
+
 def request_data(site, year, month):
     """Makes a request for each file type until successful or we
     run out of filetypes.
@@ -162,6 +163,11 @@ def fetch(api, site, start, end):
         return pd.DataFrame()
     var_columns = [col for col in all_period_data.columns
                    if '_flag' not in col]
+    power_columns = [col for col in var_columns
+                     if col.startswith('5')]
+    # adjust power from watts to megawatts
+    for column in power_columns:
+        all_period_data[column] = all_period_data[column] / 1000000
     all_period_data = all_period_data[var_columns]
     return all_period_data
 
@@ -216,59 +222,32 @@ def initialize_site_observations(api, site):
         for variable in srml_variable_map.keys():
             matches = [col for col in site_df.columns
                        if col.startswith(variable)]
-            if variable == '5':
-                # create an aggregated power observations
-                if hasattr(site, "modeling_parameters"):
-                    site_power_prefix = _site_power_prefix(
-                        site.modeling_parameters.surface_tilt,
-                        site.modeling_parameters.surface_azimuth,
-                    )
-                    # limit power to data with matching surface_tilt/azimuth
-                    matches = [match for match in matches 
-                               if match.startswith(site_power_prefix)]
-                    if matches:
-                        # from matching raw data files against the 
-                        # comprehensive format, it appears that ac power
-                        # measurements are suffixed with a letter, while  
-                        # dc is suffixed with a number.
-                        dc_matches = [match for match in matches if isalpha(match[-1])]
-                        ac_matches = [match for match in matches if isnumeric(match[-1])]
-                        observation_extra_parameters = extra_params.copy()
-                        observation_extra_parameters.update({
-                            'network_data_label': ','.join(matches)})
-                        try:
-                            # Here, we pass a name with match instead of
-                            # variable to differentiate between multiple
-                            # observations of the same variable
-                            common.create_observation(
-                                api, site, srml_variable_map[variable],
-                                name=f'{site_name} {srml_variable_map[variable]}',
-                                interval_label='beginning',
-                                extra_params=observation_extra_parameters)
-                        except HTTPError as e:
-                            logger.error(
-                                f'Failed to create {variable} observation at '
-                                f'Site {site.name}. Error: {e.response.text}')
-                else:
-                    continue
-            else:
-                for match in matches:
-                    observation_extra_parameters = extra_params.copy()
-                    observation_extra_parameters.update({
-                        'network_data_label': match})
-                    try:
-                        # Here, we pass a name with match instead of variable
-                        # to differentiate between multiple observations of
-                        # the same variable
-                        common.create_observation(
-                            api, site, srml_variable_map[variable],
-                            name=f'{site_name} {match}',
-                            interval_label='beginning',
-                            extra_params=observation_extra_parameters)
-                    except HTTPError as e:
-                        logger.error(
-                            f'Failed to create {variable} observation at Site '
-                            f'{site.name}. Error: {e.response.text}')
+            for match in matches:
+                observation_extra_parameters = extra_params.copy()
+                observation_extra_parameters.update({
+                    'network_data_label': match})
+                try:
+                    # Here, we pass a name with match instead of variable
+                    # to differentiate between multiple observations of
+                    # the same variable
+                    common.create_observation(
+                        api, site, srml_variable_map[variable],
+                        name=f'{site_name} {match}',
+                        interval_label='beginning',
+                        extra_params=observation_extra_parameters)
+                except HTTPError as e:
+                    logger.error(
+                        f'Failed to create {variable} observation at Site '
+                        f'{site.name}. Error: {e.response.text}')
+        with open(DEFAULT_SITEFILE) as fp:
+            obs_metadata = json.load(fp)['observations']
+        for obs in obs_metadata:
+            obs_site_extra_params = json.loads(obs['site']['extra_parameters'])
+            if obs_site_extra_params['network_api_id'] == extra_params[
+                    'network_api_id']:
+                obs['site'] = site
+                observation = Observation.from_dict(obs)
+                common.check_and_post_observation(api, observation)
 
 
 def initialize_site_forecasts(api, site):
