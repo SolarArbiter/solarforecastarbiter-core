@@ -8,26 +8,36 @@ Overview
 ========
 
 The Solar Forecast Arbiter imports reference observation data from multiple
-measurement networks. A list of these networks and their Solar Forecast Arbiter
-modules can be found in the `Available Network Handlers`_ section. A map of all
-of the sites available in the reference dataset can be found on the
+measurement networks. All of the logic for creating the appropriate Solar
+Forecast Arbiter sites and observations and updating observations with new data
+from the network can be found in the
+:py:mod:`solarforecastarbiter.io.reference_observations` subpackage. Code for
+retrieving data from the network's APIs are spread between the
+:py:mod:`solarforecastarbiter.io.fetch` subpackage, and the
+`PVLib <https://pvlib-python.readthedocs.io/en/stable/index.html>`_ *iotools*
+module.
+
+A list of these networks and their Solar Forecast Arbiter modules can be found
+in the `Available Network Handlers`_ section. A map of all of the sites
+available in the reference dataset can be found on the
 `Solar Forecast Arbiter project website <https://solarforecastarbiter.org/referencedata/>`_.
 
-The :py:mod:`solarforecastarbiter.io.reference_observations` subpackage
-contains code for instantiating reference sites and observations and
-updating reference observations.
 
 Structure
 =========
 
 The :py:mod:`solarforecastarbiter.io.reference_observations` subpackage
-contains python modules and metadata files in JSON and CSV format.
+contains python modules and data files in JSON and CSV format.
 
 Data Files
 ----------
 * `sfa_reference_sites.csv`
    The master list of reference sites. See the comment at the top of this file
-   for descriptions of its fields.
+   for descriptions of its fields. The file contains extra fields that are not
+   found in the Solar Forecast Arbiter API schema for Sites. These fields are
+   for use with the source network's API and are stored in the
+   `extra_parameters` field when the site is created for use in subsequent
+   updates.
 
 * `<network>_reference_sites.json`
    Network specific files containing site and observation metadata in the API's
@@ -49,9 +59,12 @@ Modules
 
 Network Handlers
 ****************
-Network Handlers are network specific modules that implement the following
-funtions. See :py:mod:`solarforecastarbiter.io.reference_observations.surfrad`
-for an example.
+Network Handlers are network specific modules that implement a handful of
+functions such that they share a common interface. See
+:py:mod:`solarforecastarbiter.io.reference_observations.surfrad` for an
+example.
+
+Required network handler functions:
 
 * `initialize_site_observations(api, site)`
    Create an observation at the site for each variable available from the
@@ -112,17 +125,20 @@ Available Network Handlers
 
    :py:mod:`solarforecastarbiter.io.reference_observations.srml`
 
-* DOE RTC: DOE Regional Test Centers for Solar Technologies
+* DOE RTC: DOE Regional Test Centers for Solar Technologies\*
    https://pv-dashboard.sandia.gov/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.rtc`
 
-* DOE ARM: DOE Atmospheric Radiation Measurement
+* DOE ARM: DOE Atmospheric Radiation Measurement\*
    https://www.arm.gov/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.arm`
 
-* NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition
+* NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition\*
    https://developer.nrel.gov/docs/solar/pvdaq-v3/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.pvdaq`
+
+\* Requesting data from these networks requires a valid api key for their
+associated api.
