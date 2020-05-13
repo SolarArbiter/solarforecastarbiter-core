@@ -303,7 +303,7 @@ def _compile_files_into_pdf(tmpdir, logfile, auxfile, max_runs):
         'out.tex'
     )
     runs_left = max_runs
-    prev_aux = ''
+    prev_aux = 'nothing to see here'
     # run pdflatex until it settles
     while runs_left > 0:
         try:
