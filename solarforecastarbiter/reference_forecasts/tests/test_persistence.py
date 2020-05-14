@@ -343,3 +343,46 @@ def test_persistence_scalar_index_low_solar_elevation(
         observation_ac, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
     assert_series_equal(fx, expected, check_less_precise=1, check_names=False)
+
+
+@pytest.mark.parametrize("interval_label", [
+    'beginning', 'ending'
+])
+def test_persistence_probabilistic(site_metadata, interval_label):
+
+    tz = 'UTC'
+    interval_length = '5min'
+    observation = default_observation(
+        site_metadata,
+        interval_length=interval_length,
+        interval_label=interval_label
+    )
+
+    data_start = pd.Timestamp('20190513 1200', tz=tz)
+    data_end = pd.Timestamp('20190513 1230', tz=tz)
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+    index = pd.date_range(start=data_start, end=data_end, freq='5min',
+                          closed=closed)
+
+    data = pd.Series([0, 0, 0, 20, 20, 20], index=index, dtype=float)
+    forecast_start = pd.Timestamp('20190513 1230', tz=tz)
+    forecast_end = pd.Timestamp('20190513 1300', tz=tz)
+    interval_length = pd.Timedelta('5min')
+    load_data = partial(load_data_base, data)
+
+    expected_index = pd.date_range(start=forecast_start, end=forecast_end,
+                                   freq=interval_length, closed=closed)
+
+    constant_values = [10, 20]
+    forecasts = persistence.persistence_probabilistic(
+        observation, data_start, data_end, forecast_start, forecast_end,
+        interval_length, interval_label, load_data, constant_values
+    )
+    for fx in forecasts:
+        pd.testing.assert_index_equal(fx.index, expected_index,
+                                      check_categorical=False)
+
+    pd.testing.assert_series_equal(forecasts[0],
+                                   pd.Series(50.0, index=expected_index))
+    pd.testing.assert_series_equal(forecasts[1],
+                                   pd.Series(100.0, index=expected_index))

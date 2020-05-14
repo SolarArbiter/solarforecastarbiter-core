@@ -369,7 +369,7 @@ def _check_intervals_times(interval_label, data_start, data_end,
 def persistence_probabilistic(observation, data_start, data_end,
                               forecast_start, forecast_end,
                               interval_length, interval_label,
-                              load_data, prob_intervals=[25, 50, 75]):
+                              load_data, constant_values):
     r"""
     Make a probabilistic persistence forecast using the empirical CDF of the
     *observation* from *data_start* to *data_end*. In the forecast literature,
@@ -380,11 +380,10 @@ def persistence_probabilistic(observation, data_start, data_end,
 
     .. math::
 
-       F_{t_f} = CDF{GHI_{t_{start}} \ldots GHI_{t_{end}}
-       GHI_{t_f}(10%) = F_{t_f}(10%)
-       GHI_{t_f}(20%) = F_{t_f}(20%)
+       F_{t_f} = CDF(GHI_{t_{start}} \ldots GHI_{t_{end})
+       Prob(GHI_{t_f} <= 100 W/m^2) = F_{t_f}(100 W/m^2)
+       Prob(GHI_{t_f} <= 250 W/m^2) = F_{t_f}(250 W/m^2)
        ...
-       GHI_{t_f}(100%) = F_{t_f}(100%)
 
     where :math:`t_f` is a forecast time, :math:`F` is the empirical CDF
     from all observations that occur between :math:`t_{start}` = *data_start*
@@ -413,13 +412,15 @@ def persistence_probabilistic(observation, data_start, data_end,
         A function that loads the observation data. Must have the
         signature load_data(observation, data_start, data_end) and
         properly account for observation interval label.
-    prob_intervals : array_like
-        The probability intervals [%] of the forecast.
+    constant_values : array_like
+        The variable values defining the right-hand-side of a CDF interval
+        (e.g. 10 MW, 25 MW, etc.).
 
     Returns
     -------
     forecasts : list of pd.Series
-        The persistence forecasts, ordered to match *prob_intervals*.
+        The persistence forecasts (probabilities [%]), return in the same order
+        as *constant_values*.
 
     References
     ----------
@@ -429,20 +430,24 @@ def persistence_probabilistic(observation, data_start, data_end,
 
     Notes
     -----
+    This function currently only supports providing physical *constant_values*,
+    not probabilities (e.g. 5 MW, 8 MW, etc. is valid but 10%, 25%, etc. is
+    not).
 
     """
-
-    # empirical CDF from observations
-    obs = load_data(observation, data_start, data_end)
-    cdf = ECDF(obs)
 
     closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
 
+    # empirical CDF from observations
+    obs = load_data(observation, data_start, data_end)
+    cdf = ECDF(obs, side="right")
+
+    # forecast probability [%]
     forecasts = []
-    for prob_interval in prob_intervals:
-        fx_values = cdf(prob_interval)
-        forecasts.append(pd.Series(fx_values, index=fx_index))
+    for constant_value in constant_values:
+        fx_prob = cdf(constant_value) * 100.0
+        forecasts.append(pd.Series(fx_prob, index=fx_index))
 
     return forecasts
