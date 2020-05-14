@@ -3,6 +3,7 @@
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """
+from contextlib import contextmanager
 from functools import wraps
 from inspect import signature
 import json
@@ -452,3 +453,62 @@ def load_report_values(raw_report, values):
                                   reference_forecast_values=ref_fx_vals)
         out.append(new_fxobs)
     return tuple(out)
+
+
+@contextmanager
+def mock_raw_report_endpoints(base_url):
+    """
+    Mock API report endpoints under base_url to enable testing
+    of the report generation task run via the dashboard. Requires
+    requests_mock>=1.8.0. Catches all report endpoints, but if
+    report generation requires POSTing to other endpoints in the
+    future, they will need to be added here.
+    """
+    import requests_mock
+    value_dict = {}  # for raw processed values
+
+    def post_value_callback(request, context):
+        context.status_code = 200
+        rjson = request.json()
+        id_ = rjson['object_id']
+        value_dict[id_] = rjson['processed_values']
+        return id_
+
+    raw_dict = {}  # for the raw reports
+
+    def post_raw_callback(request, context):
+        context.status_code = 200
+        raw_dict.update(request.json())
+
+    report_dict = {}  # for new and full reports
+
+    def post_report_callback(request, context):
+        context.status_code = 200
+        report_dict.update(request.json())
+        return 'no_id'
+
+    def get_report_callback(request, context):
+        context.status_code = 200
+        out = report_dict.copy()
+        if raw_dict:
+            out['raw_report'] = raw_dict
+            out['values'] = [
+                {'id': k, 'processed_values': v}
+                for k, v in value_dict.items()]
+        out['status'] = 'complete'
+        return out
+
+    with requests_mock.Mocker(real_http=True) as m:
+        value_re = re.compile(f'{base_url}/reports/.*/values')
+        raw_re = re.compile(f'{base_url}/reports/.*/raw')
+        m.register_uri('GET', re.compile(
+            f'{base_url}/reports/.*'),
+                       json=get_report_callback)
+        m.register_uri('POST', re.compile(
+            f'{base_url}/reports/*'),
+                       text=post_report_callback)
+        m.register_uri('POST', re.compile(
+            f'{base_url}/reports/.*/status/.*'))
+        m.register_uri('POST', value_re, text=post_value_callback)
+        m.register_uri('POST', raw_re, json=post_raw_callback)
+        yield
