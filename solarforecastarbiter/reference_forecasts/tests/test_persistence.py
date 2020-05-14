@@ -348,7 +348,14 @@ def test_persistence_scalar_index_low_solar_elevation(
 @pytest.mark.parametrize("interval_label", [
     'beginning', 'ending'
 ])
-def test_persistence_probabilistic(site_metadata, interval_label):
+@pytest.mark.parametrize("obs_values,constant_values,expected_values", [
+    # obs_values : physical units
+    # constant_values : physical units
+    # expected_values : probabilities [%]
+    ([0, 0, 0, 20, 20, 20], [10, 20], [50, 100]),
+])
+def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
+                                   constant_values, expected_values):
 
     tz = 'UTC'
     interval_length = '5min'
@@ -364,7 +371,7 @@ def test_persistence_probabilistic(site_metadata, interval_label):
     index = pd.date_range(start=data_start, end=data_end, freq='5min',
                           closed=closed)
 
-    data = pd.Series([0, 0, 0, 20, 20, 20], index=index, dtype=float)
+    data = pd.Series(obs_values, index=index, dtype=float)
     forecast_start = pd.Timestamp('20190513 1230', tz=tz)
     forecast_end = pd.Timestamp('20190513 1300', tz=tz)
     interval_length = pd.Timedelta('5min')
@@ -373,16 +380,15 @@ def test_persistence_probabilistic(site_metadata, interval_label):
     expected_index = pd.date_range(start=forecast_start, end=forecast_end,
                                    freq=interval_length, closed=closed)
 
-    constant_values = [10, 20]
     forecasts = persistence.persistence_probabilistic(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data, constant_values
     )
-    for fx in forecasts:
+    for i, fx in enumerate(forecasts):
         pd.testing.assert_index_equal(fx.index, expected_index,
                                       check_categorical=False)
 
-    pd.testing.assert_series_equal(forecasts[0],
-                                   pd.Series(50.0, index=expected_index))
-    pd.testing.assert_series_equal(forecasts[1],
-                                   pd.Series(100.0, index=expected_index))
+        pd.testing.assert_series_equal(
+            fx,
+            pd.Series(expected_values[i], index=expected_index, dtype=float)
+        )
