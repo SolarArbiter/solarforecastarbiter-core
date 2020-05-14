@@ -3,9 +3,10 @@ Functions to connect to and process data from SolarForecastArbiter API
 """
 import json
 import logging
+
+
 import requests
 from urllib3 import Retry
-
 import numpy as np
 import pandas as pd
 
@@ -817,7 +818,7 @@ class APISession(requests.Session):
         """
         req = self.get(f'/reports/{report_id}')
         resp = req.json()
-        raw = resp.pop('raw_report')
+        raw = resp.pop('raw_report', None)
         report = self.process_report_dict(resp)
         if raw is not None:
             raw_report = datamodel.RawReport.from_dict(raw)

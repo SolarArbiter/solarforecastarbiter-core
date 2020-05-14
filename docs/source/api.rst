@@ -433,6 +433,7 @@ Utility functions for data IO.
    io.utils.serialize_timeseries
    io.utils.deserialize_timeseries
    io.utils.load_report_values
+   io.utils.mock_raw_report_endpoints
 
 
 Metrics

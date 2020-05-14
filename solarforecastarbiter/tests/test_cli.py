@@ -2,6 +2,7 @@ import asyncio
 from functools import partial
 import logging
 from pathlib import Path
+import re
 import shutil
 import tempfile
 
@@ -251,6 +252,44 @@ def test_report(cli_token, mocker, report_objects):
         res = runner.invoke(cli.report,
                             ['-u user', '-p pass', infile, outfile])
     assert res.exit_code == 0
+
+
+def test_report_roundtrip(cli_token, mocker, report_objects, requests_mock):
+    # mock all endpoints
+    base_url = 'http://baseurl'
+    requests_mock.register_uri(['POST', 'GET'], re.compile(base_url + '/.*'))
+    # faster to not make real pdf
+    from solarforecastarbiter.reports.figures.plotly_figures import fail_pdf
+    mocker.patch(
+        'solarforecastarbiter.reports.figures.plotly_figures.output_pdf',
+        return_value=fail_pdf)
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report_objects[0].replace(status='complete'))
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series(1., index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    ref_fx = \
+        report_objects[0].report_parameters.object_pairs[1].reference_forecast
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value={report_objects[2]: data,
+                               report_objects[3]: data,
+                               ref_fx: data,
+                               report_objects[1]: obs,
+                               report_objects[4]: obs,
+                               report_objects[5]: data})
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + '/test_out.html'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', f'--base-url={base_url}',
+                             '--serialization-roundtrip',
+                             infile, outfile])
+        assert res.exit_code == 0
 
 
 def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
