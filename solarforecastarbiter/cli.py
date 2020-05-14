@@ -358,5 +358,13 @@ def report(verbose, user, password, base_url, report_file, output_file,
         raise ValueError("Unable to detect format")
 
 
+@cli.command(context_settings=dict(ignore_unknown_options=True))
+@click.argument('pytest_args', nargs=-1, type=click.UNPROCESSED)
+def test(pytest_args):  # pragma: no cover
+    """Test this installation of solarforecastarbiter"""
+    import pytest
+    pytest.main(['--pyargs', 'solarforecastarbiter'] + list(pytest_args))
+
+
 if __name__ == "__main__":  # pragma: no cover
     cli()
