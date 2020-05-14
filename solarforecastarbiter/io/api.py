@@ -1191,8 +1191,15 @@ class APISession(requests.Session):
 
 @contextmanager
 def mock_raw_report_endpoints(base_url):
+    """
+    Mock API report endpoints under base_url to enable testing
+    of the report generation task run via the dashboard. Requires
+    requests_mock>=1.8.0. Catches all report endpoints, but if
+    report generation requires POSTing to other endpoints in the
+    future, they will need to be added here.
+    """
     import requests_mock
-    value_dict = {}
+    value_dict = {}  # for raw processed values
 
     def post_value_callback(request, context):
         context.status_code = 200
@@ -1206,7 +1213,7 @@ def mock_raw_report_endpoints(base_url):
         return [{'id': k, 'processed_values': v}
                 for k, v in value_dict.items()]
 
-    raw_dict = {}
+    raw_dict = {}  # for the raw reports
 
     def post_raw_callback(request, context):
         context.status_code = 200
@@ -1216,7 +1223,7 @@ def mock_raw_report_endpoints(base_url):
         context.status_code = 200
         return raw_dict
 
-    report_dict = {}
+    report_dict = {}  # for new and full reports
 
     def post_report_callback(request, context):
         context.status_code = 200
