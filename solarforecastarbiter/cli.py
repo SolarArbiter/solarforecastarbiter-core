@@ -303,12 +303,17 @@ def referencenwp(verbose, user, password, base_url, run_time,
     '--serialization-roundtrip', is_flag=True,
     help='Run the raw report through a mock API with serialization'
 )
+@click.option(
+    '--orca-server-url', help=(
+        'URL to the plotly orca server to generate PDF images if '
+        'orca is not installed locally')
+)
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
 @click.argument(
     'output-file', type=click.Path(resolve_path=True))
 def report(verbose, user, password, base_url, report_file, output_file,
-           format, serialization_roundtrip):
+           format, serialization_roundtrip, orca_server_url):
     """
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
@@ -319,6 +324,9 @@ def report(verbose, user, password, base_url, report_file, output_file,
         metadata = json.load(f)
     session = APISession(token, base_url=base_url)
     report = session.process_report_dict(metadata)
+    if orca_server_url is not None:
+        import plotly.io as pio
+        pio.orca.config.server_url = orca_server_url
     if serialization_roundtrip:
         with mock_raw_report_endpoints(base_url):
             session.create_report(report)
