@@ -1,8 +1,10 @@
 import datetime as dt
 import pandas as pd
 import pytest
+from urllib import error
 
 from pandas import Timestamp
+from pandas.testing import assert_frame_equal
 
 from solarforecastarbiter.io.reference_observations import srml
 from solarforecastarbiter.datamodel import Site
@@ -150,3 +152,29 @@ def test_init_site_observations(
     srml.initialize_site_observations(mock_api, test_site)
     assert mock_create_obs.call_count == 5
     assert mock_chk_post.call_count == 2
+
+
+def request_data_test(mocker, exception, test_site, test_data):
+    get_func = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.iotools.'
+        'read_srml_month_from_solardat')
+    get_func.return_value = test_data
+    data = srml.request_data(test_site, 1, 1)
+    assert_frame_equal(data, test_data)
+
+
+@pytest.mark.parametrize('exception', [
+    pd.errors.EmptyDataError,
+    error.URLError,
+])
+def request_data_test_warnings(mocker, exception, test_site):
+    logger = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.iotools.'
+        'logger.warning')
+    get_func = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.iotools.'
+        'read_srml_month_from_solardat')
+    get_func.side_effect = exception()
+    data = srml.request_data(test_site, 1, 1)
+    assert logger.call_count == 5
+    assert data is None

@@ -77,11 +77,7 @@ def request_data(site, year, month):
 
     Parameters
     ----------
-    interval_length: int
-        The number of minutes between each timestep in the data. Used
-        to lookup filetypes in FILE_TYPE_MAP.
-    station: string
-        The two character station abbreviation found in filenames.
+    site: :py:class:`solarforecastarbiter.datamodel.Site`
     year: int
         The year of the data to request.
     month: int
