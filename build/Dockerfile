@@ -68,3 +68,5 @@ RUN set -ex \
     && /opt/app-root/bin/pip install --no-cache-dir /tmp/build/ \
     && tlmgr --usermode install $(cat /tmp/build/packages.tex) \
     && rm -rf /tmp/build
+
+CMD /opt/app-root/bin/solararbiter
