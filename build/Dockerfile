@@ -17,7 +17,7 @@ RUN set -ex \
     && apt-get update \
     && apt-get upgrade -y \
     && buildDeps='gfortran libnetcdf-dev libhdf5-dev libgrib2c-dev' \
-    && apt-get install -y $buildDeps python3-gpg \
+    && apt-get install -y $buildDeps python3-gpg libnetcdf13 \
     && cd /root \
     # wgrib2 install, with help from fedora RPM build https://src.fedoraproject.org/rpms/wgrib2/tree/master
     && wget http://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2_nolib.tgz.v2.0.8 \
