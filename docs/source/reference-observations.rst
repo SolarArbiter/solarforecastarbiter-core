@@ -14,7 +14,7 @@ from the network can be found in the
 :py:mod:`solarforecastarbiter.io.reference_observations` subpackage. Code for
 retrieving data from the network's APIs are spread between the
 :py:mod:`solarforecastarbiter.io.fetch` subpackage, and the
-`PVLib <https://pvlib-python.readthedocs.io/en/stable/index.html>`_ *iotools*
+`pvlib python <https://pvlib-python.readthedocs.io/en/stable/index.html>`_ *iotools*
 module.
 
 A list of these networks and their Solar Forecast Arbiter modules can be found
