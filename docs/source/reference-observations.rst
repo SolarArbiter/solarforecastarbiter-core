@@ -60,7 +60,7 @@ Modules
 Network Handlers
 ****************
 Network Handlers are network specific modules that implement a handful of
-functions such that they share a common interface. See
+functions with a common interface. See
 :py:mod:`solarforecastarbiter.io.reference_observations.surfrad` for an
 example.
 
