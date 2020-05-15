@@ -56,7 +56,7 @@ RUN set -ex \
     && wget http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
     && mkdir install-tl \
     && tar -xzf install-tl-unx.tar.gz -C install-tl --strip=1 \
-    && install-tl/install-tl -no-gui -profile /tmp/tex/texlive.profile \
+    && install-tl/install-tl -no-gui -profile /tmp/tex/texlive.profile -repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
     && mkdir -p /opt/app-root/texmf \
     && chown 1001:0 /opt/app-root/texmf \
     && su user -c "tlmgr init-usertree" \
@@ -66,7 +66,7 @@ USER 1001
 
 COPY . /tmp/build
 RUN set -ex \
-    && tlmgr --usermode install $(cat /tmp/build/packages.tex) \
+    && tlmgr --usermode install $(cat /tmp/build/packages.tex) --repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir '/tmp/build/.[all]' \
