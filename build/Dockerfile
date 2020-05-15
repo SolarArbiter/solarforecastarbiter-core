@@ -66,10 +66,10 @@ USER 1001
 
 COPY . /tmp/build
 RUN set -ex \
+    && tlmgr --usermode install $(cat /tmp/build/packages.tex) \
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir /tmp/build/ \
-    && tlmgr --usermode install $(cat /tmp/build/packages.tex) \
     && rm -rf /tmp/build
 
 CMD /opt/app-root/bin/solararbiter
