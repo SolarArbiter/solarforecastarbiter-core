@@ -69,7 +69,7 @@ RUN set -ex \
     && tlmgr --usermode install $(cat /tmp/build/packages.tex) \
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
-    && /opt/app-root/bin/pip install --no-cache-dir /tmp/build/ \
+    && /opt/app-root/bin/pip install --no-cache-dir '/tmp/build/.[all]' \
     && rm -rf /tmp/build
 
 CMD /opt/app-root/bin/solararbiter
