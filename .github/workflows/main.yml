@@ -1,4 +1,4 @@
-name: arbiter core CI
+name: CI
 
 on:
   push:
@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/solararbiter/solarforecastarbiter-core:latest
+      volumes:
+        - /codecov
 
     steps:
       - uses: actions/checkout@v2
@@ -27,7 +29,22 @@ jobs:
         run: pip install '.[all]'
 
       - name: Pytest
-        run: pytest solarforecastarbiter --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html
+        run: pytest solarforecastarbiter --cov --cov-report=xml:/codecov/coverage.xml
 
       - name: flake8
         run: flake8 solarforecastarbiter
+        if: ${{ always() }}
+
+      - name: coverage
+        uses: codecov/codecov-action@v1
+        with:
+          file: /codecov/coverage.xml
+          flags: adder,subtractor,pypi
+          fail_ci_if_error: true
+        if: ${{ always() }}
+
+      - name: make docs
+        run: |
+          pip install -r docs/requirements.txt
+          make -c docs html
+        if: ${{ always() }}
