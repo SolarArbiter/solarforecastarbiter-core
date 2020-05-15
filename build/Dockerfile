@@ -42,10 +42,7 @@ RUN set -ex \
     && ln -s "/usr/lib/python3/dist-packages/gpg" "/opt/app-root/lib/python3.7/site-packages/" \
     && ln -s "/usr/lib/python3/dist-packages/gpg-*.egg-info" "/opt/app-root/lib/python3.7/site-packages/" \
     && /opt/app-root/bin/python -c "import gpg" \
-    && groupadd wheel \
-    && useradd -M -N -u 1001 -s /bin/bash -g 0 -G wheel user \
-    && echo '%wheel   ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel \
-    && chmod 0440 /etc/sudoers.d/wheel \
+    && useradd -M -N -u 1001 -s /bin/bash -g 0 user \
     && chown -R 1001:0 /opt/app-root
 
 COPY build/tex /tmp/tex
@@ -71,5 +68,8 @@ RUN set -ex \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir /tmp/build/ \
     && rm -rf /tmp/build
+
+# need to be root to be able to use in azure pipeline
+USER root
 
 CMD /opt/app-root/bin/solararbiter
