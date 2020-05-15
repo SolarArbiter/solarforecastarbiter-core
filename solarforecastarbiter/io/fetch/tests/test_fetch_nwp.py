@@ -1,9 +1,11 @@
 from pathlib import Path
+import shutil
 
 
 import aiohttp
 from asynctest import CoroutineMock, MagicMock
 import pandas as pd
+from pkg_resources import resource_filename, Requirement
 import pytest
 
 
@@ -266,3 +268,24 @@ async def test_next_run_time(mocker, tmp_path):
         (pp / 'file.nc').touch()
     res = await nwp.next_run_time(init, tmp_path, model)
     assert res == pd.Timestamp('20190410T0000Z')
+
+
+@pytest.mark.asyncio
+async def test_optimize_only(mocker, tmp_path):
+    if shutil.which('wgrib2') is None:
+        pytest.skip('wgrib2 must be on the PATH to run this test')
+    grib_dir = tmp_path / 'grib'
+    shutil.copytree(
+        resource_filename(
+            Requirement.parse('solarforecastarbiter'),
+            'solarforecastarbiter/io/fetch/tests/data/grib'),
+        grib_dir)
+
+    async def run(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    mocker.patch('solarforecastarbiter.io.fetch.signal.pthread_kill')
+    mocker.patch('solarforecastarbiter.io.fetch.nwp.run_in_executor',
+                 new=run)
+    await nwp.optimize_only(grib_dir, 'rap')
+    assert [x.name for x in grib_dir.iterdir()] == ['rap.nc']
