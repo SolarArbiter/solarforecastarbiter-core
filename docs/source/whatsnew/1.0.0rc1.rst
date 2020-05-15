@@ -59,7 +59,7 @@ Bug fixes
 * Ensure data is sorted from reference data sources before slicing and
   posting to the API (:pull:`435`)
 * Remove UO SMRL sites from reference dataset that have not reported recent
-  data. (:issue:`436`)
+  data. (:issue:`436`) (:pull:`442`)
 
 
 Contributors
