@@ -120,10 +120,10 @@ def fetch(api, site, start, end):
 
     Parameters
     ----------
-    api : io.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An APISession with a valid JWT for accessing the Reference Data
         user.
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site`
         Site object with the appropriate metadata.
     start : datetime
         The beginning of the period to request data for.
@@ -174,9 +174,9 @@ def initialize_site_observations(api, site):
 
     Parameters
     ----------
-    api: io.api.APISession
+    api: :py:class:`solarforecastarbiter.io.api.APISession`
 
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site
         The site object for which to create Observations.
 
     Notes
@@ -253,9 +253,9 @@ def initialize_site_forecasts(api, site):
 
     Parameters
     ----------
-    api : solarforecastarbiter.io.api.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An active Reference user session.
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site`
         The site object for which to create Forecasts.
     """
     common.create_forecasts(
@@ -267,15 +267,17 @@ def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of SRML Observations
     from start to end.
 
-    api : solarforecastarbiter.io.api.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An active Reference user session.
-    sites: list
+    sites: list of :py:class:`solarforecastarbiter.datamodel.Site`
         List of all reference sites as Objects
+    observations: list of :py:class:`solarforecastarbiter.datamodel.Observation`
+        List of all reference observations as Objects
     start : datetime
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
-    """
+    """  # noqa
     srml_sites = common.filter_by_networks(sites, 'UO SRML')
     for site in srml_sites:
         common.update_site_observations(api, fetch, site, observations,
