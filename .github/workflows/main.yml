@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/solararbiter/solarforecastarbiter-core:latest
-      volumes:
-        - covvol:/codecov
 
     steps:
       - uses: actions/checkout@v2
@@ -29,7 +27,7 @@ jobs:
         run: pip install '.[all]'
 
       - name: Pytest
-        run: pytest solarforecastarbiter --cov --cov-report=xml:/codecov/coverage.xml
+        run: pytest solarforecastarbiter --cov --cov-report=xml:$HOME/coverage.xml
 
       - name: flake8
         run: flake8 solarforecastarbiter
@@ -38,7 +36,7 @@ jobs:
       - name: coverage
         uses: codecov/codecov-action@v1
         with:
-          file: /codecov/coverage.xml
+          file: $HOME/coverage.xml
           flags: adder,subtractor,pypi
           fail_ci_if_error: true
         if: ${{ always() }}
