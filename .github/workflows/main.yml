@@ -27,7 +27,7 @@ jobs:
         run: pip install '.[all]'
 
       - name: Pytest
-        run: pytest solarforecastarbiter --cov --cov-report=xml:$HOME/coverage.xml
+        run: pytest solarforecastarbiter --cov --cov-report=xml
 
       - name: flake8
         run: flake8 solarforecastarbiter
@@ -36,7 +36,7 @@ jobs:
       - name: coverage
         uses: codecov/codecov-action@v1
         with:
-          file: $HOME/coverage.xml
+          file: ./coverage.xml
           flags: adder,subtractor,pypi
           fail_ci_if_error: true
         if: ${{ always() }}
