@@ -40,7 +40,7 @@ Data Files
    updates.
 
 * `<network>_reference_sites.json`
-   Network specific files containing site and observation metadata in the API's
+   Network-specific files containing site and observation metadata in the API's
    JSON format. These are used when the master CSV does not contain all of
    the columns needed to accurately define a site or observation.
 
