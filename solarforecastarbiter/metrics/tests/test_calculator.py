@@ -277,12 +277,15 @@ def test_calculate_metrics_with_probablistic(single_observation,
     proc_prfx_obs = create_processed_fxobs(prfxobs, fx_values, obs_values)
 
     # Without reference
-    result = calculator.calculate_metrics([proc_prfx_obs], LIST_OF_CATEGORIES,
-                                           PROB_NO_REF)
+    result = calculator.calculate_metrics([proc_prfx_obs],
+                                          LIST_OF_CATEGORIES,
+                                          PROB_NO_REF)
     assert len(result) == 1
     assert isinstance(result[0], datamodel.MetricResult)
     verify_metric_result(result[0],
-        proc_prfx_obs, LIST_OF_CATEGORIES, probabilistic._REQ_DIST)
+                         proc_prfx_obs,
+                         LIST_OF_CATEGORIES,
+                         probabilistic._REQ_DIST)
 
     # With reference
     ref_fx_values = fx_values + .5
@@ -306,7 +309,9 @@ def test_calculate_metrics_with_probablistic(single_observation,
     assert len(dist_results) == 1
     assert isinstance(dist_results[0], datamodel.MetricResult)
     verify_metric_result(dist_results[0],
-        proc_ref_prfx_obs, LIST_OF_CATEGORIES, probabilistic._REQ_DIST)
+                         proc_ref_prfx_obs,
+                         LIST_OF_CATEGORIES,
+                         probabilistic._REQ_DIST)
 
     expected = {
         0: ('total', 'crps', '0', 0.0067),
@@ -581,6 +586,7 @@ def test_calculate_probabilistic_metrics_interval_label_ending(
     proc_fxobs = proc_fxobs.replace(interval_label='ending')
     result = calculator.calculate_probabilistic_metrics(
         proc_fxobs, LIST_OF_CATEGORIES, PROB_NO_REF)
+    assert result
 
 
 def test_calculate_probabilistic_metrics_bad_reference_axis(

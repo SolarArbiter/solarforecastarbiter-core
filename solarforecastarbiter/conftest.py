@@ -1728,11 +1728,11 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
         extra_parameters='',
     )
     cv0_1 = cv0.replace(constant_value=25.0,
-        forecast_id='26a6684c-080b-11ea-bab3-0a580a8200e0')
+                        forecast_id='26a6684c-080b-11ea-bab3-0a580a8200e0')
     cv0_2 = cv0.replace(constant_value=50.0,
-        forecast_id='26a82ba8-080b-11ea-a36b-0a580a8200e0')
+                        forecast_id='26a82ba8-080b-11ea-a36b-0a580a8200e0')
     cv0_3 = cv0.replace(constant_value=75.0,
-        forecast_id='26a9e678-080b-11ea-8989-0a580a8200e0')
+                        forecast_id='26a9e678-080b-11ea-8989-0a580a8200e0')
     pfx0 = datamodel.ProbabilisticForecast(
         name="Day Ahead GEFS ghi",
         issue_time_of_day=dt.time(7, 0),
@@ -1763,11 +1763,11 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
         axis=axis,
     )
     cv1_1 = cv1.replace(constant_value=25.0,
-        forecast_id='71ee6aff-7011-4610-1111-2c9709ab1999')
+                        forecast_id='71ee6aff-7011-4610-1111-2c9709ab1999')
     cv1_2 = cv1.replace(constant_value=50.0,
-        forecast_id='71ee6aff-7011-4610-2222-2c9709ab1999')
+                        forecast_id='71ee6aff-7011-4610-2222-2c9709ab1999')
     cv1_3 = cv1.replace(constant_value=75.0,
-        forecast_id='71ee6aff-7011-4610-3333-2c9709ab1999')
+                        forecast_id='71ee6aff-7011-4610-3333-2c9709ab1999')
     pfx1 = datamodel.ProbabilisticForecast(
         name="Hour Ahead GEFS ghi (example only)",
         issue_time_of_day=dt.time(7, 0),
@@ -1783,26 +1783,12 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
         constant_values=(cv1_1, cv1_2, cv1_3),
         extra_parameters='',
     )
-    cvagg = datamodel.ProbabilisticForecastConstantValue(
-        name="GHI Aggregate FX 60 (example only)",
-        issue_time_of_day=dt.time(7, 0),
-        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
-        interval_length=pd.Timedelta("0 days 01:00:00"),
-        run_length=pd.Timedelta("0 days 01:00:00"),
-        interval_label="beginning",
-        interval_value_type="interval_mean",
-        variable="ghi",
-        site=site,
-        forecast_id="1a6cc8c0-c433-432b-8077-31a1fac500d5",
-        constant_value=0.0,
-        axis=axis,
-    )
     cvagg_1 = cv1.replace(constant_value=25.0,
-        forecast_id='1a6cc8c0-c433-432b-1111-31a1fac500d5')
+                          forecast_id='1a6cc8c0-c433-432b-1111-31a1fac500d5')
     cvagg_2 = cv1.replace(constant_value=50.0,
-        forecast_id='1a6cc8c0-c433-432b-2222-31a1fac500d5')
+                          forecast_id='1a6cc8c0-c433-432b-2222-31a1fac500d5')
     cvagg_3 = cv1.replace(constant_value=75.0,
-        forecast_id='1a6cc8c0-c433-432b-3333-31a1fac500d5')
+                          forecast_id='1a6cc8c0-c433-432b-3333-31a1fac500d5')
     pfx2 = datamodel.ProbabilisticForecast(
         name="GHI Aggregate FX 60 (example only)",
         issue_time_of_day=dt.time(7, 0),

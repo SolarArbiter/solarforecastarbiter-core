@@ -349,7 +349,7 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
         single_observation)
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    proc_fx_obs = preprocessing.resample_and_align(
+    preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
@@ -370,7 +370,7 @@ def test_resample_and_align_prob_constant_value(
         single_observation)
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    proc_fx_obs = preprocessing.resample_and_align(
+    preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
@@ -516,8 +516,8 @@ def test_process_forecast_observations(report_objects, quality_filter,
                                       proc_fxobs.observation_values.index)
 
 
-def test_process_probabilistic_forecast_observations(cdf_and_cv_report_objects,
-        quality_filter, timeofdayfilter, mocker):
+def test_process_probabilistic_forecast_observations(
+        cdf_and_cv_report_objects, quality_filter, timeofdayfilter, mocker):
     report, observation, cdf_forecast_0, cdf_forecast_1, \
         cv_forecast_0, cv_forecast_1, aggregate, cdf_forecast_agg, \
         cv_forecast_agg = cdf_and_cv_report_objects
@@ -530,16 +530,14 @@ def test_process_probabilistic_forecast_observations(cdf_and_cv_report_objects,
                                             freq='1min',
                                             tz='MST',
                                             name='timestamp'))
-    # obs_ser = obs_ser[obs_ser.index.hour.isin([6, 7])]  # filtered hours
     cdf_fx_df = pd.DataFrame({'25': np.arange(periods_1min/60),
                               '50': np.arange(periods_1min/60)+1,
                               '75': np.arange(periods_1min/60)+2},
-                              index=pd.date_range(start='2020-04-01T00:00:00',
-                                                  periods=periods_1min/60,
-                                                  freq='60min',
-                                                  tz='MST',
-                                                  name='timestamp'))
-    # cdf_fx_df = cdf_fx_df[cdf_fx_df.index.hour.isin([6, 7])]  # filtered hours
+                             index=pd.date_range(start='2020-04-01T00:00:00',
+                                                 periods=periods_1min/60,
+                                                 freq='60min',
+                                                 tz='MST',
+                                                 name='timestamp'))
     obs_df = obs_ser.to_frame('value')
     obs_df['quality_flag'] = OK
     agg_df = obs_df.resample('60T').asfreq()
@@ -560,13 +558,26 @@ def test_process_probabilistic_forecast_observations(cdf_and_cv_report_objects,
 
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
-    import pdb; pdb.set_trace()
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs, filters, data, 'MST')
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.warning.called
     assert not logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        if isinstance(proc_fxobs.original.forecast,
+                      datamodel.ProbabilisticForecast):
+            assert isinstance(proc_fxobs.forecast_values, pd.DataFrame)
+        else:
+            assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
 
 
 def test_process_forecast_observations_no_data(
@@ -634,11 +645,7 @@ def test_process_forecast_observations_resample_fail(
                    for vr in proc_fxobs.validation_results)
         assert all(isinstance(pr, datamodel.PreprocessingResult)
                    for pr in proc_fxobs.preprocessing_results)
-        if isinstance(proc_fxobs.original.forecast,
-                      datamodel.ProbabilisticForecast):
-            assert isinstance(proc_fxobs.forecast_values, pd.DataFrame)
-        else:
-            assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
         assert isinstance(proc_fxobs.observation_values, pd.Series)
         pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
                                       proc_fxobs.observation_values.index)
