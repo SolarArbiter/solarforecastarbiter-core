@@ -17,7 +17,7 @@ RUN set -ex \
     && apt-get update \
     && apt-get upgrade -y \
     && buildDeps='gfortran libnetcdf-dev libhdf5-dev libgrib2c-dev' \
-    && apt-get install -y $buildDeps python3-gpg libnetcdf13 \
+    && apt-get install -y $buildDeps python3-gpg libnetcdf13 sudo \
     && cd /root \
     # wgrib2 install, with help from fedora RPM build https://src.fedoraproject.org/rpms/wgrib2/tree/master
     && wget http://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2_nolib.tgz.v2.0.8 \
@@ -42,7 +42,10 @@ RUN set -ex \
     && ln -s "/usr/lib/python3/dist-packages/gpg" "/opt/app-root/lib/python3.7/site-packages/" \
     && ln -s "/usr/lib/python3/dist-packages/gpg-*.egg-info" "/opt/app-root/lib/python3.7/site-packages/" \
     && /opt/app-root/bin/python -c "import gpg" \
-    && useradd -M -N -u 1001 -s /bin/bash -g 0 user \
+    && groupadd wheel \
+    && useradd -M -N -u 1001 -s /bin/bash -g 0 -G wheel user \
+    && echo '%wheel   ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel \
     && chown -R 1001:0 /opt/app-root
 
 COPY build/tex /tmp/tex
