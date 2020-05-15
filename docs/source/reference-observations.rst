@@ -64,7 +64,7 @@ functions with a common interface. See
 :py:mod:`solarforecastarbiter.io.reference_observations.surfrad` for an
 example.
 
-Required network handler functions:
+The required network handler functions are:
 
 * `initialize_site_observations(api, site)`
    Create an observation at the site for each variable available from the
