@@ -1,0 +1,23 @@
+name: arbiter core CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+  jobs:
+    ci:
+      runs-on: ubuntu-latest
+      container:
+        image: solararbiter/solarforecastarbiter-core
+
+      steps:
+        - uses: actions/checkout@v1
+        - name: Install and test
+          run: |
+            pip install -r requirements.txt -r requirements-test.txt
+            tlmgr --usermode install $(cat packages.tex)
+            pytest solarforecastarbiter
