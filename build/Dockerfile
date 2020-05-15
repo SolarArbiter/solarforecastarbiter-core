@@ -20,7 +20,7 @@ RUN set -ex \
     && apt-get install -y $buildDeps python3-gpg libnetcdf13 sudo \
     && cd /root \
     # wgrib2 install, with help from fedora RPM build https://src.fedoraproject.org/rpms/wgrib2/tree/master
-    && wget http://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2_nolib.tgz.v2.0.8 \
+    && wget -q http://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2_nolib.tgz.v2.0.8 \
     && tar -xzf wgrib2_nolib.tgz.v2.0.8 \
     && cd grib2 \
     && /bin/bash -c "rm -r wgrib2/{fnlist,Gctpc,gctpc_ll2xy,new_grid_lambertc}.[ch]" \
@@ -53,7 +53,7 @@ COPY build/tex /tmp/tex
 # install texlive basic
 RUN set -ex \
     && cd /tmp/tex \
-    && wget http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
+    && wget -q http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
     && mkdir install-tl \
     && tar -xzf install-tl-unx.tar.gz -C install-tl --strip=1 \
     && install-tl/install-tl -no-gui -profile /tmp/tex/texlive.profile -repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
@@ -62,14 +62,15 @@ RUN set -ex \
     && su user -c "tlmgr init-usertree" \
     && rm -r /tmp/tex
 
-USER 1001
-
 COPY . /tmp/build
 RUN set -ex \
     && tlmgr --usermode install $(cat /tmp/build/packages.tex) --repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir '/tmp/build/.[all]' \
-    && rm -rf /tmp/build
+    && rm -rf /tmp/build \
+    && chown -R 1001:0 /opt/app-root
+
+USER 1001
 
 CMD /opt/app-root/bin/solararbiter
