@@ -346,18 +346,23 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
-        single_observation)
-    fx_series = THREE_HOUR_SERIES.to_frame()
-    obs_series = THREE_HOUR_SERIES
+        single_observation,
+        reference_forecast=prob_forecasts.replace(
+            name='reference'))
+    fx_data = THREE_HOUR_SERIES.to_frame()
+    obs_data = THREE_HOUR_SERIES
+    ref_data = THREE_HOUR_SERIES.to_frame()
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, tz)
+        fx_obs, fx_data, obs_data, ref_data, tz)
+    pd.testing.assert_frame_equal(fx_values,
+                                  ref_values,
+                                  check_categorical=False)
     pd.testing.assert_frame_equal(fx_values,
                                   obs_values.to_frame(),
                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
                                   check_categorical=False)
-    assert ref_values is None
 
 
 def test_resample_and_align_prob_constant_value(
@@ -365,18 +370,23 @@ def test_resample_and_align_prob_constant_value(
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
         prob_forecast_constant_value,
-        single_observation)
-    fx_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
+        single_observation,
+        reference_forecast=prob_forecast_constant_value.replace(
+            name='reference'))
+    fx_data = THREE_HOUR_SERIES
+    obs_data = THREE_HOUR_SERIES
+    ref_data = THREE_HOUR_SERIES
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, tz)
+        fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_series_equal(fx_values,
-                                  obs_values,
-                                  check_categorical=False)
+                                   ref_values,
+                                   check_categorical=False)
+    pd.testing.assert_series_equal(fx_values,
+                                   obs_values,
+                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
                                   check_categorical=False)
-    assert ref_values is None
 
 
 @pytest.mark.parametrize('obs,somecounts', [
