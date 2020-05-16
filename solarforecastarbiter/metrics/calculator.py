@@ -28,7 +28,7 @@ def calculate_metrics(processed_pairs, categories, metrics):
     Parameters
     ----------
     processed_pairs :
-        List of solarforecastarbiter.datamodel.ProcessedForecastObservation
+        List of datamodel.ProcessedForecastObservation
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
@@ -37,7 +37,8 @@ def calculate_metrics(processed_pairs, categories, metrics):
     Returns
     -------
     list
-        List of solarforecastarbiter.datamodel.MetricResult
+        List of datamodel.MetricResult for each
+        datamodel.ProcessedForecastObservation
     """
     calc_metrics = []
 
@@ -274,11 +275,17 @@ def _sort_metrics_vals(metrics_vals, mapping):
 def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
     """
     Calculate probabilistic metrics for the processed data using the provided
-    categories and metric types.
+    categories and metric types. Will calculate distribution metrics (e.g.,
+    Continuous Ranked Probability Score (CRPS)) over all constant values if
+    forecast is a datamodel.ProbabilisticForecast is provided, or single value
+    metrics (e.g., Briar Score (BS)) if forecast is a
+    datamodel.ProbabilisticForecastConstantValue.
 
     Parameters
     ----------
     processed_fx_obs : datamodel.ProcessedForecastObservation
+        Forecasts must be datamodel.ProbabilisticForecast (CDFs) or
+        datamodel.ProbabilisticForecastConstantValue (single values)
     categories : list of str
         List of categories to compute metrics over.
     metrics : list of str
@@ -286,11 +293,7 @@ def calculate_probabilistic_metrics(processed_fx_obs, categories, metrics):
 
     Returns
     -------
-    tuple of (list of datamodel.MetricsResult, datamodel.MetricsResult)
-        First value is a list of metric results calculated per
-        datamodel.ProbabilisticForecastConstantValue, and
-        the second value are the metrics calculated per
-        datamodel.ProbabilisticForecast.
+    datamodel.MetricsResult
 
     Raises
     ------
