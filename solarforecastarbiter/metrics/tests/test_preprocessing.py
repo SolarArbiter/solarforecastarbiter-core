@@ -347,14 +347,12 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
         single_observation)
-    fx_series = THREE_HOUR_SERIES
+    fx_series = THREE_HOUR_SERIES.to_frame()
     obs_series = THREE_HOUR_SERIES
-    preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, tz)
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
+    pd.testing.assert_frame_equal(fx_values,
+                                  obs_values.to_frame(),
                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
@@ -370,12 +368,10 @@ def test_resample_and_align_prob_constant_value(
         single_observation)
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, tz)
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, tz)
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
+    pd.testing.assert_series_equal(fx_values,
+                                  obs_values,
                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
