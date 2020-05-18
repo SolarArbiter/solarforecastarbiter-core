@@ -30,6 +30,8 @@ Enhancements
 * Reports can now be rendered into PDF files via pdflatex (:issue:`319`) (:pull:`439`)
 * Report generation via the CLI can now run through mock API endpoints to test
   report serialization (:issue:`405`) (:pull:`441`)
+* A public Docker image is available, and Github Actions use this image for
+  continuous integration tests (:pull:`446`)
 
 Bug fixes
 ~~~~~~~~~
