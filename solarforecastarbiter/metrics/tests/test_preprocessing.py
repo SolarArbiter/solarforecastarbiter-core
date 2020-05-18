@@ -354,11 +354,11 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
     ref_data = THREE_HOUR_SERIES.to_frame()
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_data, obs_data, ref_data, tz)
-    pd.testing.assert_frame_equal(fx_values,
-                                  ref_values,
+    pd.testing.assert_index_equal(fx_values.index,
+                                  ref_values.index,
                                   check_categorical=False)
-    pd.testing.assert_frame_equal(fx_values,
-                                  obs_values.to_frame(),
+    pd.testing.assert_index_equal(fx_values.index,
+                                  obs_values.index,
                                   check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
@@ -378,11 +378,11 @@ def test_resample_and_align_prob_constant_value(
     ref_data = THREE_HOUR_SERIES
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_data, obs_data, ref_data, tz)
-    pd.testing.assert_series_equal(fx_values,
-                                   ref_values,
+    pd.testing.assert_index_equal(fx_values.index,
+                                   ref_values.index,
                                    check_categorical=False)
-    pd.testing.assert_series_equal(fx_values,
-                                   obs_values,
+    pd.testing.assert_index_equal(fx_values.index,
+                                   obs_values.index,
                                    check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
