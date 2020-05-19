@@ -697,7 +697,7 @@ def test_create_one_forecast_existing(template_fx, mocker):
     (('ghi', 'dni'), 'ghi'),
     (('dni', 'wind_speed', 'relative_humidity'), False)
 ])
-def test_create_forecasts(template_fx, mocker, vars_, primary):
+def test_create_nwp_forecasts(template_fx, mocker, vars_, primary):
     api, template, site = template_fx
     templates = [template.replace(name='one'), template.replace(name='two')]
     fxdict = template.to_dict()
@@ -705,7 +705,7 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     fxdict['axis'] = 'y'
     templates += [ProbabilisticForecast.from_dict(fxdict)]
 
-    fxs = common.create_forecasts(api, site, vars_, templates)
+    fxs = common.create_nwp_forecasts(api, site, vars_, templates)
     assert len(fxs) == 6
     if primary:
         assert fxs[0].variable == primary
@@ -719,10 +719,51 @@ def test_create_forecasts(template_fx, mocker, vars_, primary):
     assert isinstance(fxs[-1], ProbabilisticForecast)
 
 
-def test_create_forecasts_outside(template_fx, mocker, log):
+def test_create_nwp_forecasts_outside(template_fx, mocker, log):
     vars_ = ('ac_power', 'dni')
     api, template, site = template_fx
     site = site.replace(latitude=19, longitude=-159)
     templates = [template.replace(name='one'), template.replace(name='two')]
     with pytest.raises(ValueError):
-        common.create_forecasts(api, site, vars_, templates)
+        common.create_nwp_forecasts(api, site, vars_, templates)
+
+
+def test_create_persistence_forecasts(template_fx, mocker):
+    vars_ = ('ghi', 'dni', 'air_temperature', 'ac_power')
+    api, template, site = template_fx
+    templates = [
+        template.replace(extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True})),
+        template.replace(extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True}),
+                         name='Longer template')
+    ]
+    obss = [site_test_observation.replace(site=site),
+            site_test_observation.replace(site=site, variable='dni'),
+            site_test_observation,
+            site_test_observation.replace(
+                site=site, variable='air_temperature'),
+            site_test_observation.replace(
+                site=site, variable='dhi'),
+            ]
+    api.list_observations = mocker.MagicMock(return_value=obss)
+    fxs = common.create_persistence_forecasts(api, site, vars_, templates)
+    assert len(fxs) == 6
+    assert sorted([fx.variable for fx in fxs]) == [
+        'air_temperature', 'air_temperature', 'dni', 'dni', 'ghi', 'ghi']
+    assert 'Longer' in fxs[-1].name
+    assert all(['observation_id' in fx.extra_parameters for fx in fxs])
+
+
+def test_create_forecasts(template_fx, mocker):
+    vars_ = ('ac_power', 'ghi')
+    api, template, site = template_fx
+    templates = [template, template.replace(extra_parameters=json.dumps(
+        {'is_reference_persistence_forecast': True}))]
+    api.list_observations = mocker.MagicMock(
+        return_value=[site_test_observation.replace(site=site)])
+    create_nwp = mocker.spy(common, 'create_nwp_forecasts')
+    fxs = common.create_forecasts(api, site, vars_, templates)
+    assert len(fxs) == 3
+    assert create_nwp.call_count == 1
+    assert create_nwp.call_args[0][-1] == templates[:1]
