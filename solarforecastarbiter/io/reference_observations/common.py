@@ -410,7 +410,7 @@ def site_name_no_network(site):
 
 
 def create_one_forecast(api, site, template_forecast, variable,
-                        piggyback_on=None):
+                        **extra_params):
     """Creates a new Forecast or ProbabilisticForecast for the variable
     and site based on the template forecast.
 
@@ -426,6 +426,9 @@ def create_one_forecast(api, site, template_forecast, variable,
         to extra parameters.
     variable : string
         Variable measured in the forecast.
+    **extra_params
+        Other key, value pairs to add to the extra_parameters of the Forecast
+        object.
 
     Returns
     -------
@@ -433,8 +436,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         The datamodel object of the newly created forecast.
     """
     extra_parameters = json.loads(template_forecast.extra_parameters)
-    if piggyback_on is not None:
-        extra_parameters['piggyback_on'] = piggyback_on
+    extra_parameters.update(extra_params)
     site_name = site_name_no_network(site)
     fx_name = f'{site_name} {template_forecast.name} {variable}'
     # Some site names are too long and exceed the API's limits,

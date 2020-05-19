@@ -672,7 +672,7 @@ def test_create_one_forecast_long_name(template_fx):
 def test_create_one_forecast_piggy(template_fx):
     api, template, site = template_fx
     fx = common.create_one_forecast(api, site, template, 'ac_power',
-                                    'other_fx')
+                                    piggyback_on='other_fx')
     assert fx.name == 'site2 Test Template ac_power'
     assert fx.variable == 'ac_power'
     assert fx.site == site
@@ -688,7 +688,7 @@ def test_create_one_forecast_existing(template_fx, mocker):
     newfx = template.replace(name='site2 Test Template ac_power', site=site)
     api.list_forecasts = mocker.MagicMock(return_value=[newfx])
     fx = common.create_one_forecast(api, site, template, 'ac_power',
-                                    'other_fx')
+                                    piggyback_on='other_fx')
     assert fx == newfx
 
 
