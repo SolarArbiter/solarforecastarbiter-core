@@ -28,7 +28,7 @@ CURRENT_NWP_VARIABLES = {'ac_power', 'ghi', 'dni', 'dhi', 'air_temperature',
 
 # issue time of day is in local standard time and will be
 # adjusted to the appropriate UTC hour
-TEMPLATE_DETERMINISTIC_FORECASTS = [
+TEMPLATE_DETERMINISTIC_NWP_FORECASTS = [
     Forecast(
         name='Day Ahead GFS',
         issue_time_of_day=dt.time(0),
@@ -91,7 +91,7 @@ TEMPLATE_DETERMINISTIC_FORECASTS = [
         ),
 ]
 
-TEMPLATE_PROBABILISTIC_FORECASTS = [
+TEMPLATE_PROBABILISTIC_NWP_FORECASTS = [
     ProbabilisticForecast(
         name='Day Ahead GEFS',
         issue_time_of_day=dt.time(0),
@@ -112,5 +112,57 @@ TEMPLATE_PROBABILISTIC_FORECASTS = [
 ]
 
 
+TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
+    Forecast(
+        name='Hour Ahead Persistence',
+        issue_time_of_day=dt.time(0, 45),
+        lead_time_to_start=pd.Timedelta('75min'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True,
+             'index': False})
+        ),
+    Forecast(
+        name='Fifteen-minute Ahead Persistence',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('15min'),
+        interval_length=pd.Timedelta('15min'),
+        run_length=pd.Timedelta('15min'),
+        interval_label='beginning',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True,
+             'index': False})
+        ),
+    Forecast(
+        name='Five-minute Ahead Persistence',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('5min'),
+        interval_length=pd.Timedelta('5min'),
+        run_length=pd.Timedelta('5min'),
+        interval_label='beginning',
+        interval_value_type='interval_mean',
+        variable='ghi',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True,
+             'index': False})
+        )
+]
+
+TEMPLATE_NWP_FORECASTS = (
+    TEMPLATE_DETERMINISTIC_NWP_FORECASTS +
+    TEMPLATE_PROBABILISTIC_NWP_FORECASTS
+)
+
 TEMPLATE_FORECASTS = (
-    TEMPLATE_DETERMINISTIC_FORECASTS + TEMPLATE_PROBABILISTIC_FORECASTS)
+    TEMPLATE_NWP_FORECASTS +
+    TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS
+)
