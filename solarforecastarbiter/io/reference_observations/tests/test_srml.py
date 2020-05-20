@@ -154,11 +154,11 @@ def test_init_site_observations(
     assert mock_chk_post.call_count == 2
 
 
-def request_data_test(mocker, exception, test_site, test_data):
-    get_func = mocker.patch(
-        'solarforecastarbiter.io.reference_observations.srml.iotools.'
-        'read_srml_month_from_solardat')
-    get_func.return_value = test_data
+def test_request_data(mocker, test_site, test_data):
+    mocked_iotools = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.iotools')
+    mocked_iotools.read_srml_month_from_solardat = mocker.MagicMock(
+        return_value = test_data)
     data = srml.request_data(test_site, 1, 1)
     assert_frame_equal(data, test_data)
 
@@ -167,14 +167,13 @@ def request_data_test(mocker, exception, test_site, test_data):
     pd.errors.EmptyDataError,
     error.URLError,
 ])
-def request_data_test_warnings(mocker, exception, test_site):
+def test_request_data_warnings(mocker, exception, test_site):
+    mocked_iotools = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.iotools')
+    mocked_iotools.read_srml_month_from_solardat = mocker.MagicMock(
+        side_effect = exception('error'))
     logger = mocker.patch(
-        'solarforecastarbiter.io.reference_observations.srml.iotools.'
-        'logger.warning')
-    get_func = mocker.patch(
-        'solarforecastarbiter.io.reference_observations.srml.iotools.'
-        'read_srml_month_from_solardat')
-    get_func.side_effect = exception()
+        'solarforecastarbiter.io.reference_observations.srml.logger')
     data = srml.request_data(test_site, 1, 1)
-    assert logger.call_count == 5
+    assert logger.warning.call_count == 3
     assert data is None
