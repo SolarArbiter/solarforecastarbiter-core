@@ -158,7 +158,7 @@ def test_request_data(mocker, test_site, test_data):
     mocked_iotools = mocker.patch(
         'solarforecastarbiter.io.reference_observations.srml.iotools')
     mocked_iotools.read_srml_month_from_solardat = mocker.MagicMock(
-        return_value = test_data)
+        return_value=test_data)
     data = srml.request_data(test_site, 1, 1)
     assert_frame_equal(data, test_data)
 
@@ -171,7 +171,7 @@ def test_request_data_warnings(mocker, exception, test_site):
     mocked_iotools = mocker.patch(
         'solarforecastarbiter.io.reference_observations.srml.iotools')
     mocked_iotools.read_srml_month_from_solardat = mocker.MagicMock(
-        side_effect = exception('error'))
+        side_effect=exception('error'))
     logger = mocker.patch(
         'solarforecastarbiter.io.reference_observations.srml.logger')
     data = srml.request_data(test_site, 1, 1)
