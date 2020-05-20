@@ -3,6 +3,7 @@ The current set of fixtures are primarily meant as examples of
 what metadata, observations, and forecasts might look like
 in terms of dataclass and pandas objects.
 """
+import base64
 import itertools
 import datetime as dt
 import json
@@ -11,6 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
+from pkg_resources import resource_filename, Requirement
 import pytest
 
 
@@ -1147,6 +1149,35 @@ def prob_forecast_constant_value_text():
 
 
 @pytest.fixture()
+def prob_forecast_constant_value_y_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
+  "variable": "ghi",
+  "axis": "y",
+  "constant_value": 50.0
+}
+"""
+
+
+@pytest.fixture()
 def prob_forecast_text():
     return b"""
 {
@@ -1174,6 +1205,41 @@ def prob_forecast_text():
         {
             "_links": {},
             "constant_value": 0,
+            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def prob_forecast_y_text():
+    return b"""
+{
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
+    },
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "DA GHI",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
+    "variable": "ghi",
+    "axis": "y",
+    "constant_values": [
+        {
+            "_links": {},
+            "constant_value": 0.50,
             "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
         }
     ]
@@ -1300,12 +1366,17 @@ def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
 
 @pytest.fixture()
 def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
+                             prob_forecast_constant_value_y,
                              get_aggregate, agg_prob_forecast_constant_value):
     def f(fx_dict):
+        axis = fx_dict['axis']
         if fx_dict.get('aggregate_id') is not None:
             cv = agg_prob_forecast_constant_value
         else:
-            cv = prob_forecast_constant_value
+            if axis == 'x':
+                cv = prob_forecast_constant_value
+            else:
+                cv = prob_forecast_constant_value_y
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
@@ -1320,7 +1391,7 @@ def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
             forecast_id=fx_dict.get('forecast_id', ''),
             provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
-            axis=fx_dict['axis'],
+            axis=axis,
             constant_values=(cv,))
     return f
 
@@ -1333,8 +1404,20 @@ def prob_forecast_constant_value(prob_forecast_constant_value_text,
 
 
 @pytest.fixture()
+def prob_forecast_constant_value_y(prob_forecast_constant_value_y_text,
+                                   _prob_forecast_constant_value_from_dict):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(prob_forecast_constant_value_y_text))
+
+
+@pytest.fixture()
 def prob_forecasts(prob_forecast_text, _prob_forecast_from_dict):
     return _prob_forecast_from_dict(json.loads(prob_forecast_text))
+
+
+@pytest.fixture()
+def prob_forecasts_y(prob_forecast_y_text, _prob_forecast_from_dict):
+    return _prob_forecast_from_dict(json.loads(prob_forecast_y_text))
 
 
 @pytest.fixture()
@@ -1358,6 +1441,11 @@ def single_event_forecast_observation(single_event_forecast,
 @pytest.fixture()
 def single_prob_forecast_observation(prob_forecasts, single_observation):
     return datamodel.ForecastObservation(prob_forecasts, single_observation)
+
+
+@pytest.fixture()
+def single_prob_forecast_observation_y(prob_forecasts_y, single_observation):
+    return datamodel.ForecastObservation(prob_forecasts_y, single_observation)
 
 
 @pytest.fixture()
@@ -2098,8 +2186,18 @@ def report_metrics(metric_index):
 
 
 @pytest.fixture()
+def fail_pdf():
+    with open(resource_filename(
+        Requirement.parse('solarforecastarbiter'),
+            'solarforecastarbiter/reports/figures/fail.pdf'),
+              'rb'
+    ) as f:
+        return base64.a85encode(f.read()).decode()
+
+
+@pytest.fixture()
 def raw_report(report_objects, report_metrics, preprocessing_result_types,
-               ref_forecast_id):
+               ref_forecast_id, fail_pdf):
     report, obs, fx0, fx1, agg, fxagg = report_objects
 
     def gen(with_series):
@@ -2186,7 +2284,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                     {
                         'name': 'mae tucson ghi',
                         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-                        'pdf': ',u@!!/MSk7$7-ue:IY',
+                        'pdf': fail_pdf,
                         'figure_type': 'bar',
                         'category': 'total',
                         'metric': 'mae',
@@ -2544,11 +2642,11 @@ def report_metadata_dict():
 
 
 @pytest.fixture
-def plotly_report_figure_dict():
+def plotly_report_figure_dict(fail_pdf):
     return {
         'name': 'mae tucson ghi',
         'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
-        'pdf': ',u@!!/MSk7$7-ue:IY',
+        'pdf': fail_pdf,
         'figure_type': 'bar',
         'category': 'total',
         'metric': 'mae',
@@ -2595,7 +2693,7 @@ def report_message(report_message_dict):
 
 
 @pytest.fixture
-def raw_report_dict_with_event():
+def raw_report_dict_with_event(fail_pdf):
     return {
         'data_checksum': None,
         'generated_at': '2020-04-22T20:02:40+00:00',
@@ -2620,7 +2718,7 @@ def raw_report_dict_with_event():
                 'metric': 'pod',
                 'name': 'all',
                 'spec': "{}",
-                'pdf': ',u@!!/MSk7$7-ue:IY'}],
+                'pdf': fail_pdf}],
             'plotly_version': '4.5.3',
             'script': None},
         'processed_forecasts_observations': [{
@@ -2708,3 +2806,10 @@ def raw_report_dict_with_event():
                      ['statsmodels', '0.11.0'],
                      ['python', '3.7.1'],
                      ['platform', 'A-Computer']]}
+
+
+@pytest.fixture(scope='function')
+def remove_orca():
+    # otherwise generating all pdfs for tests can take ages
+    import plotly.io as pio
+    pio.orca.config.executable = '/dev/null'

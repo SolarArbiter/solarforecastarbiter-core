@@ -109,14 +109,17 @@ def single_forecast_data_obj(
 
 
 @pytest.fixture(params=['probfxobs', 'probfxagg',
-                        'probfx_ref', 'probfxagg_ref'])
+                        'probfx_ref', 'probfxagg_ref', 'probfxobsy'])
 def prob_forecasts_data_obj(
         request, single_prob_forecast_observation,
         single_prob_forecast_aggregate,
+        single_prob_forecast_observation_y,
         single_prob_forecast_observation_reffx,
         single_prob_forecast_aggregate_reffx):
     if request.param == 'probfxobs':
         return single_prob_forecast_observation
+    elif request.param == 'probfxobsy':
+        return single_prob_forecast_observation_y
     elif request.param == 'probfxagg':
         return single_prob_forecast_aggregate
     elif request.param == 'probfx_ref':
@@ -270,6 +273,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
         np.linspace(0, 9., 10),
         np.linspace(1, 10., 10),
         np.linspace(2, 11., 10))).T,
+        columns=const_values,
         index=create_dt_index(10))
     obs_values = pd.Series(
         np.linspace(1.5, 10.5, 10),
@@ -314,11 +318,11 @@ def test_calculate_metrics_with_probablistic(single_observation,
                          probabilistic._REQ_DIST)
 
     expected = {
-        0: ('total', 'crps', '0', 0.0067),
-        1: ('year', 'crps', '2019', 0.0067),
-        2: ('month', 'crps', 'Aug', 0.0067),
-        3: ('hour', 'crps', '0', 0.0001),
-        4: ('hour', 'crps', '1', 0.0005)
+        0: ('total', 'crps', '0', 17.247),
+        1: ('year', 'crps', '2019', 17.247),
+        2: ('month', 'crps', 'Aug', 17.247),
+        3: ('hour', 'crps', '0', 19.801000000000002),
+        4: ('hour', 'crps', '1', 19.405)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -330,14 +334,14 @@ def test_calculate_metrics_with_probablistic(single_observation,
     zip_cvs = zip(conv_prob_fx.constant_values,
                   conv_ref_prob_fx.constant_values)
     for i, (cv, ref_cv) in enumerate(zip_cvs):
-        ref_fx_values = fx_values[i] + .5
+        ref_fx_values = fx_values.iloc[:, i] + .5
         cv_ref_prfxobs = datamodel.ForecastObservation(
             cv,
             single_observation,
             reference_forecast=ref_cv)
         cv_proc_ref_prfx_obs.append(
             create_processed_fxobs(cv_ref_prfxobs,
-                                   fx_values[i],
+                                   fx_values.iloc[:, i],
                                    obs_values,
                                    ref_values=ref_fx_values))
 
@@ -349,11 +353,11 @@ def test_calculate_metrics_with_probablistic(single_observation,
     # test MetricValues contents and order
     single_result = cv_results[0]
     expected = {
-        0: ('total', 'bs', '0', 0.00285),
-        1: ('total', 'bss', '0', 0.1428571428571429),
-        5: ('year', 'bs', '2019', 0.00285),
-        9: ('year', 'unc', '2019', 0.),
-        10: ('month', 'bs', 'Aug', 0.00285)
+        0: ('total', 'bs', '0', 0.8308500000000001),
+        1: ('total', 'bss', '0', -0.010366947374821578),
+        5: ('year', 'bs', '2019', 0.8308500000000001),
+        9: ('year', 'unc', '2019', 0.08999999999999998),
+        10: ('month', 'bs', 'Aug', 0.8308500000000001)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -679,9 +683,11 @@ def test_calculate_probabilistic_metrics_with_constant_value_simple(
             cv,
             data_object,
             pair.original.reference_forecast)
+        fx = pair.forecast_values[i]
+        fx.name = 'value'
         cv_pair = create_processed_fxobs(
             fxobs,
-            pair.forecast_values[i],
+            fx,
             pair.observation_values,
             ref_values=ref_values)
         result = calculator.calculate_probabilistic_metrics(

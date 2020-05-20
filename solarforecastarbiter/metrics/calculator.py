@@ -495,7 +495,9 @@ def _transform_prob_forecast_value_and_prob(proc_fx_obs,
     # Need to convert to DataFrame of ProbabilisticForecastConstantValue
     # for consistency with ProbabilisticForecas that provides a DataFrame
     if isinstance(data, pd.Series):
-        data = data.to_frame()
+        # set the name to a float because it will default to 'value'
+        data = data.to_frame(
+            name=proc_fx_obs.original.forecast.constant_value)
 
     for col in data.columns:
         if proc_fx_obs.original.forecast.axis == 'x':
