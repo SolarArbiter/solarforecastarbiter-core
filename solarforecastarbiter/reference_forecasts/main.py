@@ -468,7 +468,7 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
 
 
 def _is_reference_persistence_forecast(extra_params_string):
-    match = re.search('is_reference_persistesnce_forecast(["\\s\\:]*)true',
+    match = re.search('is_reference_persistence_forecast(["\\s\\:]*)true',
                       extra_params_string, re.I)
     return match is not None
 
@@ -535,7 +535,7 @@ def generate_reference_persistence_forecast_parameters(
             continue
         observation = observation_dict[observation_id]
 
-        index = extra_parameters.get('index', False)
+        index = extra_parameters.get('index_persistence', False)
         obs_mint, obs_maxt = session.get_observation_time_range(observation_id)
         if pd.isna(obs_maxt):  # no observations to use anyway
             logger.info(
@@ -547,7 +547,12 @@ def generate_reference_persistence_forecast_parameters(
         # find the next issue time for the forecast based on the last value
         # in the forecast series
         if pd.isna(fx_maxt):
-            next_issue_time = utils.get_next_issue_time(fx, obs_mint)
+            # if there is no forecast yet, go back a bit from the last
+            # observation. Don't use the start of observations, since it
+            # could really stress the workers if we have a few years of
+            # data before deciding to make a persistence fx
+            next_issue_time = utils.get_next_issue_time(
+                fx, obs_maxt - fx.run_length)
         else:
             next_issue_time = utils.find_next_issue_time_from_last_forecast(
                 fx, fx_maxt)
