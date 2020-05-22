@@ -125,7 +125,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
             {'is_reference_persistence_forecast': True,
-             'index': False})
+             'index_persistence': False})
         ),
     Forecast(
         name='Fifteen-minute Ahead Persistence',
@@ -139,7 +139,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
             {'is_reference_persistence_forecast': True,
-             'index': False})
+             'index_persistence': False})
         ),
     Forecast(
         name='Five-minute Ahead Persistence',
@@ -153,7 +153,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
             {'is_reference_persistence_forecast': True,
-             'index': False})
+             'index_persistence': False})
         )
 ]
 
