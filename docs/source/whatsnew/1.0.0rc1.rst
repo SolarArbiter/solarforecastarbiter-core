@@ -16,6 +16,10 @@ API Changes
   with units of % of DC capacity/C instead of 1/C (:issue:`350`) (:pull:`433`)
 * Add :py:func:`solarforecastarbiter.io.utils.mock_raw_report_endpoints` to mock
   report API endpoints used, primarily to test report serialization (:pull:`441`)
+* Change default
+  :py:func:`solarforecastarbiter.validation.validator.detect_stale_values` and
+  :py:func:`solarforecastarbiter.validation.validator.detect_interpolated_values`
+  ``window`` value from 3 to 6. (:issue:`124`)
 * :py:func:`solarforecastarbiter.io.reference_data.common.create_forecasts` now
   calls :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts`
   and :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts`
