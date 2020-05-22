@@ -382,3 +382,12 @@ def test_detect_clearsky_ghi_one_val(ghi_clearsky):
     with pytest.warns(RuntimeWarning):
         flags = validator.detect_clearsky_ghi(ser, ser)
     assert (flags == 0).all()
+
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (pd.Timedelta('15min'), 6),
+    (pd.Timedelta('1h'), 3)
+])
+def test_stale_interpolated_window(inp, expected):
+    assert validator.stale_interpolated_window(inp) == expected
