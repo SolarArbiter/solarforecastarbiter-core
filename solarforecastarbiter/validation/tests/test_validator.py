@@ -384,7 +384,6 @@ def test_detect_clearsky_ghi_one_val(ghi_clearsky):
     assert (flags == 0).all()
 
 
-
 @pytest.mark.parametrize('inp,expected', [
     (pd.Timedelta('15min'), 6),
     (pd.Timedelta('1h'), 3)
