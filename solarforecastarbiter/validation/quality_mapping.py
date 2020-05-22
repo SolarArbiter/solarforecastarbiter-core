@@ -258,7 +258,9 @@ def convert_mask_into_dataframe(flag_series):
        Columns are keys of BITMASK_DESCRIPTION_DICT and values are booleans
        indicating if the input flag corresponds to the given check. An
        additional column, NOT VALIDATED, indicates if the data has not
-       been validated. Columns may vary depending the version of the quality
+       been validated. Additional columns defined by DERIVED_MASKS are
+       computed based on the results of the fundamental flags.
+       Columns may vary depending the version of the quality
        flags in the series.
     """
     vers = get_version(flag_series)
