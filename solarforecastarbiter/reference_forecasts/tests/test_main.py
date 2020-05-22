@@ -881,3 +881,24 @@ def test_generate_reference_persistence_forecast_parameters_up_to_date(
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
     assert len(param_list) == 0
+
+
+def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
+    session.get_forecast_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    max_run_time = pd.Timestamp('2020-05-20T16:00Z')
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence')
+    main.make_latest_persistence_forecasts('', max_run_time)
+    assert run_pers.call_count == 2
+    assert session.post_forecast_values.call_count == 2
