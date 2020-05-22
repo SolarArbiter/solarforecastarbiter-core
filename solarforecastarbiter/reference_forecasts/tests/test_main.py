@@ -818,12 +818,19 @@ def test_generate_reference_persistence_forecast_parameters_off_time(
     )
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
-    assert len(param_list) == 1
-    assert param_list[0] == (
-        forecasts[0], observations[0],
-        pd.Timestamp('2020-05-20T15:00Z'),
-        False
-    )
+    assert len(param_list) == 2
+    assert param_list == [
+        (
+            forecasts[0], observations[0],
+            pd.Timestamp('2020-05-20T14:00Z'),
+            False
+        ),
+        (
+            forecasts[0], observations[0],
+            pd.Timestamp('2020-05-20T15:00Z'),
+            False
+        ),
+    ]
 
 
 def test_generate_reference_persistence_forecast_parameters_multiple(
