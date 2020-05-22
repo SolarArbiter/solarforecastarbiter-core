@@ -38,6 +38,8 @@ Enhancements
   :py:func:`solarforecastarbiter.validation.quality_mapping.convert_mask_into_dataframe`
   output. These currently include ``'DAYTIME', 'DAYTIME STALE VALUES',
   'DAYTIME INTERPOLATED VALUES'``. (:issue:`124`)
+* A public Docker image is available, and Github Actions use this image for
+  continuous integration tests (:pull:`446`)
 
 Bug fixes
 ~~~~~~~~~
