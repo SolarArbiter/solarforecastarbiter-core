@@ -606,8 +606,8 @@ def create_forecasts(api, site, variables, templates):
 
     See Also
     --------
-    :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts
-    :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts
+    solarforecastarbiter.io.reference_data.common.create_nwp_forecasts
+    solarforecastarbiter.io.reference_data.common.create_persistence_forecasts
 
     """  # NOQA: E501
     persistence_templates = []
