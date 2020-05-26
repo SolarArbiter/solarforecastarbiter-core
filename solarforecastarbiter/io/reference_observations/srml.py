@@ -211,7 +211,7 @@ def initialize_site_forecasts(api, site):
     """
     common.create_forecasts(
         api, site, srml_variable_map.values(),
-        default_forecasts.TEMPLATE_DETERMINISTIC_NWP_FORECASTS)
+        default_forecasts.TEMPLATE_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):
