@@ -527,14 +527,14 @@ def generate_reference_persistence_forecast_parameters(
             observation_id = extra_parameters['observation_id']
         except KeyError:
             logger.error(
-                ('Forecast, %s: %s, has no observation_id to base forecasts'
-                 ' off of. Cannot make forecast.'),
+                'Forecast, %s: %s, has no observation_id to base forecasts'
+                ' off of. Cannot make forecast.',
                 fx.name, fx.forecast_id)
             continue
         if observation_id not in observation_dict:
             logger.error(
-                ('Observation %s not in set of given observations.'
-                 ' Cannot generate persistence forecast for %s:%s.'),
+                'Observation %s not in set of given observations.'
+                ' Cannot generate persistence forecast for %s:%s.',
                 observation_id, fx.name, fx.forecast_id)
             continue
         observation = observation_dict[observation_id]
