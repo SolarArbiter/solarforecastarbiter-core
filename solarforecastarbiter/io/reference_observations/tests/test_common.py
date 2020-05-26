@@ -759,7 +759,7 @@ def test_create_persistence_forecasts(template_fx, mocker):
                            fx.extra_parameters, re.I) is not None
                  for fx in fxs if fx.variable != 'air_temperature'
                  and 'Longer' not in fx.name
-    ]
+                 ]
     assert len(index_fxs) == 2
     assert all(index_fxs)
 
