@@ -255,11 +255,11 @@ def test_render_pdf_special_chars(
     )
     raw = datamodel.RawReport(
         generated_at=report.report_parameters.end,
-        versions=(),
         timezone=tz,
         plots=figs,
         metrics=report_metrics(report),
         processed_forecasts_observations=(pfxobs,),
+        versions=(('test',  'test_with_underscore?'),),
         messages=(datamodel.ReportMessage(
             message="Failed to make metrics for ac_power forecast ()'-_,",
             step='', level='', function=''),))
