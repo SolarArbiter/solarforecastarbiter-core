@@ -23,7 +23,7 @@ from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
-    DESCRIPTION_MASK_MAPPING
+    DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
 
 DASH_URL = 'https://dashboard.solarforecastarbiter.org'
@@ -1128,19 +1128,21 @@ class QualityFlagFilter(BaseFilter):
     Parameters
     ----------
     quality_flags : Tuple of str
-        Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` keys.
+        Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` or
+        ``DERIVED_MASKS`` keys.
         These periods will be excluded from the analysis.
     """
     quality_flags: Tuple[str, ...] = (
         'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
-        'STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
+        'DAYTIME STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
     )
 
     def __post_init__(self):
-        if not all(flag in DESCRIPTION_MASK_MAPPING
-                   for flag in self.quality_flags):
+        allowed_flags = (
+            list(DESCRIPTION_MASK_MAPPING.keys()) + list(DERIVED_MASKS.keys()))
+        if not all(flag in allowed_flags for flag in self.quality_flags):
             raise ValueError('Quality flags must be in '
-                             'BITMASK_DESCRIPTION_DICT')
+                             'BITMASK_DESCRIPTION_DICT or DERIVED_MASKS')
 
 
 @dataclass(frozen=True)
