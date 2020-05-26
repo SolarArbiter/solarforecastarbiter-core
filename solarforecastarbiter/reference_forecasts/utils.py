@@ -122,7 +122,7 @@ def find_next_issue_time_from_last_forecast(forecast, last_forecast_time):
                                 forecast.run_length -
                                 forecast.lead_time_to_start)
     # for beginning & instantaneous labels, last_probable_issue_time
-    # is currently e.g. 13:55 - 60 min - 0 min = 12:55, so add the 
+    # is currently e.g. 13:55 - 60 min - 0 min = 12:55, so add the
     # interval_length to make last_probable_issue_time = 13:00
     if forecast.interval_label != 'ending':
         last_probable_issue_time += forecast.interval_length
