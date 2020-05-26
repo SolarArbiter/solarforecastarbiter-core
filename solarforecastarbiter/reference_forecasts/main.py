@@ -534,7 +534,7 @@ def generate_reference_persistence_forecast_parameters(
         if observation_id not in observation_dict:
             logger.error(
                 'Observation %s not in set of given observations.'
-                ' Cannot generate persistence forecast for %s:%s.',
+                ' Cannot generate persistence forecast for %s: %s.',
                 observation_id, fx.name, fx.forecast_id)
             continue
         observation = observation_dict[observation_id]
@@ -543,7 +543,7 @@ def generate_reference_persistence_forecast_parameters(
         obs_mint, obs_maxt = session.get_observation_time_range(observation_id)
         if pd.isna(obs_maxt):  # no observations to use anyway
             logger.info(
-                'No observation values to use for %s:%s from observation %s',
+                'No observation values to use for %s: %s from observation %s',
                 fx.name, fx.forecast_id, observation_id)
             continue
 
