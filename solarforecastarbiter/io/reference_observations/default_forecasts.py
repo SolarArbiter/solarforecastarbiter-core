@@ -115,8 +115,8 @@ TEMPLATE_PROBABILISTIC_NWP_FORECASTS = [
 TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
     Forecast(
         name='Hour Ahead Persistence',
-        issue_time_of_day=dt.time(0, 45),
-        lead_time_to_start=pd.Timedelta('75min'),
+        issue_time_of_day=dt.time(0, 0),
+        lead_time_to_start=pd.Timedelta('60min'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label='beginning',

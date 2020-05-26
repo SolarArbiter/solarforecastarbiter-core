@@ -100,7 +100,7 @@ def get_forecast_start_end(forecast, issue_time,
     return forecast_start, forecast_end
 
 
-def find_next_issue_time_from_last_forecast(forecast,  last_forecast_time):
+def find_next_issue_time_from_last_forecast(forecast, last_forecast_time):
     """
     Find the next issue time for *forecast* based on the timestamp of the
     last forecast value. If *last_forecast_time* is not the end of a forecast
@@ -111,15 +111,19 @@ def find_next_issue_time_from_last_forecast(forecast,  last_forecast_time):
     ----------
     forecast : datamodel.Forecast
     last_forecast_time : pd.Timestamp
-        Last timestamp avaible for the forecast
+        Last timestamp available for the forecast
 
     Returns
+    -------
     pd.Timestamp
         The next issue time for the forecast
     """
     last_probable_issue_time = (last_forecast_time -
                                 forecast.run_length -
                                 forecast.lead_time_to_start)
+    # for beginning & instantaneous labels, last_probable_issue_time
+    # is currently e.g. 13:55 - 60 min - 0 min = 12:55, so add the 
+    # interval_length to make last_probable_issue_time = 13:00
     if forecast.interval_label != 'ending':
         last_probable_issue_time += forecast.interval_length
     next_issue_time = get_next_issue_time(

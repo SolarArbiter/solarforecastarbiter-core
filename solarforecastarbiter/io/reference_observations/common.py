@@ -546,7 +546,7 @@ def create_nwp_forecasts(api, site, variables, templates):
 def create_persistence_forecasts(api, site, variables, templates):
     """Create persistence Forecast objects for each Observation at the
     ``site`` with variable in ``variables``. Each Forecast in templates
-5    will be updated with the appropriate parameters for each variable.
+     will be updated with the appropriate parameters for each variable.
 
     Parameters
     ----------
@@ -581,7 +581,7 @@ def create_forecasts(api, site, variables, templates):
     variables. Each Forecast in templates will be updated with the
     appropriate parameters for each variable.
 
-    Templates with the 'is_reference_persistence_forecast' key  in
+    Templates with the 'is_reference_persistence_forecast' key in
     'extra_parameters' are assumed to be persistence forecasts, and others
     are assumed to be NWP forecasts.
 
@@ -609,7 +609,7 @@ def create_forecasts(api, site, variables, templates):
     :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts
     :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts
 
-    """  # NOQA
+    """  # NOQA: E501
     persistence_templates = []
     nwp_templates = []
     for template in templates:

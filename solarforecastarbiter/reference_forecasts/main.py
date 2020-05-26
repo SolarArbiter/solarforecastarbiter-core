@@ -505,8 +505,8 @@ def generate_reference_persistence_forecast_parameters(
     for fx in forecasts:
         if not _is_reference_persistence_forecast(fx.extra_parameters):
             logger.debug(
-                'Forecast %s is not labeled as a reference persistence forecast',  # NOQA
-                fx.forecast_id)
+                'Forecast %s is not labeled as a reference '
+                'persistence forecast',  fx.forecast_id)
             continue
 
         if not fx.provider == user_info['organization']:
