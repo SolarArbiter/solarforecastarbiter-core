@@ -425,7 +425,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         to extra parameters.
     variable : string
         Variable measured in the forecast.
-    **extra_params
+    **extra_params : dict
         Other key, value pairs to add to the extra_parameters of the Forecast
         object.
 
