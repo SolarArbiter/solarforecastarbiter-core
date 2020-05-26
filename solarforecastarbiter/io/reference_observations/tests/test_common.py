@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import re
 import uuid
 
 
@@ -733,7 +734,8 @@ def test_create_persistence_forecasts(template_fx, mocker):
     api, template, site = template_fx
     templates = [
         template.replace(extra_parameters=json.dumps(
-            {'is_reference_persistence_forecast': True})),
+            {'is_reference_persistence_forecast': True}),
+                         run_length=pd.Timedelta('6h')),
         template.replace(extra_parameters=json.dumps(
             {'is_reference_persistence_forecast': True}),
                          name='Longer template')
@@ -753,6 +755,13 @@ def test_create_persistence_forecasts(template_fx, mocker):
         'air_temperature', 'air_temperature', 'dni', 'dni', 'ghi', 'ghi']
     assert 'Longer' in fxs[-1].name
     assert all(['observation_id' in fx.extra_parameters for fx in fxs])
+    index_fxs = [re.search(r'index_persistence(["\s\:]*)true',
+                           fx.extra_parameters, re.I) is not None
+                 for fx in fxs if fx.variable != 'air_temperature'
+                 and 'Longer' not in fx.name
+    ]
+    assert len(index_fxs) == 2
+    assert all(index_fxs)
 
 
 def test_create_forecasts(template_fx, mocker):

@@ -547,6 +547,8 @@ def create_persistence_forecasts(api, site, variables, templates):
     """Create persistence Forecast objects for each Observation at the
     ``site`` with variable in ``variables``. Each Forecast in templates
      will be updated with the appropriate parameters for each variable.
+    By default, *index* persistence forecasts are made for variables
+    with valid index persistence functions namely (ghi, dni, dhi, ac_power).
 
     Parameters
     ----------
@@ -570,8 +572,14 @@ def create_persistence_forecasts(api, site, variables, templates):
         for template_fx in templates:
             logger.info('Creating forecast based on %s and observation %s',
                         template_fx.name, obs.name)
+            use_index = (
+                template_fx.run_length < pd.Timedelta('1d') and
+                obs.variable in ('ghi', 'dni', 'dhi', 'ac_power')
+            )
+            # net_load might go here, although other changes might be required
             fx_id = create_one_forecast(api, site, template_fx, obs.variable,
-                                        observation_id=obs.observation_id)
+                                        observation_id=obs.observation_id,
+                                        index_persistence=use_index)
             created.append(fx_id)
     return created
 

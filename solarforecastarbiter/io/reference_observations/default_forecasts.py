@@ -124,8 +124,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         variable='ghi',
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
-            {'is_reference_persistence_forecast': True,
-             'index_persistence': False})
+            {'is_reference_persistence_forecast': True})
         ),
     Forecast(
         name='Hour Ahead Persistence',
@@ -138,8 +137,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         variable='ghi',
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
-            {'is_reference_persistence_forecast': True,
-             'index_persistence': False})
+            {'is_reference_persistence_forecast': True})
         ),
     Forecast(
         name='Fifteen-minute Ahead Persistence',
@@ -152,8 +150,7 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         variable='ghi',
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
-            {'is_reference_persistence_forecast': True,
-             'index_persistence': False})
+            {'is_reference_persistence_forecast': True})
         ),
     Forecast(
         name='Five-minute Ahead Persistence',
@@ -166,9 +163,8 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
         variable='ghi',
         site=_DUMMY_SITE,
         extra_parameters=json.dumps(
-            {'is_reference_persistence_forecast': True,
-             'index_persistence': False})
-        )
+            {'is_reference_persistence_forecast': True})
+         )
 ]
 
 TEMPLATE_NWP_FORECASTS = (
