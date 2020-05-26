@@ -288,7 +288,7 @@ def _verify_nwp_forecasts_compatible(fx_group):
 
 
 def _is_reference_forecast(extra_params_string):
-    match = re.search('is_reference_forecast(["\\s\\:]*)true',
+    match = re.search(r'is_reference_forecast(["\s\:]*)true',
                       extra_params_string, re.I)
     return match is not None
 
@@ -468,7 +468,7 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
 
 
 def _is_reference_persistence_forecast(extra_params_string):
-    match = re.search('is_reference_persistence_forecast(["\\s\\:]*)true',
+    match = re.search(r'is_reference_persistence_forecast(["\s\:]*)true',
                       extra_params_string, re.I)
     return match is not None
 
