@@ -17,6 +17,15 @@ def _validate_timestamp(observation, values):
         values.index, observation.interval_length, _return_mask=True)
 
 
+def _validate_stale_interpolated(observation, values):
+    window = validator.stale_interpolated_window(observation.interval_length)
+    stale_flag = validator.detect_stale_values(values, window=window,
+                                               _return_mask=True)
+    interpolation_flag = validator.detect_interpolation(values, window=window,
+                                                        _return_mask=True)
+    return stale_flag, interpolation_flag
+
+
 def _solpos_night(observation, values):
     solar_position = pvmodel.calculate_solar_position(
         observation.site.latitude, observation.site.longitude,
@@ -280,9 +289,8 @@ def validate_daily_ghi(observation, values):
         :py:func:`.validator.detect_interpolation`
     """
     ghi_flags = validate_ghi(observation, values)
-    stale_flag = validator.detect_stale_values(values, _return_mask=True)
-    interpolation_flag = validator.detect_interpolation(values,
-                                                        _return_mask=True)
+    stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
+                                                                  values)
     return (*ghi_flags, stale_flag, interpolation_flag)
 
 
@@ -307,9 +315,8 @@ def validate_daily_dc_power(observation, values):
         :py:func:`.validator.detect_interpolation`
     """
     timestamp_flag, night_flag = validate_defaults(observation, values)
-    stale_flag = validator.detect_stale_values(values, _return_mask=True)
-    interpolation_flag = validator.detect_interpolation(values,
-                                                        _return_mask=True)
+    stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
+                                                                  values)
     return (timestamp_flag, night_flag, stale_flag, interpolation_flag)
 
 
@@ -335,9 +342,8 @@ def validate_daily_ac_power(observation, values):
         :py:func:`.validator.detect_clipping`
     """  # NOQA
     timestamp_flag, night_flag = validate_defaults(observation, values)
-    stale_flag = validator.detect_stale_values(values, _return_mask=True)
-    interpolation_flag = validator.detect_interpolation(values,
-                                                        _return_mask=True)
+    stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
+                                                                  values)
     clipping_flag = validator.detect_clipping(values, _return_mask=True)
     return (timestamp_flag, night_flag, stale_flag, interpolation_flag,
             clipping_flag)

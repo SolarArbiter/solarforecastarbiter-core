@@ -43,6 +43,15 @@ BITMASK_DESCRIPTION_DICT = {1: {
     }
 }
 
+# logical combinations of the masks defined above.
+# add a version layer for compatibility if needed in the future.
+# derived masks may reference masks defined in an earlier key.
+DERIVED_MASKS = {
+    'DAYTIME': (np.logical_not, 'NIGHTTIME'),
+    'DAYTIME STALE VALUES': (np.logical_and, 'DAYTIME', 'STALE VALUES'),
+    'DAYTIME INTERPOLATED VALUES': (
+        np.logical_and, 'DAYTIME', 'INTERPOLATED VALUES'),
+}
 
 # should never change unless another VERSION IDENTIFIER is required
 VERSION_MASK = 0b1110
@@ -221,6 +230,18 @@ def _convert_version_mask(ser):
     return out
 
 
+def _add_derived_masks(masks):
+    """Copies input DataFrame and then adds new masks derived from
+    input masks"""
+    out = masks.copy()
+    for flag, operations in DERIVED_MASKS.items():
+        func = operations[0]
+        cols = operations[1:]
+        args = [out[col] for col in cols]
+        out[flag] = func(*args)
+    return out
+
+
 def convert_mask_into_dataframe(flag_series):
     """
     Convert `flag_series` into a boolean DataFrame indicating which checks
@@ -237,12 +258,15 @@ def convert_mask_into_dataframe(flag_series):
        Columns are keys of BITMASK_DESCRIPTION_DICT and values are booleans
        indicating if the input flag corresponds to the given check. An
        additional column, NOT VALIDATED, indicates if the data has not
-       been validated. Columns may vary depending the version of the quality
+       been validated. Additional columns defined by DERIVED_MASKS are
+       computed based on the results of the fundamental flags.
+       Columns may vary depending the version of the quality
        flags in the series.
     """
     vers = get_version(flag_series)
-    out = flag_series.groupby(vers, sort=False).apply(
+    fundamental_masks = flag_series.groupby(vers, sort=False).apply(
         _convert_version_mask).fillna(False)
+    out = _add_derived_masks(fundamental_masks)
     return out
 
 
