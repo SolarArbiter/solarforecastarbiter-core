@@ -776,7 +776,6 @@ def test_create_forecasts(template_fx, mocker):
     assert len(fxs) == 3
     assert create_nwp.call_count == 1
     assert create_nwp.call_args[0][-1] == templates[:1]
-    common.create_forecasts(api, site, vars_, templates)
 
 
 @pytest.mark.parametrize('params', [
