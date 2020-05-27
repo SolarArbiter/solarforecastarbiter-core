@@ -363,7 +363,9 @@ def report(verbose, user, password, base_url, report_file, output_file,
 def test(pytest_args):  # pragma: no cover
     """Test this installation of solarforecastarbiter"""
     import pytest
-    pytest.main(['--pyargs', 'solarforecastarbiter'] + list(pytest_args))
+    ret_code = pytest.main(
+        ['--pyargs', 'solarforecastarbiter'] + list(pytest_args))
+    sys.exit(ret_code)
 
 
 if __name__ == "__main__":  # pragma: no cover
