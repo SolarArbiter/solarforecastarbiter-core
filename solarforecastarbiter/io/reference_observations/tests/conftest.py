@@ -1,6 +1,7 @@
 import copy
+import inspect
 import json
-from pkg_resources import resource_filename, Requirement
+import os
 
 
 import numpy as np
@@ -9,6 +10,10 @@ import pytest
 
 
 from solarforecastarbiter.datamodel import Site, Observation
+
+
+TEST_DATA_DIR = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
 def site_dicts():
@@ -157,7 +162,4 @@ def mock_fetch(mocker, fake_ghi_data):
 
 @pytest.fixture
 def test_json_site_file():
-    return resource_filename(
-        Requirement.parse('solarforecastarbiter'),
-        'solarforecastarbiter/io/reference_observations/'
-        'tests/data/test_site.json')
+    return os.path.join(TEST_DATA_DIR, 'data', 'test_site.json')
