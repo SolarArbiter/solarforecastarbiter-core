@@ -285,9 +285,9 @@ def _save_figures_to_pdf(tmpdir, report):
     figdir.mkdir()
     for fig in report.raw_report.plots.figures:
         name = (
-            fig.category + '_' + fig.metric + '_' +
+            fig.category + '+' + fig.metric + '+' +
             fig.name + '.pdf'
-        ).replace('^', '-').replace(' ', '_')
+        ).replace('^', '-').replace(' ', '+').replace('_', '+')
         # handle characters that will cause problems for tex
         figpath = figdir / name
         figpath.write_bytes(base64.a85decode(fig.pdf))
