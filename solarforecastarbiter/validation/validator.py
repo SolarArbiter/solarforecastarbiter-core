@@ -399,6 +399,59 @@ def check_rh_limits(rh, rh_limits=(0, 100)):
     return flags
 
 
+@mask_flags('LIMITS EXCEEDED')
+def check_power_limits(power, solar_zenith, capacity,
+                       capacity_limit_low=-0.05,
+                       capacity_limit_high_day=1.3,
+                       capacity_limit_high_night=0.05):
+    """ Checks for extreme DC or AC power.
+
+    Parameters
+    ----------
+    power : Series
+        DC or AC power.
+    solar_zenith : Series
+        Solar zenith angle in degrees.
+    capacity : float
+        DC or AC capacity.
+    capacity_limit_low : float
+        Lower bound in fraction of capacity.
+    capacity_limit_high_day : float
+        Upper bound in fraction of capacity for day time.
+    capacity_limit_high_night : float
+        Upper bound in fraction of capacity for night time.
+
+    Returns
+    -------
+    flags : Series
+        True for values that are within the limits:
+          * power > capacity * capacity_limit_low, AND
+            * power < capacity * capacity_limit_high_day AND solar_zenith < 93, OR
+            * power < capacity * capacity_limit_high_night AND solar_zenith > 93
+
+    Notes
+    -----
+    Day time is defined as zenith < 93 degrees.
+    """  # noqa: E501
+
+    # convert fractions to absolute values
+    capacity_low = capacity * capacity_limit_low
+    capacity_high_day = capacity * capacity_limit_high_day
+    capacity_high_night = capacity * capacity_limit_high_night
+
+    # True for daytime values
+    day_night = check_irradiance_day_night(solar_zenith, max_zenith=93)
+
+    flag_low = _check_limits(power, lb=capacity_low)
+    flag_high_day = _check_limits(power, ub=capacity_high_day) & day_night
+    flag_high_night = _check_limits(power, ub=capacity_high_night) & ~day_night
+
+    # composite constructed such that True values within limits for day
+    # or night. False values exceed any limit.
+    flags = flag_low & (flag_high_day | flag_high_night)
+    return flags
+
+
 @mask_flags('CLEARSKY EXCEEDED')
 def check_ghi_clearsky(ghi, ghi_clearsky, kt_max=1.1):
     """

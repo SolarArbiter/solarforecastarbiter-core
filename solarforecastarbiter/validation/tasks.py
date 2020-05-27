@@ -311,13 +311,19 @@ def validate_daily_dc_power(observation, values):
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`
     """
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    dc_limit_flag = validator.check_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.dc_capacity, _return_mask=True)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag)
+    return (timestamp_flag, night_flag, dc_limit_flag, stale_flag,
+            interpolation_flag)
 
 
 def validate_daily_ac_power(observation, values):
@@ -337,16 +343,21 @@ def validate_daily_ac_power(observation, values):
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`,
         :py:func:`.validator.detect_clipping`
-    """  # NOQA
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    """  # NOQA: E501
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    ac_limit_flag = validator.check_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.ac_capacity, _return_mask=True)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
     clipping_flag = validator.detect_clipping(values, _return_mask=True)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag,
-            clipping_flag)
+    return (timestamp_flag, night_flag, ac_limit_flag, stale_flag,
+            interpolation_flag, clipping_flag)
 
 
 IMMEDIATE_VALIDATION_FUNCS = {
