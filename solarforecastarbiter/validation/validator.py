@@ -413,7 +413,7 @@ def check_ac_power_limits(power, solar_zenith, capacity,
     solar_zenith : Series
         Solar zenith angle in degrees.
     capacity : float
-        DC or AC capacity.
+        AC capacity.
     capacity_limit_low : float
         Lower bound in fraction of capacity.
     capacity_limit_high_day : float
@@ -456,7 +456,7 @@ def check_dc_power_limits(power, solar_zenith, capacity,
     solar_zenith : Series
         Solar zenith angle in degrees.
     capacity : float
-        DC or AC capacity.
+        DC capacity.
     capacity_limit_low : float
         Lower bound in fraction of capacity.
     capacity_limit_high_day : float
