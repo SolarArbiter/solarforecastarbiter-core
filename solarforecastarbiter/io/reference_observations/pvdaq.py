@@ -149,7 +149,14 @@ def fetch(api, site, start, end, *, nrel_pvdaq_api_key):
         logger.warning(f'Could not retrieve data for site {site.name}'
                        f' between {start} and {end}.')
         return pd.DataFrame()
+    obs_df = _watts_to_mw(obs_df)
     obs_df = obs_df.tz_localize(site.timezone)
+    return obs_df
+
+
+def _watts_to_mw(obs_df):
+    obs_df_power_mw = obs_df.filter(regex='.*[pP]ower.*') / 1e6
+    obs_df[obs_df_power_mw.columns] = obs_df_power_mw
     return obs_df
 
 

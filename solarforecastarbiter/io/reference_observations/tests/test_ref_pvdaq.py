@@ -1,6 +1,7 @@
 import re
 
 import pandas as pd
+import pandas.testing as pdt
 
 import pytest
 
@@ -165,3 +166,16 @@ def test_update_observation_data_no_creds(session, site):
     with pytest.raises(KeyError) as e:
         pvdaq.update_observation_data(session, [site], [], start, end)
     assert 'environment variable' in str(e.value)
+
+
+def test_watts_to_mw():
+    columns = [
+        'ac_power', 'inv1_ac_power', 'AC_power', 'AC_Power', 'DC_power',
+        'wind_speed', 'bla h_power_blob']
+    obs_df = pd.DataFrame(
+        1.e6, columns=columns, index=[pd.Timestamp('20200514')])
+    expected = pd.DataFrame(
+        [[1., 1., 1., 1., 1., 1.e6, 1.]], columns=columns,
+        index=[pd.Timestamp('20200514')])
+    out = pvdaq._watts_to_mw(obs_df)
+    pdt.assert_frame_equal(out, expected)

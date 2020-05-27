@@ -1,0 +1,13 @@
+diff -up grib2/wgrib2/enc_jpeg2000_clone.c.jasper-2 grib2/wgrib2/enc_jpeg2000_clone.c
+--- grib2/wgrib2/enc_jpeg2000_clone.c.jasper-2	2016-12-16 11:25:58.000000000 -0700
++++ grib2/wgrib2/enc_jpeg2000_clone.c	2017-12-17 11:46:13.822185276 -0700
+@@ -129,9 +129,6 @@ int enc_jpeg2000_clone(unsigned char *ci
+ #if JAS_VERSION_MAJOR == 1
+    image.inmem_=1;
+ #endif
+-#ifndef JAS_VERSION_MAJOR
+-   image.inmem_=1;
+-#endif
+ 
+ 
+ 

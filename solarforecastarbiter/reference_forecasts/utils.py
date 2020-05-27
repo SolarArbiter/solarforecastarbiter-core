@@ -100,6 +100,37 @@ def get_forecast_start_end(forecast, issue_time,
     return forecast_start, forecast_end
 
 
+def find_next_issue_time_from_last_forecast(forecast, last_forecast_time):
+    """
+    Find the next issue time for *forecast* based on the timestamp of the
+    last forecast value. If *last_forecast_time* is not the end of a forecast
+    run, the issue time returned will be the issue time that overwrites
+    *last_forecast_time* with a full length forecast.
+
+    Parameters
+    ----------
+    forecast : datamodel.Forecast
+    last_forecast_time : pd.Timestamp
+        Last timestamp available for the forecast
+
+    Returns
+    -------
+    pd.Timestamp
+        The next issue time for the forecast
+    """
+    last_probable_issue_time = (last_forecast_time -
+                                forecast.run_length -
+                                forecast.lead_time_to_start)
+    # for beginning & instantaneous labels, last_probable_issue_time
+    # is currently e.g. 13:55 - 60 min - 0 min = 12:55, so add the
+    # interval_length to make last_probable_issue_time = 13:00
+    if forecast.interval_label != 'ending':
+        last_probable_issue_time += forecast.interval_length
+    next_issue_time = get_next_issue_time(
+        forecast, last_probable_issue_time + pd.Timedelta('1ns'))
+    return next_issue_time
+
+
 def _is_intraday(forecast):
     """Is the forecast intraday?"""
     # intra day persistence and "day ahead" persistence require

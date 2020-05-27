@@ -364,3 +364,72 @@ def test_get_forecast_start_end_time_instant(
     if adjust_for_interval_label:
         fx_end_exp -= pd.Timedelta('1n')
     assert fx_end == fx_end_exp
+
+
+@pytest.mark.parametrize('fxargs,last_time,expected', [
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('0h'),
+          run_length='1h',
+          interval_label='beginning'),
+     pd.Timestamp('2020-05-20T10:00Z'),
+     pd.Timestamp('2020-05-20T11:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('0h'),
+          run_length='1h',
+          interval_label='beginning'),
+     pd.Timestamp('2020-05-20T10:30Z'),  # inconsistent w/ fx
+     pd.Timestamp('2020-05-20T11:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('0h'),
+          run_length='1h',
+          interval_label='ending'),
+     pd.Timestamp('2020-05-20T10:00Z'),
+     pd.Timestamp('2020-05-20T10:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('1h'),
+          run_length='1h',
+          interval_label='ending'),
+     pd.Timestamp('2020-05-20T10:00Z'),
+     pd.Timestamp('2020-05-20T09:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('1h'),
+          run_length='1h',
+          interval_label='beginning'),
+     pd.Timestamp('2020-05-20T10:00Z'),
+     pd.Timestamp('2020-05-20T10:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('2h'),
+          run_length='4h',
+          interval_label='beginning'),
+     pd.Timestamp('2020-05-20T05:00Z'),
+     pd.Timestamp('2020-05-20T04:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('2h'),
+          run_length='4h',
+          interval_label='ending'),
+     pd.Timestamp('2020-05-20T06:00Z'),
+     pd.Timestamp('2020-05-20T04:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('2h'),
+          run_length='4h',
+          interval_label='ending'),
+     pd.Timestamp('2020-05-20T05:00Z'),  # run not finished?
+     pd.Timestamp('2020-05-20T00:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('2h'),
+          run_length='4h',
+          interval_label='ending'),
+     pd.Timestamp('2020-05-20T06:00:01Z'),  # run not finished?
+     pd.Timestamp('2020-05-20T04:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=6),
+          lead_time_to_start=pd.Timedelta('24h'),
+          run_length='8h',
+          interval_label='instantaneous'),
+     pd.Timestamp('2020-05-20T04:00Z'),
+     pd.Timestamp('2020-05-18T22:00Z')),
+])
+def test_find_next_issue_time_from_last_forecast(fxargs, last_time, expected,
+                                                 site_metadata):
+    fx = default_forecast(site_metadata, **fxargs)
+    out = utils.find_next_issue_time_from_last_forecast(fx, last_time)
+    assert out == expected

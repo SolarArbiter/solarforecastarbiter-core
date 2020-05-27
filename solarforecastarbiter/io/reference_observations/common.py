@@ -9,9 +9,8 @@ from requests.exceptions import HTTPError
 
 
 from solarforecastarbiter.datamodel import Observation, ProbabilisticForecast
-from solarforecastarbiter.io.reference_observations.default_forecasts import (  # NOQA
-    TEMPLATE_FORECASTS, CURRENT_NWP_VARIABLES, is_in_nwp_domain,
-    TEMPLATE_PROBABILISTIC_FORECASTS)
+from solarforecastarbiter.io.reference_observations.default_forecasts import (
+    CURRENT_NWP_VARIABLES, is_in_nwp_domain)
 
 
 logger = logging.getLogger('reference_data')
@@ -410,7 +409,7 @@ def site_name_no_network(site):
 
 
 def create_one_forecast(api, site, template_forecast, variable,
-                        piggyback_on=None):
+                        **extra_params):
     """Creates a new Forecast or ProbabilisticForecast for the variable
     and site based on the template forecast.
 
@@ -426,6 +425,9 @@ def create_one_forecast(api, site, template_forecast, variable,
         to extra parameters.
     variable : string
         Variable measured in the forecast.
+    **extra_params : dict
+        Other key, value pairs to add to the extra_parameters of the Forecast
+        object.
 
     Returns
     -------
@@ -433,8 +435,7 @@ def create_one_forecast(api, site, template_forecast, variable,
         The datamodel object of the newly created forecast.
     """
     extra_parameters = json.loads(template_forecast.extra_parameters)
-    if piggyback_on is not None:
-        extra_parameters['piggyback_on'] = piggyback_on
+    extra_parameters.update(extra_params)
     site_name = site_name_no_network(site)
     fx_name = f'{site_name} {template_forecast.name} {variable}'
     # Some site names are too long and exceed the API's limits,
@@ -483,9 +484,9 @@ def create_one_forecast(api, site, template_forecast, variable,
         return created
 
 
-def create_forecasts(api, site, variables, templates):
+def create_nwp_forecasts(api, site, variables, templates):
     """Create Forecast objects for each of variables, if NWP forecasts
-    can be made for that variable. Each of TEMPLATE_FORECASTS will be
+    can be made for that variable. Each Forecast in templates will be
     updated with the appropriate parameters for each variable. Forecasts
     will also be grouped together via 'piggyback_on'.
 
@@ -493,15 +494,20 @@ def create_forecasts(api, site, variables, templates):
     ----------
     api : solarforecastarbiter.io.api.APISession
         An APISession with a valid JWT for accessing the Reference Data user.
-    site : solarforecastarbiter.datamodel.site
+    site : solarforecastarbiter.datamodel.Site
         A site object.
     variables : list-like
         List of variables to make a new forecast for each of the template
         forecasts
     templates : list of datamodel.Forecasts or datamodel.ProbabilisticForecast
         Forecasts that will be used as templates for many fields. See
-        :py:mod:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
+        :py:func:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
         for the fields that are required vs overwritten.
+
+    Raises
+    ------
+    ValueError
+        If the site is outside the domain of the current NWP forecasts.
     """  # NOQA
     if not is_in_nwp_domain(site):
         raise ValueError(
@@ -535,3 +541,91 @@ def create_forecasts(api, site, variables, templates):
                 create_one_forecast(api, site, template_fx, var,
                                     piggyback_on=piggyback_on))
     return created
+
+
+def create_persistence_forecasts(api, site, variables, templates):
+    """Create persistence Forecast objects for each Observation at the
+    ``site`` with variable in ``variables``. Each Forecast in templates
+     will be updated with the appropriate parameters for each variable.
+    By default, *index* persistence forecasts are made for variables
+    with valid index persistence functions namely (ghi, dni, dhi, ac_power).
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.Site
+        A site object with Observations whose data will be persisted.
+    variables : list-like
+        List of variables to make a new forecast for each of the template
+        forecasts
+    templates : list of datamodel.Forecasts or datamodel.ProbabilisticForecast
+        Forecasts that will be used as templates for many fields. See
+        :py:func:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
+        for the fields that are required vs overwritten.
+
+    """  # NOQA
+    created = []
+    for obs in api.list_observations():
+        if obs.site != site or obs.variable not in variables:
+            continue
+        for template_fx in templates:
+            logger.info('Creating forecast based on %s and observation %s',
+                        template_fx.name, obs.name)
+            use_index = (
+                template_fx.run_length < pd.Timedelta('1d') and
+                obs.variable in ('ghi', 'dni', 'dhi', 'ac_power')
+            )
+            # net_load might go here, although other changes might be required
+            fx_id = create_one_forecast(api, site, template_fx, obs.variable,
+                                        observation_id=obs.observation_id,
+                                        index_persistence=use_index)
+            created.append(fx_id)
+    return created
+
+
+def create_forecasts(api, site, variables, templates):
+    """Create Forecast objects (NWP based and persistence) for each of
+    variables. Each Forecast in templates will be updated with the
+    appropriate parameters for each variable.
+
+    Templates with the 'is_reference_persistence_forecast' key in
+    'extra_parameters' are assumed to be persistence forecasts, and others
+    are assumed to be NWP forecasts.
+
+    Parameters
+    ----------
+    api : solarforecastarbiter.io.api.APISession
+        An APISession with a valid JWT for accessing the Reference Data user.
+    site : solarforecastarbiter.datamodel.Site
+        A site object.
+    variables : list-like
+        List of variables to make a new forecast for each of the template
+        forecasts
+    templates : list of datamodel.Forecasts or datamodel.ProbabilisticForecast
+        Forecasts that will be used as templates for many fields. See
+        :py:func:`solarforecastarbiter.io.reference_data.common.create_one_forecast`
+        for the fields that are required vs overwritten.
+
+    Returns
+    -------
+    list
+        A list of all Forecast/ProbabilisticForecast objects created
+
+    See Also
+    --------
+    solarforecastarbiter.io.reference_data.common.create_nwp_forecasts
+    solarforecastarbiter.io.reference_data.common.create_persistence_forecasts
+
+    """  # NOQA: E501
+    persistence_templates = []
+    nwp_templates = []
+    for template in templates:
+        if 'is_reference_persistence_forecast' in template.extra_parameters:
+            persistence_templates.append(template)
+        else:
+            nwp_templates.append(template)
+    nwp_created = create_nwp_forecasts(api, site, variables, nwp_templates)
+    persist_created = create_persistence_forecasts(
+        api, site, variables, nwp_templates)
+    return nwp_created + persist_created

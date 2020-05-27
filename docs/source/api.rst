@@ -433,6 +433,7 @@ Utility functions for data IO.
    io.utils.serialize_timeseries
    io.utils.deserialize_timeseries
    io.utils.load_report_values
+   io.utils.mock_raw_report_endpoints
 
 
 Metrics
@@ -596,6 +597,7 @@ Functions to generate output (HTML, PDF) for reports
 
    reports.template.render_html
    reports.template.get_template_and_kwargs
+   reports.template.render_pdf
 
 Validation
 ==========
@@ -625,6 +627,7 @@ Functions to perform validation.
    validation.validator.detect_levels
    validation.validator.detect_clipping
    validation.validator.detect_clearsky_ghi
+   validation.validator.stale_interpolated_window
 
 
 Tasks

@@ -100,8 +100,9 @@ def initialize_site_forecasts(api, site):
     site : datamodel.Site
         The site object for which to create Forecasts.
     """
-    common.create_forecasts(api, site, crn_variables,
-                            default_forecasts.TEMPLATE_DETERMINISTIC_FORECASTS)
+    common.create_forecasts(
+        api, site, crn_variables,
+        default_forecasts.TEMPLATE_DETERMINISTIC_NWP_FORECASTS)
 
 
 def update_observation_data(api, sites, observations, start, end):

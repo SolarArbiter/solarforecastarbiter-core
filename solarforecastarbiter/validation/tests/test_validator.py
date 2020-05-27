@@ -235,13 +235,13 @@ def test_check_timestamp_spacing(times):
 def test_detect_stale_values():
     data = [1.0, 1.001, 1.001, 1.001, 1.001, 1.001001, 1.001, 1.001, 1.2, 1.3]
     x = pd.Series(data=data)
-    res1 = validator.detect_stale_values(x)
+    res1 = validator.detect_stale_values(x, window=3)
     res2 = validator.detect_stale_values(x, rtol=1e-8, window=2)
     res3 = validator.detect_stale_values(x, window=7)
     res4 = validator.detect_stale_values(x, window=8)
     res5 = validator.detect_stale_values(x, rtol=1e-8, window=4)
-    res6 = validator.detect_stale_values(x[1:])
-    res7 = validator.detect_stale_values(x[1:8])
+    res6 = validator.detect_stale_values(x[1:], window=3)
+    res7 = validator.detect_stale_values(x[1:8], window=3)
     assert_series_equal(res1, pd.Series([False, False, False, True, True, True,
                                          True, True, False, False]))
     assert_series_equal(res2, pd.Series([False, False, True, True, True, False,
@@ -259,16 +259,16 @@ def test_detect_stale_values():
                                               True, True]))
     data = [0.0, 0.0, 0.0, -0.0, 0.00001, 0.000010001, -0.00000001]
     y = pd.Series(data=data)
-    res = validator.detect_stale_values(y)
+    res = validator.detect_stale_values(y, window=3)
     assert_series_equal(res, pd.Series([False, False, True, True, False, False,
                                         False]))
-    res = validator.detect_stale_values(y, atol=1e-3)
+    res = validator.detect_stale_values(y, window=3, atol=1e-3)
     assert_series_equal(res, pd.Series([False, False, True, True, True, True,
                                         True]))
-    res = validator.detect_stale_values(y, atol=1e-5)
+    res = validator.detect_stale_values(y, window=3, atol=1e-5)
     assert_series_equal(res, pd.Series([False, False, True, True, True, False,
                                         False]))
-    res = validator.detect_stale_values(y, atol=2e-5)
+    res = validator.detect_stale_values(y, window=3, atol=2e-5)
     assert_series_equal(res, pd.Series([False, False, True, True, True, True,
                                         True]))
     with pytest.raises(ValueError):
@@ -279,12 +279,12 @@ def test_detect_interpolation():
     data = [1.0, 1.001, 1.002001, 1.003, 1.004, 1.001001, 1.001001, 1.001001,
             1.2, 1.3, 1.5, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0]
     x = pd.Series(data=data)
-    res1 = validator.detect_interpolation(x)
+    res1 = validator.detect_interpolation(x, window=3)
     assert_series_equal(res1, pd.Series([False, False, False, False, False,
                                          False, False, True, False, False,
                                          False, False, False, True, True, True,
                                          False]))
-    res2 = validator.detect_interpolation(x, rtol=1e-2)
+    res2 = validator.detect_interpolation(x, window=3, rtol=1e-2)
     assert_series_equal(res2, pd.Series([False, False, True, True, True,
                                          False, False, True, False, False,
                                          False, False, False, True, True, True,
@@ -294,17 +294,17 @@ def test_detect_interpolation():
                                          False, False, False, False, False,
                                          False, False, False, False, False,
                                          True, False]))
-    res4 = validator.detect_interpolation(x, atol=1e-2)
+    res4 = validator.detect_interpolation(x, window=3, atol=1e-2)
     assert_series_equal(res4, pd.Series([False, False, True, True, True,
                                          True, True, True, False, False,
                                          False, False, False, True, True, True,
                                          False]))
     data = [0.0, 0.0, 0.0, -0.0, 0.00001, 0.000010001, -0.00000001]
     y = pd.Series(data=data)
-    res = validator.detect_interpolation(y, atol=1e-5)
+    res = validator.detect_interpolation(y, window=3, atol=1e-5)
     assert_series_equal(res, pd.Series([False, False, True, True, True, True,
                                         False]))
-    res = validator.detect_stale_values(y, atol=1e-4)
+    res = validator.detect_stale_values(y, window=3, atol=1e-4)
     assert_series_equal(res, pd.Series([False, False, True, True, True, True,
                                         True]))
     with pytest.raises(ValueError):
@@ -382,3 +382,11 @@ def test_detect_clearsky_ghi_one_val(ghi_clearsky):
     with pytest.warns(RuntimeWarning):
         flags = validator.detect_clearsky_ghi(ser, ser)
     assert (flags == 0).all()
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (pd.Timedelta('15min'), 6),
+    (pd.Timedelta('1h'), 3)
+])
+def test_stale_interpolated_window(inp, expected):
+    assert validator.stale_interpolated_window(inp) == expected
