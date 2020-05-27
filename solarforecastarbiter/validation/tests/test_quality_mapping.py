@@ -259,11 +259,21 @@ def test_convert_mask_into_dataframe_w_unvalidated():
              quality_mapping.LATEST_VERSION_FLAG)
     flags.iloc[0] = 0
     columns = DESCRIPTIONS + ['NOT VALIDATED'] + DERIVED_DESCRIPTIONS
-    expected = pd.DataFrame([[0] * 11 + [1, 1, 0, 0],
+    expected = pd.DataFrame([[0] * 11 + [1, 0, 0, 0],
                              [0] * 12 + [1, 0, 0],
                              [1] + [0] * 11 + [1, 0, 0],
                              [0] * 9 + [1, 0, 0, 1, 0, 0],
                              [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0]],
+                            columns=columns,
+                            dtype=bool)
+    out = quality_mapping.convert_mask_into_dataframe(flags)
+    assert_frame_equal(out, expected, check_like=True)
+
+
+def test_convert_mask_into_dataframe_all_unvalidated():
+    flags = pd.Series([0, 0, 1, 1, 0])
+    columns = ['NOT VALIDATED']
+    expected = pd.DataFrame([[1]] * 5,
                             columns=columns,
                             dtype=bool)
     out = quality_mapping.convert_mask_into_dataframe(flags)

@@ -233,13 +233,16 @@ def _convert_version_mask(ser):
 def _add_derived_masks(masks):
     """Copies input DataFrame and then adds new masks derived from
     input masks"""
-    out = masks.copy()
+    unvalidated = masks['NOT VALIDATED']
+    if unvalidated.all():
+        return masks
+    out = masks.copy()[~unvalidated]
     for flag, operations in DERIVED_MASKS.items():
         func = operations[0]
         cols = operations[1:]
         args = [out[col] for col in cols]
         out[flag] = func(*args)
-    return out
+    return pd.concat([out, masks[unvalidated]]).fillna(False)
 
 
 def convert_mask_into_dataframe(flag_series):
