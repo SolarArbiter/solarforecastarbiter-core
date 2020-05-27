@@ -116,9 +116,9 @@ TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS = [
     Forecast(
         name='Day Ahead Persistence',
         issue_time_of_day=dt.time(0),
-        lead_time_to_start=pd.Timedelta('24h'),
+        lead_time_to_start=pd.Timedelta('1d'),
         interval_length=pd.Timedelta('1h'),
-        run_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
         interval_label='ending',
         interval_value_type='interval_mean',
         variable='ghi',
