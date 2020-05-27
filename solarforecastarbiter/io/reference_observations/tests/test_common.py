@@ -794,6 +794,7 @@ def test_apply_json_site_parameters_plant(test_json_site_file, params):
     assert extra_params['network'] == 'TEST'
     assert extra_params['observation_interval_length'] == 1.0
 
+
 @pytest.mark.parametrize('params', [
     {'network_api_id': 'not_plant'},
 ])
