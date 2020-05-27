@@ -776,3 +776,16 @@ def test_create_forecasts(template_fx, mocker):
     assert len(fxs) == 3
     assert create_nwp.call_count == 1
     assert create_nwp.call_args[0][-1] == templates[:1]
+    common.create_forecasts(api, site, vars_, templates)
+
+
+@pytest.mark.parametrize('params', [
+    {'network_api_id': 2},
+    {'network_api_id': '2'},
+])
+def test_apply_json_site_parameters_plant(test_json_site_file, params):
+    new_site = common.apply_json_site_parameters(
+        test_json_site_file,
+        {'extra_parameters': params},
+    )
+    assert 'modeling_parameters' in new_site

@@ -1,5 +1,8 @@
 import copy
 import json
+from pkg_resources import resource_filename, Requirement
+
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -150,3 +153,11 @@ def mock_fetch(mocker, fake_ghi_data):
     fetch = mocker.MagicMock()
     fetch.return_value = fake_ghi_data
     return fetch
+
+
+@pytest.fixture
+def test_json_site_file():
+    return resource_filename(
+        Requirement.parse('solarforecastarbiter'),
+        'solarforecastarbiter/io/reference_observations/'
+        'tests/data/test_site.json')
