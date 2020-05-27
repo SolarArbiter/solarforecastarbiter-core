@@ -20,6 +20,15 @@ API Changes
   :py:func:`solarforecastarbiter.validation.validator.detect_stale_values` and
   :py:func:`solarforecastarbiter.validation.validator.detect_interpolated_values`
   ``window`` value from 3 to 6. (:issue:`124`)
+* :py:func:`solarforecastarbiter.io.reference_data.common.create_forecasts` now
+  calls :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts`
+  and :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts`
+  which create the Forecast objects from persistence and NWP templates,
+  respectively. (:issue:`375`) (:pull:`455`)
+* Added :py:func:`solarforecastarbiter.reference_forecasts.main.make_latest_persistence_forecasts`
+  to support periodic generation of persistence reference forecasts. (:issue:`375`)
+  (:pull:`455`)
+
 
 Enhancements
 ~~~~~~~~~~~~
@@ -44,6 +53,8 @@ Enhancements
   :py:func:`solarforecastarbiter.validation.validator.check_ac_power_limits` and
   :py:func:`solarforecastarbiter.validation.validator.check_dc_power_limits`
   functions. (:issue:`452`) (:pull:`458`)
+* Adjusted University of Oregon Solar Radiation Measurment Laboratory (UO SRML)
+  to include available PV power data. (:pull:`442`)
 
 Bug fixes
 ~~~~~~~~~
@@ -51,6 +62,8 @@ Bug fixes
   (:issue:`428`) (:pull:`430`)
 * Ensure data is sorted from reference data sources before slicing and
   posting to the API (:pull:`435`)
+* Remove UO SMRL sites from reference dataset that have not reported recent
+  data. (:issue:`436`) (:pull:`442`)
 
 
 Contributors

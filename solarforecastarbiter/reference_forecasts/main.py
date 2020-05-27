@@ -288,7 +288,7 @@ def _verify_nwp_forecasts_compatible(fx_group):
 
 
 def _is_reference_forecast(extra_params_string):
-    match = re.search('is_reference_forecast(["\\s\\:]*)true',
+    match = re.search(r'is_reference_forecast(["\s\:]*)true',
                       extra_params_string, re.I)
     return match is not None
 
@@ -465,3 +465,143 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
         logger.info('No forecasts to be made at %s', run_time)
         return
     process_nwp_forecast_groups(session, run_time, execute_for)
+
+
+def _is_reference_persistence_forecast(extra_params_string):
+    match = re.search(r'is_reference_persistence_forecast(["\s\:]*)true',
+                      extra_params_string, re.I)
+    return match is not None
+
+
+def generate_reference_persistence_forecast_parameters(
+        session, forecasts, observations, max_run_time):
+    """Sort through all *forecasts* to find those that should be generated
+    by the Arbiter from persisting Observation values. The forecast
+    must have ``'is_reference_persistence_forecast': true`` and an
+    observation_id in Forecast.extra_parameters (formatted as a JSON
+    string). A boolean value for "index_persistence" in
+    Forecast.extra_parameters controls whether the persistence
+    forecast should be made adjusting for clear-sky/AC power index or
+    not.
+
+    Parameters
+    ----------
+    session : solarforecastarbiter.io.api.APISession
+    forecasts : list of datamodel.Forecasts
+        The forecasts that should be filtered to find references.
+    observations : list of datamodel.Observations
+        Observations that will are available to use to fetch values
+        and make persistence forecasts.
+    max_run_time : pandas.Timestamp
+        The maximum run time/issue time for any forecasts. Usually now.
+
+    Returns
+    -------
+    generator of (Forecast, Observation, next_issue_time, index)
+
+    """
+    user_info = session.get_user_info()
+    observation_dict = {obs.observation_id: obs for obs in observations}
+    for fx in forecasts:
+        if not _is_reference_persistence_forecast(fx.extra_parameters):
+            logger.debug(
+                'Forecast %s is not labeled as a reference '
+                'persistence forecast',  fx.forecast_id)
+            continue
+
+        if not fx.provider == user_info['organization']:
+            logger.debug(
+                "Forecast %s is not in user's organization",
+                fx.forecast_id)
+            continue
+
+        try:
+            extra_parameters = json.loads(fx.extra_parameters)
+        except json.JSONDecodeError:
+            logger.warning(
+                'Failed to decode extra_parameters for %s: %s as JSON',
+                fx.name, fx.forecast_id)
+            continue
+
+        try:
+            observation_id = extra_parameters['observation_id']
+        except KeyError:
+            logger.error(
+                'Forecast, %s: %s, has no observation_id to base forecasts'
+                ' off of. Cannot make persistence forecast.',
+                fx.name, fx.forecast_id)
+            continue
+        if observation_id not in observation_dict:
+            logger.error(
+                'Observation %s not in set of given observations.'
+                ' Cannot generate persistence forecast for %s: %s.',
+                observation_id, fx.name, fx.forecast_id)
+            continue
+        observation = observation_dict[observation_id]
+
+        index = extra_parameters.get('index_persistence', False)
+        obs_mint, obs_maxt = session.get_observation_time_range(observation_id)
+        if pd.isna(obs_maxt):  # no observations to use anyway
+            logger.info(
+                'No observation values to use for %s: %s from observation %s',
+                fx.name, fx.forecast_id, observation_id)
+            continue
+
+        fx_mint, fx_maxt = session.get_forecast_time_range(fx.forecast_id)
+        # find the next issue time for the forecast based on the last value
+        # in the forecast series
+        if pd.isna(fx_maxt):
+            # if there is no forecast yet, go back a bit from the last
+            # observation. Don't use the start of observations, since it
+            # could really stress the workers if we have a few years of
+            # data before deciding to make a persistence fx
+            next_issue_time = utils.get_next_issue_time(
+                fx, obs_maxt - fx.run_length)
+        else:
+            next_issue_time = utils.find_next_issue_time_from_last_forecast(
+                fx, fx_maxt)
+
+        # now find all the run times that can be made based on the
+        # last observation timestamp
+        while next_issue_time <= max_run_time:
+            data_start, data_end = utils.get_data_start_end(
+                observation, fx, next_issue_time)
+            if data_end > obs_maxt:
+                break
+
+            if data_start > obs_mint:
+                yield (
+                    fx,
+                    observation,
+                    next_issue_time,
+                    index
+                )
+            next_issue_time = utils.get_next_issue_time(
+                fx, next_issue_time + pd.Timedelta('1ns'))
+
+
+def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
+    """Make all reference persistence forecasts that need to be made up to
+    *max_run_time*.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    max_run_time : pandas.Timestamp
+        Last possible run time of the forecast generation
+    base_url : str or None, default None
+        Alternate base_url of the API
+    """
+    session = api.APISession(token, base_url=base_url)
+    forecasts = session.list_forecasts()
+    observations = session.list_observations()
+    params = generate_reference_persistence_forecast_parameters(
+        session, forecasts, observations, max_run_time)
+    for fx, obs, issue_time, index in params:
+        run_time = issue_time
+        logger.info('Making persistence forecast for %s:%s at %s',
+                    fx.name, fx.forecast_id, issue_time)
+        fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
+                                 index=index)
+        session.post_forecast_values(fx.forecast_id, fx_ser)
