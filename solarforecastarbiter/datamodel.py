@@ -1570,7 +1570,7 @@ class ReportParameters(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
-    forecast_observations : Tuple of ForecastObservation or ForecastAggregate
+    object_pairs: Tuple of ForecastObservation or ForecastAggregate
         Paired Forecasts and Observations or Aggregates to be analyzed
         in the report.
     metrics : Tuple of str

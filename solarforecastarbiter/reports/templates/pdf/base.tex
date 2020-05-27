@@ -15,6 +15,7 @@
 \usepackage{caption}
 \usepackage{float}
 \usepackage{lmodern}
+\usepackage{underscore}
 \captionsetup[table]{skip=10pt}
 
 \newcommand{\ccbr}{\allowbreak\hspace{0pt}}
@@ -101,7 +102,7 @@ available \href{\VAR{report_url}}{here}.
 %- set human_metric = human_metrics[metric].replace('^', '\\textasciicircum')
 %- for rep_fig in report.raw_report.plots.figures
 %- if rep_fig.category == category and rep_fig.metric == metric
-%- set plot_id = (category+'_'+metric+'_'+rep_fig.name) | replace('^', '-') | replace(' ', '_')
+%- set plot_id = (category+'+'+metric+'+'+rep_fig.name) | replace('^', '-') | replace(' ', '+') | replace('_', '+')
 %- if category == 'total'
 %- set caption = 'Total ' + human_metric + ' for all forecasts.'
 %- else
@@ -127,7 +128,7 @@ available \href{\VAR{report_url}}{here}.
   \begin{tabu}{ l | X }
     Package & Version \\ \hline
     %- for pkg_ver in report.raw_report.versions
-    \VAR{pkg_ver[0]} & \VAR{pkg_ver[1].replace('_', '\\_')} \\
+    \VAR{pkg_ver[0]} & \VAR{pkg_ver[1]} \\
     %- endfor
     LaTeX & \fmtversion \\
     pdfTeX & \pdftexbanner \\
