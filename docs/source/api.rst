@@ -279,8 +279,25 @@ DOE RTC
    io.fetch.rtc.request_doe_rtc_data
    io.fetch.rtc.fetch_doe_rtc
 
+NREL PVDAQ
+----------
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.pvdaq.get_pvdaq_metadata
+   io.fetch.pvdaq.get_pvdaq_data
+
+
 Reference observations
-----------------------
+======================
+
+The following modules contain code for initializing the reference
+database, wrappers for fetching data, functions for processing (e.g.
+renaming and resampling) data, and wrapper functions for posting data.
+The pure fetch functions are found in ``pvlib.iotools`` and in
+``solarforecastarbiter.io.fetch``. See the source code for additional
+files with site and observation metadata.
 
 .. autosummary::
    :toctree: generated/
@@ -295,6 +312,7 @@ Reference observations
    io.reference_observations.srml
    io.reference_observations.surfrad
    io.reference_observations.arm
+   io.reference_observations.pvdaq
 
 SFA API
 =======
@@ -415,6 +433,7 @@ Utility functions for data IO.
    io.utils.serialize_timeseries
    io.utils.deserialize_timeseries
    io.utils.load_report_values
+   io.utils.mock_raw_report_endpoints
 
 
 Metrics
@@ -578,6 +597,7 @@ Functions to generate output (HTML, PDF) for reports
 
    reports.template.render_html
    reports.template.get_template_and_kwargs
+   reports.template.render_pdf
 
 Validation
 ==========
@@ -607,6 +627,7 @@ Functions to perform validation.
    validation.validator.detect_levels
    validation.validator.detect_clipping
    validation.validator.detect_clearsky_ghi
+   validation.validator.stale_interpolated_window
 
 
 Tasks

@@ -511,7 +511,7 @@ def _all_close_to_first(x, rtol=1e-5, atol=1e-8):
 
 
 @mask_flags('STALE VALUES', invert=False)
-def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
+def detect_stale_values(x, window=6, rtol=1e-5, atol=1e-8):
     """ Detects stale data.
 
     For a window of length N, the last value (index N-1) is considered stale
@@ -521,7 +521,7 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     ----------
     x : Series
         data to be processed
-    window : int, default 3
+    window : int, default 6
         number of consecutive values which, if unchanged, indicates stale data
     rtol : float, default 1e-5
         relative tolerance for detecting a change in data values
@@ -548,8 +548,17 @@ def detect_stale_values(x, window=3, rtol=1e-5, atol=1e-8):
     return flags
 
 
+def stale_interpolated_window(interval_length):
+    """Returns the recommended window size for detect stale and
+    interpolation functions"""
+    if interval_length < pd.Timedelta('1h'):
+        return 6
+    else:
+        return 3
+
+
 @mask_flags('INTERPOLATED VALUES', invert=False)
-def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
+def detect_interpolation(x, window=6, rtol=1e-5, atol=1e-8):
     """ Detects sequences of data which appear linear.
 
     Sequences are linear if the first difference appears to be constant.
@@ -560,7 +569,7 @@ def detect_interpolation(x, window=3, rtol=1e-5, atol=1e-8):
     ----------
     x : series
         data to be processed
-    window : int, default 3
+    window : int, default 6
         number of sequential values that, if the first difference is constant,
         are classified as a linear sequence
     rtol : float, default 1e-5

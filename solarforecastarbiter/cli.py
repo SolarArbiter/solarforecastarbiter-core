@@ -18,6 +18,7 @@ from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
 from solarforecastarbiter.io.fetch import start_cluster
 from solarforecastarbiter.io.reference_observations import reference_data
+from solarforecastarbiter.io.utils import mock_raw_report_endpoints
 import solarforecastarbiter.reference_forecasts.main as reference_forecasts
 from solarforecastarbiter.validation import tasks as validation_tasks
 import solarforecastarbiter.reports.main as reports
@@ -161,7 +162,7 @@ def referencedata():
 
 network_opt = click.option(
     '--network', multiple=True,
-    help="The Networks to act on. Defaults to all.",
+    help="The networks to act on. Defaults to all.",
     default=reference_data.NETWORK_OPTIONS,
     type=click.Choice(reference_data.NETWORK_OPTIONS))
 
@@ -292,31 +293,79 @@ def referencenwp(verbose, user, password, base_url, run_time,
 
 @cli.command()
 @common_options
+@click.option(
+    '--format', default='detect',
+    help=('Format of output file. "detect" tries to infer from '
+          'the file extension of OUTPUT-FILE'),
+    type=click.Choice(['detect', 'pdf', 'html'], case_sensitive=False)
+)
+@click.option(
+    '--serialization-roundtrip', is_flag=True,
+    help='Run the raw report through a mock API with serialization'
+)
+@click.option(
+    '--orca-server-url', help=(
+        'URL to the plotly orca server to generate PDF images if '
+        'orca is not installed locally')
+)
 @click.argument(
     'report-file', type=click.Path(exists=True, resolve_path=True))
 @click.argument(
     'output-file', type=click.Path(resolve_path=True))
-def report(verbose, user, password, base_url, report_file, output_file):
+def report(verbose, user, password, base_url, report_file, output_file,
+           format, serialization_roundtrip, orca_server_url):
     """
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
     """
     set_log_level(verbose)
     token = cli_access_token(user, password)
-    session = APISession(token, base_url=base_url)
     with open(report_file) as f:
         metadata = json.load(f)
+    session = APISession(token, base_url=base_url)
     report = session.process_report_dict(metadata)
-    data = reports.get_data_for_report(session, report)
-    raw_report = reports.create_raw_report_from_data(report, data)
-    full_report = report.replace(raw_report=raw_report, status='complete')
+    if orca_server_url is not None:
+        import plotly.io as pio
+        pio.orca.config.server_url = orca_server_url
+    if serialization_roundtrip:
+        with mock_raw_report_endpoints(base_url):
+            session.create_report(report)
+            reports.compute_report(token, 'no_id', base_url)
+            full_report = session.get_report('no_id')
+    else:
+        data = reports.get_data_for_report(session, report)
+        raw_report = reports.create_raw_report_from_data(report, data)
+        full_report = report.replace(raw_report=raw_report, status='complete')
     # assumed dashboard url based on api url
     dash_url = base_url.replace('api', 'dashboard')
-    html_report = template.render_html(
-        full_report, dash_url,
-        with_timeseries=True, body_only=False)
-    with open(output_file, 'w') as f:
-        f.write(html_report)
+    if (
+            (format == 'detect' and output_file.endswith('.html'))
+            or format == 'html'
+    ):
+        html_report = template.render_html(
+            full_report, dash_url,
+            with_timeseries=True, body_only=False)
+        with open(output_file, 'w') as f:
+            f.write(html_report)
+    elif (
+            (format == 'detect' and output_file.endswith('.pdf'))
+            or format == 'pdf'
+    ):
+        pdf_report = template.render_pdf(full_report, dash_url)
+        with open(output_file, 'wb') as f:
+            f.write(pdf_report)
+    else:
+        raise ValueError("Unable to detect format")
+
+
+@cli.command(context_settings=dict(ignore_unknown_options=True))
+@click.argument('pytest_args', nargs=-1, type=click.UNPROCESSED)
+def test(pytest_args):  # pragma: no cover
+    """Test this installation of solarforecastarbiter"""
+    import pytest
+    ret_code = pytest.main(
+        ['--pyargs', 'solarforecastarbiter'] + list(pytest_args))
+    sys.exit(ret_code)
 
 
 if __name__ == "__main__":  # pragma: no cover

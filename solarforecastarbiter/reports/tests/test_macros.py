@@ -10,7 +10,8 @@ def macro_test_template():
     def fn(macro_name_and_args):
         macro_template = f"{{% import 'macros.j2' as macros with context%}}{{{{macros.{macro_name_and_args} | safe }}}}"  # noqa
         env = Environment(
-            loader=PackageLoader('solarforecastarbiter.reports', 'templates'),
+            loader=PackageLoader(
+                'solarforecastarbiter.reports', 'templates/html'),
             autoescape=select_autoescape(['html', 'xml']),
             lstrip_blocks=True,
             trim_blocks=True
