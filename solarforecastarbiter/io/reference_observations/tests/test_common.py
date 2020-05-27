@@ -772,7 +772,10 @@ def test_create_forecasts(template_fx, mocker):
     api.list_observations = mocker.MagicMock(
         return_value=[site_test_observation.replace(site=site)])
     create_nwp = mocker.spy(common, 'create_nwp_forecasts')
+    create_perst = mocker.spy(common, 'create_persistence_forecasts')
     fxs = common.create_forecasts(api, site, vars_, templates)
     assert len(fxs) == 3
     assert create_nwp.call_count == 1
+    assert create_perst.call_count == 1
     assert create_nwp.call_args[0][-1] == templates[:1]
+    assert create_perst.call_args[0][-1] == templates[-1:]
