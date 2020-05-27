@@ -793,7 +793,7 @@ def test_apply_json_site_parameters_plant(test_json_site_file, params):
 @pytest.mark.parametrize('params', [
     {'network_api_id': 'not_plant'},
 ])
-def test_apply_json_site_parameters_plant(test_json_site_file, params):
+def test_apply_json_site_parameters_no_params(test_json_site_file, params):
     new_site = common.apply_json_site_parameters(
         test_json_site_file,
         {'extra_parameters': params},
