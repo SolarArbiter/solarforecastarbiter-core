@@ -788,7 +788,11 @@ def test_apply_json_site_parameters_plant(test_json_site_file, params):
         {'extra_parameters': params},
     )
     assert 'modeling_parameters' in new_site
-
+    extra_params = new_site['extra_parameters']
+    assert extra_params['network_api_abbreviation'] == 'SITE2'
+    assert extra_params['attribution'] == ""
+    assert extra_params['network'] == 'TEST'
+    assert extra_params['observation_interval_length'] == 1.0
 
 @pytest.mark.parametrize('params', [
     {'network_api_id': 'not_plant'},
@@ -799,3 +803,4 @@ def test_apply_json_site_parameters_no_params(test_json_site_file, params):
         {'extra_parameters': params},
     )
     assert 'modeling_parameters' not in new_site
+    assert list(new_site['extra_parameters'].keys()) == ['network_api_id']

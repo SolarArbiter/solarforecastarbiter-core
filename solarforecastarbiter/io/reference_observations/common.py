@@ -655,5 +655,6 @@ def apply_json_site_parameters(json_sitefile, site):
             site_out = site.copy()
             site_out['modeling_parameters'] = site_metadata[
                 'modeling_parameters']
+            site_out['extra_parameters'].update(site_extra_params)
             return site_out
     return site
