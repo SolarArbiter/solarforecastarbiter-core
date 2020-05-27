@@ -1,11 +1,19 @@
 import copy
+import inspect
 import json
+import os
+
+
 import numpy as np
 import pandas as pd
 import pytest
 
 
 from solarforecastarbiter.datamodel import Site, Observation
+
+
+TEST_DATA_DIR = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
 def site_dicts():
@@ -150,3 +158,8 @@ def mock_fetch(mocker, fake_ghi_data):
     fetch = mocker.MagicMock()
     fetch.return_value = fake_ghi_data
     return fetch
+
+
+@pytest.fixture
+def test_json_site_file():
+    return os.path.join(TEST_DATA_DIR, 'data', 'test_site.json')
