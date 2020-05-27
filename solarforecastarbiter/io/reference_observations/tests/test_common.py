@@ -780,6 +780,7 @@ def test_create_forecasts(template_fx, mocker):
     assert create_nwp.call_args[0][-1] == templates[:1]
     assert create_perst.call_args[0][-1] == templates[-1:]
 
+
 @pytest.mark.parametrize('params', [
     {'network_api_id': 2},
     {'network_api_id': '2'},
