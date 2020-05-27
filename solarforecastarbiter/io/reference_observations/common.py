@@ -629,3 +629,32 @@ def create_forecasts(api, site, variables, templates):
     persist_created = create_persistence_forecasts(
         api, site, variables, nwp_templates)
     return nwp_created + persist_created
+
+
+def apply_json_site_parameters(json_sitefile, site):
+    """Updates site metadata with modeling parameters found in a json file.
+
+    Parameters
+    ----------
+    json_sitefile: str
+        Absolute path of a json file with a 'sites' key containing a list of
+        sites in the Solar Forecast Arbiter JSON format.
+    site: dict
+
+    Returns
+    -------
+    dict
+        Copy of inputs plus a new key 'modeling_parameters'.
+    """
+    with open(json_sitefile) as fp:
+        sites_metadata = json.load(fp)['sites']
+    site_api_id = str(site['extra_parameters']['network_api_id'])
+    for site_metadata in sites_metadata:
+        site_extra_params = json.loads(site_metadata['extra_parameters'])
+        if str(site_extra_params['network_api_id']) == site_api_id:
+            site_out = site.copy()
+            site_out['modeling_parameters'] = site_metadata[
+                'modeling_parameters']
+            site_out['extra_parameters'].update(site_extra_params)
+            return site_out
+    return site

@@ -1,0 +1,23 @@
+{
+    "sites": [
+        {
+            "elevation": 595.0,
+            "extra_parameters": "{\"network_api_id\": \"2\", \"attribution\": \"\", \"network\": \"TEST\", \"network_api_abbreviation\": \"SITE2\", \"observation_interval_length\": 1.0}",
+            "latitude": 42.19,
+            "longitude": -122.7,
+            "modeling_parameters": {
+                "ac_capacity": 0.02,
+                "ac_loss_factor": 0.0,
+                "dc_capacity": 0.02,
+                "dc_loss_factor": 0.0,
+                "surface_azimuth": 180.0,
+                "surface_tilt": 15.0,
+                "temperature_coefficient": 0.3,
+                "tracking_type": "fixed"
+            },
+            "name": "Test data",
+            "provider": "",
+            "site_id": ""
+        }
+    ]
+}

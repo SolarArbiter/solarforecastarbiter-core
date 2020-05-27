@@ -1,5 +1,7 @@
 import logging
+import json
 from urllib import error
+from pkg_resources import resource_filename, Requirement
 
 
 import pandas as pd
@@ -7,8 +9,15 @@ from pvlib import iotools
 from requests.exceptions import HTTPError
 
 
+from solarforecastarbiter.datamodel import Observation
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
+
+
+DEFAULT_SITEFILE = resource_filename(
+    Requirement.parse('solarforecastarbiter'),
+    'solarforecastarbiter/io/reference_observations/'
+    'srml_reference_sites.json')
 
 
 # maps the desired variable names to those returned by pvlib.iotools
@@ -19,6 +28,7 @@ srml_variable_map = {
     'wind_speed_': 'wind_speed',
     'temp_air_': 'air_temperature',
 }
+
 
 # maps SolarForecastArbiter interval_label to the SRML infix which
 # designates the time resolution of each file. The list of file types
@@ -36,17 +46,28 @@ FILE_TYPE_MAP = {
 logger = logging.getLogger('reference_data')
 
 
+def adjust_site_parameters(site):
+    """Inserts modeling parameters for sites with pv measurments
+
+    Parameters
+    ----------
+    site: dict
+
+    Returns
+    -------
+    dict
+        Copy of inputs plus a new key 'modeling_parameters'.
+    """
+    return common.apply_json_site_parameters(DEFAULT_SITEFILE, site)
+
+
 def request_data(site, year, month):
     """Makes a request for each file type until successful or we
     run out of filetypes.
 
     Parameters
     ----------
-    interval_length: int
-        The number of minutes between each timestep in the data. Used
-        to lookup filetypes in FILE_TYPE_MAP.
-    station: string
-        The two character station abbreviation found in filenames.
+    site: :py:class:`solarforecastarbiter.datamodel.Site`
     year: int
         The year of the data to request.
     month: int
@@ -80,6 +101,8 @@ def request_data(site, year, month):
             continue
         else:
             return srml_month
+    logger.warning(f'Could not retrieve data for site {site.name} on '
+                   f'{year}/{month}.')
 
 
 def fetch(api, site, start, end):
@@ -87,10 +110,10 @@ def fetch(api, site, start, end):
 
     Parameters
     ----------
-    api : io.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An APISession with a valid JWT for accessing the Reference Data
         user.
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site`
         Site object with the appropriate metadata.
     start : datetime
         The beginning of the period to request data for.
@@ -126,6 +149,11 @@ def fetch(api, site, start, end):
         return pd.DataFrame()
     var_columns = [col for col in all_period_data.columns
                    if '_flag' not in col]
+    power_columns = [col for col in var_columns
+                     if col.startswith('5')]
+    # adjust power from watts to megawatts
+    for column in power_columns:
+        all_period_data[column] = all_period_data[column] / 1000000
     all_period_data = all_period_data[var_columns]
     return all_period_data
 
@@ -136,9 +164,9 @@ def initialize_site_observations(api, site):
 
     Parameters
     ----------
-    api: io.api.APISession
+    api: :py:class:`solarforecastarbiter.io.api.APISession`
 
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site
         The site object for which to create Observations.
 
     Notes
@@ -154,8 +182,9 @@ def initialize_site_observations(api, site):
     labels to differentiate between measurements recorded by
     different instruments.
     """
-    start = pd.Timestamp.now()
-    end = pd.Timestamp.now()
+    # Request ~month old data at initialization to ensure we get a response.
+    start = pd.Timestamp.now() - pd.Timedelta('30 days')
+    end = start
     try:
         extra_params = common.decode_extra_parameters(site)
     except ValueError:
@@ -178,7 +207,8 @@ def initialize_site_observations(api, site):
                          f'for SRML site {site_name}.')
             return
         for variable in srml_variable_map.keys():
-            matches = [col for col in site_df.columns if variable in col]
+            matches = [col for col in site_df.columns
+                       if col.startswith(variable)]
             for match in matches:
                 observation_extra_parameters = extra_params.copy()
                 observation_extra_parameters.update({
@@ -196,6 +226,15 @@ def initialize_site_observations(api, site):
                     logger.error(
                         f'Failed to create {variable} observation at Site '
                         f'{site.name}. Error: {e.response.text}')
+        with open(DEFAULT_SITEFILE) as fp:
+            obs_metadata = json.load(fp)['observations']
+        for obs in obs_metadata:
+            obs_site_extra_params = json.loads(obs['site']['extra_parameters'])
+            if obs_site_extra_params['network_api_id'] == extra_params[
+                    'network_api_id']:
+                obs['site'] = site
+                observation = Observation.from_dict(obs)
+                common.check_and_post_observation(api, observation)
 
 
 def initialize_site_forecasts(api, site):
@@ -204,9 +243,9 @@ def initialize_site_forecasts(api, site):
 
     Parameters
     ----------
-    api : solarforecastarbiter.io.api.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An active Reference user session.
-    site : datamodel.Site
+    site : :py:class:`solarforecastarbiter.datamodel.Site`
         The site object for which to create Forecasts.
     """
     common.create_forecasts(
@@ -218,15 +257,17 @@ def update_observation_data(api, sites, observations, start, end):
     """Post new observation data to a list of SRML Observations
     from start to end.
 
-    api : solarforecastarbiter.io.api.APISession
+    api : :py:class:`solarforecastarbiter.io.api.APISession`
         An active Reference user session.
-    sites: list
+    sites: list of :py:class:`solarforecastarbiter.datamodel.Site`
         List of all reference sites as Objects
+    observations: list of :py:class:`solarforecastarbiter.datamodel.Observation`
+        List of all reference observations as Objects
     start : datetime
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
-    """
+    """  # noqa
     srml_sites = common.filter_by_networks(sites, 'UO SRML')
     for site in srml_sites:
         common.update_site_observations(api, fetch, site, observations,
