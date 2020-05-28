@@ -1,4 +1,4 @@
-import time
+gimport time
 import json
 import datetime as dt
 import numpy as np
@@ -379,11 +379,11 @@ def test_resample_and_align_prob_constant_value(
     fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
         fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_index_equal(fx_values.index,
-                                   ref_values.index,
-                                   check_categorical=False)
+                                  ref_values.index,
+                                  check_categorical=False)
     pd.testing.assert_index_equal(fx_values.index,
-                                   obs_values.index,
-                                   check_categorical=False)
+                                  obs_values.index,
+                                  check_categorical=False)
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
                                   check_categorical=False)

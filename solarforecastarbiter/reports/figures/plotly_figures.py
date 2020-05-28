@@ -493,11 +493,6 @@ def construct_metrics_dataframe(metrics, rename=None):
 
     data = []
     for metric_result in metrics:
-        # error here for ProbabilisticForecasts.
-        # metrics is a 2 element tuple:
-        # element 0: list of MetricsResults for each ProbFxConstVal in the ProbFx
-        # element 1: MetricsResult for distribution metrics (CRPS)
-        # so metric_result.values fails on the list object
         for mvalue in metric_result.values:
             new = {
                 'name': metric_result.name,
