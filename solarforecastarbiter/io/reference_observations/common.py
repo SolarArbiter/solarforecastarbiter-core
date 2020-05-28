@@ -627,7 +627,7 @@ def create_forecasts(api, site, variables, templates):
             nwp_templates.append(template)
     nwp_created = create_nwp_forecasts(api, site, variables, nwp_templates)
     persist_created = create_persistence_forecasts(
-        api, site, variables, nwp_templates)
+        api, site, variables, persistence_templates)
     return nwp_created + persist_created
 
 
