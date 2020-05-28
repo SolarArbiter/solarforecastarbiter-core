@@ -538,6 +538,116 @@ def test_immediate_observation_validation_relative_humidity(
     assert_frame_equal(post_mock.call_args[0][1], out)
 
 
+def test_validate_ac_power(mocker, make_observation, default_index):
+    mocks = [mocker.patch.object(validator, f,
+                                 new=mocker.MagicMock(
+                                     wraps=getattr(validator, f)))
+             for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
+                       'check_ac_power_limits']]
+    obs = make_observation('ac_power')
+    data = pd.Series([0, 1, -1, 0.001, 0.001], index=default_index)
+    flags = tasks.validate_ac_power(obs, data)
+    for mock in mocks:
+        assert mock.called
+
+    expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                pd.Series([0, 1, 1, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
+    for flag, exp in zip(flags, expected):
+        assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
+                            check_names=False)
+
+
+def test_immediate_observation_validation_ac_power(mocker, make_observation,
+                                                   default_index):
+    obs = make_observation('ac_power')
+    data = pd.DataFrame(
+        [(0, 0), (1, 0), (-1, 0), (0.001, 1), (0.001, 0)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        return_value=data)
+
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+
+    tasks.immediate_observation_validation(
+        '', obs.observation_id, data.index[0], data.index[-1])
+
+    out = data.copy()
+    out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG
+    ]
+    assert post_mock.called_once
+    assert_frame_equal(post_mock.call_args[0][1], out)
+
+
+def test_validate_dc_power(mocker, make_observation, default_index):
+    mocks = [mocker.patch.object(validator, f,
+                                 new=mocker.MagicMock(
+                                     wraps=getattr(validator, f)))
+             for f in ['check_timestamp_spacing',
+                       'check_irradiance_day_night',
+                       'check_dc_power_limits']]
+    obs = make_observation('dc_power')
+    data = pd.Series([0, 1, -1, 0.001, 0.001], index=default_index)
+    flags = tasks.validate_dc_power(obs, data)
+    for mock in mocks:
+        assert mock.called
+
+    expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+                pd.Series([1, 0, 0, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                pd.Series([0, 1, 1, 0, 0], index=data.index) *
+                DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
+    for flag, exp in zip(flags, expected):
+        assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
+                            check_names=False)
+
+
+def test_immediate_observation_validation_dc_power(mocker, make_observation,
+                                                   default_index):
+    obs = make_observation('dc_power')
+    data = pd.DataFrame(
+        [(0, 0), (1, 0), (-1, 0), (0.001, 1), (0.001, 0)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        return_value=data)
+
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+
+    tasks.immediate_observation_validation(
+        '', obs.observation_id, data.index[0], data.index[-1])
+
+    out = data.copy()
+    out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG
+    ]
+    assert post_mock.called_once
+    assert_frame_equal(post_mock.call_args[0][1], out)
+
+
 def test_validate_daily_ghi(mocker, make_observation, daily_index):
     mocks = [mocker.patch.object(validator, f,
                                  new=mocker.MagicMock(
@@ -706,6 +816,9 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
                 pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+                          index=data.index) *
+                DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
@@ -741,26 +854,28 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
@@ -798,6 +913,9 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
                 pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+                          index=data.index) *
+                DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
@@ -836,28 +954,32 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
 
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['OK'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
         LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |

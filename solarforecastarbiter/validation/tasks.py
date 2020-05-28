@@ -244,6 +244,60 @@ def validate_relative_humidity(observation, values):
     return timestamp_flag, night_flag, rh_limit_flag
 
 
+def validate_ac_power(observation, values):
+    """
+    Run a number of validation checks on a daily timeseries of AC power.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    timestamp_flag, night_flag, limit_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.validator.check_timestamp_spacing`,
+        :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`
+    """
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    ac_limit_flag = validator.check_ac_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.ac_capacity, _return_mask=True)
+    return timestamp_flag, night_flag, ac_limit_flag
+
+
+def validate_dc_power(observation, values):
+    """
+    Run a number of validation checks on a daily timeseries of DC power.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    timestamp_flag, night_flag, limit_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.validator.check_timestamp_spacing`,
+        :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`
+    """
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    dc_limit_flag = validator.check_dc_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.dc_capacity, _return_mask=True)
+    return timestamp_flag, night_flag, dc_limit_flag
+
+
 def validate_defaults(observation, values):
     """
     Run default validation checks on an observation.
@@ -307,17 +361,20 @@ def validate_daily_dc_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, stale_flag, interpolation_flag : pandas.Series
+    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag : pandas.Series
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`
-    """
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    """  # NOQA: E501
+    timestamp_flag, night_flag, dc_limit_flag = validate_dc_power(observation,
+                                                                  values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag)
+    return (timestamp_flag, night_flag, dc_limit_flag, stale_flag,
+            interpolation_flag)
 
 
 def validate_daily_ac_power(observation, values):
@@ -333,20 +390,22 @@ def validate_daily_ac_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, stale_flag, interpolation_flag, clipping_flag : pandas.Series
+    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag, clipping_flag : pandas.Series
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`,
         :py:func:`.validator.detect_clipping`
-    """  # NOQA
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    """  # NOQA: E501
+    timestamp_flag, night_flag, ac_limit_flag = validate_ac_power(observation,
+                                                                  values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
     clipping_flag = validator.detect_clipping(values, _return_mask=True)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag,
-            clipping_flag)
+    return (timestamp_flag, night_flag, ac_limit_flag, stale_flag,
+            interpolation_flag, clipping_flag)
 
 
 IMMEDIATE_VALIDATION_FUNCS = {
@@ -356,7 +415,9 @@ IMMEDIATE_VALIDATION_FUNCS = {
     'dni': validate_dni,
     'dhi': validate_dhi,
     'poa_global': validate_poa_global,
-    'relative_humidity': validate_relative_humidity
+    'relative_humidity': validate_relative_humidity,
+    'ac_power': validate_ac_power,
+    'dc_power': validate_dc_power
 }
 
 

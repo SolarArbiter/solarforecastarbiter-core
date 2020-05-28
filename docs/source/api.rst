@@ -618,6 +618,8 @@ Functions to perform validation.
    validation.validator.check_temperature_limits
    validation.validator.check_wind_limits
    validation.validator.check_rh_limits
+   validation.validator.check_ac_power_limits
+   validation.validator.check_dc_power_limits
    validation.validator.check_ghi_clearsky
    validation.validator.check_poa_clearsky
    validation.validator.check_irradiance_day_night
@@ -642,6 +644,8 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_dni
    validation.tasks.validate_dhi
    validation.tasks.validate_poa_global
+   validation.tasks.validate_dc_power
+   validation.tasks.validate_ac_power
    validation.tasks.validate_defaults
    validation.tasks.validate_air_temperature
    validation.tasks.validate_wind_speed

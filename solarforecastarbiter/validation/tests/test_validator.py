@@ -139,6 +139,30 @@ def test_check_rh_limits(weather):
     assert_series_equal(result, result_expected)
 
 
+def test_check_ac_power_limits():
+    index = pd.date_range(
+        start='20200401 0700', freq='2h', periods=6, tz='UTC')
+    power = pd.Series([0, -0.1, 0.1, 1, 1.1, -0.1], index=index)
+    # not precise zenith - just for day/night flagging
+    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    capacity = 1.
+    expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
+    out = validator.check_ac_power_limits(power, solar_zenith, capacity)
+    assert_series_equal(out, expected)
+
+
+def test_check_dc_power_limits():
+    index = pd.date_range(
+        start='20200401 0700', freq='2h', periods=6, tz='UTC')
+    power = pd.Series([0, -0.1, 0.1, 1, 1.3, -0.1], index=index)
+    # not precise zenith - just for day/night flagging
+    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    capacity = 1.
+    expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
+    out = validator.check_dc_power_limits(power, solar_zenith, capacity)
+    assert_series_equal(out, expected)
+
+
 def test_check_limits():
     # testing with input type Series
     expected = pd.Series(data=[True, False])

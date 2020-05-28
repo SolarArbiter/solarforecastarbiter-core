@@ -49,6 +49,10 @@ Enhancements
   'DAYTIME INTERPOLATED VALUES'``. (:issue:`124`)
 * A public Docker image is available, and Github Actions use this image for
   continuous integration tests (:pull:`446`)
+* Add ``LIMITS EXCEEDED`` quality checks for AC and DC power, including
+  :py:func:`solarforecastarbiter.validation.validator.check_ac_power_limits` and
+  :py:func:`solarforecastarbiter.validation.validator.check_dc_power_limits`
+  functions. (:issue:`452`) (:pull:`458`)
 * Adjusted University of Oregon Solar Radiation Measurment Laboratory (UO SRML)
   to include available PV power data. (:pull:`442`)
 
