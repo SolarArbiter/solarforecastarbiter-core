@@ -1,4 +1,4 @@
-gimport time
+import time
 import json
 import datetime as dt
 import numpy as np
