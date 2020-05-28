@@ -40,6 +40,9 @@ Enhancements
   reports (:issue:`360`) (:pull:`437`)
 * Added support for NREL PVDAQ sites to the reference database functions.
   (:issue:`397`) (:pull:`438`)
+* Refactor :py:func:`solarforecastarbiter.metrics.calculator` to accept and
+  calculate for individual ProbabilisticForecast (CDFs) and ProbabilisticForecastConstantValue
+  (single values). (:pull:`445`) partially (:issue:`425`)
 * Reports can now be rendered into PDF files via pdflatex (:issue:`319`) (:pull:`439`)
 * Report generation via the CLI can now run through mock API endpoints to test
   report serialization (:issue:`405`) (:pull:`441`)
@@ -62,6 +65,8 @@ Bug fixes
   (:issue:`428`) (:pull:`430`)
 * Ensure data is sorted from reference data sources before slicing and
   posting to the API (:pull:`435`)
+* Fix bug with metrics.preprocessing for CDF ProbabilisticForecast reference
+  forecasts. (:pull:`445`)
 * Remove UO SMRL sites from reference dataset that have not reported recent
   data. (:issue:`436`) (:pull:`442`)
 

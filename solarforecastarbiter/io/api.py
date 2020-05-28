@@ -778,12 +778,14 @@ class APISession(requests.Session):
             req_dict[key] = rep_dict.get(key, '')
         pairs = []
         for o in rep_params['object_pairs']:
-            fx = self.get_forecast(o['forecast'])
+            fx_type = o.get('forecast_type', 'forecast')
+            fx_method = 'get_' + fx_type
+            fx = getattr(self, fx_method)(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
             if ref_fx is not None:
-                ref_fx = self.get_forecast(ref_fx)
+                ref_fx = getattr(self, fx_method)(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(

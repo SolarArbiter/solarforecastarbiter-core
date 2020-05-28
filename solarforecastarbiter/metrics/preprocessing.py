@@ -58,7 +58,7 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
-def _resample_event_obs(obs, fx, obs_series):
+def _resample_event_obs(obs, fx, obs_data):
     """
     Resample the event observation.
 
@@ -68,7 +68,7 @@ def _resample_event_obs(obs, fx, obs_series):
         The Observation being resampled.
     fx : datamodel.EventForecast
         The corresponding Forecast.
-    obs_series : pd.Series
+    obs_data : pd.Series
         Timeseries data of the event observation.
 
     Returns
@@ -87,7 +87,7 @@ def _resample_event_obs(obs, fx, obs_series):
         raise ValueError("Event observation and forecast time-series "
                          "must have matching interval length.")
     else:
-        obs_resampled = obs_series
+        obs_resampled = obs_data
 
     return obs_resampled
 
@@ -124,7 +124,7 @@ def _validate_event_dtype(ser):
                         "convert {} to boolean.".format(ser.dtype))
 
 
-def _resample_obs(obs, fx, obs_series):
+def _resample_obs(obs, fx, obs_data):
     """
 
     Parameters
@@ -133,7 +133,7 @@ def _resample_obs(obs, fx, obs_series):
         The Observation being resampled.
     fx : datamodel.Forecast
         The corresponding Forecast.
-    obs_series : pandas.Series
+    obs_data : pandas.Series
         Timeseries data of the observation/aggregate after processing the
         quality flag column.
 
@@ -147,9 +147,9 @@ def _resample_obs(obs, fx, obs_series):
 
     # Resample observation, checking for invalid interval_length and that
     # the Series has data:
-    if fx.interval_length > obs.interval_length and not obs_series.empty:
+    if fx.interval_length > obs.interval_length and not obs_data.empty:
         closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-        obs_resampled = obs_series.resample(
+        obs_resampled = obs_data.resample(
             fx.interval_length,
             label=closed,
             closed=closed
@@ -163,12 +163,12 @@ def _resample_obs(obs, fx, obs_series):
             obs_resampled["count"] >= count_threshold
         )
     else:
-        obs_resampled = obs_series
+        obs_resampled = obs_data
 
     return obs_resampled
 
 
-def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
+def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
     """
     Resample the observation to the forecast interval length and align to
     remove overlap.
@@ -177,21 +177,21 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     ----------
     fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
         Pair of forecast and observation.
-    fx_series : pandas.Series
+    fx_data : pandas.Series or pandas.DataFrame
         Timeseries data of the forecast.
-    obs_series : pandas.Series
+    obs_data : pandas.Series
         Timeseries data of the observation/aggregate after processing the quality
         flag column.
-    ref_series : pandas.Series or None
+    ref_data : pandas.Series or pandas.DataFrame or None
         Timeseries data of the reference forecast.
     tz : str
         Timezone to which processed data will be converted.
 
     Returns
     -------
-    forecast_values : pandas.Series
+    forecast_values : pandas.Series or pandas.DataFrame
     observation_values : pandas.Series
-    reference_forecast_values : pandas.Series or None
+    reference_forecast_values : pandas.Series or pandas.DataFrame or None
     results : dict
 
     Notes
@@ -204,7 +204,7 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     Raises
     ------
     ValueError
-        If fx_obs.reference_forecast is not None but ref_series is None
+        If fx_obs.reference_forecast is not None but ref_data is None
         or vice versa
     ValueError
         If fx_obs.reference_forecast.interval_label or interval_length
@@ -219,21 +219,21 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     ref_fx = fx_obs.reference_forecast
 
     # raise ValueError if intervals don't match
-    _check_ref_fx(fx, ref_fx, ref_series)
+    _check_ref_fx(fx, ref_fx, ref_data)
 
     # Resample based on forecast type
     if isinstance(fx, datamodel.EventForecast):
-        fx_series = _validate_event_dtype(fx_series)
-        obs_series = _validate_event_dtype(obs_series)
-        obs_resampled = _resample_event_obs(obs, fx, obs_series)
+        fx_data = _validate_event_dtype(fx_data)
+        obs_data = _validate_event_dtype(obs_data)
+        obs_resampled = _resample_event_obs(obs, fx, obs_data)
     else:
-        obs_resampled = _resample_obs(obs, fx, obs_series)
+        obs_resampled = _resample_obs(obs, fx, obs_data)
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
     # forecasts, and missing periods
     obs_resampled = obs_resampled.dropna(how="any")
-    obs_aligned, fx_aligned = obs_resampled.align(fx_series.dropna(how="any"),
+    obs_aligned, fx_aligned = obs_resampled.align(fx_data.dropna(how="any"),
                                                   'inner')
     # another alignment step if reference forecast exists.
     # here we drop points that don't exist in all 3 series.
@@ -242,9 +242,9 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     # could build a DataFrame (implicit outer-join), then perform
     # alignment using ['forecast', 'observation'] or
     # ['forecast', 'observation', 'reference'] selections
-    if ref_series is not None:
+    if ref_data is not None:
         obs_aligned, ref_fx_aligned = obs_aligned.align(
-            ref_series.dropna(how="any"), 'inner')
+            ref_data.dropna(how="any"), 'inner')
         fx_aligned = fx_aligned.reindex(obs_aligned.index)
         ref_values = ref_fx_aligned.tz_convert(tz)
     else:
@@ -254,33 +254,39 @@ def resample_and_align(fx_obs, fx_series, obs_series, ref_series, tz):
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
 
+    # prob fx DataFrame needs to be summed across both dimensions
+    if isinstance(fx_data, pd.DataFrame):
+        undefined_fx = fx_data.isna().sum().sum()
+    else:
+        undefined_fx = fx_data.isna().sum()
+
     # Return dict summarizing results
     results = {
         type(fx).__name__ + " " + DISCARD_DATA_STRING:
-            len(fx_series.dropna(how="any")) - len(fx_aligned),
+            len(fx_data.dropna(how="any")) - len(fx_aligned),
         type(obs).__name__ + " " + DISCARD_DATA_STRING:
             len(obs_resampled) - len(observation_values),
         type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
-            int(fx_series.isna().sum()),
+            int(undefined_fx),
         type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
-            int(obs_series.isna().sum())
+            int(obs_data.isna().sum())
     }
 
-    if ref_series is not None:
+    if ref_data is not None:
         k = type(ref_fx).__name__ + " " + UNDEFINED_DATA_STRING
-        results[k] = int(ref_values.isna().sum())
+        results[k] = len(ref_data.dropna(how='any')) - len(ref_fx_aligned)
 
     return forecast_values, observation_values, ref_values, results
 
 
-def _check_ref_fx(fx, ref_fx, ref_series):
-    if ref_fx is not None and ref_series is None:
+def _check_ref_fx(fx, ref_fx, ref_data):
+    if ref_fx is not None and ref_data is None:
         raise ValueError(
-            'ref_series must be supplied if fx_obs.reference_forecast is not'
+            'ref_data must be supplied if fx_obs.reference_forecast is not'
             'None')
-    elif ref_fx is None and ref_series is not None:
+    elif ref_fx is None and ref_data is not None:
         raise ValueError(
-            'ref_series was supplied but fx_obs.reference_forecast is None')
+            'ref_data was supplied but fx_obs.reference_forecast is None')
 
     if ref_fx is not None:
         if fx.interval_length != ref_fx.interval_length:
@@ -439,7 +445,7 @@ def process_forecast_observations(forecast_observations, filters, data,
                 reference_forecast_values=ref_fx_values,
                 normalization_factor=fxobs.normalization,
                 uncertainty=fxobs.uncertainty
-                )
+            )
             processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())
 
