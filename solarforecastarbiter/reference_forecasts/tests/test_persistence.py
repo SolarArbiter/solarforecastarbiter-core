@@ -348,14 +348,23 @@ def test_persistence_scalar_index_low_solar_elevation(
 @pytest.mark.parametrize("interval_label", [
     'beginning', 'ending'
 ])
-@pytest.mark.parametrize("obs_values,constant_values,expected_values", [
-    # obs_values : physical units
-    # constant_values : physical units
-    # expected_values : probabilities [%]
-    ([0, 0, 0, 20, 20, 20], [10, 20], [50, 100]),
+@pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
+    # constant_values = variable values
+    # forecasts = percentiles [%]
+    ([0, 0, 0, 20, 20, 20], 'x', [10, 20], [50, 100]),
+
+    # constant_values = percentiles [%]
+    # forecasts = variable values
+    ([0, 0, 0, 4, 4, 4], 'y', [50], [2]),
+
+    # invalid percentile constant_values
+    pytest.param([0, 0, 0, 4, 4, 4], 'y', [101], None,
+                 marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
+    pytest.param([0, 0, 0, 4, 4, 4], 'y', [-1], None,
+                 marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
 ])
 def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
-                                   constant_values, expected_values):
+                                   axis, constant_values, expected_values):
 
     tz = 'UTC'
     interval_length = '5min'
@@ -382,8 +391,9 @@ def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
 
     forecasts = persistence.persistence_probabilistic(
         observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data, constant_values
+        interval_length, interval_label, load_data, axis, constant_values
     )
+    assert isinstance(forecasts, list)
     for i, fx in enumerate(forecasts):
         pd.testing.assert_index_equal(fx.index, expected_index,
                                       check_categorical=False)

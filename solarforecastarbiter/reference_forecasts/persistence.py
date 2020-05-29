@@ -23,6 +23,7 @@ rather than using the solarforecastarbiter database.
 """
 from functools import partial
 
+import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
@@ -369,25 +370,14 @@ def _check_intervals_times(interval_label, data_start, data_end,
 def persistence_probabilistic(observation, data_start, data_end,
                               forecast_start, forecast_end,
                               interval_length, interval_label,
-                              load_data, constant_values):
+                              load_data, axis, constant_values):
     r"""
-    Make a probabilistic persistence forecast using the empirical CDF of the
-    *observation* from *data_start* to *data_end*. In the forecast literature,
-    this method is typically referred to as Persistence Ensemble (PeEn). [1]
+    Make a probabilistic persistence forecast using the empirical CDF or
+    quantile of the *observation* from *data_start* to *data_end*. In the
+    forecast literature, this method is typically referred to as Persistence
+    Ensemble (PeEn). [1]
 
-    In the example below, we use GHI to be concrete but the concept applies to
-    any kind of observation data. The probabilistic persistence forecast
-
-    .. math::
-
-       F_{t_f} = CDF(GHI_{t_{start}} \ldots GHI_{t_{end})
-       Prob(GHI_{t_f} <= 100 W/m^2) = F_{t_f}(100 W/m^2)
-       Prob(GHI_{t_f} <= 250 W/m^2) = F_{t_f}(250 W/m^2)
-       ...
-
-    where :math:`t_f` is a forecast time, :math:`F` is the empirical CDF
-    from all observations that occur between :math:`t_{start}` = *data_start*
-    and :math:`t_{end}` = *data_end*.
+    TODO: add examples of `axis='x'` and `axis='y'` usage
 
     Parameters
     ----------
@@ -412,15 +402,20 @@ def persistence_probabilistic(observation, data_start, data_end,
         A function that loads the observation data. Must have the
         signature load_data(observation, data_start, data_end) and
         properly account for observation interval label.
+    axis : {'x', 'y'}
+        The axis on whicht he constant values of the CDF is specified. The axis
+        can be either *x* (constant variable values) or *y* (constant
+        percentiles).
     constant_values : array_like
-        The variable values defining the right-hand-side of a CDF interval
-        (e.g. 10 MW, 25 MW, etc.).
+        The variable values or percentiles.
 
     Returns
     -------
     forecasts : list of pd.Series
-        The persistence forecasts (probabilities [%]), return in the same order
-        as *constant_values*.
+        The persistence forecasts, returned in the same order as
+        *constant_values*. If *axis* is *x*, the forecast values are
+        percentiles (e.g. 25%). If instead *axis* is *y*, the forecasts values
+        have the same units as the observation data (e.g. MW).
 
     References
     ----------
@@ -428,26 +423,30 @@ def persistence_probabilistic(observation, data_start, data_end,
     probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
     doi: 10.1016/j.apenergy.2015.08.011
 
-    Notes
-    -----
-    This function currently only supports providing physical *constant_values*,
-    not probabilities (e.g. 5 MW, 8 MW, etc. is valid but 10%, 25%, etc. is
-    not).
-
     """
 
     closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
 
-    # empirical CDF from observations
     obs = load_data(observation, data_start, data_end)
-    cdf = ECDF(obs, side="right")
 
-    # forecast probability [%]
-    forecasts = []
-    for constant_value in constant_values:
-        fx_prob = cdf(constant_value) * 100.0
-        forecasts.append(pd.Series(fx_prob, index=fx_index))
+    if axis == "x":
+        cdf = ECDF(obs)
+        forecasts = []
+        for constant_value in constant_values:
+            fx_prob = cdf(constant_value) * 100.0
+            forecasts.append(pd.Series(fx_prob, index=fx_index))
+    elif axis == "y":   # constant_values=percentiles, fx=variable
+        for constant_value in constant_values:
+            assert 0 <= constant_value <= 100, ("Constant percentile values "
+                                                "must be between 0 and 100")
+
+        forecasts = []
+        for constant_value in constant_values:
+            fx = np.percentile(obs, constant_value)
+            forecasts.append(pd.Series(fx, index=fx_index))
+    else:
+        raise ValueError(f"Invalid axis parameter: {axis}")
 
     return forecasts
