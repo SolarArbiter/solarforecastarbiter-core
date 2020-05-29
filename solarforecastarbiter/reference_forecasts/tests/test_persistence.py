@@ -357,11 +357,12 @@ def test_persistence_scalar_index_low_solar_elevation(
     # forecasts = variable values
     ([0, 0, 0, 4, 4, 4], 'y', [50], [2]),
 
-    # invalid percentile constant_values
     pytest.param([0, 0, 0, 4, 4, 4], 'y', [101], None,
                  marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
     pytest.param([0, 0, 0, 4, 4, 4], 'y', [-1], None,
                  marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
+    pytest.param([0, 0, 0, 4, 4, 4], 'percentile', [-1], None,
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
 ])
 def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
                                    axis, constant_values, expected_values):
