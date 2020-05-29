@@ -94,34 +94,67 @@ def construct_timeseries_dataframe(report):
     """  # NOQA
     value_frames = []
     meta_rows = []
-    for idx, pfxobs in enumerate(
-            report.raw_report.processed_forecasts_observations):
-        value_frame_dict = {
-            'pair_index': idx,
-            'observation_values': pfxobs.observation_values,
-            'forecast_values': pfxobs.forecast_values,
-        }
-        meta_row_dict = {
-            'pair_index': idx,
-            'observation_name': _obs_name(pfxobs.original),
-            'forecast_name': _fx_name(pfxobs.original),
-            'interval_label': pfxobs.interval_label,
-            'interval_length': pfxobs.interval_length,
-            'observation_hash': str(hash(
-                (pfxobs.original.data_object,
-                 pfxobs.interval_length,
-                 pfxobs.interval_value_type,
-                 pfxobs.interval_label))),
-            'forecast_hash': str(hash(
-                (pfxobs.original.forecast,
-                 pfxobs.interval_length,
-                 pfxobs.interval_value_type,
-                 pfxobs.interval_label))),
-            'observation_color': _obs_color(
-                pfxobs.interval_length)
-        }
-        value_frames.append(pd.DataFrame(value_frame_dict))
-        meta_rows.append(meta_row_dict)
+    idx = 0
+    for pfxobs in report.raw_report.processed_forecasts_observations:
+        if isinstance(pfxobs.original.forecast, datamodel.ProbabilisticForecast):
+            for cvfx in pfxobs.original.forecast.constant_values:
+                value_frame_dict = {
+                    'pair_index': idx,
+                    'observation_values': pfxobs.observation_values,
+                    'forecast_values': pfxobs.forecast_values[
+                        cvfx.constant_value],
+                }
+                meta_row_dict = {
+                    'pair_index': idx,
+                    'observation_name': _obs_name(pfxobs.original),
+                    'forecast_name': _fx_name(pfxobs.original),
+                    'interval_label': pfxobs.interval_label,
+                    'interval_length': pfxobs.interval_length,
+                    'observation_hash': str(hash(
+                        (pfxobs.original.data_object,
+                        pfxobs.interval_length,
+                        pfxobs.interval_value_type,
+                        pfxobs.interval_label))),
+                    'forecast_hash': str(hash(
+                        (pfxobs.original.forecast,
+                        pfxobs.interval_length,
+                        pfxobs.interval_value_type,
+                        pfxobs.interval_label,
+                        cvfx))),
+                    'observation_color': _obs_color(
+                        pfxobs.interval_length)
+                }
+                value_frames.append(pd.DataFrame(value_frame_dict))
+                meta_rows.append(meta_row_dict)
+                idx += 1
+        else:
+            value_frame_dict = {
+                'pair_index': idx,
+                'observation_values': pfxobs.observation_values,
+                'forecast_values': pfxobs.forecast_values,
+            }
+            meta_row_dict = {
+                'pair_index': idx,
+                'observation_name': _obs_name(pfxobs.original),
+                'forecast_name': _fx_name(pfxobs.original),
+                'interval_label': pfxobs.interval_label,
+                'interval_length': pfxobs.interval_length,
+                'observation_hash': str(hash(
+                    (pfxobs.original.data_object,
+                    pfxobs.interval_length,
+                    pfxobs.interval_value_type,
+                    pfxobs.interval_label))),
+                'forecast_hash': str(hash(
+                    (pfxobs.original.forecast,
+                    pfxobs.interval_length,
+                    pfxobs.interval_value_type,
+                    pfxobs.interval_label))),
+                'observation_color': _obs_color(
+                    pfxobs.interval_length)
+            }
+            value_frames.append(pd.DataFrame(value_frame_dict))
+            meta_rows.append(meta_row_dict)
+            idx += 1
     data = pd.concat(value_frames)
     metadata = pd.DataFrame(meta_rows)
     # convert data to report timezone
