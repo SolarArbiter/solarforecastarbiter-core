@@ -418,7 +418,7 @@ def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
     ([0, 0, 0, 0, 0, 4, 4, 4, 4, 4], 'y', [50], [2]),
 
     # invalid constant_values
-    pytest.param([0, 0, 0, 0,0, 4, 4, 4, 4, 4], 'y', [101], None,
+    pytest.param([0, 0, 0, 0, 0, 4, 4, 4, 4, 4], 'y', [101], None,
                  marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
     pytest.param([0, 0, 0, 0, 0, 4, 4, 4, 4, 4], 'y', [-1], None,
                  marks=pytest.mark.xfail(raises=AssertionError, strict=True)),
