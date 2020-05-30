@@ -28,6 +28,9 @@ API Changes
   and `validation.tasks.daily_observation_validation` in favor of
   :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
   and :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations` (:pull:`484`)
+* Added support for probabilistic persistence forecasts with
+  :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_probabilistic` (:issue:`195`) (:pull:`434`)
+
 
 Enhancements
 ~~~~~~~~~~~~
@@ -42,6 +45,9 @@ Enhancements
   :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
   in order to only validate periods that have not yet had daily validation applied
   (:issue:`377`) (:pull:`484`)
+* Reference probabilistic forecasts provided using the Persistence Ensemble
+  (PeEn) method. (:issue:`195`) (:pull:`434`)
+
 
 Bug fixes
 ~~~~~~~~~
