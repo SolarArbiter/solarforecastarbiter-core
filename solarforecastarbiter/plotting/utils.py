@@ -1,4 +1,5 @@
 import pandas as pd
+import plotly
 
 
 from solarforecastarbiter.datamodel import ALLOWED_VARIABLES, COMMON_NAMES
@@ -79,9 +80,10 @@ def line_or_step(interval_label):
     return plot_method, plot_kwargs, hover_kwargs
 
 
-def line_or_step_plotly(interval_label):
+def line_or_step_plotly(interval_label, forecast_type=None):
     """
-    For a given interval_label, determine any kwargs for the plot.
+    For a given interval_label, forecast_type determine any kwargs for
+    the plot.
     """
     if 'instant' in interval_label:
         plot_kwargs = dict()
@@ -95,5 +97,13 @@ def line_or_step_plotly(interval_label):
         raise ValueError(
             'interval_label must be one of "instant", "beginning", '
             '"event", or "ending"')
+
+    if forecast_type == 'ProbabilisticForecast':
+        probfx_kwargs = dict(
+            # fill='tonexty',
+            # hoveron='points+fills',
+            # marker_colorscale=plotly.colors.sequential.Viridis
+        )
+        plot_kwargs.update(probfx_kwargs)
 
     return plot_kwargs

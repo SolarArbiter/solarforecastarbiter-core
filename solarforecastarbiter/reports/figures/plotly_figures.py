@@ -64,6 +64,48 @@ except Exception:
     fail_pdf = ',u@!!/MSk8$73+IY58P_+>=pV@VQ644<Q:NASu.&BHT/T0Ha7#+<Vd[7VQ[\\ATAnH7VlLTAOL*>De*Dd5!B<pFE1r$D$kNX1K6%.6<uqiV.X\\GOIXKoa;)c"!&3^A=pehYA92j5ARTE_ASu$s@VQ6-+>=pV@VQ5m+<WEu$>"*cDdmGg1E\\@oDdmGg4?Ns74pkk=A8bpl$8N_X+E(_($9UEn03!49AKWX&@:s-o,p4oL+<Vd[:gnBUDKI!U+>=p9$6UH6026"gBjj>HGT^350H`%l0J5:A+>>E,2\'?03+<Vd[6Z6jaASuU2+>b2p+ArOh+<W=-Ec6)>+?Van+<VdL+<W=:H#R=;01U&$F`7[1+<VdL+>6Y902ut#DKBc*Eb0,uGmYZ:+<VdL01d:.Eckq#+<VdL+<W=);]m_]AThctAPu#b$6UH65!B;r+<W=8ATMd4Ear[%+>Y,o+ArP14pkk=A8bpl$8EYW+E(_($9UEn03!49AKWX&@:s.m$6UH602$"iF!+[01*A7n;BT6P+<Vd[6Z7*bF<E:F5!B<bDIdZpC\'ljA0Hb:CC\'m\'c+>6Q3De+!#ATAnA@ps(lD]gbe0fCX<+=LoFFDu:^0/$gDBl\\-)Ea`p#Bk)3:DfTJ>.1.1?+>6*&ART[pDf.sOFCcRC6om(W1,(C>0K1^?0ebFC/MK+20JFp_5!B<bDIdZpC\'lmB0Hb:CC\'m\'c+>6]>E+L.F6Xb(FCi<qn+<Vd[:gn!JF!*1[0Ha7#5!B<bDIdZpC\'o3+AS)9\'+?0]^0JG170JG170H`822)@*4AfqF70JG170JG:B0d&/(0JG1\'DBK9?0JG170JG4>0d&/(0JG1\'DBK9?0JG170JG4<0H`&\'0JG1\'DBK9?0JG170JG182\'=S,0JG1\'DBK9?0JG170JG493?U"00JG1\'DBK9?0JG170JG=?2BX\\-0JG1\'DBK9?0JG170JG@B1*A8)0JG1\'DBK:.Ea`ZuATA,?4<Q:UBmO>53!pcN+>6W2Dfd*\\+>=p9$6UH601g%nD]gq\\0Ha7#5!B<pFCB33G]IA-$8sUq$7-ue:IYZ'  # NOQA
 
 
+def _value_frame_dict(idx, pfxobs, column=None):
+    if column is None:
+        forecast_values = pfxobs.forecast_values
+    else:
+        forecast_values = pfxobs.forecast_values[column]
+    value_frame_dict = {
+        'pair_index': idx,
+        'observation_values': pfxobs.observation_values,
+        'forecast_values': forecast_values,
+    }
+    return value_frame_dict
+
+
+def _meta_row_dict(idx, pfxobs, **kwargs):
+    forecast_object = kwargs.pop('forecast_object')
+    if forecast_object is None:
+        forecast_object = pfxobs.original.forecast
+    meta = {
+        'pair_index': idx,
+        'observation_name': _obs_name(pfxobs.original),
+        'forecast_name': _fx_name(
+            forecast_object, pfxobs.original.data_object),
+        'interval_label': pfxobs.interval_label,
+        'interval_length': pfxobs.interval_length,
+        'forecast_type': pfxobs.original.__class__.__name__,
+        'observation_hash': str(hash((
+            pfxobs.original.data_object,
+            pfxobs.interval_length,
+            pfxobs.interval_value_type,
+            pfxobs.interval_label))),
+        'forecast_hash': str(hash((
+            forecast_object,
+            pfxobs.interval_length,
+            pfxobs.interval_value_type,
+            pfxobs.interval_label))),
+        'observation_color': _obs_color(
+            pfxobs.interval_length)
+    }
+    meta.update(kwargs)
+    return meta
+
+
 def construct_timeseries_dataframe(report):
     """Construct two standardized Dataframes for the timeseries and scatter
     plot functions. One with timeseries data for all observations,
@@ -94,64 +136,27 @@ def construct_timeseries_dataframe(report):
     """  # NOQA
     value_frames = []
     meta_rows = []
+    # enumerate won't work because of the conditional for loop, so
+    # manually keep track of the index
     idx = 0
     for pfxobs in report.raw_report.processed_forecasts_observations:
-        if isinstance(pfxobs.original.forecast, datamodel.ProbabilisticForecast):
+        if isinstance(pfxobs.original.forecast,
+                      datamodel.ProbabilisticForecast):
             for cvfx in pfxobs.original.forecast.constant_values:
-                value_frame_dict = {
-                    'pair_index': idx,
-                    'observation_values': pfxobs.observation_values,
-                    'forecast_values': pfxobs.forecast_values[
-                        cvfx.constant_value],
-                }
-                meta_row_dict = {
-                    'pair_index': idx,
-                    'observation_name': _obs_name(pfxobs.original),
-                    'forecast_name': _fx_name(pfxobs.original),
-                    'interval_label': pfxobs.interval_label,
-                    'interval_length': pfxobs.interval_length,
-                    'observation_hash': str(hash(
-                        (pfxobs.original.data_object,
-                        pfxobs.interval_length,
-                        pfxobs.interval_value_type,
-                        pfxobs.interval_label))),
-                    'forecast_hash': str(hash(
-                        (pfxobs.original.forecast,
-                        pfxobs.interval_length,
-                        pfxobs.interval_value_type,
-                        pfxobs.interval_label,
-                        cvfx))),
-                    'observation_color': _obs_color(
-                        pfxobs.interval_length)
-                }
+                value_frame_dict = _value_frame_dict(
+                    idx, pfxobs, column=cvfx.constant_value)
+                # specify fx type so we know the const value fx came from a
+                # ProbabilisticForecast
+                meta_row_dict = _meta_row_dict(
+                    idx, pfxobs,
+                    forecast_object=cvfx,
+                    forecast_type='ProbabilisticForecast')
                 value_frames.append(pd.DataFrame(value_frame_dict))
                 meta_rows.append(meta_row_dict)
                 idx += 1
         else:
-            value_frame_dict = {
-                'pair_index': idx,
-                'observation_values': pfxobs.observation_values,
-                'forecast_values': pfxobs.forecast_values,
-            }
-            meta_row_dict = {
-                'pair_index': idx,
-                'observation_name': _obs_name(pfxobs.original),
-                'forecast_name': _fx_name(pfxobs.original),
-                'interval_label': pfxobs.interval_label,
-                'interval_length': pfxobs.interval_length,
-                'observation_hash': str(hash(
-                    (pfxobs.original.data_object,
-                    pfxobs.interval_length,
-                    pfxobs.interval_value_type,
-                    pfxobs.interval_label))),
-                'forecast_hash': str(hash(
-                    (pfxobs.original.forecast,
-                    pfxobs.interval_length,
-                    pfxobs.interval_value_type,
-                    pfxobs.interval_label))),
-                'observation_color': _obs_color(
-                    pfxobs.interval_length)
-            }
+            value_frame_dict = _value_frame_dict(idx, pfxobs)
+            meta_row_dict = _meta_row_dict(idx, pfxobs)
             value_frames.append(pd.DataFrame(value_frame_dict))
             meta_rows.append(meta_row_dict)
             idx += 1
@@ -201,12 +206,18 @@ def _obs_name(fx_obs):
     return name
 
 
-def _fx_name(fx_obs):
+def _fx_name(forecast, data_object):
     # TODO: add code to ensure fx names are unique
-    name = fx_obs.forecast.name
-    if fx_obs.forecast.name == fx_obs.data_object.name:
-        name += ' Forecast'
-    return name
+    forecast_name = forecast.name
+    if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
+        if forecast.axis == 'x':
+            forecast_name += \
+                f' Prob(x <= {forecast.constant_value} {forecast.units})'
+        else:
+            forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
+    if forecast_name == data_object.name:
+        forecast_name += ' Forecast'
+    return forecast_name
 
 
 def _obs_color(interval_length):
@@ -221,7 +232,7 @@ def _boolean_filter_indices_by_pair(value_cds, pair_index):
 
 def _extract_metadata_from_df(metadata_df, hash_, hash_key):
     metadata = metadata_df[metadata_df[hash_key] == hash_]
-    return {
+    meta = {
         'pair_index': metadata['pair_index'].values[0],
         'observation_name': metadata['observation_name'].values[0],
         'forecast_name': metadata['forecast_name'].values[0],
@@ -229,6 +240,11 @@ def _extract_metadata_from_df(metadata_df, hash_, hash_key):
         'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
+    forecast_type = metadata.get('forecast_type')
+    if forecast_type is not None:
+        forecast_type = forecast_type.values[0]
+    meta['forecast_type'] = forecast_type
+    return meta
 
 
 def _legend_text(name, max_length=20):
@@ -313,24 +329,30 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         plotted_objects += 1
 
     palette = cycle(PALETTE)
+    # construct graph objects in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    gos = []
     for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
+        plot_kwargs = line_or_step_plotly(
+            metadata['interval_label'], metadata['forecast_type'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
         )
-        fig.add_trace(go.Scattergl(
+        plot_kwargs['marker'] = dict(color=next(palette))
+        go_ = go.Scattergl(
             y=data['forecast_values'],
             x=data.index,
             name=_legend_text(metadata['forecast_name']),
             legendgroup=metadata['forecast_name'],
-            marker=dict(color=next(palette)),
             connectgaps=False,
-            **plot_kwargs),
-        )
+            **plot_kwargs)
+        gos.append((metadata['pair_index'], go_))
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
         plotted_objects += 1
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
@@ -339,6 +361,7 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
                      fixedrange=True)
+    fig.update_layout(legend=dict(font=dict(size=10)))
     return fig
 
 
