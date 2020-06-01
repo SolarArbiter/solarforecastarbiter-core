@@ -451,13 +451,16 @@ def process_forecast_observations(forecast_observations, filters, data,
 
 
 def _name_pfxobs(current_names, forecast, i=1):
-    forecast_name = forecast.name
-    if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
-        if forecast.axis == 'x':
-            forecast_name += \
-                f' Prob(x <= {forecast.constant_value} {forecast.units})'
-        else:
-            forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
+    if isinstance(forecast, str):
+        forecast_name = forecast
+    else:
+        forecast_name = forecast.name
+        if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
+            if forecast.axis == 'x':
+                forecast_name += \
+                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+            else:
+                forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
     if i > 99:
         logger.warning(
             'Limit of unique names for identically named forecasts reached.'
