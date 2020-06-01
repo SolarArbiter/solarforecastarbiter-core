@@ -10,6 +10,7 @@ These are new features and improvements of note in each release.
    :maxdepth: 2
 
    1.0.0rc1
+   1.0.0b6
    1.0.0b5
    1.0.0b4
    1.0.0b3
