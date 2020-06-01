@@ -78,9 +78,17 @@ def _value_frame_dict(idx, pfxobs, column=None):
 
 
 def _meta_row_dict(idx, pfxobs, **kwargs):
-    forecast_object = kwargs.pop('forecast_object')
+    forecast_object = kwargs.pop('forecast_object', None)
     if forecast_object is None:
         forecast_object = pfxobs.original.forecast
+    try:
+        axis = forecast_object.axis
+    except AttributeError:
+        axis = None
+    try:
+        constant_value = forecast_object.constant_value
+    except AttributeError:
+        constant_value = None
     meta = {
         'pair_index': idx,
         'observation_name': _obs_name(pfxobs.original),
@@ -89,6 +97,8 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
         'interval_label': pfxobs.interval_label,
         'interval_length': pfxobs.interval_length,
         'forecast_type': pfxobs.original.__class__.__name__,
+        'axis': axis,
+        'constant_value': constant_value,
         'observation_hash': str(hash((
             pfxobs.original.data_object,
             pfxobs.interval_length,
@@ -240,10 +250,19 @@ def _extract_metadata_from_df(metadata_df, hash_, hash_key):
         'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
+    # consider replacing with for loop over attrs
     forecast_type = metadata.get('forecast_type')
     if forecast_type is not None:
         forecast_type = forecast_type.values[0]
     meta['forecast_type'] = forecast_type
+    axis = metadata.get('axis')
+    if axis is not None:
+        axis = axis.values[0]
+    meta['axis'] = axis
+    constant_value = metadata.get('constant_value')
+    if constant_value is not None:
+        constant_value = constant_value.values[0]
+    meta['constant_value'] = constant_value
     return meta
 
 
@@ -328,6 +347,11 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         )
         plotted_objects += 1
 
+    # dict to optionally move legend if we end up adding a colorbar for
+    # probabilistic forecasts
+    # https://github.com/plotly/plotly_express/issues/54
+    legend_kwargs = {}
+
     palette = cycle(PALETTE)
     # construct graph objects in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
@@ -336,20 +360,48 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(
-            metadata['interval_label'], metadata['forecast_type'])
-        data = _fill_timeseries(
-            timeseries_value_df[pair_idcs],
-            metadata['interval_length'],
-        )
-        plot_kwargs['marker'] = dict(color=next(palette))
-        go_ = go.Scattergl(
-            y=data['forecast_values'],
-            x=data.index,
-            name=_legend_text(metadata['forecast_name']),
-            legendgroup=metadata['forecast_name'],
-            connectgaps=False,
-            **plot_kwargs)
+        # maybe treat axis == None and axis == y separately too
+        if metadata['axis'] in (None, 'y'):
+            # forecasts are in units of the variable, so plot lines
+            plot_kwargs = line_or_step_plotly(
+                metadata['interval_label'], metadata['forecast_type'])
+            data = _fill_timeseries(
+                timeseries_value_df[pair_idcs],
+                metadata['interval_length'],
+            )
+            plot_kwargs['marker'] = dict(color=next(palette))
+            go_ = go.Scattergl(
+                y=data['forecast_values'],
+                x=data.index,
+                name=_legend_text(metadata['forecast_name']),
+                legendgroup=metadata['forecast_name'],
+                connectgaps=False,
+                **plot_kwargs)
+        else:
+            # axis='x', forecasts are in units of percent
+            # visualize probability as colored bar filled to constant value
+            data = _fill_timeseries(
+                timeseries_value_df[pair_idcs],
+                metadata['interval_length'],
+            )
+            data = data['forecast_values']
+            # no equivalent of Scattergl's line_shape kwarg for controlling
+            # left/right/center labeling. end result will depend on number of
+            # bar traces displayed.
+            go_ = go.Bar(
+                marker_color=data,
+                y=np.full_like(data, metadata['constant_value']),
+                x=data.index,
+                text=data,
+                textposition='auto',
+                name=_legend_text(metadata['forecast_name']),
+                legendgroup=metadata['forecast_name'],
+                marker=dict(
+                    cmin=0,
+                    cmax=1,
+                    colorbar=dict(title="Probability"))
+                )
+            legend_kwargs['x'] = -0.3
         gos.append((metadata['pair_index'], go_))
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
@@ -361,7 +413,14 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
                      fixedrange=True)
-    fig.update_layout(legend=dict(font=dict(size=10)))
+    fig.update_layout(
+        legend=dict(font=dict(size=10), **legend_kwargs),
+        barmode='group',
+        bargap=0.,  # gap between bars of adjacent location coordinates.
+        bargroupgap=0.,  # gap between bars of the same location coordinate.
+        coloraxis_colorbar=dict(
+            yanchor="top", y=1, x=1.2, ticks="outside")
+    )
     return fig
 
 
@@ -409,6 +468,10 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fxhash, 'forecast_hash')
+        if metadata['axis'] == 'x':
+            # don't know how to represent probability forecasts on a
+            # physical value vs. physical value plot.
+            continue
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
 
