@@ -1,6 +1,6 @@
 .. _whatsnew_100b6:
 
-1.0.0b6 (June 1, 2020)
+1.0.0b6 (June 2, 2020)
 ----------------------
 
 This is the sixth 1.0 beta release.
