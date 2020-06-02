@@ -427,7 +427,9 @@ def persistence_probabilistic(observation, data_start, data_end,
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
 
+    # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
+    obs = obs.resample(interval_length, closed=closed).mean()
 
     if axis == "x":
         cdf = ECDF(obs)
