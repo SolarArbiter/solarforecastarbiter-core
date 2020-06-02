@@ -423,7 +423,6 @@ def persistence_probabilistic(observation, data_start, data_end,
     doi: 10.1016/j.apenergy.2015.08.011
 
     """
-
     closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
@@ -513,12 +512,18 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_probabilistic`
 
     """
+    # ensure that we're using times rounded to multiple of interval_length
+    _check_intervals_times(observation.interval_label, data_start, data_end,
+                           forecast_start, forecast_end,
+                           observation.interval_length)
 
     closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
 
+    # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
+    obs = obs.resample(interval_length, closed=closed).mean()
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
     obs_timeofday = (obs.index.hour * 60 + obs.index.minute).astype(int)
