@@ -437,10 +437,6 @@ def persistence_probabilistic(observation, data_start, data_end,
             fx_prob = cdf(constant_value) * 100.0
             forecasts.append(pd.Series(fx_prob, index=fx_index))
     elif axis == "y":   # constant_values=percentiles, fx=variable
-        for constant_value in constant_values:
-            assert 0 <= constant_value <= 100, ("Constant percentile values "
-                                                "must be between 0 and 100")
-
         forecasts = []
         for constant_value in constant_values:
             fx = np.percentile(obs, constant_value)
@@ -529,9 +525,8 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
 
     # confirm sufficient data for matching by time of day
-    assert data_end - data_start > pd.Timedelta('7D'), (
-        "Insufficient data to match by time of day."
-    )
+    if data_end - data_start < pd.Timedelta('7D'):
+        raise ValueError("Insufficient data to match by time of day")
 
     if axis == "x":
         forecasts = []
@@ -543,10 +538,6 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
                 fx[fx_timeofday == tod] = cdf(constant_value) * 100.0
             forecasts.append(pd.Series(fx, index=fx_index))
     elif axis == "y":
-        for constant_value in constant_values:
-            assert 0 <= constant_value <= 100, ("Constant percentile values "
-                                                "must be between 0 and 100")
-
         forecasts = []
         for constant_value in constant_values:
             fx = np.empty(len(fx_index))
