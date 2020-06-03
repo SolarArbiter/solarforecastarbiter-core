@@ -231,6 +231,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     to look more similar to the previous Monday that it does to the previous
     day (Sunday).
     """
+    utils.check_persistence_compatibility(observation, forecast, index)
     forecast_start, forecast_end = utils.get_forecast_start_end(
         forecast, issue_time, False)
     intraday = utils._is_intraday(forecast)
