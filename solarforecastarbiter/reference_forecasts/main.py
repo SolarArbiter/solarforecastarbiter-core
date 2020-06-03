@@ -261,7 +261,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         fx = persistence.persistence_interval(
             observation, data_start, data_end, forecast_start,
             forecast.interval_length, forecast.interval_label, load_data)
-    else:
+    else:  # pragma: no cover
         raise ValueError(
             'index=True not supported for forecasts with run_length >= 1day')
 
