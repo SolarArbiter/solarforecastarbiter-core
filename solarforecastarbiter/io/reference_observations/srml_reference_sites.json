@@ -315,7 +315,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power 5kw",
+            "name": "Ashland OR PV dc_power 5kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -333,7 +333,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -346,7 +346,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power 15kw",
+            "name": "Ashland OR PV dc_power 15kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -364,7 +364,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -377,7 +377,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Kalapuya High School OR dc_power Sharp",
+            "name": "Kalapuya High School OR PV dc_power Sharp",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -395,7 +395,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -408,7 +408,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Kalapuya High School OR ac_power Sharp",
+            "name": "Kalapuya High School OR PV ac_power Sharp",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -426,7 +426,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -439,7 +439,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) ac_power Sunpower",
+            "name": "Bend OR PV ac_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -457,7 +457,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -470,7 +470,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) dc_power Sunpower",
+            "name": "Bend OR PV dc_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -488,7 +488,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -513,7 +513,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Ashland OR",
+            "name": "Ashland OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -532,7 +532,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Kalapuya High School OR",
+            "name": "Kalapuya High School OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -589,7 +589,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Bend OR (PV)",
+            "name": "Bend OR PV",
             "provider": "",
             "site_id": ""
         }
