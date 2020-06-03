@@ -232,6 +232,76 @@ def test_run_persistence_interval_not_midnight_to_midnight(session,
     assert 'midnight to midnight' in str(excinfo.value)
 
 
+def test_run_persistence_incompatible_issue(session, site_metadata,
+                                            obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190423T2330Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'incompatible' in str(excinfo.value).lower()
+
+
+def test_run_persistence_fx_too_short(session, site_metadata,
+                                      obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1min'),
+        run_length=pd.Timedelta('3min'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'requires observation.interval_length' in str(excinfo.value)
+
+
+def test_run_persistence_incompatible_instant_fx(session, site_metadata,
+                                                 obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='instantaneous')
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'instantaneous forecast' in str(excinfo.value).lower()
+
+
+def test_run_persistence_incompatible_instant_interval(session, site_metadata,
+                                                       obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='instantaneous')
+    obs = obs_5min_begin.replace(interval_label='instantaneous',
+                                 interval_length=pd.Timedelta('10min'))
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs, forecast, run_time,
+                             issue_time)
+    assert 'identical interval length' in str(excinfo.value)
+
+
 def test_verify_nwp_forecasts_compatible(ac_power_forecast_metadata):
     fx0 = ac_power_forecast_metadata
     fx1 = replace(fx0, run_length=pd.Timedelta('10h'), interval_label='ending')
