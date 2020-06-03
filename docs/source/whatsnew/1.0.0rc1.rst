@@ -8,7 +8,9 @@ This is the first 1.0 release candidate.
 
 API Changes
 ~~~~~~~~~~~
-
+* Added :py:func:`solarforecastarbiter.reference_forecasts.utils.check_persistence_compatibility`
+  to check if a pair of Forecast and Observation objects are compatible for
+  making a persistence forecast (:pull:`478`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -16,6 +18,9 @@ Enhancements
 
 Bug fixes
 ~~~~~~~~~
+* Check if a Forecast and Observation are compatible for generating a
+  persistence forecast before creating reference persistence forecasts
+  (:issue:`472`) (:pull:`478`)
 
 
 Contributors
