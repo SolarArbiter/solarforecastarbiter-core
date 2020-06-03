@@ -914,3 +914,38 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
     assert session.post_forecast_values.call_count == 4
     assert [l[1]['index'] for l in run_pers.call_args_list] == [
         False, False, True, True]
+
+
+def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
+    session = mocker.MagicMock()
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
+    session.get_forecast_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    max_run_time = pd.Timestamp('2020-05-20T16:00Z')
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    def sometimes_fail(session, obs, fx, run_time, issue_time,
+                       index=False):
+        if forecasts[0] == fx:
+            raise ValueError('Failed')
+
+    logger = mocker.spy(main, 'logger')
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        side_effect=sometimes_fail, autospec=True)
+    main.make_latest_persistence_forecasts('', max_run_time)
+    assert run_pers.call_count == 4
+    assert session.post_forecast_values.call_count == 2
+    assert logger.error.call_count == 2
+    assert [li[1]['index'] for li in run_pers.call_args_list] == [
+        False, False, True, True]

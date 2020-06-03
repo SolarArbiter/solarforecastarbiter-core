@@ -602,6 +602,10 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
         run_time = issue_time
         logger.info('Making persistence forecast for %s:%s at %s',
                     fx.name, fx.forecast_id, issue_time)
-        fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
-                                 index=index)
-        session.post_forecast_values(fx.forecast_id, fx_ser)
+        try:
+            fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
+                                     index=index)
+        except ValueError as e:
+            logger.error('Unable to generate persistence forecast: %s', e)
+        else:
+            session.post_forecast_values(fx.forecast_id, fx_ser)
