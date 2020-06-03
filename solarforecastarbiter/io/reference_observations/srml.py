@@ -27,6 +27,8 @@ srml_variable_map = {
     'dhi_': 'dhi',
     'wind_speed_': 'wind_speed',
     'temp_air_': 'air_temperature',
+    'ac_power_': 'ac_power',
+    'dc_power_': 'dc_power'
 }
 
 
