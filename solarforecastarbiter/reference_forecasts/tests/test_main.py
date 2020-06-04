@@ -989,7 +989,7 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
 def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
     # test that some persistence forecast parameters are invalid for the
     # observation and that no peristence values are posted
-    # and tests that the creation_validation works as expected
+    # and that the failure doesn't interrupt other posts
     forecasts, observations = perst_fx_obs
     forecasts += [forecasts[0].replace(
         extra_parameters=(forecasts[0].extra_parameters[:-1] +
@@ -1007,10 +1007,14 @@ def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
         'solarforecastarbiter.reference_forecasts.main.api.APISession',
         return_value=session)
 
-    def sometimes_fail(session, obs, fx, run_time, issue_time,
-                       index=False):
-        if forecasts[0] == fx:
+    i = []
+
+    def sometimes_fail(*args, **kwargs):
+        i.append(1)
+        if len(i) == 1:
             raise ValueError('Failed')
+        else:
+            return mocker.DEFAULT
 
     logger = mocker.spy(main, 'logger')
     run_pers = mocker.patch(
@@ -1018,7 +1022,8 @@ def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
         side_effect=sometimes_fail, autospec=True)
     main.make_latest_persistence_forecasts('', max_run_time)
     assert run_pers.call_count == 4
-    assert session.post_forecast_values.call_count == 2
-    assert logger.error.call_count == 2
+    assert session.post_forecast_values.call_count == 3
+    assert logger.error.call_count == 1
+    assert len(i) == 4
     assert [li[1]['index'] for li in run_pers.call_args_list] == [
         False, False, True, True]
