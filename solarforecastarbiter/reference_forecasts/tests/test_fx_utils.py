@@ -440,10 +440,12 @@ def test_find_next_issue_time_from_last_forecast(fxargs, last_time, expected,
                  marks=pytest.mark.xfail(strict=True)),
     pytest.param(dict(), dict(), True,
                  marks=pytest.mark.xfail(strict=True)),
-    # obs too long
-    (dict(interval_length=pd.Timedelta('2h')), dict(), True),
-    (dict(interval_length=pd.Timedelta('2h')), dict(), False),
-    # short fx runs
+    # obs interval length > 1h too long
+    (dict(interval_length=pd.Timedelta('2h')),
+     dict(interval_length=pd.Timedelta('4h')), True),
+    (dict(interval_length=pd.Timedelta('2h')),
+     dict(interval_length=pd.Timedelta('4h')), False),
+    # fx run_length < obs interval length
     (dict(), dict(run_length=pd.Timedelta('15min')), True),
     (dict(), dict(run_length=pd.Timedelta('15min')), False),
     # day forecast index

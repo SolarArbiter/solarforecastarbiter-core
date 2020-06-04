@@ -987,6 +987,9 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
 
 
 def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
+    # test that some persistence forecast parameters are invalid for the
+    # observation and that no peristence values are posted
+    # and tests that the creation_validation works as expected
     forecasts, observations = perst_fx_obs
     forecasts += [forecasts[0].replace(
         extra_parameters=(forecasts[0].extra_parameters[:-1] +
