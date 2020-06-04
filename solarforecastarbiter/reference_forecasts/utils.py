@@ -161,14 +161,7 @@ def _intraday_start_end(observation, forecast, run_time):
     data_start : pd.Timestamp
     data_end : pd.Timestamp
     """
-
-    # time window over which observation data will be used to create
-    # persistence forecast.
-    if (observation.interval_length > forecast.run_length or
-            observation.interval_length > pd.Timedelta('1h')):
-        raise ValueError(
-            'Intraday persistence requires observation.interval_length '
-            '<= forecast.run_length and observation.interval_length <= 1h')
+    _check_intraday_compatibility(observation, forecast)
     # no longer than 1 hour
     window = min(forecast.run_length, pd.Timedelta('1hr'))
     data_end = run_time
@@ -229,11 +222,7 @@ def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     # instantaneous observations require care.
     # persistence models return forecasts with same closure as obs
     if 'instant' in forecast.interval_label:
-        if forecast.interval_length != observation.interval_length:
-            raise ValueError('Instantaneous forecast requires instantaneous '
-                             'observation with identical interval length.')
-        else:
-            data_end -= pd.Timedelta('1s')
+        data_end -= pd.Timedelta('1s')
     elif forecast.interval_label == 'beginning':
         data_end -= pd.Timedelta('1s')
     else:
@@ -266,14 +255,70 @@ def get_data_start_end(observation, forecast, run_time):
     else:
         data_start, data_end = _dayahead_start_end(run_time)
 
+    _check_instant_compatibility(observation, forecast)
     # to ensure that each observation data point contributes to the correct
     # forecast, the data_end and data_start values may need to be nudged
     if 'instant' in observation.interval_label:
         data_start, data_end = _adjust_for_instant_obs(data_start, data_end,
                                                        observation, forecast)
-    else:
-        if 'instant' in forecast.interval_label:
+    return data_start, data_end
+
+
+def _check_instant_compatibility(observation, forecast):
+    if 'instant' in forecast.interval_label:
+        if 'instant' not in observation.interval_label:
             raise ValueError('Instantaneous forecast cannot be made from '
                              'interval average observations')
 
-    return data_start, data_end
+        if forecast.interval_length != observation.interval_length:
+            raise ValueError('Instantaneous forecast requires instantaneous '
+                             'observation with identical interval length.')
+
+
+def _check_intraday_compatibility(observation, forecast):
+    # time window over which observation data will be used to create
+    # persistence forecast.
+    if (observation.interval_length > forecast.run_length or
+            observation.interval_length > pd.Timedelta('1h')):
+        raise ValueError(
+            'Intraday persistence requires observation.interval_length '
+            '<= forecast.run_length and observation.interval_length <= 1h')
+
+
+def check_persistence_compatibility(observation, forecast, index):
+    """
+    Checks if the Observation is compatible with the Forecast to
+    generate a persistence forecast.
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+        The metadata of the observation to be used to create the
+        forecast.
+    forecast : datamodel.Forecast
+        The metadata of the desired forecast.
+    index : bool
+        If the persistence forecast will persist a clear sky or
+        AC power index (True), or use the observed value (False).
+
+    Raises
+    ------
+    ValueError
+        If an intraday forecast is to be made and the
+        observation interval length is too long.
+    ValueError
+        If an instantaneous forecast is to be made and the
+        observation is not also instantaneous with the same
+        interval length.
+    ValueError
+        If the forecast run length is greater than one day
+        and an index persistence forecast was to be made.
+    """
+    intraday = _is_intraday(forecast)
+    if intraday:
+        _check_intraday_compatibility(observation, forecast)
+    else:
+        if index:
+            raise ValueError('index=True not supported for forecasts'
+                             ' with run_length >= 1day')
+    _check_instant_compatibility(observation, forecast)
