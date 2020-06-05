@@ -376,7 +376,35 @@ def persistence_probabilistic(observation, data_start, data_end,
     *data_start* to *data_end*. In the forecast literature, this method is
     typically referred to as Persistence Ensemble (PeEn). [1]
 
-    TODO: add examples of `axis='x'` and `axis='y'` usage
+    The function handles forecasting either constant variable values or
+    constant percentiles. In the examples below, we use GHI to be concrete but
+    the concepts also apply to other variables (AC power, net load, etc.).
+
+    If forecasting constant values (e.g. forecast the probability of GHI being
+    less than or equal to 500 W/m^2), the persistence forecast is:
+
+    .. math::
+
+       F_n(x) = ECDF(GHI_{t_{start}}, ..., GHI_{t_{end}})
+       Prob(GHI_{t_f} <= 100 W/m^2) = F_n(100 W/m^2)
+
+    where :math:`t_f` is a forecast time and :math:`F_n` is the empirical CDF
+    (ECDF) function computed from the *n* observations between
+    :math:`t_{start}` = *data_start* and :math:`t_{end}` = *data_end*, which
+    maps from variable values to probabilities.
+
+    If forecasting constant probabilities (e.g. forecast the GHI value that has
+    a 50% probability), the persistence forecast is:
+
+    .. math::
+
+       F_n(x) = ECDF(GHI_{t_{start}}, ..., GHI_{t_{end}})
+       Q_n(p) = \inf {x \in \mathrf{R} : p \leq F_n(x) }
+       p_{t_f} = Q_n(50%)
+
+    where :math:`Q_n` is the quantile function based on the *n* observations
+    between :math:`t_{start}` = *data_start* and :math:`t_{end}` = *data_end*,
+    which maps from probabilities to variable values.
 
     Parameters
     ----------
@@ -458,8 +486,6 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     only use observations from 9am on days between *data_start* and
     *data_end*). This is a common variant of the Persistence Ensemble (PeEn)
     method. [1]
-
-    TODO: add examples of `axis='x'` and `axis='y'` usage
 
     Parameters
     ----------
