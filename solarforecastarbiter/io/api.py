@@ -147,6 +147,22 @@ class APISession(requests.Session):
         return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
 
+    def list_sites_in_zone(self, zone):
+        """
+        List all the sites available to a user in the given climate zone.
+
+        Parameters
+        ----------
+        zone : str
+
+        Returns
+        -------
+        list of datamodel.Sites and datamodel.SolarPowerPlants
+        """
+        req = self.get(f'/sites/in/{zone}')
+        return [self._process_site_dict(site_dict)
+                for site_dict in req.json()]
+
     def create_site(self, site):
         """
         Create a new site in the API with the given Site model
