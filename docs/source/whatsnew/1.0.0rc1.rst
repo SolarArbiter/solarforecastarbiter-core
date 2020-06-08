@@ -14,6 +14,7 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
+* Support parsing of Site climate zones from the API (:pull:`481`)
 
 
 Bug fixes

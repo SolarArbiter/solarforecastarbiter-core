@@ -310,7 +310,8 @@ def site_text():
     "timezone": "Etc/GMT+6",
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
     "created_at": "2019-03-01T11:44:44Z",
-    "modified_at": "2019-03-01T11:44:44Z"
+    "modified_at": "2019-03-01T11:44:44Z",
+    "climate_zones": ["Reference Region 5"]
 }"""
 
 
@@ -342,7 +343,8 @@ def many_sites_text():
         "timezone": "America/Phoenix",
         "site_id": "d2018f1d-82b1-422a-8ec4-4e8b3fe92a4a",
         "created_at": "2019-03-01T11:44:44Z",
-        "modified_at": "2019-03-01T11:44:44Z"
+        "modified_at": "2019-03-01T11:44:44Z",
+        "climate_zones": ["Reference Region 3"]
     },
     {
         "elevation": 786.0,
@@ -369,7 +371,8 @@ def many_sites_text():
         "timezone": "Etc/GMT+6",
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
         "created_at": "2019-03-01T11:44:44Z",
-        "modified_at": "2019-03-01T11:44:44Z"
+        "modified_at": "2019-03-01T11:44:44Z",
+        "climate_zones": ["Reference Region 5"]
     },
     {
         "elevation": 786.0,
@@ -396,7 +399,8 @@ def many_sites_text():
         "timezone": "Etc/GMT+6",
         "site_id": "123e4567-e89b-12d3-a456-426655440001",
         "created_at": "2019-03-01T11:44:46Z",
-        "modified_at": "2019-03-01T11:44:46Z"
+        "modified_at": "2019-03-01T11:44:46Z",
+        "climate_zones": ["Reference Region 5"]
     }
 ]"""
 
@@ -410,7 +414,8 @@ def _site_from_dict(site_dict):
             provider=site_dict.get('provider', ''),
             extra_parameters=site_dict.get('extra_parameters', ''),
             site_id=site_dict.get('site_id', ''),
-            modeling_parameters=site_dict['modeling_parameters'])
+            modeling_parameters=site_dict['modeling_parameters'],
+            climate_zones=tuple(site_dict.get('climate_zones', ())))
     else:
         return datamodel.Site(
             name=site_dict['name'], latitude=site_dict['latitude'],
@@ -418,7 +423,8 @@ def _site_from_dict(site_dict):
             timezone=site_dict['timezone'],
             site_id=site_dict.get('site_id', ''),
             provider=site_dict.get('provider', ''),
-            extra_parameters=site_dict.get('extra_parameters', ''))
+            extra_parameters=site_dict.get('extra_parameters', ''),
+            climate_zones=tuple(site_dict.get('climate_zones', ())))
 
 
 @pytest.fixture()

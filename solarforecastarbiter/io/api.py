@@ -162,7 +162,7 @@ class APISession(requests.Session):
             With the appropriate parameters such as site_id set by the API
         """
         site_dict = site.to_dict()
-        for k in ('site_id', 'provider'):
+        for k in ('site_id', 'provider', 'climate_zones'):
             site_dict.pop(k, None)
         site_json = json.dumps(site_dict)
         req = self.post('/sites/', data=site_json,

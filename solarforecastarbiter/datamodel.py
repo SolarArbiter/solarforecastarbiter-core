@@ -315,6 +315,8 @@ class Site(BaseModel):
         implementing other PV models. The framework does not provide
         a standard set of extra parameters or require a particular
         format – these are up to the site owner.
+    climate_zones : tuple of str, optional
+        The climate zones that the site is within
     """
     name: str
     latitude: float
@@ -324,6 +326,7 @@ class Site(BaseModel):
     site_id: str = ''
     provider: str = ''
     extra_parameters: str = ''
+    climate_zones: Tuple[str, ...] = ()
 
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
