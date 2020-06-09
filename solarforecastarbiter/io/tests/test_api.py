@@ -158,6 +158,16 @@ def test_apisession_list_sites_in_zone_empty(requests_mock):
     assert site_list == []
 
 
+def test_apisession_search_climatezones(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri(
+        'GET', matcher,
+        content=b'[{"name": "Reference Region 3", "created_at": 0}]')
+    zone_list = session.search_climatezones(32.1, -110.8)
+    assert zone_list == ["Reference Region 3"]
+
+
 def test_apisession_create_site(requests_mock, single_site, site_text):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/sites/.*')
@@ -1091,6 +1101,16 @@ def test_real_apisession_list_sites_in_zone(real_session):
     sites = real_session.list_sites_in_zone('Reference Region 5')
     assert isinstance(sites, list)
     assert isinstance(sites[0], datamodel.Site)
+
+
+@pytest.mark.parametrize('lat,lon,expected', [
+    (32.1, -110.8, {'Reference Region 3'}),
+    (45, -70.0, {'Reference Region 7'}),
+    (0, 0, set())
+])
+def test_real_apisession_search_climatezones(real_session, lat, lon, expected):
+    zones = real_session.search_climatezones(lat, lon)
+    assert set(zones) == expected
 
 
 def test_real_apisession_create_site(site_text, real_session):

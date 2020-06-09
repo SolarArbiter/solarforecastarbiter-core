@@ -346,6 +346,7 @@ Sites
 
    io.api.APISession.get_site
    io.api.APISession.list_sites
+   io.api.APISession.list_sites_in_zone
    io.api.APISession.create_site
 
 Observations
@@ -406,6 +407,14 @@ Reports
    io.api.APISession.get_raw_report_processed_data
    io.api.APISession.post_raw_report
    io.api.APISession.update_report_status
+
+Climate Zones
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.list_sites_in_zone
+   io.api.APISession.search_climatezones
 
 Convenience method for unifying API for getting time series values
 for observations, forecasts, aggregates, and probabilistic forecasts:

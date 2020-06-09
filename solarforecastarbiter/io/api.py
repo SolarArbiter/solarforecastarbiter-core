@@ -163,6 +163,25 @@ class APISession(requests.Session):
         return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
 
+    def search_climatezones(self, latitude, longitude):
+        """
+        Find all climate zones that the location is in.
+
+        Parameters
+        ----------
+        latitude : float, degrees North
+        longitude : float, degrees East of the Prime Meridian
+
+        Returns
+        -------
+        list
+            A list of the climate zones the location is in
+        """
+        req = self.get('/climatezones/search',
+                       params={'latitude': latitude,
+                               'longitude': longitude})
+        return [r['name'] for r in req.json()]
+
     def create_site(self, site):
         """
         Create a new site in the API with the given Site model
