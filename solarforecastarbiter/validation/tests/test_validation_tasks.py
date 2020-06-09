@@ -127,6 +127,38 @@ def test_apply_immediate_validation(
     assert_frame_equal(val, out)
 
 
+@pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
+                                 'poa_global', 'relative_humidity'])
+def test_apply_immediate_validation_other(
+        mocker, make_observation, default_index, var):
+    mock = mocker.MagicMock()
+    mocker.patch.dict(
+        'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
+        {var: mock})
+    obs = make_observation(var)
+    data = pd.DataFrame(
+        [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+    tasks.apply_immediate_validation(obs, data)
+    assert mock.called
+
+
+@pytest.mark.parametrize('var', ['availability', 'curtailment', 'event',
+                                 'net_load'])
+def test_apply_immediate_validation_defaults(
+        mocker, make_observation, default_index, var):
+    mock = mocker.spy(tasks, 'validate_defaults')
+    obs = make_observation(var)
+    data = pd.DataFrame(
+        [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+
+    tasks.apply_immediate_validation(obs, data)
+    assert mock.called
+
+
 def test_immediate_observation_validation_ghi(mocker, make_observation,
                                               default_index):
     obs = make_observation('ghi')
@@ -1017,7 +1049,8 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
 
 
 @pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
-                                 'poa_global', 'relative_humidity'])
+                                 'poa_global', 'relative_humidity', 'net_load',
+                                 'availability', 'curtailment', 'event'])
 def test_daily_observation_validation_other(var, mocker, make_observation,
                                             daily_index):
     obs = make_observation(var)
@@ -1043,6 +1076,44 @@ def test_daily_observation_validation_other(var, mocker, make_observation,
         '', obs.observation_id, data.index[0], data.index[-1])
     assert post_mock.called
     assert validate_mock.called
+
+
+@pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
+                                 'poa_global', 'relative_humidity'])
+def test_apply_daily_validation_other(
+        mocker, make_observation, daily_index, var):
+    mock = mocker.MagicMock()
+    mocker.patch.dict(
+        'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
+        {var: mock})
+    mocks = [mock,
+             mocker.spy(tasks, '_validate_stale_interpolated')]
+    obs = make_observation(var)
+    data = pd.DataFrame({
+        'value': [
+            # 8     9     10   11   12  13    14   15  16  17  18  19  23
+            10, 1900, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
+        'quality_flag': 0}, index=daily_index)
+    tasks.apply_daily_validation(obs, data)
+    for mock in mocks:
+        assert mock.called
+
+
+@pytest.mark.parametrize('var', ['net_load', 'availability', 'curtailment',
+                                 'event'])
+def test_apply_daily_validation_defaults(
+        mocker, make_observation, daily_index, var):
+    mocks = [mocker.spy(tasks, 'validate_defaults'),
+             mocker.spy(tasks, '_validate_stale_interpolated')]
+    obs = make_observation(var)
+    data = pd.DataFrame({
+        'value': [
+            # 8     9     10   11   12  13    14   15  16  17  18  19  23
+            10, 1900, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
+        'quality_flag': 0}, index=daily_index)
+    tasks.apply_daily_validation(obs, data)
+    for mock in mocks:
+        assert mock.called
 
 
 def test_apply_daily_validation(mocker, make_observation, daily_index):

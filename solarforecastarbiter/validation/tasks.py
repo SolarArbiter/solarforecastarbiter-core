@@ -409,6 +409,37 @@ def validate_daily_ac_power(observation, values):
             interpolation_flag, clipping_flag)
 
 
+def validate_daily_defaults(observation, values):
+    """
+    Run default daily validation checks on an observation.
+    Applies the validation for the observation's variable and then
+    the stale and interpolated validation. If the variable does
+    not have a defined validation function :py:func:`validate_defaults`
+    is used.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    *variable_immediate_flags, stale_flag, interpolation_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.tasks.validate_{variable}`,
+        :py:func:`.validator.detect_stale_values`,
+        :py:func:`.validator.detect_interpolation`
+    """
+    immediate_func = IMMEDIATE_VALIDATION_FUNCS.get(
+        observation.variable, validate_defaults)
+    immediate_flags = immediate_func(observation, values)
+    stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
+                                                                  values)
+    return (*immediate_flags, stale_flag, interpolation_flag)
+
+
 IMMEDIATE_VALIDATION_FUNCS = {
     'air_temperature': validate_air_temperature,
     'wind_speed': validate_wind_speed,
@@ -508,8 +539,7 @@ def apply_daily_validation(observation, observation_values):
     # if the variable has a daily check, run that, else run the
     # immediate validation, else validate timestamps
     validation_func = DAILY_VALIDATION_FUNCS.get(
-        observation.variable, IMMEDIATE_VALIDATION_FUNCS.get(
-            observation.variable, validate_defaults))
+        observation.variable, validate_daily_defaults)
     validation_flags = validation_func(observation, value_series)
 
     for flag in validation_flags:
