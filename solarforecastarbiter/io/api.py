@@ -147,6 +147,41 @@ class APISession(requests.Session):
         return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
 
+    def list_sites_in_zone(self, zone):
+        """
+        List all the sites available to a user in the given climate zone.
+
+        Parameters
+        ----------
+        zone : str
+
+        Returns
+        -------
+        list of datamodel.Sites and datamodel.SolarPowerPlants
+        """
+        req = self.get(f'/sites/in/{zone}')
+        return [self._process_site_dict(site_dict)
+                for site_dict in req.json()]
+
+    def search_climatezones(self, latitude, longitude):
+        """
+        Find all climate zones that the location is in.
+
+        Parameters
+        ----------
+        latitude : float, degrees North
+        longitude : float, degrees East of the Prime Meridian
+
+        Returns
+        -------
+        list
+            A list of the climate zones the location is in
+        """
+        req = self.get('/climatezones/search',
+                       params={'latitude': latitude,
+                               'longitude': longitude})
+        return [r['name'] for r in req.json()]
+
     def create_site(self, site):
         """
         Create a new site in the API with the given Site model
@@ -162,7 +197,7 @@ class APISession(requests.Session):
             With the appropriate parameters such as site_id set by the API
         """
         site_dict = site.to_dict()
-        for k in ('site_id', 'provider'):
+        for k in ('site_id', 'provider', 'climate_zones'):
             site_dict.pop(k, None)
         site_json = json.dumps(site_dict)
         req = self.post('/sites/', data=site_json,
