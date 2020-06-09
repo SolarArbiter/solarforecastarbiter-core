@@ -61,6 +61,7 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
 from solarforecastarbiter.reports.figures import plotly_figures
 from solarforecastarbiter.utils import hijack_loggers
+from solarforecastarbiter.validation.tasks import apply_validation
 
 
 def get_data_for_report(session, report):
@@ -95,8 +96,15 @@ def get_data_for_report(session, report):
             data[fxobs.forecast] = session.get_values(
                 fxobs.forecast, start, end)
         if fxobs.data_object not in data:
-            data[fxobs.data_object] = session.get_values(
+            obs_data = session.get_values(
                 fxobs.data_object, start, end)
+            if isinstance(
+                    fxobs.data_object, datamodel.Aggregate):
+                data[fxobs.data_object] = obs_data
+            else:
+                validated_obs_data = apply_validation(
+                    fxobs.data_object, obs_data)
+                data[fxobs.data_object] = validated_obs_data
         if fxobs.reference_forecast is not None:
             if fxobs.reference_forecast not in data:
                 data[fxobs.reference_forecast] = session.get_values(
