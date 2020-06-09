@@ -104,6 +104,29 @@ def test_validate_mostly_clear(mocker, make_observation):
                             check_names=False)
 
 
+def test_apply_immediate_validation(
+        mocker, make_observation, default_index):
+    obs = make_observation('ghi')
+    data = pd.DataFrame(
+        [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+
+    val = tasks.apply_immediate_validation(obs, data)
+
+    out = data.copy()
+    out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']
+    ]
+    assert_frame_equal(val, out)
+
+
 def test_immediate_observation_validation_ghi(mocker, make_observation,
                                               default_index):
     obs = make_observation('ghi')
@@ -1022,6 +1045,54 @@ def test_daily_observation_validation_other(var, mocker, make_observation,
     assert validate_mock.called
 
 
+def test_apply_daily_validation(mocker, make_observation, daily_index):
+    obs = make_observation('ac_power')
+    data = pd.DataFrame({
+        'value': [
+            # 8     9     10   11   12  13    14   15  16  17  18  19  23
+            0, 100, -100, 100, 300, 300, 300, 300, 100, 0, 100, 0, 0],
+        'quality_flag': 0},
+        index=daily_index)
+
+    out = tasks.apply_daily_validation(obs, data)
+    qf = (pd.Series(LATEST_VERSION_FLAG, index=data.index),
+          pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
+          pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+          pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
+          pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['STALE VALUES'],
+          pd.Series([0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'],
+          pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+                    index=data.index) *
+          DESCRIPTION_MASK_MAPPING['CLIPPED VALUES']
+          )
+    exp = data.copy()
+    exp['quality_flag'] = sum(qf)
+    assert_frame_equal(exp, out)
+
+
+def test_apply_daily_validation_not_enough(mocker, make_observation):
+    obs = make_observation('ghi')
+    data = pd.DataFrame(
+        [(0, 0)],
+        index=pd.date_range(start='2019-01-01T0000Z',
+                            end='2019-01-01T0100Z',
+                            tz='UTC',
+                            freq='1h'),
+        columns=['value', 'quality_flag'])
+    with pytest.raises(IndexError):
+        tasks.apply_daily_validation(obs, data)
+
+
 def test_daily_observation_validation_many(mocker, make_observation,
                                            daily_index):
     obs = [make_observation('dhi'), make_observation('dni')]
@@ -1143,3 +1214,47 @@ def test__group_continuous_week_post(mocker, make_observation):
     assert len(call_list) == 4
     for i, cal in enumerate(call_list):
         assert_frame_equal(split_dfs[i], cal[0][1])
+
+
+@pytest.mark.parametrize('vals,func', [
+    (pd.DataFrame({'value': 0, 'quality_flag': 4}, index=pd.DatetimeIndex(
+        [pd.Timestamp.utcnow()], name='timestamp')),
+     'apply_immediate_validation'),
+    (pd.DataFrame({'value': [0.0] * 5 + [None] * 10, 'quality_flag': 4},
+                  index=pd.date_range('now', name='timestamp', freq='2h',
+                                      periods=15)),
+     'apply_immediate_validation'),
+    (pd.DataFrame({'value': [0.0] * 15 + [None] * 11, 'quality_flag': 4},
+                  index=pd.date_range('now', name='timestamp', freq='1h',
+                                      periods=26)),
+     'apply_daily_validation'),
+])
+def test_apply_validation(make_observation, mocker, vals, func):
+    obs = make_observation('ac_power')
+    fmock = mocker.patch.object(tasks, func, autospec=True)
+    tasks.apply_validation(obs, vals)
+    assert fmock.called
+
+
+def test_apply_validation_empty(make_observation, mocker):
+    obs = make_observation('dhi')
+    daily = mocker.patch.object(tasks, 'apply_daily_validation')
+    immediate = mocker.patch.object(tasks, 'apply_immediate_validation')
+    data = pd.DataFrame({'value': [], 'quality_flag': []},
+                        index=pd.DatetimeIndex([], name='timestamp'))
+    out = tasks.apply_validation(obs, data)
+    assert_frame_equal(out, data)
+    assert not daily.called
+    assert not immediate.called
+
+
+def test_apply_validation_bad_df(make_observation, mocker):
+    obs = make_observation('dhi')
+    data = pd.DataFrame()
+    with pytest.raises(TypeError):
+        tasks.apply_validation(obs, data)
+
+    with pytest.raises(TypeError):
+        tasks.apply_validation(obs, pd.Series(
+            index=pd.DatetimeIndex([]),
+            dtype=float))

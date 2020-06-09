@@ -1,6 +1,7 @@
 import logging
 
 
+import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
@@ -421,16 +422,22 @@ IMMEDIATE_VALIDATION_FUNCS = {
 }
 
 
-def immediate_observation_validation(access_token, observation_id, start, end,
-                                     base_url=None):
+def apply_immediate_validation(observation, observation_values):
     """
-    Task that will run immediately after Observation values are uploaded to the
-    API to validate the data.
+    Applies the appropriate validation functions to the observation_values.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
+
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
     """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    observation_values = session.get_observation_values(observation_id, start,
-                                                        end)
     value_series = observation_values['value'].astype(float)
     quality_flags = observation_values['quality_flag'].copy()
 
@@ -443,7 +450,22 @@ def immediate_observation_validation(access_token, observation_id, start, end,
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
-    session.post_observation_values(observation_id, observation_values,
+    return observation_values
+
+
+def immediate_observation_validation(access_token, observation_id, start, end,
+                                     base_url=None):
+    """
+    Task that will run immediately after Observation values are uploaded to the
+    API to validate the data.
+    """
+    session = APISession(access_token, base_url=base_url)
+    observation = session.get_observation(observation_id)
+    observation_values = session.get_observation_values(observation_id, start,
+                                                        end)
+    validated = apply_immediate_validation(
+        observation, observation_values)
+    session.post_observation_values(observation_id, validated,
                                     params='donotvalidate')
 
 
@@ -454,16 +476,34 @@ DAILY_VALIDATION_FUNCS = {
 }
 
 
-def _daily_validation(session, observation, start, end, base_url):
-    logger.info('Validating data for %s from %s to %s',
-                observation.name, start, end)
-    observation_values = session.get_observation_values(
-        observation.observation_id, start, end).sort_index()
-    value_series = observation_values['value'].astype(float)
+def apply_daily_validation(observation, observation_values):
+    """
+    Applies the appropriate daily validation functions to the
+    observation_values.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
+
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
+
+    Raises
+    ------
+    IndexError
+        If there are not enough valid points to perform daily validation
+    """
+    validated = observation_values.sort_index()
+    value_series = validated['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
             'Data series does not have at least 10 datapoints to validate')
-    quality_flags = observation_values['quality_flag'].copy()
+    quality_flags = validated['quality_flag'].copy()
 
     # if the variable has a daily check, run that, else run the
     # immediate validation, else validate timestamps
@@ -476,9 +516,19 @@ def _daily_validation(session, observation, start, end, base_url):
         quality_flags |= flag
 
     quality_flags.name = 'quality_flag'
-    observation_values.update(quality_flags)
+    validated.update(quality_flags)
+    return validated
+
+
+def _daily_validation(session, observation, start, end, base_url):
+    logger.info('Validating data for %s from %s to %s',
+                observation.name, start, end)
+    observation_values = session.get_observation_values(
+        observation.observation_id, start, end)
+    validated = apply_daily_validation(
+        observation, observation_values)
     return _group_continuous_week_post(
-        session, observation, observation_values)
+        session, observation, validated)
 
 
 def _group_continuous_week_post(session, observation, observation_values):
@@ -533,3 +583,43 @@ def daily_observation_validation(access_token, start, end, base_url=None):
             logger.warning(('Skipping daily validation of %s '
                             'not enough values'), observation.name)
             continue
+
+
+def apply_validation(observation, observation_values):
+    """
+    Applies the appropriate daily or immediate validation functions to the
+    observation_values depending on the length of the data.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
+
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
+
+    Raises
+    ------
+    TypeError
+        If the supplied observations_values is not a DataFrame with a
+        DatetimeIndex
+    """
+    data = observation_values.sort_index()
+    if (
+            not isinstance(data, pd.DataFrame) or
+            not isinstance(data.index, pd.DatetimeIndex)
+    ):
+        raise TypeError('Expect observation_values to have a DatetimeIndex')
+    if data.empty:
+        return data
+    if (
+            (data.index[-1] - data.index[0]) > pd.Timedelta('1d') and
+            (len(data['value'].dropna()) > 10)
+    ):
+        return apply_daily_validation(observation, data)
+    else:
+        return apply_immediate_validation(observation, data)
