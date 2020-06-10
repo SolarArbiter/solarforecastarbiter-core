@@ -56,6 +56,21 @@ class APISession(requests.Session):
         server.
     base_url : string
         URL to use as the base for endpoints to APISession
+
+    Notes
+    -----
+    To pass the API calls through a proxy server, set either the HTTP_PROXY or
+    HTTPS_PROXY environment variable. If necessary, you can also specify a SSL
+    certificate using the REQUESTS_CA_BUNDLE environment variable. For example,
+    on a Linux machine:
+
+    >>> export HTTPS_PROXY=https://some_corporate_proxy.com:8080
+    >>> export REQUESTS_CA_BUNDLE=/path/to/certificates/cert.crt
+    >>> python script_that_calls_api.py
+
+    For more information, see the "Advanced Usage" documentation for the
+    requests package: https://requests.readthedocs.io/en/master/user/advanced/
+
     """
 
     def __init__(self, access_token, default_timeout=(10, 60),

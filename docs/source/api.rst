@@ -317,6 +317,10 @@ files with site and observation metadata.
 SFA API
 =======
 
+To pass API calls through a proxy server, set either the HTTP_PROXY or
+HTTPS_PROXY environment variable. If necessary, set a SSL certificate using the
+REQUESTS_CA_BUNDLE environment variable.
+
 Token
 -----
 
