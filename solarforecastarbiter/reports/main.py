@@ -98,13 +98,8 @@ def get_data_for_report(session, report):
         if fxobs.data_object not in data:
             obs_data = session.get_values(
                 fxobs.data_object, start, end)
-            if isinstance(
-                    fxobs.data_object, datamodel.Aggregate):
-                data[fxobs.data_object] = obs_data
-            else:
-                validated_obs_data = apply_validation(
-                    fxobs.data_object, obs_data)
-                data[fxobs.data_object] = validated_obs_data
+            data[fxobs.data_object] = apply_validation(
+                fxobs.data_object, obs_data)
         if fxobs.reference_forecast is not None:
             if fxobs.reference_forecast not in data:
                 data[fxobs.reference_forecast] = session.get_values(

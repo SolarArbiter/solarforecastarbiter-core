@@ -5,7 +5,7 @@ import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
-from solarforecastarbiter import pvmodel
+from solarforecastarbiter import pvmodel, datamodel
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter.validation import validator, quality_mapping
 
@@ -618,7 +618,9 @@ def daily_observation_validation(access_token, start, end, base_url=None):
 def apply_validation(observation, observation_values):
     """
     Applies the appropriate daily or immediate validation functions to the
-    observation_values depending on the length of the data.
+    observation_values depending on the length of the data. If an Aggregate
+    object is passed, a warning is logged and the observation_values are
+    returned.
 
     Parameters
     ----------
@@ -638,6 +640,9 @@ def apply_validation(observation, observation_values):
         If the supplied observations_values is not a DataFrame with a
         DatetimeIndex
     """
+    if isinstance(observation, datamodel.Aggregate):
+        logger.warning('Cannot apply validation to an Aggregate')
+        return observation_values
     data = observation_values.sort_index()
     if (
             not isinstance(data, pd.DataFrame) or

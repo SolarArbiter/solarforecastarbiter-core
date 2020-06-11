@@ -1329,3 +1329,11 @@ def test_apply_validation_bad_df(make_observation, mocker):
         tasks.apply_validation(obs, pd.Series(
             index=pd.DatetimeIndex([]),
             dtype=float))
+
+
+def test_apply_validation_agg(aggregate, mocker):
+    data = pd.DataFrame({'value': [1], 'quality_flag': [0]},
+                        index=pd.DatetimeIndex(
+                            ['2020-01-01T00:00Z'], name='timestamp'))
+    out = tasks.apply_validation(aggregate, data)
+    assert_frame_equal(data, out)
