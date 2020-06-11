@@ -6,7 +6,8 @@ import pytest
 from solarforecastarbiter.datamodel import Observation
 from solarforecastarbiter.validation import tasks, validator
 from solarforecastarbiter.validation.quality_mapping import (
-    LATEST_VERSION_FLAG, DESCRIPTION_MASK_MAPPING)
+    LATEST_VERSION_FLAG, DESCRIPTION_MASK_MAPPING,
+    DAILY_VALIDATION_FLAG)
 
 
 @pytest.fixture()
@@ -770,32 +771,34 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
     tasks.daily_single_observation_validation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
+    BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
+
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-        LATEST_VERSION_FLAG
+        BASE_FLAG
     ]
     assert post_mock.called
     posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
@@ -824,12 +827,14 @@ def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
     base = (
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-        LATEST_VERSION_FLAG
+        LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
     )
     out = data.copy()
     out['quality_flag'] = [
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG |
+        DAILY_VALIDATION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG |
+        DAILY_VALIDATION_FLAG,
         base,
         base,
         base,
@@ -879,7 +884,7 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
                 DESCRIPTION_MASK_MAPPING['STALE VALUES'],
                 pd.Series([0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
                           index=data.index) *
-                DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES']
+                DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'],
                 )
     for flag, exp in zip(flags, expected):
         assert_series_equal(flag, exp | LATEST_VERSION_FLAG,
@@ -907,37 +912,38 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
     tasks.daily_single_observation_validation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
+    BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
     out = data.copy()
     out['quality_flag'] = [
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG
+        BASE_FLAG
     ]
     assert post_mock.called
     posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
@@ -1007,41 +1013,42 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
     tasks.daily_single_observation_validation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
+    BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
     out = data.copy()
     out['quality_flag'] = [
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['STALE VALUES'] |
         DESCRIPTION_MASK_MAPPING['INTERPOLATED VALUES'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLIPPED VALUES'] |
-        LATEST_VERSION_FLAG,
-        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG,
+        BASE_FLAG,
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['OK'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG,
+        BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        LATEST_VERSION_FLAG
+        BASE_FLAG
     ]
     assert post_mock.called
     posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
@@ -1094,7 +1101,8 @@ def test_apply_daily_validation_other(
             # 8     9     10   11   12  13    14   15  16  17  18  19  23
             10, 1900, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
         'quality_flag': 0}, index=daily_index)
-    tasks.apply_daily_validation(obs, data)
+    out = tasks.apply_daily_validation(obs, data)
+    assert (out['quality_flag'] | DAILY_VALIDATION_FLAG).all()
     for mock in mocks:
         assert mock.called
 
@@ -1111,7 +1119,8 @@ def test_apply_daily_validation_defaults(
             # 8     9     10   11   12  13    14   15  16  17  18  19  23
             10, 1900, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
         'quality_flag': 0}, index=daily_index)
-    tasks.apply_daily_validation(obs, data)
+    out = tasks.apply_daily_validation(obs, data)
+    assert (out['quality_flag'] | DAILY_VALIDATION_FLAG).all()
     for mock in mocks:
         assert mock.called
 
@@ -1127,6 +1136,7 @@ def test_apply_daily_validation(mocker, make_observation, daily_index):
 
     out = tasks.apply_daily_validation(obs, data)
     qf = (pd.Series(LATEST_VERSION_FLAG, index=data.index),
+          pd.Series(DAILY_VALIDATION_FLAG, index=data.index),
           pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                     index=data.index) *
           DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],

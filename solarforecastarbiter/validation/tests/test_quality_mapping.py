@@ -209,7 +209,8 @@ def test_which_data_is_ok(flags, expected):
 DESCRIPTIONS = ['USER FLAGGED', 'NIGHTTIME', 'CLEARSKY',
                 'SHADED', 'UNEVEN FREQUENCY', 'LIMITS EXCEEDED',
                 'CLEARSKY EXCEEDED', 'STALE VALUES', 'INTERPOLATED VALUES',
-                'CLIPPED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS']
+                'CLIPPED VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS',
+                'DAILY VALIDATION APPLIED']
 
 
 DERIVED_DESCRIPTIONS = ['DAYTIME', 'DAYTIME STALE VALUES',
@@ -217,14 +218,14 @@ DERIVED_DESCRIPTIONS = ['DAYTIME', 'DAYTIME STALE VALUES',
 
 
 @pytest.mark.parametrize('flag,expected', [
-    (2, pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    (2, pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   index=DESCRIPTIONS, dtype=bool)),
-    (3, pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    (3, pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   index=DESCRIPTIONS, dtype=bool)),
-    (35, pd.Series([1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    (35, pd.Series([1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                    index=DESCRIPTIONS, dtype=bool)),
     (2 | 1 << 13 | 1 << 12 | 1 << 10,
-     pd.Series([0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
+     pd.Series([0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
                index=DESCRIPTIONS, dtype=bool))
 
 ])
@@ -243,11 +244,11 @@ def test_convert_mask_into_dataframe():
     flags = (pd.Series([0, 0, 1, 1 << 12, 1 << 9 | 1 << 7 | 1 << 5]) |
              quality_mapping.LATEST_VERSION_FLAG)
     columns = DESCRIPTIONS + ['NOT VALIDATED'] + DERIVED_DESCRIPTIONS
-    expected = pd.DataFrame([[0] * 12 + [1, 0, 0],
-                             [0] * 12 + [1, 0, 0],
-                             [1] + [0] * 11 + [1, 0, 0],
-                             [0] * 9 + [1, 0, 0, 1, 0, 0],
-                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0]],
+    expected = pd.DataFrame([[0] * 13 + [1, 0, 0],
+                             [0] * 13 + [1, 0, 0],
+                             [1] + [0] * 12 + [1, 0, 0],
+                             [0] * 9 + [1, 0, 0, 0, 1, 0, 0],
+                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]],
                             columns=columns,
                             dtype=bool)
     out = quality_mapping.convert_mask_into_dataframe(flags)
@@ -259,11 +260,11 @@ def test_convert_mask_into_dataframe_w_unvalidated():
              quality_mapping.LATEST_VERSION_FLAG)
     flags.iloc[0] = 0
     columns = DESCRIPTIONS + ['NOT VALIDATED'] + DERIVED_DESCRIPTIONS
-    expected = pd.DataFrame([[0] * 11 + [1, 0, 0, 0],
-                             [0] * 12 + [1, 0, 0],
-                             [1] + [0] * 11 + [1, 0, 0],
-                             [0] * 9 + [1, 0, 0, 1, 0, 0],
-                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0]],
+    expected = pd.DataFrame([[0] * 12 + [1, 0, 0, 0],
+                             [0] * 13 + [1, 0, 0],
+                             [1] + [0] * 12 + [1, 0, 0],
+                             [0] * 9 + [1, 0, 0, 0, 1, 0, 0],
+                             [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]],
                             columns=columns,
                             dtype=bool)
     out = quality_mapping.convert_mask_into_dataframe(flags)

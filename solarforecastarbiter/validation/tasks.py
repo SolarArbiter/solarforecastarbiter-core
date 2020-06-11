@@ -544,6 +544,7 @@ def apply_daily_validation(observation, observation_values):
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.DAILY_VALIDATION_FLAG
 
     quality_flags.name = 'quality_flag'
     validated.update(quality_flags)
