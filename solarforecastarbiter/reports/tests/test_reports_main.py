@@ -67,7 +67,7 @@ def test_get_data_for_report(mock_data, report_objects, mocker):
     session = api.APISession('nope')
     apply_obs = mocker.spy(main, 'apply_validation')
     data = main.get_data_for_report(session, report)
-    assert apply_obs.call_count == 1  # only for observation
+    assert apply_obs.call_count == 2
     assert isinstance(data[observation], pd.DataFrame)
     assert isinstance(data[forecast_0], pd.Series)
     assert isinstance(data[forecast_1], pd.Series)
