@@ -11,10 +11,20 @@ API Changes
 * Added :py:func:`solarforecastarbiter.reference_forecasts.utils.check_persistence_compatibility`
   to check if a pair of Forecast and Observation objects are compatible for
   making a persistence forecast (:pull:`478`)
+* Added :py:func:`solarforecastarbiter.validation.tasks.validate_daily_defaults`
+  to validate all observations using the immediate validation function
+  along with stale and interpolated flags (:pull:`482`) (:issue:`453`)
+* Added :py:func:`solarforecastarbiter.validation.tasks.apply_immediate_validation`,
+  :py:func:`solarforecastarbiter.validation.tasks.apply_daily_validation`,
+  and :py:func:`solarforecastarbiter.validation.tasks.apply_validation`
+  convience functions (:pull:`482`)
+
 
 Enhancements
 ~~~~~~~~~~~~
 * Support parsing of Site climate zones from the API (:pull:`481`)
+* Reapply validation to Observation data when fetched for a Report
+  (:issue:`376`) (:pull:`482`)
 
 
 Bug fixes
