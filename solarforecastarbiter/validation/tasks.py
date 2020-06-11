@@ -413,9 +413,9 @@ def validate_daily_defaults(observation, values):
     """
     Run default daily validation checks on an observation.
     Applies the validation for the observation's variable and then
-    the stale and interpolated validation. If the variable does
-    not have a defined validation function :py:func:`validate_defaults`
-    is used.
+    the stale and interpolated validation. :py:func:`validate_defaults`
+    is used if the Observation variable does not have a defined validation
+    function.
 
     Parameters
     ----------
