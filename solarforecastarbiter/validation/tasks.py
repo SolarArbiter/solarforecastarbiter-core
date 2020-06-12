@@ -451,6 +451,11 @@ IMMEDIATE_VALIDATION_FUNCS = {
     'ac_power': validate_ac_power,
     'dc_power': validate_dc_power
 }
+DAILY_VALIDATION_FUNCS = {
+    'ghi': validate_daily_ghi,
+    'dc_power': validate_daily_dc_power,
+    'ac_power': validate_daily_ac_power
+}
 
 
 def apply_immediate_validation(observation, observation_values):
@@ -482,29 +487,6 @@ def apply_immediate_validation(observation, observation_values):
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
     return observation_values
-
-
-def immediate_observation_validation(access_token, observation_id, start, end,
-                                     base_url=None):
-    """
-    Task that will run immediately after Observation values are uploaded to the
-    API to validate the data.
-    """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    observation_values = session.get_observation_values(observation_id, start,
-                                                        end)
-    validated = apply_immediate_validation(
-        observation, observation_values)
-    session.post_observation_values(observation_id, validated,
-                                    params='donotvalidate')
-
-
-DAILY_VALIDATION_FUNCS = {
-    'ghi': validate_daily_ghi,
-    'dc_power': validate_daily_dc_power,
-    'ac_power': validate_daily_ac_power
-}
 
 
 def apply_daily_validation(observation, observation_values):
@@ -551,71 +533,6 @@ def apply_daily_validation(observation, observation_values):
     return validated
 
 
-def _daily_validation(session, observation, start, end, base_url):
-    logger.info('Validating data for %s from %s to %s',
-                observation.name, start, end)
-    observation_values = session.get_observation_values(
-        observation.observation_id, start, end)
-    validated = apply_daily_validation(
-        observation, observation_values)
-    return _group_continuous_week_post(
-        session, observation, validated)
-
-
-def _group_continuous_week_post(session, observation, observation_values):
-    # observation_values expected to be sorted
-    # observation values already have uneven frequency checked
-    gid = quality_mapping.check_if_series_flagged(
-        observation_values['quality_flag'], 'UNEVEN FREQUENCY').cumsum()
-    # make series of week + year integers to further
-    # split data to post at most one week at a time
-    # ~10,000 pts of 1min data
-    week_int = (gid.index.week + gid.index.year).values
-    # combine the continuous groups with groups of weeks
-    # gid is unique for each group since week_int and cumsum
-    # increase monotonically and are positive
-    gid += week_int
-    observation_values['gid'] = gid
-    for _, group in observation_values.groupby('gid'):
-        session.post_observation_values(observation.observation_id,
-                                        group[['value', 'quality_flag']],
-                                        params='donotvalidate')
-
-
-def daily_single_observation_validation(access_token, observation_id, start,
-                                        end, base_url=None):
-    """
-    Task that expects a longer, likely daily timeseries of Observation values
-    that will be validated.
-    """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    try:
-        _daily_validation(session, observation, start, end, base_url)
-    except IndexError:
-        logger.warning(
-            'Daily validation for %s failed: not enough values',
-            observation.name)
-
-
-def daily_observation_validation(access_token, start, end, base_url=None):
-    """
-    Run the daily observation validation for all observations that the user
-    has access to in their organization.
-    """
-    session = APISession(access_token, base_url=base_url)
-    user_info = session.get_user_info()
-    observations = [obs for obs in session.list_observations()
-                    if obs.provider == user_info['organization']]
-    for observation in observations:
-        try:
-            _daily_validation(session, observation, start, end, base_url)
-        except IndexError:
-            logger.warning(('Skipping daily validation of %s '
-                            'not enough values'), observation.name)
-            continue
-
-
 def apply_validation(observation, observation_values):
     """
     Applies the appropriate daily or immediate validation functions to the
@@ -659,3 +576,59 @@ def apply_validation(observation, observation_values):
         return apply_daily_validation(observation, data)
     else:
         return apply_immediate_validation(observation, data)
+
+
+def _group_continuous_week_post(session, observation, observation_values):
+    # observation_values expected to be sorted
+    # observation values already have uneven frequency checked
+    gid = quality_mapping.check_if_series_flagged(
+        observation_values['quality_flag'], 'UNEVEN FREQUENCY').cumsum()
+    # make series of week + year integers to further
+    # split data to post at most one week at a time
+    # ~10,000 pts of 1min data
+    week_int = (gid.index.week + gid.index.year).values
+    # combine the continuous groups with groups of weeks
+    # gid is unique for each group since week_int and cumsum
+    # increase monotonically and are positive
+    gid += week_int
+    observation_values['gid'] = gid
+    for _, group in observation_values.groupby('gid'):
+        session.post_observation_values(observation.observation_id,
+                                        group[['value', 'quality_flag']],
+                                        params='donotvalidate')
+
+
+def _validate_post(session, observation, start, end, base_url):
+    logger.info('Validating data for %s from %s to %s',
+                observation.name, start, end)
+    observation_values = session.get_observation_values(
+        observation.observation_id, start, end)
+    validated = apply_validation(observation, observation_values)
+    return _group_continuous_week_post(
+        session, observation, validated)
+
+
+def fetch_and_validate_observation(access_token, observation_id, start, end,
+                                   base_url=None):
+    """Task that will run immediately after Observation values are
+    uploaded to the API to validate the data. If over a day of data is
+    present, daily validation will be applied.
+
+    """
+    session = APISession(access_token, base_url=base_url)
+    observation = session.get_observation(observation_id)
+    _validate_post(session, observation, start, end, base_url)
+
+
+def fetch_and_validate_all_observations(access_token, start, end,
+                                        base_url=None):
+    """
+    Run the daily observation validation for all observations that the user
+    has access to in their organization.
+    """
+    session = APISession(access_token, base_url=base_url)
+    user_info = session.get_user_info()
+    observations = [obs for obs in session.list_observations()
+                    if obs.provider == user_info['organization']]
+    for observation in observations:
+        _validate_post(session, observation, start, end, base_url)
