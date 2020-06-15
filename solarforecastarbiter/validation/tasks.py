@@ -671,6 +671,22 @@ def fetch_and_validate_observation(access_token, observation_id, start, end,
     uploaded to the API to validate the data. If over a day of data is
     present, daily validation will be applied.
 
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    observation_id : str
+        ID of the observation to fetch values and validate
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default False
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
     """
     session = APISession(access_token, base_url=base_url)
     observation = session.get_observation(observation_id)
@@ -682,6 +698,22 @@ def fetch_and_validate_all_observations(access_token, start, end,
     """
     Run the daily observation validation for all observations that the user
     has access to in their organization.
+
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default True
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
+
     """
     session = APISession(access_token, base_url=base_url)
     user_info = session.get_user_info()
