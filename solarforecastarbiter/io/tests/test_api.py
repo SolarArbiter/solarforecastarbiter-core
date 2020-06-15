@@ -1422,3 +1422,14 @@ def test_real_apisession_get_cdf_forecast_time_range(real_session):
     assert out == (
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-17T06:55:00Z'))
+
+
+def test_real_apisession_get_observation_values_not_flagged(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
+    out = real_session.get_observation_values_not_flagged(
+        '123e4567-e89b-12d3-a456-426655440000',
+        start, end, 1)
+    assert isinstance(out, np.array)
+    assert out.dtype == 'datetime64[D]'
+    assert all(out == np.array(['2019-04-15'], dtype='datetime64[D]'))

@@ -126,6 +126,7 @@ def test_mask_flags_noop(flag_val):
     mask |= latest
 
     inp = pd.Series([True, True, False, False])
+
     @quality_mapping.mask_flags(flag)
     def f():
         return inp
