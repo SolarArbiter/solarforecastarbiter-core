@@ -454,13 +454,19 @@ IMMEDIATE_VALIDATION_FUNCS = {
 DAILY_VALIDATION_FUNCS = {
     'ghi': validate_daily_ghi,
     'dc_power': validate_daily_dc_power,
-    'ac_power': validate_daily_ac_power
+    'ac_power': validate_daily_ac_power,
+    # no stale/interpolated
+    'event': validate_defaults,
+    'availability': validate_defaults,
+    'curtailment': validate_defaults,
 }
 
 
 def apply_immediate_validation(observation, observation_values):
     """
     Applies the appropriate validation functions to the observation_values.
+    Only the USER_FLAGGED flag is propagated if the series has been
+    previously validated.
 
     Parameters
     ----------
@@ -475,7 +481,7 @@ def apply_immediate_validation(observation, observation_values):
         appropriately
     """
     value_series = observation_values['value'].astype(float)
-    quality_flags = observation_values['quality_flag'].copy()
+    quality_flags = observation_values['quality_flag'].copy() & 1
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable, validate_defaults)
@@ -490,9 +496,9 @@ def apply_immediate_validation(observation, observation_values):
 
 
 def apply_daily_validation(observation, observation_values):
-    """
-    Applies the appropriate daily validation functions to the
-    observation_values.
+    """Applies the appropriate daily validation functions to the
+    observation_values.  Only the USER_FLAGGED flag is propagated if
+    the series has been previously validated.
 
     Parameters
     ----------
@@ -510,13 +516,14 @@ def apply_daily_validation(observation, observation_values):
     ------
     IndexError
         If there are not enough valid points to perform daily validation
+
     """
     validated = observation_values.sort_index()
     value_series = validated['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
             'Data series does not have at least 10 datapoints to validate')
-    quality_flags = validated['quality_flag'].copy()
+    quality_flags = validated['quality_flag'].copy() & 1
 
     # if the variable has a daily check, run that, else run the
     # immediate validation, else validate timestamps
@@ -570,7 +577,7 @@ def apply_validation(observation, observation_values):
     if data.empty:
         return data
     if (
-            (data.index[-1] - data.index[0]) > pd.Timedelta('1d') and
+            (data.index[-1] - data.index[0]) >= pd.Timedelta('1d') and
             (len(data['value'].dropna()) > 10)
     ):
         return apply_daily_validation(observation, data)
