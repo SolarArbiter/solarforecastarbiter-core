@@ -723,7 +723,8 @@ def detect_levels(x, count=3, num_bins=100):
         decreasing order of count of x values in the interval. List length is
         given by the kwarg count
     """
-    hist, bin_edges = np.histogram(x, bins=num_bins, density=True)
+    nonan = x[~np.isnan(x)]
+    hist, bin_edges = np.histogram(nonan, bins=num_bins, density=True)
     level_index = np.argsort(hist * -1)  # decreasing order
     levels = [(bin_edges[i], bin_edges[i + 1]) for i in level_index[:count]]
     return levels, bin_edges

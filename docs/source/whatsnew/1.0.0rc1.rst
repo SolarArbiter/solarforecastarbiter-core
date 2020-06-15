@@ -49,7 +49,11 @@ Bug fixes
   persistence forecast before creating reference persistence forecasts
   (:issue:`472`) (:pull:`478`)
 * When applying validation, only the 'USER FLAGGED' flag is preserved
-  instead of all previous flags
+  instead of all previous flags (:pull:`484`)
+* Drop NaN before computing histogram when applying
+  :py:func:`solarforecastarbiter.validation.validator.detect_clipping`
+  (:pull:`484`)
+
 
 Contributors
 ~~~~~~~~~~~~
