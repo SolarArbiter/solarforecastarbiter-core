@@ -1430,6 +1430,6 @@ def test_real_apisession_get_observation_values_not_flagged(real_session):
     out = real_session.get_observation_values_not_flagged(
         '123e4567-e89b-12d3-a456-426655440000',
         start, end, 1)
-    assert isinstance(out, np.array)
+    assert isinstance(out, np.ndarray)
     assert out.dtype == 'datetime64[D]'
     assert all(out == np.array(['2019-04-15'], dtype='datetime64[D]'))
