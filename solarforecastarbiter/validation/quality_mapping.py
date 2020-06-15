@@ -243,7 +243,7 @@ def _add_derived_masks(masks):
         cols = operations[1:]
         args = [out[col] for col in cols]
         out[flag] = func(*args)
-    return pd.concat([out, masks[unvalidated]]).fillna(False)
+    return pd.concat([out, masks[unvalidated]], sort=False).fillna(False)
 
 
 def convert_mask_into_dataframe(flag_series):
