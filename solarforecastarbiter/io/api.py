@@ -553,6 +553,29 @@ class APISession(requests.Session):
     def get_observation_values_not_flagged(
             self, observation_id, start, end, flag, timezone='UTC'):
         """
+        Get the any dates where the observation series is NOT flagged with
+        the given flag/bitmask.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        flag : int
+            Days that are not flagged with this flag are returned. This can
+            be a compound flag/bitmask of the flags found in
+            :py:mod:`solarforecastarbiter.validation.quality_mapping`,
+            in which case days that do not have all flags present
+            are returned.
+        timezone : str, default "UTC"
+            The timezone to localize the data before computing the date
+
+        Returns
+        -------
+        dates : numpy.array of type datetime64[D]
         """
         req = self.get(f'/observations/{observation_id}/values/unflagged',
                        params={'start': start,

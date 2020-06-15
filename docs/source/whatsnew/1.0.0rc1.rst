@@ -33,7 +33,7 @@ Enhancements
 ~~~~~~~~~~~~
 * Support parsing of Site climate zones from the API (:pull:`481`)
 * Reapply validation to Observation data when fetched for a Report
-  (:issue:`376`) (:pull:`482**`)
+  (:issue:`376`)
 * Added the 'DAILY VALIDATION APPLIED' quality flag to ensure daily validation
   is applied to all observation values (:issue:`377`) (:pull:`484`)
 * :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
