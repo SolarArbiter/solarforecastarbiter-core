@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal, assert_frame_equal
 import pytest
@@ -1347,3 +1348,80 @@ def test_apply_validation_agg(aggregate, mocker):
                             ['2020-01-01T00:00Z'], name='timestamp'))
     out = tasks.apply_validation(aggregate, data)
     assert_frame_equal(data, out)
+
+
+def test_find_unvalidated_time_ranges(mocker):
+    session = mocker.MagicMock()
+    session.get_observation_values_not_flagged.return_value = np.array(
+        ['2019-04-13', '2019-04-14', '2019-04-15', '2019-04-16', '2019-04-18',
+         '2019-05-22', '2019-05-23'], dtype='datetime64[D]')
+    obs = mocker.MagicMock()
+    obs.observation_id = ''
+    obs.site.timezone = 'UTC'
+    out = list(tasks._find_unvalidated_time_ranges(
+        session, obs, '2019-01-01T00:00Z', '2020-01-01T00:00Z'))
+    assert out == [
+        (pd.Timestamp('2019-04-13T00:00Z'), pd.Timestamp('2019-04-17T00:00Z')),
+        (pd.Timestamp('2019-04-18T00:00Z'), pd.Timestamp('2019-04-19T00:00Z')),
+        (pd.Timestamp('2019-05-22T00:00Z'), pd.Timestamp('2019-05-24T00:00Z')),
+    ]
+
+
+def test_find_unvalidated_time_ranges_all(mocker):
+    session = mocker.MagicMock()
+    session.get_observation_values_not_flagged.return_value = np.array(
+        ['2019-04-13', '2019-04-14', '2019-04-15', '2019-04-16'],
+        dtype='datetime64[D]')
+    obs = mocker.MagicMock()
+    obs.observation_id = ''
+    obs.site.timezone = 'Etc/GMT+7'
+    out = list(tasks._find_unvalidated_time_ranges(
+        session, obs, '2019-01-01T00:00Z', '2020-01-01T00:00Z'))
+    assert out == [
+        (pd.Timestamp('2019-04-13T00:00-07:00'),
+         pd.Timestamp('2019-04-17T00:00-07:00')),
+    ]
+
+
+def test_find_unvalidated_time_ranges_single(mocker):
+    session = mocker.MagicMock()
+    session.get_observation_values_not_flagged.return_value = np.array(
+        ['2019-04-13'], dtype='datetime64[D]')
+    obs = mocker.MagicMock()
+    obs.observation_id = ''
+    obs.site.timezone = 'Etc/GMT+5'
+    out = list(tasks._find_unvalidated_time_ranges(
+        session, obs, '2019-01-01T00:00Z', '2020-01-01T00:00Z'))
+    assert out == [
+        (pd.Timestamp('2019-04-13T00:00-05:00'),
+         pd.Timestamp('2019-04-14T00:00-05:00')),
+    ]
+
+
+def test_find_unvalidated_time_ranges_disjoint(mocker):
+    session = mocker.MagicMock()
+    session.get_observation_values_not_flagged.return_value = np.array(
+        ['2019-04-13', '2019-05-22'], dtype='datetime64[D]')
+    obs = mocker.MagicMock()
+    obs.observation_id = ''
+    obs.site.timezone = 'Etc/GMT+5'
+    out = list(tasks._find_unvalidated_time_ranges(
+        session, obs, '2019-01-01T00:00Z', '2020-01-01T00:00Z'))
+    assert out == [
+        (pd.Timestamp('2019-04-13T00:00-05:00'),
+         pd.Timestamp('2019-04-14T00:00-05:00')),
+        (pd.Timestamp('2019-05-22T00:00-05:00'),
+         pd.Timestamp('2019-05-23T00:00-05:00')),
+    ]
+
+
+def test_find_unvalidated_time_ranges_empty(mocker):
+    session = mocker.MagicMock()
+    session.get_observation_values_not_flagged.return_value = np.array(
+         [], dtype='datetime64[D]')
+    obs = mocker.MagicMock()
+    obs.observation_id = ''
+    obs.site.timezone = 'UTC'
+    out = list(tasks._find_unvalidated_time_ranges(
+        session, obs, '2019-01-01T00:00Z', '2020-01-01T00:00Z'))
+    assert out == []

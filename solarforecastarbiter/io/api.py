@@ -1,6 +1,7 @@
 """
 Functions to connect to and process data from SolarForecastArbiter API
 """
+import datetime as dt
 import json
 import logging
 
@@ -547,6 +548,21 @@ class APISession(requests.Session):
         if maxt.tzinfo is None and pd.notna(maxt):
             maxt = maxt.tz_localize('UTC')
         return mint, maxt
+
+    @ensure_timestamps('start', 'end')
+    def get_observation_values_not_flagged(
+            self, observation_id, start, end, flag, timezone='UTC'):
+        """
+        """
+        req = self.get(f'/observations/{observation_id}/values/unflagged',
+                       params={'start': start,
+                               'end': end,
+                               'timezone': timezone,
+                               'flag': flag})
+        data = req.json()
+        dates = data['dates']
+        return np.array([dt.date.fromisoformat(d) for d in dates],
+                        dtype='datetime64[D]')
 
     @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,

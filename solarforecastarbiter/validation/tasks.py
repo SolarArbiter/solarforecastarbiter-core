@@ -1,6 +1,8 @@
+import datetime as dt
 import logging
 
 
+import numpy as np
 import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
@@ -605,7 +607,7 @@ def _group_continuous_week_post(session, observation, observation_values):
                                         params='donotvalidate')
 
 
-def _validate_post(session, observation, start, end, base_url):
+def _validate_post(session, observation, start, end):
     logger.info('Validating data for %s from %s to %s',
                 observation.name, start, end)
     observation_values = session.get_observation_values(
@@ -615,8 +617,52 @@ def _validate_post(session, observation, start, end, base_url):
         session, observation, validated)
 
 
+def _find_unvalidated_time_ranges(session, observation, min_start, max_end):
+    """Find the time ranges where the observation data needs to have
+    daily validation applied. Extend to next day midnight so daily
+    validation can be applied even since it requires >= 1 day of data
+    """
+    tz = observation.site.timezone
+    dates = np.array(sorted(
+        session.get_observation_values_not_flagged(
+            observation_id=observation.observation_id,
+            start=min_start,
+            end=max_end,
+            flag=quality_mapping.DAILY_VALIDATION_FLAG,
+            timezone=tz)
+        ))
+    if len(dates) == 0:
+        return
+
+    breaks = np.diff(dates).astype('timedelta64[D]') - 1
+
+    def fl(prev, ind):
+        first = pd.Timestamp(dates[prev]).tz_localize(tz)
+        last = (pd.Timestamp(dates[ind])
+                .tz_localize(tz) + pd.Timedelta('1D'))
+        return first, last
+
+    prev = 0
+    for ind in np.nonzero(breaks)[0]:
+        first, last = fl(prev, ind)
+        yield first, last
+        prev = ind + 1
+
+    first, last = fl(prev, -1)
+    yield first, last
+
+
+def _split_validation(session, observation, start, end, only_missing):
+    if not only_missing:
+        return _validate_post(session, observation, start, end)
+
+    for _start, _end in _find_unvalidated_time_ranges(
+            session, observation, start, end):
+        _validate_post(session, observation, _start, _end)
+
+
 def fetch_and_validate_observation(access_token, observation_id, start, end,
-                                   base_url=None):
+                                   only_missing=False, base_url=None):
     """Task that will run immediately after Observation values are
     uploaded to the API to validate the data. If over a day of data is
     present, daily validation will be applied.
@@ -624,11 +670,11 @@ def fetch_and_validate_observation(access_token, observation_id, start, end,
     """
     session = APISession(access_token, base_url=base_url)
     observation = session.get_observation(observation_id)
-    _validate_post(session, observation, start, end, base_url)
+    _split_validation(session, observation, start, end, only_missing)
 
 
 def fetch_and_validate_all_observations(access_token, start, end,
-                                        base_url=None):
+                                        only_missing=True, base_url=None):
     """
     Run the daily observation validation for all observations that the user
     has access to in their organization.
@@ -638,4 +684,4 @@ def fetch_and_validate_all_observations(access_token, start, end,
     observations = [obs for obs in session.list_observations()
                     if obs.provider == user_info['organization']]
     for observation in observations:
-        _validate_post(session, observation, start, end, base_url)
+        _split_validation(session, observation, start, end, only_missing)
