@@ -1,4 +1,3 @@
-import datetime as dt
 import logging
 
 
@@ -491,6 +490,7 @@ def apply_immediate_validation(observation, observation_values):
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
@@ -536,6 +536,7 @@ def apply_daily_validation(observation, observation_values):
     for flag in validation_flags:
         quality_flags |= flag
     quality_flags |= quality_mapping.DAILY_VALIDATION_FLAG
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
     validated.update(quality_flags)
@@ -628,7 +629,10 @@ def _find_unvalidated_time_ranges(session, observation, min_start, max_end):
             observation_id=observation.observation_id,
             start=min_start,
             end=max_end,
-            flag=quality_mapping.DAILY_VALIDATION_FLAG,
+            flag=(
+                quality_mapping.DAILY_VALIDATION_FLAG |
+                quality_mapping.LATEST_VERSION_FLAG
+            ),
             timezone=tz)
         ))
     if len(dates) == 0:
