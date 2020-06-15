@@ -1,3 +1,4 @@
+import datetime as dt
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal, assert_frame_equal
@@ -38,7 +39,7 @@ def daily_index(single_site):
                         freq='1h',
                         tz=single_site.timezone)
     return out.append(
-        pd.Index([pd.Timestamp('2019-01-01T23:00:00',
+        pd.Index([pd.Timestamp('2019-01-02T09:00:00',
                                tz=single_site.timezone)]))
 
 
@@ -129,6 +130,29 @@ def test_apply_immediate_validation(
     assert_frame_equal(val, out)
 
 
+def test_apply_immediate_validation_already_validated(
+        mocker, make_observation, default_index):
+    obs = make_observation('ghi')
+    data = pd.DataFrame(
+        [(0, 18), (100, 18), (200, 18), (-1, 19), (1500, 18)],
+        index=default_index,
+        columns=['value', 'quality_flag'])
+
+    val = tasks.apply_immediate_validation(obs, data)
+
+    out = data.copy()
+    out['quality_flag'] = [
+        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['OK'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
+        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
+        DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
+        DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']
+    ]
+    assert_frame_equal(val, out)
+
+
 @pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
                                  'poa_global', 'relative_humidity'])
 def test_apply_immediate_validation_other(
@@ -161,8 +185,8 @@ def test_apply_immediate_validation_defaults(
     assert mock.called
 
 
-def test_immediate_observation_validation_ghi(mocker, make_observation,
-                                              default_index):
+def test_fetch_and_validate_observation_ghi(mocker, make_observation,
+                                            default_index):
     obs = make_observation('ghi')
     data = pd.DataFrame(
         [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
@@ -177,7 +201,7 @@ def test_immediate_observation_validation_ghi(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -190,11 +214,12 @@ def test_immediate_observation_validation_ghi(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
-def test_immediate_observation_validation_ghi_nones(
+def test_fetch_and_validate_observation_ghi_nones(
         mocker, make_observation, default_index):
     obs = make_observation('ghi')
     data = pd.DataFrame(
@@ -209,7 +234,7 @@ def test_immediate_observation_validation_ghi_nones(
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -226,12 +251,13 @@ def test_immediate_observation_validation_ghi_nones(
         base,
         base | DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
-def test_immediate_observation_validation_not_listed(mocker, make_observation,
-                                                     default_index):
+def test_fetch_and_validate_observation_not_listed(mocker, make_observation,
+                                                   default_index):
     obs = make_observation('curtailment')
     data = pd.DataFrame(
         [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
@@ -245,7 +271,7 @@ def test_immediate_observation_validation_not_listed(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -255,8 +281,9 @@ def test_immediate_observation_validation_not_listed(mocker, make_observation,
         LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_dni(mocker, make_observation, default_index):
@@ -283,8 +310,8 @@ def test_validate_dni(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_dni(mocker, make_observation,
-                                              default_index):
+def test_fetch_and_validate_observation_dni(mocker, make_observation,
+                                            default_index):
     obs = make_observation('dni')
     data = pd.DataFrame(
         [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
@@ -299,7 +326,7 @@ def test_immediate_observation_validation_dni(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -310,8 +337,9 @@ def test_immediate_observation_validation_dni(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED']]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_dhi(mocker, make_observation, default_index):
@@ -338,8 +366,8 @@ def test_validate_dhi(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_dhi(mocker, make_observation,
-                                              default_index):
+def test_fetch_and_validate_observation_dhi(mocker, make_observation,
+                                            default_index):
     obs = make_observation('dhi')
     data = pd.DataFrame(
         [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
@@ -354,7 +382,7 @@ def test_immediate_observation_validation_dhi(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -365,8 +393,9 @@ def test_immediate_observation_validation_dhi(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED']]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_poa_global(mocker, make_observation, default_index):
@@ -393,8 +422,8 @@ def test_validate_poa_global(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_poa_global(mocker, make_observation,
-                                                     default_index):
+def test_fetch_and_validate_observation_poa_global(mocker, make_observation,
+                                                   default_index):
     obs = make_observation('poa_global')
     data = pd.DataFrame(
         [(0, 0), (100, 0), (200, 0), (-1, 1), (1500, 0)],
@@ -409,7 +438,7 @@ def test_immediate_observation_validation_poa_global(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -420,8 +449,9 @@ def test_immediate_observation_validation_poa_global(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG |
         DESCRIPTION_MASK_MAPPING['CLEARSKY EXCEEDED']]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_air_temp(mocker, make_observation, default_index):
@@ -448,7 +478,7 @@ def test_validate_air_temp(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_air_temperature(
+def test_fetch_and_validate_observation_air_temperature(
         mocker, make_observation, default_index):
     obs = make_observation('air_temperature')
     data = pd.DataFrame(
@@ -464,7 +494,7 @@ def test_immediate_observation_validation_air_temperature(
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -477,8 +507,9 @@ def test_immediate_observation_validation_air_temperature(
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_wind_speed(mocker, make_observation, default_index):
@@ -505,7 +536,7 @@ def test_validate_wind_speed(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_wind_speed(
+def test_fetch_and_validate_observation_wind_speed(
         mocker, make_observation, default_index):
     obs = make_observation('wind_speed')
     data = pd.DataFrame(
@@ -521,7 +552,7 @@ def test_immediate_observation_validation_wind_speed(
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -534,8 +565,9 @@ def test_immediate_observation_validation_wind_speed(
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_relative_humidity(mocker, make_observation, default_index):
@@ -562,7 +594,7 @@ def test_validate_relative_humidity(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_relative_humidity(
+def test_fetch_and_validate_observation_relative_humidity(
         mocker, make_observation, default_index):
     obs = make_observation('relative_humidity')
     data = pd.DataFrame(
@@ -578,7 +610,7 @@ def test_immediate_observation_validation_relative_humidity(
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -591,8 +623,9 @@ def test_immediate_observation_validation_relative_humidity(
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | LATEST_VERSION_FLAG]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_ac_power(mocker, make_observation, default_index):
@@ -619,8 +652,8 @@ def test_validate_ac_power(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_ac_power(mocker, make_observation,
-                                                   default_index):
+def test_fetch_and_validate_observation_ac_power(mocker, make_observation,
+                                                 default_index):
     obs = make_observation('ac_power')
     data = pd.DataFrame(
         [(0, 0), (1, 0), (-1, 0), (0.001, 1), (0.001, 0)],
@@ -635,7 +668,7 @@ def test_immediate_observation_validation_ac_power(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -646,8 +679,9 @@ def test_immediate_observation_validation_ac_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_dc_power(mocker, make_observation, default_index):
@@ -674,8 +708,8 @@ def test_validate_dc_power(mocker, make_observation, default_index):
                             check_names=False)
 
 
-def test_immediate_observation_validation_dc_power(mocker, make_observation,
-                                                   default_index):
+def test_fetch_and_validate_observation_dc_power(mocker, make_observation,
+                                                 default_index):
     obs = make_observation('dc_power')
     data = pd.DataFrame(
         [(0, 0), (1, 0), (-1, 0), (0.001, 1), (0.001, 0)],
@@ -690,7 +724,7 @@ def test_immediate_observation_validation_dc_power(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.immediate_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     out = data.copy()
@@ -701,8 +735,9 @@ def test_immediate_observation_validation_dc_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] | LATEST_VERSION_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] | LATEST_VERSION_FLAG
     ]
-    assert post_mock.called_once
-    assert_frame_equal(post_mock.call_args[0][1], out)
+    assert post_mock.call_count == 2
+    assert_frame_equal(post_mock.call_args_list[0][0][1], out[:-1])
+    assert_frame_equal(post_mock.call_args_list[1][0][1], out[-1:])
 
 
 def test_validate_daily_ghi(mocker, make_observation, daily_index):
@@ -728,7 +763,7 @@ def test_validate_daily_ghi(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
@@ -751,8 +786,8 @@ def test_validate_daily_ghi(mocker, make_observation, daily_index):
                             check_names=False)
 
 
-def test_daily_observation_validation_ghi(mocker, make_observation,
-                                          daily_index):
+def test_fetch_and_validate_observation_ghi_daily(mocker, make_observation,
+                                                  daily_index):
     obs = make_observation('ghi')
     data = pd.DataFrame(
         [(10, 0), (1000, 0), (-100, 0), (500, 0), (300, 0),
@@ -769,7 +804,7 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.daily_single_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
@@ -797,7 +832,6 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['USER FLAGGED'] |
         DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'] | BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] | BASE_FLAG,
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
         BASE_FLAG
     ]
@@ -806,8 +840,8 @@ def test_daily_observation_validation_ghi(mocker, make_observation,
     assert_frame_equal(posted_df, out)
 
 
-def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
-                                                daily_index):
+def test_fetch_and_validate_observation_ghi_zeros(mocker, make_observation,
+                                                  daily_index):
     obs = make_observation('ghi')
     data = pd.DataFrame(
         [(0, 0)] * 13,
@@ -822,7 +856,7 @@ def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.daily_single_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     base = (
@@ -846,8 +880,7 @@ def test_daily_observation_validation_ghi_zeros(mocker, make_observation,
         base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
         base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
         base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
-        base | DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
-        DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']
+        base | DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY']
     ]
     assert post_mock.called
     posted_df = pd.concat([cal[0][1] for cal in post_mock.call_args_list])
@@ -874,7 +907,7 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
@@ -892,8 +925,8 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
                             check_names=False)
 
 
-def test_daily_observation_validation_dc_power(mocker, make_observation,
-                                               daily_index):
+def test_fetch_and_validate_observation_dc_power_daily(
+        mocker, make_observation, daily_index):
     obs = make_observation('dc_power')
     data = pd.DataFrame(
         [(10, 0), (1000, 0), (-100, 0), (500, 0), (300, 0),
@@ -910,7 +943,7 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.daily_single_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
@@ -943,7 +976,6 @@ def test_daily_observation_validation_dc_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         BASE_FLAG
     ]
     assert post_mock.called
@@ -972,7 +1004,7 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
                 pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
@@ -993,8 +1025,8 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
                             check_names=False)
 
 
-def test_daily_observation_validation_ac_power(mocker, make_observation,
-                                               daily_index):
+def test_fetch_and_validate_observation_ac_power_daily(
+        mocker, make_observation, daily_index):
     obs = make_observation('ac_power')
     data = pd.DataFrame(
         [(10, 0), (100, 0), (-100, 0), (100, 0), (300, 0),
@@ -1011,7 +1043,7 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
     post_mock = mocker.patch(
         'solarforecastarbiter.io.api.APISession.post_observation_values')
 
-    tasks.daily_single_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
 
     BASE_FLAG = LATEST_VERSION_FLAG | DAILY_VALIDATION_FLAG
@@ -1048,7 +1080,6 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
         DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         BASE_FLAG,
         DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'] |
-        DESCRIPTION_MASK_MAPPING['NIGHTTIME'] |
         BASE_FLAG
     ]
     assert post_mock.called
@@ -1058,9 +1089,9 @@ def test_daily_observation_validation_ac_power(mocker, make_observation,
 
 @pytest.mark.parametrize('var', ['air_temperature', 'wind_speed', 'dni', 'dhi',
                                  'poa_global', 'relative_humidity', 'net_load',
-                                 'availability', 'curtailment', 'event'])
-def test_daily_observation_validation_other(var, mocker, make_observation,
-                                            daily_index):
+                                 ])
+def test_fetch_and_validate_observation_other(var, mocker, make_observation,
+                                              daily_index):
     obs = make_observation(var)
     data = pd.DataFrame(
         [(0, 0), (100, 0), (-100, 0), (100, 0), (300, 0),
@@ -1080,7 +1111,7 @@ def test_daily_observation_validation_other(var, mocker, make_observation,
     mocker.patch.dict(
         'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
         {var: validate_mock})
-    tasks.daily_single_observation_validation(
+    tasks.fetch_and_validate_observation(
         '', obs.observation_id, data.index[0], data.index[-1])
     assert post_mock.called
     assert validate_mock.called
@@ -1108,8 +1139,7 @@ def test_apply_daily_validation_other(
         assert mock.called
 
 
-@pytest.mark.parametrize('var', ['net_load', 'availability', 'curtailment',
-                                 'event'])
+@pytest.mark.parametrize('var', ['net_load'])
 def test_apply_daily_validation_defaults(
         mocker, make_observation, daily_index, var):
     mocks = [mocker.spy(tasks, 'validate_defaults'),
@@ -1132,7 +1162,7 @@ def test_apply_daily_validation(mocker, make_observation, daily_index):
         'value': [
             # 8     9     10   11   12  13    14   15  16  17  18  19  23
             0, 100, -100, 100, 300, 300, 300, 300, 100, 0, 100, 0, 0],
-        'quality_flag': 0},
+        'quality_flag': 94},
         index=daily_index)
 
     out = tasks.apply_daily_validation(obs, data)
@@ -1141,7 +1171,7 @@ def test_apply_daily_validation(mocker, make_observation, daily_index):
           pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                     index=data.index) *
           DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-          pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+          pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
                     index=data.index) *
           DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
           pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
@@ -1175,8 +1205,8 @@ def test_apply_daily_validation_not_enough(mocker, make_observation):
         tasks.apply_daily_validation(obs, data)
 
 
-def test_daily_observation_validation_many(mocker, make_observation,
-                                           daily_index):
+def test_fetch_and_validate_all_observations(mocker, make_observation,
+                                             daily_index):
     obs = [make_observation('dhi'), make_observation('dni')]
     obs += [make_observation('ghi').replace(provider='Organization 2')]
     data = pd.DataFrame(
@@ -1199,42 +1229,21 @@ def test_daily_observation_validation_many(mocker, make_observation,
     mocker.patch.dict(
         'solarforecastarbiter.validation.tasks.IMMEDIATE_VALIDATION_FUNCS',
         {'dhi': validate_mock, 'dni': validate_mock})
-    tasks.daily_observation_validation(
-        '', data.index[0], data.index[-1])
+    tasks.fetch_and_validate_all_observations(
+        '', data.index[0], data.index[-1], only_missing=False)
     assert post_mock.called
     assert validate_mock.call_count == 2
 
 
-def test_daily_single_observation_validation_not_enough(mocker,
-                                                        make_observation):
-    obs = make_observation('ghi')
+def test_fetch_and_validate_all_observations_only_missing(
+        mocker, make_observation, daily_index):
+    obs = [make_observation('dhi'), make_observation('dni')]
+    obs += [make_observation('ghi').replace(provider='Organization 2')]
     data = pd.DataFrame(
-        [(0, 0)],
-        index=pd.date_range(start='2019-01-01T0000Z',
-                            end='2019-01-01T0100Z',
-                            tz='UTC',
-                            freq='1h'),
-        columns=['value', 'quality_flag'])
-    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
-                 return_value=obs)
-    mocker.patch(
-        'solarforecastarbiter.io.api.APISession.get_observation_values',
-        return_value=data)
-    log = mocker.patch('solarforecastarbiter.validation.tasks.logger.warning')
-    out = tasks.daily_single_observation_validation(
-        '', obs.observation_id, data.index[0], data.index[-1])
-    assert out is None
-    assert log.called
-
-
-def test_daily_observation_validation_not_enough(mocker, make_observation):
-    obs = [make_observation('ghi')]
-    data = pd.DataFrame(
-        [(0, 0)],
-        index=pd.date_range(start='2019-01-01T0000Z',
-                            end='2019-01-01T0100Z',
-                            tz='UTC',
-                            freq='1h'),
+        [(0, 0), (100, 0), (-100, 0), (100, 0), (300, 0),
+         (300, 0), (300, 0), (300, 0), (100, 0), (0, 0),
+         (100, 1), (0, 0), (0, 0)],
+        index=daily_index,
         columns=['value', 'quality_flag'])
     mocker.patch('solarforecastarbiter.io.api.APISession.list_observations',
                  return_value=obs)
@@ -1243,11 +1252,54 @@ def test_daily_observation_validation_not_enough(mocker, make_observation):
     mocker.patch(
         'solarforecastarbiter.io.api.APISession.get_observation_values',
         return_value=data)
-    log = mocker.patch('solarforecastarbiter.validation.tasks.logger.warning')
-    out = tasks.daily_observation_validation(
-        '', data.index[0], data.index[-1])
-    assert out is None
-    assert log.called
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values_not_flagged',  # NOQA
+        return_value=np.array(['2019-01-01', '2019-01-02'],
+                              dtype='datetime64[D]'))
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+    tasks.fetch_and_validate_all_observations(
+        '', data.index[0], data.index[-1], only_missing=True)
+    assert post_mock.called
+    assert (post_mock.call_args_list[0][0][1].index.date ==
+            dt.date(2019, 1, 1)).all()
+    assert (post_mock.call_args_list[1][0][1].index.date ==
+            dt.date(2019, 1, 2)).all()
+    assert (post_mock.call_args_list[2][0][1].index.date ==
+            dt.date(2019, 1, 1)).all()
+    assert (post_mock.call_args_list[3][0][1].index.date ==
+            dt.date(2019, 1, 2)).all()
+
+
+def test_fetch_and_validate_observation_only_missing(
+        mocker, make_observation, daily_index):
+    obs = make_observation('ac_power')
+    data = pd.DataFrame(
+        [(0, 0), (100, 0), (-100, 0), (100, 0), (300, 0),
+         (300, 0), (300, 0), (300, 0), (100, 0), (0, 0),
+         (100, 1), (0, 0), (0, 0)],
+        index=daily_index,
+        columns=['value', 'quality_flag'])
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_observation',
+                 return_value=obs)
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_user_info',
+                 return_value={'organization': obs.provider})
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values',
+        return_value=data)
+    mocker.patch(
+        'solarforecastarbiter.io.api.APISession.get_observation_values_not_flagged',  # NOQA
+        return_value=np.array(['2019-01-01', '2019-01-02'],
+                              dtype='datetime64[D]'))
+    post_mock = mocker.patch(
+        'solarforecastarbiter.io.api.APISession.post_observation_values')
+    tasks.fetch_and_validate_observation(
+        'token', 'obsid', data.index[0], data.index[-1], only_missing=True)
+    assert post_mock.called
+    assert (post_mock.call_args_list[0][0][1].index.date ==
+            dt.date(2019, 1, 1)).all()
+    assert (post_mock.call_args_list[1][0][1].index.date ==
+            dt.date(2019, 1, 2)).all()
 
 
 def test__group_continuous_week_post(mocker, make_observation):
