@@ -624,35 +624,38 @@ def _find_unvalidated_time_ranges(session, observation, min_start, max_end):
     validation can be applied even since it requires >= 1 day of data
     """
     tz = observation.site.timezone
-    dates = np.array(sorted(
-        session.get_observation_values_not_flagged(
-            observation_id=observation.observation_id,
-            start=min_start,
-            end=max_end,
-            flag=(
-                quality_mapping.DAILY_VALIDATION_FLAG |
-                quality_mapping.LATEST_VERSION_FLAG
-            ),
-            timezone=tz)
-        ))
+    dates = session.get_observation_values_not_flagged(
+        observation_id=observation.observation_id,
+        start=min_start,
+        end=max_end,
+        flag=(
+            quality_mapping.DAILY_VALIDATION_FLAG |
+            quality_mapping.LATEST_VERSION_FLAG
+        ),
+        timezone=tz)
     if len(dates) == 0:
         return
+    sorted_dates = np.array(sorted(dates))
 
-    breaks = np.diff(dates).astype('timedelta64[D]') - 1
-
-    def fl(prev, ind):
+    def first_last(prev, ind):
         first = pd.Timestamp(dates[prev]).tz_localize(tz)
         last = (pd.Timestamp(dates[ind])
                 .tz_localize(tz) + pd.Timedelta('1D'))
         return first, last
 
     prev = 0
-    for ind in np.nonzero(breaks)[0]:
-        first, last = fl(prev, ind)
+    # find the difference between each date, as integer days
+    # subtract one to then use nonzero to find those
+    # dates that are not continuous
+    breaks = np.diff(sorted_dates).astype('timedelta64[D]') - 1
+    discontinuities = np.nonzero(breaks)[0]
+
+    for ind in discontinuities:
+        first, last = first_last(prev, ind)
         yield first, last
         prev = ind + 1
 
-    first, last = fl(prev, -1)
+    first, last = first_last(prev, -1)
     yield first, last
 
 
@@ -670,6 +673,13 @@ def fetch_and_validate_observation(access_token, observation_id, start, end,
     """Task that will run immediately after Observation values are
     uploaded to the API to validate the data. If over a day of data is
     present, daily validation will be applied.
+
+    For the last day of a multiday series that only has a partial day's
+    worth of data, if `only_missing` is False, the data is evaluated as
+    one series and daily validation is applied. If `only_missing` is True,
+    any discontinuous periods of data with less than one day of data will
+    only have immediate validation applied. If the period is longer than
+    a day, the full daily validation is applied.
 
     Parameters
     ----------
@@ -696,8 +706,9 @@ def fetch_and_validate_observation(access_token, observation_id, start, end,
 def fetch_and_validate_all_observations(access_token, start, end,
                                         only_missing=True, base_url=None):
     """
-    Run the daily observation validation for all observations that the user
-    has access to in their organization.
+    Run the observation validation for all observations that the user
+    has access to in their organization. See further discussion in
+    :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations`
 
     Parameters
     ----------
