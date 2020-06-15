@@ -363,6 +363,8 @@ Observations
    io.api.APISession.create_observation
    io.api.APISession.get_observation_values
    io.api.APISession.post_observation_values
+   io.api.APISession.get_observation_time_range
+   io.api.APISession.get_observation_values_not_flagged
 
 Forecasts
 
@@ -374,6 +376,7 @@ Forecasts
    io.api.APISession.create_forecast
    io.api.APISession.get_forecast_values
    io.api.APISession.post_forecast_values
+   io.api.APISession.get_forecast_time_range
 
 Probabilistic Forecasts
 
@@ -387,6 +390,7 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
+   io.api.APISession.get_probabilistic_forecast_constant_value_time_range
 
 Aggregates
 
