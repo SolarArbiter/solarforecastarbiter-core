@@ -18,8 +18,8 @@ API Changes
   :py:func:`solarforecastarbiter.validation.tasks.apply_daily_validation`,
   and :py:func:`solarforecastarbiter.validation.tasks.apply_validation`
   convience functions (:pull:`482`)
-* The `dailyvalidation` command of the CLI has been renamed to `validate` and a
-  new `--only-missing/--not-only-missing` flag may be used to run validation
+* The ``dailyvalidation`` command of the CLI has been renamed to ``validate`` and a
+  new ``--only-missing/--not-only-missing`` flag may be used to run validation
   only for periods that have not been previously validated (:pull:`484`)
 * Added :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
   to find days where an observation is not flagged with a given flag (:pull:`484`)
