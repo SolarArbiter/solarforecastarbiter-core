@@ -1,6 +1,5 @@
 """Functions to extract EIA."""
 
-import json
 import requests
 import pandas as pd
 
@@ -23,12 +22,12 @@ def get_eia_data(series_id, api_key, start, end):
 
     """
 
-    base_url = "http://api.eia.gov/series"
+    base_url = "https://api.eia.gov/series/"
     params = dict(
-        series_id=series_id,
         api_key=api_key,
-        start=start.strftime("%Y%m%dY%HZ"),
-        end=end.strftime("%Y%m%dY%HZ"),
+        series_id=series_id,
+        start=start.strftime("%Y%m%dT%HZ"),
+        end=end.strftime("%Y%m%dT%HZ"),
     )
     r = requests.get(base_url, params=params)
     r.raise_for_status()
@@ -42,4 +41,5 @@ def get_eia_data(series_id, api_key, start, end):
     df = pd.DataFrame(data, columns=["timestamp", "value"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df.set_index("timestamp", inplace=True)
+    df.sort_index(inplace=True)
     return df
