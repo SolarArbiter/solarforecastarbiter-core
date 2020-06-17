@@ -430,7 +430,7 @@ def persistence_probabilistic(observation, data_start, data_end,
         signature load_data(observation, data_start, data_end) and
         properly account for observation interval label.
     axis : {'x', 'y'}
-        The axis on whicht he constant values of the CDF is specified. The axis
+        The axis on which the constant values of the CDF is specified. The axis
         can be either *x* (constant variable values) or *y* (constant
         percentiles).
     constant_values : array_like
@@ -522,7 +522,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
         signature load_data(observation, data_start, data_end) and
         properly account for observation interval label.
     axis : {'x', 'y'}
-        The axis on whicht he constant values of the CDF is specified. The axis
+        The axis on which the constant values of the CDF is specified. The axis
         can be either *x* (constant variable values) or *y* (constant
         percentiles).
     constant_values : array_like
