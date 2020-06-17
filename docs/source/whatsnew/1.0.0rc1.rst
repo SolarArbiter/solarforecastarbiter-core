@@ -8,54 +8,51 @@ This is the first 1.0 release candidate.
 
 API Changes
 ~~~~~~~~~~~
-* Added support for week-ahead persistence forecasts with
-  :py:func:`solarforecastarbiter.utils.get_data_start_end` and
-  :py:func:`solarforecastarbiter.main.run_persistence` modifications. (:issue:`55`) (:pull:`392`)
-* :py:func:`solarforecastarbiter.pvmodel.calculate_power` and
-  :py:func:`solarforecastarbiter.datamodel.Site` expect a ``temperature_coefficient``
-  with units of % of DC capacity/C instead of 1/C (:issue:`350`) (:pull:`433`)
-* Add :py:func:`solarforecastarbiter.io.utils.mock_raw_report_endpoints` to mock
-  report API endpoints used, primarily to test report serialization (:pull:`441`)
-* Change default
-  :py:func:`solarforecastarbiter.validation.validator.detect_stale_values` and
-  :py:func:`solarforecastarbiter.validation.validator.detect_interpolated_values`
-  ``window`` value from 3 to 6. (:issue:`124`)
-* :py:func:`solarforecastarbiter.io.reference_data.common.create_forecasts` now
-  calls :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts`
-  and :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts`
-  which create the Forecast objects from persistence and NWP templates,
-  respectively. (:issue:`375`) (:pull:`455`)
-* Added :py:func:`solarforecastarbiter.reference_forecasts.main.make_latest_persistence_forecasts`
-  to support periodic generation of persistence reference forecasts. (:issue:`375`)
-  (:pull:`455`)
-
+* Added :py:func:`solarforecastarbiter.reference_forecasts.utils.check_persistence_compatibility`
+  to check if a pair of Forecast and Observation objects are compatible for
+  making a persistence forecast (:pull:`478`)
+* Added :py:func:`solarforecastarbiter.validation.tasks.validate_daily_defaults`
+  to validate all observations using the immediate validation function
+  along with stale and interpolated flags (:pull:`482`) (:issue:`453`)
+* Added :py:func:`solarforecastarbiter.validation.tasks.apply_immediate_validation`,
+  :py:func:`solarforecastarbiter.validation.tasks.apply_daily_validation`,
+  and :py:func:`solarforecastarbiter.validation.tasks.apply_validation`
+  convience functions (:pull:`482`)
+* The ``dailyvalidation`` command of the CLI has been renamed to ``validate`` and a
+  new ``--only-missing/--not-only-missing`` flag may be used to run validation
+  only for periods that have not been previously validated (:pull:`484`)
+* Added :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
+  to find days where an observation is not flagged with a given flag (:pull:`484`)
+* Removed `validation.tasks.immediate_observation_validation`,
+  `validation.tasks.daily_single_observation_validation`,
+  and `validation.tasks.daily_observation_validation` in favor of
+  :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
+  and :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations` (:pull:`484`)
 
 Enhancements
 ~~~~~~~~~~~~
-* Reference net load forecasts provided using week-ahead persistence. (:issue:`55`) (:pull:`392`)
-* Datamodel now supports ``'net_load'`` as an allowed variable. (:issue:`55`) (:pull:`392`)
-* Posting of daily validation now splits requests to avoid missing periods and
-  limit each request to one week of data (:issue:`424`) (:pull:`435`)
-* PDF report figures are generated instead of SVG for easy integration into PDF
-  reports (:issue:`360`) (:pull:`437`)
-* Added support for NREL PVDAQ sites to the reference database functions.
-  (:issue:`397`) (:pull:`438`)
-* Reports can now be rendered into PDF files via pdflatex (:issue:`319`) (:pull:`439`)
-* Report generation via the CLI can now run through mock API endpoints to test
-  report serialization (:issue:`405`) (:pull:`441`)
-* Add derived quality flag masks to
-  :py:func:`solarforecastarbiter.validation.quality_mapping.convert_mask_into_dataframe`
-  output. These currently include ``'DAYTIME', 'DAYTIME STALE VALUES',
-  'DAYTIME INTERPOLATED VALUES'``. (:issue:`124`)
-* A public Docker image is available, and Github Actions use this image for
-  continuous integration tests (:pull:`446`)
+* Support parsing of Site climate zones from the API (:pull:`481`)
+* Reapply validation to Observation data when fetched for a Report
+  (:issue:`376`)
+* Added the 'DAILY VALIDATION APPLIED' quality flag to ensure daily validation
+  is applied to all observation values (:issue:`377`) (:pull:`484`)
+* :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
+  and :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations`
+  can make use of
+  :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
+  in order to only validate periods that have not yet had daily validation applied
+  (:issue:`377`) (:pull:`484`)
 
 Bug fixes
 ~~~~~~~~~
-* Fix incorrect ordering of months and weekdays in metrics plots.
-  (:issue:`428`) (:pull:`430`)
-* Ensure data is sorted from reference data sources before slicing and
-  posting to the API (:pull:`435`)
+* Check if a Forecast and Observation are compatible for generating a
+  persistence forecast before creating reference persistence forecasts
+  (:issue:`472`) (:pull:`478`)
+* When applying validation, only the 'USER FLAGGED' flag is preserved
+  instead of all previous flags (:pull:`484`)
+* Drop NaN before computing histogram when applying
+  :py:func:`solarforecastarbiter.validation.validator.detect_clipping`
+  (:pull:`484`)
 
 
 Contributors

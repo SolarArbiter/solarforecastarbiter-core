@@ -1,10 +1,12 @@
 import logging
 
 
+import numpy as np
+import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
 
-from solarforecastarbiter import pvmodel
+from solarforecastarbiter import pvmodel, datamodel
 from solarforecastarbiter.io.api import APISession
 from solarforecastarbiter.validation import validator, quality_mapping
 
@@ -244,6 +246,60 @@ def validate_relative_humidity(observation, values):
     return timestamp_flag, night_flag, rh_limit_flag
 
 
+def validate_ac_power(observation, values):
+    """
+    Run a number of validation checks on a daily timeseries of AC power.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    timestamp_flag, night_flag, limit_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.validator.check_timestamp_spacing`,
+        :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`
+    """
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    ac_limit_flag = validator.check_ac_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.ac_capacity, _return_mask=True)
+    return timestamp_flag, night_flag, ac_limit_flag
+
+
+def validate_dc_power(observation, values):
+    """
+    Run a number of validation checks on a daily timeseries of DC power.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    timestamp_flag, night_flag, limit_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.validator.check_timestamp_spacing`,
+        :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`
+    """
+    solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
+        observation, values)
+    dc_limit_flag = validator.check_dc_power_limits(
+        values, solar_position['apparent_zenith'],
+        observation.site.modeling_parameters.dc_capacity, _return_mask=True)
+    return timestamp_flag, night_flag, dc_limit_flag
+
+
 def validate_defaults(observation, values):
     """
     Run default validation checks on an observation.
@@ -307,17 +363,20 @@ def validate_daily_dc_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, stale_flag, interpolation_flag : pandas.Series
+    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag : pandas.Series
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`
-    """
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    """  # NOQA: E501
+    timestamp_flag, night_flag, dc_limit_flag = validate_dc_power(observation,
+                                                                  values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag)
+    return (timestamp_flag, night_flag, dc_limit_flag, stale_flag,
+            interpolation_flag)
 
 
 def validate_daily_ac_power(observation, values):
@@ -333,20 +392,53 @@ def validate_daily_ac_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, stale_flag, interpolation_flag, clipping_flag : pandas.Series
+    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag, clipping_flag : pandas.Series
         Integer bitmask series from
         :py:func:`.validator.check_timestamp_spacing`,
         :py:func:`.validator.check_irradiance_day_night`,
+        :py:func:`.validator.check_power_limits`,
         :py:func:`.validator.detect_stale_values`,
         :py:func:`.validator.detect_interpolation`,
         :py:func:`.validator.detect_clipping`
-    """  # NOQA
-    timestamp_flag, night_flag = validate_defaults(observation, values)
+    """  # NOQA: E501
+    timestamp_flag, night_flag, ac_limit_flag = validate_ac_power(observation,
+                                                                  values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
                                                                   values)
     clipping_flag = validator.detect_clipping(values, _return_mask=True)
-    return (timestamp_flag, night_flag, stale_flag, interpolation_flag,
-            clipping_flag)
+    return (timestamp_flag, night_flag, ac_limit_flag, stale_flag,
+            interpolation_flag, clipping_flag)
+
+
+def validate_daily_defaults(observation, values):
+    """
+    Run default daily validation checks on an observation.
+    Applies the validation for the observation's variable and then
+    the stale and interpolated validation. :py:func:`validate_defaults`
+    is used if the Observation variable does not have a defined validation
+    function.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+       Observation object that the data is associated with
+    values : pandas.Series
+       Series of observation values
+
+    Returns
+    -------
+    *variable_immediate_flags, stale_flag, interpolation_flag : pandas.Series
+        Integer bitmask series from
+        :py:func:`.tasks.validate_{variable}`,
+        :py:func:`.validator.detect_stale_values`,
+        :py:func:`.validator.detect_interpolation`
+    """
+    immediate_func = IMMEDIATE_VALIDATION_FUNCS.get(
+        observation.variable, validate_defaults)
+    immediate_flags = immediate_func(observation, values)
+    stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
+                                                                  values)
+    return (*immediate_flags, stale_flag, interpolation_flag)
 
 
 IMMEDIATE_VALIDATION_FUNCS = {
@@ -356,22 +448,41 @@ IMMEDIATE_VALIDATION_FUNCS = {
     'dni': validate_dni,
     'dhi': validate_dhi,
     'poa_global': validate_poa_global,
-    'relative_humidity': validate_relative_humidity
+    'relative_humidity': validate_relative_humidity,
+    'ac_power': validate_ac_power,
+    'dc_power': validate_dc_power
+}
+DAILY_VALIDATION_FUNCS = {
+    'ghi': validate_daily_ghi,
+    'dc_power': validate_daily_dc_power,
+    'ac_power': validate_daily_ac_power,
+    # no stale/interpolated
+    'event': validate_defaults,
+    'availability': validate_defaults,
+    'curtailment': validate_defaults,
 }
 
 
-def immediate_observation_validation(access_token, observation_id, start, end,
-                                     base_url=None):
+def apply_immediate_validation(observation, observation_values):
     """
-    Task that will run immediately after Observation values are uploaded to the
-    API to validate the data.
+    Applies the appropriate validation functions to the observation_values.
+    Only the USER_FLAGGED flag is propagated if the series has been
+    previously validated.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
+
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
     """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    observation_values = session.get_observation_values(observation_id, start,
-                                                        end)
     value_series = observation_values['value'].astype(float)
-    quality_flags = observation_values['quality_flag'].copy()
+    quality_flags = observation_values['quality_flag'].copy() & 1
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable, validate_defaults)
@@ -379,45 +490,102 @@ def immediate_observation_validation(access_token, observation_id, start, end,
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
-    session.post_observation_values(observation_id, observation_values,
-                                    params='donotvalidate')
+    return observation_values
 
 
-DAILY_VALIDATION_FUNCS = {
-    'ghi': validate_daily_ghi,
-    'dc_power': validate_daily_dc_power,
-    'ac_power': validate_daily_ac_power
-}
+def apply_daily_validation(observation, observation_values):
+    """Applies the appropriate daily validation functions to the
+    observation_values.  Only the USER_FLAGGED flag is propagated if
+    the series has been previously validated.
 
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
 
-def _daily_validation(session, observation, start, end, base_url):
-    logger.info('Validating data for %s from %s to %s',
-                observation.name, start, end)
-    observation_values = session.get_observation_values(
-        observation.observation_id, start, end).sort_index()
-    value_series = observation_values['value'].astype(float)
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
+
+    Raises
+    ------
+    IndexError
+        If there are not enough valid points to perform daily validation
+
+    """
+    validated = observation_values.sort_index()
+    value_series = validated['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
             'Data series does not have at least 10 datapoints to validate')
-    quality_flags = observation_values['quality_flag'].copy()
+    quality_flags = validated['quality_flag'].copy() & 1
 
     # if the variable has a daily check, run that, else run the
     # immediate validation, else validate timestamps
     validation_func = DAILY_VALIDATION_FUNCS.get(
-        observation.variable, IMMEDIATE_VALIDATION_FUNCS.get(
-            observation.variable, validate_defaults))
+        observation.variable, validate_daily_defaults)
     validation_flags = validation_func(observation, value_series)
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.DAILY_VALIDATION_FLAG
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
-    observation_values.update(quality_flags)
-    return _group_continuous_week_post(
-        session, observation, observation_values)
+    validated.update(quality_flags)
+    return validated
+
+
+def apply_validation(observation, observation_values):
+    """
+    Applies the appropriate daily or immediate validation functions to the
+    observation_values depending on the length of the data. If an Aggregate
+    object is passed, a warning is logged and the observation_values are
+    returned.
+
+    Parameters
+    ----------
+    observation : solarforecastarbiter.datamodel.Observation
+    observation_values : pandas.DataFrame
+        Must have 'value' and 'quality_flag' columns
+
+    Returns
+    -------
+    pandas.DataFrame
+        With the same index as the input and 'quality_flag' updated
+        appropriately
+
+    Raises
+    ------
+    TypeError
+        If the supplied observations_values is not a DataFrame with a
+        DatetimeIndex
+    """
+    if isinstance(observation, datamodel.Aggregate):
+        logger.warning('Cannot apply validation to an Aggregate')
+        return observation_values
+    data = observation_values.sort_index()
+    if (
+            not isinstance(data, pd.DataFrame) or
+            not isinstance(data.index, pd.DatetimeIndex)
+    ):
+        raise TypeError('Expect observation_values to have a DatetimeIndex')
+    if data.empty:
+        return data
+    if (
+            (data.index[-1] - data.index[0]) >= pd.Timedelta('1d') and
+            (len(data['value'].dropna()) > 10)
+    ):
+        return apply_daily_validation(observation, data)
+    else:
+        return apply_immediate_validation(observation, data)
 
 
 def _group_continuous_week_post(session, observation, observation_values):
@@ -440,35 +608,127 @@ def _group_continuous_week_post(session, observation, observation_values):
                                         params='donotvalidate')
 
 
-def daily_single_observation_validation(access_token, observation_id, start,
-                                        end, base_url=None):
+def _validate_post(session, observation, start, end):
+    logger.info('Validating data for %s from %s to %s',
+                observation.name, start, end)
+    observation_values = session.get_observation_values(
+        observation.observation_id, start, end)
+    validated = apply_validation(observation, observation_values)
+    return _group_continuous_week_post(
+        session, observation, validated)
+
+
+def _find_unvalidated_time_ranges(session, observation, min_start, max_end):
+    """Find the time ranges where the observation data needs to have
+    daily validation applied. Extend to next day midnight so daily
+    validation can be applied even since it requires >= 1 day of data
     """
-    Task that expects a longer, likely daily timeseries of Observation values
-    that will be validated.
+    tz = observation.site.timezone
+    dates = session.get_observation_values_not_flagged(
+        observation_id=observation.observation_id,
+        start=min_start,
+        end=max_end,
+        flag=(
+            quality_mapping.DAILY_VALIDATION_FLAG |
+            quality_mapping.LATEST_VERSION_FLAG
+        ),
+        timezone=tz)
+    if len(dates) == 0:
+        return
+    sorted_dates = np.array(sorted(dates))
+
+    def first_last(prev, ind):
+        first = pd.Timestamp(dates[prev]).tz_localize(tz)
+        last = (pd.Timestamp(dates[ind])
+                .tz_localize(tz) + pd.Timedelta('1D'))
+        return first, last
+
+    prev = 0
+    # find the difference between each date, as integer days
+    # subtract one to then use nonzero to find those
+    # dates that are not continuous
+    breaks = np.diff(sorted_dates).astype('timedelta64[D]') - 1
+    discontinuities = np.nonzero(breaks)[0]
+
+    for ind in discontinuities:
+        first, last = first_last(prev, ind)
+        yield first, last
+        prev = ind + 1
+
+    first, last = first_last(prev, -1)
+    yield first, last
+
+
+def _split_validation(session, observation, start, end, only_missing):
+    if not only_missing:
+        return _validate_post(session, observation, start, end)
+
+    for _start, _end in _find_unvalidated_time_ranges(
+            session, observation, start, end):
+        _validate_post(session, observation, _start, _end)
+
+
+def fetch_and_validate_observation(access_token, observation_id, start, end,
+                                   only_missing=False, base_url=None):
+    """Task that will run immediately after Observation values are
+    uploaded to the API to validate the data. If over a day of data is
+    present, daily validation will be applied.
+
+    For the last day of a multiday series that only has a partial day's
+    worth of data, if `only_missing` is False, the data is evaluated as
+    one series and daily validation is applied. If `only_missing` is True,
+    any discontinuous periods of data with less than one day of data will
+    only have immediate validation applied. If the period is longer than
+    a day, the full daily validation is applied.
+
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    observation_id : str
+        ID of the observation to fetch values and validate
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default False
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
     """
     session = APISession(access_token, base_url=base_url)
     observation = session.get_observation(observation_id)
-    try:
-        _daily_validation(session, observation, start, end, base_url)
-    except IndexError:
-        logger.warning(
-            'Daily validation for %s failed: not enough values',
-            observation.name)
+    _split_validation(session, observation, start, end, only_missing)
 
 
-def daily_observation_validation(access_token, start, end, base_url=None):
+def fetch_and_validate_all_observations(access_token, start, end,
+                                        only_missing=True, base_url=None):
     """
-    Run the daily observation validation for all observations that the user
-    has access to in their organization.
+    Run the observation validation for all observations that the user
+    has access to in their organization. See further discussion in
+    :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations`
+
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default True
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
+
     """
     session = APISession(access_token, base_url=base_url)
     user_info = session.get_user_info()
     observations = [obs for obs in session.list_observations()
                     if obs.provider == user_info['organization']]
     for observation in observations:
-        try:
-            _daily_validation(session, observation, start, end, base_url)
-        except IndexError:
-            logger.warning(('Skipping daily validation of %s '
-                            'not enough values'), observation.name)
-            continue
+        _split_validation(session, observation, start, end, only_missing)

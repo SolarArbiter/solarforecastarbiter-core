@@ -61,11 +61,13 @@ def mock_data(mocker, _test_data):
     return get_forecast_values, get_observation_values, get_aggregate_values
 
 
-def test_get_data_for_report(mock_data, report_objects):
+def test_get_data_for_report(mock_data, report_objects, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     session = api.APISession('nope')
+    apply_obs = mocker.spy(main, 'apply_validation')
     data = main.get_data_for_report(session, report)
+    assert apply_obs.call_count == 2
     assert isinstance(data[observation], pd.DataFrame)
     assert isinstance(data[forecast_0], pd.Series)
     assert isinstance(data[forecast_1], pd.Series)

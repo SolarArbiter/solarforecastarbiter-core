@@ -61,6 +61,7 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing, calculator
 from solarforecastarbiter.reports.figures import plotly_figures
 from solarforecastarbiter.utils import hijack_loggers
+from solarforecastarbiter.validation.tasks import apply_validation
 
 
 def get_data_for_report(session, report):
@@ -89,17 +90,20 @@ def get_data_for_report(session, report):
     for fxobs in report.report_parameters.object_pairs:
         # forecasts and especially observations may be repeated.
         # only get the raw data once.
-        forecast_id = fxobs.forecast.forecast_id
         if fxobs.forecast not in data:
-            data[fxobs.forecast] = session.get_forecast_values(
-                forecast_id, start, end)
+            # use get_values instead of get_forecast_values so that api module
+            # can handle determ., prob constant value, or prob group values
+            data[fxobs.forecast] = session.get_values(
+                fxobs.forecast, start, end)
         if fxobs.data_object not in data:
-            data[fxobs.data_object] = session.get_values(
+            obs_data = session.get_values(
                 fxobs.data_object, start, end)
+            data[fxobs.data_object] = apply_validation(
+                fxobs.data_object, obs_data)
         if fxobs.reference_forecast is not None:
             if fxobs.reference_forecast not in data:
-                data[fxobs.reference_forecast] = session.get_forecast_values(
-                    fxobs.reference_forecast.forecast_id, start, end)
+                data[fxobs.reference_forecast] = session.get_values(
+                    fxobs.reference_forecast, start, end)
 
     return data
 

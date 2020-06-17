@@ -232,6 +232,76 @@ def test_run_persistence_interval_not_midnight_to_midnight(session,
     assert 'midnight to midnight' in str(excinfo.value)
 
 
+def test_run_persistence_incompatible_issue(session, site_metadata,
+                                            obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190423T2330Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'incompatible' in str(excinfo.value).lower()
+
+
+def test_run_persistence_fx_too_short(session, site_metadata,
+                                      obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1min'),
+        run_length=pd.Timedelta('3min'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'requires observation.interval_length' in str(excinfo.value)
+
+
+def test_run_persistence_incompatible_instant_fx(session, site_metadata,
+                                                 obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='instantaneous')
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                             issue_time)
+    assert 'instantaneous forecast' in str(excinfo.value).lower()
+
+
+def test_run_persistence_incompatible_instant_interval(session, site_metadata,
+                                                       obs_5min_begin):
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='instantaneous')
+    obs = obs_5min_begin.replace(interval_label='instantaneous',
+                                 interval_length=pd.Timedelta('10min'))
+    issue_time = pd.Timestamp('20190423T2300Z')
+    run_time = pd.Timestamp('20190422T1945Z')
+    with pytest.raises(ValueError) as excinfo:
+        main.run_persistence(session, obs, forecast, run_time,
+                             issue_time)
+    assert 'identical interval length' in str(excinfo.value)
+
+
 def test_verify_nwp_forecasts_compatible(ac_power_forecast_metadata):
     fx0 = ac_power_forecast_metadata
     fx1 = replace(fx0, run_length=pd.Timedelta('10h'), interval_label='ending')
@@ -913,4 +983,47 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
     assert run_pers.call_count == 4
     assert session.post_forecast_values.call_count == 4
     assert [l[1]['index'] for l in run_pers.call_args_list] == [
+        False, False, True, True]
+
+
+def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
+    # test that some persistence forecast parameters are invalid for the
+    # observation and that no peristence values are posted
+    # and that the failure doesn't interrupt other posts
+    forecasts, observations = perst_fx_obs
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
+    session = mocker.MagicMock()
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
+    session.get_forecast_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    max_run_time = pd.Timestamp('2020-05-20T16:00Z')
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    i = []
+
+    def sometimes_fail(*args, **kwargs):
+        i.append(1)
+        if len(i) == 1:
+            raise ValueError('Failed')
+        else:
+            return mocker.DEFAULT
+
+    logger = mocker.spy(main, 'logger')
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        side_effect=sometimes_fail, autospec=True)
+    main.make_latest_persistence_forecasts('', max_run_time)
+    assert run_pers.call_count == 4
+    assert session.post_forecast_values.call_count == 3
+    assert logger.error.call_count == 1
+    assert len(i) == 4
+    assert [li[1]['index'] for li in run_pers.call_args_list] == [
         False, False, True, True]

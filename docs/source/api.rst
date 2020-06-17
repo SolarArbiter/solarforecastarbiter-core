@@ -317,6 +317,10 @@ files with site and observation metadata.
 SFA API
 =======
 
+To pass API calls through a proxy server, set either the HTTP_PROXY or
+HTTPS_PROXY environment variable. If necessary, set a SSL certificate using the
+REQUESTS_CA_BUNDLE environment variable.
+
 Token
 -----
 
@@ -346,6 +350,7 @@ Sites
 
    io.api.APISession.get_site
    io.api.APISession.list_sites
+   io.api.APISession.list_sites_in_zone
    io.api.APISession.create_site
 
 Observations
@@ -358,6 +363,8 @@ Observations
    io.api.APISession.create_observation
    io.api.APISession.get_observation_values
    io.api.APISession.post_observation_values
+   io.api.APISession.get_observation_time_range
+   io.api.APISession.get_observation_values_not_flagged
 
 Forecasts
 
@@ -369,6 +376,7 @@ Forecasts
    io.api.APISession.create_forecast
    io.api.APISession.get_forecast_values
    io.api.APISession.post_forecast_values
+   io.api.APISession.get_forecast_time_range
 
 Probabilistic Forecasts
 
@@ -382,6 +390,7 @@ Probabilistic Forecasts
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
+   io.api.APISession.get_probabilistic_forecast_constant_value_time_range
 
 Aggregates
 
@@ -406,6 +415,14 @@ Reports
    io.api.APISession.get_raw_report_processed_data
    io.api.APISession.post_raw_report
    io.api.APISession.update_report_status
+
+Climate Zones
+
+.. autosummary::
+   :toctree: generated/
+
+   io.api.APISession.list_sites_in_zone
+   io.api.APISession.search_climatezones
 
 Convenience method for unifying API for getting time series values
 for observations, forecasts, aggregates, and probabilistic forecasts:
@@ -618,6 +635,8 @@ Functions to perform validation.
    validation.validator.check_temperature_limits
    validation.validator.check_wind_limits
    validation.validator.check_rh_limits
+   validation.validator.check_ac_power_limits
+   validation.validator.check_dc_power_limits
    validation.validator.check_ghi_clearsky
    validation.validator.check_poa_clearsky
    validation.validator.check_irradiance_day_night
@@ -642,6 +661,8 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_dni
    validation.tasks.validate_dhi
    validation.tasks.validate_poa_global
+   validation.tasks.validate_dc_power
+   validation.tasks.validate_ac_power
    validation.tasks.validate_defaults
    validation.tasks.validate_air_temperature
    validation.tasks.validate_wind_speed
@@ -649,9 +670,13 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_daily_ghi
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power
+   validation.tasks.validate_daily_defaults
    validation.tasks.immediate_observation_validation
    validation.tasks.daily_single_observation_validation
    validation.tasks.daily_observation_validation
+   validation.tasks.apply_immediate_validation
+   validation.tasks.apply_daily_validation
+   validation.tasks.apply_validation
 
 
 Quality flag mapping

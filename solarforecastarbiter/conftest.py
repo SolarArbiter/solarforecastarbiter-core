@@ -310,7 +310,8 @@ def site_text():
     "timezone": "Etc/GMT+6",
     "site_id": "123e4567-e89b-12d3-a456-426655440002",
     "created_at": "2019-03-01T11:44:44Z",
-    "modified_at": "2019-03-01T11:44:44Z"
+    "modified_at": "2019-03-01T11:44:44Z",
+    "climate_zones": ["Reference Region 5"]
 }"""
 
 
@@ -342,7 +343,8 @@ def many_sites_text():
         "timezone": "America/Phoenix",
         "site_id": "d2018f1d-82b1-422a-8ec4-4e8b3fe92a4a",
         "created_at": "2019-03-01T11:44:44Z",
-        "modified_at": "2019-03-01T11:44:44Z"
+        "modified_at": "2019-03-01T11:44:44Z",
+        "climate_zones": ["Reference Region 3"]
     },
     {
         "elevation": 786.0,
@@ -369,7 +371,8 @@ def many_sites_text():
         "timezone": "Etc/GMT+6",
         "site_id": "123e4567-e89b-12d3-a456-426655440002",
         "created_at": "2019-03-01T11:44:44Z",
-        "modified_at": "2019-03-01T11:44:44Z"
+        "modified_at": "2019-03-01T11:44:44Z",
+        "climate_zones": ["Reference Region 5"]
     },
     {
         "elevation": 786.0,
@@ -396,7 +399,8 @@ def many_sites_text():
         "timezone": "Etc/GMT+6",
         "site_id": "123e4567-e89b-12d3-a456-426655440001",
         "created_at": "2019-03-01T11:44:46Z",
-        "modified_at": "2019-03-01T11:44:46Z"
+        "modified_at": "2019-03-01T11:44:46Z",
+        "climate_zones": ["Reference Region 5"]
     }
 ]"""
 
@@ -410,7 +414,8 @@ def _site_from_dict(site_dict):
             provider=site_dict.get('provider', ''),
             extra_parameters=site_dict.get('extra_parameters', ''),
             site_id=site_dict.get('site_id', ''),
-            modeling_parameters=site_dict['modeling_parameters'])
+            modeling_parameters=site_dict['modeling_parameters'],
+            climate_zones=tuple(site_dict.get('climate_zones', ())))
     else:
         return datamodel.Site(
             name=site_dict['name'], latitude=site_dict['latitude'],
@@ -418,7 +423,8 @@ def _site_from_dict(site_dict):
             timezone=site_dict['timezone'],
             site_id=site_dict.get('site_id', ''),
             provider=site_dict.get('provider', ''),
-            extra_parameters=site_dict.get('extra_parameters', ''))
+            extra_parameters=site_dict.get('extra_parameters', ''),
+            climate_zones=tuple(site_dict.get('climate_zones', ())))
 
 
 @pytest.fixture()
@@ -1149,6 +1155,35 @@ def prob_forecast_constant_value_text():
 
 
 @pytest.fixture()
+def prob_forecast_constant_value_y_text():
+    return b"""
+{
+  "_links": {
+    "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440002",
+    "aggregate": null
+  },
+  "created_at": "2019-03-01T11:55:37+00:00",
+  "extra_parameters": "",
+  "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+  "interval_label": "beginning",
+  "interval_length": 5,
+  "interval_value_type": "interval_mean",
+  "issue_time_of_day": "06:00",
+  "lead_time_to_start": 60,
+  "modified_at": "2019-03-01T11:55:37+00:00",
+  "name": "DA GHI",
+  "provider": "Organization 1",
+  "run_length": 1440,
+  "site_id": "123e4567-e89b-12d3-a456-426655440002",
+  "aggregate_id": null,
+  "variable": "ghi",
+  "axis": "y",
+  "constant_value": 50.0
+}
+"""
+
+
+@pytest.fixture()
 def prob_forecast_text():
     return b"""
 {
@@ -1176,6 +1211,41 @@ def prob_forecast_text():
         {
             "_links": {},
             "constant_value": 0,
+            "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
+        }
+    ]
+}
+"""  # NOQA
+
+
+@pytest.fixture()
+def prob_forecast_y_text():
+    return b"""
+{
+    "_links": {
+      "site": "http://127.0.0.1:5000/sites/123e4567-e89b-12d3-a456-426655440001",
+      "aggregate": null
+    },
+    "created_at": "2019-03-01T11:55:37+00:00",
+    "extra_parameters": "",
+    "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3",
+    "interval_label": "beginning",
+    "interval_length": 5,
+    "interval_value_type": "interval_mean",
+    "issue_time_of_day": "06:00",
+    "lead_time_to_start": 60,
+    "modified_at": "2019-03-01T11:55:37+00:00",
+    "name": "DA GHI",
+    "provider": "Organization 1",
+    "run_length": 1440,
+    "site_id": "123e4567-e89b-12d3-a456-426655440002",
+    "aggregate_id": null,
+    "variable": "ghi",
+    "axis": "y",
+    "constant_values": [
+        {
+            "_links": {},
+            "constant_value": 0.50,
             "forecast_id": "11c20780-76ae-4b11-bef1-7a75bdc784e3"
         }
     ]
@@ -1302,12 +1372,17 @@ def _prob_forecast_constant_value_from_dict(get_site, get_aggregate):
 
 @pytest.fixture()
 def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
+                             prob_forecast_constant_value_y,
                              get_aggregate, agg_prob_forecast_constant_value):
     def f(fx_dict):
+        axis = fx_dict['axis']
         if fx_dict.get('aggregate_id') is not None:
             cv = agg_prob_forecast_constant_value
         else:
-            cv = prob_forecast_constant_value
+            if axis == 'x':
+                cv = prob_forecast_constant_value
+            else:
+                cv = prob_forecast_constant_value_y
         return datamodel.ProbabilisticForecast(
             name=fx_dict['name'], variable=fx_dict['variable'],
             interval_value_type=fx_dict['interval_value_type'],
@@ -1322,7 +1397,7 @@ def _prob_forecast_from_dict(get_site, prob_forecast_constant_value,
             forecast_id=fx_dict.get('forecast_id', ''),
             provider=fx_dict.get('provider', ''),
             extra_parameters=fx_dict.get('extra_parameters', ''),
-            axis=fx_dict['axis'],
+            axis=axis,
             constant_values=(cv,))
     return f
 
@@ -1335,8 +1410,20 @@ def prob_forecast_constant_value(prob_forecast_constant_value_text,
 
 
 @pytest.fixture()
+def prob_forecast_constant_value_y(prob_forecast_constant_value_y_text,
+                                   _prob_forecast_constant_value_from_dict):
+    return _prob_forecast_constant_value_from_dict(
+        json.loads(prob_forecast_constant_value_y_text))
+
+
+@pytest.fixture()
 def prob_forecasts(prob_forecast_text, _prob_forecast_from_dict):
     return _prob_forecast_from_dict(json.loads(prob_forecast_text))
+
+
+@pytest.fixture()
+def prob_forecasts_y(prob_forecast_y_text, _prob_forecast_from_dict):
+    return _prob_forecast_from_dict(json.loads(prob_forecast_y_text))
 
 
 @pytest.fixture()
@@ -1360,6 +1447,11 @@ def single_event_forecast_observation(single_event_forecast,
 @pytest.fixture()
 def single_prob_forecast_observation(prob_forecasts, single_observation):
     return datamodel.ForecastObservation(prob_forecasts, single_observation)
+
+
+@pytest.fixture()
+def single_prob_forecast_observation_y(prob_forecasts_y, single_observation):
+    return datamodel.ForecastObservation(prob_forecasts_y, single_observation)
 
 
 @pytest.fixture()
@@ -1685,6 +1777,191 @@ def event_report_objects():
     )
 
     return report, obs, fx0, fx1
+
+
+@pytest.fixture()
+def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
+    tz = 'America/Denver'
+    start = pd.Timestamp('20200401T0000', tz=tz)
+    end = pd.Timestamp('20200407T2359', tz=tz)
+    axis = 'y'
+    site = datamodel.Site(
+        name="NOAA SOLRAD Albuquerque New Mexico",
+        latitude=35.03796,
+        longitude=-106.62211,
+        elevation=1617.0,
+        timezone="Etc/GMT+7",
+        site_id="c26ba076-7e49-11e9-bd90-0a580a8003e9",
+        provider="Reference",
+        extra_parameters=''
+    )
+    obs = datamodel.Observation(
+        name="Albuquerque New Mexico ghi",
+        variable="ghi",
+        interval_value_type="interval mean",
+        interval_length=pd.Timedelta("1min"),
+        interval_label="ending",
+        site=site,
+        uncertainty=1.0,
+        observation_id="c26ff506-7e49-11e9-beae-0a580a8003e9",
+        extra_parameters='',
+    )
+    cv0 = datamodel.ProbabilisticForecastConstantValue(
+        name="Day Ahead GEFS ghi",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="26a449ca-080b-11ea-aabd-0a580a8200e0",
+        axis=axis,
+        constant_value=0.0,
+        extra_parameters='',
+    )
+    cv0_1 = cv0.replace(constant_value=25.0,
+                        forecast_id='26a6684c-080b-11ea-bab3-0a580a8200e0')
+    cv0_2 = cv0.replace(constant_value=50.0,
+                        forecast_id='26a82ba8-080b-11ea-a36b-0a580a8200e0')
+    cv0_3 = cv0.replace(constant_value=75.0,
+                        forecast_id='26a9e678-080b-11ea-8989-0a580a8200e0')
+    pfx0 = datamodel.ProbabilisticForecast(
+        name="Day Ahead GEFS ghi",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="269d757a-080b-11ea-8107-0a580a8200e0",
+        axis=axis,
+        constant_values=(cv0_1, cv0_2, cv0_3),
+        extra_parameters='',
+    )
+    cv1 = datamodel.ProbabilisticForecastConstantValue(
+        name="Hour Ahead GEFS ghi (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="71ee6aff-7011-4610-bbae-2c9709ab1999",
+        constant_value=0.0,
+        axis=axis,
+    )
+    cv1_1 = cv1.replace(constant_value=25.0,
+                        forecast_id='71ee6aff-7011-4610-1111-2c9709ab1999')
+    cv1_2 = cv1.replace(constant_value=50.0,
+                        forecast_id='71ee6aff-7011-4610-2222-2c9709ab1999')
+    cv1_3 = cv1.replace(constant_value=75.0,
+                        forecast_id='71ee6aff-7011-4610-3333-2c9709ab1999')
+    pfx1 = datamodel.ProbabilisticForecast(
+        name="Hour Ahead GEFS ghi (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="26b514ec-080b-11ea-bbea-0a580a8200e0",
+        axis=axis,
+        constant_values=(cv1_1, cv1_2, cv1_3),
+        extra_parameters='',
+    )
+    cvagg_1 = cv1.replace(constant_value=25.0,
+                          forecast_id='1a6cc8c0-c433-432b-1111-31a1fac500d5')
+    cvagg_2 = cv1.replace(constant_value=50.0,
+                          forecast_id='1a6cc8c0-c433-432b-2222-31a1fac500d5')
+    cvagg_3 = cv1.replace(constant_value=75.0,
+                          forecast_id='1a6cc8c0-c433-432b-3333-31a1fac500d5')
+    pfx2 = datamodel.ProbabilisticForecast(
+        name="GHI Aggregate FX 60 (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        axis=axis,
+        constant_values=(cvagg_1, cvagg_2, cvagg_3),
+        extra_parameters='',
+    )
+
+    # CDFs
+    pfxobs0 = datamodel.ForecastObservation(
+        pfx0,
+        obs,
+        uncertainty=obs.uncertainty
+    )
+    pfx_ref = pfx0.replace(forecast_id=ref_forecast_id)
+    pfxobs1 = datamodel.ForecastObservation(
+        pfx1,
+        obs,
+        normalization=1000,
+        uncertainty=15.,
+        reference_forecast=pfx_ref
+    )
+    pfx_agg = datamodel.ForecastAggregate(
+        pfx2,
+        aggregate
+    )
+
+    # single, constant values
+    pfxcvobs0_1 = datamodel.ForecastObservation(
+        cv0_1,
+        obs,
+        uncertainty=obs.uncertainty
+    )
+    pfxcvobs0_2 = datamodel.ForecastObservation(
+        cv0_2,
+        obs,
+        normalization=1000,
+        reference_forecast=cv0_3.replace(forecast_id=ref_forecast_id)
+    )
+    pfxcvagg0_3 = datamodel.ForecastAggregate(
+        cv0_3,
+        aggregate,
+        uncertainty=15.,
+    )
+
+    quality_flag_filter = datamodel.QualityFlagFilter(
+        (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES"
+        )
+    )
+    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(6, 0),
+                                                 dt.time(8, 0)))
+    report_params = datamodel.ReportParameters(
+        name="Albuquerque GHI Forecast Analysis",
+        start=start,
+        end=end,
+        object_pairs=(pfxobs0, pfxobs1, pfxcvobs0_1, pfxcvobs0_2,
+                      pfx_agg, pfxcvagg0_3),
+        metrics=("crps", "bs", "bss", "unc"),
+        categories=("total", "date", "hour"),
+        filters=(quality_flag_filter, timeofdayfilter)
+    )
+    report = datamodel.Report(
+        report_id="1179f8c1-4d76-479c-a826-053d6b6e5116",
+        report_parameters=report_params
+    )
+    return report, obs, pfx0, pfx1, cv0_1, cv0_2, aggregate, pfx2, cv0_3
 
 
 @pytest.fixture()

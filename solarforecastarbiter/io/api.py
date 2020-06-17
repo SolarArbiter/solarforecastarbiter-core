@@ -1,6 +1,7 @@
 """
 Functions to connect to and process data from SolarForecastArbiter API
 """
+import datetime as dt
 import json
 import logging
 
@@ -56,6 +57,21 @@ class APISession(requests.Session):
         server.
     base_url : string
         URL to use as the base for endpoints to APISession
+
+    Notes
+    -----
+    To pass the API calls through a proxy server, set either the HTTP_PROXY or
+    HTTPS_PROXY environment variable. If necessary, you can also specify a SSL
+    certificate using the REQUESTS_CA_BUNDLE environment variable. For example,
+    on a Linux machine:
+
+    >>> export HTTPS_PROXY=https://some_corporate_proxy.com:8080
+    >>> export REQUESTS_CA_BUNDLE=/path/to/certificates/cert.crt
+    >>> python script_that_calls_api.py
+
+    For more information, see the "Advanced Usage" documentation for the
+    requests package: https://requests.readthedocs.io/en/master/user/advanced/
+
     """
 
     def __init__(self, access_token, default_timeout=(10, 60),
@@ -147,6 +163,41 @@ class APISession(requests.Session):
         return [self._process_site_dict(site_dict)
                 for site_dict in req.json()]
 
+    def list_sites_in_zone(self, zone):
+        """
+        List all the sites available to a user in the given climate zone.
+
+        Parameters
+        ----------
+        zone : str
+
+        Returns
+        -------
+        list of datamodel.Sites and datamodel.SolarPowerPlants
+        """
+        req = self.get(f'/sites/in/{zone}')
+        return [self._process_site_dict(site_dict)
+                for site_dict in req.json()]
+
+    def search_climatezones(self, latitude, longitude):
+        """
+        Find all climate zones that the location is in.
+
+        Parameters
+        ----------
+        latitude : float, degrees North
+        longitude : float, degrees East of the Prime Meridian
+
+        Returns
+        -------
+        list
+            A list of the climate zones the location is in
+        """
+        req = self.get('/climatezones/search',
+                       params={'latitude': latitude,
+                               'longitude': longitude})
+        return [r['name'] for r in req.json()]
+
     def create_site(self, site):
         """
         Create a new site in the API with the given Site model
@@ -162,7 +213,7 @@ class APISession(requests.Session):
             With the appropriate parameters such as site_id set by the API
         """
         site_dict = site.to_dict()
-        for k in ('site_id', 'provider'):
+        for k in ('site_id', 'provider', 'climate_zones'):
             site_dict.pop(k, None)
         site_json = json.dumps(site_dict)
         req = self.post('/sites/', data=site_json,
@@ -499,6 +550,44 @@ class APISession(requests.Session):
         return mint, maxt
 
     @ensure_timestamps('start', 'end')
+    def get_observation_values_not_flagged(
+            self, observation_id, start, end, flag, timezone='UTC'):
+        """
+        Get the dates where the observation series is NOT flagged with
+        the given flag/bitmask.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        flag : int
+            Days that are not flagged with this flag are returned. This can
+            be a compound flag/bitmask of the flags found in
+            :py:mod:`solarforecastarbiter.validation.quality_mapping`,
+            in which case days that do not have all flags present
+            are returned.
+        timezone : str, default "UTC"
+            The timezone to localize the data before computing the date
+
+        Returns
+        -------
+        dates : numpy.array of type datetime64[D]
+        """
+        req = self.get(f'/observations/{observation_id}/values/unflagged',
+                       params={'start': start,
+                               'end': end,
+                               'timezone': timezone,
+                               'flag': flag})
+        data = req.json()
+        dates = data['dates']
+        return np.array([dt.date.fromisoformat(d) for d in dates],
+                        dtype='datetime64[D]')
+
+    @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,
                                interval_label=None):
         """
@@ -778,12 +867,14 @@ class APISession(requests.Session):
             req_dict[key] = rep_dict.get(key, '')
         pairs = []
         for o in rep_params['object_pairs']:
-            fx = self.get_forecast(o['forecast'])
+            fx_type = o.get('forecast_type', 'forecast')
+            fx_method = 'get_' + fx_type
+            fx = getattr(self, fx_method)(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
             if ref_fx is not None:
-                ref_fx = self.get_forecast(ref_fx)
+                ref_fx = getattr(self, fx_method)(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
