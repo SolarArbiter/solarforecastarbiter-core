@@ -2819,3 +2819,42 @@ def remove_orca():
     # otherwise generating all pdfs for tests can take ages
     import plotly.io as pio
     pio.orca.config.executable = '/dev/null'
+
+
+@pytest.fixture()
+def ferc890_cost_params():
+    return datamodel.CostParameters(
+        name='FERC-890',
+        type='errorband',
+        parameters=datamodel.ErrorBandCost(
+            bands=(
+                datamodel.CostBand(
+                    error_range=(-2, 2),
+                    cost_function='constant',
+                    cost_function_parameters=datamodel.ConstantCost(
+                        cost=1.0,
+                        aggregation='sum',
+                        net=True
+                    )
+                ),
+                datamodel.CostBand(
+                    error_range=(2, np.inf),
+                    cost_function='constant',
+                    cost_function_parameters=datamodel.ConstantCost(
+                        cost=1.1,
+                        aggregation='sum',
+                        net=False
+                    )
+                ),
+                datamodel.CostBand(
+                    error_range=(-np.inf, -2),
+                    cost_function='constant',
+                    cost_function_parameters=datamodel.ConstantCost(
+                        cost=-0.9,
+                        aggregation='sum',
+                        net=False
+                    )
+                )
+            )
+        )
+    )

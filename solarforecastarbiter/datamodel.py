@@ -1561,6 +1561,137 @@ class RawReport(BaseModel):
     data_checksum: Union[str, None] = None
 
 
+def __validate_cost__(index_var):
+    def val(obj):
+        if obj.fill not in ('forward', 'backward'):
+            raise ValueError("Cost 'fill' must be 'forward' or 'backward'")
+        if len(obj.costs) != len(getattr(obj, index_var)):
+            raise ValueError(
+                f"'costs' and '{index_var}' must have the same length")
+    return val
+
+
+@dataclass(frozen=True)
+class TimeOfDayCost(BaseModel):
+    """Cost values based on the time of day.
+
+    Parameters
+    ----------
+    times : tuple of datetime.time
+       The times to associate with each cost value
+    costs : tuple of float
+       The cost per unit error of the forecasted variable for each time.
+       Must have the same length as `times`.
+    fill : str
+       Fill method to apply for times between those specified in `times`
+    """
+    times: Tuple[datetime.time, ...]
+    costs: Tuple[float, ...]
+    aggregation: str
+    net: bool
+    fill: str
+    __post_init__ = __validate_cost__('times')
+
+
+@dataclass(frozen=True)
+class DatetimeCost(BaseModel):
+    """Cost values based on datetimes.
+
+    Parameters
+    ----------
+    datetimes : tuple of datetime.datetime
+       The datetimes to associate with each cost value
+    costs : tuple of float
+       The cost per unit error of the forecasted variable for each datetime.
+       Must have the same length as `datetimes`.
+    fill : str
+       Fill method to apply for datetimes between those specified in
+       `datetimes`
+    """
+    datetimes: Tuple[datetime.datetime, ...]
+    costs: Tuple[float, ...]
+    aggregation: str
+    net: bool
+    fill: str
+    __post_init__ = __validate_cost__('datetimes')
+
+
+@dataclass(frozen=True)
+class ConstantCost(BaseModel):
+    """A constant cost per unit error of the forecasted variable
+
+    Parameters
+    ----------
+    cost : float
+    """
+    cost: float
+    aggregation: str
+    net: bool
+
+
+@dataclass(frozen=True)
+class CostBand(BaseModel):
+    """Cost based on error bands.
+
+    Parameters
+    ----------
+    bands : tuple of float
+       The error value that should be associated with each cost value.
+       `fill` controls if the interval is closed on the right (forward fill)
+       or the left (back fill).
+    costs : tuple of float
+       The cost per unit error of the forecasted variable for each error band.
+       Must have the same length as `bands`.
+    fill : str
+       Fill method to apply for errors between those specified in `bands`
+    absolute : bool, default True
+       If the absolute error should be used to calculate the cost
+    """
+    error_range: Tuple[float, float]
+    cost_function: str
+    cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
+
+
+@dataclass(frozen=True)
+class ErrorBandCost(BaseModel):
+    bands: Tuple[CostBand, ...]
+    # ascending priority
+
+
+
+@dataclass(frozen=True)
+class CostParameters(BaseModel):
+    name: str
+    type: str
+    parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
+
+    def __post_init__(self):
+        if self.type not in ('timeofday', 'datetime', 'constant',
+                             'errorband'):
+            raise ValueError(
+                "'type' must be one of 'timeofday', 'datetime', 'constant', "
+                "'errorband'")
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        type_ = dict_['type']
+        param_dict = dict_.get('parameters', {})
+        if type_ == 'timeofday':
+            dict_['parameters'] = TimeOfDayCost.from_dict(param_dict)
+        elif type_ == 'datetime':
+            dict_['parameters'] = DatetimeCost.from_dict(param_dict)
+        elif type_ == 'constant':
+            dict_['parameters'] = ConstantCost.from_dict(param_dict)
+        elif type_ == 'errorband':
+            dict_['parameters'] = ErrorBandCost.from_dict(param_dict)
+        else:
+            raise ValueError(
+                "'type' must be one of 'timeofday', 'datetime', 'constant', "
+                "'errorband'")
+        return super().from_dict(dict_, raise_on_extra)
+
+
 @dataclass(frozen=True)
 class ReportParameters(BaseModel):
     """Parameters required to define and generate a Report.
@@ -1592,6 +1723,7 @@ class ReportParameters(BaseModel):
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
+    cost: Union[CostParameters, None] = None
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
