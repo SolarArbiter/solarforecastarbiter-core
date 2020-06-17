@@ -1609,11 +1609,12 @@ class DatetimeCost(BaseModel):
        Fill method to apply for datetimes between those specified in
        `datetimes`
     """
-    datetimes: Tuple[datetime.datetime, ...]
+    datetimes: Tuple[pd.Timestamp, ...]
     costs: Tuple[float, ...]
     aggregation: str
     net: bool
     fill: str
+    timezone: str = None
     __post_init__ = __validate_cost__('datetimes')
 
 

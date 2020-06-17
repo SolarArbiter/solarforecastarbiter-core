@@ -3,28 +3,17 @@ import pandas as pd
 
 
 def _np_agg_fnc(agg_str, net):
-    if agg_str == 'mean':
-        if net:
-            return lambda x: np.mean(x)
-        else:
-            return lambda x: np.mean(np.abs(x))
-    elif agg_str == 'sum':
-        if net:
-            return lambda x: np.sum(x)
-        else:
-            return lambda x: np.sum(np.abs(x))
+    fnc = AGG_OPTIONS[agg_str]
+    if net:
+        return lambda x: fnc(x)
     else:
-        raise ValueError()
-
-
-def _fill_kwarg(fill_str):
-    if fill_str == 'forward':
-        return 'ffill'
-    elif fill_str == 'backward':
-        return 'bfill'
+        return lambda x: fnc(np.abs(x))
 
 
 def constant_cost_wrapper(cost_params):
+    """Wrapper to generate cost function appropriate for calling
+    in the loop of metrics.calculator.calculate_deterministic_metrics
+    """
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
 
@@ -48,14 +37,32 @@ def _make_time_of_day_cost(times, costs, index, tz, fill):
 
 def time_of_day_cost_wrapper(cost_params):
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
-    fill = _fill_kwarg(cost_params.fill)
+    fill = FILL_OPTIONS[cost_params.fill]
 
     def cost_func(obs, fx, error_fnc):
         error = error_fnc(obs, fx)
-        tz = cost_params.timezone or error.index.tzinfo
+        tz = cost_params.timezone or error.tzinfo
         cost_ser = _make_time_of_day_cost(
             cost_params.times, cost_params.costs, error.index, tz, fill)
         error_cost = error * cost_ser
+        return agg_fnc(error_cost)
+
+
+def datetime_cost_wrapper(cost_params):
+    agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
+    fill = FILL_OPTIONS[cost_params.fill]
+    cost_ser = pd.Series(cost_params.costs,
+                         index=cost_params.datetimes)
+    if cost_params.timezone is not None and cost_ser.tzinfo is None:
+        cost_ser = cost_ser.tz_localize(cost_params.timezone)
+
+    def cost_func(obs, fx, error_fnc):
+        error = error_fnc(obs, fx)
+        if cost_ser.tzinfo is None:
+            cs = cost_ser.tz_localize(error.tzinfo)
+        else:
+            cs = cost_ser
+        error_cost = error * cs.reindex(error.index, method=fill)
         return agg_fnc(error_cost)
 
 
@@ -102,5 +109,17 @@ def generate_cost_function(cost_params):
 
 COST_FUNCTION_MAP = {
     'constant': constant_cost_wrapper,
+    'time_of_day': time_of_day_cost_wrapper,
+    'datetime': datetime_cost_wrapper,
     'errorband': error_band_cost_wrapper,
+}
+
+FILL_OPTIONS = {
+    'forward': 'ffill',
+    'backward': 'bfill'
+}
+
+AGG_OPTIONS = {
+    'sum': np.sum,
+    'mean': np.mean
 }
