@@ -1,6 +1,10 @@
 """Deterministic forecast error metrics."""
+import datetime as dt
+from functools import partial
+
 
 import numpy as np
+import pandas as pd
 import scipy as sp
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -546,72 +550,87 @@ def combined_performance_index(obs, fx):
 
 
 def _np_agg_fnc(agg_str, net):
-    fnc = AGG_OPTIONS[agg_str]
+    fnc = _AGG_OPTIONS[agg_str]
     if net:
         return lambda x: fnc(x)
     else:
         return lambda x: fnc(np.abs(x))
 
 
-def constant_cost_wrapper(cost_params):
+def _constant_cost(obs, fx, cost_params, error_fnc):
     """Wrapper to generate cost function appropriate for calling
     in the loop of metrics.calculator.calculate_deterministic_metrics
     """
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
 
-    def cost_func(obs, fx, error_fnc=error_fnc):
-        errors = error_fnc(obs, fx)
-        return agg_fnc(errors) * cost_const
-
-    return cost_func
+    errors = error_fnc(obs, fx)
+    return agg_fnc(errors) * cost_const
 
 
-def _make_time_of_day_cost(times, costs, index, tz, fill):
-    dates = np.unique(index.date)
+def _make_time_of_day_cost_ser(times, costs, index, tz, fill):
+    dates = list(np.unique(index.date))
+    # extend dates +- 1 day so that index is within the cost
+    # ser we construct
+    dates.insert(0, min(dates) - dt.timedelta(days=1))
+    dates.insert(-1, max(dates) + dt.timedelta(days=1))
+
+    # insert the last cost at 00:00 if not present so forward
+    # fill works (sometimes one date w/ tz adjust not enough)
+    if fill == 'ffill' and dt.time(0) not in times:
+        max_ind = np.argmax(times)
+        times.insert(0, dt.time(0))
+        costs.insert(0, costs[max_ind])
+    # insert the first cost at 23:59 if not present so back
+    # fill works even if tz adjusts index
+    elif fill == 'bfill' and dt.time(23, 59, 59) not in times:
+        min_ind = np.argmin(times)
+        times.insert(-1, dt.time(23, 59, 59))
+        costs.insert(-1, costs[min_ind])
+    # make the cost series
     prod = [(pd.Timestamp.combine(x, y[0]), y[1])
             for x in dates for y in zip(times, costs)]
     base_ser = pd.DataFrame(
         prod, columns=['timestamp', 'cost']
     ).set_index('timestamp')['cost'].tz_localize(tz).sort_index()
+    # only get those values at index filling as appropriate
     ser = base_ser.reindex(index, method=fill)
     return ser
 
 
-def time_of_day_cost_wrapper(cost_params):
+def _time_of_day_cost(obs, fx, cost_params, error_fnc):
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
-    fill = FILL_OPTIONS[cost_params.fill]
+    fill = _FILL_OPTIONS[cost_params.fill]
 
-    def cost_func(obs, fx, error_fnc):
-        errors = error_fnc(obs, fx)
-        tz = cost_params.timezone or errors.tzinfo
-        cost_ser = _make_time_of_day_cost(
-            cost_params.times, cost_params.costs, error.index, tz, fill)
-        error_cost = errors * cost_ser
-        return agg_fnc(error_cost)
+    errors = error_fnc(obs, fx)
+    tz = cost_params.timezone or errors.index.tzinfo
+    cost_ser = _make_time_of_day_cost_ser(
+        cost_params.times, cost_params.costs, errors.index, tz, fill)
+    error_cost = errors * cost_ser
+    return agg_fnc(error_cost)
 
 
-def datetime_cost_wrapper(cost_params):
+def _datetime_cost(obs, fx, cost_params, error_fnc):
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
-    fill = FILL_OPTIONS[cost_params.fill]
+    fill = _FILL_OPTIONS[cost_params.fill]
     cost_ser = pd.Series(cost_params.costs,
                          index=cost_params.datetimes)
-    if cost_params.timezone is not None and cost_ser.tzinfo is None:
-        cost_ser = cost_ser.tz_localize(cost_params.timezone)
 
-    def cost_func(obs, fx, error_fnc):
-        errors = error_fnc(obs, fx)
-        if cost_ser.tzinfo is None:
-            cs = cost_ser.tz_localize(errors.tzinfo)
+    errors = error_fnc(obs, fx)
+
+    if cost_ser.index.tzinfo is None:
+        if cost_params.timezone is not None:
+            cost_ser = cost_ser.tz_localize(cost_params.timezone)
         else:
-            cs = cost_ser
-        error_cost = errors * cs.reindex(error.index, method=fill)
-        return agg_fnc(error_cost)
+            cost_ser = cost_ser.tz_localize(errors.index.tzinfo)
+
+    error_cost = errors * cost_ser.reindex(errors.index, method=fill)
+    return agg_fnc(error_cost)
 
 
 def _band_masks(bands, errors):
     """"""
-    prev = np.zeros(error.shape, dtype=bool)
+    prev = np.zeros(errors.shape, dtype=bool)
     out = []
     for band in bands:
         emin, emax = band.error_range
@@ -619,43 +638,42 @@ def _band_masks(bands, errors):
         # only those new locations that not also in prev should be used
         both = prev & new
         new[both] = False
-        out.append(~new)
+        out.append(new)
         prev |= new
     return out
 
 
-def error_band_cost_wrapper(cost_params):
+def _error_band_cost(obs, fx, cost_params, error_fnc):
     bands = cost_params.bands
     band_cost_functions = [
-        _COST_FUNCTION_MAP[band.cost_function](
-            band.cost_function_parameters)
+        partial(_COST_FUNCTION_MAP[band.cost_function],
+                cost_params=band.cost_function_parameters,
+                error_fnc=error_fnc)
         for band in bands
     ]
 
-    def cost_func(obs, fx, error_fnc):
-        errors = error_fnc(obs, fx)
-        out = 0
-        masks = _band_masks(bands, errors)
-        for mask, fnc in zip(masks, band_cost_functions):
-            if mask.all():
-                continue
-            mobs = np.ma.MaskedArray(obs, mask=mask)
-            mfx = np.ma.MaskedArray(fx, mask=mask)
-            out += fnc(mobs, mfx, error_fnc)
-        return out
-    return cost_func
+    errors = error_fnc(obs, fx)
+    out = 0
+    masks = _band_masks(bands, errors)
+    for mask, fnc in zip(masks, band_cost_functions):
+        if not mask.any():
+            continue
+        mobs = obs[mask]
+        mfx = fx[mask]
+        out += fnc(mobs, mfx)
+    return out
 
 
 def cost(obs, fx, cost_params, error_fnc=error):
-    fnc = _COST_FUNCTION_MAP[cost_params.type](cost_params)
-    return fnc(obs, fx, error_fnc)
+    fnc = _COST_FUNCTION_MAP[cost_params.type]
+    return fnc(obs, fx, cost_params.parameters, error_fnc)
 
 
 _COST_FUNCTION_MAP = {
-    'constant': constant_cost_wrapper,
-    'time_of_day': time_of_day_cost_wrapper,
-    'datetime': datetime_cost_wrapper,
-    'errorband': error_band_cost_wrapper,
+    'constant': _constant_cost,
+    'timeofday': _time_of_day_cost,
+    'datetime': _datetime_cost,
+    'errorband': _error_band_cost
 }
 
 _FILL_OPTIONS = {
