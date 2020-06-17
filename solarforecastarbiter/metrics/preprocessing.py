@@ -444,7 +444,8 @@ def process_forecast_observations(forecast_observations, filters, data,
                 observation_values=observation_values,
                 reference_forecast_values=ref_fx_values,
                 normalization_factor=fxobs.normalization,
-                uncertainty=fxobs.uncertainty
+                uncertainty=fxobs.uncertainty,
+                cost=fxobs.cost
             )
             processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())
