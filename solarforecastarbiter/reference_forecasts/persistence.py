@@ -374,14 +374,14 @@ def persistence_probabilistic(observation, data_start, data_end,
     r"""
     Make a probabilistic persistence forecast using the *observation* from
     *data_start* to *data_end*. In the forecast literature, this method is
-    typically referred to as Persistence Ensemble (PeEn). [1]
+    typically referred to as Persistence Ensemble (PeEn). [1]_
 
     The function handles forecasting either constant variable values or
     constant percentiles. In the examples below, we use GHI to be concrete but
     the concepts also apply to other variables (AC power, net load, etc.).
 
-    If forecasting constant values (e.g. forecast the probability of GHI being
-    less than or equal to 500 W/m^2), the persistence forecast is:
+    If forecasting constant variable values (e.g. forecast the probability of
+    GHI being less than or equal to 500 W/m^2), the persistence forecast is:
 
     .. math::
 
@@ -446,9 +446,9 @@ def persistence_probabilistic(observation, data_start, data_end,
 
     References
     ----------
-    Allessandrini et al. (2015) "An analog ensemble for short-term
-    probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
-    doi: 10.1016/j.apenergy.2015.08.011
+    .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
+       probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
+       doi: 10.1016/j.apenergy.2015.08.011
 
     """
     closed = datamodel.CLOSED_MAPPING[interval_label]
@@ -485,7 +485,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     *data_start* to *data_end*, matched by time of day (e.g. to forecast 9am,
     only use observations from 9am on days between *data_start* and
     *data_end*). This is a common variant of the Persistence Ensemble (PeEn)
-    method. [1]
+    method. [1]_
 
     Parameters
     ----------
@@ -527,9 +527,9 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
 
     References
     ----------
-    Allessandrini et al. (2015) "An analog ensemble for short-term
-    probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
-    doi: 10.1016/j.apenergy.2015.08.011
+    .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
+       probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
+       doi: 10.1016/j.apenergy.2015.08.011
 
     Notes
     -----
