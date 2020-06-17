@@ -553,7 +553,7 @@ class APISession(requests.Session):
     def get_observation_values_not_flagged(
             self, observation_id, start, end, flag, timezone='UTC'):
         """
-        Get the any dates where the observation series is NOT flagged with
+        Get the dates where the observation series is NOT flagged with
         the given flag/bitmask.
 
         Parameters
