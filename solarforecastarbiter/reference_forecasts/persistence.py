@@ -444,6 +444,11 @@ def persistence_probabilistic(observation, data_start, data_end,
         percentiles (e.g. 25%). If instead *axis* is *y*, the forecasts values
         have the same units as the observation data (e.g. MW).
 
+    Raises
+    ------
+    ValueError
+        If the **axis** parameter is invalid.
+
     References
     ----------
     .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
@@ -524,6 +529,13 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
         *constant_values*. If *axis* is *x*, the forecast values are
         percentiles (e.g. 25%). If instead *axis* is *y*, the forecasts values
         have the same units as the observation data (e.g. MW).
+
+    Raises
+    ------
+    ValueError
+        If there is insufficient data for matching by time of day or the
+        **axis** parameter is invalid.
+
 
     References
     ----------
