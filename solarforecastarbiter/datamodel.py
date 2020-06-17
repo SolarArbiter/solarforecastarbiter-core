@@ -22,6 +22,8 @@ from solarforecastarbiter.metrics.deterministic import \
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
+from solarforecastarbiter.metrics.cost import (
+    FILL_OPTIONS, AGG_OPTIONS)
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
@@ -151,6 +153,8 @@ def _single_field_processing(model, field, val, field_type=None):
         return out
     elif type_ == datetime.time:
         return datetime.datetime.strptime(val, '%H:%M').time()
+    elif type_ == float:
+        return float(val)
     elif (
             is_dataclass(type_) and
             isinstance(val, dict)
@@ -934,6 +938,195 @@ class ProbabilisticForecast(
         __check_axis_consistency__(self.axis, self.constant_values)
 
 
+def __validate_cost__(index_var):
+    def val(obj):
+        if hasattr(obj, 'fill'):
+            if obj.fill not in FILL_OPTIONS.keys():
+                raise ValueError(
+                    f"Cost 'fill' must be one of {list(FILL_OPTIONS.keys())}")
+        if hasattr(obj, 'aggregation'):
+            if obj.aggregation not in AGG_OPTIONS.keys():
+                raise ValueError(
+                    "Cost 'aggregation' must be one of " +
+                    str(list(FILL_OPTIONS.keys())))
+        if index_var is not None:
+            if len(obj.costs) != len(getattr(obj, index_var)):
+                raise ValueError(
+                    f"'costs' and '{index_var}' must have the same length")
+    return val
+
+
+@dataclass(frozen=True)
+class TimeOfDayCost(BaseModel):
+    """Cost values based on the time of day.
+
+    Parameters
+    ----------
+    times : tuple of datetime.time
+        The times to associate with each cost value
+    costs : tuple of float
+        The cost per unit error of the forecasted variable for each time.
+        Must have the same length as `times`.
+    aggregation : str
+        Aggregation method to use after calculating cost for the error series.
+        Currently only 'sum' or 'mean' are available.
+    net : bool
+        If True, compute the 'net' aggregate error instead of first calcuating
+        the absolute error before performing the aggregation.
+    fill : str
+        Fill method to apply for times between those specified in `times`.
+        Options are 'forward' or 'backward'.
+    timezone : str, default None
+        IANA timezone string to use when constructing datetimes. If None,
+        the timezone of the observations is used, which is the report
+        timezone when calculated in a report.
+    """
+    times: Tuple[datetime.time, ...]
+    costs: Tuple[float, ...]
+    aggregation: str
+    net: bool
+    fill: str
+    timezone: str = None
+    __post_init__ = __validate_cost__('times')
+
+
+@dataclass(frozen=True)
+class DatetimeCost(BaseModel):
+    """Cost values based on datetimes.
+
+    Parameters
+    ----------
+    datetimes : tuple of datetime.datetime
+       The datetimes to associate with each cost value
+    costs : tuple of float
+       The cost per unit error of the forecasted variable for each datetime.
+       Must have the same length as `datetimes`.
+    aggregation : str
+        Aggregation method to use after calculating cost for the error series.
+        Currently only 'sum' or 'mean' are available.
+    net : bool
+        If True, compute the 'net' aggregate error instead of first calcuating
+        the absolute error before performing the aggregation.
+    fill : str
+       Fill method to apply for datetimes between those specified in
+       `datetimes`. Options are 'forward' or 'backward'.
+    timezone : str, default None
+        IANA timezone string to use when constructing datetimes. If None,
+        the timezone of the observations is used, which is the report
+        timezone when calculated in a report.    """
+    datetimes: Tuple[pd.Timestamp, ...]
+    costs: Tuple[float, ...]
+    aggregation: str
+    net: bool
+    fill: str
+    timezone: str = None
+    __post_init__ = __validate_cost__('datetimes')
+
+
+@dataclass(frozen=True)
+class ConstantCost(BaseModel):
+    """A constant cost per unit error of the forecasted variable
+
+    Parameters
+    ----------
+    cost : float
+    aggregation : str
+        Aggregation method to use after calculating cost for the error series.
+        Currently only 'sum' or 'mean' are available.
+    net : bool
+        If True, compute the 'net' aggregate error instead of first calcuating
+        the absolute error before performing the aggregation.
+    """
+    cost: float
+    aggregation: str
+    net: bool
+    __post_init__ = __validate_cost__(None)
+
+
+@dataclass(frozen=True)
+class CostBand(BaseModel):
+    """Cost specification for one error band
+
+    Parameters
+    ----------
+    error_range : tuple(float, float)
+        Bounds of the error to apply the specified cost function to.
+        Inf and -Inf are valid range points, and the error may be positive or
+        negative.
+    cost_function : str
+        One of 'timeofday', 'datetime', or 'constant'. Specifies which
+        cost model should be used to calculate the cost in this band.
+    cost_function_parameters : :py:class:`solarforecastarbiter.datamodel.ConstantCost` or :py:class:`solarforecastarbiter.TimeOfDayCost` or :py:class:`solarforecastarbiter.DatetimeCost`
+        Parameters for the selected cost function.
+    """  # NOQA
+    error_range: Tuple[float, float]
+    cost_function: str
+    cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
+
+
+@dataclass(frozen=True)
+class ErrorBandCost(BaseModel):
+    """Cost that varies based on the error value. For each error band,
+    one of the other cost functions is applied to the errors within the band.
+    If an error value does not fall within any band ranges, no cost is
+    calculated for that error.
+
+    Parameters
+    ----------
+    bands : tuple of :py:class:`solarforecastarbiter.datamodel.CostBand`
+       Specification of the error bands and associated cost functions.
+       Each error is restricted to a single band/cost function, so the
+       order in bands determines which band is applied in ascending
+       priority. For example, if ``bands[0].error_range = (0, 2)``
+       and ``bands[1].error_range == (1, 3)``, the cost function of
+       bands[0] is applied for all errors from [0, 2] and bands[1]
+       is applied for errors from (2, 3].
+    """
+    bands: Tuple[CostBand, ...]
+
+
+@dataclass(frozen=True)
+class Cost(BaseModel):
+    """Specify how cost metrics should be calculated.
+
+    Parameters
+    ----------
+    type : str
+       The type of cost parameters that are included in `parameters`. One of
+       'timeofday', 'datetime', 'constant', or 'errorband'.
+    parameters : :py:class:`solarforecastarbiter.datamodel.ConstantCost` or :py:class:`solarforecastarbiter.TimeOfDayCost` or :py:class:`solarforecastarbiter.DatetimeCost` or :py:class:`solarforecastarbiter.ErrorBandCost`
+        Parameters for the specific cost function type.
+    """  # NOQA
+    type: str
+    parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
+
+    def __post_init__(self):
+        if self.type not in ('timeofday', 'datetime', 'constant',
+                             'errorband'):
+            raise ValueError(
+                "'type' must be one of 'timeofday', 'datetime', 'constant', "
+                "'errorband'")
+
+    @classmethod
+    def from_dict(model, input_dict, raise_on_extra=False):
+        dict_ = input_dict.copy()
+        type_ = dict_['type']
+        param_dict = dict_.get('parameters', {})
+        if type_ == 'timeofday':
+            dict_['parameters'] = TimeOfDayCost.from_dict(param_dict)
+        elif type_ == 'datetime':
+            dict_['parameters'] = DatetimeCost.from_dict(param_dict)
+        elif type_ == 'constant':
+            dict_['parameters'] = ConstantCost.from_dict(param_dict)
+        elif type_ == 'errorband':
+            dict_['parameters'] = ErrorBandCost.from_dict(param_dict)
+        else:
+            raise ValueError(
+                "'type' must be one of 'timeofday', 'datetime', 'constant', "
+                "'errorband'")
+        return super().from_dict(dict_, raise_on_extra)
+
+
 def __set_constant_values__(self):
     out = []
     for cv in self.constant_values:
@@ -1410,7 +1603,7 @@ class ReportFigure(BaseModel):
             return BokehReportFigure.from_dict(dict_, raise_on_extra)
         else:
             raise NotImplementedError(
-                f'Do not know how to process dict into a ReportFigure.')
+                'Do not know how to process dict into a ReportFigure.')
 
 
 @dataclass(frozen=True)
@@ -1561,139 +1754,6 @@ class RawReport(BaseModel):
     data_checksum: Union[str, None] = None
 
 
-def __validate_cost__(index_var):
-    def val(obj):
-        if obj.fill not in ('forward', 'backward'):
-            raise ValueError("Cost 'fill' must be 'forward' or 'backward'")
-        if len(obj.costs) != len(getattr(obj, index_var)):
-            raise ValueError(
-                f"'costs' and '{index_var}' must have the same length")
-    return val
-
-
-@dataclass(frozen=True)
-class TimeOfDayCost(BaseModel):
-    """Cost values based on the time of day.
-
-    Parameters
-    ----------
-    times : tuple of datetime.time
-       The times to associate with each cost value
-    costs : tuple of float
-       The cost per unit error of the forecasted variable for each time.
-       Must have the same length as `times`.
-    fill : str
-       Fill method to apply for times between those specified in `times`
-    """
-    times: Tuple[datetime.time, ...]
-    costs: Tuple[float, ...]
-    aggregation: str
-    net: bool
-    fill: str
-    timezone: str = None
-    __post_init__ = __validate_cost__('times')
-
-
-@dataclass(frozen=True)
-class DatetimeCost(BaseModel):
-    """Cost values based on datetimes.
-
-    Parameters
-    ----------
-    datetimes : tuple of datetime.datetime
-       The datetimes to associate with each cost value
-    costs : tuple of float
-       The cost per unit error of the forecasted variable for each datetime.
-       Must have the same length as `datetimes`.
-    fill : str
-       Fill method to apply for datetimes between those specified in
-       `datetimes`
-    """
-    datetimes: Tuple[pd.Timestamp, ...]
-    costs: Tuple[float, ...]
-    aggregation: str
-    net: bool
-    fill: str
-    timezone: str = None
-    __post_init__ = __validate_cost__('datetimes')
-
-
-@dataclass(frozen=True)
-class ConstantCost(BaseModel):
-    """A constant cost per unit error of the forecasted variable
-
-    Parameters
-    ----------
-    cost : float
-    """
-    cost: float
-    aggregation: str
-    net: bool
-
-
-@dataclass(frozen=True)
-class CostBand(BaseModel):
-    """Cost based on error bands.
-
-    Parameters
-    ----------
-    bands : tuple of float
-       The error value that should be associated with each cost value.
-       `fill` controls if the interval is closed on the right (forward fill)
-       or the left (back fill).
-    costs : tuple of float
-       The cost per unit error of the forecasted variable for each error band.
-       Must have the same length as `bands`.
-    fill : str
-       Fill method to apply for errors between those specified in `bands`
-    absolute : bool, default True
-       If the absolute error should be used to calculate the cost
-    """
-    error_range: Tuple[float, float]
-    cost_function: str
-    cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
-
-
-@dataclass(frozen=True)
-class ErrorBandCost(BaseModel):
-    bands: Tuple[CostBand, ...]
-    # ascending priority
-
-
-
-@dataclass(frozen=True)
-class CostParameters(BaseModel):
-    name: str
-    type: str
-    parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
-
-    def __post_init__(self):
-        if self.type not in ('timeofday', 'datetime', 'constant',
-                             'errorband'):
-            raise ValueError(
-                "'type' must be one of 'timeofday', 'datetime', 'constant', "
-                "'errorband'")
-
-    @classmethod
-    def from_dict(model, input_dict, raise_on_extra=False):
-        dict_ = input_dict.copy()
-        type_ = dict_['type']
-        param_dict = dict_.get('parameters', {})
-        if type_ == 'timeofday':
-            dict_['parameters'] = TimeOfDayCost.from_dict(param_dict)
-        elif type_ == 'datetime':
-            dict_['parameters'] = DatetimeCost.from_dict(param_dict)
-        elif type_ == 'constant':
-            dict_['parameters'] = ConstantCost.from_dict(param_dict)
-        elif type_ == 'errorband':
-            dict_['parameters'] = ErrorBandCost.from_dict(param_dict)
-        else:
-            raise ValueError(
-                "'type' must be one of 'timeofday', 'datetime', 'constant', "
-                "'errorband'")
-        return super().from_dict(dict_, raise_on_extra)
-
-
 @dataclass(frozen=True)
 class ReportParameters(BaseModel):
     """Parameters required to define and generate a Report.
@@ -1725,7 +1785,6 @@ class ReportParameters(BaseModel):
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
-    cost: Union[CostParameters, None] = None
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
