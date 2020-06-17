@@ -374,7 +374,7 @@ def persistence_probabilistic(observation, data_start, data_end,
     r"""
     Make a probabilistic persistence forecast using the *observation* from
     *data_start* to *data_end*. In the forecast literature, this method is
-    typically referred to as Persistence Ensemble (PeEn). [1]_
+    typically referred to as Persistence Ensemble (PeEn). [1]_ [2]_ [3]_
 
     The function handles forecasting either constant variable values or
     constant percentiles. In the examples below, we use GHI to be concrete but
@@ -454,6 +454,12 @@ def persistence_probabilistic(observation, data_start, data_end,
     .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
        probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
        doi: 10.1016/j.apenergy.2015.08.011
+    .. [2] Yang (2019) "A universal benchmarking method for probabilistic
+       solar irradiance forecasting", Solar Energy 184, pp. 410-416.
+       doi: 10.1016/j.solener.2019.04.018
+    .. [3] Doubleday, Van Scyoc Herndandez and Hodge (2020) "Benchmark
+       probabilistic solar forecasts: characteristics and recommendations",
+       Solar Energy 206, pp. 52-67. doi: 10.1016/j.solener.2020.05.051
 
     """
     closed = datamodel.CLOSED_MAPPING[interval_label]
@@ -490,7 +496,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     *data_start* to *data_end*, matched by time of day (e.g. to forecast 9am,
     only use observations from 9am on days between *data_start* and
     *data_end*). This is a common variant of the Persistence Ensemble (PeEn)
-    method. [1]_
+    method. [1]_ [2]_ [3]_
 
     Parameters
     ----------
@@ -536,16 +542,22 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
         If there is insufficient data for matching by time of day or the
         **axis** parameter is invalid.
 
+    Notes
+    -----
+    Assumes that there is at least 20 days of *observation* data available
+    based on [1]_, [2]_, [3]_.
 
     References
     ----------
     .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
        probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
        doi: 10.1016/j.apenergy.2015.08.011
-
-    Notes
-    -----
-    Assumes that there is at least 7 days of *observation* data available.
+    .. [2] Yang (2019) "A universal benchmarking method for probabilistic
+       solar irradiance forecasting", Solar Energy 184, pp. 410-416.
+       doi: 10.1016/j.solener.2019.04.018
+    .. [3] Doubleday, Van Scyoc Herndandez and Hodge (2020) "Benchmark
+       probabilistic solar forecasts: characteristics and recommendations",
+       Solar Energy 206, pp. 52-67. doi: 10.1016/j.solener.2020.05.051
 
     See also
     --------
