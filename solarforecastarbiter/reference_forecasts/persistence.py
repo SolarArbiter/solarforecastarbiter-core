@@ -576,20 +576,20 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     if axis == "x":
         forecasts = []
         for constant_value in constant_values:
-            fx = np.empty(len(fx_index))
+            fx = pd.Series(np.nan, index=fx_index)
             for tod in fx_timeofday:
                 data = obs[obs_timeofday == tod]
                 cdf = ECDF(data)
                 fx[fx_timeofday == tod] = cdf(constant_value) * 100.0
-            forecasts.append(pd.Series(fx, index=fx_index))
+            forecasts.append(fx)
     elif axis == "y":
         forecasts = []
         for constant_value in constant_values:
-            fx = np.empty(len(fx_index))
+            fx = pd.Series(np.nan, index=fx_index)
             for tod in fx_timeofday:
                 data = obs[obs_timeofday == tod]
                 fx[fx_timeofday == tod] = np.percentile(data, constant_value)
-            forecasts.append(pd.Series(fx, index=fx_index))
+            forecasts.append(fx)
     else:
         raise ValueError(f"Invalid axis parameter: {axis}")
 
