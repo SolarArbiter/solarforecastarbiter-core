@@ -1,5 +1,5 @@
-from solarforecastarbiter.datamodel import CostParameters, ErrorBandCost, ConstantCost, CostBand
 import numpy as np
+import pandas as pd
 
 
 def _np_agg_fnc(agg_str, net):
@@ -17,6 +17,13 @@ def _np_agg_fnc(agg_str, net):
         raise ValueError()
 
 
+def _fill_kwarg(fill_str):
+    if fill_str == 'forward':
+        return 'ffill'
+    elif fill_str == 'backward':
+        return 'bfill'
+
+
 def constant_cost_wrapper(cost_params):
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
@@ -26,6 +33,30 @@ def constant_cost_wrapper(cost_params):
         return agg_fnc(error) * cost_const
 
     return cost_func
+
+
+def _make_time_of_day_cost(times, costs, index, tz, fill):
+    dates = np.unique(index.date)
+    prod = [(pd.Timestamp.combine(x, y[0]), y[1])
+            for x in dates for y in zip(times, costs)]
+    base_ser = pd.DataFrame(
+        prod, columns=['timestamp', 'cost']
+    ).set_index('timestamp')['cost'].tz_localize(tz).sort_index()
+    ser = base_ser.reindex(index, method=fill)
+    return ser
+
+
+def time_of_day_cost_wrapper(cost_params):
+    agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
+    fill = _fill_kwarg(cost_params.fill)
+
+    def cost_func(obs, fx, error_fnc):
+        error = error_fnc(obs, fx)
+        tz = cost_params.timezone or error.index.tzinfo
+        cost_ser = _make_time_of_day_cost(
+            cost_params.times, cost_params.costs, error.index, tz, fill)
+        error_cost = error * cost_ser
+        return agg_fnc(error_cost)
 
 
 def _band_masks(bands, error):

@@ -1590,6 +1590,7 @@ class TimeOfDayCost(BaseModel):
     aggregation: str
     net: bool
     fill: str
+    timezone: str = None
     __post_init__ = __validate_cost__('times')
 
 
