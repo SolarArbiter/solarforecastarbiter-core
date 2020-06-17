@@ -18,20 +18,41 @@ API Changes
   :py:func:`solarforecastarbiter.validation.tasks.apply_daily_validation`,
   and :py:func:`solarforecastarbiter.validation.tasks.apply_validation`
   convience functions (:pull:`482`)
-
+* The ``dailyvalidation`` command of the CLI has been renamed to ``validate`` and a
+  new ``--only-missing/--not-only-missing`` flag may be used to run validation
+  only for periods that have not been previously validated (:pull:`484`)
+* Added :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
+  to find days where an observation is not flagged with a given flag (:pull:`484`)
+* Removed `validation.tasks.immediate_observation_validation`,
+  `validation.tasks.daily_single_observation_validation`,
+  and `validation.tasks.daily_observation_validation` in favor of
+  :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
+  and :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations` (:pull:`484`)
 
 Enhancements
 ~~~~~~~~~~~~
 * Support parsing of Site climate zones from the API (:pull:`481`)
 * Reapply validation to Observation data when fetched for a Report
-  (:issue:`376`) (:pull:`482`)
-
+  (:issue:`376`)
+* Added the 'DAILY VALIDATION APPLIED' quality flag to ensure daily validation
+  is applied to all observation values (:issue:`377`) (:pull:`484`)
+* :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_observation`
+  and :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations`
+  can make use of
+  :py:func:`solarforecastarbiter.api.APISession.get_observation_values_not_flagged`
+  in order to only validate periods that have not yet had daily validation applied
+  (:issue:`377`) (:pull:`484`)
 
 Bug fixes
 ~~~~~~~~~
 * Check if a Forecast and Observation are compatible for generating a
   persistence forecast before creating reference persistence forecasts
   (:issue:`472`) (:pull:`478`)
+* When applying validation, only the 'USER FLAGGED' flag is preserved
+  instead of all previous flags (:pull:`484`)
+* Drop NaN before computing histogram when applying
+  :py:func:`solarforecastarbiter.validation.validator.detect_clipping`
+  (:pull:`484`)
 
 
 Contributors

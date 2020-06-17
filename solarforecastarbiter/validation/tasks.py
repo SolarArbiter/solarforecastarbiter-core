@@ -1,6 +1,7 @@
 import logging
 
 
+import numpy as np
 import pandas as pd
 from pvlib.irradiance import get_extra_radiation
 
@@ -451,11 +452,22 @@ IMMEDIATE_VALIDATION_FUNCS = {
     'ac_power': validate_ac_power,
     'dc_power': validate_dc_power
 }
+DAILY_VALIDATION_FUNCS = {
+    'ghi': validate_daily_ghi,
+    'dc_power': validate_daily_dc_power,
+    'ac_power': validate_daily_ac_power,
+    # no stale/interpolated
+    'event': validate_defaults,
+    'availability': validate_defaults,
+    'curtailment': validate_defaults,
+}
 
 
 def apply_immediate_validation(observation, observation_values):
     """
     Applies the appropriate validation functions to the observation_values.
+    Only the USER_FLAGGED flag is propagated if the series has been
+    previously validated.
 
     Parameters
     ----------
@@ -470,7 +482,7 @@ def apply_immediate_validation(observation, observation_values):
         appropriately
     """
     value_series = observation_values['value'].astype(float)
-    quality_flags = observation_values['quality_flag'].copy()
+    quality_flags = observation_values['quality_flag'].copy() & 1
 
     validation_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable, validate_defaults)
@@ -478,39 +490,17 @@ def apply_immediate_validation(observation, observation_values):
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
     observation_values.update(quality_flags)
     return observation_values
 
 
-def immediate_observation_validation(access_token, observation_id, start, end,
-                                     base_url=None):
-    """
-    Task that will run immediately after Observation values are uploaded to the
-    API to validate the data.
-    """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    observation_values = session.get_observation_values(observation_id, start,
-                                                        end)
-    validated = apply_immediate_validation(
-        observation, observation_values)
-    session.post_observation_values(observation_id, validated,
-                                    params='donotvalidate')
-
-
-DAILY_VALIDATION_FUNCS = {
-    'ghi': validate_daily_ghi,
-    'dc_power': validate_daily_dc_power,
-    'ac_power': validate_daily_ac_power
-}
-
-
 def apply_daily_validation(observation, observation_values):
-    """
-    Applies the appropriate daily validation functions to the
-    observation_values.
+    """Applies the appropriate daily validation functions to the
+    observation_values.  Only the USER_FLAGGED flag is propagated if
+    the series has been previously validated.
 
     Parameters
     ----------
@@ -528,13 +518,14 @@ def apply_daily_validation(observation, observation_values):
     ------
     IndexError
         If there are not enough valid points to perform daily validation
+
     """
     validated = observation_values.sort_index()
     value_series = validated['value'].astype(float)
     if len(value_series.dropna()) < 10:
         raise IndexError(
             'Data series does not have at least 10 datapoints to validate')
-    quality_flags = validated['quality_flag'].copy()
+    quality_flags = validated['quality_flag'].copy() & 1
 
     # if the variable has a daily check, run that, else run the
     # immediate validation, else validate timestamps
@@ -544,75 +535,12 @@ def apply_daily_validation(observation, observation_values):
 
     for flag in validation_flags:
         quality_flags |= flag
+    quality_flags |= quality_mapping.DAILY_VALIDATION_FLAG
+    quality_flags |= quality_mapping.LATEST_VERSION_FLAG
 
     quality_flags.name = 'quality_flag'
     validated.update(quality_flags)
     return validated
-
-
-def _daily_validation(session, observation, start, end, base_url):
-    logger.info('Validating data for %s from %s to %s',
-                observation.name, start, end)
-    observation_values = session.get_observation_values(
-        observation.observation_id, start, end)
-    validated = apply_daily_validation(
-        observation, observation_values)
-    return _group_continuous_week_post(
-        session, observation, validated)
-
-
-def _group_continuous_week_post(session, observation, observation_values):
-    # observation_values expected to be sorted
-    # observation values already have uneven frequency checked
-    gid = quality_mapping.check_if_series_flagged(
-        observation_values['quality_flag'], 'UNEVEN FREQUENCY').cumsum()
-    # make series of week + year integers to further
-    # split data to post at most one week at a time
-    # ~10,000 pts of 1min data
-    week_int = (gid.index.week + gid.index.year).values
-    # combine the continuous groups with groups of weeks
-    # gid is unique for each group since week_int and cumsum
-    # increase monotonically and are positive
-    gid += week_int
-    observation_values['gid'] = gid
-    for _, group in observation_values.groupby('gid'):
-        session.post_observation_values(observation.observation_id,
-                                        group[['value', 'quality_flag']],
-                                        params='donotvalidate')
-
-
-def daily_single_observation_validation(access_token, observation_id, start,
-                                        end, base_url=None):
-    """
-    Task that expects a longer, likely daily timeseries of Observation values
-    that will be validated.
-    """
-    session = APISession(access_token, base_url=base_url)
-    observation = session.get_observation(observation_id)
-    try:
-        _daily_validation(session, observation, start, end, base_url)
-    except IndexError:
-        logger.warning(
-            'Daily validation for %s failed: not enough values',
-            observation.name)
-
-
-def daily_observation_validation(access_token, start, end, base_url=None):
-    """
-    Run the daily observation validation for all observations that the user
-    has access to in their organization.
-    """
-    session = APISession(access_token, base_url=base_url)
-    user_info = session.get_user_info()
-    observations = [obs for obs in session.list_observations()
-                    if obs.provider == user_info['organization']]
-    for observation in observations:
-        try:
-            _daily_validation(session, observation, start, end, base_url)
-        except IndexError:
-            logger.warning(('Skipping daily validation of %s '
-                            'not enough values'), observation.name)
-            continue
 
 
 def apply_validation(observation, observation_values):
@@ -652,9 +580,155 @@ def apply_validation(observation, observation_values):
     if data.empty:
         return data
     if (
-            (data.index[-1] - data.index[0]) > pd.Timedelta('1d') and
+            (data.index[-1] - data.index[0]) >= pd.Timedelta('1d') and
             (len(data['value'].dropna()) > 10)
     ):
         return apply_daily_validation(observation, data)
     else:
         return apply_immediate_validation(observation, data)
+
+
+def _group_continuous_week_post(session, observation, observation_values):
+    # observation_values expected to be sorted
+    # observation values already have uneven frequency checked
+    gid = quality_mapping.check_if_series_flagged(
+        observation_values['quality_flag'], 'UNEVEN FREQUENCY').cumsum()
+    # make series of week + year integers to further
+    # split data to post at most one week at a time
+    # ~10,000 pts of 1min data
+    week_int = (gid.index.week + gid.index.year).values
+    # combine the continuous groups with groups of weeks
+    # gid is unique for each group since week_int and cumsum
+    # increase monotonically and are positive
+    gid += week_int
+    observation_values['gid'] = gid
+    for _, group in observation_values.groupby('gid'):
+        session.post_observation_values(observation.observation_id,
+                                        group[['value', 'quality_flag']],
+                                        params='donotvalidate')
+
+
+def _validate_post(session, observation, start, end):
+    logger.info('Validating data for %s from %s to %s',
+                observation.name, start, end)
+    observation_values = session.get_observation_values(
+        observation.observation_id, start, end)
+    validated = apply_validation(observation, observation_values)
+    return _group_continuous_week_post(
+        session, observation, validated)
+
+
+def _find_unvalidated_time_ranges(session, observation, min_start, max_end):
+    """Find the time ranges where the observation data needs to have
+    daily validation applied. Extend to next day midnight so daily
+    validation can be applied even since it requires >= 1 day of data
+    """
+    tz = observation.site.timezone
+    dates = session.get_observation_values_not_flagged(
+        observation_id=observation.observation_id,
+        start=min_start,
+        end=max_end,
+        flag=(
+            quality_mapping.DAILY_VALIDATION_FLAG |
+            quality_mapping.LATEST_VERSION_FLAG
+        ),
+        timezone=tz)
+    if len(dates) == 0:
+        return
+    sorted_dates = np.array(sorted(dates))
+
+    def first_last(prev, ind):
+        first = pd.Timestamp(dates[prev]).tz_localize(tz)
+        last = (pd.Timestamp(dates[ind])
+                .tz_localize(tz) + pd.Timedelta('1D'))
+        return first, last
+
+    prev = 0
+    # find the difference between each date, as integer days
+    # subtract one to then use nonzero to find those
+    # dates that are not continuous
+    breaks = np.diff(sorted_dates).astype('timedelta64[D]') - 1
+    discontinuities = np.nonzero(breaks)[0]
+
+    for ind in discontinuities:
+        first, last = first_last(prev, ind)
+        yield first, last
+        prev = ind + 1
+
+    first, last = first_last(prev, -1)
+    yield first, last
+
+
+def _split_validation(session, observation, start, end, only_missing):
+    if not only_missing:
+        return _validate_post(session, observation, start, end)
+
+    for _start, _end in _find_unvalidated_time_ranges(
+            session, observation, start, end):
+        _validate_post(session, observation, _start, _end)
+
+
+def fetch_and_validate_observation(access_token, observation_id, start, end,
+                                   only_missing=False, base_url=None):
+    """Task that will run immediately after Observation values are
+    uploaded to the API to validate the data. If over a day of data is
+    present, daily validation will be applied.
+
+    For the last day of a multiday series that only has a partial day's
+    worth of data, if `only_missing` is False, the data is evaluated as
+    one series and daily validation is applied. If `only_missing` is True,
+    any discontinuous periods of data with less than one day of data will
+    only have immediate validation applied. If the period is longer than
+    a day, the full daily validation is applied.
+
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    observation_id : str
+        ID of the observation to fetch values and validate
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default False
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
+    """
+    session = APISession(access_token, base_url=base_url)
+    observation = session.get_observation(observation_id)
+    _split_validation(session, observation, start, end, only_missing)
+
+
+def fetch_and_validate_all_observations(access_token, start, end,
+                                        only_missing=True, base_url=None):
+    """
+    Run the observation validation for all observations that the user
+    has access to in their organization. See further discussion in
+    :py:func:`solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations`
+
+    Parameters
+    ----------
+    access_token : str
+        Token to access the API
+    start : datetime-like
+        Start time to limit observation fetch
+    end : datetime-like
+        End time to limit observation fetch
+    only_missing : boolean, default True
+        If True, only periods that have not had daily validation applied
+        are fetched and validated. Otherwise all data between start and end
+        is validated.
+    base_url : str, default None
+        URL for the API to fetch and post data
+
+    """
+    session = APISession(access_token, base_url=base_url)
+    user_info = session.get_user_info()
+    observations = [obs for obs in session.list_observations()
+                    if obs.provider == user_info['organization']]
+    for observation in observations:
+        _split_validation(session, observation, start, end, only_missing)

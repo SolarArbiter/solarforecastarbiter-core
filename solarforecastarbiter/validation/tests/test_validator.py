@@ -373,6 +373,25 @@ def test_detect_clipping(ghi_clipped):
     assert_series_equal(flags, expected)
 
 
+def test_detect_clipping_some_nans(ghi_clipped):
+    placeholder = pd.Series(index=ghi_clipped.index, data=False)
+    expected = placeholder.copy()
+    # for window=4 and fraction_in_window=0.75
+    expected.iloc[3:6] = True
+    expected.iloc[14:17] = True
+    expected.iloc[18:20] = True
+    expected.iloc[25] = True
+    expected.iloc[30:36] = True
+    expected.iloc[38:46] = True
+    expected.iloc[56:60] = True
+    inp = ghi_clipped.copy()
+    inp.iloc[48] = np.nan
+    flags = validator.detect_clipping(inp, window=4,
+                                      fraction_in_window=0.75, rtol=5e-3,
+                                      levels=4)
+    assert_series_equal(flags, expected)
+
+
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_detect_clearsky_ghi(ghi_clearsky):
     flags = validator.detect_clearsky_ghi(ghi_clearsky, ghi_clearsky)

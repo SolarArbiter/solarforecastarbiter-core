@@ -1,6 +1,7 @@
 """
 Functions to connect to and process data from SolarForecastArbiter API
 """
+import datetime as dt
 import json
 import logging
 
@@ -547,6 +548,44 @@ class APISession(requests.Session):
         if maxt.tzinfo is None and pd.notna(maxt):
             maxt = maxt.tz_localize('UTC')
         return mint, maxt
+
+    @ensure_timestamps('start', 'end')
+    def get_observation_values_not_flagged(
+            self, observation_id, start, end, flag, timezone='UTC'):
+        """
+        Get the dates where the observation series is NOT flagged with
+        the given flag/bitmask.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+        flag : int
+            Days that are not flagged with this flag are returned. This can
+            be a compound flag/bitmask of the flags found in
+            :py:mod:`solarforecastarbiter.validation.quality_mapping`,
+            in which case days that do not have all flags present
+            are returned.
+        timezone : str, default "UTC"
+            The timezone to localize the data before computing the date
+
+        Returns
+        -------
+        dates : numpy.array of type datetime64[D]
+        """
+        req = self.get(f'/observations/{observation_id}/values/unflagged',
+                       params={'start': start,
+                               'end': end,
+                               'timezone': timezone,
+                               'flag': flag})
+        data = req.json()
+        dates = data['dates']
+        return np.array([dt.date.fromisoformat(d) for d in dates],
+                        dtype='datetime64[D]')
 
     @ensure_timestamps('start', 'end')
     def get_observation_values(self, observation_id, start, end,

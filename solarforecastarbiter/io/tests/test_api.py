@@ -1056,6 +1056,26 @@ def test_get_forecast_time_range(requests_mock, mint, maxt, expected):
     assert out == expected
 
 
+@pytest.mark.parametrize('inp,exp', [
+    ('[]', np.array([], dtype='datetime64[D]')),
+    ('["2019-01-01"]',
+     np.array(['2019-01-01'], dtype='datetime64[D]')),
+    ('["2019-01-03", "2019-04-01"]',
+     np.array(['2019-01-03', '2019-04-01'],
+              dtype='datetime64[D]')),
+])
+def test_get_observation_values_not_flagged(requests_mock, inp, exp):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/unflagged',
+        content=(
+            '{"observation_id": "obsid", "_links": {}, '
+            f'"dates": {inp}' + '}').encode())
+    out = session.get_observation_values_not_flagged(
+        'obsid', '2019-01-01T00:00Z', '2020-01-01T00:00Z', 16)
+    assert all(out == exp)
+
+
 @pytest.fixture(scope='session')
 def auth_token():
     try:
@@ -1402,3 +1422,14 @@ def test_real_apisession_get_cdf_forecast_time_range(real_session):
     assert out == (
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-17T06:55:00Z'))
+
+
+def test_real_apisession_get_observation_values_not_flagged(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
+    out = real_session.get_observation_values_not_flagged(
+        '123e4567-e89b-12d3-a456-426655440000',
+        start, end, 1)
+    assert isinstance(out, np.ndarray)
+    assert out.dtype == 'datetime64[D]'
+    assert all(out == np.array(['2019-04-15'], dtype='datetime64[D]'))

@@ -126,33 +126,37 @@ def test_common_options(common_runner, opts, envs, monkeypatch):
     assert res.output == 'OK\n'
 
 
-def test_dailyvalidation_cmd_all(cli_token, mocker):
+def test_validate_cmd_all(cli_token, mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.validation.tasks.daily_observation_validation')
+        'solarforecastarbiter.validation.tasks.fetch_and_validate_all_observations')  # NOQA
     mocker.patch.object(cli, 'midnight',
                         new=pd.Timestamp('2019-01-02T00:00:00Z'))
     runner = CliRunner()
-    runner.invoke(cli.dailyvalidation, ['-u user', '-p pass'])
+    runner.invoke(cli.validate, ['-u user', '-p pass'])
     assert mocked.called
     assert mocked.call_args[0] == ('TOKEN',
                                    pd.Timestamp('2019-01-01T00:00Z'),
-                                   pd.Timestamp('2019-01-01T23:59:59Z'),
-                                   'https://api.solarforecastarbiter.org')
+                                   pd.Timestamp('2019-01-02T00:00Z'))
+    assert mocked.call_args[1] == {
+        'only_missing': True,
+        'base_url': 'https://api.solarforecastarbiter.org'}
 
 
-def test_dailyvalidation_cmd_single(cli_token, mocker):
+def test_validate_cmd_single(cli_token, mocker):
     mocked = mocker.patch(
-        'solarforecastarbiter.validation.tasks.daily_single_observation_validation')  # NOQA
+        'solarforecastarbiter.validation.tasks.fetch_and_validate_observation')  # NOQA
     mocker.patch.object(cli, 'midnight',
                         new=pd.Timestamp('2019-01-02T00:00:00Z'))
     runner = CliRunner()
-    runner.invoke(cli.dailyvalidation, ['-u user', '-p pass', 'OBS_ID'])
+    runner.invoke(cli.validate, ['-u user', '-p pass', 'OBS_ID'])
     assert mocked.called
     assert mocked.call_args[0] == ('TOKEN',
                                    'OBS_ID',
                                    pd.Timestamp('2019-01-01T00:00Z'),
-                                   pd.Timestamp('2019-01-01T23:59:59Z'),
-                                   'https://api.solarforecastarbiter.org')
+                                   pd.Timestamp('2019-01-02T00:00Z'))
+    assert mocked.call_args[1] == {
+        'only_missing': True,
+        'base_url': 'https://api.solarforecastarbiter.org'}
 
 
 def test_referencedata_init(cli_token, mocker):
