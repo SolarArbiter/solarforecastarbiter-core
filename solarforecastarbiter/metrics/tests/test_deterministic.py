@@ -1,8 +1,15 @@
+import datetime as dt
 from functools import partial
 
+
+import pandas as pd
+from pandas.testing import assert_series_equal
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
+
+
+from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import deterministic
 
 
@@ -248,3 +255,136 @@ def test_deadband(func, error_func_deadband, deadband_obs_fx, expect,
     out_deadband = func(obs, fx, *args, error_fnc=error_func_deadband)
     assert_allclose(out, expect)
     assert_allclose(out_deadband, expect_deadband)
+
+
+@pytest.fixture()
+def default_cost_err():
+    # sum: 8.6, netsum: 16.6
+    return pd.Series([0, 0, -1, .1, 2.5, 2.1, 1.9, -3, 6],
+                     index=pd.date_range(
+                         start='2020-05-01T00:00Z', freq='1h', periods=9))
+
+
+@pytest.mark.parametrize('params,exp', [
+    (datamodel.ConstantCost(
+        cost=1.0, aggregation='sum', net=True), 8.6),
+    (datamodel.ConstantCost(
+        cost=1.0, aggregation='sum', net=False), 16.6),
+    (datamodel.ConstantCost(
+        cost=0.0, aggregation='sum', net=False), 0),
+    (datamodel.ConstantCost(
+        cost=1.0, aggregation='mean', net=False), 16.6/9),
+    (datamodel.ConstantCost(
+        cost=1.0, aggregation='mean', net=True), 8.6/9),
+    (datamodel.ConstantCost(
+        cost=2.0, aggregation='sum', net=True), 17.2),
+])
+def test_constant_cost(default_cost_err, params, exp):
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    cost = deterministic._constant_cost(obs, fx, params,
+                                        deterministic.error)
+    assert cost == exp
+
+
+@pytest.mark.parametrize('times,costs,index,tz,fill,exp', [
+    ([dt.time(0), dt.time(2)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'UTC', 'ffill',
+     pd.Series([1.0, 1.0, 2.0])),
+    ([dt.time(0), dt.time(4)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'UTC', 'ffill',
+     pd.Series([1.0, 1.0, 1.0])),
+    ([dt.time(1), dt.time(2)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'UTC', 'ffill',
+     pd.Series([2.0, 1.0, 2.0])),
+    ([dt.time(1), dt.time(1, 30)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:01Z', freq='1h', periods=3),
+     'UTC', 'bfill',
+     pd.Series([1.0, 2.0, 1.0])),
+    ([dt.time(17), dt.time(19)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'MST', 'ffill',
+     pd.Series([1.0, 1.0, 2.0])),
+    # missing first time
+    ([dt.time(15), dt.time(17)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'Etc/GMT+10', 'ffill',
+     pd.Series([2.0, 1.0, 1.0])),
+    # missing last time
+    ([dt.time(9), dt.time(11)], [1.0, 2.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'Etc/GMT-10', 'bfill',
+     pd.Series([2.0, 2.0, 1.0])),
+    ([dt.time(9)], [1.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=2),
+     'Etc/GMT-1', 'bfill',
+     pd.Series([1.0, 1.0])),
+    ([dt.time(0, 5), dt.time(0, 10)], [1.0, -99.9],
+     pd.date_range('2020-01-01T00:00Z', freq='5min', periods=3),
+     'UTC', 'ffill',
+     pd.Series([-99.9, 1.0, -99.9])),
+])
+def test_make_time_of_day_cost_ser(times, costs, index, tz, fill, exp):
+    ser = deterministic._make_time_of_day_cost_ser(times, costs, index, tz,
+                                                   fill)
+    exp.index = index
+    exp.name = 'cost'
+    assert_series_equal(ser, exp)
+
+
+def test_band_masks(banded_cost_params, default_cost_err):
+    masks = deterministic._band_masks(banded_cost_params.parameters.bands,
+                                      default_cost_err)
+    expmasks = [
+        pd.Series([1, 1, 1, 1, 0, 0, 1, 0, 0], dtype=bool,
+                  index=default_cost_err.index),
+        pd.Series([0, 0, 0, 0, 1, 1, 0, 0, 1], dtype=bool,
+                  index=default_cost_err.index),
+        pd.Series([0, 0, 0, 0, 0, 0, 0, 1, 0], dtype=bool,
+                  index=default_cost_err.index),
+    ]
+    assert sum(masks).all()
+    for i, m in enumerate(masks):
+        assert_series_equal(m, expmasks[i])
+
+
+@pytest.fixture(params=['constant', 'timeofday', 'datetime'])
+def costs(request):
+    if request.param == 'constant':
+        return datamodel.ConstantCost(
+            cost=1.0,
+            aggregation='mean',
+            net=False
+        )
+    elif request.param == 'timeofday':
+        return datamodel.TimeOfDayCost(
+            times=[dt.time(0), dt.time(12)],
+            costs=[1.0, -1.0],
+            aggregation='sum',
+            net=True,
+            fill='forward'
+        )
+    elif request.param == 'datetime':
+        return datamodel.DatetimeCost(
+            datetimes=[pd.Timestamp('2020-05-01T00:00Z'),
+                       pd.Timestamp('2020-05-02T12:00Z')],
+            costs=[1.0, 3.0],
+            aggregation='sum',
+            net=False,
+            fill='forward'
+        )
+
+
+def test_error_band_cost(banded_cost_params):
+    ind = pd.date_range(start='2020-05-01T00:00Z', freq='1h', periods=8)
+    obs = pd.Series([1, 6, 1, 2, 2.00, 2.0, 0, 4], index=ind)
+    fx = pd.Series([1., 2, 3, 0, -0.1, 1.9, 3, 5], index=ind)
+    err = deterministic._error_band_cost(
+        obs, fx, banded_cost_params.parameters, deterministic.error)
+    exp = ((0 + 0 + 2 + -2 + 0.0 + -0.1 + 0 + 1) +
+           (0 + 0 + 0 + 0. + 0.0 + 0.00 + 3 * 0.9 + 0) +
+           (0 + -4 * -0.2 + 0 + 0. + -2.1 * -0.2 + 0.00 + 0 + 0))
+    assert err == exp

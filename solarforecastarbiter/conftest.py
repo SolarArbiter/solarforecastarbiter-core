@@ -2822,9 +2822,9 @@ def remove_orca():
 
 
 @pytest.fixture()
-def ferc890_cost_params():
-    return datamodel.CostParameters(
-        name='FERC-890',
+def banded_cost_params():
+    return datamodel.Cost(
+        name='bandedcost',
         type='errorband',
         parameters=datamodel.ErrorBandCost(
             bands=(
@@ -2839,19 +2839,23 @@ def ferc890_cost_params():
                 ),
                 datamodel.CostBand(
                     error_range=(2, np.inf),
-                    cost_function='constant',
-                    cost_function_parameters=datamodel.ConstantCost(
-                        cost=1.1,
+                    cost_function='timeofday',
+                    cost_function_parameters=datamodel.TimeOfDayCost(
+                        times=[dt.time(0), dt.time(6)],
+                        costs=[1.1, 0.9],
                         aggregation='sum',
+                        fill='forward',
                         net=False
                     )
                 ),
                 datamodel.CostBand(
                     error_range=(-np.inf, -2),
-                    cost_function='constant',
-                    cost_function_parameters=datamodel.ConstantCost(
-                        cost=-0.9,
+                    cost_function='timeofday',
+                    cost_function_parameters=datamodel.TimeOfDayCost(
+                        times=[dt.time(2), dt.time(4)],
+                        costs=[-0.1, -0.2],
                         aggregation='sum',
+                        fill='forward',
                         net=False
                     )
                 )
