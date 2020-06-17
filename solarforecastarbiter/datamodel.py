@@ -19,11 +19,13 @@ import pandas as pd
 
 from solarforecastarbiter.metrics.deterministic import \
     _MAP as deterministic_mapping
+from solarforecastarbiter.metrics.deterministic import \
+    _FILL_OPTIONS as deterministic_cost_filling
+from solarforecastarbiter.metrics.deterministic import \
+    _AGG_OPTIONS as deterministic_cost_aggregation
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
-from solarforecastarbiter.metrics.cost import (
-    FILL_OPTIONS, AGG_OPTIONS)
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
@@ -941,14 +943,15 @@ class ProbabilisticForecast(
 def __validate_cost__(index_var):
     def val(obj):
         if hasattr(obj, 'fill'):
-            if obj.fill not in FILL_OPTIONS.keys():
+            fillkeys = deterministic_cost_filling.keys()
+            if obj.fill not in fillkeys:
                 raise ValueError(
-                    f"Cost 'fill' must be one of {list(FILL_OPTIONS.keys())}")
+                    f"Cost 'fill' must be one of {str(fillkeys)}")
         if hasattr(obj, 'aggregation'):
-            if obj.aggregation not in AGG_OPTIONS.keys():
+            aggkeys = deterministic_cost_aggregation.keys()
+            if obj.aggregation not in aggkeys:
                 raise ValueError(
-                    "Cost 'aggregation' must be one of " +
-                    str(list(FILL_OPTIONS.keys())))
+                    f"Cost 'aggregation' must be one of {str(aggkeys)}")
         if index_var is not None:
             if len(obj.costs) != len(getattr(obj, index_var)):
                 raise ValueError(
@@ -1091,12 +1094,15 @@ class Cost(BaseModel):
 
     Parameters
     ----------
+    name : str
+        Identifier for these cost parameters
     type : str
        The type of cost parameters that are included in `parameters`. One of
        'timeofday', 'datetime', 'constant', or 'errorband'.
     parameters : :py:class:`solarforecastarbiter.datamodel.ConstantCost` or :py:class:`solarforecastarbiter.TimeOfDayCost` or :py:class:`solarforecastarbiter.DatetimeCost` or :py:class:`solarforecastarbiter.ErrorBandCost`
         Parameters for the specific cost function type.
     """  # NOQA
+    name: str
     type: str
     parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
 
@@ -1201,8 +1207,7 @@ class ForecastObservation(BaseModel):
     # ProcessedForecastObservation
     normalization: Union[float, None] = None
     uncertainty: Union[None, float, str] = None
-    # cost: Cost
-    cost_per_unit_error: float = 0.0
+    cost: Union[Cost, None] = None
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
@@ -1281,7 +1286,7 @@ class ForecastAggregate(BaseModel):
     reference_forecast: Union[Forecast, None] = None
     normalization: Union[float, None] = None
     uncertainty: Union[float, None] = None
-    cost_per_unit_error: float = 0.0
+    cost: Union[Cost, None] = None
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
@@ -1501,10 +1506,7 @@ class ProcessedForecastObservation(BaseModel):
     # only in original
     normalization_factor: Union[pd.Series, float] = 1.0
     uncertainty: Union[None, float] = None
-    # For now only, a single $/unit error cost is allowed.
-    # This is defined along with each ForecastObservation, but
-    # in the future this might also be a series
-    cost_per_unit_error: float = 0.0
+    cost: Union[Cost, None] = None
 
 
 @dataclass(frozen=True)
