@@ -1,6 +1,6 @@
-("""
+"""
 Metric calculation functions.
-""")
+"""
 import calendar
 from functools import partial
 import logging
@@ -10,14 +10,13 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import (
-    deterministic, probabilistic, event, cost)
+from solarforecastarbiter.metrics import deterministic, probabilistic, event
 
 
 logger = logging.getLogger(__name__)
 
 
-def calculate_metrics(processed_pairs, categories, metrics, cost_params=None):
+def calculate_metrics(processed_pairs, categories, metrics):
     """
     Loop through the forecast-observation pairs and calculate metrics.
 
@@ -42,9 +41,6 @@ def calculate_metrics(processed_pairs, categories, metrics, cost_params=None):
         datamodel.ProcessedForecastObservation
     """
     calc_metrics = []
-
-    if cost_params is not None:
-        cost_func = cost.generate_cost_function(cost_params)
 
     for proc_fxobs in processed_pairs:
 
@@ -73,8 +69,7 @@ def calculate_metrics(processed_pairs, categories, metrics, cost_params=None):
                 calc_metrics.append(calculate_deterministic_metrics(
                     proc_fxobs,
                     categories,
-                    metrics,
-                    cost_func))
+                    metrics))
             except RuntimeError as e:
                 logger.error('Failed to calculate deterministic metrics'
                              ' for %s: %s',
@@ -83,20 +78,10 @@ def calculate_metrics(processed_pairs, categories, metrics, cost_params=None):
     return calc_metrics
 
 
-def _null_func(*args, **kwargs):
-    return np.nan
-
-
 def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     deterministic metric functions."""
-    if metric == 'cost':
-        metric_func = kwargs.get('cost_func', None)
-        if metric_func is None:
-            logger.warning('Cannot calculate "cost" without cost function')
-            metric_func = _null_func
-    else:
-        metric_func = deterministic._MAP[metric][0]
+    metric_func = deterministic._MAP[metric][0]
 
     # the keyword arguments that will be passed to the functions
     _kw = {}
@@ -124,12 +109,7 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
 def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     probabilistic metric functions."""
-    if metric == 'cost':
-        logger.warning(
-            '"cost" metric not yet implemented for probabilistic forecasts')
-        metric_func = _null_func
-    else:
-        metric_func = probabilistic._MAP[metric][0]
+    metric_func = probabilistic._MAP[metric][0]
     if metric in probabilistic._REQ_REF_FX:
         return metric_func(obs, fx, fx_prob,
                            kwargs['ref_fx'], kwargs['ref_fx_prob'])
@@ -140,17 +120,11 @@ def _apply_probabilistic_metric_func(metric, fx, fx_prob, obs, **kwargs):
 def _apply_event_metric_func(metric, fx, obs, **kwargs):
     """Helper function to deal with variable number of arguments possible for
     event metric functions."""
-    if metric == 'cost':
-        logger.warning(
-            '"cost" metric not yet implemented for event forecasts')
-        metric_func = _null_func
-    else:
-        metric_func = event._MAP[metric][0]
+    metric_func = event._MAP[metric][0]
     return metric_func(obs, fx)
 
 
-def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
-                                    cost_func=None):
+def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     """
     Calculate deterministic metrics for the processed data using the provided
     categories and metric types.
@@ -240,7 +214,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics,
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
                     ref_fx=group.reference, normalization=normalization,
-                    deadband=deadband, cost_func=cost_func)
+                    deadband=deadband)
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday
