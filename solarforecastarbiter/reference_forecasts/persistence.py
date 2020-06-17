@@ -582,7 +582,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
 
     # confirm sufficient data for matching by time of day
-    if data_end - data_start < pd.Timedelta('7D'):
+    if data_end - data_start < pd.Timedelta('20D'):
         raise ValueError("Insufficient data to match by time of day")
 
     if axis == "x":
