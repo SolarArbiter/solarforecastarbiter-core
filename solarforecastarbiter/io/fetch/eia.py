@@ -22,7 +22,8 @@ def get_eia_data(series_id, api_key, start, end):
 
     Returns
     -------
-    df : pandas.Series
+    pandas.Series
+        The data from *start* to *end* for *series_id*.
 
     References
     ----------
@@ -52,4 +53,4 @@ def get_eia_data(series_id, api_key, start, end):
     # - "*" if statistically insignificant
     df.replace(["null", "w", "*"], np.nan, inplace=True)
 
-    return df
+    return df["value"]
