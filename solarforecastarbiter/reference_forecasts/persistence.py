@@ -23,9 +23,12 @@ rather than using the solarforecastarbiter database.
 """
 from functools import partial
 
+import numpy as np
 import pandas as pd
 
 from solarforecastarbiter import datamodel, pvmodel
+
+from statsmodels.distributions.empirical_distribution import ECDF
 
 
 def persistence_scalar(observation, data_start, data_end, forecast_start,
@@ -362,3 +365,253 @@ def _check_intervals_times(interval_label, data_start, data_end,
                              'interval_length. ' + strvals)
     else:
         raise ValueError('invalid interval_label')
+
+
+def persistence_probabilistic(observation, data_start, data_end,
+                              forecast_start, forecast_end,
+                              interval_length, interval_label,
+                              load_data, axis, constant_values):
+    r"""
+    Make a probabilistic persistence forecast using the *observation* from
+    *data_start* to *data_end*. In the forecast literature, this method is
+    typically referred to as Persistence Ensemble (PeEn). [1]_ [2]_ [3]_
+
+    The function handles forecasting either constant variable values or
+    constant percentiles. In the examples below, we use GHI to be concrete but
+    the concepts also apply to other variables (AC power, net load, etc.).
+
+    If forecasting constant variable values (e.g. forecast the probability of
+    GHI being less than or equal to 500 W/m^2), the persistence forecast is:
+
+    .. math::
+
+       F_n(x) = ECDF(GHI_{t_{start}}, ..., GHI_{t_{end}})
+       Prob(GHI_{t_f} <= 100 W/m^2) = F_n(100 W/m^2)
+
+    where :math:`t_f` is a forecast time and :math:`F_n` is the empirical CDF
+    (ECDF) function computed from the *n* observations between
+    :math:`t_{start}` = *data_start* and :math:`t_{end}` = *data_end*, which
+    maps from variable values to probabilities.
+
+    If forecasting constant probabilities (e.g. forecast the GHI value that has
+    a 50% probability), the persistence forecast is:
+
+    .. math::
+
+       F_n(x) = ECDF(GHI_{t_{start}}, ..., GHI_{t_{end}})
+       Q_n(p) = \inf {x \in \mathrf{R} : p \leq F_n(x) }
+       p_{t_f} = Q_n(50%)
+
+    where :math:`Q_n` is the quantile function based on the *n* observations
+    between :math:`t_{start}` = *data_start* and :math:`t_{end}` = *data_end*,
+    which maps from probabilities to variable values.
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    data_start : pd.Timestamp
+        Observation data start. Forecast is inclusive of this instant if
+        observation.interval_label is *beginning* or *instant*.
+    data_end : pd.Timestamp
+        Observation data end. Forecast is inclusive of this instant if
+        observation.interval_label is *ending* or *instant*.
+    forecast_start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* or *instant*.
+    forecast_end : pd.Timestamp
+        Forecast end. Forecast is inclusive of this instant if
+        interval_label is *ending* or *instant*.
+    interval_length : pd.Timedelta
+        Forecast interval length
+    interval_label : str
+        instant, beginning, or ending
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
+    axis : {'x', 'y'}
+        The axis on which the constant values of the CDF is specified. The axis
+        can be either *x* (constant variable values) or *y* (constant
+        percentiles).
+    constant_values : array_like
+        The variable values or percentiles.
+
+    Returns
+    -------
+    forecasts : list of pd.Series
+        The persistence forecasts, returned in the same order as
+        *constant_values*. If *axis* is *x*, the forecast values are
+        percentiles (e.g. 25%). If instead *axis* is *y*, the forecasts values
+        have the same units as the observation data (e.g. MW).
+
+    Raises
+    ------
+    ValueError
+        If the **axis** parameter is invalid.
+
+    References
+    ----------
+    .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
+       probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
+       doi: 10.1016/j.apenergy.2015.08.011
+    .. [2] Yang (2019) "A universal benchmarking method for probabilistic
+       solar irradiance forecasting", Solar Energy 184, pp. 410-416.
+       doi: 10.1016/j.solener.2019.04.018
+    .. [3] Doubleday, Van Scyoc Herndandez and Hodge (2020) "Benchmark
+       probabilistic solar forecasts: characteristics and recommendations",
+       Solar Energy 206, pp. 52-67. doi: 10.1016/j.solener.2020.05.051
+
+    """
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+    fx_index = pd.date_range(start=forecast_start, end=forecast_end,
+                             freq=interval_length, closed=closed)
+
+    # observation data resampled to match forecast sampling
+    obs = load_data(observation, data_start, data_end)
+    obs = obs.resample(interval_length, closed=closed).mean()
+
+    if axis == "x":
+        cdf = ECDF(obs)
+        forecasts = []
+        for constant_value in constant_values:
+            fx_prob = cdf(constant_value) * 100.0
+            forecasts.append(pd.Series(fx_prob, index=fx_index))
+    elif axis == "y":   # constant_values=percentiles, fx=variable
+        forecasts = []
+        for constant_value in constant_values:
+            fx = np.percentile(obs, constant_value)
+            forecasts.append(pd.Series(fx, index=fx_index))
+    else:
+        raise ValueError(f"Invalid axis parameter: {axis}")
+
+    return forecasts
+
+
+def persistence_probabilistic_timeofday(observation, data_start, data_end,
+                                        forecast_start, forecast_end,
+                                        interval_length, interval_label,
+                                        load_data, axis, constant_values):
+    r"""
+    Make a probabilistic persistence forecast using the *observation* from
+    *data_start* to *data_end*, matched by time of day (e.g. to forecast 9am,
+    only use observations from 9am on days between *data_start* and
+    *data_end*). This is a common variant of the Persistence Ensemble (PeEn)
+    method. [1]_ [2]_ [3]_
+
+    Parameters
+    ----------
+    observation : datamodel.Observation
+    data_start : pd.Timestamp
+        Observation data start. Forecast is inclusive of this instant if
+        observation.interval_label is *beginning* or *instant*.
+    data_end : pd.Timestamp
+        Observation data end. Forecast is inclusive of this instant if
+        observation.interval_label is *ending* or *instant*.
+    forecast_start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* or *instant*.
+    forecast_end : pd.Timestamp
+        Forecast end. Forecast is inclusive of this instant if
+        interval_label is *ending* or *instant*.
+    interval_length : pd.Timedelta
+        Forecast interval length
+    interval_label : str
+        instant, beginning, or ending
+    load_data : function
+        A function that loads the observation data. Must have the
+        signature load_data(observation, data_start, data_end) and
+        properly account for observation interval label.
+    axis : {'x', 'y'}
+        The axis on which the constant values of the CDF is specified. The axis
+        can be either *x* (constant variable values) or *y* (constant
+        percentiles).
+    constant_values : array_like
+        The variable values or percentiles.
+
+    Returns
+    -------
+    forecasts : list of pd.Series
+        The persistence forecasts, returned in the same order as
+        *constant_values*. If *axis* is *x*, the forecast values are
+        percentiles (e.g. 25%). If instead *axis* is *y*, the forecasts values
+        have the same units as the observation data (e.g. MW).
+
+    Raises
+    ------
+    ValueError
+        If there is insufficient data for matching by time of day or the
+        **axis** parameter is invalid.
+
+    Notes
+    -----
+    Assumes that there is at least 20 days of *observation* data available
+    based on [1]_, [2]_, [3]_.
+
+    References
+    ----------
+    .. [1] Allessandrini et al. (2015) "An analog ensemble for short-term
+       probabilistic solar power forecast", Appl. Energy 157, pp. 95-110.
+       doi: 10.1016/j.apenergy.2015.08.011
+    .. [2] Yang (2019) "A universal benchmarking method for probabilistic
+       solar irradiance forecasting", Solar Energy 184, pp. 410-416.
+       doi: 10.1016/j.solener.2019.04.018
+    .. [3] Doubleday, Van Scyoc Herndandez and Hodge (2020) "Benchmark
+       probabilistic solar forecasts: characteristics and recommendations",
+       Solar Energy 206, pp. 52-67. doi: 10.1016/j.solener.2020.05.051
+
+    See also
+    --------
+    :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_probabilistic`
+
+    """
+    # ensure that we're using times rounded to multiple of interval_length
+    _check_intervals_times(observation.interval_label, data_start, data_end,
+                           forecast_start, forecast_end,
+                           observation.interval_length)
+
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+    fx_index = pd.date_range(start=forecast_start, end=forecast_end,
+                             freq=interval_length, closed=closed)
+
+    # observation data resampled to match forecast sampling
+    obs = load_data(observation, data_start, data_end)
+    obs = obs.resample(interval_length, closed=closed).mean()
+
+    # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
+    if obs.index.tzinfo is not None:
+        if fx_index.tzinfo is not None:
+            obs = obs.tz_convert(fx_index.tzinfo)
+        else:
+            fx_index = fx_index.tz_localize(obs.index.tzinfo)
+    else:
+        if fx_index.tzinfo is not None:
+            obs = obs.tz_localize(fx_index.tzinfo)
+
+    obs_timeofday = (obs.index.hour * 60 + obs.index.minute).astype(int)
+    fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
+
+    # confirm sufficient data for matching by time of day
+    if obs.last_valid_index() - obs.first_valid_index() < pd.Timedelta("20D"):
+        raise ValueError("Insufficient data to match by time of day")
+
+    if axis == "x":
+        forecasts = []
+        for constant_value in constant_values:
+            fx = pd.Series(np.nan, index=fx_index)
+            for tod in fx_timeofday:
+                data = obs[obs_timeofday == tod]
+                cdf = ECDF(data)
+                fx[fx_timeofday == tod] = cdf(constant_value) * 100.0
+            forecasts.append(fx)
+    elif axis == "y":
+        forecasts = []
+        for constant_value in constant_values:
+            fx = pd.Series(np.nan, index=fx_index)
+            for tod in fx_timeofday:
+                data = obs[obs_timeofday == tod]
+                fx[fx_timeofday == tod] = np.percentile(data, constant_value)
+            forecasts.append(fx)
+    else:
+        raise ValueError(f"Invalid axis parameter: {axis}")
+
+    return forecasts
