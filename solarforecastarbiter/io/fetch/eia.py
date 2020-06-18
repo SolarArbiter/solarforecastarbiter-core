@@ -1,6 +1,7 @@
 """Functions to extract EIA."""
 
 import requests
+import numpy as np
 import pandas as pd
 
 
@@ -32,14 +33,16 @@ def get_eia_data(series_id, api_key, start, end):
     r = requests.get(base_url, params=params)
     r.raise_for_status()
 
-    # returned values:
-    # - numeric if valid
-    # - "null" if missing
-    # - "w" if witheld
-    # - "*" if statistically insignificant
     data = r.json()["series"][0]["data"]
     df = pd.DataFrame(data, columns=["timestamp", "value"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df.set_index("timestamp", inplace=True)
     df.sort_index(inplace=True)
+
+    # replace invalid values:
+    # - "null" if missing
+    # - "w" if witheld
+    # - "*" if statistically insignificant
+    df.replace(["null", "w", "*"], np.nan, inplace=True)
+
     return df
