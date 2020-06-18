@@ -911,7 +911,8 @@ def test_invalid_costband(constant_cost, datetime_cost, timeofday_cost,
 
 @pytest.mark.parametrize('which', [
     'constant', 'timeofday', 'datetime', 'errorband',
-    pytest.param('fullcost', marks=pytest.mark.xfail(type=ValueError, strict=True))
+    pytest.param('fullcost', marks=pytest.mark.xfail(
+        type=ValueError, strict=True))
 ])
 def test_cost_from_dict(cost_dicts, which):
     out = datamodel.Cost.from_dict({'name': 'test', 'type': which,
@@ -922,7 +923,8 @@ def test_cost_from_dict(cost_dicts, which):
 
 @pytest.mark.parametrize('which', [
     'constant', 'timeofday', 'datetime', 'errorband',
-    pytest.param('other', marks=pytest.mark.xfail(type=ValueError, strict=True))
+    pytest.param('other', marks=pytest.mark.xfail(type=ValueError,
+                                                  strict=True))
 ])
 def test_cost_types(which, constant_cost, datetime_cost, timeofday_cost,
                     errorband_cost):

@@ -1093,7 +1093,6 @@ class CostBand(BaseModel):
                 " 'constant'")
 
 
-
 @dataclass(frozen=True)
 class ErrorBandCost(BaseModel):
     """Cost that varies based on the error value. For each error band,
