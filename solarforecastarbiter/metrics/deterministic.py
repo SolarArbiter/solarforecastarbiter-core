@@ -617,7 +617,8 @@ def _datetime_cost(obs, fx, cost_params, error_fnc):
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
     cost_ser = pd.Series(cost_params.costs,
-                         index=cost_params.datetimes)
+                         index=pd.DatetimeIndex(cost_params.datetimes),
+                         dtype=float)
 
     errors = error_fnc(obs, fx)
 
@@ -632,7 +633,7 @@ def _datetime_cost(obs, fx, cost_params, error_fnc):
 
 
 def _band_masks(bands, errors):
-    """"""
+    """Make masks for each band based on which band errors falls in"""
     prev = np.zeros(errors.shape, dtype=bool)
     out = []
     for band in bands:
@@ -647,6 +648,7 @@ def _band_masks(bands, errors):
 
 
 def _error_band_cost(obs, fx, cost_params, error_fnc):
+    """Calculate cost using datamodel.BandedCost parameters"""
     bands = cost_params.bands
     band_cost_functions = [
         partial(_COST_FUNCTION_MAP[band.cost_function],
@@ -668,6 +670,9 @@ def _error_band_cost(obs, fx, cost_params, error_fnc):
 
 
 def cost(obs, fx, cost_params, error_fnc=error):
+    """
+    GOODER DOCS
+    """
     fnc = _COST_FUNCTION_MAP[cost_params.type]
     return fnc(obs, fx, cost_params.parameters, error_fnc)
 
