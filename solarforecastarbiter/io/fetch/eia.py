@@ -29,6 +29,20 @@ def get_eia_data(series_id, api_key, start, end):
     ----------
     .. [1] https://www.eia.gov/opendata/
 
+    Examples
+    --------
+    >>> series_id = "EBA.CISO-ALL.D.H"  # CAISO demand [MW]
+    >>> start = pd.Timestamp("20200601T0800Z")
+    >>> end = pd.Timestamp("20200602T0800Z")
+    >>> api_key = "yourapikeygoeshere"
+    >>> get_eia_data(series_id, api_key, start, end)
+    timestamp
+    2020-06-01 08:00:00+00:00    22028
+    2020-06-01 09:00:00+00:00    21141
+    2020-06-01 10:00:00+00:00    20573
+    ...
+    Name: value, dtype: int64
+
     """
 
     base_url = "https://api.eia.gov/series/"
