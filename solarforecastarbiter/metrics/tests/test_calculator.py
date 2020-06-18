@@ -28,7 +28,7 @@ EVENT_METRICS = list(event._MAP.keys())
 
 
 @pytest.fixture()
-def create_processed_fxobs(create_dt_index):
+def create_processed_fxobs(create_dt_index, banded_cost_params):
     def _create_processed_fxobs(fxobs, fx_values, obs_values,
                                 ref_values=None,
                                 interval_label=None):
@@ -59,7 +59,8 @@ def create_processed_fxobs(create_dt_index):
             observation_values=conv_obs_values,
             reference_forecast_values=ref_values,
             normalization_factor=fxobs.normalization,
-            uncertainty=fxobs.uncertainty
+            uncertainty=fxobs.uncertainty,
+            cost=banded_cost_params
             )
 
     return _create_processed_fxobs
@@ -409,6 +410,18 @@ def test_calculate_deterministic_metrics_no_metrics(
     with pytest.raises(RuntimeError):
         calculator.calculate_deterministic_metrics(
             proc_fx_obs, LIST_OF_CATEGORIES, []
+        )
+
+
+def test_calculate_deterministic_metrics_no_cost_param(
+        create_processed_fxobs, single_forecast_observation):
+    proc_fx_obs = create_processed_fxobs(single_forecast_observation,
+                                         np.array([1]), np.array([1])).replace(
+                                             cost=None)
+
+    with pytest.raises(RuntimeError):
+        calculator.calculate_deterministic_metrics(
+            proc_fx_obs, LIST_OF_CATEGORIES, ['cost']
         )
 
 
