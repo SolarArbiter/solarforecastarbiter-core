@@ -7,19 +7,26 @@ import pandas as pd
 
 def get_eia_data(series_id, api_key, start, end):
     """
+    Retrieve data from the EIA Open Data API. [1]_
 
     Parameters
     ----------
     series_id : string
-        The series ID in the EIA Open Data API.
+        The series ID in the EIA API.
     api_key : string
-        The API key for accessing the EIA Open Data API.
+        The API key for accessing the EIA API.
     start : pd.Timestamp
+        The start timestamp in UTC.
     end : pd.Timestamp
+        The end timestamp in UTC.
 
     Returns
     -------
     df : pandas.Series
+
+    References
+    ----------
+    .. [1] https://www.eia.gov/opendata/
 
     """
 
