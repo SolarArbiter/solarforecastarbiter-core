@@ -155,8 +155,6 @@ def _single_field_processing(model, field, val, field_type=None):
         return out
     elif type_ == datetime.time:
         return datetime.datetime.strptime(val, '%H:%M').time()
-    elif type_ == float:
-        return float(val)
     elif (
             is_dataclass(type_) and
             isinstance(val, dict)
@@ -1065,6 +1063,13 @@ class CostBand(BaseModel):
     error_range: Tuple[float, float]
     cost_function: str
     cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
+
+    def _special_field_processing(self, model_field, val):
+        # support passing "inf", "-inf" as strings via json/dict
+        if model_field.name == 'error_range':
+            return float(val)
+        else:  # pragma: no cover
+            return val
 
     def __post_init__(self):
         if self.cost_function == 'timeofday':

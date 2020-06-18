@@ -23,7 +23,9 @@ from solarforecastarbiter import datamodel
                         'metricresult', 'validationresult',
                         'preprocessing_result', 'reportparameters',
                         'plotlyreportfigure', 'reportmessage',
-                        'bokehreportfigure'])
+                        'bokehreportfigure', 'constantcost',
+                        'timeofdaycost', 'datetimecost', 'errorbandcost',
+                        'cost'])
 def pdid_params(request, many_sites, many_sites_text,
                 single_observation, single_observation_text,
                 single_site, single_forecast_text, single_forecast,
@@ -47,7 +49,9 @@ def pdid_params(request, many_sites, many_sites_text,
                 plotly_report_figure_dict, plotly_report_figure,
                 bokeh_report_figure_dict, bokeh_report_figure,
                 report_message_dict, report_message,
-                report_params_dict, report_params):
+                report_params_dict, report_params,
+                constant_cost, timeofday_cost, datetime_cost,
+                errorband_cost, banded_cost_params, cost_dicts):
     if request.param == 'site':
         return (many_sites[0], json.loads(many_sites_text)[0],
                 datamodel.Site)
@@ -154,6 +158,18 @@ def pdid_params(request, many_sites, many_sites_text,
                 datamodel.BokehReportFigure)
     elif request.param == 'reportmessage':
         return (report_message, report_message_dict, datamodel.ReportMessage)
+    elif request.param == 'constantcost':
+        return (constant_cost, cost_dicts['constant'], datamodel.ConstantCost)
+    elif request.param == 'timeofdaycost':
+        return (timeofday_cost, cost_dicts['timeofday'],
+                datamodel.TimeOfDayCost)
+    elif request.param == 'datetimecost':
+        return (datetime_cost, cost_dicts['datetime'], datamodel.DatetimeCost)
+    elif request.param == 'errorbandcost':
+        return (errorband_cost, cost_dicts['errorband'],
+                datamodel.ErrorBandCost)
+    elif request.param == 'cost':
+        return (banded_cost_params, cost_dicts['fullcost'], datamodel.Cost)
 
 
 @pytest.mark.parametrize('extra', [
@@ -866,3 +882,76 @@ def test_raw_report_event_forecast_loading(raw_report_dict_with_event):
     raw_report = datamodel.RawReport.from_dict(raw_report_dict_with_event)
     for fxobs in raw_report.processed_forecasts_observations:
         assert isinstance(fxobs.original.forecast, datamodel.EventForecast)
+
+
+@pytest.mark.parametrize('a,b', [
+    ('constant', 'datetime'),
+    ('constant', 'timeofday'),
+    ('constant', 'errorband'),
+    ('timeofday', 'constant'),
+    ('timeofday', 'datetime'),
+    ('timeofday', 'errorband'),
+    ('datetime', 'constant'),
+    ('datetime', 'timeofday'),
+    ('datetime', 'errorband'),
+    pytest.param('erorband', 'constant',
+                 marks=pytest.mark.xfail(type=ValueError, strict=True)),
+])
+def test_invalid_costband(constant_cost, datetime_cost, timeofday_cost,
+                          errorband_cost, a, b):
+    dd = {'constant': constant_cost, 'timeofday': timeofday_cost,
+          'datetime': datetime_cost, 'errorband': errorband_cost}
+    with pytest.raises(TypeError):
+        datamodel.CostBand(
+            error_range=(0, 2),
+            cost_function=a,
+            cost_function_parameters=dd[b]
+        )
+
+
+@pytest.mark.parametrize('which', [
+    'constant', 'timeofday', 'datetime', 'errorband',
+    pytest.param('fullcost', marks=pytest.mark.xfail(type=ValueError, strict=True))
+])
+def test_cost_from_dict(cost_dicts, which):
+    out = datamodel.Cost.from_dict({'name': 'test', 'type': which,
+                                    'parameters': cost_dicts[which]})
+    assert isinstance(out, datamodel.Cost)
+    assert str(out.parameters).split('(')[0].lower() == which + 'cost'
+
+
+@pytest.mark.parametrize('which', [
+    'constant', 'timeofday', 'datetime', 'errorband',
+    pytest.param('other', marks=pytest.mark.xfail(type=ValueError, strict=True))
+])
+def test_cost_types(which, constant_cost, datetime_cost, timeofday_cost,
+                    errorband_cost):
+    dd = {'constant': constant_cost, 'timeofday': timeofday_cost,
+          'datetime': datetime_cost, 'errorband': errorband_cost,
+          'other': constant_cost}
+    out = datamodel.Cost(
+        name='test',
+        type=which,
+        parameters=dd[which]
+    )
+    assert isinstance(out, datamodel.Cost)
+    assert str(out.parameters).split('(')[0].lower() == which + 'cost'
+
+
+@pytest.mark.parametrize('which,cls,new', [
+    ('constant', datamodel.ConstantCost, {'aggregation': 'min'}),
+    ('timeofday', datamodel.TimeOfDayCost, {'aggregation': 'what'}),
+    ('timeofday', datamodel.TimeOfDayCost, {'fill': 'no'}),
+    ('timeofday', datamodel.TimeOfDayCost, {'times': tuple()}),
+    ('timeofday', datamodel.TimeOfDayCost, {'costs': tuple()}),
+    ('timeofday', datamodel.TimeOfDayCost, {'costs': tuple(), 'fill': 0}),
+    ('datetime', datamodel.DatetimeCost, {'datetimes': tuple()}),
+    ('datetime', datamodel.DatetimeCost, {'costs': tuple()}),
+    ('datetime', datamodel.DatetimeCost, {'aggregation': tuple()}),
+    ('datetime', datamodel.DatetimeCost, {'fill': 1})
+])
+def test_cost_validation(which, cls, new, cost_dicts):
+    cd = cost_dicts[which]
+    cd.update(new)
+    with pytest.raises(ValueError):
+        cls.from_dict(cd)

@@ -2822,43 +2822,118 @@ def remove_orca():
 
 
 @pytest.fixture()
-def banded_cost_params():
-    return datamodel.Cost(
-        name='bandedcost',
-        type='errorband',
-        parameters=datamodel.ErrorBandCost(
-            bands=(
-                datamodel.CostBand(
-                    error_range=(-2, 2),
-                    cost_function='constant',
-                    cost_function_parameters=datamodel.ConstantCost(
-                        cost=1.0,
-                        aggregation='sum',
-                        net=True
-                    )
-                ),
-                datamodel.CostBand(
-                    error_range=(2, np.inf),
-                    cost_function='timeofday',
-                    cost_function_parameters=datamodel.TimeOfDayCost(
-                        times=[dt.time(0), dt.time(6)],
-                        costs=[1.1, 0.9],
-                        aggregation='sum',
-                        fill='forward',
-                        net=False
-                    )
-                ),
-                datamodel.CostBand(
-                    error_range=(-np.inf, -2),
-                    cost_function='timeofday',
-                    cost_function_parameters=datamodel.TimeOfDayCost(
-                        times=[dt.time(2), dt.time(4)],
-                        costs=[-0.1, -0.2],
-                        aggregation='sum',
-                        fill='forward',
-                        net=False
-                    )
-                )
+def constant_cost():
+    return datamodel.ConstantCost(
+        cost=1.0,
+        aggregation='sum',
+        net=True
+    )
+
+
+@pytest.fixture()
+def timeofday_cost():
+    return datamodel.TimeOfDayCost(
+        times=(dt.time(0), dt.time(6)),
+        costs=(1.1, 0.9),
+        aggregation='sum',
+        fill='forward',
+        net=False,
+        timezone='UTC'
+    )
+
+
+@pytest.fixture()
+def datetime_cost():
+    return datamodel.DatetimeCost(
+        datetimes=(pd.Timestamp('2020-04-30T12:00Z'),
+                   pd.Timestamp('2020-05-03T00:00Z')),
+        costs=(-0.2, -0.1),
+        aggregation='sum',
+        fill='forward',
+        net=False,
+        timezone='UTC'
+    )
+
+
+@pytest.fixture()
+def errorband_cost(constant_cost, timeofday_cost, datetime_cost):
+    return datamodel.ErrorBandCost(
+        bands=(
+            datamodel.CostBand(
+                error_range=(-2, 2),
+                cost_function='constant',
+                cost_function_parameters=constant_cost
+            ),
+            datamodel.CostBand(
+                error_range=(2, np.inf),
+                cost_function='timeofday',
+                cost_function_parameters=timeofday_cost
+            ),
+            datamodel.CostBand(
+                error_range=(-np.inf, -2),
+                cost_function='datetime',
+                cost_function_parameters=datetime_cost
             )
         )
     )
+
+
+@pytest.fixture()
+def banded_cost_params(errorband_cost):
+    return datamodel.Cost(
+        name='bandedcost',
+        type='errorband',
+        parameters=errorband_cost
+    )
+
+
+@pytest.fixture()
+def cost_dicts():
+    out = {
+        'constant': {
+            'cost': 1.0,
+            'aggregation': 'sum',
+            'net': True
+        },
+        'timeofday': {
+            'times': ('00:00', '06:00'),
+            'costs': (1.1, 0.9),
+            'aggregation': 'sum',
+            'fill': 'forward',
+            'net': False,
+            'timezone': 'UTC'
+        },
+        'datetime': {
+            'datetimes': ('2020-04-30T12:00Z', '2020-05-03T00:00Z'),
+            'costs': (-0.2, -0.1),
+            'aggregation': 'sum',
+            'fill': 'forward',
+            'net': False,
+            'timezone': 'UTC'
+        }
+    }
+    out['errorband'] = {
+        'bands': (
+            {
+                'error_range': (-2, 2),
+                'cost_function': 'constant',
+                'cost_function_parameters': out['constant']
+            },
+            {
+                'error_range': (2, 'inf'),
+                'cost_function': 'timeofday',
+                'cost_function_parameters': out['timeofday']
+            },
+            {
+                'error_range': ('-inf', -2),
+                'cost_function': 'datetime',
+                'cost_function_parameters': out['datetime']
+            }
+        )
+    }
+    out['fullcost'] = {
+        'name': 'bandedcost',
+        'type': 'errorband',
+        'parameters': out['errorband']
+    }
+    return out
