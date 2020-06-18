@@ -578,9 +578,16 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     obs = obs.resample(interval_length, closed=closed).mean()
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
+    if obs.index.tzinfo is not None:
+        if fx_index.tzinfo is not None:
+            obs = obs.tz_convert(fx_index.tzinfo)
+        else:
+            fx_index = fx_index.tz_localize(obs.index.tzinfo)
+    else:
+        if fx_index.tzinfo is not None:
+            obs = obs.tz_localize(fx_index.tzinfo)
+
     obs_timeofday = (obs.index.hour * 60 + obs.index.minute).astype(int)
-    if fx_index.tzinfo is None:
-        fx_index = fx_index.tz_localize(obs.index.tzinfo)
     fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
 
     # confirm sufficient data for matching by time of day

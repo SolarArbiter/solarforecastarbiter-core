@@ -436,10 +436,8 @@ def test_persistence_probabilistic_timeofday(site_metadata, obs_values, axis,
     data_end = pd.Timestamp('20190513T0900', tz=tz)
     data_start = data_end - pd.Timedelta("{}D".format(len(obs_values)))
     closed = datamodel.CLOSED_MAPPING[interval_label]
-    index = pd.date_range(start=data_start, end=data_end, freq='1h',
+    index = pd.date_range(start=data_start, end=data_end, freq='1D',
                           closed=closed)
-    index = index[index.hour == 9]
-
     data = pd.Series(obs_values, index=index, dtype=float)
 
     # forecast 9am
@@ -467,7 +465,36 @@ def test_persistence_probabilistic_timeofday(site_metadata, obs_values, axis,
         )
 
 
-def test_persistence_probabilistic_timeofday_timezone(site_metadata):
+@pytest.mark.parametrize("data_end,forecast_start", [
+    # no timezone
+    (pd.Timestamp("20190513T0900"), pd.Timestamp("20190514T0900")),
+
+    # same timezone
+    (
+        pd.Timestamp("20190513T0900", tz="UTC"),
+        pd.Timestamp("20190514T0900", tz="UTC")
+    ),
+
+    # different timezone
+    (
+        pd.Timestamp("20190513T0200", tz="US/Pacific"),
+        pd.Timestamp("20190514T0900", tz="UTC")
+    ),
+
+    # obs timezone, but no fx timezone
+    (
+        pd.Timestamp("20190513T0900", tz="UTC"),
+        pd.Timestamp("20190514T0900")
+    ),
+
+    # no obs timezone, but fx timezone
+    (
+        pd.Timestamp("20190513T0900"),
+        pd.Timestamp("20190514T0900", tz="UTC")
+    ),
+])
+def test_persistence_probabilistic_timeofday_timezone(site_metadata, data_end,
+                                                      forecast_start):
 
     obs_values = [0] * 11 + [20] * 11
     axis, constant_values, expected_values = 'x', [10, 20], [50, 100]
@@ -481,24 +508,24 @@ def test_persistence_probabilistic_timeofday_timezone(site_metadata):
     )
 
     # all observations at 9am each day
-    data_end = pd.Timestamp('20190513T0900', tz="UTC")
     data_start = data_end - pd.Timedelta("{}D".format(len(obs_values)))
     closed = datamodel.CLOSED_MAPPING[interval_label]
-    index = pd.date_range(start=data_start, end=data_end, freq='1h',
+    index = pd.date_range(start=data_start, end=data_end, freq='1D',
                           closed=closed)
-    index = index[index.hour == 9]
-
     data = pd.Series(obs_values, index=index, dtype=float)
 
     # forecast 9am
-    forecast_start = pd.Timestamp('20190514T0900')
-    forecast_end = pd.Timestamp('20190514T1000')
+    forecast_end = forecast_start + pd.Timedelta("1h")
     interval_length = pd.Timedelta('1h')
 
     load_data = partial(load_data_base, data)
 
     expected_index = pd.date_range(start=forecast_start, end=forecast_end,
-                                   freq=interval_length, closed=closed, tz="UTC")
+                                   freq=interval_length, closed=closed)
+
+    # if forecast without timezone, then use obs timezone
+    if data.index.tzinfo is not None and forecast_start.tzinfo is None:
+        expected_index = expected_index.tz_localize(data.index.tzinfo)
 
     forecasts = persistence.persistence_probabilistic_timeofday(
         observation, data_start, data_end, forecast_start, forecast_end,
