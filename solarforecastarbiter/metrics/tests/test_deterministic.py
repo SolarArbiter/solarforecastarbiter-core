@@ -287,6 +287,16 @@ def test_constant_cost(default_cost_err, params, exp):
     assert cost == exp
 
 
+def test_constant_cost_using_err_fnc(default_cost_err):
+    params = datamodel.ConstantCost(
+        cost=2.0, aggregation='sum', net=True)
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    cost = deterministic._constant_cost(obs, fx, params,
+                                        lambda x, y: 0)
+    assert cost == 0
+
+
 @pytest.mark.parametrize('times,costs,index,tz,fill,exp', [
     ([dt.time(0), dt.time(2)], [1.0, 2.0],
      pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
@@ -335,6 +345,156 @@ def test_make_time_of_day_cost_ser(times, costs, index, tz, fill, exp):
     assert_series_equal(ser, exp)
 
 
+dt_cost_parametrize = pytest.mark.parametrize('fill,agg,net,tz,exp', [
+    ('forward', 'sum', True, 'UTC', 16.1),
+    ('backward', 'sum', True, 'UTC', 25.1),
+    ('forward', 'sum', True, None, 16.1),
+    ('backward', 'sum', True, None, 25.1),
+    ('forward', 'mean', True, 'UTC', 16.1/9),
+    ('backward', 'mean', True, 'UTC', 25.1/9),
+    ('forward', 'sum', False, 'UTC', 34.1),
+    ('backward', 'sum', False, 'UTC', 45.1),
+    ('forward', 'mean', False, 'UTC', 34.1/9),
+    ('backward', 'mean', False, 'UTC', 45.1/9),
+    ('forward', 'sum', True, 'Etc/GMT+5', 13.8),
+    ('backward', 'sum', True, 'Etc/GMT+5', 8.6),
+
+])
+
+
+@dt_cost_parametrize
+def test_time_of_day_cost(fill, agg, net, tz, exp, default_cost_err):
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    params = datamodel.TimeOfDayCost(
+        costs=[1.0, 2.0, 3.0],
+        times=[dt.time(3), dt.time(4), dt.time(8, 1)],
+        aggregation=agg,
+        fill=fill,
+        net=net,
+        timezone=tz
+    )
+    out = deterministic._time_of_day_cost(obs, fx, params, deterministic.error)
+    assert out == exp
+
+
+def test_time_of_day_cost_alt_error_fnc(default_cost_err):
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    params = datamodel.TimeOfDayCost(
+        costs=[1.0, 2.0, 3.0],
+        times=[dt.time(3), dt.time(4), dt.time(8, 1)],
+        aggregation='sum',
+        fill='forward',
+        net=False,
+    )
+    out = deterministic._time_of_day_cost(
+        obs, fx, params,
+        lambda x, y: pd.Series(index=pd.DatetimeIndex([]), dtype=float))
+    assert out == 0
+
+
+def test_time_of_day_cost_empty(default_cost_err):
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    params = datamodel.TimeOfDayCost(
+        costs=[],
+        times=[],
+        aggregation='mean',
+        fill='forward',
+        net=True
+    )
+    out = deterministic._time_of_day_cost(obs, fx, params, deterministic.error)
+    assert out == 0
+
+
+@dt_cost_parametrize
+def test_datetime_cost(fill, agg, net, tz, exp, default_cost_err):
+    params = datamodel.DatetimeCost(
+        datetimes=[
+            pd.Timestamp('2020-04-30T12:00'),
+            pd.Timestamp('2020-05-01T03:00'),
+            pd.Timestamp('2020-05-01T04:00'),
+            pd.Timestamp('2020-05-01T08:01'),
+        ],
+        costs=[3.0, 1.0, 2.0, 3.0],
+        aggregation=agg,
+        fill=fill,
+        net=net,
+        timezone=tz
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    out = deterministic._datetime_cost(obs, fx, params, deterministic.error)
+    assert out == exp
+
+
+def test_datetime_cost_nans(default_cost_err):
+    params = datamodel.DatetimeCost(
+        datetimes=[
+            pd.Timestamp('2020-05-01T03:00'),
+            pd.Timestamp('2020-05-01T04:00'),
+            pd.Timestamp('2020-05-01T08:01'),
+        ],
+        costs=[1.0, 2.0, 3.0],
+        aggregation='sum',
+        fill='forward',
+        net=True
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    out = deterministic._datetime_cost(obs, fx, params, deterministic.error)
+    assert (out - 19.1) < 1e-9  # float precision diff
+
+    params = datamodel.DatetimeCost(
+        datetimes=[
+            pd.Timestamp('2020-05-01T03:00'),
+            pd.Timestamp('2020-05-01T04:00'),
+        ],
+        costs=[1.0, 2.0],
+        aggregation='sum',
+        fill='backward',
+        net=True
+    )
+    out = deterministic._datetime_cost(obs, fx, params, deterministic.error)
+    assert out == 4.1
+
+
+def test_datetime_cost_alt_err(default_cost_err):
+    params = datamodel.DatetimeCost(
+        datetimes=[
+            pd.Timestamp('2020-05-01T03:00'),
+            pd.Timestamp('2020-05-01T04:00'),
+            pd.Timestamp('2020-05-01T08:01'),
+        ],
+        costs=[1.0, 2.0, 3.0],
+        aggregation='sum',
+        fill='forward',
+        net=True
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    out = deterministic._datetime_cost(
+        obs, fx, params,
+        lambda x, y: pd.Series(index=pd.DatetimeIndex([]), dtype=float))
+    assert out == 0
+
+
+def test_datetime_cost_empty(default_cost_err):
+    params = datamodel.DatetimeCost(
+        datetimes=[],
+        costs=[],
+        aggregation='sum',
+        fill='forward',
+        net=True
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=default_cost_err.index)
+    out = deterministic._datetime_cost(obs, fx, params,
+                                       deterministic.error)
+    assert out == 0
+
+
 def test_band_masks(banded_cost_params, default_cost_err):
     masks = deterministic._band_masks(banded_cost_params.parameters.bands,
                                       default_cost_err)
@@ -351,33 +511,6 @@ def test_band_masks(banded_cost_params, default_cost_err):
         assert_series_equal(m, expmasks[i])
 
 
-@pytest.fixture(params=['constant', 'timeofday', 'datetime'])
-def costs(request):
-    if request.param == 'constant':
-        return datamodel.ConstantCost(
-            cost=1.0,
-            aggregation='mean',
-            net=False
-        )
-    elif request.param == 'timeofday':
-        return datamodel.TimeOfDayCost(
-            times=[dt.time(0), dt.time(12)],
-            costs=[1.0, -1.0],
-            aggregation='sum',
-            net=True,
-            fill='forward'
-        )
-    elif request.param == 'datetime':
-        return datamodel.DatetimeCost(
-            datetimes=[pd.Timestamp('2020-05-01T00:00Z'),
-                       pd.Timestamp('2020-05-02T12:00Z')],
-            costs=[1.0, 3.0],
-            aggregation='sum',
-            net=False,
-            fill='forward'
-        )
-
-
 def test_error_band_cost(banded_cost_params):
     ind = pd.date_range(start='2020-05-01T00:00Z', freq='1h', periods=8)
     obs = pd.Series([1, 6, 1, 2, 2.00, 2.0, 0, 4], index=ind)
@@ -388,3 +521,69 @@ def test_error_band_cost(banded_cost_params):
            (0 + 0 + 0 + 0. + 0.0 + 0.00 + 3 * 0.9 + 0) +
            (0 + -4 * -0.2 + 0 + 0. + -2.1 * -0.2 + 0.00 + 0 + 0))
     assert err == exp
+
+
+def test_error_band_cost_positive_only(default_cost_err):
+    params = datamodel.ErrorBandCost(
+        bands=[datamodel.CostBand(
+            error_range=(0, 10),
+            cost_function='constant',
+            cost_function_parameters=datamodel.ConstantCost(
+                cost=2.0, aggregation='sum', net=True
+            )
+        )]
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    err = deterministic._error_band_cost(
+        obs, fx, params, deterministic.error)
+    assert err == 25.2
+
+
+def test_error_band_cost_out_of_range(default_cost_err):
+    params = datamodel.ErrorBandCost(
+        bands=[datamodel.CostBand(
+            error_range=(10, 100),
+            cost_function='constant',
+            cost_function_parameters=datamodel.ConstantCost(
+                cost=2.0, aggregation='sum', net=True
+            )
+        )]
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    err = deterministic._error_band_cost(
+        obs, fx, params, deterministic.error)
+    assert err == 0
+
+
+def test_error_band_cost_no_bands(default_cost_err):
+    params = datamodel.ErrorBandCost(
+        bands=tuple()
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    err = deterministic._error_band_cost(
+        obs, fx, params, deterministic.error)
+    assert err == 0
+
+
+def test_error_band_cost_out_of_times(default_cost_err):
+    params = datamodel.ErrorBandCost(
+        bands=[datamodel.CostBand(
+            error_range=(-10, 1),
+            cost_function='datetime',
+            cost_function_parameters=datamodel.DatetimeCost(
+                times=[],
+                costs=[],
+                aggregation='sum',
+                fill='forward',
+                net=True
+            )
+        )]
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    err = deterministic._error_band_cost(
+        obs, fx, params, deterministic.error)
+    assert err == 0

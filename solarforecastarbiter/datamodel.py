@@ -1066,6 +1066,28 @@ class CostBand(BaseModel):
     cost_function: str
     cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
 
+    def __post_init__(self):
+        if self.cost_function == 'timeofday':
+            if not isinstance(self.cost_function_parameters, TimeOfDayCost):
+                raise TypeError(
+                    "'cost_function_parameters' must be of type TimeOfDayCost "
+                    "for 'timeofday' cost function.")
+        elif self.cost_function == 'datetime':
+            if not isinstance(self.cost_function_parameters, DatetimeCost):
+                raise TypeError(
+                    "'cost_function_parameters' must be of type DatetimeCost "
+                    "for 'datetime' cost function.")
+        elif self.cost_function == 'constant':
+            if not isinstance(self.cost_function_parameters, ConstantCost):
+                raise TypeError(
+                    "'cost_function_parameters' must be of type ConstantCost "
+                    "for 'constant' cost function.")
+        else:
+            raise ValueError(
+                "'cost_function' must be one of 'timeofday', 'datetime', or"
+                " 'constant'")
+
+
 
 @dataclass(frozen=True)
 class ErrorBandCost(BaseModel):

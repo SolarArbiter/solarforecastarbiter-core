@@ -558,8 +558,7 @@ def _np_agg_fnc(agg_str, net):
 
 
 def _constant_cost(obs, fx, cost_params, error_fnc):
-    """Wrapper to generate cost function appropriate for calling
-    in the loop of metrics.calculator.calculate_deterministic_metrics
+    """Compute cost using a datamodel.ConstantCost object
     """
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
@@ -569,6 +568,8 @@ def _constant_cost(obs, fx, cost_params, error_fnc):
 
 
 def _make_time_of_day_cost_ser(times, costs, index, tz, fill):
+    if len(index) == 0 or len(times) == 0:
+        return 0
     dates = list(np.unique(index.date))
     # extend dates +- 1 day so that index is within the cost
     # ser we construct
@@ -599,6 +600,7 @@ def _make_time_of_day_cost_ser(times, costs, index, tz, fill):
 
 
 def _time_of_day_cost(obs, fx, cost_params, error_fnc):
+    """Compute cost according to a datamodel.TimeOfDayCost"""
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
 
@@ -611,6 +613,7 @@ def _time_of_day_cost(obs, fx, cost_params, error_fnc):
 
 
 def _datetime_cost(obs, fx, cost_params, error_fnc):
+    """Compute cost according to a datamodel.DatetimeCost"""
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
     cost_ser = pd.Series(cost_params.costs,
