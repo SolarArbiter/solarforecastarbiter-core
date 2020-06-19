@@ -554,15 +554,6 @@ Functions to compute deterministic event forecast performance metrics:
     metrics.event.event_bias
     metrics.event.event_accuracy
 
-Value
------
-
-Functions to compute forecast valuation metrics:
-
-.. autosummary::
-    :toctree: generated/
-
-    metrics.valuation.fixed_error_cost
 
 Reports
 =======
