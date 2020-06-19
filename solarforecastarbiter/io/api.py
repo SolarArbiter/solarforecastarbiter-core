@@ -957,7 +957,6 @@ class APISession(requests.Session):
 
         """
         report_params = report.report_parameters.to_dict()
-        costs = {}
         fxobs = report_params.pop('object_pairs')
         object_pairs = []
         for _fo in fxobs:
@@ -978,7 +977,6 @@ class APISession(requests.Session):
                 d['cost'] = _fo['cost']
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
-        report_params['costs'] = list(costs.values())
         params = {'report_parameters': report_params}
         req = self.post('/reports/', json=params,
                         headers={'Content-Type': 'application/json'})
