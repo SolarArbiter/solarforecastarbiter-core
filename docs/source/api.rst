@@ -512,6 +512,11 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.kolmogorov_smirnov_integral
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
+   metrics.deterministic.constant_cost
+   metrics.deterministic.time_of_day_cost
+   metrics.deterministic.datetime_cost
+   metrics.deterministic.error_band_cost
+   metrics.deterministic.cost
 
 Functions to compute errors and deadbands:
 

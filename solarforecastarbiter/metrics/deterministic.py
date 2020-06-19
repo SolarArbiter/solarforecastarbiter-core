@@ -558,7 +558,40 @@ def _np_agg_fnc(agg_str, net):
 
 
 def constant_cost(obs, fx, cost_params, error_fnc=error):
-    """Compute cost using a datamodel.ConstantCost object
+    r"""Compute cost using a constant cost value.  The attributes `cost`,
+    `net`, and `aggregation` are used from `cost_params` to perform
+    the following calculation depending on (`net`, `aggregation`):
+
+    .. math::
+
+       cost = \text{cost_params.cost} * \begin{cases}
+          1/n \sum_{i=1}^n \text{error_fnc}(\text{obs}_i, \text{fx}_i) &
+            \text{True, mean} \\
+          \sum_{i=1}^n \text{error_fnc}(\text{obs}_i, \text{fx}_i) &
+            \text{True, sum} \\
+          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| &
+            \text{False, mean} \\
+          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| &
+            \text{False, sum}
+        \end{cases}
+
+    Parameters
+    ----------
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+    cost_params : :py:class:`solarforecastarbiter.datamodel.ConstantCost`
+        Parameters that the define the cost value along with
+        how to aggregate the costs.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
+
+    Returns
+    -------
+    cost : float
+        The cost of the forecast errors.
     """
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
@@ -600,7 +633,49 @@ def _make_time_of_day_cost_ser(times, costs, index, tz, fill):
 
 
 def time_of_day_cost(obs, fx, cost_params, error_fnc=error):
-    """Compute cost according to a datamodel.TimeOfDayCost"""
+    r"""Compute cost using a time-of-day varying cost value.  First, a
+    `pandas.Series` of costs is constructed to match the index of
+    `obs` and `fx`: `cost_params.cost` specifies the value to assign
+    to each time of day in `cost_params.times`. The `cost_params.fill`
+    attribute specifies how to fill (forward or backward) the cost for
+    times in the observation/forecast index but not in
+    `cost_params.times`. This series, `cost_series`, along with the
+    attributes `net` and `aggregation` from `cost_params` are used to
+    perform the following calculation depending on (`net`,
+    `aggregation`):
+
+    .. math::
+
+       cost = \begin{cases}
+          1/n \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+            \text{True, mean} \\
+          \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+            \text{True, sum} \\
+          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+            \text{False, mean} \\
+          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+            \text{False, sum}
+        \end{cases}
+
+    Parameters
+    ----------
+    obs : (n,) pandas.Series
+        Observed values with a pandas.DatetimeIndex.
+    fx : (n,) pandas.Series
+        Forecasted values with a pandas.DatetimeIndex matching `obs`.
+    cost_params : :py:class:`solarforecastarbiter.datamodel.TimeOfDayCost`
+        Parameters that the define the cost value along with
+        how to aggregate the costs.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
+
+    Returns
+    -------
+    cost : float
+        The cost of the forecast errors.
+
+    """  # NOQA
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
 
@@ -613,7 +688,54 @@ def time_of_day_cost(obs, fx, cost_params, error_fnc=error):
 
 
 def datetime_cost(obs, fx, cost_params, error_fnc=error):
-    """Compute cost according to a datamodel.DatetimeCost"""
+    r"""Compute cost using a date-time varying cost value.  First, a
+    `pandas.Series` of costs is constructed to match the index of
+    `obs` and `fx`: `cost_params.cost` specifies the value to assign
+    to each date-time in `cost_params.datetimes`. The
+    `cost_params.fill` attribute specifies how to fill (forward or
+    backward) the cost for date-times in the observation/forecast
+    index but not in `cost_params.datetimes`.  This series,
+    `cost_series`, along with the attributes `net` and `aggregation`
+    from `cost_params` are used to perform the following calculation
+    depending on (`net`, `aggregation`):
+
+    .. math::
+
+       cost = \begin{cases}
+          1/n \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+            \text{True, mean} \\
+          \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+            \text{True, sum} \\
+          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+            \text{False, mean} \\
+          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+            \text{False, sum}
+        \end{cases}
+
+    Parameters
+    ----------
+    obs : (n,) pandas.Series
+        Observed values with a pandas.DatetimeIndex.
+    fx : (n,) pandas.Series
+        Forecasted values with a pandas.DatetimeIndex matching `obs`.
+    cost_params : :py:class:`solarforecastarbiter.datamodel.DatetimeCost`
+        Parameters that the define the cost value along with
+        how to aggregate the costs.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
+
+    Returns
+    -------
+    cost : float
+        The cost of the forecast errors.
+
+    Notes
+    -----
+    In the case where the specified `cost_params.datetimes` are insufficient
+    to cover the observation/forecast index after filling, those missing
+    date-times are excluded from the cost calculation.
+    """  # NOQA
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
     cost_ser = pd.Series(cost_params.cost,
@@ -648,7 +770,51 @@ def _band_masks(bands, errors):
 
 
 def error_band_cost(obs, fx, cost_params, error_fnc=error):
-    """Calculate cost using datamodel.BandedCost parameters"""
+    r"""Compute cost according to various functions applied to specified
+    error bands. The `cost_params` parameters is a
+    :py:class:`solarforecastarbiter.datamodel.ErrorBandCost`
+    object. The `cost_params.bands` attribute lists the cost function
+    (one of :py:func:`.constant_cost`, :py:func:`.time_of_day_cost`,
+    :py:func:`.datetime_cost`) that will apply to periods where the
+    error (as calculated by `error_fnc`) falls within the given range.
+
+    To calculate the final cost value, the forecast error is
+    calculated with `error_fnc`, then this error is compared with the
+    range in each `cost_params.bands`. If the error falls within the
+    range, the cost function associated with the range is applied to
+    the error and added to the final result until all errors are
+    evaluated:
+
+    .. code-block:: python
+
+       final_cost = 0
+       for i in range(n):
+           error = error_fnc(obs[i], fx[i])
+           for band in cost_params.bands:
+               if range[0] <= error <= range[1]:
+                   final_cost += band.cost_function(error, cost_params)
+                   break # from band loop, continue to next i
+
+
+    Parameters
+    ----------
+    obs : (n,) pandas.Series
+        Observed values with a pandas.DatetimeIndex.
+    fx : (n,) pandas.Series
+        Forecasted values with a pandas.DatetimeIndex matching `obs`.
+    cost_params : :py:class:`solarforecastarbiter.datamodel.ErrorBandCost`
+        Parameters that the define the cost value along with
+        how to aggregate the costs.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
+
+    Returns
+    -------
+    cost : float
+        The cost of the forecast errors.
+
+    """
     bands = cost_params.bands
     band_cost_functions = [
         partial(_COST_FUNCTION_MAP[band.cost_function],
@@ -670,8 +836,30 @@ def error_band_cost(obs, fx, cost_params, error_fnc=error):
 
 
 def cost(obs, fx, cost_params, error_fnc=error):
-    """
-    GOODER DOCS
+    """Compute the cost for forecast errors according to `cost_params`.
+    `cost_params.type` determines which cost function of
+    :py:func:`.constant_cost`, :py:func:`.time_of_day_cost`,
+    :py:func:`.datetime_cost`, or :py:func:`error_band_cost` will be
+    used.
+
+    Parameters
+    ----------
+    obs : (n,) pandas.Series
+        Observed values
+    fx : (n,) pandas.Series
+        Forecasted values
+    cost_params : :py:class:`solarforecastarbiter.datamodel.Cost`
+        Parameters that the define the cost value along with
+        how to aggregate the costs.
+    error_fnc : function
+        A function that returns the error, default fx - obs. First
+        argument is obs, second argument is fx.
+
+    Returns
+    -------
+    cost : float
+        The cost of the forecast errors.
+
     """
     if cost_params is None:
         return np.nan
