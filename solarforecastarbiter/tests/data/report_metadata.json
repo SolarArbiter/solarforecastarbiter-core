@@ -40,7 +40,7 @@
                         "cost_function": "timeofday",
                         "cost_function_parameters": {
                             "times": ["00:00", "12:00"],
-                            "costs": [1.0, 1.2],
+                            "cost": [1.0, 1.2],
                             "aggregation": "sum",
                             "fill": "forward",
                             "net": true

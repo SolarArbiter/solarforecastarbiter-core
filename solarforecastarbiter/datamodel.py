@@ -951,9 +951,9 @@ def __validate_cost__(index_var):
                 raise ValueError(
                     f"Cost 'aggregation' must be one of {str(aggkeys)}")
         if index_var is not None:
-            if len(obj.costs) != len(getattr(obj, index_var)):
+            if len(obj.cost) != len(getattr(obj, index_var)):
                 raise ValueError(
-                    f"'costs' and '{index_var}' must have the same length")
+                    f"'cost' and '{index_var}' must have the same length")
     return val
 
 
@@ -965,7 +965,7 @@ class TimeOfDayCost(BaseModel):
     ----------
     times : tuple of datetime.time
         The times to associate with each cost value
-    costs : tuple of float
+    cost : tuple of float
         The cost per unit error of the forecasted variable for each time.
         Must have the same length as `times`.
     aggregation : str
@@ -983,7 +983,7 @@ class TimeOfDayCost(BaseModel):
         timezone when calculated in a report.
     """
     times: Tuple[datetime.time, ...]
-    costs: Tuple[float, ...]
+    cost: Tuple[float, ...]
     aggregation: str
     net: bool
     fill: str
@@ -997,9 +997,9 @@ class DatetimeCost(BaseModel):
 
     Parameters
     ----------
-    datetimes : tuple of datetime.datetime
+    datetimes : tuple/iterable of datetime-like objects
        The datetimes to associate with each cost value
-    costs : tuple of float
+    cost : tuple of float
        The cost per unit error of the forecasted variable for each datetime.
        Must have the same length as `datetimes`.
     aggregation : str
@@ -1016,7 +1016,7 @@ class DatetimeCost(BaseModel):
         the timezone of the observations is used, which is the report
         timezone when calculated in a report.    """
     datetimes: Tuple[pd.Timestamp, ...]
-    costs: Tuple[float, ...]
+    cost: Tuple[float, ...]
     aggregation: str
     net: bool
     fill: str
@@ -1053,7 +1053,8 @@ class CostBand(BaseModel):
     error_range : tuple(float, float)
         Bounds of the error to apply the specified cost function to.
         Inf and -Inf are valid range points, and the error may be positive or
-        negative.
+        negative. Inclusion/exclusion of endpoints is determined by ordering
+        in :py:class:`solarforecastarbiter.datamodel.ErrorBandCost`.
     cost_function : str
         One of 'timeofday', 'datetime', or 'constant'. Specifies which
         cost model should be used to calculate the cost in this band.
@@ -1104,12 +1105,15 @@ class ErrorBandCost(BaseModel):
     ----------
     bands : tuple of :py:class:`solarforecastarbiter.datamodel.CostBand`
        Specification of the error bands and associated cost functions.
-       Each error is restricted to a single band/cost function, so the
-       order in bands determines which band is applied in ascending
-       priority. For example, if ``bands[0].error_range = (0, 2)``
-       and ``bands[1].error_range == (1, 3)``, the cost function of
-       bands[0] is applied for all errors from [0, 2] and bands[1]
-       is applied for errors from (2, 3].
+
+    Notes
+    -----
+    Each error is restricted to a single band/cost function, so the
+    order in bands determines which band is applied in ascending
+    priority. For example, if ``bands[0].error_range = (0, 2)``
+    and ``bands[1].error_range == (1, 3)``, the cost function of
+    bands[0] is applied for all errors from [0, 2] and bands[1]
+    is applied for errors from (2, 3].
     """
     bands: Tuple[CostBand, ...]
 

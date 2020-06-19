@@ -2880,7 +2880,7 @@ def constant_cost():
 def timeofday_cost():
     return datamodel.TimeOfDayCost(
         times=(dt.time(0), dt.time(6)),
-        costs=(1.1, 0.9),
+        cost=(1.1, 0.9),
         aggregation='sum',
         fill='forward',
         net=False,
@@ -2893,7 +2893,7 @@ def datetime_cost():
     return datamodel.DatetimeCost(
         datetimes=(pd.Timestamp('2020-04-30T12:00Z'),
                    pd.Timestamp('2020-05-03T00:00Z')),
-        costs=(-0.2, -0.1),
+        cost=(-0.2, -0.1),
         aggregation='sum',
         fill='forward',
         net=False,
@@ -2943,7 +2943,7 @@ def cost_dicts():
         },
         'timeofday': {
             'times': ('00:00', '06:00'),
-            'costs': (1.1, 0.9),
+            'cost': (1.1, 0.9),
             'aggregation': 'sum',
             'fill': 'forward',
             'net': False,
@@ -2951,7 +2951,7 @@ def cost_dicts():
         },
         'datetime': {
             'datetimes': ('2020-04-30T12:00Z', '2020-05-03T00:00Z'),
-            'costs': (-0.2, -0.1),
+            'cost': (-0.2, -0.1),
             'aggregation': 'sum',
             'fill': 'forward',
             'net': False,

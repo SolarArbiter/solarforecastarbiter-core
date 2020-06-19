@@ -945,10 +945,10 @@ def test_cost_types(which, constant_cost, datetime_cost, timeofday_cost,
     ('timeofday', datamodel.TimeOfDayCost, {'aggregation': 'what'}),
     ('timeofday', datamodel.TimeOfDayCost, {'fill': 'no'}),
     ('timeofday', datamodel.TimeOfDayCost, {'times': tuple()}),
-    ('timeofday', datamodel.TimeOfDayCost, {'costs': tuple()}),
-    ('timeofday', datamodel.TimeOfDayCost, {'costs': tuple(), 'fill': 0}),
+    ('timeofday', datamodel.TimeOfDayCost, {'cost': tuple()}),
+    ('timeofday', datamodel.TimeOfDayCost, {'cost': tuple(), 'fill': 0}),
     ('datetime', datamodel.DatetimeCost, {'datetimes': tuple()}),
-    ('datetime', datamodel.DatetimeCost, {'costs': tuple()}),
+    ('datetime', datamodel.DatetimeCost, {'cost': tuple()}),
     ('datetime', datamodel.DatetimeCost, {'aggregation': tuple()}),
     ('datetime', datamodel.DatetimeCost, {'fill': 1})
 ])
