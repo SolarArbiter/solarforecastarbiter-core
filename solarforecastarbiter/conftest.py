@@ -1662,22 +1662,34 @@ def report_objects(aggregate, ref_forecast_id):
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
+    cost = datamodel.Cost(
+        name="example cost",
+        type="constant",
+        parameters=datamodel.ConstantCost(
+            cost=1.0,
+            net=True,
+            aggregation="sum"
+        )
+    )
     fxobs0 = datamodel.ForecastObservation(
         forecast_0,
         observation,
         # report_text parsing will ensure unc can be done dynamically too
-        uncertainty=observation.uncertainty)
+        uncertainty=observation.uncertainty,
+        cost=cost)
     forecast_ref = forecast_0.replace(forecast_id=ref_forecast_id)
     fxobs1 = datamodel.ForecastObservation(
         forecast_1,
         observation,
         normalization=1000.,
         uncertainty=15.,
-        reference_forecast=forecast_ref)
+        reference_forecast=forecast_ref,
+        cost=cost)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
-        uncertainty=5.)
+        uncertainty=5.,
+        cost=cost)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1695,7 +1707,7 @@ def report_objects(aggregate, ref_forecast_id):
         start=start,
         end=end,
         object_pairs=(fxobs0, fxobs1, fxagg0),
-        metrics=("mae", "rmse", "mbe", "s"),
+        metrics=("mae", "rmse", "mbe", "s", "cost"),
         categories=("total", "date", "hour"),
         filters=(quality_flag_filter, timeofdayfilter)
     )
@@ -2050,12 +2062,17 @@ def ref_forecast_id():
 
 @pytest.fixture()
 def report_params_dict(report_objects, quality_filter_dict,
-                       timeofdayfilter_dict, ref_forecast_id):
+                       timeofdayfilter_dict, ref_forecast_id, cost_dicts):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     report_params = report.report_parameters
     ref_dict = forecast_0.to_dict()
     ref_dict.update(forecast_id=ref_forecast_id)
+    cost_dict = {
+        'name': 'example cost',
+        'type': 'constant',
+        'parameters': cost_dicts['constant']
+    }
     return {
         'name': report_params.name,
         'start': report_params.start,
@@ -2063,17 +2080,20 @@ def report_params_dict(report_objects, quality_filter_dict,
         'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict(),
-             'uncertainty': observation.uncertainty},
+             'uncertainty': observation.uncertainty,
+             'cost': cost_dict},
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict(),
              'normalization': 1000.,
              'uncertainty': 15.,
-             'reference_forecast': ref_dict},
+             'reference_forecast': ref_dict,
+             'cost': cost_dict},
             {'forecast': forecast_agg.to_dict(),
              'aggregate': aggregate.to_dict(),
-             'uncertainty': 5.},
+             'uncertainty': 5.,
+             'cost': cost_dict},
         ),
-        'metrics': ('mae', 'rmse', 'mbe', 's'),
+        'metrics': ('mae', 'rmse', 'mbe', 's', 'cost'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
     }
 
@@ -2115,19 +2135,34 @@ def report_text():
              ]},
              {"time_of_day_range": ["12:00", "14:00"]}
          ],
-         "metrics": ["mae", "rmse", "mbe", "s"],
+         "costs": [
+             {
+                "name": "example cost",
+                "type": "constant",
+                "parameters": {
+                    "cost": 1.0,
+                    "aggregation": "sum",
+                    "net": true
+                 }
+             }
+         ],
+         "metrics": ["mae", "rmse", "mbe", "s", "cost"],
          "categories": ["total", "date", "hour"],
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
-              "uncertainty": "observation_uncertainty"},
+              "uncertainty": "observation_uncertainty",
+              "cost": "example cost"
+             },
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
               "uncertainty": "15",
+              "cost": "example cost",
               "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+              "cost": "example cost",
               "uncertainty": "5"}
          ]
      },
@@ -2203,7 +2238,7 @@ def fail_pdf():
 
 @pytest.fixture()
 def raw_report(report_objects, report_metrics, preprocessing_result_types,
-               ref_forecast_id, fail_pdf):
+               ref_forecast_id, fail_pdf, constant_cost):
     report, obs, fx0, fx1, agg, fxagg = report_objects
 
     def gen(with_series):
@@ -2223,11 +2258,17 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             isinstance(f, datamodel.QualityFlagFilter)
         )
         qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,
             datamodel.ForecastObservation(
                 fx0,
                 obs,
+                cost=cost,
                 uncertainty=obs.uncertainty),
             fx0.interval_value_type,
             il0,
@@ -2239,7 +2280,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il0) if with_series else fx0.forecast_id,
             observation_values=ser(il0) if with_series else obs.observation_id,
-            uncertainty=1.
+            uncertainty=1.,
+            cost=cost
         )
         il1 = fx1.interval_length
         fxobs1 = datamodel.ProcessedForecastObservation(
@@ -2249,7 +2291,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 obs,
                 normalization=1000.,
                 uncertainty=15.,
-                reference_forecast=fx0.replace(forecast_id=ref_forecast_id)),
+                reference_forecast=fx0.replace(forecast_id=ref_forecast_id),
+                cost=cost),
             fx1.interval_value_type,
             il1,
             fx1.interval_label,
@@ -2264,6 +2307,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 ser(il0) if with_series else ref_forecast_id),
             normalization_factor=1000.,
             uncertainty=15.,
+            cost=cost
         )
         ilagg = fxagg.interval_length
         fxagg_ = datamodel.ProcessedForecastObservation(
@@ -2271,6 +2315,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             datamodel.ForecastAggregate(
                 fxagg,
                 agg,
+                cost=cost,
                 uncertainty=5.),
             fxagg.interval_value_type,
             ilagg,
@@ -2282,7 +2327,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
             observation_values=ser(ilagg) if with_series else agg.aggregate_id,
-            uncertainty=5.
+            uncertainty=5.,
+            cost=cost
         )
         figs = datamodel.RawReportPlots(
             (
