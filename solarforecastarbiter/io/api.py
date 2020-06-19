@@ -875,13 +875,9 @@ class APISession(requests.Session):
             norm = o.get('normalization')
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
-            cost_type = o.get('cost')
-            if isinstance(cost_type, dict):
-                cost = cost_type
-            else:
-                cost = costs.get(cost_type)
             if ref_fx is not None:
                 ref_fx = getattr(self, fx_method)(ref_fx)
+            cost = costs.get(o.get('cost'))
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
