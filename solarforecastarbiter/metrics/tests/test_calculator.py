@@ -419,10 +419,11 @@ def test_calculate_deterministic_metrics_no_cost_param(
                                          np.array([1]), np.array([1])).replace(
                                              cost=None)
 
-    with pytest.raises(RuntimeError):
-        calculator.calculate_deterministic_metrics(
+    out = calculator.calculate_deterministic_metrics(
             proc_fx_obs, LIST_OF_CATEGORIES, ['cost']
-        )
+    )
+    for o in out.values:
+        assert np.isnan(o.value)
 
 
 @pytest.mark.parametrize('fx_vals,obs_vals', [

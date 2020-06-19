@@ -194,9 +194,6 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     deadband = processed_fx_obs.uncertainty
 
     cost_params = processed_fx_obs.cost
-    if cost_params is None and 'cost' in metrics:
-        raise RuntimeError(
-            "Cost parameters not defined and 'cost' in requested metrics")
 
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin

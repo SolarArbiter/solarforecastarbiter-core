@@ -673,6 +673,8 @@ def cost(obs, fx, cost_params, error_fnc=error):
     """
     GOODER DOCS
     """
+    if cost_params is None:
+        return np.nan
     fnc = _COST_FUNCTION_MAP[cost_params.type]
     return fnc(obs, fx, cost_params.parameters, error_fnc)
 

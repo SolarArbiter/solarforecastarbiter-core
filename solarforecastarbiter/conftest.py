@@ -1676,7 +1676,7 @@ def report_objects(aggregate, ref_forecast_id):
         observation,
         # report_text parsing will ensure unc can be done dynamically too
         uncertainty=observation.uncertainty,
-        cost=cost)
+        cost=cost.name)
     forecast_ref = forecast_0.replace(forecast_id=ref_forecast_id)
     fxobs1 = datamodel.ForecastObservation(
         forecast_1,
@@ -1684,12 +1684,12 @@ def report_objects(aggregate, ref_forecast_id):
         normalization=1000.,
         uncertainty=15.,
         reference_forecast=forecast_ref,
-        cost=cost)
+        cost=cost.name)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
         uncertainty=5.,
-        cost=cost)
+        cost=cost.name)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1709,7 +1709,8 @@ def report_objects(aggregate, ref_forecast_id):
         object_pairs=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe", "s", "cost"),
         categories=("total", "date", "hour"),
-        filters=(quality_flag_filter, timeofdayfilter)
+        filters=(quality_flag_filter, timeofdayfilter),
+        costs=(cost,)
     )
     report = datamodel.Report(
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
@@ -2068,11 +2069,6 @@ def report_params_dict(report_objects, quality_filter_dict,
     report_params = report.report_parameters
     ref_dict = forecast_0.to_dict()
     ref_dict.update(forecast_id=ref_forecast_id)
-    cost_dict = {
-        'name': 'example cost',
-        'type': 'constant',
-        'parameters': cost_dicts['constant']
-    }
     return {
         'name': report_params.name,
         'start': report_params.start,
@@ -2081,20 +2077,27 @@ def report_params_dict(report_objects, quality_filter_dict,
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict(),
              'uncertainty': observation.uncertainty,
-             'cost': cost_dict},
+             'cost': 'example cost'},
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict(),
              'normalization': 1000.,
              'uncertainty': 15.,
              'reference_forecast': ref_dict,
-             'cost': cost_dict},
+             'cost': 'example cost'},
             {'forecast': forecast_agg.to_dict(),
              'aggregate': aggregate.to_dict(),
              'uncertainty': 5.,
-             'cost': cost_dict},
+             'cost': 'example cost'},
         ),
         'metrics': ('mae', 'rmse', 'mbe', 's', 'cost'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
+        'costs': (
+            {
+                'name': 'example cost',
+                'type': 'constant',
+                'parameters': cost_dicts['constant']
+            },
+        )
     }
 
 
@@ -2268,7 +2271,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             datamodel.ForecastObservation(
                 fx0,
                 obs,
-                cost=cost,
+                cost=cost.name,
                 uncertainty=obs.uncertainty),
             fx0.interval_value_type,
             il0,
@@ -2292,7 +2295,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 normalization=1000.,
                 uncertainty=15.,
                 reference_forecast=fx0.replace(forecast_id=ref_forecast_id),
-                cost=cost),
+                cost=cost.name),
             fx1.interval_value_type,
             il1,
             fx1.interval_label,
@@ -2315,7 +2318,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             datamodel.ForecastAggregate(
                 fxagg,
                 agg,
-                cost=cost,
+                cost=cost.name,
                 uncertainty=5.),
             fxagg.interval_value_type,
             ilagg,

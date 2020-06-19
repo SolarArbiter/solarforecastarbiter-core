@@ -1227,7 +1227,8 @@ class ForecastObservation(BaseModel):
         'observation_uncertainty' to indicate that the value should be
         set to ``observation.uncertainty``, or may be coerceable to a
         float.
-    cost_per_unit_error: float
+    cost: str or None
+        Cost parameters to use from the costs associated with ReportParameters
     """  # NOQA
     forecast: Forecast
     observation: Observation
@@ -1237,7 +1238,7 @@ class ForecastObservation(BaseModel):
     # ProcessedForecastObservation
     normalization: Union[float, None] = None
     uncertainty: Union[None, float, str] = None
-    cost: Union[Cost, None] = None
+    cost: Union[str, None] = None
     data_object: Observation = field(init=False)
 
     def __post_init__(self):
@@ -1309,14 +1310,15 @@ class ForecastAggregate(BaseModel):
         If None, uncertainty is not accounted for. Float specifies the
         uncertainty as a percentage from 0 to 100%. Strings must be
         coerceable to a float.
-    cost_per_unit_error: float
+    cost: str or None
+        Cost parameters to use from the costs associated with ReportParameters
     """  # NOQA
     forecast: Forecast
     aggregate: Aggregate
     reference_forecast: Union[Forecast, None] = None
     normalization: Union[float, None] = None
     uncertainty: Union[float, None] = None
-    cost: Union[Cost, None] = None
+    cost: Union[str, None] = None
     data_object: Aggregate = field(init=False)
 
     def __post_init__(self):
@@ -1517,7 +1519,8 @@ class ProcessedForecastObservation(BaseModel):
     uncertainty: None or float
         If None, uncertainty is not accounted for. Float specifies the
         uncertainty as a percentage from 0 to 100%.
-    cost_per_unit_error: float
+    cost: :py:class:`solarforecastarbiter.datamodel.Cost` or None
+        The parameters to use when calculating cost metrics.
     """  # NOQA
     name: str
     # do this instead of subclass to compare objects later
@@ -1807,7 +1810,9 @@ class ReportParameters(BaseModel):
         Categories to compute and organize metrics over in the report.
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
-
+    costs : Tuple of Costs
+        Set of cost parameters that can be reference in `object_pairs`
+        to compute cost metrics for that pair.
     """
     name: str
     start: pd.Timestamp
@@ -1817,6 +1822,7 @@ class ReportParameters(BaseModel):
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
+    costs: Tuple[Cost, ...] = tuple()
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same

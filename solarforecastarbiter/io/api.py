@@ -865,8 +865,6 @@ class APISession(requests.Session):
         req_dict = {}
         for key in ('report_id', 'status', 'provider'):
             req_dict[key] = rep_dict.get(key, '')
-        costs = {c['name']: datamodel.Cost.from_dict(c)
-                 for c in rep_params.get('costs', [])}
         pairs = []
         for o in rep_params['object_pairs']:
             fx_type = o.get('forecast_type', 'forecast')
@@ -874,10 +872,10 @@ class APISession(requests.Session):
             fx = getattr(self, fx_method)(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
+            cost = o.get('cost')
             ref_fx = o.get('reference_forecast')
             if ref_fx is not None:
                 ref_fx = getattr(self, fx_method)(ref_fx)
-            cost = costs.get(o.get('cost'))
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
@@ -977,9 +975,7 @@ class APISession(requests.Session):
             if _fo['uncertainty'] is not None:
                 d['uncertainty'] = str(_fo['uncertainty'])
             if _fo['cost'] is not None:
-                newcost = _dedup_costdict(costs, _fo['cost'])
-                costs[newcost['name']] = newcost
-                d['cost'] = newcost['name']
+                d['cost'] = _fo['cost']
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
         report_params['costs'] = list(costs.values())
@@ -1285,11 +1281,3 @@ class APISession(requests.Session):
         """
         req = self.get('/users/current')
         return req.json()
-
-
-def _dedup_costdict(current_costs, new_cost, i=1):
-    name = new_cost['name']
-    if name in current_costs and current_costs[name] != new_cost:
-        new_cost['name'] = name + '-' + str(i)
-        return _dedup_costdict(current_costs, new_cost, i+1)
-    return new_cost

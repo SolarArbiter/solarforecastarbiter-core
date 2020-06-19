@@ -589,6 +589,7 @@ def test_error_band_cost_out_of_times(default_cost_err):
 
 @pytest.mark.parametrize('params,exp', [
     ('banded', 12.06),
+    (None, np.nan),
     (datamodel.Cost(
         name='cost',
         type='constant',
@@ -630,4 +631,7 @@ def test_cost(params, exp, banded_cost_params, default_cost_err):
         params = banded_cost_params
 
     out = deterministic.cost(obs, fx, params)
-    assert out == exp
+    if np.isnan(exp):
+        assert np.isnan(out)
+    else:
+        assert out == exp
