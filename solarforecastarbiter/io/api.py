@@ -865,6 +865,8 @@ class APISession(requests.Session):
         req_dict = {}
         for key in ('report_id', 'status', 'provider'):
             req_dict[key] = rep_dict.get(key, '')
+        costs = {c['name']: datamodel.Cost.from_dict(c)
+                 for c in rep_params.get('costs', [])}
         pairs = []
         for o in rep_params['object_pairs']:
             fx_type = o.get('forecast_type', 'forecast')
@@ -873,18 +875,23 @@ class APISession(requests.Session):
             norm = o.get('normalization')
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
+            cost_type = o.get('cost')
+            if isinstance(cost_type, dict):
+                cost = cost_type
+            else:
+                cost = costs.get(cost_type)
             if ref_fx is not None:
                 ref_fx = getattr(self, fx_method)(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
                     fx, obs, normalization=norm, uncertainty=unc,
-                    reference_forecast=ref_fx)
+                    reference_forecast=ref_fx, cost=cost)
             elif 'aggregate' in o:
                 agg = self.get_aggregate(o['aggregate'])
                 pair = datamodel.ForecastAggregate(
                     fx, agg, normalization=norm, uncertainty=unc,
-                    reference_forecast=ref_fx)
+                    reference_forecast=ref_fx, cost=cost)
             else:
                 raise ValueError('must provide observation or aggregate in all'
                                  'object_pairs')
@@ -956,6 +963,7 @@ class APISession(requests.Session):
 
         """
         report_params = report.report_parameters.to_dict()
+        costs = {}
         fxobs = report_params.pop('object_pairs')
         object_pairs = []
         for _fo in fxobs:
@@ -972,8 +980,13 @@ class APISession(requests.Session):
                 d['normalization'] = str(_fo['normalization'])
             if _fo['uncertainty'] is not None:
                 d['uncertainty'] = str(_fo['uncertainty'])
+            if _fo['cost'] is not None:
+                newcost = _dedup_costdict(costs, _fo['cost'])
+                costs[newcost['name']] = newcost
+                d['cost'] = newcost['name']
             object_pairs.append(d)
         report_params['object_pairs'] = object_pairs
+        report_params['costs'] = list(costs.values())
         params = {'report_parameters': report_params}
         req = self.post('/reports/', json=params,
                         headers={'Content-Type': 'application/json'})
@@ -1276,3 +1289,11 @@ class APISession(requests.Session):
         """
         req = self.get('/users/current')
         return req.json()
+
+
+def _dedup_costdict(current_costs, new_cost, i=1):
+    name = new_cost['name']
+    if name in current_costs and current_costs[name] != new_cost:
+        new_cost['name'] = name + '-' + str(i)
+        return _dedup_costdict(current_costs, new_cost, i+1)
+    return new_cost

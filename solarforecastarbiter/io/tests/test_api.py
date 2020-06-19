@@ -820,20 +820,34 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                     "INCONSISTENT IRRADIANCE COMPONENTS",
                 ]},
                 {'time_of_day_range': ['12:00', '14:00']}],
-            "metrics": ["mae", "rmse", "mbe", "s"],
+            "metrics": ["mae", "rmse", "mbe", "s", "cost"],
             "categories": ["total", "date", "hour"],
             "object_pairs": [
                 {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
                  "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "cost": "example cost",
                  "uncertainty": "1.0"},
                 {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
                  "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
                  "normalization": "1000.0",
                  "uncertainty": "15.0",
+                 "cost": "example cost",
                  "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
                 {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
                  "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+                 "cost": "example cost",
                  "uncertainty": "5.0"}
+            ],
+            "costs": [
+                {
+                    "name": "example cost",
+                    "type": "constant",
+                    "parameters": {
+                        "cost": 1.0,
+                        "aggregation": "sum",
+                        "net": True
+                    }
+                }
             ]
         }}
     session.create_report(report)
