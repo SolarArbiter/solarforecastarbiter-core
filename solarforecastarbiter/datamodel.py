@@ -1789,6 +1789,15 @@ class RawReport(BaseModel):
     data_checksum: Union[str, None] = None
 
 
+def __check_cost_consistency__(object_pairs, available_costs):
+    cost_names = [ac.name for ac in available_costs]
+    for op in object_pairs:
+        if op.cost is not None and op.cost not in cost_names:
+            raise ValueError(
+                f'Object pair cost, {op.cost}, not present in cost '
+                'parameters specified here')
+
+
 @dataclass(frozen=True)
 class ReportParameters(BaseModel):
     """Parameters required to define and generate a Report.
@@ -1812,7 +1821,9 @@ class ReportParameters(BaseModel):
         Filters to be applied to the data in the report.
     costs : Tuple of Costs
         Set of cost parameters that can be reference in `object_pairs`
-        to compute cost metrics for that pair.
+        to compute cost metrics for that pair. Each object pair must have
+        the 'cost' parameter set to None (no cost calculation will be
+        performed) or one of the names of these costs.
     """
     name: str
     start: pd.Timestamp
@@ -1833,6 +1844,7 @@ class ReportParameters(BaseModel):
             __check_metrics__(k.forecast, self.metrics)
         # ensure that categories are valid
         __check_categories__(self.categories)
+        __check_cost_consistency__(self.object_pairs, self.costs)
 
 
 @dataclass(frozen=True)

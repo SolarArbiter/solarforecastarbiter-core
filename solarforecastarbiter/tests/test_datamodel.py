@@ -957,3 +957,24 @@ def test_cost_validation(which, cls, new, cost_dicts):
     cd.update(new)
     with pytest.raises(ValueError):
         cls.from_dict(cd)
+
+
+@pytest.mark.parametrize('param', [
+    pytest.param(
+        'wont be', marks=pytest.mark.xfail(strict=True, type=ValueError)),
+    'example cost',
+    None
+])
+def test_reportparameters_cost_consistencey(report_params, param):
+    nop = report_params.object_pairs[0].replace(cost=param)
+    op = list(report_params.object_pairs) + [nop]
+    datamodel.ReportParameters(
+        name=report_params.name,
+        start=report_params.start,
+        end=report_params.end,
+        object_pairs=op,
+        metrics=('cost', 'mae'),
+        categories=report_params.categories,
+        filters=report_params.filters,
+        costs=report_params.costs
+    )

@@ -725,21 +725,6 @@ def test_apisession_get_report(requests_mock, report_text, report_objects,
     assert out == expected
 
 
-def test_apisession_get_report_without_costs(
-        requests_mock, report_text, report_objects,
-        mock_request_fxobs):
-    session = api.APISession('')
-    reportjson = json.loads(report_text)
-    reportjson['report_parameters'].pop('costs')
-    requests_mock.register_uri('GET', f'{session.base_url}/reports/',
-                               content=json.dumps(reportjson).encode())
-    out = session.get_report('')
-    report = report_objects[0]
-    exp = report.replace(report_parameters=report.report_parameters.replace(
-        costs=tuple()))
-    assert out == exp
-
-
 @pytest.fixture()
 def mock_request_event_fxobs(event_report_objects, mocker):
     _, obs, fx0, fx1 = event_report_objects
@@ -957,7 +942,10 @@ def test_apisession_create_report_no_costs(
     report = report_objects[0]
     report = report.replace(
         report_parameters=report.report_parameters.replace(
-            costs=tuple()))
+            costs=tuple(),
+            object_pairs=tuple(
+                op.replace(cost=None) for op in
+                report.report_parameters.object_pairs)))
     mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
     mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
                  return_value=report)
@@ -981,17 +969,14 @@ def test_apisession_create_report_no_costs(
             "object_pairs": [
                 {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
                  "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
-                 "cost": "example cost",
                  "uncertainty": "1.0"},
                 {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
                  "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
                  "normalization": "1000.0",
-                 "cost": "example cost",
                  "uncertainty": "15.0",
                  "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
                 {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
                  "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
-                 "cost": "example cost",
                  "uncertainty": "5.0"}
             ],
             "costs": []
