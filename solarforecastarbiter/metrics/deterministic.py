@@ -557,7 +557,7 @@ def _np_agg_fnc(agg_str, net):
         return lambda x: fnc(np.abs(x))
 
 
-def _constant_cost(obs, fx, cost_params, error_fnc):
+def constant_cost(obs, fx, cost_params, error_fnc=error):
     """Compute cost using a datamodel.ConstantCost object
     """
     cost_const = cost_params.cost
@@ -599,7 +599,7 @@ def _make_time_of_day_cost_ser(times, costs, index, tz, fill):
     return ser
 
 
-def _time_of_day_cost(obs, fx, cost_params, error_fnc):
+def time_of_day_cost(obs, fx, cost_params, error_fnc=error):
     """Compute cost according to a datamodel.TimeOfDayCost"""
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
@@ -607,16 +607,16 @@ def _time_of_day_cost(obs, fx, cost_params, error_fnc):
     errors = error_fnc(obs, fx)
     tz = cost_params.timezone or errors.index.tzinfo
     cost_ser = _make_time_of_day_cost_ser(
-        cost_params.times, cost_params.costs, errors.index, tz, fill)
+        cost_params.times, cost_params.cost, errors.index, tz, fill)
     error_cost = errors * cost_ser
     return agg_fnc(error_cost)
 
 
-def _datetime_cost(obs, fx, cost_params, error_fnc):
+def datetime_cost(obs, fx, cost_params, error_fnc=error):
     """Compute cost according to a datamodel.DatetimeCost"""
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
-    cost_ser = pd.Series(cost_params.costs,
+    cost_ser = pd.Series(cost_params.cost,
                          index=pd.DatetimeIndex(cost_params.datetimes),
                          dtype=float)
 
@@ -647,7 +647,7 @@ def _band_masks(bands, errors):
     return out
 
 
-def _error_band_cost(obs, fx, cost_params, error_fnc):
+def error_band_cost(obs, fx, cost_params, error_fnc=error):
     """Calculate cost using datamodel.BandedCost parameters"""
     bands = cost_params.bands
     band_cost_functions = [
@@ -678,10 +678,10 @@ def cost(obs, fx, cost_params, error_fnc=error):
 
 
 _COST_FUNCTION_MAP = {
-    'constant': _constant_cost,
-    'timeofday': _time_of_day_cost,
-    'datetime': _datetime_cost,
-    'errorband': _error_band_cost
+    'constant': constant_cost,
+    'timeofday': time_of_day_cost,
+    'datetime': datetime_cost,
+    'errorband': error_band_cost
 }
 
 _FILL_OPTIONS = {
