@@ -7,9 +7,12 @@ Calculating Costs
 Overview
 ========
 
-The Solar Forecast Arbiter includes functionality to calculate the cost of
-forecast errors. This page explains the motivation for and structure of the
-cost calculation functionality.
+The Solar Forecast Arbiter includes functionality to calculate the
+cost of forecast errors. Error in this context refers to the deviation
+of forecasted values from observed values (possible including a
+deadband) and not a specific error metric e.g. MBE, RMSE. This page
+explains the motivation for and structure of the cost calculation
+functionality.
 
 Basic costs can be specified as a :py:class:`constant <.ConstantCost>`
 cost per unit error, a cost per unit error that varies by
@@ -22,6 +25,15 @@ charges from transmission generator imbalance service as described in
 `FERC Order 890-B
 <https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`_
 as described below.
+
+Most cost models allow the specification of an `aggregation` and `net`
+parameters. The `aggregation` parameter controls how the cost for each
+error value in the timeseries are aggregated into a single cost
+number. The `net` parameter is a boolean that indicates if the
+aggregation should keep the sign of the error, or take the absolute
+value of the error before aggregating. Note that when :code:`net ==
+True` and the cost per unit error is positive, it is possible to
+calculate a final cost that is negative.
 
 
 Basic Cost Models
@@ -135,3 +147,183 @@ the final calculation.
 
 Error Band Cost
 ===============
+
+The error band cost model is defined using :py:class:`.ErrorBandCost`
+and implemented for deterministic forecasts by
+:py:func:`solarforecastarbiter.metrics.deterministic.error_band_cost`.
+Each of `bands` is a :py:class:`.CostBand` that describes the range of
+errors the band applies to and the parameters for one of the costs
+above. For example,
+
+.. code-block:: python
+
+    import datetime
+    from solarforecastarbiter import datamodel
+
+    cost_model = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-5.0, 20.5),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=33.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(20.5, float('inf')),
+                cost_function='timeofday'
+                cost_function_parameters=datamodel.TimeOfDayCost(
+                    cost=[3.3, 1.2],
+                    times=[datetime.time(hour=15), datetime.time(hour=20)],
+                    net=True,
+                    aggregation='sum',
+                    fill='forward'
+                )
+            )
+        ]
+    )
+
+defines a cost that will apply a constant cost of $33.0 / unit error
+for all errors in the range [-5.0, 20.5]. For errors > 20.5, the time
+of day cost applies. The errors within each band are aggregated
+according to the `aggregation` and `net` parameter of the band
+parameters, but the total cost is the sum of all error bands.
+
+Band error ranges are evaluated in order and any errors outside the
+list of ranges *are not evaluated*. Thus, for the model described by
+
+.. code-block:: python
+
+    from solarforecastarbiter import datamodel
+
+    cost_model = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-5.0, 5.0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=2.0,
+                    net=True,
+                    aggregation='mean'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(-10.0, 10.0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            )
+        ]
+    )
+
+errors in the range [-5, 5] have cost of $2.0 / unit error. Errors
+that are outside [-5, 5] but within [-10, 10], that is errors in the
+range [-10, 5) or (5, 10] have a cost of $4.0 / unit error. Errors
+outside the range of [-10, 10] are not evaluated at all and have an
+effective cost of $0 / unit error. Therefore, most use cases should
+specify -Inf and Inf in the error ranges to ensure all errors have
+some cost assigned to them.
+
+It is especially important to consider the sign of the `cost`
+parameter and the value of `net` when using the error band cost. For
+example,
+
+.. code-block:: python
+
+    from solarforecastarbiter import datamodel
+
+    cost_model = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(float('-inf'), 0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=2.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(0, float(inf)),
+                cost_function='constant'
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=0,
+                    net=True,
+                    aggregation='sum'
+                )
+            )
+        ]
+    )
+
+will always result in a negative (or 0) cost because the `net`
+parameter of the first error band is True (so no absolute value is
+taken) and the cost factor 2.0 will therefore multiply negative values
+that are summed. This model is consistent with a contract where a
+generator is paid some additional amount if it overproduces and is not
+penalized for underproducing. A negative cost value in the first error
+band in this case would penalize the producer for overproducing
+compared to the forecast.
+
+Finally, to implement a cost similar to
+charges from transmission generator imbalance service as described in
+`FERC Order 890-B
+<https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`_, one might
+define a cost model like
+
+
+.. code-block:: python
+
+    import datetime
+    from solarforecastarbiter import datamodel
+
+    cost_model = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-2, 2),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=1.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(float('-inf'), -2),
+                cost_function='timeofday'
+                cost_function_parameters=datamodel.TimeOfDayCost(
+                    cost=[5.1, 0.3],  # decremental cost
+                    times=[datetime.time(16, 0), datetime.time(19, 0)],
+                    net=False,
+                    aggregation='sum',
+                    fill='forward'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(2, float('inf')),
+                cost_function='timeofday'
+                cost_function_parameters=datamodel.TimeOfDayCost(
+                    cost=[7.1, 1.4],  # incremental cost
+                    times=[datetime.time(16, 0), datetime.time(19, 0)],
+                    net=False,
+                    aggregation='sum',
+                    fill='forward'
+                )
+            )
+        ]
+    )
+
+If this cost model is used to evaluate an hourly, mean AC power
+forecast, errors between :math:`\pm 2` MW are netted over the
+evaluation time period and assigned a value of $1 / MWh error. For
+overproduction errors over 2 MW, a decremental cost is
+charged/refunded based on a time of day cost. Underproduction errors
+over 2MW are charged an incremental cost depending on the time of the
+infraction. Therefore, the total cost over the evaluation time period
+is the net cost of errors within :math:`\pm 2` MW plus the cost of
+each error over :math:`\pm 2` MW charged at the time the error occured
+and summed over the evaluation time period.
