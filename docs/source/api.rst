@@ -525,6 +525,12 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.kolmogorov_smirnov_integral
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
+
+Functions to compute costs:
+
+.. autosummary::
+   :toctree: generated/
+
    metrics.deterministic.constant_cost
    metrics.deterministic.time_of_day_cost
    metrics.deterministic.datetime_cost
