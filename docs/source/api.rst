@@ -112,6 +112,19 @@ Reports:
    datamodel.Report
 
 
+Cost:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ConstantCost
+   datamodel.TimeOfDayCost
+   datamodel.DatetimeCost
+   datamodel.CostBand
+   datamodel.ErrorBandCost
+   datamodel.Cost
+
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 
@@ -676,9 +689,6 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power
    validation.tasks.validate_daily_defaults
-   validation.tasks.immediate_observation_validation
-   validation.tasks.daily_single_observation_validation
-   validation.tasks.daily_observation_validation
    validation.tasks.apply_immediate_validation
    validation.tasks.apply_daily_validation
    validation.tasks.apply_validation
