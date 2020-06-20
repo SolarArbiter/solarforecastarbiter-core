@@ -37,7 +37,7 @@ def deadband_mask(obs, fx, deadband):
 
 
 def error(obs, fx):
-    """The difference ..math:: fx - obs"""
+    """The difference :math:`fx - obs`"""
     return fx - obs
 
 
@@ -564,16 +564,19 @@ def constant_cost(obs, fx, cost_params, error_fnc=error):
 
     .. math::
 
-       cost = \text{cost_params.cost} * \begin{cases}
-          1/n \sum_{i=1}^n \text{error_fnc}(\text{obs}_i, \text{fx}_i) &
+       \text{cost} = C * \begin{cases}
+          1/n \sum_{i=1}^n S(\text{obs}_i, \text{fx}_i) &
             \text{True, mean} \\
-          \sum_{i=1}^n \text{error_fnc}(\text{obs}_i, \text{fx}_i) &
+          \sum_{i=1}^n S(\text{obs}_i, \text{fx}_i) &
             \text{True, sum} \\
-          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| &
+          1/n \sum_{i=1}^n |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, mean} \\
-          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| &
+          \sum_{i=1}^n |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, sum}
         \end{cases}
+
+    where :math:`S` is the error function defined by `error_fnc` and
+    :math:`C` is the `cost`.
 
     Parameters
     ----------
@@ -592,6 +595,7 @@ def constant_cost(obs, fx, cost_params, error_fnc=error):
     -------
     cost : float
         The cost of the forecast errors.
+
     """
     cost_const = cost_params.cost
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
@@ -639,23 +643,26 @@ def time_of_day_cost(obs, fx, cost_params, error_fnc=error):
     to each time of day in `cost_params.times`. The `cost_params.fill`
     attribute specifies how to fill (forward or backward) the cost for
     times in the observation/forecast index but not in
-    `cost_params.times`. This series, `cost_series`, along with the
+    `cost_params.times`. This cost series, along with the
     attributes `net` and `aggregation` from `cost_params` are used to
     perform the following calculation depending on (`net`,
     `aggregation`):
 
     .. math::
 
-       cost = \begin{cases}
-          1/n \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+       \text{cost} = \begin{cases}
+          1/n \sum_{i=1}^n C_i * S(\text{obs}_i, \text{fx}_i) &
             \text{True, mean} \\
-          \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+          \sum_{i=1}^n C_i * S(\text{obs}_i, \text{fx}_i) &
             \text{True, sum} \\
-          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+          1/n \sum_{i=1}^n C_i * |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, mean} \\
-          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+          \sum_{i=1}^n C_i * |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, sum}
         \end{cases}
+
+    where :math:`S` is the error function defined by `error_fnc` and
+    :math:`C` is the computed cost series.
 
     Parameters
     ----------
@@ -694,23 +701,26 @@ def datetime_cost(obs, fx, cost_params, error_fnc=error):
     to each date-time in `cost_params.datetimes`. The
     `cost_params.fill` attribute specifies how to fill (forward or
     backward) the cost for date-times in the observation/forecast
-    index but not in `cost_params.datetimes`.  This series,
-    `cost_series`, along with the attributes `net` and `aggregation`
-    from `cost_params` are used to perform the following calculation
-    depending on (`net`, `aggregation`):
+    index but not in `cost_params.datetimes`.  This cost series, along
+    with the attributes `net` and `aggregation` from `cost_params` are
+    used to perform the following calculation depending on (`net`,
+    `aggregation`):
 
     .. math::
 
-       cost = \begin{cases}
-          1/n \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+       \text{cost} = \begin{cases}
+          1/n \sum_{i=1}^n C_i * S(\text{obs}_i, \text{fx}_i) &
             \text{True, mean} \\
-          \sum_{i=1}^n (\text{error_fnc}(\text{obs}_i, \text{fx}_i)) * \text{cost_series}_i &
+          \sum_{i=1}^n C_i * S(\text{obs}_i, \text{fx}_i) &
             \text{True, sum} \\
-          1/n \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+          1/n \sum_{i=1}^n C_i * |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, mean} \\
-          \sum_{i=1}^n |\text{error_fnc}(\text{obs}_i, \text{fx}_i)| * \text{cost_series}_i &
+          \sum_{i=1}^n C_i * |S(\text{obs}_i, \text{fx}_i)| &
             \text{False, sum}
         \end{cases}
+
+    where :math:`S` is the error function defined by `error_fnc` and
+    :math:`C` is the computed cost series.
 
     Parameters
     ----------
@@ -735,6 +745,7 @@ def datetime_cost(obs, fx, cost_params, error_fnc=error):
     In the case where the specified `cost_params.datetimes` are insufficient
     to cover the observation/forecast index after filling, those missing
     date-times are excluded from the cost calculation.
+
     """  # NOQA
     agg_fnc = _np_agg_fnc(cost_params.aggregation, cost_params.net)
     fill = _FILL_OPTIONS[cost_params.fill]
@@ -783,17 +794,38 @@ def error_band_cost(obs, fx, cost_params, error_fnc=error):
     range in each `cost_params.bands`. If the error falls within the
     range, the cost function associated with the range is applied to
     the error and added to the final result until all errors are
-    evaluated:
+    evaluated.
 
-    .. code-block:: python
+    In mathematical terms, if :math:`R_j` is the range of band :math:`j`, the banded cost series :math:`K` is defined as
 
-       final_cost = 0
-       for i in range(n):
-           error = error_fnc(obs[i], fx[i])
-           for band in cost_params.bands:
-               if range[0] <= error <= range[1]:
-                   final_cost += band.cost_function(error, cost_params)
-                   break # from band loop, continue to next i
+    .. math::
+
+        K_i = \begin{cases}
+            C_{1, i} & S(\text{obs}_i, \text{fx}_i) \in R_1 \\
+            C_{2, i} & S(\text{obs}_i, \text{fx}_i) \in R_2 \land S(\text{obs}_i, \text{fx}_i) \notin R_1 \\
+            C_{3, i} & S(\text{obs}_i, \text{fx}_i) \in R_3 \land S(\text{obs}_i, \text{fx}_i) \notin \{R_1, R_2\} \\
+            \ldots \\
+            C_{j, i} & S(\text{obs}_i, \text{fx}_i) \in R_j \land S(\text{obs}_i, \text{fx}_i) \notin \{R_1, \ldots, R_{j-1}\} \\
+        \end{cases}
+
+    where :math:`C_j` is the cost series defined for band :math:`j`
+    and :math:`S` is the error function defined by `error_fnc`. The
+    final cost is then computed as (depending on the the values of
+    `net` and `aggregation`),
+
+    .. math::
+
+       \text{cost} = \begin{cases}
+          1/n \sum_{i=1}^n K_i * S(\text{obs}_i, \text{fx}_i) &
+            \text{True, mean} \\
+          \sum_{i=1}^n K_i * S(\text{obs}_i, \text{fx}_i) &
+            \text{True, sum} \\
+          1/n \sum_{i=1}^n K_i * |S(\text{obs}_i, \text{fx}_i)| &
+            \text{False, mean} \\
+          \sum_{i=1}^n K_i * |S(\text{obs}_i, \text{fx}_i)| &
+            \text{False, sum}
+        \end{cases}
+
 
 
     Parameters
@@ -814,7 +846,7 @@ def error_band_cost(obs, fx, cost_params, error_fnc=error):
     cost : float
         The cost of the forecast errors.
 
-    """
+    """  # NOQA
     bands = cost_params.bands
     band_cost_functions = [
         partial(_COST_FUNCTION_MAP[band.cost_function],
@@ -836,11 +868,20 @@ def error_band_cost(obs, fx, cost_params, error_fnc=error):
 
 
 def cost(obs, fx, cost_params, error_fnc=error):
-    """Compute the cost for forecast errors according to `cost_params`.
+    r"""Compute the cost for forecast errors according to `cost_params`.
     `cost_params.type` determines which cost function of
     :py:func:`.constant_cost`, :py:func:`.time_of_day_cost`,
     :py:func:`.datetime_cost`, or :py:func:`error_band_cost` will be
     used.
+
+    In general, the cost is calculated as
+
+    .. math::
+
+        \text{cost} = \sum_{i=1}^n C_i(S(\text{obs}_i, \text{fx}_i))
+
+    where :math:`C_i` is determined by the cost function and :math:`S` is the
+    error function.
 
     Parameters
     ----------
