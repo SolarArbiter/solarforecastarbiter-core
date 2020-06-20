@@ -796,35 +796,23 @@ def error_band_cost(obs, fx, cost_params, error_fnc=error):
     the error and added to the final result until all errors are
     evaluated.
 
-    In mathematical terms, if :math:`R_j` is the range of band :math:`j`, the banded cost series :math:`K` is defined as
+    In mathematical terms, if :math:`R_j` is the range of band
+    :math:`j` and :math:`S` is the error function defined by
+    `error_fnc`, the forecasts and observations are first split into
+    sets according to
 
     .. math::
 
-        K_i = \begin{cases}
-            C_{1, i} & S(\text{obs}_i, \text{fx}_i) \in R_1 \\
-            C_{2, i} & S(\text{obs}_i, \text{fx}_i) \in R_2 \land S(\text{obs}_i, \text{fx}_i) \notin R_1 \\
-            C_{3, i} & S(\text{obs}_i, \text{fx}_i) \in R_3 \land S(\text{obs}_i, \text{fx}_i) \notin \{R_1, R_2\} \\
-            \ldots \\
-            C_{j, i} & S(\text{obs}_i, \text{fx}_i) \in R_j \land S(\text{obs}_i, \text{fx}_i) \notin \{R_1, \ldots, R_{j-1}\} \\
-        \end{cases}
+        \{\text{obs}^j, \text{fx}^j\} = \left\{\text{obs}_i, \text{fx}_i \forall i \text{ s.t. } S(\text{obs}_i, \text{fx}_i) \in R_j \text{ and } S(\text{obs}_i, \text{fx}_i) \notin \{R_1, \ldots, R_{j-1}\} \right\}
 
-    where :math:`C_j` is the cost series defined for band :math:`j`
-    and :math:`S` is the error function defined by `error_fnc`. The
-    final cost is then computed as (depending on the the values of
-    `net` and `aggregation`),
+    Then, the cost function for each band, :math:`K_j(\cdot)` (as
+    described by :py:func:`.constant_cost`,
+    :py:func:`.time_of_day_cost`, and :py:func:`datetime_cost`), is
+    applied to each set, yiedling
 
     .. math::
 
-       \text{cost} = \begin{cases}
-          1/n \sum_{i=1}^n K_i * S(\text{obs}_i, \text{fx}_i) &
-            \text{True, mean} \\
-          \sum_{i=1}^n K_i * S(\text{obs}_i, \text{fx}_i) &
-            \text{True, sum} \\
-          1/n \sum_{i=1}^n K_i * |S(\text{obs}_i, \text{fx}_i)| &
-            \text{False, mean} \\
-          \sum_{i=1}^n K_i * |S(\text{obs}_i, \text{fx}_i)| &
-            \text{False, sum}
-        \end{cases}
+        \text{cost} = \sum_j K_j(\text{obs}^j, \text{fx}^j)
 
 
 
