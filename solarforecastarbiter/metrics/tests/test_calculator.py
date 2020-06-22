@@ -198,6 +198,22 @@ def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
     assert result[0].values[0].value == expected
 
 
+def test_calculate_metrics_explicit_cost(single_forecast_observation_uncert,
+                                         create_processed_fxobs,
+                                         constant_cost):
+    inp = [create_processed_fxobs(single_forecast_observation_uncert,
+                                  np.array([1.9, 1, 1.0005]),
+                                  np.array([1, 1, 1]))]
+    result = calculator.calculate_metrics(inp, ['total'], ['cost'])
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
+    expected_values = {None: (0.9 + 5e-4), 100.: 0., 0.1: 0.3 * 3}
+    expected = expected_values[single_forecast_observation_uncert.uncertainty]
+    # float precision issues
+    assert abs(result[0].values[0].value - expected) < 1e-8
+
+
 def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
                                                  create_processed_fxobs,
                                                  create_dt_index):
