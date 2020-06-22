@@ -1014,7 +1014,8 @@ class DatetimeCost(BaseModel):
     timezone : str, default None
         IANA timezone string to use when constructing datetimes. If None,
         the timezone of the observations is used, which is the report
-        timezone when calculated in a report.    """
+        timezone when calculated in a report.    
+        """
     datetimes: Tuple[pd.Timestamp, ...]
     cost: Tuple[float, ...]
     aggregation: str
@@ -1060,7 +1061,7 @@ class CostBand(BaseModel):
         cost model should be used to calculate the cost in this band.
     cost_function_parameters : :py:class:`solarforecastarbiter.datamodel.ConstantCost` or :py:class:`solarforecastarbiter.TimeOfDayCost` or :py:class:`solarforecastarbiter.DatetimeCost`
         Parameters for the selected cost function.
-    """  # NOQA
+    """  # NOQA: E501
     error_range: Tuple[float, float]
     cost_function: str
     cost_function_parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost]
@@ -1131,7 +1132,7 @@ class Cost(BaseModel):
        'timeofday', 'datetime', 'constant', or 'errorband'.
     parameters : :py:class:`solarforecastarbiter.datamodel.ConstantCost` or :py:class:`solarforecastarbiter.TimeOfDayCost` or :py:class:`solarforecastarbiter.DatetimeCost` or :py:class:`solarforecastarbiter.ErrorBandCost`
         Parameters for the specific cost function type.
-    """  # NOQA
+    """  # NOQA: E501
     name: str
     type: str
     parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
@@ -1820,7 +1821,7 @@ class ReportParameters(BaseModel):
     filters : Tuple of Filters
         Filters to be applied to the data in the report.
     costs : Tuple of Costs
-        Set of cost parameters that can be reference in `object_pairs`
+        Cost parameters that can be referenced in `object_pairs`
         to compute cost metrics for that pair. Each object pair must have
         the 'cost' parameter set to None (no cost calculation will be
         performed) or one of the names of these costs.

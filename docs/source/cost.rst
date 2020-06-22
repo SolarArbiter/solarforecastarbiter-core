@@ -23,12 +23,12 @@ aforementioned basic costs depending on the size of the error is
 implemented.  This banded cost allows one to specify a cost similar to
 charges from transmission generator imbalance service as described in
 `FERC Order 890-B
-<https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`_
-as described below.
+<https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`.
+Examples are provided below.
 
 Most cost models allow the specification of an `aggregation` and `net`
 parameters. The `aggregation` parameter controls how the cost for each
-error value in the timeseries are aggregated into a single cost
+error value in the timeseries are aggregated (e.g. summed or averaged) into a single cost
 number. The `net` parameter is a boolean that indicates if the
 aggregation should keep the sign of the error, or take the absolute
 value of the error before aggregating. Note that when :code:`net ==
@@ -53,7 +53,7 @@ based on the forecast interval length to mimic a cost per MWh.
 :py:class:`.ConstantCost` also expects `aggregation` and `net`
 parameters. `aggregation` defines how costs are aggregated for a given
 analysis time period (as specified in the report). Options include
-`sum` and `mean`. The `net` parameter is boolean that specifies
+`sum` and `mean`. The `net` parameter is a boolean that specifies
 whether or not the the sum/mean should be taken without (True) or with
 (False) the absolute value of the error.
 
@@ -152,7 +152,7 @@ The error band cost model is defined using :py:class:`.ErrorBandCost`
 and implemented for deterministic forecasts by
 :py:func:`solarforecastarbiter.metrics.deterministic.error_band_cost`.
 Each of `bands` is a :py:class:`.CostBand` that describes the range of
-errors the band applies to and the parameters for one of the costs
+errors the band applies to and one of the cost models
 above. For example,
 
 .. code-block:: python
@@ -322,7 +322,7 @@ forecast, errors between :math:`\pm 2` MW are netted over the
 evaluation time period and assigned a value of $1 / MWh error. For
 overproduction errors over 2 MW, a decremental cost is
 charged/refunded based on a time of day cost. Underproduction errors
-over 2MW are charged an incremental cost depending on the time of the
+over 2 MW are charged an incremental cost depending on the time of the
 infraction. Therefore, the total cost over the evaluation time period
 is the net cost of errors within :math:`\pm 2` MW plus the cost of
 each error over :math:`\pm 2` MW charged at the time the error occured
