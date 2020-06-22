@@ -545,6 +545,59 @@ def test_error_band_cost_positive_only(default_cost_err):
     assert err == 25.2
 
 
+def test_error_band_cost_range_equiv(default_cost_err):
+    covering = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-2, 2),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=2.0, aggregation='sum', net=True
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(-np.inf, np.inf),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0, aggregation='sum', net=False
+                )
+            )
+        ]
+    )
+    split = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-2, 2),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=2.0, aggregation='sum', net=True
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(-np.inf, -2),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0, aggregation='sum', net=False
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(2, np.inf),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0, aggregation='sum', net=False
+                )
+            )
+        ]
+    )
+    fx = default_cost_err
+    obs = pd.Series(0, index=fx.index)
+    err_cov = deterministic.error_band_cost(
+        obs, fx, covering, deterministic.error)
+    err_split = deterministic.error_band_cost(
+        obs, fx, split, deterministic.error)
+    assert err_cov == err_split
+
+
 def test_error_band_cost_out_of_range(default_cost_err):
     params = datamodel.ErrorBandCost(
         bands=[datamodel.CostBand(
