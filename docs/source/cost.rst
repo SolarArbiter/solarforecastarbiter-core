@@ -191,8 +191,9 @@ of day cost applies. The errors within each band are aggregated
 according to the `aggregation` and `net` parameter of the band
 parameters, but the total cost is the sum of all error bands.
 
-Band error ranges are evaluated in order and any errors outside the
-list of ranges *are not evaluated*. Thus, for the model described by
+Band error ranges are evaluated in the order specified and any errors
+outside the list of ranges *are not evaluated*. Thus, for the model
+described by
 
 .. code-block:: python
 
@@ -228,6 +229,45 @@ outside the range of [-10, 10] are not evaluated at all and have an
 effective cost of $0 / unit error. Therefore, most use cases should
 specify -Inf and Inf in the error ranges to ensure all errors have
 some cost assigned to them.
+
+The above model is equivalent to
+
+.. code-block:: python
+
+    from solarforecastarbiter import datamodel
+
+    cost_model = datamodel.ErrorBandCost(
+        bands=[
+            datamodel.CostBand(
+                error_range=(-5.0, 5.0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=2.0,
+                    net=True,
+                    aggregation='mean'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(-10.0, 5.0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            ),
+            datamodel.CostBand(
+                error_range=(5.0, 10.0),
+                cost_function='constant',
+                cost_function_parameters=datamodel.ConstantCost(
+                    cost=4.0,
+                    net=True,
+                    aggregation='sum'
+                )
+            )
+        ]
+    )
+
 
 It is especially important to consider the sign of the `cost`
 parameter and the value of `net` when using the error band cost. For
