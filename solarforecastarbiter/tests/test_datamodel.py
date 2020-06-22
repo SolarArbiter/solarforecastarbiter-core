@@ -965,7 +965,7 @@ def test_cost_validation(which, cls, new, cost_dicts):
     'example cost',
     None
 ])
-def test_reportparameters_cost_consistencey(report_params, param):
+def test_reportparameters_cost_consistency(report_params, param):
     nop = report_params.object_pairs[0].replace(cost=param)
     op = list(report_params.object_pairs) + [nop]
     datamodel.ReportParameters(
@@ -978,3 +978,26 @@ def test_reportparameters_cost_consistencey(report_params, param):
         filters=report_params.filters,
         costs=report_params.costs
     )
+
+
+@pytest.fixture(params=['constant', 'timeofday', 'datetime', 'errorband'])
+def cost_json(constant_cost, constant_cost_json, timeofday_cost,
+              timeofday_cost_json, datetime_cost, datetime_cost_json,
+              banded_cost_params, banded_cost_params_json, request):
+    if request.param == 'constant':
+        return constant_cost_json, datamodel.Cost(
+            name='constantcost', type='constant', parameters=constant_cost)
+    elif request.param == 'timeofday':
+        return timeofday_cost_json, datamodel.Cost(
+            name='timeofdaycost', type='timeofday', parameters=timeofday_cost)
+    elif request.param == 'datetime':
+        return datetime_cost_json, datamodel.Cost(
+            name='datetimecost', type='datetime', parameters=datetime_cost)
+    elif request.param == 'errorband':
+        return banded_cost_params_json, banded_cost_params
+
+
+def test_cost_from_json(cost_json):
+    cjson, exp = cost_json
+    out = datamodel.Cost.from_dict(json.loads(cjson))
+    assert out == exp

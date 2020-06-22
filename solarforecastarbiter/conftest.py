@@ -2880,6 +2880,17 @@ def constant_cost():
 
 
 @pytest.fixture()
+def constant_cost_json():
+    return """{"name": "constantcost", "type": "constant", "parameters":
+    {
+        "cost": 1.0,
+        "aggregation": "sum",
+        "net": true
+    }
+    }"""
+
+
+@pytest.fixture()
 def timeofday_cost():
     return datamodel.TimeOfDayCost(
         times=(dt.time(0), dt.time(6)),
@@ -2889,6 +2900,20 @@ def timeofday_cost():
         net=False,
         timezone='UTC'
     )
+
+
+@pytest.fixture()
+def timeofday_cost_json():
+    return """{"name": "timeofdaycost", "type": "timeofday", "parameters":
+    {
+        "cost": [1.1, 0.9],
+        "times": ["00:00", "06:00"],
+        "aggregation": "sum",
+        "fill": "forward",
+        "net": false,
+        "timezone": "UTC"
+    }
+    }"""
 
 
 @pytest.fixture()
@@ -2902,6 +2927,22 @@ def datetime_cost():
         net=False,
         timezone='UTC'
     )
+
+
+@pytest.fixture()
+def datetime_cost_json():
+    # somewhat strange spacing for easy split
+    return """{"name": "datetimecost", "type": "datetime", "parameters":
+    {
+        "cost": [-0.2, -0.1],
+        "datetimes": ["2020-04-30T12:00Z",
+                      "2020-05-03T00:00Z"],
+        "aggregation": "sum",
+        "fill": "forward",
+        "net": false,
+        "timezone": "UTC"
+    }
+    }"""
 
 
 @pytest.fixture()
@@ -2934,6 +2975,39 @@ def banded_cost_params(errorband_cost):
         type='errorband',
         parameters=errorband_cost
     )
+
+
+@pytest.fixture()
+def banded_cost_params_json(constant_cost_json, timeofday_cost_json,
+                            datetime_cost_json):
+    things = ['\n'.join(j.split('\n')[1:-1]) for j in
+              (constant_cost_json, timeofday_cost_json, datetime_cost_json)]
+    outstr = """
+    {
+        "name": "bandedcost",
+        "type": "errorband",
+        "parameters": {
+            "bands": [
+                {
+                    "error_range": [-2, 2],
+                    "cost_function": "constant",
+                    "cost_function_parameters": %s
+                },
+                {
+                    "error_range": [2, "inf"],
+                    "cost_function": "timeofday",
+                    "cost_function_parameters": %s
+                },
+                {
+                    "error_range": ["-inf", -2],
+                    "cost_function": "datetime",
+                    "cost_function_parameters": %s
+                }
+            ]
+        }
+    }
+    """
+    return outstr % tuple(things)
 
 
 @pytest.fixture()

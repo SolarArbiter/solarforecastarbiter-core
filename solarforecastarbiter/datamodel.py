@@ -1014,7 +1014,7 @@ class DatetimeCost(BaseModel):
     timezone : str, default None
         IANA timezone string to use when constructing datetimes. If None,
         the timezone of the observations is used, which is the report
-        timezone when calculated in a report.    
+        timezone when calculated in a report.
         """
     datetimes: Tuple[pd.Timestamp, ...]
     cost: Tuple[float, ...]
