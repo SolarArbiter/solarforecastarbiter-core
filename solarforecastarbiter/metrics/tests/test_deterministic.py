@@ -300,6 +300,12 @@ def test_constant_cost_using_err_fnc(default_cost_err):
      pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
      'UTC', 'ffill',
      pd.Series([1.0, 1.0, 2.0])),
+    # out of order times
+    ([dt.time(2), dt.time(0)], [2.0, 1.0],
+     pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
+     'UTC', 'ffill',
+     pd.Series([1.0, 1.0, 2.0], index=pd.date_range(
+         '2020-01-01T00:00Z', freq='1h', periods=3),)),
     ([dt.time(0), dt.time(4)], [1.0, 2.0],
      pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3),
      'UTC', 'ffill',
@@ -338,7 +344,8 @@ def test_constant_cost_using_err_fnc(default_cost_err):
 def test_make_time_of_day_cost_ser(times, costs, index, tz, fill, exp):
     ser = deterministic._make_time_of_day_cost_ser(times, costs, index, tz,
                                                    fill)
-    exp.index = index
+    if not isinstance(exp.index, pd.DatetimeIndex):
+        exp.index = index
     exp.name = 'cost'
     assert_series_equal(ser, exp)
 
