@@ -1437,7 +1437,7 @@ def test_real_apisession_get_observation_values_not_flagged(real_session):
 
 @pytest.mark.parametrize('ftype,expected_fn', [
     ('forecast', 'get_forecast'),
-    ('forecast', 'get_forecast'),
+    ('event_forecast', 'get_forecast'),
     ('probabilistic_forecast', 'get_probabilistic_forecast'),
     ('probabilistic_forecast_constant_value',
      'get_probabilistic_forecast_constant_value'),
