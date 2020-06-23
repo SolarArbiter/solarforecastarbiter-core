@@ -326,7 +326,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
     plotly.Figure
     """  # NOQA
     fig = go.Figure()
-    plotted_objects = 0
     for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
@@ -345,7 +344,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
             connectgaps=False,
             **plot_kwargs),
         )
-        plotted_objects += 1
 
     # dict to optionally move legend if we end up adding a colorbar for
     # probabilistic forecasts
@@ -405,7 +403,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         gos.append((metadata['pair_index'], go_))
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
-        plotted_objects += 1
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside')
