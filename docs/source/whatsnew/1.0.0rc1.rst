@@ -60,6 +60,9 @@ Bug fixes
 * Drop NaN before computing histogram when applying
   :py:func:`solarforecastarbiter.validation.validator.detect_clipping`
   (:pull:`484`)
+* Fixed an issue where data for object pairs with `forecast_type` of `event`
+  caused an `AttributeError` in the
+  :py:mod:`solarforecastarbiter.io.api` module. (:issue:`486`, :pull:`489`)
 
 
 Contributors
