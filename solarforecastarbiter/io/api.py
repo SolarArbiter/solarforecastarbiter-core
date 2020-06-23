@@ -874,7 +874,7 @@ class APISession(requests.Session):
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
             if ref_fx is not None:
-                ref_fx = getattr(self, fx_method)(ref_fx)
+                ref_fx = fx_method(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
