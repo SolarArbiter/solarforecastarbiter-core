@@ -1279,7 +1279,7 @@ class APISession(requests.Session):
 
     def _forecast_get_by_type(self, forecast_type):
         """Returns the appropriate function for requesting forecast metadata
-        based on the `forecast type` field of an object pair.
+        based on `forecast_type`.
 
         Parameters
         ----------
