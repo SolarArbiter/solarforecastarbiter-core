@@ -433,3 +433,47 @@ def test_find_next_issue_time_from_last_forecast(fxargs, last_time, expected,
     fx = default_forecast(site_metadata, **fxargs)
     out = utils.find_next_issue_time_from_last_forecast(fx, last_time)
     assert out == expected
+
+
+@pytest.mark.parametrize('obs_kw,fx_kw,index', [
+    pytest.param(dict(), dict(), False,
+                 marks=pytest.mark.xfail(strict=True)),
+    pytest.param(dict(), dict(), True,
+                 marks=pytest.mark.xfail(strict=True)),
+    # obs interval length > 1h too long
+    (dict(interval_length=pd.Timedelta('2h')),
+     dict(interval_length=pd.Timedelta('4h')), True),
+    (dict(interval_length=pd.Timedelta('2h')),
+     dict(interval_length=pd.Timedelta('4h')), False),
+    # fx run_length < obs interval length
+    (dict(), dict(run_length=pd.Timedelta('15min')), True),
+    (dict(), dict(run_length=pd.Timedelta('15min')), False),
+    # day forecast index
+    (dict(), dict(run_length=pd.Timedelta('24h')), True),
+    pytest.param(dict(), dict(run_length=pd.Timedelta('24h')), False,
+                 marks=pytest.mark.xfail(strict=True)),
+    # non-instant obs
+    (dict(), dict(interval_label='instantaneous'), True),
+    (dict(), dict(interval_label='instantaneous'), False),
+    # instant, but mismatch length
+    (dict(interval_label='instantaneous'),
+     dict(interval_label='instantaneous'),
+     True),
+    (dict(interval_label='instantaneous'),
+     dict(interval_label='instantaneous'),
+     False),
+])
+def test_check_persistence_compatibility(obs_kw, fx_kw, index, site_metadata):
+    obs_dict = {'interval_label': 'ending',
+                'interval_value_type': 'interval_mean',
+                'interval_length': pd.Timedelta('30min')}
+    fx_dict = {'interval_label': 'ending',
+               'interval_value_type': 'interval_mean',
+               'interval_length': pd.Timedelta('1h'),
+               'run_length': pd.Timedelta('12h')}
+    obs_dict.update(obs_kw)
+    fx_dict.update(fx_kw)
+    obs = default_observation(site_metadata, **obs_dict)
+    fx = default_forecast(site_metadata, **fx_dict)
+    with pytest.raises(ValueError):
+        utils.check_persistence_compatibility(obs, fx, index)

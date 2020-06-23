@@ -1,0 +1,94 @@
+.. _whatsnew_100b6:
+
+1.0.0b6 (June 2, 2020)
+----------------------
+
+This is the sixth 1.0 beta release.
+
+Highlights include:
+
+* support for automated reference persistence forecasts
+* reports can now be rendered to PDF
+* added reference data from NREL PVDAQ
+* adjusted quality check thresholds and added new daytime flags
+
+See below for the full list of changes.
+
+
+API Changes
+~~~~~~~~~~~
+* Added support for week-ahead persistence forecasts with
+  :py:func:`solarforecastarbiter.utils.get_data_start_end` and
+  :py:func:`solarforecastarbiter.main.run_persistence` modifications. (:issue:`55`) (:pull:`392`)
+* :py:func:`solarforecastarbiter.pvmodel.calculate_power` and
+  :py:func:`solarforecastarbiter.datamodel.Site` expect a ``temperature_coefficient``
+  with units of % of DC capacity/C instead of 1/C (:issue:`350`) (:pull:`433`)
+* Add :py:func:`solarforecastarbiter.io.utils.mock_raw_report_endpoints` to mock
+  report API endpoints used, primarily to test report serialization (:pull:`441`)
+* Change default
+  :py:func:`solarforecastarbiter.validation.validator.detect_stale_values` and
+  :py:func:`solarforecastarbiter.validation.validator.detect_interpolated_values`
+  ``window`` value from 3 to 6. (:issue:`124`)
+* :py:func:`solarforecastarbiter.io.reference_data.common.create_forecasts` now
+  calls :py:func:`solarforecastarbiter.io.reference_data.common.create_persistence_forecasts`
+  and :py:func:`solarforecastarbiter.io.reference_data.common.create_nwp_forecasts`
+  which create the Forecast objects from persistence and NWP templates,
+  respectively. (:issue:`375`) (:pull:`455`)
+* Added :py:func:`solarforecastarbiter.reference_forecasts.main.make_latest_persistence_forecasts`
+  to support periodic generation of persistence reference forecasts. (:issue:`375`)
+  (:pull:`455`)
+
+
+Enhancements
+~~~~~~~~~~~~
+* Reference net load forecasts provided using week-ahead persistence. (:issue:`55`) (:pull:`392`)
+* Datamodel now supports ``'net_load'`` as an allowed variable. (:issue:`55`) (:pull:`392`)
+* Posting of daily validation now splits requests to avoid missing periods and
+  limit each request to one week of data (:issue:`424`) (:pull:`435`)
+* PDF report figures are generated instead of SVG for easy integration into PDF
+  reports (:issue:`360`) (:pull:`437`)
+* Added support for NREL PVDAQ sites to the reference database functions.
+  (:issue:`397`) (:pull:`438`)
+* Refactor :py:func:`solarforecastarbiter.metrics.calculator` to accept and
+  calculate for individual ProbabilisticForecast (CDFs) and ProbabilisticForecastConstantValue
+  (single values). (:pull:`445`) partially (:issue:`425`)
+* Reports can now be rendered into PDF files via pdflatex (:issue:`319`) (:pull:`439`)
+* Report generation via the CLI can now run through mock API endpoints to test
+  report serialization (:issue:`405`) (:pull:`441`)
+* Add derived quality flag masks to
+  :py:func:`solarforecastarbiter.validation.quality_mapping.convert_mask_into_dataframe`
+  output. These currently include ``'DAYTIME', 'DAYTIME STALE VALUES',
+  'DAYTIME INTERPOLATED VALUES'``. (:issue:`124`)
+* A public Docker image is available, and Github Actions use this image for
+  continuous integration tests (:pull:`446`)
+* Add ``LIMITS EXCEEDED`` quality checks for AC and DC power, including
+  :py:func:`solarforecastarbiter.validation.validator.check_ac_power_limits` and
+  :py:func:`solarforecastarbiter.validation.validator.check_dc_power_limits`
+  functions. (:issue:`452`) (:pull:`458`)
+* Adjusted University of Oregon Solar Radiation Measurment Laboratory (UO SRML)
+  to include available PV power data. (:pull:`442`)
+
+Bug fixes
+~~~~~~~~~
+* Fix incorrect ordering of months and weekdays in metrics plots.
+  (:issue:`428`) (:pull:`430`)
+* Ensure data is sorted from reference data sources before slicing and
+  posting to the API (:pull:`435`)
+* Fix bug with metrics.preprocessing for CDF ProbabilisticForecast reference
+  forecasts. (:pull:`445`)
+* Remove UO SMRL sites from reference dataset that have not reported recent
+  data. (:issue:`436`) (:pull:`442`)
+* Fixed timezones for DOE RTC sites (:pull:`469`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

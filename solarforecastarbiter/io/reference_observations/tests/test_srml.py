@@ -177,3 +177,20 @@ def test_request_data_warnings(mocker, exception, test_site):
     data = srml.request_data(test_site, 1, 1)
     assert logger.warning.call_count == 3
     assert data is None
+
+
+def test_initialize_site_forecasts(mocker, test_site):
+    mock_create_fx = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.srml.common.'
+        'create_forecasts')
+    mock_api = mocker.MagicMock()
+    srml.initialize_site_forecasts(mock_api, test_site)
+    assert 'ac_power' in mock_create_fx.call_args[0][2]
+    assert 'dc_power' in mock_create_fx.call_args[0][2]
+
+    regular_site_dict = test_site_dict.copy()
+    regular_site_dict.pop('modeling_parameters')
+    reg_site = Site.from_dict(regular_site_dict)
+    srml.initialize_site_forecasts(mock_api, reg_site)
+    assert 'ac_power' not in mock_create_fx.call_args[0][2]
+    assert 'dc_power' not in mock_create_fx.call_args[0][2]

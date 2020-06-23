@@ -231,6 +231,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     to look more similar to the previous Monday that it does to the previous
     day (Sunday).
     """
+    utils.check_persistence_compatibility(observation, forecast, index)
     forecast_start, forecast_end = utils.get_forecast_start_end(
         forecast, issue_time, False)
     intraday = utils._is_intraday(forecast)
@@ -260,7 +261,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         fx = persistence.persistence_interval(
             observation, data_start, data_end, forecast_start,
             forecast.interval_length, forecast.interval_label, load_data)
-    else:
+    else:  # pragma: no cover
         raise ValueError(
             'index=True not supported for forecasts with run_length >= 1day')
 
@@ -602,6 +603,10 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
         run_time = issue_time
         logger.info('Making persistence forecast for %s:%s at %s',
                     fx.name, fx.forecast_id, issue_time)
-        fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
-                                 index=index)
-        session.post_forecast_values(fx.forecast_id, fx_ser)
+        try:
+            fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
+                                     index=index)
+        except ValueError as e:
+            logger.error('Unable to generate persistence forecast: %s', e)
+        else:
+            session.post_forecast_values(fx.forecast_id, fx_ser)

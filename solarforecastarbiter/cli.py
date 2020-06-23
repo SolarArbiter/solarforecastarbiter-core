@@ -128,31 +128,37 @@ def cli():
               type=UTCTIMESTAMP,
               default=lambda: midnight - pd.Timedelta(days=1),
               help='datetime to start validation at')
-@click.option('--end', default=lambda: midnight - pd.Timedelta(seconds=1),
+@click.option('--end', default=lambda: midnight,
               type=UTCTIMESTAMP,
-              show_default='23:59:59 Yesterday (UTC)',
+              show_default='00:00:00 Today (UTC)',
               help='datetime to end validation at')
+@click.option(
+    '--only-missing/--not-only-missing',
+    is_flag=True, default=True,
+    help='Only apply validation to periods where daily validation is missing')
 @click.argument('observation_id', nargs=-1)
-def dailyvalidation(verbose, user, password, start, end, base_url,
-                    observation_id):
+def validate(verbose, user, password, start, end, base_url,
+             only_missing, observation_id):
     """
-    Run the daily validation tasks for a given set of observations
+    Run the validation tasks for a given set of observations
     """
     set_log_level(verbose)
     token = cli_access_token(user, password)
     if not observation_id:
         logger.info(
-            ('Validating daily observation data from %s to %s for all '
+            ('Validating observation data from %s to %s for all '
              'observations'), start, end)
-        validation_tasks.daily_observation_validation(token, start, end,
-                                                      base_url)
+        validation_tasks.fetch_and_validate_all_observations(
+            token, start, end, only_missing=only_missing,
+            base_url=base_url)
     else:
         logger.info(
-            ('Validating daily observation data from %s to %s for '
+            ('Validating observation data from %s to %s for '
              'observations:\n\t%s'), start, end, ','.join(observation_id))
         for obsid in observation_id:
-            validation_tasks.daily_single_observation_validation(
-                token, obsid, start, end, base_url)
+            validation_tasks.fetch_and_validate_observation(
+                token, obsid, start, end, only_missing=only_missing,
+                base_url=base_url)
 
 
 @cli.group(help=reference_data.CLI_DESCRIPTION)

@@ -132,12 +132,40 @@ def test_apisession_list_sites(requests_mock, many_sites_text, many_sites):
     assert site_list == many_sites
 
 
+def test_apisession_list_sites_in_zone(requests_mock, many_sites_text,
+                                       many_sites):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri('GET', matcher, content=json.dumps(
+        json.loads(many_sites_text)[1:]).encode())
+    site_list = session.list_sites_in_zone('Reference Region 5')
+    assert site_list == many_sites[1:]
+
+
 def test_apisession_list_sites_empty(requests_mock):
     session = api.APISession('')
     matcher = re.compile(f'{session.base_url}/.*')
     requests_mock.register_uri('GET', matcher, content=b"[]")
     site_list = session.list_sites()
     assert site_list == []
+
+
+def test_apisession_list_sites_in_zone_empty(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri('GET', matcher, content=b"[]")
+    site_list = session.list_sites_in_zone('bad zone')
+    assert site_list == []
+
+
+def test_apisession_search_climatezones(requests_mock):
+    session = api.APISession('')
+    matcher = re.compile(f'{session.base_url}/.*')
+    requests_mock.register_uri(
+        'GET', matcher,
+        content=b'[{"name": "Reference Region 3", "created_at": 0}]')
+    zone_list = session.search_climatezones(32.1, -110.8)
+    assert zone_list == ["Reference Region 3"]
 
 
 def test_apisession_create_site(requests_mock, single_site, site_text):
@@ -1028,6 +1056,26 @@ def test_get_forecast_time_range(requests_mock, mint, maxt, expected):
     assert out == expected
 
 
+@pytest.mark.parametrize('inp,exp', [
+    ('[]', np.array([], dtype='datetime64[D]')),
+    ('["2019-01-01"]',
+     np.array(['2019-01-01'], dtype='datetime64[D]')),
+    ('["2019-01-03", "2019-04-01"]',
+     np.array(['2019-01-03', '2019-04-01'],
+              dtype='datetime64[D]')),
+])
+def test_get_observation_values_not_flagged(requests_mock, inp, exp):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/unflagged',
+        content=(
+            '{"observation_id": "obsid", "_links": {}, '
+            f'"dates": {inp}' + '}').encode())
+    out = session.get_observation_values_not_flagged(
+        'obsid', '2019-01-01T00:00Z', '2020-01-01T00:00Z', 16)
+    assert all(out == exp)
+
+
 @pytest.fixture(scope='session')
 def auth_token():
     try:
@@ -1067,6 +1115,22 @@ def test_real_apisession_list_sites(real_session):
     sites = real_session.list_sites()
     assert isinstance(sites, list)
     assert isinstance(sites[0], datamodel.Site)
+
+
+def test_real_apisession_list_sites_in_zone(real_session):
+    sites = real_session.list_sites_in_zone('Reference Region 5')
+    assert isinstance(sites, list)
+    assert isinstance(sites[0], datamodel.Site)
+
+
+@pytest.mark.parametrize('lat,lon,expected', [
+    (32.1, -110.8, {'Reference Region 3'}),
+    (45, -70.0, {'Reference Region 7'}),
+    (0, 0, set())
+])
+def test_real_apisession_search_climatezones(real_session, lat, lon, expected):
+    zones = real_session.search_climatezones(lat, lon)
+    assert set(zones) == expected
 
 
 def test_real_apisession_create_site(site_text, real_session):
@@ -1358,3 +1422,33 @@ def test_real_apisession_get_cdf_forecast_time_range(real_session):
     assert out == (
         pd.Timestamp('2019-04-14T00:00:00Z'),
         pd.Timestamp('2019-04-17T06:55:00Z'))
+
+
+def test_real_apisession_get_observation_values_not_flagged(real_session):
+    start = pd.Timestamp('2019-04-15T00:00:00Z')
+    end = pd.Timestamp('2019-04-15T12:00:00Z')
+    out = real_session.get_observation_values_not_flagged(
+        '123e4567-e89b-12d3-a456-426655440000',
+        start, end, 1)
+    assert isinstance(out, np.ndarray)
+    assert out.dtype == 'datetime64[D]'
+    assert all(out == np.array(['2019-04-15'], dtype='datetime64[D]'))
+
+
+@pytest.mark.parametrize('ftype,expected_fn', [
+    ('forecast', 'get_forecast'),
+    ('event_forecast', 'get_forecast'),
+    ('probabilistic_forecast', 'get_probabilistic_forecast'),
+    ('probabilistic_forecast_constant_value',
+     'get_probabilistic_forecast_constant_value'),
+])
+def test_api_session_forecast_get_by_type(ftype, expected_fn):
+    test_session = api.APISession('token')
+    get_fn = test_session._forecast_get_by_type(ftype)
+    assert get_fn == getattr(test_session, expected_fn)
+
+
+def test_api_session_forecast_get_by_type_invalid_type():
+    test_session = api.APISession('token')
+    with pytest.raises(ValueError):
+        test_session._forecast_get_by_type('bad_type')

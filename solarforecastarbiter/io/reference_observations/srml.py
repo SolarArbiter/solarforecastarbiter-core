@@ -9,7 +9,7 @@ from pvlib import iotools
 from requests.exceptions import HTTPError
 
 
-from solarforecastarbiter.datamodel import Observation
+from solarforecastarbiter.datamodel import Observation, SolarPowerPlant
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
 
@@ -248,8 +248,11 @@ def initialize_site_forecasts(api, site):
     site : :py:class:`solarforecastarbiter.datamodel.Site`
         The site object for which to create Forecasts.
     """
+    variables = list(srml_variable_map.values())
+    if isinstance(site, SolarPowerPlant):
+        variables += ['ac_power', 'dc_power']
     common.create_forecasts(
-        api, site, srml_variable_map.values(),
+        api, site, variables,
         default_forecasts.TEMPLATE_FORECASTS)
 
 

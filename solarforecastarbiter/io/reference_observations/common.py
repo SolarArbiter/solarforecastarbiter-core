@@ -1,5 +1,5 @@
 import datetime as dt
-from functools import lru_cache
+from functools import lru_cache, partial
 import json
 import logging
 
@@ -11,6 +11,8 @@ from requests.exceptions import HTTPError
 from solarforecastarbiter.datamodel import Observation, ProbabilisticForecast
 from solarforecastarbiter.io.reference_observations.default_forecasts import (
     CURRENT_NWP_VARIABLES, is_in_nwp_domain)
+from solarforecastarbiter.reference_forecasts.utils import (
+    check_persistence_compatibility)
 
 
 logger = logging.getLogger('reference_data')
@@ -409,7 +411,7 @@ def site_name_no_network(site):
 
 
 def create_one_forecast(api, site, template_forecast, variable,
-                        **extra_params):
+                        creation_validation=lambda x: True, **extra_params):
     """Creates a new Forecast or ProbabilisticForecast for the variable
     and site based on the template forecast.
 
@@ -425,6 +427,10 @@ def create_one_forecast(api, site, template_forecast, variable,
         to extra parameters.
     variable : string
         Variable measured in the forecast.
+    creation_validation : function
+        Function that expects a Forecast or ProbabilisticForecast object
+        and raises a ValueError if the forecast is invalid just before it
+        is created.
     **extra_params : dict
         Other key, value pairs to add to the extra_parameters of the Forecast
         object.
@@ -473,6 +479,12 @@ def create_one_forecast(api, site, template_forecast, variable,
     else:
         create_func = api.create_forecast
 
+    try:
+        creation_validation(forecast)
+    except ValueError as exc:
+        logger.error('Validation failed on creation of %s forecast '
+                     'at Site %s with message %s', variable, site.name, exc)
+        return
     try:
         created = create_func(forecast)
     except HTTPError as e:
@@ -576,8 +588,11 @@ def create_persistence_forecasts(api, site, variables, templates):
                 template_fx.run_length < pd.Timedelta('1d') and
                 obs.variable in ('ghi', 'dni', 'dhi', 'ac_power')
             )
+            validation_func = partial(check_persistence_compatibility, obs,
+                                      index=use_index)
             # net_load might go here, although other changes might be required
             fx_id = create_one_forecast(api, site, template_fx, obs.variable,
+                                        creation_validation=validation_func,
                                         observation_id=obs.observation_id,
                                         index_persistence=use_index)
             created.append(fx_id)

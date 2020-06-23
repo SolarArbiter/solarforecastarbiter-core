@@ -640,6 +640,17 @@ def test_create_one_forecast(template_fx):
     assert 'piggyback_on' not in ep
 
 
+def test_create_one_forecast_invalid(template_fx):
+    api, template, site = template_fx
+
+    def fail(fx):
+        raise ValueError('failed')
+    fx = common.create_one_forecast(
+        api, site, template, 'ac_power',
+        creation_validation=fail)
+    assert fx is None
+
+
 @pytest.mark.parametrize('tz,expected', [
     ('Etc/GMT+8', dt.time(1)),
     ('MST', dt.time(0)),

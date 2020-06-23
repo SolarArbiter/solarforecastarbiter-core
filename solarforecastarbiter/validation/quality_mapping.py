@@ -38,7 +38,7 @@ BITMASK_DESCRIPTION_DICT = {1: {
     'INTERPOLATED VALUES': 1 << 11,
     'CLIPPED VALUES': 1 << 12,
     'INCONSISTENT IRRADIANCE COMPONENTS': 1 << 13,
-    'RESERVED 0': 1 << 14,  # available for new flag
+    'DAILY VALIDATION APPLIED': 1 << 14,
     'RESERVED 1': 1 << 15  # available for new flag
     }
 }
@@ -59,6 +59,7 @@ LATEST_VERSION = max(BITMASK_DESCRIPTION_DICT.keys())
 DESCRIPTION_MASK_MAPPING = BITMASK_DESCRIPTION_DICT[LATEST_VERSION]
 LATEST_VERSION_FLAG = (
     LATEST_VERSION * DESCRIPTION_MASK_MAPPING['VERSION IDENTIFIER 0'])
+DAILY_VALIDATION_FLAG = DESCRIPTION_MASK_MAPPING['DAILY VALIDATION APPLIED']
 
 
 def convert_bool_flags_to_flag_mask(flags, flag_description, invert):
@@ -242,7 +243,7 @@ def _add_derived_masks(masks):
         cols = operations[1:]
         args = [out[col] for col in cols]
         out[flag] = func(*args)
-    return pd.concat([out, masks[unvalidated]]).fillna(False)
+    return pd.concat([out, masks[unvalidated]], sort=False).fillna(False)
 
 
 def convert_mask_into_dataframe(flag_series):

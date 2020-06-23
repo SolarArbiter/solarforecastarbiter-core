@@ -94,11 +94,11 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536B\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
+            "extra_parameters": "{\"network_data_label\": \"5362\", \"module\": \"Evergreen 190W/ Solectra PV1 1800\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Portland OR PV 30 deg tilt dc_power Evergreen",
+            "name": "Portland OR PV 30 deg tilt ac_power Evergreen",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -122,7 +122,7 @@
                 "timezone": "Etc/GMT+8"
             },
             "uncertainty": 0,
-            "variable": "dc_power"
+            "variable": "ac_power"
         },
         {
             "extra_parameters": "{\"network_data_label\": \"536C\", \"module\": \"Photowatt 105W/ PVP 1100\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
@@ -156,11 +156,11 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536C\", \"module\": \"Photowatt 105W/ PVP 1100\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
+            "extra_parameters": "{\"network_data_label\": \"5363\", \"module\": \"Photowatt 105W/ PVP 1100\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Portland OR PV 30 deg tilt dc_power Photowatt",
+            "name": "Portland OR PV 30 deg tilt ac_power Photowatt",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -184,7 +184,7 @@
                 "timezone": "Etc/GMT+8"
             },
             "uncertainty": 0,
-            "variable": "dc_power"
+            "variable": "ac_power"
         },
         {
             "extra_parameters": "{\"network_data_label\": \"536D\", \"module\": \"Kaneka 60W/SMA 700\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
@@ -218,11 +218,42 @@
             "variable": "dc_power"
         },
         {
-            "extra_parameters": "{\"network_data_label\": \"536D\", \"module\": \"Kaneka 60W/SMA 700\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
+            "extra_parameters": "{\"network_data_label\": \"5364\", \"module\": \"Kaneka 60W/SMA 700\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Portland OR PV 30 deg tilt dc_power Kaneka",
+            "name": "Portland OR PV 30 deg tilt ac_power Kaneka",
+            "observation_id": "",
+            "provider": "",
+            "site": {
+                "elevation": 70.0,
+                "extra_parameters": "{\"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0, \"modules\": [\"Evergreen 190W/ Solectra PV1 1800\", \"Photowatt 105W/ PVP 1100\", \"Kaneka 60W/SMA 700\", \"Sanyo 195W/ SMA 3000\"]}",
+                "latitude": 45.51,
+                "longitude": -122.69,
+                "modeling_parameters": {
+                    "ac_capacity": 0.004755,
+                    "ac_loss_factor": 0.0,
+                    "dc_capacity": 0.004755,
+                    "dc_loss_factor": 0.0,
+                    "surface_azimuth": 180.0,
+                    "surface_tilt": 30.0,
+                    "temperature_coefficient": 0.3,
+                    "tracking_type": "fixed"
+                },
+                "name": "Portland OR PV 30 deg tilt",
+                "provider": "",
+                "site_id": "",
+                "timezone": "Etc/GMT+8"
+            },
+            "uncertainty": 0,
+            "variable": "ac_power"
+        },
+        {
+            "extra_parameters": "{\"network_data_label\": \"536F\", \"module\": \"Sanyo 195W/ SMA 3000\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
+            "interval_label": "beginning",
+            "interval_length": 1.0,
+            "interval_value_type": "interval_mean",
+            "name": "Portland OR PV 30 deg tilt dc_power Sanyo",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -247,13 +278,44 @@
             },
             "uncertainty": 0,
             "variable": "dc_power"
+        },
+        {
+            "extra_parameters": "{\"network_data_label\": \"5366\", \"module\": \"Sanyo 195W/ SMA 3000\", \"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0}",
+            "interval_label": "beginning",
+            "interval_length": 1.0,
+            "interval_value_type": "interval_mean",
+            "name": "Portland OR PV 30 deg tilt ac_power Sanyo",
+            "observation_id": "",
+            "provider": "",
+            "site": {
+                "elevation": 70.0,
+                "extra_parameters": "{\"network_api_id\": \"94808.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"PS\", \"observation_interval_length\": 1.0, \"modules\": [\"Evergreen 190W/ Solectra PV1 1800\", \"Photowatt 105W/ PVP 1100\", \"Kaneka 60W/SMA 700\", \"Sanyo 195W/ SMA 3000\"]}",
+                "latitude": 45.51,
+                "longitude": -122.69,
+                "modeling_parameters": {
+                    "ac_capacity": 0.004755,
+                    "ac_loss_factor": 0.0,
+                    "dc_capacity": 0.004755,
+                    "dc_loss_factor": 0.0,
+                    "surface_azimuth": 180.0,
+                    "surface_tilt": 30.0,
+                    "temperature_coefficient": 0.3,
+                    "tracking_type": "fixed"
+                },
+                "name": "Portland OR PV 30 deg tilt",
+                "provider": "",
+                "site_id": "",
+                "timezone": "Etc/GMT+8"
+            },
+            "uncertainty": 0,
+            "variable": "ac_power"
         },
         {
             "extra_parameters": "{\"network_data_label\": \"5161\", \"module\": \"5kw unspecified\", \"network_api_id\": \"94040.0\", \"attribution\": \"Peterson, J., and Vignola, F., 2017: Structure of a Comprehensive Solar Radiation Dataset. Proceedings of the ASES National Solar Conference 2017. doi: 10.18086/solar.2017.07.02\", \"network\": \"UO SRML\", \"network_api_abbreviation\": \"AS\", \"observation_interval_length\": 1.0}",
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power 5kw",
+            "name": "Ashland OR PV dc_power 5kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -271,7 +333,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -284,7 +346,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Ashland OR dc_power 15kw",
+            "name": "Ashland OR PV dc_power 15kw",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -302,7 +364,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Ashland OR",
+                "name": "Ashland OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -315,7 +377,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Kalapuya High School OR dc_power Sharp",
+            "name": "Kalapuya High School OR PV dc_power Sharp",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -333,7 +395,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -346,7 +408,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Kalapuya High School OR ac_power Sharp",
+            "name": "Kalapuya High School OR PV ac_power Sharp",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -364,7 +426,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Kalapuya High School OR",
+                "name": "Kalapuya High School OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -377,7 +439,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) ac_power Sunpower",
+            "name": "Bend OR PV ac_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -395,7 +457,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -408,7 +470,7 @@
             "interval_label": "beginning",
             "interval_length": 1.0,
             "interval_value_type": "interval_mean",
-            "name": "Bend OR (PV) dc_power Sunpower",
+            "name": "Bend OR PV dc_power Sunpower",
             "observation_id": "",
             "provider": "",
             "site": {
@@ -426,7 +488,7 @@
                     "temperature_coefficient": 0.3,
                     "tracking_type": "fixed"
                 },
-                "name": "Bend OR (PV)",
+                "name": "Bend OR PV",
                 "provider": "",
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
@@ -451,7 +513,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Ashland OR",
+            "name": "Ashland OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -470,7 +532,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Kalapuya High School OR",
+            "name": "Kalapuya High School OR PV",
             "provider": "",
             "site_id": ""
         },
@@ -527,7 +589,7 @@
                 "temperature_coefficient": 0.3,
                 "tracking_type": "fixed"
             },
-            "name": "Bend OR (PV)",
+            "name": "Bend OR PV",
             "provider": "",
             "site_id": ""
         }
