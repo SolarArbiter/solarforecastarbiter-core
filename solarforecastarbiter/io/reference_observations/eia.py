@@ -1,17 +1,19 @@
 import os
-from functools import partial
 import logging
+from functools import partial
+import pandas as pd
 
 from solarforecastarbiter.io.fetch import eia
-from solarforecastarbiter.io.reference_observations import common
+from solarforecastarbiter.io.reference_observations import (
+    common, default_forecasts)
 
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger('reference_data')
 
 
 def initialize_site_observations(api, site):
-    """Creates an observation at the site for each variable in the EIA
-    site's file.
+    """Creates an observation at the site.
 
     Parameters
     ----------
@@ -19,12 +21,26 @@ def initialize_site_observations(api, site):
         API Session object, authenticated for the Reference user.
     site : solarforecastarbiter.datamodel.Site
         The site object for which to create the Observations.
+
+    Notes
+    -----
+    Currently only creates observations for net load [MW], but EIA contains
+    other variables that may be incorporated later (e.g. solar generation).
+
     """
-    pass
+
+    sfa_var = "net_load"
+    logger.info(f'Creating {sfa_var} at {site.name}')
+    try:
+        common.create_observation(api, site, sfa_var)
+    except HTTPError as e:
+        logger.error(f'Could not create Observation for "{sfa_var}" '
+                     f'at EIA site {site.name}')
+        logger.debug(f'Error: {e.response.text}')
 
 
 def initialize_site_forecasts(api, site):
-    """Creates a forecast for each observation at the site.
+    """Creates a forecast at the site.
 
     Parameters
     ----------
@@ -34,7 +50,8 @@ def initialize_site_forecasts(api, site):
         The site object for which to create the Observations.
 
     """
-    pass
+    common.create_forecasts(api, site, ["net_load"],
+                            default_forecasts.TEMPLATE_FORECASTS)
 
 
 def fetch(api, site, start, end, *, eia_api_key):
@@ -56,9 +73,32 @@ def fetch(api, site, start, end, *, eia_api_key):
     Returns
     -------
     data : pandas.DataFrame
-        All of the requested data concatenated into a single DataFrame.
+        All of the requested data as a single DataFrame.
+
+    Notes
+    -----
+    Currently only fetches observations for net load [MW], but EIA contains
+    other variables that may be incorporated later (e.g. solar generation).
+
     """
-    pass
+    try:
+        site_extra_params = common.decode_extra_parameters(site)
+    except ValueError:
+        return pd.DataFrame()
+    eia_site_id = site_extra_params['network_api_id']
+    series_id = f"EBA.{eia_site_id}.D.H"   # hourly net load (demand)
+    obs_df = eia.get_eia_data(
+        series_id, eia_api_key,
+        start.tz_convert(site.timezone),
+        end.tz_convert(site.timezone)
+    )
+    if obs_df.empty:
+        logger.warning(f'Data for site {site.name} contained no '
+                       f'entries from {start} to {end}.')
+        return pd.DataFrame()
+    obs_df = obs_df.rename(columns={"value": "net_load"}).tz_localize(
+        site.timezone)
+    return obs_df
 
 
 def update_observation_data(api, sites, observations, start, end):
@@ -81,6 +121,7 @@ def update_observation_data(api, sites, observations, start, end):
     Raises
     ------
     KeyError
+        If EIA_API_KEY environmental variable is not set.
 
     """
 
