@@ -299,33 +299,11 @@ def _legend_text(name, max_length=20):
         return name
 
 
-def timeseries(timeseries_value_df, timeseries_meta_df,
-               start, end, units, timezone='UTC'):
-    """
-    Timeseries plot of one or more forecasts and observations.
-
-    Parameters
-    ----------
-    timeseries_value_df: pandas.DataFrame
-        DataFrame of timeseries data. See
-        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
-        for format.
-    timeseries_meta_df: pandas.DataFrame
-        DataFrame of metadata for each Observation Forecast pair. See
-        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
-        for format.
-    start : pandas.Timestamp
-        Report start time
-    end : pandas.Timestamp
-        Report end time
-    timezone : str
-        Timezone consistent with the data in the timeseries_metadata_df.
-
-    Returns
-    -------
-    plotly.Figure
-    """  # NOQA
-    fig = go.Figure()
+def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
+    # construct graph objects in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    gos = []
+    # construct graph objects in random hash order
     for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
@@ -335,30 +313,36 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
         )
-        fig.add_trace(go.Scattergl(
+        go_ = go.Scattergl(
             y=data['observation_values'],
             x=data.index,
             name=_legend_text(metadata['observation_name']),
             legendgroup=metadata['observation_name'],
             marker=dict(color=metadata['observation_color']),
             connectgaps=False,
-            **plot_kwargs),
-        )
+            **plot_kwargs)
+        # collect in list
+        gos.append((metadata['pair_index'], go_))
+    # Add traces in order of pair index
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
 
-    # dict to optionally move legend if we end up adding a colorbar for
-    # probabilistic forecasts
-    # https://github.com/plotly/plotly_express/issues/54
-    legend_kwargs = {}
 
+def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PALETTE)
     # construct graph objects in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
     gos = []
+    # construct graph objects in random hash order
     for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
+        if metadata['axis'] not in axis:
+            # we're looking at a different kind of forecast than what we wanted
+            # to plot
+            continue
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        # maybe treat axis == None and axis == y separately too
+        # probably treat axis == None and axis == y separately in the future
         if metadata['axis'] in (None, 'y'):
             # forecasts are in units of the variable, so plot lines
             plot_kwargs = line_or_step_plotly(
@@ -376,42 +360,84 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
                 connectgaps=False,
                 **plot_kwargs)
         else:
-            # axis='x', forecasts are in units of percent
-            # visualize probability as colored bar filled to constant value
+            plot_kwargs = line_or_step_plotly(
+                metadata['interval_label'], metadata['forecast_type'])
             data = _fill_timeseries(
                 timeseries_value_df[pair_idcs],
                 metadata['interval_length'],
             )
-            data = data['forecast_values']
-            # no equivalent of Scattergl's line_shape kwarg for controlling
-            # left/right/center labeling. end result will depend on number of
-            # bar traces displayed.
-            go_ = go.Bar(
-                marker_color=data,
-                y=np.full_like(data, metadata['constant_value']),
+            plot_kwargs['marker'] = dict(color=next(palette))
+            go_ = go.Scattergl(
+                y=data['forecast_values'],
                 x=data.index,
-                text=data,
-                textposition='auto',
                 name=_legend_text(metadata['forecast_name']),
                 legendgroup=metadata['forecast_name'],
-                marker=dict(
-                    cmin=0,
-                    cmax=1,
-                    colorbar=dict(title="Probability"))
-                )
-            legend_kwargs['x'] = -0.3
+                connectgaps=False,
+                **plot_kwargs)
+        # collect in list
         gos.append((metadata['pair_index'], go_))
+    # Add traces in order of pair index
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
+
+
+def timeseries(timeseries_value_df, timeseries_meta_df,
+               start, end, units, axis, timezone='UTC'):
+    """
+    Timeseries plot of one or more forecasts and observations.
+
+    Parameters
+    ----------
+    timeseries_value_df: pandas.DataFrame
+        DataFrame of timeseries data. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
+    timeseries_meta_df: pandas.DataFrame
+        DataFrame of metadata for each Observation Forecast pair. See
+        :py:func:`solarforecastarbiter.reports.figures.construct_timeseries_dataframe`
+        for format.
+    start : pandas.Timestamp
+        Report start time
+    end : pandas.Timestamp
+        Report end time
+    axis : {(None,), ('x',), ('y',), (None, 'y')}
+        Specifies the kinds of forecast to plot. None is appropriate for
+        deterministic forecasts, 'x' for probabilistic forecasts with
+        axis = 'x', and 'y' for probabilistic forecasts with
+        axis = 'y'. Observations, deterministic forecasts, and
+        probabilistic forecasts may all be plotted together if
+        axis = (None, 'y'). Observations will not be plotted if
+        axis = ('x',).
+    timezone : str
+        Timezone consistent with the data in the timeseries_metadata_df.
+
+    Returns
+    -------
+    plotly.Figure
+    """  # NOQA: E501
+    # might want to make fig=None a kwarg and modify this line to
+    # fig = fig if fig is not None else go.Figure()
+    fig = go.Figure()
+
+    if 'x' in axis:
+        ylabel = 'Probability (%)'
+    else:
+        ylabel = f'Data ({units})'
+        # adds observation traces to fig
+        _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
+
+    # add forecast traces that have correct axis to fig
+    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
+
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside')
-    fig.update_yaxes(title_text=f'Data ({units})', showgrid=True,
+    fig.update_yaxes(title_text=ylabel, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
                      fixedrange=True)
     fig.update_layout(
-        legend=dict(font=dict(size=10), **legend_kwargs),
+        legend=dict(font=dict(size=10)),
         barmode='group',
         bargap=0.,  # gap between bars of adjacent location coordinates.
         bargroupgap=0.,  # gap between bars of the same location coordinate.
@@ -976,16 +1002,35 @@ def timeseries_plots(report):
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
+
     ts_fig = timeseries(
         value_df, meta_df, report.report_parameters.start,
-        report.report_parameters.end, units,
+        report.report_parameters.end, units, (None, 'y'),
         report.raw_report.timezone)
     ts_fig.update_layout(
         plot_bgcolor=PLOT_BGCOLOR,
         font=dict(size=14),
         margin=PLOT_MARGINS,
-
     )
+
+    if any(
+            isinstance(pfxob.original.forecast, (
+                datamodel.ProbabilisticForecast,
+                datamodel.ProbabilisticForecastConstantValue)) and
+            pfxob.original.forecast.axis == 'x' for pfxob in pfxobs
+            ):
+        ts_prob_fig = timeseries(
+            value_df, meta_df, report.report_parameters.start,
+            report.report_parameters.end, units, ('x',),
+            report.raw_report.timezone)
+        ts_prob_fig.update_layout(
+            plot_bgcolor=PLOT_BGCOLOR,
+            font=dict(size=14),
+            margin=PLOT_MARGINS,
+        )
+        ts_prob_fig_json = ts_prob_fig.to_json()
+    else:
+        ts_prob_fig_json = None
 
     # switch secondary plot based on forecast type
     pfxobs = report.raw_report.processed_forecasts_observations
@@ -1006,4 +1051,5 @@ def timeseries_plots(report):
             height=500,
             autosize=False,
         )
-    return ts_fig.to_json(), scat_fig.to_json()
+
+    return ts_fig.to_json(), ts_prob_fig_json, scat_fig.to_json()
