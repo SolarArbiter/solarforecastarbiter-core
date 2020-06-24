@@ -1113,7 +1113,7 @@ def test_generate_reference_persistence_forecast_parameters_prob_fx(
     session.get_user_info.return_value = {'organization': ''}
     session.get_observation_time_range.return_value = (
         pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
-    session.get_probabilistic_forecast_constant_value_time_range.return_value = (
+    session.get_probabilistic_forecast_constant_value_time_range.return_value = (  # NOQA
         pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
     max_run_time = pd.Timestamp('2020-05-20T16:00Z')
     # one hour ahead forecast, so 14Z was made at 13Z
