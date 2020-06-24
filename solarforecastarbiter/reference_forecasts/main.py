@@ -4,7 +4,7 @@ Make benchmark irradiance and power forecasts.
 The functions in this module use the
 :py:mod:`solarforecastarbiter.datamodel` objects.
 """
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import itertools
 import json
 import logging
@@ -17,6 +17,7 @@ import pandas as pd
 from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.io import api
 from solarforecastarbiter.io.fetch import nwp as fetch_nwp
+from solarforecastarbiter.io.utils import adjust_timeseries_for_interval_label
 from solarforecastarbiter.reference_forecasts import persistence, models, utils
 
 
@@ -146,8 +147,18 @@ def run_nwp(forecast, model, run_time, issue_time):
     return nwpoutput(*resampled)
 
 
+def _default_load_data(session):
+    def load_data(observation, data_start, data_end):
+        df = session.get_observation_values(observation.observation_id,
+                                            data_start, data_end,
+                                            observation.interval_label)
+        df = df.tz_convert(observation.site.timezone)
+        return df['value']
+    return load_data
+
+
 def run_persistence(session, observation, forecast, run_time, issue_time,
-                    index=False):
+                    index=False, load_data=None):
     """
     Run a persistence *forecast* for an *observation*.
 
@@ -239,15 +250,11 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         # raise ValueError if not intraday and not midnight to midnight
         utils._check_midnight_to_midnight(forecast_start, forecast_end)
 
+    if load_data is None:
+        load_data = _default_load_data(session)
     data_start, data_end = utils.get_data_start_end(
         observation, forecast, run_time)
 
-    def load_data(observation, data_start, data_end):
-        df = session.get_observation_values(observation.observation_id,
-                                            data_start, data_end,
-                                            observation.interval_label)
-        df = df.tz_convert(observation.site.timezone)
-        return df['value']
     if isinstance(forecast, datamodel.ProbabilisticForecast):
         cvs = [f.constant_value for f in forecast.constant_values]
         fx = persistence.persistence_probabilistic(
@@ -503,8 +510,7 @@ def generate_reference_persistence_forecast_parameters(
 
     Returns
     -------
-    generator of (Forecast, Observation, next_issue_time, index)
-
+    generator of (Forecast, Observation, index, data_start, issue_times)
     """
     user_info = session.get_user_info()
     observation_dict = {obs.observation_id: obs for obs in observations}
@@ -572,23 +578,48 @@ def generate_reference_persistence_forecast_parameters(
             next_issue_time = utils.find_next_issue_time_from_last_forecast(
                 fx, fx_maxt)
 
-        # now find all the run times that can be made based on the
-        # last observation timestamp
-        while next_issue_time <= max_run_time:
-            data_start, data_end = utils.get_data_start_end(
-                observation, fx, next_issue_time)
-            if data_end > obs_maxt:
-                break
+        data_start, _ = utils.get_data_start_end(observation, fx,
+                                                 next_issue_time)
+        issue_times = tuple(_issue_time_generator(
+            observation, fx, obs_mint, obs_maxt,
+            next_issue_time, max_run_time))
 
-            if data_start > obs_mint:
-                yield (
-                    fx,
-                    observation,
-                    next_issue_time,
-                    index
-                )
-            next_issue_time = utils.get_next_issue_time(
-                fx, next_issue_time + pd.Timedelta('1ns'))
+        if len(issue_times) == 0:
+            continue
+
+        out = namedtuple(
+            'PersistenceParameters',
+            ['forecast', 'observation', 'index', 'data_start',
+             'issue_times'])
+
+        yield out(fx, observation, index, data_start, issue_times)
+
+
+def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time, max_run_time):
+    # now find all the run times that can be made based on the
+    # last observation timestamp
+    while next_issue_time <= max_run_time:
+        data_start, data_end = utils.get_data_start_end(
+            observation, fx, next_issue_time)
+        if data_end > obs_maxt:
+            break
+
+        if data_start > obs_mint:
+            yield next_issue_time
+        next_issue_time = utils.get_next_issue_time(
+            fx, next_issue_time + pd.Timedelta('1ns'))
+
+
+def _preload_load_data(session, obs, data_start, data_end):
+    obs_data = session.get_observation_values(
+        obs.observation_id, data_start, data_end,
+        obs.interval_label).tz_convert(obs.site.timezone)['value']
+
+    def load_data(observation, data_start, data_end):
+        data = obs_data.loc[data_start:data_end]
+        return adjust_timeseries_for_interval_label(
+            data, obs.interval_label, data_start, data_end)
+    return load_data
 
 
 def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
@@ -609,17 +640,24 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
     observations = session.list_observations()
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
-    for fx, obs, issue_time, index in params:
-        run_time = issue_time
-        logger.info('Making persistence forecast for %s:%s at %s',
-                    fx.name, fx.forecast_id, issue_time)
-        try:
-            fx_ser = run_persistence(session, obs, fx, run_time, issue_time,
-                                     index=index)
-        except ValueError as e:
-            logger.error('Unable to generate persistence forecast: %s', e)
-        else:
-            session.post_forecast_values(fx.forecast_id, fx_ser)
+    for fx, obs, index, data_start, issue_times in params:
+        load_data = _preload_load_data(session, obs, data_start, max_run_time)
+        serlist = []
+        for issue_time in issue_times:
+            run_time = issue_time
+            logger.info('Making persistence forecast for %s:%s at %s',
+                        fx.name, fx.forecast_id, issue_time)
+            try:
+                fx_ser = run_persistence(
+                    session, obs, fx, run_time, issue_time,
+                    index=index, load_data=load_data)
+            except ValueError as e:
+                logger.error('Unable to generate persistence forecast: %s', e)
+            else:
+                serlist.append(fx_ser)
+        if len(serlist) > 0:
+            ser = pd.concat(serlist)
+            session.post_forecast_values(fx.forecast_id, ser)
 
 
 def make_latest_probabilistic_persistence_forecasts(
@@ -641,17 +679,26 @@ def make_latest_probabilistic_persistence_forecasts(
     observations = session.list_observations()
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
-    for fx, obs, issue_time, index in params:
-        run_time = issue_time
-        logger.info('Making persistence forecast for %s:%s at %s',
-                    fx.name, fx.forecast_id, issue_time)
-        try:
-            fx_list = run_persistence(session, obs, fx, run_time, issue_time,
-                                      index=index)
-        except ValueError as e:
-            logger.error('Unable to generate persistence forecast: %s', e)
-        else:
-            cv_ids = [f.forecast_id for f in fx.constant_values]
-            for id_, fx_ser in zip(cv_ids, fx_list):
+    for fx, obs, index, data_start, issue_times in params:
+        load_data = _preload_load_data(session, obs, data_start, max_run_time)
+        out = defaultdict(list)
+        for issue_time in issue_times:
+            run_time = issue_time
+            logger.info('Making persistence forecast for %s:%s at %s',
+                        fx.name, fx.forecast_id, issue_time)
+            try:
+                fx_list = run_persistence(
+                    session, obs, fx, run_time, issue_time,
+                    index=index, load_data=load_data)
+            except ValueError as e:
+                logger.error('Unable to generate persistence forecast: %s', e)
+            else:
+                cv_ids = [f.forecast_id for f in fx.constant_values]
+                for id_, fx_ser in zip(cv_ids, fx_list):
+                    out[id_].append(fx_ser)
+
+        for id_, serlist in out.items():
+            if len(serlist) > 0:
+                ser = pd.concat(serlist)
                 session.post_probabilistic_forecast_constant_value_values(
-                    id_, fx_ser)
+                    id_, ser)

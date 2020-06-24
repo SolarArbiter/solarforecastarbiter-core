@@ -687,16 +687,15 @@ def test_generate_reference_persistence_forecast_parameters(
     )
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
-    assert len(param_list) == 2
-    assert param_list[0] == (
-        forecasts[0], observations[0],
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp(
+        '2020-05-20T14:00Z') - pd.Timedelta('1h')
+    assert param_list[0].issue_times == (
         pd.Timestamp('2020-05-20T14:00Z'),
-        False
-    )
-    assert param_list[1] == (
-        forecasts[0], observations[0],
-        pd.Timestamp('2020-05-20T15:00Z'),
-        False
+        pd.Timestamp('2020-05-20T15:00Z')
     )
 
 
@@ -716,11 +715,11 @@ def test_generate_reference_persistence_forecast_parameters_no_forecast_yet(
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
     assert len(param_list) == 1
-    assert param_list[0] == (
-        forecasts[0], observations[0],
-        pd.Timestamp('2020-05-20T15:00Z'),
-        False
-    )
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T14:00Z')
+    assert param_list[0].issue_times == (pd.Timestamp('2020-05-20T15:00Z'),)
 
 
 def test_generate_reference_persistence_forecast_parameters_no_data(
@@ -818,24 +817,15 @@ def test_generate_reference_persistence_forecast_parameters_ending_label(
     )
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
-    assert len(param_list) == 3
-    assert param_list == [
-        (
-            forecasts[0], observations[0],
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].issue_times == (
             pd.Timestamp('2020-05-20T14:00Z'),
-            False
-        ),
-        (
-            forecasts[0], observations[0],
             pd.Timestamp('2020-05-20T15:00Z'),
-            False
-        ),
-        (
-            forecasts[0], observations[0],
             pd.Timestamp('2020-05-20T16:00Z'),
-            False
-        )
-    ]
+    )
 
 
 def test_generate_reference_persistence_forecast_parameters_no_lead(
@@ -856,19 +846,14 @@ def test_generate_reference_persistence_forecast_parameters_no_lead(
     )
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
-    assert len(param_list) == 2
-    assert param_list == [
-        (
-            forecasts[0], observations[0],
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].issue_times == (
             pd.Timestamp('2020-05-20T15:00Z'),
-            False
-        ),
-        (
-            forecasts[0], observations[0],
             pd.Timestamp('2020-05-20T16:00Z'),
-            False
-        )
-    ]
+    )
 
 
 def test_generate_reference_persistence_forecast_parameters_off_time(
@@ -888,19 +873,14 @@ def test_generate_reference_persistence_forecast_parameters_off_time(
     )
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
-    assert len(param_list) == 2
-    assert param_list == [
-        (
-            forecasts[0], observations[0],
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].issue_times == (
             pd.Timestamp('2020-05-20T14:00Z'),
-            False
-        ),
-        (
-            forecasts[0], observations[0],
             pd.Timestamp('2020-05-20T15:00Z'),
-            False
-        ),
-    ]
+    )
 
 
 def test_generate_reference_persistence_forecast_parameters_multiple(
@@ -927,18 +907,14 @@ def test_generate_reference_persistence_forecast_parameters_multiple(
     assert isinstance(param_gen, types.GeneratorType)
     param_list = list(param_gen)
     assert len(param_list) == 2
-    assert param_list == [
-        (
-            forecasts[0], observations[0],
-            pd.Timestamp('2020-05-20T14:00Z'),
-            True
-        ),
-        (
-            forecasts[1], observations[1],
-            pd.Timestamp('2020-05-20T14:00Z'),
-            False
-        )
-    ]
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is True
+    assert param_list[0].issue_times == (pd.Timestamp('2020-05-20T14:00Z'),)
+    assert param_list[1].forecast == forecasts[1]
+    assert param_list[1].observation == observations[1]
+    assert param_list[1].index is False
+    assert param_list[1].issue_times == (pd.Timestamp('2020-05-20T14:00Z'),)
 
 
 def test_generate_reference_persistence_forecast_parameters_up_to_date(
@@ -978,12 +954,40 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
         'solarforecastarbiter.reference_forecasts.main.api.APISession',
         return_value=session)
     run_pers = mocker.patch(
-        'solarforecastarbiter.reference_forecasts.main.run_persistence')
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        return_value=pd.Series(dtype=float))
     main.make_latest_persistence_forecasts('', max_run_time)
     assert run_pers.call_count == 4
-    assert session.post_forecast_values.call_count == 4
+    assert session.get_observation_values.call_count == 2
+    assert session.post_forecast_values.call_count == 2
     assert [l[1]['index'] for l in run_pers.call_args_list] == [
         False, False, True, True]
+
+
+def test_make_latest_persistence_forecasts_up_to_date(mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
+    session = mocker.MagicMock()
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
+    session.get_forecast_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T16:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    max_run_time = pd.Timestamp('2020-05-20T16:00Z')
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        return_value=pd.Series(dtype=float))
+    main.make_latest_persistence_forecasts('', max_run_time)
+    assert run_pers.call_count == 0
+    assert session.get_observation_values.call_count == 0
+    assert session.post_forecast_values.call_count == 0
 
 
 def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
@@ -991,6 +995,9 @@ def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
     # observation and that no peristence values are posted
     # and that the failure doesn't interrupt other posts
     forecasts, observations = perst_fx_obs
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
     forecasts += [forecasts[0].replace(
         extra_parameters=(forecasts[0].extra_parameters[:-1] +
                           ', "index_persistence": true}'))]
@@ -1011,19 +1018,20 @@ def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
 
     def sometimes_fail(*args, **kwargs):
         i.append(1)
-        if len(i) == 1:
+        if len(i) > 3:
             raise ValueError('Failed')
         else:
-            return mocker.DEFAULT
+            return pd.Series(dtype=float)
 
     logger = mocker.spy(main, 'logger')
     run_pers = mocker.patch(
         'solarforecastarbiter.reference_forecasts.main.run_persistence',
         side_effect=sometimes_fail, autospec=True)
     main.make_latest_persistence_forecasts('', max_run_time)
-    assert run_pers.call_count == 4
-    assert session.post_forecast_values.call_count == 3
-    assert logger.error.call_count == 1
-    assert len(i) == 4
+    assert run_pers.call_count == 6
+    assert session.get_observation_values.call_count == 3
+    assert session.post_forecast_values.call_count == 2
+    assert logger.error.call_count == 3
+    assert len(i) == 6
     assert [li[1]['index'] for li in run_pers.call_args_list] == [
-        False, False, True, True]
+        False, False, True, True, True, True]
