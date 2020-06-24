@@ -89,6 +89,8 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
             timeseries_specs = ('{}', '{}')
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
+        if timeseries_specs[2] is not None:
+            kwargs['timeseries_prob_spec'] = timeseries_specs[2]
 
     return kwargs
 

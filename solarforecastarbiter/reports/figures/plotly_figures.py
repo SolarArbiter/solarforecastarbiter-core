@@ -1003,6 +1003,8 @@ def timeseries_plots(report):
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
 
+    # data (units) vs time plot for the observation, deterministic fx,
+    # and y-axis probabilistic fx
     ts_fig = timeseries(
         value_df, meta_df, report.report_parameters.start,
         report.report_parameters.end, units, (None, 'y'),
@@ -1013,6 +1015,7 @@ def timeseries_plots(report):
         margin=PLOT_MARGINS,
     )
 
+    # probability vs time plot for the x-axis probabilistic fx
     if any(
             isinstance(pfxob.original.forecast, (
                 datamodel.ProbabilisticForecast,
@@ -1052,4 +1055,4 @@ def timeseries_plots(report):
             autosize=False,
         )
 
-    return ts_fig.to_json(), ts_prob_fig_json, scat_fig.to_json()
+    return ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json
