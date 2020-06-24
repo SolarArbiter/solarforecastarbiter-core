@@ -60,10 +60,10 @@ def get_eia_data(series_id, api_key, start, end):
     df.set_index("timestamp", inplace=True)
     df.sort_index(inplace=True)
 
-    # replace invalid values:
+    # replace invalid values with NaN
     # - "null" if missing
     # - "w" if witheld
     # - "*" if statistically insignificant
-    df.replace(["null", "w", "*"], np.nan, inplace=True)
+    df["value"] = pd.to_numeric(df["value"], errors="coerce")
 
     return df
