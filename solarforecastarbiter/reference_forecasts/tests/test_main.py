@@ -627,7 +627,7 @@ def test_is_reference_persistence_forecast(string, expected):
 
 @pytest.fixture
 def perst_fx_obs(mocker, ac_power_observation_metadata,
-                 ac_power_forecast_metadata, prob_forecasts_y):
+                 ac_power_forecast_metadata):
     observations = [
         ac_power_observation_metadata.replace(
             observation_id=str(uuid.uuid1())
@@ -666,25 +666,6 @@ def perst_fx_obs(mocker, ac_power_observation_metadata,
             run_length=pd.Timedelta('1h'),
             forecast_id=str(uuid.uuid1())
         ),
-        prob_forecasts_y.replace(
-            variable='ac_power',
-            run_length=pd.Timedelta('1h'),
-            issue_time_of_day=dt.time(0),
-            lead_time_to_start=pd.Timedelta('1h'),
-            extra_parameters=make_extra(observations[1]),
-            provider=ac_power_forecast_metadata.provider,
-            constant_values=[
-                prob_forecasts_y.constant_values[0],
-                prob_forecasts_y.constant_values[0].replace(
-                    constant_value=0.0,
-                    forecast_id=str(uuid.uuid1())
-                ),
-                prob_forecasts_y.constant_values[0].replace(
-                    constant_value=100.0,
-                    forecast_id=str(uuid.uuid1())
-                ),
-            ]
-        )
     ]
     return forecasts, observations
 
@@ -710,8 +691,7 @@ def test_generate_reference_persistence_forecast_parameters(
     assert param_list[0].forecast == forecasts[0]
     assert param_list[0].observation == observations[0]
     assert param_list[0].index is False
-    assert param_list[0].data_start == pd.Timestamp(
-        '2020-05-20T14:00Z') - pd.Timedelta('1h')
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
     assert param_list[0].issue_times == (
         pd.Timestamp('2020-05-20T14:00Z'),
         pd.Timestamp('2020-05-20T15:00Z')
@@ -1056,8 +1036,107 @@ def test_make_latest_persistence_forecasts_some_errors(mocker, perst_fx_obs):
         False, False, True, True, True, True]
 
 
-def test_make_latest_probabilistic_persistence_forecasts(mocker, perst_fx_obs):
-    forecasts, observations = perst_fx_obs
+@pytest.fixture
+def perst_prob_fx_obs(mocker, ac_power_observation_metadata,
+                      ac_power_forecast_metadata, prob_forecasts_y):
+    observations = [
+        ac_power_observation_metadata.replace(
+            observation_id=str(uuid.uuid1())
+        ),
+        ac_power_observation_metadata.replace(
+            observation_id=str(uuid.uuid1())
+        ),
+        ac_power_observation_metadata.replace(
+            observation_id=str(uuid.uuid1())
+        )
+    ]
+
+    def make_extra(obs):
+        extra = (
+            '{"is_reference_persistence_forecast": true,'
+            f'"observation_id": "{obs.observation_id}"'
+            '}'
+        )
+        return extra
+
+    forecasts = [
+        prob_forecasts_y.replace(
+            variable='ac_power',
+            run_length=pd.Timedelta('1h'),
+            issue_time_of_day=dt.time(0),
+            interval_length=pd.Timedelta('1h'),
+            lead_time_to_start=pd.Timedelta('1h'),
+            extra_parameters=make_extra(observations[1]),
+            provider=ac_power_forecast_metadata.provider,
+            constant_values=[
+                prob_forecasts_y.constant_values[0],
+                prob_forecasts_y.constant_values[0].replace(
+                    constant_value=0.0,
+                    forecast_id=str(uuid.uuid1())
+                ),
+                prob_forecasts_y.constant_values[0].replace(
+                    constant_value=100.0,
+                    forecast_id=str(uuid.uuid1())
+                ),
+            ]
+        ),
+        prob_forecasts_y.replace(
+            forecast_id=str(uuid.uuid1()),
+            variable='ac_power',
+            interval_label='ending',
+            run_length=pd.Timedelta('1h'),
+            interval_length=pd.Timedelta('1h'),
+            issue_time_of_day=dt.time(0),
+            lead_time_to_start=pd.Timedelta('1h'),
+            extra_parameters='',
+            provider=ac_power_forecast_metadata.provider,
+            constant_values=[
+                prob_forecasts_y.constant_values[0],
+                prob_forecasts_y.constant_values[0].replace(
+                    constant_value=0.0,
+                    forecast_id=str(uuid.uuid1())
+                ),
+                prob_forecasts_y.constant_values[0].replace(
+                    constant_value=100.0,
+                    forecast_id=str(uuid.uuid1())
+                ),
+            ]
+        )
+    ]
+    return forecasts, observations
+
+
+def test_generate_reference_persistence_forecast_parameters_prob_fx(
+        mocker, perst_prob_fx_obs):
+    forecasts, observations = perst_prob_fx_obs
+    session = mocker.MagicMock()
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T15:33Z'))
+    session.get_probabilistic_forecast_constant_value_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
+    max_run_time = pd.Timestamp('2020-05-20T16:00Z')
+    # one hour ahead forecast, so 14Z was made at 13Z
+    # enough data to do 14Z and 15Z issue times but not 16Z
+    param_gen = main.generate_reference_persistence_forecast_parameters(
+        session, forecasts, observations, max_run_time
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[1]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
+    assert param_list[0].issue_times == (
+        pd.Timestamp('2020-05-20T14:00Z'),
+        pd.Timestamp('2020-05-20T15:00Z')
+    )
+
+
+def test_make_latest_probabilistic_persistence_forecasts(
+        mocker, perst_prob_fx_obs):
+    forecasts, observations = perst_prob_fx_obs
     session = mocker.MagicMock()
     session.get_user_info.return_value = {'organization': ''}
     session.get_observation_time_range.return_value = (
@@ -1065,7 +1144,7 @@ def test_make_latest_probabilistic_persistence_forecasts(mocker, perst_fx_obs):
     session.get_probabilistic_forecast_constant_value_time_range.return_value = (  # NOQA
         pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
     # can do 13, 14, 15, init times
-    session.list_probabilistic_forecasts.return_value = forecasts[-1:]
+    session.list_probabilistic_forecasts.return_value = forecasts
     session.list_observations.return_value = observations
     max_run_time = pd.Timestamp('2020-05-20T16:00Z')
     mocker.patch(
@@ -1076,14 +1155,14 @@ def test_make_latest_probabilistic_persistence_forecasts(mocker, perst_fx_obs):
         'solarforecastarbiter.reference_forecasts.main.run_persistence',
         return_value=[pd.Series(dtype=float)] * cvs)
     main.make_latest_probabilistic_persistence_forecasts('', max_run_time)
-    assert run_pers.call_count == 3
+    assert run_pers.call_count == 2
     assert session.get_observation_values.call_count == 1
     assert session.post_probabilistic_forecast_constant_value_values.call_count == cvs  # NOQA
 
 
 def test_make_latest_probabilistic_persistence_forecasts_err(
-        mocker, perst_fx_obs):
-    forecasts, observations = perst_fx_obs
+        mocker, perst_prob_fx_obs):
+    forecasts, observations = perst_prob_fx_obs
     session = mocker.MagicMock()
     session.get_user_info.return_value = {'organization': ''}
     session.get_observation_time_range.return_value = (
@@ -1091,7 +1170,7 @@ def test_make_latest_probabilistic_persistence_forecasts_err(
     session.get_probabilistic_forecast_constant_value_time_range.return_value = (  # NOQA
         pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:00Z'))
     # can do 13, 14, 15, init times
-    session.list_probabilistic_forecasts.return_value = forecasts[-1:]
+    session.list_probabilistic_forecasts.return_value = forecasts
     session.list_observations.return_value = observations
     max_run_time = pd.Timestamp('2020-05-20T16:00Z')
     mocker.patch(
@@ -1101,6 +1180,6 @@ def test_make_latest_probabilistic_persistence_forecasts_err(
         'solarforecastarbiter.reference_forecasts.main.run_persistence',
         side_effect=ValueError)
     main.make_latest_probabilistic_persistence_forecasts('', max_run_time)
-    assert run_pers.call_count == 3
+    assert run_pers.call_count == 2
     assert session.get_observation_values.call_count == 1
     assert session.post_probabilistic_forecast_constant_value_values.call_count == 0  # NOQA
