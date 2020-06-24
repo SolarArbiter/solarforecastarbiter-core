@@ -25,8 +25,9 @@ def initialize_site_observations(api, site):
     Notes
     -----
     Currently only creates observations for net load [MW]
-    (`f"EBA.{site_name}.D.H"`), but EIA contains other variables that may be
-    incorporated later (e.g. solar generation: `f"EBA.{site_name}.NG.SUN.H"`).
+    (`f"EBA.{eia_site_id}.D.H"`), but EIA contains other variables that may be
+    incorporated later (e.g. solar generation:
+    `f"EBA.{eia_site_id}.NG.SUN.H"`).
 
     """
 
@@ -79,8 +80,9 @@ def fetch(api, site, start, end, *, eia_api_key):
     Notes
     -----
     Currently only fetches observations for net load [MW]
-    (`f"EBA.{site_name}.D.H"`), but EIA contains other variables that may be
-    incorporated later (e.g. solar generation: `f"EBA.{site_name}.NG.SUN.H"`).
+    (`f"EBA.{eia_site_id}.D.H"`), but EIA contains other variables that may be
+    incorporated later (e.g. solar generation:
+    `f"EBA.{eia_site_id}.NG.SUN.H"`).
 
     """
     try:
