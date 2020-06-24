@@ -181,6 +181,8 @@ High-level functions for NWP and persistence forecasts.
    reference_forecasts.main.find_reference_nwp_forecasts
    reference_forecasts.main.process_nwp_forecast_groups
    reference_forecasts.main.make_latest_nwp_forecasts
+   reference_forecasts.main.make_latest_persistence_forecasts
+   reference_forecasts.main.make_latest_probabilistic_persistence_forecasts
 
 NWP models
 ----------
