@@ -91,8 +91,8 @@ def fetch(api, site, start, end, *, eia_api_key):
     series_id = f"EBA.{eia_site_id}.D.H"   # hourly net load (demand)
     obs_df = eia.get_eia_data(
         series_id, eia_api_key,
-        start.tz_convert(site.timezone),
-        end.tz_convert(site.timezone)
+        start,
+        end
     )
     if obs_df.empty:
         logger.warning(f'Data for site {site.name} contained no '
