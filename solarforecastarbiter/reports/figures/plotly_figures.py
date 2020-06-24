@@ -342,38 +342,23 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             # to plot
             continue
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        # probably treat axis == None and axis == y separately in the future
-        if metadata['axis'] in (None, 'y'):
-            # forecasts are in units of the variable, so plot lines
-            plot_kwargs = line_or_step_plotly(
-                metadata['interval_label'], metadata['forecast_type'])
-            data = _fill_timeseries(
-                timeseries_value_df[pair_idcs],
-                metadata['interval_length'],
-            )
-            plot_kwargs['marker'] = dict(color=next(palette))
-            go_ = go.Scattergl(
-                y=data['forecast_values'],
-                x=data.index,
-                name=_legend_text(metadata['forecast_name']),
-                legendgroup=metadata['forecast_name'],
-                connectgaps=False,
-                **plot_kwargs)
-        else:
-            plot_kwargs = line_or_step_plotly(
-                metadata['interval_label'], metadata['forecast_type'])
-            data = _fill_timeseries(
-                timeseries_value_df[pair_idcs],
-                metadata['interval_length'],
-            )
-            plot_kwargs['marker'] = dict(color=next(palette))
-            go_ = go.Scattergl(
-                y=data['forecast_values'],
-                x=data.index,
-                name=_legend_text(metadata['forecast_name']),
-                legendgroup=metadata['forecast_name'],
-                connectgaps=False,
-                **plot_kwargs)
+        # probably treat axis == None and axis == y separately in the future.
+        # currently no need for a separate axis == x treatment either, so
+        # removed an if statement on the axis.
+        plot_kwargs = line_or_step_plotly(
+            metadata['interval_label'], metadata['forecast_type'])
+        data = _fill_timeseries(
+            timeseries_value_df[pair_idcs],
+            metadata['interval_length'],
+        )
+        plot_kwargs['marker'] = dict(color=next(palette))
+        go_ = go.Scattergl(
+            y=data['forecast_values'],
+            x=data.index,
+            name=_legend_text(metadata['forecast_name']),
+            legendgroup=metadata['forecast_name'],
+            connectgaps=False,
+            **plot_kwargs)
         # collect in list
         gos.append((metadata['pair_index'], go_))
     # Add traces in order of pair index

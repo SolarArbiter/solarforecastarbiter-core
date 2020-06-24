@@ -99,6 +99,7 @@ def line_or_step_plotly(interval_label, forecast_type=None):
             '"event", or "ending"')
 
     if forecast_type == 'ProbabilisticForecast':
+        # maybe just get rid of this for now.
         probfx_kwargs = dict(
             # fill='tonexty',
             # hoveron='points+fills',
