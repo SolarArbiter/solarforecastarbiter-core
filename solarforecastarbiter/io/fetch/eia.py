@@ -22,7 +22,7 @@ def get_eia_data(series_id, api_key, start, end):
 
     Returns
     -------
-    pandas.Series
+    pandas.DataFrame
         The data from *start* to *end* for *series_id*.
 
     References
@@ -36,12 +36,11 @@ def get_eia_data(series_id, api_key, start, end):
     >>> end = pd.Timestamp("20200602T0800Z")
     >>> api_key = "yourapikeygoeshere"
     >>> get_eia_data(series_id, api_key, start, end)
-    timestamp
+    timestamp                    value
     2020-06-01 08:00:00+00:00    22028
     2020-06-01 09:00:00+00:00    21141
     2020-06-01 10:00:00+00:00    20573
     ...
-    Name: value, dtype: int64
 
     """
 
@@ -67,4 +66,4 @@ def get_eia_data(series_id, api_key, start, end):
     # - "*" if statistically insignificant
     df.replace(["null", "w", "*"], np.nan, inplace=True)
 
-    return df["value"]
+    return df
