@@ -176,3 +176,32 @@ TEMPLATE_FORECASTS = (
     TEMPLATE_NWP_FORECASTS +
     TEMPLATE_DETERMINISTIC_PERSISTENCE_FORECASTS
 )
+
+TEMPLATE_NETLOAD_PERSISTENCE_FORECASTS = [
+    Forecast(
+        name='Day Ahead Persistence',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('1d'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        variable='net_load',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True})
+        ),
+    Forecast(
+        name='Hour Ahead Persistence',
+        issue_time_of_day=dt.time(0),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning',
+        interval_value_type='interval_mean',
+        variable='net_load',
+        site=_DUMMY_SITE,
+        extra_parameters=json.dumps(
+            {'is_reference_persistence_forecast': True})
+        )
+]

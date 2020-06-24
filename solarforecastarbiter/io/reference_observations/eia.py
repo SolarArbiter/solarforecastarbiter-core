@@ -52,8 +52,9 @@ def initialize_site_forecasts(api, site):
         The site object for which to create the Observations.
 
     """
-    common.create_forecasts(api, site, ["net_load"],
-                            default_forecasts.TEMPLATE_FORECASTS)
+    common.create_forecasts(
+        api, site, ["net_load"],
+        default_forecasts.TEMPLATE_NETLOAD_PERSISTNECE_FORECASTS)
 
 
 def fetch(api, site, start, end, *, eia_api_key):
