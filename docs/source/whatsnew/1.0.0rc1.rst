@@ -31,7 +31,8 @@ API Changes
 * Added support for probabilistic persistence forecasts with
   :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_probabilistic` and
   :py:func:`solarforecastarbiter.reference_forecasts.persistence.persistence_probabilistic_timeofday` (:issue:`195`) (:pull:`434`)
-
+* Added capability to import reference data from the EIA Open Data API in the
+  :py:mod:`solarforecastarbiter.io.reference_observations.eia` module. (:issue:`431`) (:pull:`485`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -48,7 +49,8 @@ Enhancements
   (:issue:`377`) (:pull:`484`)
 * Reference probabilistic forecasts provided using the Persistence Ensemble
   (PeEn) method. (:issue:`195`) (:pull:`434`)
-
+* Added net load reference observations from the US ISOs/RTOs: CAISO, ERCOT,
+  ISO-NE, MISO, NYISO, PJM, and SPP. (:issue:`431`) (:pull:`485`)
 
 Bug fixes
 ~~~~~~~~~
