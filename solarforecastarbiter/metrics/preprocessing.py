@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
 DISCARD_DATA_STRING = "Values Discarded by Alignment"
 UNDEFINED_DATA_STRING = "Undefined Values"
+SUPPORTED_FORECAST_FILL = ['drop', 'forward', str.isnumeric]
 
 
 def apply_validation(obs_df, qfilter, handle_func):
@@ -56,6 +57,57 @@ def apply_validation(obs_df, qfilter, handle_func):
         validated_obs = handle_func(obs_df.value, validation_df)
         counts = validation_df.astype(int).sum(axis=0).to_dict()
         return validated_obs, counts
+
+
+def apply_fill(fx_data, missing_forecast, start, end):
+    """
+    Apply fill procedure to the data from the start to end timestamps.
+
+    Parameters
+    ----------
+    fx_data : pandas.Series
+        Forecast data with pandas.DatetimeIndex.
+    missing_forecast : str
+        Indicates what process to use for handling missing forecasts.
+        Currently supports : 'drop', 'forward'.
+    start : datetime.datetime
+    end : datetime.datetime
+
+    TODO
+    ----
+    - Add support for 'clearsky' fillin.
+
+    """
+    orig_dtype = fx_data.dtype
+    missing_forecast = str(missing_forecast)
+    # Create full datetime range at resolution
+    if len(fx_data) > 2:
+        data_res = pd.infer_freq(fx_data.index)
+    else:
+        data_res = fx_data.index[1]-fx_data.index[0]
+    full_dt_index = pd.date_range(start=start, end=end, freq=data_res,
+                                  name=fx_data.index.name)
+
+    if missing_forecast=='drop':
+        print(fx_data)
+        fx_data_proc = fx_data.dropna(axis=0)
+        print(fx_data_proc)
+    elif missing_forecast=='forward':
+        fx_data_proc = fx_data.reindex(index=full_dt_index,
+                                       axis=0)
+        fx_data_proc.fillna(axis=0, method='ffill', inplace=True)
+        fx_data_proc.fillna(axis=0, value=0, inplace=True)  # leading gap
+    elif missing_forecast.isnumeric() or missing_forecast in ['False', 'True']:
+        fill_value = pd.to_numeric(missing_forecast).astype(orig_dtype)
+        fx_data_proc = fx_data.reindex(index=full_dt_index,
+                                       axis=0,
+                                       fill_value=fill_value)
+        fx_data_proc.fillna(axis=0, value=fill_value, inplace=True)
+    else:
+        raise ValueError(f"Unsupported forecast missing data procedure: "
+                         f"{missing_forecast}")
+
+    return fx_data_proc.astype(orig_dtype)
 
 
 def _resample_event_obs(obs, fx, obs_data):

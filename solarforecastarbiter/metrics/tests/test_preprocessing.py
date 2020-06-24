@@ -776,3 +776,97 @@ def test__validate_event_dtype(data):
     pd.testing.assert_index_equal(ser.index, ser_conv.index,
                                   check_categorical=False)
     assert ser_conv.dtype == bool
+
+
+@pytest.mark.parametrize("type,exp", [
+
+])
+def test_apply_fill(type, exp):
+    pass
+
+
+def test_apply_unsupported(type, exp):
+    pass
+
+
+@pytest.mark.parametrize("input,exp,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 3, 5], 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [2, 3, 4], 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 5], 0, 0),
+    ([3, 4, 5], [3, 4, 5], 2, 0),
+    ([1, 2], [1, 2], 0, 3),
+    ([np.nan]*5, [], 0, 0)
+])
+def test_apply_fill_drop(input, exp, n_pre, n_post):
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
+    expected = data.loc[data.isin(exp)]
+
+    # as a Series
+    result1 = preprocessing.apply_fill(data, 'drop',
+                                       dt_range[0], dt_range[-1])
+
+    pd.testing.assert_series_equal(result1, expected,
+                                   check_exact=True)
+
+
+@pytest.mark.parametrize("input,exp,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 1, 3, 3, 5], 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [0, 2, 3, 4, 4], 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 1, 1, 1, 5], 0, 0),
+    ([3, 4, 5], [0, 0, 3, 4, 5], 2, 0),
+    ([1, 2], [1, 2, 2, 2, 2], 0, 3),
+    ([np.nan]*5, [0, 0, 0, 0, 0], 0, 0)
+])
+def test_apply_fill_forward(input, exp, n_pre, n_post):
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
+    expected = pd.Series(exp, index=dt_range)
+    expected = expected.astype(data.dtype)
+
+    # as a Series
+    result = preprocessing.apply_fill(data, 'forward',
+                                      dt_range[0], dt_range[-1])
+
+    pd.testing.assert_series_equal(result, expected,
+                                   check_exact=True)
+
+
+@pytest.mark.parametrize("input,exp,fvalue,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 100, 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 100, 3, 100, 5], 100, 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [100, 2, 3, 4, 100], 100, 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 100, 100, 100, 5], 100, 0, 0),
+    ([3, 4, 5], [100, 100, 3, 4, 5], 100, 2, 0),
+    ([1, 2], [1, 2, 100, 100, 100], 100, 0, 3),
+    ([np.nan]*5, [100]*5, 100, 0, 0)
+])
+def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
+    expected = pd.Series(exp, index=dt_range)
+    expected = expected.astype(data.dtype)
+
+    # as a Series
+    result = preprocessing.apply_fill(data, fvalue,
+                                      dt_range[0], dt_range[-1])
+
+    pd.testing.assert_series_equal(result, expected,
+                                   check_exact=True)
