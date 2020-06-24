@@ -1183,3 +1183,20 @@ def test_make_latest_probabilistic_persistence_forecasts_err(
     assert run_pers.call_count == 2
     assert session.get_observation_values.call_count == 1
     assert session.post_probabilistic_forecast_constant_value_values.call_count == 0  # NOQA
+
+
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
+def test_run_persistence_probabilistic(
+        session, perst_prob_fx_obs, obs_5min_begin,
+        interval_label, mocker):
+    run_time = pd.Timestamp('20190101T1945Z')
+    # intraday, index=False
+    forecast = perst_prob_fx_obs[0][0]
+    issue_time = pd.Timestamp('20190101T2300Z')
+    prob = mocker.spy(main.persistence, 'persistence_probabilistic')
+    out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                               issue_time)
+    assert isinstance(out, list)
+    assert len(out) == 3
+    assert isinstance(out[0], pd.Series)
+    assert prob.call_count == 1
