@@ -248,8 +248,13 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
                                             observation.interval_label)
         df = df.tz_convert(observation.site.timezone)
         return df['value']
-
-    if intraday and index:
+    if isinstance(forecast, datamodel.ProbabilisticForecast):
+        cvs = [f.constant_value for f in forecast.constant_values]
+        fx = persistence.persistence_probabilistic(
+            observation, data_start, data_end, forecast_start, forecast_end,
+            forecast.interval_length, forecast.interval_label, load_data,
+            forecast.axis, cvs)
+    elif intraday and index:
         fx = persistence.persistence_scalar_index(
             observation, data_start, data_end, forecast_start, forecast_end,
             forecast.interval_length, forecast.interval_label, load_data)
@@ -548,7 +553,12 @@ def generate_reference_persistence_forecast_parameters(
                 fx.name, fx.forecast_id, observation_id)
             continue
 
-        fx_mint, fx_maxt = session.get_forecast_time_range(fx.forecast_id)
+        if isinstance(fx, datamodel.ProbabilisticForecast):
+            fx_mint, fx_maxt = \
+                session.get_probabilistic_forecast_constant_value_time_range(
+                    fx.constant_values[0].forecast_id)
+        else:
+            fx_mint, fx_maxt = session.get_forecast_time_range(fx.forecast_id)
         # find the next issue time for the forecast based on the last value
         # in the forecast series
         if pd.isna(fx_maxt):
@@ -610,3 +620,38 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
             logger.error('Unable to generate persistence forecast: %s', e)
         else:
             session.post_forecast_values(fx.forecast_id, fx_ser)
+
+
+def make_latest_probabilistic_persistence_forecasts(
+        token, max_run_time, base_url=None):
+    """Make all reference probabilistic persistence forecasts that need to
+    be made up to *max_run_time*.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    max_run_time : pandas.Timestamp
+        Last possible run time of the forecast generation
+    base_url : str or None, default None
+        Alternate base_url of the API
+    """
+    session = api.APISession(token, base_url=base_url)
+    forecasts = session.list_probabilistic_forecasts()
+    observations = session.list_observations()
+    params = generate_reference_persistence_forecast_parameters(
+        session, forecasts, observations, max_run_time)
+    for fx, obs, issue_time, index in params:
+        run_time = issue_time
+        logger.info('Making persistence forecast for %s:%s at %s',
+                    fx.name, fx.forecast_id, issue_time)
+        try:
+            fx_list = run_persistence(session, obs, fx, run_time, issue_time,
+                                      index=index)
+        except ValueError as e:
+            logger.error('Unable to generate persistence forecast: %s', e)
+        else:
+            cv_ids = [f.forecast_id for f in fx.constant_values]
+            for id_, fx_ser in zip(cv_ids, fx_list):
+                session.post_probabilistic_forecast_constant_value_values(
+                    id_, fx_ser)
