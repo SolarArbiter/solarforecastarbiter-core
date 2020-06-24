@@ -979,7 +979,7 @@ def test_make_latest_persistence_forecasts(mocker, perst_fx_obs):
     assert run_pers.call_count == 4
     assert session.get_observation_values.call_count == 2
     assert session.post_forecast_values.call_count == 2
-    assert [l[1]['index'] for l in run_pers.call_args_list] == [
+    assert [ll[1]['index'] for ll in run_pers.call_args_list] == [
         False, False, True, True]
 
 
@@ -1081,7 +1081,8 @@ def test_make_latest_probabilistic_persistence_forecasts(mocker, perst_fx_obs):
     assert session.post_probabilistic_forecast_constant_value_values.call_count == cvs  # NOQA
 
 
-def test_make_latest_probabilistic_persistence_forecasts_err(mocker, perst_fx_obs):
+def test_make_latest_probabilistic_persistence_forecasts_err(
+        mocker, perst_fx_obs):
     forecasts, observations = perst_fx_obs
     session = mocker.MagicMock()
     session.get_user_info.return_value = {'organization': ''}

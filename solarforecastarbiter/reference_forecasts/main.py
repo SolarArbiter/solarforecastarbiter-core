@@ -595,7 +595,8 @@ def generate_reference_persistence_forecast_parameters(
         yield out(fx, observation, index, data_start, issue_times)
 
 
-def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time, max_run_time):
+def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time,
+                          max_run_time):
     # now find all the run times that can be made based on the
     # last observation timestamp
     while next_issue_time <= max_run_time:
