@@ -53,13 +53,12 @@ NETWORKHANDLER_MAP = {
     'DOE RTC': rtc,
     'DOE ARM': arm,
     'NREL PVDAQ': pvdaq,
-    'EIA Open Data': eia,
+    'EIA': eia,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ',
-                   'EIA Open Data']
+                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ', 'EIA']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -98,7 +97,7 @@ https://www.arm.gov/
 NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition
 https://developer.nrel.gov/docs/solar/pvdaq-v3/
 
-EIA Open Data: U.S. Energy Information Administration Open Data
+EIA: U.S. Energy Information Administration Open Data
 https://www.eia.gov/opendata/
 """  # noqa: E501
 
