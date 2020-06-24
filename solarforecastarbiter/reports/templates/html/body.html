@@ -93,9 +93,9 @@ Plotly.newPlot("scatter-div", scat_plot);
 </p>
 <div id="timeseries-prob-div"></div>
 <script>
-  ts_plot = JSON.parse('{{ timeseries_prob_spec | safe }}');
+  ts_prob_plot = JSON.parse('{{ timeseries_prob_spec | safe }}');
   Object.assign(ts_prob_plot,{config: {responsive: true}});
-  Plotly.newPlot("timeseries-prob-div", ts_plot);
+  Plotly.newPlot("timeseries-prob-div", ts_prob_plot);
 </script>
 {% endif %}
 {% endblock %}
