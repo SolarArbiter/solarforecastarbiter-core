@@ -20,9 +20,7 @@ import pandas as pd
 from solarforecastarbiter.metrics.deterministic import \
     _MAP as deterministic_mapping
 from solarforecastarbiter.metrics.deterministic import \
-    _FILL_OPTIONS as deterministic_cost_filling
-from solarforecastarbiter.metrics.deterministic import \
-    _AGG_OPTIONS as deterministic_cost_aggregation
+    _FILL_OPTIONS, _COST_FUNCTION_MAP, _AGG_OPTIONS
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
@@ -107,6 +105,10 @@ ALLOWED_PROBABILISTIC_METRICS = {
 ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
+
+ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())
+ALLOWED_COST_AGG_OPTIONS = tuple(_AGG_OPTIONS.keys())
+ALLOWED_COST_FILL_OPTIONS = tuple(_FILL_OPTIONS.keys())
 
 
 def _time_conv(inp):
@@ -941,12 +943,12 @@ class ProbabilisticForecast(
 def __validate_cost__(index_var):
     def val(obj):
         if hasattr(obj, 'fill'):
-            fillkeys = deterministic_cost_filling.keys()
+            fillkeys = ALLOWED_COST_FILL_OPTIONS
             if obj.fill not in fillkeys:
                 raise ValueError(
                     f"Cost 'fill' must be one of {str(fillkeys)}")
         if hasattr(obj, 'aggregation'):
-            aggkeys = deterministic_cost_aggregation.keys()
+            aggkeys = ALLOWED_COST_AGG_OPTIONS
             if obj.aggregation not in aggkeys:
                 raise ValueError(
                     f"Cost 'aggregation' must be one of {str(aggkeys)}")
@@ -1138,11 +1140,9 @@ class Cost(BaseModel):
     parameters: Union[TimeOfDayCost, DatetimeCost, ConstantCost, ErrorBandCost]
 
     def __post_init__(self):
-        if self.type not in ('timeofday', 'datetime', 'constant',
-                             'errorband'):
+        if self.type not in ALLOWED_COST_FUNCTIONS:
             raise ValueError(
-                "'type' must be one of 'timeofday', 'datetime', 'constant', "
-                "'errorband'")
+                f"'type' must be one of {ALLOWED_COST_FUNCTIONS}")
 
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
@@ -1159,8 +1159,7 @@ class Cost(BaseModel):
             dict_['parameters'] = ErrorBandCost.from_dict(param_dict)
         else:
             raise ValueError(
-                "'type' must be one of 'timeofday', 'datetime', 'constant', "
-                "'errorband'")
+                f"'type' must be one of {ALLOWED_COST_FUNCTIONS}")
         return super().from_dict(dict_, raise_on_extra)
 
 
