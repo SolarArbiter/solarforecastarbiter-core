@@ -240,6 +240,13 @@ def _boolean_filter_indices_by_pair(value_cds, pair_index):
     return value_cds.data['pair_index'] == pair_index
 
 
+def _none_or_values0(metadata, key):
+    value = metadata.get(key)
+    if value is not None:
+        value = value.values[0]
+    return value
+
+
 def _extract_metadata_from_df(metadata_df, hash_, hash_key):
     metadata = metadata_df[metadata_df[hash_key] == hash_]
     meta = {
@@ -250,19 +257,9 @@ def _extract_metadata_from_df(metadata_df, hash_, hash_key):
         'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
-    # consider replacing with for loop over attrs
-    forecast_type = metadata.get('forecast_type')
-    if forecast_type is not None:
-        forecast_type = forecast_type.values[0]
-    meta['forecast_type'] = forecast_type
-    axis = metadata.get('axis')
-    if axis is not None:
-        axis = axis.values[0]
-    meta['axis'] = axis
-    constant_value = metadata.get('constant_value')
-    if constant_value is not None:
-        constant_value = constant_value.values[0]
-    meta['constant_value'] = constant_value
+    meta['forecast_type'] = _none_or_values0(metadata, 'forecast_type')
+    meta['axis'] = _none_or_values0(metadata, 'axis')
+    meta['constant_value'] = _none_or_values0(metadata, 'constant_value')
     return meta
 
 

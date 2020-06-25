@@ -86,7 +86,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         except Exception:
             logger.exception(
                 'Failed to make Plotly items for timeseries and scatterplot')
-            timeseries_specs = ('{}', '{}')
+            timeseries_specs = ('{}', '{}', '{}')
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
         if timeseries_specs[2] is not None:
@@ -176,6 +176,7 @@ def render_html(report, dash_url=datamodel.DASH_URL,
 
 
 def _html_to_tex(value):
+    print(value)
     value = (value
              .replace('<p>', '')
              .replace('</p>', '\n')
@@ -190,6 +191,7 @@ def _html_to_tex(value):
              .replace('<li>', '\\item ')
              .replace('</li>', '\n')
              .replace('</a>', '')
+             .replace('<=', '\\leq')
              )
     value = re.sub('\\<a.*\\>', '', value)
     return value
