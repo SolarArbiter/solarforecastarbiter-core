@@ -133,21 +133,24 @@ def test_fetch_fail(mocker, session, site_no_extra):
     assert out.empty
 
 
-def test_initialize_site_forecasts(
-        requests_mock, mocker, session, site, mock_list_sites):
+def test_initialize_site_forecasts(mocker, session, site,
+                                   mock_list_sites):
 
     obs = Observation(
+        name='Net Load',
+        variable='net_load',
         site=site,
-        name="Net Load",
-        variable="net_load",
-        interval_length=pd.Timedelta("60min"),
-        interval_value_type="interval_mean",
-        interval_label="ending",
-        uncertainty=0,
+        interval_label='ending',
+        interval_value_type='interval_mean',
+        interval_length=pd.Timedelta('1h'),
+        uncertainty=0.0,
     )
 
     mocker.patch('solarforecastarbiter.io.api.APISession.list_observations',
-                 return_values=[obs])
+                 return_value=[obs])
+    mocker.patch('solarforecastarbiter.io.api.APISession.list_forecasts')
+    mocker.patch('solarforecastarbiter.io.api.APISession.'
+                 'list_probabilistic_forecasts')
     status = mocker.patch(
         'solarforecastarbiter.io.api.APISession.create_forecast')
     eia.initialize_site_forecasts(session, site)
