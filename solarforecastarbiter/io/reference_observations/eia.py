@@ -54,7 +54,7 @@ def initialize_site_forecasts(api, site):
     """
     common.create_forecasts(
         api, site, ["net_load"],
-        default_forecasts.TEMPLATE_NETLOAD_PERSISTNECE_FORECASTS)
+        default_forecasts.TEMPLATE_NETLOAD_PERSISTENCE_FORECASTS)
 
 
 def fetch(api, site, start, end, *, eia_api_key):
