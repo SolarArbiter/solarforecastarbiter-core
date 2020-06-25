@@ -133,8 +133,7 @@ def test_fetch_fail(mocker, session, site_no_extra):
     assert out.empty
 
 
-def test_initialize_site_forecasts(mocker, session, site,
-                                   mock_list_sites):
+def test_initialize_site_forecasts(mocker, session, site, mock_list_sites):
 
     obs = Observation(
         name='Net Load',
