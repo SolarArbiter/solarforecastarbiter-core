@@ -778,11 +778,27 @@ def test__validate_event_dtype(data):
     assert ser_conv.dtype == bool
 
 
-@pytest.mark.parametrize("type,exp", [
-
+@pytest.mark.parametrize("method", [
+    ('drop'), ('forward'), ('1')
 ])
-def test_apply_fill(type, exp):
-    pass
+def test_apply_fill(method):
+    n=10
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series([1]*n,
+                     index=dt_range)
+    i_rand = (np.append(0., np.round(np.random.rand(n-1)))==1)
+    data[i_rand] = np.nan
+
+    result = preprocessing.apply_fill(data, method, dt_range[0], dt_range[-1])
+    assert isinstance(result, pd.Series)
+    assert isinstance(result.index, pd.DatetimeIndex)
+    if method == 'drop':
+        assert result.sum() == n - sum(i_rand)
+    else:
+        assert result.sum() == n
 
 
 def test_apply_unsupported():

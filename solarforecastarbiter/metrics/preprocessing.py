@@ -97,7 +97,7 @@ def apply_fill(fx_data, missing_forecast, start, end):
                                        axis=0)
         fx_data_proc.fillna(axis=0, method='ffill', inplace=True)
         fx_data_proc.fillna(axis=0, value=0, inplace=True)  # leading gap
-    elif missing_forecast.isnumeric() or missing_forecast in ['False', 'True']:
+    elif missing_forecast.isnumeric():
         fill_value = pd.to_numeric(missing_forecast).astype(orig_dtype)
         fx_data_proc = fx_data.reindex(index=full_dt_index,
                                        axis=0,
