@@ -531,6 +531,9 @@ def create_nwp_forecasts(api, site, variables, templates):
         logger.warning('NWP forecasts for %s cannot currently be made',
                        diff)
     vars_ = vars_ & CURRENT_NWP_VARIABLES
+    if len(vars_) == 0:
+        return []
+
     if 'ac_power' in vars_:
         primary = 'ac_power'
         vars_.remove('ac_power')
