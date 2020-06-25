@@ -100,8 +100,29 @@ def test_fetch(mocker, session, site):
     start = pd.Timestamp('2020-01-01T0000Z')
     end = pd.Timestamp('2020-01-02T0000Z')
     api_key = 'bananasmoothie'
-    eia.fetch(session, site, start, end, eia_api_key=api_key)
+
+    index = pd.date_range(start, end, freq="1h")
+    data = {"net_load": range(len(index))}
+    df = pd.DataFrame(index=index, data=data)
+    status.return_value = df
+
+    out = eia.fetch(session, site, start, end, eia_api_key=api_key)
     assert status.called
+    assert not out.empty
+
+
+def test_fetch_empty(log, mocker, session, site):
+    status = mocker.patch(
+        'solarforecastarbiter.io.fetch.eia.get_eia_data'
+    )
+    start = pd.Timestamp('2020-01-01T0000Z')
+    end = pd.Timestamp('2020-01-02T0000Z')
+    api_key = 'bananasmoothie'
+    status.return_value = pd.DataFrame()
+    out = eia.fetch(session, site, start, end, eia_api_key=api_key)
+    assert status.called
+    assert log.warning.call_count == 1
+    assert out.empty
 
 
 def test_fetch_fail(mocker, session, site_no_extra):
