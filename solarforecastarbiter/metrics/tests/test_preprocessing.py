@@ -859,11 +859,23 @@ def test_apply_fill_drop(input, exp, n_pre, n_post):
     expected = data.loc[data.isin(exp)]
 
     # as a Series
-    result1 = preprocessing.apply_fill(data, 'drop',
-                                       dt_range[0], dt_range[-1])
-
-    pd.testing.assert_series_equal(result1, expected,
+    result = preprocessing.apply_fill(data, 'drop',
+                                      dt_range[0], dt_range[-1])
+    pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input}, index=dt_range[n_pre:n-n_post])
+    df_result = preprocessing.apply_fill(df_data, 'drop',
+                                         dt_range[0], dt_range[-1])
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp}, index=expected.index)
+    df_expected = df_expected.astype(data.dtype)
+    pd.testing.assert_frame_equal(df_result, df_expected,
+                                  dt_range[0], dt_range[-1])
 
 
 @pytest.mark.parametrize("input,exp,n_pre,n_post", [
@@ -889,9 +901,21 @@ def test_apply_fill_forward(input, exp, n_pre, n_post):
     # as a Series
     result = preprocessing.apply_fill(data, 'forward',
                                       dt_range[0], dt_range[-1])
-
     pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input}, index=dt_range[n_pre:n-n_post])
+    df_result = preprocessing.apply_fill(df_data, 'forward',
+                                         dt_range[0], dt_range[-1])
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp}, index=dt_range)
+    df_expected = df_expected.astype(data.dtype)
+    pd.testing.assert_frame_equal(df_result, df_expected,
+                                  dt_range[0], dt_range[-1])
 
 
 @pytest.mark.parametrize("input,exp,fvalue,n_pre,n_post", [
@@ -917,6 +941,52 @@ def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
     # as a Series
     result = preprocessing.apply_fill(data, fvalue,
                                       dt_range[0], dt_range[-1])
-
     pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input}, index=dt_range[n_pre:n-n_post])
+    df_result = preprocessing.apply_fill(df_data, fvalue,
+                                         dt_range[0], dt_range[-1])
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp}, index=dt_range)
+    df_expected = df_expected.astype(data.dtype)
+    pd.testing.assert_frame_equal(df_result, df_expected,
+                                  dt_range[0], dt_range[-1])
+
+
+@pytest.mark.parametrize("data", [
+    (pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, np.nan, 30, np.nan, 50],
+         '3': [np.nan, 200, 300, 400, np.nan]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=np.float64)),
+])
+@pytest.mark.parametrize("method,exp", [
+    ('drop', pd.DataFrame(
+        {'1': [3],
+         '2': [30],
+         '3': [300]},
+        index=[pd.Timestamp('2020-01-01T02:00')],
+        dtype=np.float64)),
+    ('forward', pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, 10, 30, 30, 50],
+         '3': [0, 200, 300, 400, 400]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=np.float64)),
+    ('-1', pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, -1, 30, -1, 50],
+         '3': [-1, 200, 300, 400, -1]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=np.float64)),
+])
+def test_apply_fill_unstratified_dataframe(data, method, exp):
+    result = preprocessing.apply_fill(data, method,
+                                      data.index[0], data.index[-1])
+    pd.testing.assert_frame_equal(result, exp)

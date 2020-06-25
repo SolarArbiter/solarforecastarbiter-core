@@ -78,7 +78,11 @@ def apply_fill(fx_data, missing_forecast, start, end):
     - Add support for 'clearsky' fillin.
 
     """
-    orig_dtype = fx_data.dtype
+    try:
+        orig_dtype = fx_data.dtype
+    except AttributeError:
+        # DataFrame must be all same dtypes
+        orig_dtype = set(fx_data.dtypes).pop()
     missing_forecast = str(missing_forecast)
     # Create full datetime range at resolution
     if len(fx_data) > 2:
@@ -89,20 +93,16 @@ def apply_fill(fx_data, missing_forecast, start, end):
                                   name=fx_data.index.name)
 
     if missing_forecast == 'drop':
-        print(fx_data)
-        fx_data_proc = fx_data.dropna(axis=0)
-        print(fx_data_proc)
+        fx_data_proc = fx_data.dropna(how='any')
     elif missing_forecast == 'forward':
-        fx_data_proc = fx_data.reindex(index=full_dt_index,
-                                       axis=0)
-        fx_data_proc.fillna(axis=0, method='ffill', inplace=True)
-        fx_data_proc.fillna(axis=0, value=0, inplace=True)  # leading gap
-    elif missing_forecast.isnumeric():
+        fx_data_proc = fx_data.reindex(index=full_dt_index)
+        fx_data_proc.fillna(method='ffill', inplace=True)
+        fx_data_proc.fillna(value=0, inplace=True)  # leading gap
+    elif missing_forecast.lstrip('-').isnumeric():
         fill_value = pd.to_numeric(missing_forecast).astype(orig_dtype)
         fx_data_proc = fx_data.reindex(index=full_dt_index,
-                                       axis=0,
                                        fill_value=fill_value)
-        fx_data_proc.fillna(axis=0, value=fill_value, inplace=True)
+        fx_data_proc.fillna(value=fill_value, inplace=True)
     else:
         raise ValueError(f"Unsupported forecast missing data procedure: "
                          f"{missing_forecast}")
