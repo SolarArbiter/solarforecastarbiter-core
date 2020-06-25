@@ -3,7 +3,7 @@ import re
 import pandas as pd
 from requests.exceptions import HTTPError
 
-from solarforecastarbiter.datamodel import Site
+from solarforecastarbiter.datamodel import Site, Observation
 from solarforecastarbiter.io import api
 from solarforecastarbiter.io.reference_observations import eia
 
@@ -134,15 +134,22 @@ def test_fetch_fail(mocker, session, site_no_extra):
 
 
 def test_initialize_site_forecasts(
-        requests_mock, mocker, session, site, single_forecast,
-        single_forecast_text, mock_list_sites):
-    matcher = re.compile(f'{session.base_url}/forecasts/.*')
-    requests_mock.register_uri('POST', matcher,
-                               text=single_forecast.forecast_id)
-    requests_mock.register_uri('GET', matcher, content=single_forecast_text)
+        requests_mock, mocker, session, site, mock_list_sites):
+
+    obs = Observation(
+        site=site,
+        name="Net Load",
+        variable="net_load",
+        interval_length=pd.Timedelta("60min"),
+        interval_value_type="interval_mean",
+        interval_label="ending",
+        uncertainty=0,
+    )
+
+    mocker.patch('solarforecastarbiter.io.api.APISession.list_observations',
+                 return_values=[obs])
     status = mocker.patch(
-        'solarforecastarbiter.io.reference_observations.common.'
-        'create_forecasts')
+        'solarforecastarbiter.io.api.APISession.create_forecast')
     eia.initialize_site_forecasts(session, site)
     assert status.called
 
