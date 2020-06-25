@@ -785,8 +785,16 @@ def test_apply_fill(type, exp):
     pass
 
 
-def test_apply_unsupported(type, exp):
-    pass
+def test_apply_unsupported():
+    n=10
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    with pytest.raises(ValueError):
+        preprocessing.apply_fill(pd.Series(range(n), index=dt_range),
+                                 'error',
+                                 dt_range[0], dt_range[-1])
 
 
 @pytest.mark.parametrize("input,exp,n_pre,n_post", [

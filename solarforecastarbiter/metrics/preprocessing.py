@@ -69,7 +69,7 @@ def apply_fill(fx_data, missing_forecast, start, end):
         Forecast data with pandas.DatetimeIndex.
     missing_forecast : str
         Indicates what process to use for handling missing forecasts.
-        Currently supports : 'drop', 'forward'.
+        Currently supports : 'drop', 'forward', and bool or numeric value.
     start : datetime.datetime
     end : datetime.datetime
 
