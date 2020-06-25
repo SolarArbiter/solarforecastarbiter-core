@@ -232,6 +232,15 @@ Persistence
    reference_forecasts.persistence.persistence_interval
    reference_forecasts.persistence.persistence_scalar_index
 
+Probabilistic persistence
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   reference_forecasts.persistence.persistence_probabilistic
+   reference_forecasts.persistence.persistence_probabilistic_timeofday
+
 
 Fetching external data
 ======================

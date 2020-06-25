@@ -868,13 +868,13 @@ class APISession(requests.Session):
         pairs = []
         for o in rep_params['object_pairs']:
             fx_type = o.get('forecast_type', 'forecast')
-            fx_method = 'get_' + fx_type
-            fx = getattr(self, fx_method)(o['forecast'])
+            fx_method = self._forecast_get_by_type(fx_type)
+            fx = fx_method(o['forecast'])
             norm = o.get('normalization')
             unc = o.get('uncertainty')
             ref_fx = o.get('reference_forecast')
             if ref_fx is not None:
-                ref_fx = getattr(self, fx_method)(ref_fx)
+                ref_fx = fx_method(ref_fx)
             if 'observation' in o:
                 obs = self.get_observation(o['observation'])
                 pair = datamodel.ForecastObservation(
@@ -1276,3 +1276,26 @@ class APISession(requests.Session):
         """
         req = self.get('/users/current')
         return req.json()
+
+    def _forecast_get_by_type(self, forecast_type):
+        """Returns the appropriate function for requesting forecast metadata
+        based on `forecast_type`.
+
+        Parameters
+        ----------
+        forecast_type: str
+
+        Returns
+        -------
+        function
+        """
+        if forecast_type == 'forecast':
+            return self.get_forecast
+        elif forecast_type == 'event_forecast':
+            return self.get_forecast
+        elif forecast_type == 'probabilistic_forecast':
+            return self.get_probabilistic_forecast
+        elif forecast_type == 'probabilistic_forecast_constant_value':
+            return self.get_probabilistic_forecast_constant_value
+        else:
+            raise ValueError('Invalid forecast type.')
