@@ -1,6 +1,7 @@
 import pytest
 import re
 import pandas as pd
+from requests.exceptions import HTTPError
 
 from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io import api
@@ -27,9 +28,23 @@ def site():
 
 
 @pytest.fixture
+def site_no_extra():
+    return Site(
+        name='CAISO',
+        latitude=37.0,
+        longitude=-120.0,
+        elevation=0.0,
+        timezone='Etc/GMT+7',
+        site_id='',
+        provider='',
+        extra_parameters='',
+    )
+
+
+@pytest.fixture
 def log(mocker):
     log = mocker.patch('solarforecastarbiter.io.reference_observations.'
-                       'pvdaq.logger')
+                       'eia.logger')
     return log
 
 
@@ -52,6 +67,32 @@ def test_initialize_site_observations(
     assert status.called
 
 
+@pytest.fixture
+def mock_obs_creation(mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.common.'
+        'create_observation')
+    return mocked
+
+
+@pytest.fixture
+def mock_obs_creation_error(mocker, mock_obs_creation):
+    mock_obs_creation.side_effect = HTTPError(
+        response=mocker.Mock(response=mocker.Mock(text="eror")))
+
+
+def test_initialize_site_obs(mock_api, mock_obs_creation, site):
+    eia.initialize_site_observations(mock_api, site)
+    mock_obs_creation.assert_called()
+
+
+def test_initialize_site_obs_http_error(
+        log, mock_api, mock_obs_creation_error, site):
+    eia.initialize_site_observations(mock_api, site)
+    assert log.error.call_count == 1
+    assert log.debug.call_count == 1
+
+
 def test_fetch(mocker, session, site):
     status = mocker.patch(
         'solarforecastarbiter.io.fetch.eia.get_eia_data'
@@ -61,6 +102,14 @@ def test_fetch(mocker, session, site):
     api_key = 'bananasmoothie'
     eia.fetch(session, site, start, end, eia_api_key=api_key)
     assert status.called
+
+
+def test_fetch_fail(mocker, session, site_no_extra):
+    start = pd.Timestamp('2020-01-01T0000Z')
+    end = pd.Timestamp('2020-01-02T0000Z')
+    api_key = 'bananasmoothie'
+    out = eia.fetch(session, site_no_extra, start, end, eia_api_key=api_key)
+    assert out.empty
 
 
 def test_initialize_site_forecasts(
