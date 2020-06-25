@@ -115,7 +115,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name} &
+    \VAR{pfxobs.name | replace("<=", "$\leq$") | replace("%", "\%")} &
     \VAR{pfxobs.interval_label} &
     \VAR{pfxobs.interval_length.total_seconds()//60 | int} min &
     %- if pfxobs.original.observation is defined

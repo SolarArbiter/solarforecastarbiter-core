@@ -176,7 +176,6 @@ def render_html(report, dash_url=datamodel.DASH_URL,
 
 
 def _html_to_tex(value):
-    print(value)
     value = (value
              .replace('<p>', '')
              .replace('</p>', '\n')
