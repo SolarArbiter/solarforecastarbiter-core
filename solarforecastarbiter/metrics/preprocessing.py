@@ -70,8 +70,8 @@ def apply_fill(fx_data, missing_forecast, start, end):
     missing_forecast : str
         Indicates what process to use for handling missing forecasts.
         Currently supports : 'drop', 'forward', and bool or numeric value.
-    start : datetime.datetime
-    end : datetime.datetime
+    start : pandas.Timestamp
+    end : pandas.Timestamp
 
     TODO
     ----
@@ -88,11 +88,11 @@ def apply_fill(fx_data, missing_forecast, start, end):
     full_dt_index = pd.date_range(start=start, end=end, freq=data_res,
                                   name=fx_data.index.name)
 
-    if missing_forecast=='drop':
+    if missing_forecast == 'drop':
         print(fx_data)
         fx_data_proc = fx_data.dropna(axis=0)
         print(fx_data_proc)
-    elif missing_forecast=='forward':
+    elif missing_forecast == 'forward':
         fx_data_proc = fx_data.reindex(index=full_dt_index,
                                        axis=0)
         fx_data_proc.fillna(axis=0, method='ffill', inplace=True)
@@ -397,8 +397,9 @@ def _merge_quality_filters(filters):
     return datamodel.QualityFlagFilter(tuple(combo))
 
 
-def process_forecast_observations(forecast_observations, filters, data,
-                                  timezone):
+def process_forecast_observations(forecast_observations, filters,
+                                  missing_forecast, start, end,
+                                  data, timezone):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -409,6 +410,13 @@ def process_forecast_observations(forecast_observations, filters, data,
         Pairs to process
     filters : list of solarforecastarbiter.datamodel.BaseFilter
         Filters to apply to each pair.
+    missing_forecast : str
+        Indicates what process to use for handling missing forecasts.
+        Currently supports : 'drop', 'forward', and bool or numeric value.
+    start : pandas.Timestamp
+        Start date and time for assessing forecast performance.
+    end : pandas.Timestamp
+        End date and time for assessing forecast performance.
     data : dict
         Dict with keys that are the Forecast/Observation/Aggregate object
         and values that are the corresponding pandas.Series/DataFrame for
@@ -416,7 +424,7 @@ def process_forecast_observations(forecast_observations, filters, data,
         to the ``reference_forecast`` attributes of the
         ``forecast_observations``.
     timezone : str
-        Timezone that data should be converted to
+        Timezone that data should be converted to.
 
     Returns
     -------
@@ -462,13 +470,18 @@ def process_forecast_observations(forecast_observations, filters, data,
         obs_ser, val_results, preproc_results = (
             validated_observations[fxobs.data_object])
 
-        # resample and align observations to forecast, create
-        # ProcessedForecastObservation
+        # Apply fill to forecasts
         fx_ser = data[fxobs.forecast]
+        if isinstance(fx_ser, pd.DataFrame):
+            import pdb; pdb.set_trace()
+        fx_ser = apply_fill(fx_ser, missing_forecast, start, end)
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
+            ref_ser = apply_fill(ref_ser, missing_forecast, start, end)
         else:
             ref_ser = None
+
+        # Resample and align and create processed pair
         try:
             forecast_values, observation_values, ref_fx_values, results = \
                 resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)

@@ -1697,7 +1697,8 @@ def report_objects(aggregate, ref_forecast_id):
         object_pairs=(fxobs0, fxobs1, fxagg0),
         metrics=("mae", "rmse", "mbe", "s"),
         categories=("total", "date", "hour"),
-        filters=(quality_flag_filter, timeofdayfilter)
+        filters=(quality_flag_filter, timeofdayfilter),
+        missing_forecast='forward',
     )
     report = datamodel.Report(
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
@@ -1769,6 +1770,7 @@ def event_report_objects():
         object_pairs=(fxobs0, fxobs1),
         metrics=("pod", "far", "pofd", "csi", "ebias", "ea"),
         categories=("total", "date", "hour"),
+        missing_forecast='forward',
     )
 
     report = datamodel.Report(
@@ -1955,7 +1957,8 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
                       pfx_agg, pfxcvagg0_3),
         metrics=("crps", "bs", "bss", "unc"),
         categories=("total", "date", "hour"),
-        filters=(quality_flag_filter, timeofdayfilter)
+        filters=(quality_flag_filter, timeofdayfilter),
+        missing_forecast='forward',
     )
     report = datamodel.Report(
         report_id="1179f8c1-4d76-479c-a826-053d6b6e5116",
@@ -1976,6 +1979,7 @@ def event_report_text():
          "end": "2019-04-04T23:59:00-07:00",
          "metrics": ["pod", "far", "pofd", "csi", "ebias", "ea"],
          "categories": ["total", "date", "hour"],
+         "missing_forecast": "forward",
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
@@ -2060,6 +2064,7 @@ def report_params_dict(report_objects, quality_filter_dict,
         'name': report_params.name,
         'start': report_params.start,
         'end': report_params.end,
+        'missing_forecast': report_params.missing_forecast,
         'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict(),
