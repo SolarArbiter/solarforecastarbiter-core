@@ -101,8 +101,7 @@ def fetch(api, site, start, end, *, eia_api_key):
         logger.warning(f'Data for site {site.name} contained no '
                        f'entries from {start} to {end}.')
         return pd.DataFrame()
-    obs_df = obs_df.rename(columns={"value": "net_load"}).tz_localize(
-        site.timezone)
+    obs_df = obs_df.rename(columns={"value": "net_load"})
     return obs_df
 
 
