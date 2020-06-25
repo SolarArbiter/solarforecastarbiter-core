@@ -1589,10 +1589,10 @@ class ReportParameters(BaseModel):
     name: str
     start: pd.Timestamp
     end: pd.Timestamp
-    missing_forecast : str
     object_pairs: Tuple[Union[ForecastObservation, ForecastAggregate], ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
+    missing_forecast : str = 'forward'
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
 
