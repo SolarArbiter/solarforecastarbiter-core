@@ -613,13 +613,13 @@ def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time,
 
 def _preload_load_data(session, obs, data_start, data_end):
     obs_data = session.get_observation_values(
-        obs.observation_id, data_start, data_end,
-        obs.interval_label).tz_convert(obs.site.timezone)['value']
+        obs.observation_id, data_start, data_end
+    ).tz_convert(obs.site.timezone)['value']
 
     def load_data(observation, data_start, data_end):
         data = obs_data.loc[data_start:data_end]
         return adjust_timeseries_for_interval_label(
-            data, obs.interval_label, data_start, data_end)
+            data, observation.interval_label, data_start, data_end)
     return load_data
 
 

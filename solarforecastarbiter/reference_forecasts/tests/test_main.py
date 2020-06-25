@@ -9,7 +9,7 @@ import uuid
 
 
 import pandas as pd
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
@@ -1200,3 +1200,22 @@ def test_run_persistence_probabilistic(
     assert len(out) == 3
     assert isinstance(out[0], pd.Series)
     assert prob.call_count == 1
+
+
+@pytest.mark.parametrize('intervallabel', ['beginning', 'ending'])
+@pytest.mark.parametrize('start,end', [
+    (pd.Timestamp('20190101T0000Z'), pd.Timestamp('20190112T0000Z')),
+    (pd.Timestamp('20190101T0000Z'), pd.Timestamp('20190114T0000Z')),
+    (pd.Timestamp('20190103T0000Z'), pd.Timestamp('20190109T0000Z')),
+    (pd.Timestamp('20190201T0000Z'), pd.Timestamp('20190202T0000Z')),
+    (pd.Timestamp('20190201T0000Z'), pd.Timestamp('20190102T0000Z')),
+])
+def test_data_loading(session, obs_5min_begin, start, end, intervallabel):
+    obs = obs_5min_begin.replace(interval_label=intervallabel)
+    full_start = pd.Timestamp('20190101T0000Z')
+    full_end = pd.Timestamp('20190112T0000Z')
+    preload_data = main._preload_load_data(
+        session, obs, full_start, full_end)(
+            obs, start, end)
+    default_load = main._default_load_data(session)(obs, start, end)
+    assert_series_equal(preload_data, default_load)
