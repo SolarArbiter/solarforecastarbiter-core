@@ -472,8 +472,6 @@ def process_forecast_observations(forecast_observations, filters,
 
         # Apply fill to forecasts
         fx_ser = data[fxobs.forecast]
-        if isinstance(fx_ser, pd.DataFrame):
-            import pdb; pdb.set_trace()
         fx_ser = apply_fill(fx_ser, missing_forecast, start, end)
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
