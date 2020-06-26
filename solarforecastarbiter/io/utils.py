@@ -276,7 +276,7 @@ def serialize_timeseries(ser):
 
     Parameters
     ----------
-    ser : pandas.Series
+    ser : (pandas.Series, pandas.DataFrame)
        Must have a tz-localized datetime index
 
     Returns
@@ -290,12 +290,13 @@ def serialize_timeseries(ser):
         If the input is invalid
     """
     if not (
-            isinstance(ser, pd.Series) and
+            isinstance(ser, (pd.Series, pd.DataFrame)) and
             isinstance(ser.index, pd.DatetimeIndex) and
             ser.index.tzinfo is not None
     ):
         raise TypeError(
-            'Only pandas Series with a localized DatetimeIndex is supported')
+            'Only pandas Series or DataFrame with a localized DatetimeIndex '
+            'is supported')
     v = ser.copy()
     v.index.name = 'timestamp'
     jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
