@@ -50,6 +50,8 @@ API Changes
   :py:class:`solarforecastarbiter.datamodel.ReportParameters` to support
   calculating cost metrics in reports (:pull:`487`)
 * Removed :py:mod:`solarforecastarbiter.metrics.valuation` (:pull:`487`)
+* Add :py:func:`solarforecastarbiter.reference_forecasts.make_latest_probabilistic_persistence_forecasts`
+  to generate reference probabilistic persistence forecasts (:pull:`490`)
 
 
 Enhancements
@@ -73,6 +75,7 @@ Enhancements
   a constant cost factor, a time-of-day varying factor, a datetime varying
   factor, and a cost that depends on the magnitude of the error. (:pull:`487`)
   (:issue:`126`)
+
 
 
 Bug fixes
