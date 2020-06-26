@@ -9,7 +9,6 @@ import tempfile
 
 import click
 from click.testing import CliRunner
-import numpy as np
 import pandas as pd
 import pytest
 import requests

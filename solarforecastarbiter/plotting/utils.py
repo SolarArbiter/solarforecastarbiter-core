@@ -1,5 +1,4 @@
 import pandas as pd
-import plotly
 
 
 from solarforecastarbiter.datamodel import ALLOWED_VARIABLES, COMMON_NAMES
