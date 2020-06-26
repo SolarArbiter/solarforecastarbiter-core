@@ -976,10 +976,14 @@ def timeseries_plots(report):
 
     Returns
     -------
-    tuple of str
-        Tuple of string json specifications of plotly figures. The first member
-        of the tuple is the specification for the timeseries plot, and the
-        second is the specification of the scatter plot.
+    timeseries_spec: str
+        String json specification of the timeseries plot
+    scatter_spec: the
+        String json specification of the scatter plot
+    timeseries_prob_spec: None or str
+        If report contains a probabilistic forecast with axis='x',
+        string json specification of the probability vs. time plot.
+        Otherwise None.
     """
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
