@@ -297,6 +297,14 @@ NREL PVDAQ
    io.fetch.pvdaq.get_pvdaq_metadata
    io.fetch.pvdaq.get_pvdaq_data
 
+EIA
+---
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.eia.get_eia_data
+
 
 Reference observations
 ======================
@@ -322,6 +330,7 @@ files with site and observation metadata.
    io.reference_observations.surfrad
    io.reference_observations.arm
    io.reference_observations.pvdaq
+   io.reference_observations.eia
 
 SFA API
 =======
