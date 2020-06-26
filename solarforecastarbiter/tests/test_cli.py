@@ -345,7 +345,6 @@ def test_report_probabilistic(
         outfile = tmpdir + '/test_out.html'
         res = runner.invoke(cli.report,
                             ['-u user', '-p pass', infile, outfile])
-        import shutil; shutil.rmtree('testoutput', ignore_errors=True); shutil.copytree(tmpdir, 'testoutput')
     assert res.exit_code == 0
 
 
@@ -366,7 +365,6 @@ def test_report_probabilistic_xy(
         outfile = tmpdir + '/test_out.html'
         res = runner.invoke(cli.report,
                             ['-u user', '-p pass', infile, outfile])
-        import shutil; shutil.rmtree('testoutput', ignore_errors=True); shutil.copytree(tmpdir, 'testoutput')
     assert res.exit_code == 0
 
 
