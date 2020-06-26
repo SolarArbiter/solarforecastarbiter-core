@@ -178,10 +178,12 @@ def create_raw_report_from_data(report, data):
                         ) as handler:
         # Validate, fill forecast, and resample
         processed_fxobs = preprocessing.process_forecast_observations(
-            report_params.object_pairs, report_params.filters,
+            report_params.object_pairs,
+            report_params.filters,
             report_params.missing_forecast,
             report_params.start, report_params.end,
-            data, timezone)
+            data, timezone,
+            costs=report_params.costs)
 
         # Calculate metrics
         metrics_list = calculator.calculate_metrics(
@@ -262,6 +264,7 @@ def compute_report(access_token, report_id, base_url=None):
     raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
     session = APISession(access_token, base_url=base_url)
+    import pdb; pdb.set_trace()
     fail_wrapper = capture_report_failure(report_id, session)
     report = fail_wrapper(session.get_report, err_msg=(
         'Failed to retrieve report. Perhaps the report does not exist, '

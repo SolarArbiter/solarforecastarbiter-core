@@ -820,7 +820,151 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                     "INCONSISTENT IRRADIANCE COMPONENTS",
                 ]},
                 {'time_of_day_range': ['12:00', '14:00']}],
-            "metrics": ["mae", "rmse", "mbe", "s"],
+            "metrics": ["mae", "rmse", "mbe", "s", "cost"],
+            "categories": ["total", "date", "hour"],
+            "object_pairs": [
+                {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "cost": "example cost",
+                 "uncertainty": "1.0"},
+                {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "normalization": "1000.0",
+                 "uncertainty": "15.0",
+                 "cost": "example cost",
+                 "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
+                {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+                 "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+                 "cost": "example cost",
+                 "uncertainty": "5.0"}
+            ],
+            "costs": [
+                {
+                    "name": "example cost",
+                    "type": "constant",
+                    "parameters": {
+                        "cost": 1.0,
+                        "aggregation": "sum",
+                        "net": True
+                    }
+                }
+            ]
+        }}
+    session.create_report(report)
+    posted = mocked.last_request.json()
+    assert posted == expected
+
+
+def test_apisession_create_report_mult_costs(requests_mock, report_objects,
+                                             mocker):
+    session = api.APISession('')
+    report = report_objects[0]
+    newobj = list(report.report_parameters.object_pairs)
+    ncost = datamodel.Cost(
+        name='other cost',
+        type='constant',
+        parameters=datamodel.ConstantCost(
+            cost=2.0,
+            aggregation='sum',
+            net=True
+        )
+    )
+    newobj[-1] = newobj[-1].replace(cost='other cost')
+    report = report.replace(
+        report_parameters=report.report_parameters.replace(
+            costs=(report.report_parameters.costs[0], ncost),
+            object_pairs=tuple(newobj)))
+    mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
+                 return_value=report)
+    expected = {
+        "report_parameters": {
+            "name": "NREL MIDC OASIS GHI Forecast Analysis",
+            "start": "2019-04-01T00:00:00-07:00",
+            "end": "2019-04-04T23:59:00-07:00",
+            "filters": [
+                {'quality_flags': [
+                    "USER FLAGGED",
+                    "NIGHTTIME",
+                    "LIMITS EXCEEDED",
+                    "STALE VALUES",
+                    "INTERPOLATED VALUES",
+                    "INCONSISTENT IRRADIANCE COMPONENTS",
+                ]},
+                {'time_of_day_range': ['12:00', '14:00']}],
+            "metrics": ["mae", "rmse", "mbe", "s", "cost"],
+            "categories": ["total", "date", "hour"],
+            "object_pairs": [
+                {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "cost": "example cost",
+                 "uncertainty": "1.0"},
+                {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
+                 "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
+                 "normalization": "1000.0",
+                 "uncertainty": "15.0",
+                 "cost": "example cost",
+                 "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
+                {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
+                 "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+                 "cost": "other cost",
+                 "uncertainty": "5.0"}
+            ],
+            "costs": [
+                {
+                    "name": "example cost",
+                    "type": "constant",
+                    "parameters": {
+                        "cost": 1.0,
+                        "aggregation": "sum",
+                        "net": True
+                    }
+                },
+                {
+                    "name": "other cost",
+                    "type": "constant",
+                    "parameters": {
+                        "cost": 2.0,
+                        "aggregation": "sum",
+                        "net": True
+                    }
+                }
+            ]
+        }}
+    session.create_report(report)
+    posted = mocked.last_request.json()
+    assert posted == expected
+
+
+def test_apisession_create_report_no_costs(
+        requests_mock, report_objects, mocker):
+    session = api.APISession('')
+    report = report_objects[0]
+    report = report.replace(
+        report_parameters=report.report_parameters.replace(
+            costs=tuple(),
+            object_pairs=tuple(
+                op.replace(cost=None) for op in
+                report.report_parameters.object_pairs)))
+    mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
+    mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
+                 return_value=report)
+    expected = {
+        "report_parameters": {
+            "name": "NREL MIDC OASIS GHI Forecast Analysis",
+            "start": "2019-04-01T00:00:00-07:00",
+            "end": "2019-04-04T23:59:00-07:00",
+            "filters": [
+                {'quality_flags': [
+                    "USER FLAGGED",
+                    "NIGHTTIME",
+                    "LIMITS EXCEEDED",
+                    "STALE VALUES",
+                    "INTERPOLATED VALUES",
+                    "INCONSISTENT IRRADIANCE COMPONENTS",
+                ]},
+                {'time_of_day_range': ['12:00', '14:00']}],
+            "metrics": ["mae", "rmse", "mbe", "s", "cost"],
             "categories": ["total", "date", "hour"],
             "object_pairs": [
                 {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
@@ -834,7 +978,8 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                 {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
                  "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
                  "uncertainty": "5.0"}
-            ]
+            ],
+            "costs": []
         }}
     session.create_report(report)
     posted = mocked.last_request.json()

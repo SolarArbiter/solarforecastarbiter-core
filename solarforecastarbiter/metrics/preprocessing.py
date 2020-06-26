@@ -435,7 +435,7 @@ def _name_pfxobs(current_names, forecast_name, i=1):
 
 def process_forecast_observations(forecast_observations, filters,
                                   missing_forecast, start, end,
-                                  data, timezone):
+                                  data, timezone, costs=tuple()):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -460,7 +460,10 @@ def process_forecast_observations(forecast_observations, filters,
         to the ``reference_forecast`` attributes of the
         ``forecast_observations``.
     timezone : str
-        Timezone that data should be converted to.
+        Timezone that data should be converted to
+    costs : tuple of :py:class:`solarforecastarbiter.datamodel.Cost`
+        Costs that are referenced by any pairs. Pairs and costs are matched
+        by the Cost name.
 
     Returns
     -------
@@ -475,6 +478,7 @@ def process_forecast_observations(forecast_observations, filters,
         forecast_fill_map.update(
             {missing_forecast: FORECAST_FILL_CONST_STRING.format(missing_forecast)})  # NOQA
     qfilter = _merge_quality_filters(filters)
+    costs_dict = {c.name: c for c in costs}
     validated_observations = {}
     processed_fxobs = {}
     for fxobs in forecast_observations:
@@ -542,6 +546,12 @@ def process_forecast_observations(forecast_observations, filters,
                         fxobs.forecast.name, fxobs.data_object.name)
             name = _name_pfxobs(processed_fxobs.keys(),
                                 fxobs.forecast.name)
+            cost_name = fxobs.cost
+            cost = costs_dict.get(cost_name)
+            if cost_name is not None and cost is None:
+                logger.warning(
+                    'Cannot calculate cost metrics for %s, cost parameters '
+                    'not supplied for cost: %s', name, cost_name)
             processed = datamodel.ProcessedForecastObservation(
                 name=name,
                 original=fxobs,
@@ -555,7 +565,8 @@ def process_forecast_observations(forecast_observations, filters,
                 observation_values=observation_values,
                 reference_forecast_values=ref_fx_values,
                 normalization_factor=fxobs.normalization,
-                uncertainty=fxobs.uncertainty
+                uncertainty=fxobs.uncertainty,
+                cost=cost
             )
             processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())

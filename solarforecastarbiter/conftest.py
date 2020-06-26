@@ -1662,22 +1662,34 @@ def report_objects(aggregate, ref_forecast_id):
         forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
         extra_parameters='',
     )
+    cost = datamodel.Cost(
+        name="example cost",
+        type="constant",
+        parameters=datamodel.ConstantCost(
+            cost=1.0,
+            net=True,
+            aggregation="sum"
+        )
+    )
     fxobs0 = datamodel.ForecastObservation(
         forecast_0,
         observation,
         # report_text parsing will ensure unc can be done dynamically too
-        uncertainty=observation.uncertainty)
+        uncertainty=observation.uncertainty,
+        cost=cost.name)
     forecast_ref = forecast_0.replace(forecast_id=ref_forecast_id)
     fxobs1 = datamodel.ForecastObservation(
         forecast_1,
         observation,
         normalization=1000.,
         uncertainty=15.,
-        reference_forecast=forecast_ref)
+        reference_forecast=forecast_ref,
+        cost=cost.name)
     fxagg0 = datamodel.ForecastAggregate(
         forecast_agg,
         aggregate,
-        uncertainty=5.)
+        uncertainty=5.,
+        cost=cost.name)
     quality_flag_filter = datamodel.QualityFlagFilter(
         (
             "USER FLAGGED",
@@ -1695,10 +1707,11 @@ def report_objects(aggregate, ref_forecast_id):
         start=start,
         end=end,
         object_pairs=(fxobs0, fxobs1, fxagg0),
-        metrics=("mae", "rmse", "mbe", "s"),
+        metrics=("mae", "rmse", "mbe", "s", "cost"),
         categories=("total", "date", "hour"),
         filters=(quality_flag_filter, timeofdayfilter),
         missing_forecast='forward',
+        costs=(cost,)
     )
     report = datamodel.Report(
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
@@ -2054,7 +2067,7 @@ def ref_forecast_id():
 
 @pytest.fixture()
 def report_params_dict(report_objects, quality_filter_dict,
-                       timeofdayfilter_dict, ref_forecast_id):
+                       timeofdayfilter_dict, ref_forecast_id, cost_dicts):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = \
         report_objects
     report_params = report.report_parameters
@@ -2068,18 +2081,28 @@ def report_params_dict(report_objects, quality_filter_dict,
         'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict(),
-             'uncertainty': observation.uncertainty},
+             'uncertainty': observation.uncertainty,
+             'cost': 'example cost'},
             {'forecast': forecast_1.to_dict(),
              'observation': observation.to_dict(),
              'normalization': 1000.,
              'uncertainty': 15.,
-             'reference_forecast': ref_dict},
+             'reference_forecast': ref_dict,
+             'cost': 'example cost'},
             {'forecast': forecast_agg.to_dict(),
              'aggregate': aggregate.to_dict(),
-             'uncertainty': 5.},
+             'uncertainty': 5.,
+             'cost': 'example cost'},
         ),
-        'metrics': ('mae', 'rmse', 'mbe', 's'),
+        'metrics': ('mae', 'rmse', 'mbe', 's', 'cost'),
         'filters': (quality_filter_dict, timeofdayfilter_dict),
+        'costs': (
+            {
+                'name': 'example cost',
+                'type': 'constant',
+                'parameters': cost_dicts['constant']
+            },
+        )
     }
 
 
@@ -2120,19 +2143,34 @@ def report_text():
              ]},
              {"time_of_day_range": ["12:00", "14:00"]}
          ],
-         "metrics": ["mae", "rmse", "mbe", "s"],
+         "costs": [
+             {
+                "name": "example cost",
+                "type": "constant",
+                "parameters": {
+                    "cost": 1.0,
+                    "aggregation": "sum",
+                    "net": true
+                 }
+             }
+         ],
+         "metrics": ["mae", "rmse", "mbe", "s", "cost"],
          "categories": ["total", "date", "hour"],
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
-              "uncertainty": "observation_uncertainty"},
+              "uncertainty": "observation_uncertainty",
+              "cost": "example cost"
+             },
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
               "uncertainty": "15",
+              "cost": "example cost",
               "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
+              "cost": "example cost",
               "uncertainty": "5"}
          ]
      },
@@ -2208,7 +2246,7 @@ def fail_pdf():
 
 @pytest.fixture()
 def raw_report(report_objects, report_metrics, preprocessing_result_types,
-               ref_forecast_id, fail_pdf):
+               ref_forecast_id, fail_pdf, constant_cost):
     report, obs, fx0, fx1, agg, fxagg = report_objects
 
     def gen(with_series):
@@ -2228,11 +2266,17 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             isinstance(f, datamodel.QualityFlagFilter)
         )
         qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
         fxobs0 = datamodel.ProcessedForecastObservation(
             fx0.name,
             datamodel.ForecastObservation(
                 fx0,
                 obs,
+                cost=cost.name,
                 uncertainty=obs.uncertainty),
             fx0.interval_value_type,
             il0,
@@ -2244,7 +2288,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(il0) if with_series else fx0.forecast_id,
             observation_values=ser(il0) if with_series else obs.observation_id,
-            uncertainty=1.
+            uncertainty=1.,
+            cost=cost
         )
         il1 = fx1.interval_length
         fxobs1 = datamodel.ProcessedForecastObservation(
@@ -2254,7 +2299,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 obs,
                 normalization=1000.,
                 uncertainty=15.,
-                reference_forecast=fx0.replace(forecast_id=ref_forecast_id)),
+                reference_forecast=fx0.replace(forecast_id=ref_forecast_id),
+                cost=cost.name),
             fx1.interval_value_type,
             il1,
             fx1.interval_label,
@@ -2269,6 +2315,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 ser(il0) if with_series else ref_forecast_id),
             normalization_factor=1000.,
             uncertainty=15.,
+            cost=cost
         )
         ilagg = fxagg.interval_length
         fxagg_ = datamodel.ProcessedForecastObservation(
@@ -2276,6 +2323,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
             datamodel.ForecastAggregate(
                 fxagg,
                 agg,
+                cost=cost.name,
                 uncertainty=5.),
             fxagg.interval_value_type,
             ilagg,
@@ -2287,7 +2335,8 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                 name=t, count=0) for t in preprocessing_result_types),
             forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
             observation_values=ser(ilagg) if with_series else agg.aggregate_id,
-            uncertainty=5.
+            uncertainty=5.,
+            cost=cost
         )
         figs = datamodel.RawReportPlots(
             (
@@ -2824,3 +2873,195 @@ def remove_orca():
     # otherwise generating all pdfs for tests can take ages
     import plotly.io as pio
     pio.orca.config.executable = '/dev/null'
+
+
+@pytest.fixture()
+def constant_cost():
+    return datamodel.ConstantCost(
+        cost=1.0,
+        aggregation='sum',
+        net=True
+    )
+
+
+@pytest.fixture()
+def constant_cost_json():
+    return """{"name": "constantcost", "type": "constant", "parameters":
+    {
+        "cost": 1.0,
+        "aggregation": "sum",
+        "net": true
+    }
+    }"""
+
+
+@pytest.fixture()
+def timeofday_cost():
+    return datamodel.TimeOfDayCost(
+        times=(dt.time(0), dt.time(6)),
+        cost=(1.1, 0.9),
+        aggregation='sum',
+        fill='forward',
+        net=False,
+        timezone='UTC'
+    )
+
+
+@pytest.fixture()
+def timeofday_cost_json():
+    return """{"name": "timeofdaycost", "type": "timeofday", "parameters":
+    {
+        "cost": [1.1, 0.9],
+        "times": ["00:00", "06:00"],
+        "aggregation": "sum",
+        "fill": "forward",
+        "net": false,
+        "timezone": "UTC"
+    }
+    }"""
+
+
+@pytest.fixture()
+def datetime_cost():
+    return datamodel.DatetimeCost(
+        datetimes=(pd.Timestamp('2020-04-30T12:00Z'),
+                   pd.Timestamp('2020-05-03T00:00Z')),
+        cost=(-0.2, -0.1),
+        aggregation='sum',
+        fill='forward',
+        net=False,
+        timezone='UTC'
+    )
+
+
+@pytest.fixture()
+def datetime_cost_json():
+    # somewhat strange spacing for easy split
+    return """{"name": "datetimecost", "type": "datetime", "parameters":
+    {
+        "cost": [-0.2, -0.1],
+        "datetimes": ["2020-04-30T12:00Z",
+                      "2020-05-03T00:00Z"],
+        "aggregation": "sum",
+        "fill": "forward",
+        "net": false,
+        "timezone": "UTC"
+    }
+    }"""
+
+
+@pytest.fixture()
+def errorband_cost(constant_cost, timeofday_cost, datetime_cost):
+    return datamodel.ErrorBandCost(
+        bands=(
+            datamodel.CostBand(
+                error_range=(-2, 2),
+                cost_function='constant',
+                cost_function_parameters=constant_cost
+            ),
+            datamodel.CostBand(
+                error_range=(2, np.inf),
+                cost_function='timeofday',
+                cost_function_parameters=timeofday_cost
+            ),
+            datamodel.CostBand(
+                error_range=(-np.inf, -2),
+                cost_function='datetime',
+                cost_function_parameters=datetime_cost
+            )
+        )
+    )
+
+
+@pytest.fixture()
+def banded_cost_params(errorband_cost):
+    return datamodel.Cost(
+        name='bandedcost',
+        type='errorband',
+        parameters=errorband_cost
+    )
+
+
+@pytest.fixture()
+def banded_cost_params_json(constant_cost_json, timeofday_cost_json,
+                            datetime_cost_json):
+    things = ['\n'.join(j.split('\n')[1:-1]) for j in
+              (constant_cost_json, timeofday_cost_json, datetime_cost_json)]
+    outstr = """
+    {
+        "name": "bandedcost",
+        "type": "errorband",
+        "parameters": {
+            "bands": [
+                {
+                    "error_range": [-2, 2],
+                    "cost_function": "constant",
+                    "cost_function_parameters": %s
+                },
+                {
+                    "error_range": [2, "inf"],
+                    "cost_function": "timeofday",
+                    "cost_function_parameters": %s
+                },
+                {
+                    "error_range": ["-inf", -2],
+                    "cost_function": "datetime",
+                    "cost_function_parameters": %s
+                }
+            ]
+        }
+    }
+    """
+    return outstr % tuple(things)
+
+
+@pytest.fixture()
+def cost_dicts():
+    out = {
+        'constant': {
+            'cost': 1.0,
+            'aggregation': 'sum',
+            'net': True
+        },
+        'timeofday': {
+            'times': ('00:00', '06:00'),
+            'cost': (1.1, 0.9),
+            'aggregation': 'sum',
+            'fill': 'forward',
+            'net': False,
+            'timezone': 'UTC'
+        },
+        'datetime': {
+            'datetimes': ('2020-04-30T12:00Z', '2020-05-03T00:00Z'),
+            'cost': (-0.2, -0.1),
+            'aggregation': 'sum',
+            'fill': 'forward',
+            'net': False,
+            'timezone': 'UTC'
+        }
+    }
+    out['errorband'] = {
+        'bands': (
+            {
+                'error_range': (-2, 2),
+                'cost_function': 'constant',
+                'cost_function_parameters': out['constant']
+            },
+            {
+                'error_range': (2, 'inf'),
+                'cost_function': 'timeofday',
+                'cost_function_parameters': out['timeofday']
+            },
+            {
+                'error_range': ('-inf', -2),
+                'cost_function': 'datetime',
+                'cost_function_parameters': out['datetime']
+            }
+        )
+    }
+    out['fullcost'] = {
+        'name': 'bandedcost',
+        'type': 'errorband',
+        'parameters': out['errorband']
+    }
+    return out
