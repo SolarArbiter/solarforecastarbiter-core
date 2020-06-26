@@ -529,44 +529,42 @@ def test_process_forecast_observations(report_objects, quality_filter,
 
 
 def test_process_probabilistic_forecast_observations(
-        cdf_and_cv_report_objects, quality_filter, timeofdayfilter, mocker):
-    report, observation, cdf_forecast_0, cdf_forecast_1, \
-        cv_forecast_0, cv_forecast_1, aggregate, cdf_forecast_agg, \
-        cv_forecast_agg = cdf_and_cv_report_objects
-    cdf_forecast_ref = report.report_parameters.object_pairs[1].reference_forecast  # NOQA
-    cv_forecast_ref = report.report_parameters.object_pairs[3].reference_forecast  # NOQA
-    periods_1min = 60*24*7
-    obs_ser = pd.Series(np.arange(periods_1min)/60.,
-                        index=pd.date_range(start='2020-04-01T00:00:00',
-                                            periods=periods_1min,
-                                            freq='1min',
-                                            tz='MST',
-                                            name='timestamp'))
-    cdf_fx_df = pd.DataFrame({'25': np.arange(periods_1min/60),
-                              '50': np.arange(periods_1min/60)+1,
-                              '75': np.arange(periods_1min/60)+2},
-                             index=pd.date_range(start='2020-04-01T00:00:00',
-                                                 periods=periods_1min/60,
-                                                 freq='60min',
-                                                 tz='MST',
-                                                 name='timestamp'))
-    obs_df = obs_ser.to_frame('value')
-    obs_df['quality_flag'] = OK
-    agg_df = obs_df.resample('60T').asfreq()
-    agg_df['quality_flag'] = OK
+        cdf_and_cv_report_objects, cdf_and_cv_report_data, quality_filter,
+        timeofdayfilter, mocker):
+    report, *_ = cdf_and_cv_report_objects
 
-    data = {
-        observation: obs_df,
-        aggregate: agg_df,
-        cdf_forecast_0: cdf_fx_df,
-        cdf_forecast_1: cdf_fx_df,
-        cdf_forecast_agg: cdf_fx_df,
-        cdf_forecast_ref: cdf_fx_df,
-        cv_forecast_0: cdf_fx_df['25'],
-        cv_forecast_1: cdf_fx_df['50'],
-        cv_forecast_agg: cdf_fx_df['75'],
-        cv_forecast_ref: cdf_fx_df['50']
-    }
+    data = cdf_and_cv_report_data
+
+    filters = [quality_filter, timeofdayfilter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs, filters, data, 'MST')
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
+    assert logger.warning.called
+    assert not logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        if isinstance(proc_fxobs.original.forecast,
+                      datamodel.ProbabilisticForecast):
+            assert isinstance(proc_fxobs.forecast_values, pd.DataFrame)
+        else:
+            assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+def test_process_probabilistic_forecast_observations_xy(
+        cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        quality_filter, timeofdayfilter, mocker):
+    report, *_ = cdf_and_cv_report_objects_xy
+
+    data = cdf_and_cv_report_data_xy
 
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')

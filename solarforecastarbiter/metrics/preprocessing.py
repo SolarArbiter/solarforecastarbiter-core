@@ -545,7 +545,7 @@ def process_forecast_observations(forecast_observations, filters,
             logger.info('Processed data successfully for pair (%s, %s)',
                         fxobs.forecast.name, fxobs.data_object.name)
             name = _name_pfxobs(processed_fxobs.keys(),
-                                fxobs.forecast.name)
+                                fxobs.forecast)
             cost_name = fxobs.cost
             cost = costs_dict.get(cost_name)
             if cost_name is not None and cost is None:

@@ -81,7 +81,8 @@ def line_or_step(interval_label):
 
 def line_or_step_plotly(interval_label):
     """
-    For a given interval_label, determine any kwargs for the plot.
+    For a given interval_label, forecast_type determine any kwargs for
+    the plot.
     """
     if 'instant' in interval_label:
         plot_kwargs = dict()

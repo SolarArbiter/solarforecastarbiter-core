@@ -64,6 +64,58 @@ except Exception:
     fail_pdf = ',u@!!/MSk8$73+IY58P_+>=pV@VQ644<Q:NASu.&BHT/T0Ha7#+<Vd[7VQ[\\ATAnH7VlLTAOL*>De*Dd5!B<pFE1r$D$kNX1K6%.6<uqiV.X\\GOIXKoa;)c"!&3^A=pehYA92j5ARTE_ASu$s@VQ6-+>=pV@VQ5m+<WEu$>"*cDdmGg1E\\@oDdmGg4?Ns74pkk=A8bpl$8N_X+E(_($9UEn03!49AKWX&@:s-o,p4oL+<Vd[:gnBUDKI!U+>=p9$6UH6026"gBjj>HGT^350H`%l0J5:A+>>E,2\'?03+<Vd[6Z6jaASuU2+>b2p+ArOh+<W=-Ec6)>+?Van+<VdL+<W=:H#R=;01U&$F`7[1+<VdL+>6Y902ut#DKBc*Eb0,uGmYZ:+<VdL01d:.Eckq#+<VdL+<W=);]m_]AThctAPu#b$6UH65!B;r+<W=8ATMd4Ear[%+>Y,o+ArP14pkk=A8bpl$8EYW+E(_($9UEn03!49AKWX&@:s.m$6UH602$"iF!+[01*A7n;BT6P+<Vd[6Z7*bF<E:F5!B<bDIdZpC\'ljA0Hb:CC\'m\'c+>6Q3De+!#ATAnA@ps(lD]gbe0fCX<+=LoFFDu:^0/$gDBl\\-)Ea`p#Bk)3:DfTJ>.1.1?+>6*&ART[pDf.sOFCcRC6om(W1,(C>0K1^?0ebFC/MK+20JFp_5!B<bDIdZpC\'lmB0Hb:CC\'m\'c+>6]>E+L.F6Xb(FCi<qn+<Vd[:gn!JF!*1[0Ha7#5!B<bDIdZpC\'o3+AS)9\'+?0]^0JG170JG170H`822)@*4AfqF70JG170JG:B0d&/(0JG1\'DBK9?0JG170JG4>0d&/(0JG1\'DBK9?0JG170JG4<0H`&\'0JG1\'DBK9?0JG170JG182\'=S,0JG1\'DBK9?0JG170JG493?U"00JG1\'DBK9?0JG170JG=?2BX\\-0JG1\'DBK9?0JG170JG@B1*A8)0JG1\'DBK:.Ea`ZuATA,?4<Q:UBmO>53!pcN+>6W2Dfd*\\+>=p9$6UH601g%nD]gq\\0Ha7#5!B<pFCB33G]IA-$8sUq$7-ue:IYZ'  # NOQA
 
 
+def _value_frame_dict(idx, pfxobs, column=None):
+    if column is None:
+        forecast_values = pfxobs.forecast_values
+    else:
+        forecast_values = pfxobs.forecast_values[column]
+    value_frame_dict = {
+        'pair_index': idx,
+        'observation_values': pfxobs.observation_values,
+        'forecast_values': forecast_values,
+    }
+    return value_frame_dict
+
+
+def _meta_row_dict(idx, pfxobs, **kwargs):
+    forecast_object = kwargs.pop('forecast_object', None)
+    if forecast_object is None:
+        forecast_object = pfxobs.original.forecast
+    try:
+        axis = forecast_object.axis
+    except AttributeError:
+        axis = None
+    try:
+        constant_value = forecast_object.constant_value
+    except AttributeError:
+        constant_value = None
+    meta = {
+        'pair_index': idx,
+        'observation_name': _obs_name(pfxobs.original),
+        'forecast_name': _fx_name(
+            forecast_object, pfxobs.original.data_object),
+        'interval_label': pfxobs.interval_label,
+        'interval_length': pfxobs.interval_length,
+        'forecast_type': pfxobs.original.__class__.__name__,
+        'axis': axis,
+        'constant_value': constant_value,
+        'observation_hash': str(hash((
+            pfxobs.original.data_object,
+            pfxobs.interval_length,
+            pfxobs.interval_value_type,
+            pfxobs.interval_label))),
+        'forecast_hash': str(hash((
+            forecast_object,
+            pfxobs.interval_length,
+            pfxobs.interval_value_type,
+            pfxobs.interval_label))),
+        'observation_color': _obs_color(
+            pfxobs.interval_length)
+    }
+    meta.update(kwargs)
+    return meta
+
+
 def construct_timeseries_dataframe(report):
     """Construct two standardized Dataframes for the timeseries and scatter
     plot functions. One with timeseries data for all observations,
@@ -94,34 +146,30 @@ def construct_timeseries_dataframe(report):
     """  # NOQA
     value_frames = []
     meta_rows = []
-    for idx, pfxobs in enumerate(
-            report.raw_report.processed_forecasts_observations):
-        value_frame_dict = {
-            'pair_index': idx,
-            'observation_values': pfxobs.observation_values,
-            'forecast_values': pfxobs.forecast_values,
-        }
-        meta_row_dict = {
-            'pair_index': idx,
-            'observation_name': _obs_name(pfxobs.original),
-            'forecast_name': _fx_name(pfxobs.original),
-            'interval_label': pfxobs.interval_label,
-            'interval_length': pfxobs.interval_length,
-            'observation_hash': str(hash(
-                (pfxobs.original.data_object,
-                 pfxobs.interval_length,
-                 pfxobs.interval_value_type,
-                 pfxobs.interval_label))),
-            'forecast_hash': str(hash(
-                (pfxobs.original.forecast,
-                 pfxobs.interval_length,
-                 pfxobs.interval_value_type,
-                 pfxobs.interval_label))),
-            'observation_color': _obs_color(
-                pfxobs.interval_length)
-        }
-        value_frames.append(pd.DataFrame(value_frame_dict))
-        meta_rows.append(meta_row_dict)
+    # enumerate won't work because of the conditional for loop, so
+    # manually keep track of the index
+    idx = 0
+    for pfxobs in report.raw_report.processed_forecasts_observations:
+        if isinstance(pfxobs.original.forecast,
+                      datamodel.ProbabilisticForecast):
+            for cvfx in pfxobs.original.forecast.constant_values:
+                value_frame_dict = _value_frame_dict(
+                    idx, pfxobs, column=cvfx.constant_value)
+                # specify fx type so we know the const value fx came from a
+                # ProbabilisticForecast
+                meta_row_dict = _meta_row_dict(
+                    idx, pfxobs,
+                    forecast_object=cvfx,
+                    forecast_type='ProbabilisticForecast')
+                value_frames.append(pd.DataFrame(value_frame_dict))
+                meta_rows.append(meta_row_dict)
+                idx += 1
+        else:
+            value_frame_dict = _value_frame_dict(idx, pfxobs)
+            meta_row_dict = _meta_row_dict(idx, pfxobs)
+            value_frames.append(pd.DataFrame(value_frame_dict))
+            meta_rows.append(meta_row_dict)
+            idx += 1
     data = pd.concat(value_frames)
     metadata = pd.DataFrame(meta_rows)
     # convert data to report timezone
@@ -168,12 +216,18 @@ def _obs_name(fx_obs):
     return name
 
 
-def _fx_name(fx_obs):
+def _fx_name(forecast, data_object):
     # TODO: add code to ensure fx names are unique
-    name = fx_obs.forecast.name
-    if fx_obs.forecast.name == fx_obs.data_object.name:
-        name += ' Forecast'
-    return name
+    forecast_name = forecast.name
+    if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
+        if forecast.axis == 'x':
+            forecast_name += \
+                f' Prob(x <= {forecast.constant_value} {forecast.units})'
+        else:
+            forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
+    if forecast_name == data_object.name:
+        forecast_name += ' Forecast'
+    return forecast_name
 
 
 def _obs_color(interval_length):
@@ -186,9 +240,16 @@ def _boolean_filter_indices_by_pair(value_cds, pair_index):
     return value_cds.data['pair_index'] == pair_index
 
 
+def _none_or_values0(metadata, key):
+    value = metadata.get(key)
+    if value is not None:
+        value = value.values[0]
+    return value
+
+
 def _extract_metadata_from_df(metadata_df, hash_, hash_key):
     metadata = metadata_df[metadata_df[hash_key] == hash_]
-    return {
+    meta = {
         'pair_index': metadata['pair_index'].values[0],
         'observation_name': metadata['observation_name'].values[0],
         'forecast_name': metadata['forecast_name'].values[0],
@@ -196,6 +257,10 @@ def _extract_metadata_from_df(metadata_df, hash_, hash_key):
         'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
+    meta['forecast_type'] = _none_or_values0(metadata, 'forecast_type')
+    meta['axis'] = _none_or_values0(metadata, 'axis')
+    meta['constant_value'] = _none_or_values0(metadata, 'constant_value')
+    return meta
 
 
 def _legend_text(name, max_length=20):
@@ -231,8 +296,75 @@ def _legend_text(name, max_length=20):
         return name
 
 
+def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
+    # construct graph objects in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    gos = []
+    # construct graph objects in random hash order
+    for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, obs_hash, 'observation_hash')
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
+        data = _fill_timeseries(
+            timeseries_value_df[pair_idcs],
+            metadata['interval_length'],
+        )
+        go_ = go.Scattergl(
+            y=data['observation_values'],
+            x=data.index,
+            name=_legend_text(metadata['observation_name']),
+            legendgroup=metadata['observation_name'],
+            marker=dict(color=metadata['observation_color']),
+            connectgaps=False,
+            **plot_kwargs)
+        # collect in list
+        gos.append((metadata['pair_index'], go_))
+    # Add traces in order of pair index
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
+
+
+def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
+    palette = cycle(PALETTE)
+    # construct graph objects in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    gos = []
+    # construct graph objects in random hash order
+    for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
+        metadata = _extract_metadata_from_df(
+            timeseries_meta_df, fx_hash, 'forecast_hash')
+        if metadata['axis'] not in axis:
+            # we're looking at a different kind of forecast than what we wanted
+            # to plot
+            continue
+        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+        # probably treat axis == None and axis == y separately in the future.
+        # currently no need for a separate axis == x treatment either, so
+        # removed an if statement on the axis.
+        plot_kwargs = line_or_step_plotly(
+            metadata['interval_label'])
+        data = _fill_timeseries(
+            timeseries_value_df[pair_idcs],
+            metadata['interval_length'],
+        )
+        plot_kwargs['marker'] = dict(color=next(palette))
+        go_ = go.Scattergl(
+            y=data['forecast_values'],
+            x=data.index,
+            name=_legend_text(metadata['forecast_name']),
+            legendgroup=metadata['forecast_name'],
+            connectgaps=False,
+            **plot_kwargs)
+        # collect in list
+        gos.append((metadata['pair_index'], go_))
+    # Add traces in order of pair index
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
+
+
 def timeseries(timeseries_value_df, timeseries_meta_df,
-               start, end, units, timezone='UTC'):
+               start, end, units, axis, timezone='UTC'):
     """
     Timeseries plot of one or more forecasts and observations.
 
@@ -250,62 +382,45 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         Report start time
     end : pandas.Timestamp
         Report end time
+    axis : {(None,), ('x',), ('y',), (None, 'y')}
+        Specifies the kinds of forecast to plot. None is appropriate for
+        deterministic forecasts, 'x' for probabilistic forecasts with
+        axis = 'x', and 'y' for probabilistic forecasts with
+        axis = 'y'. Observations, deterministic forecasts, and
+        probabilistic forecasts may all be plotted together if
+        axis = (None, 'y'). Observations will not be plotted if
+        axis = ('x',).
     timezone : str
         Timezone consistent with the data in the timeseries_metadata_df.
 
     Returns
     -------
     plotly.Figure
-    """  # NOQA
+    """  # NOQA: E501
+    # might want to make fig=None a kwarg and modify this line to
+    # fig = fig if fig is not None else go.Figure()
     fig = go.Figure()
-    plotted_objects = 0
-    for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
-        metadata = _extract_metadata_from_df(
-            timeseries_meta_df, obs_hash, 'observation_hash')
-        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
-        data = _fill_timeseries(
-            timeseries_value_df[pair_idcs],
-            metadata['interval_length'],
-        )
-        fig.add_trace(go.Scattergl(
-            y=data['observation_values'],
-            x=data.index,
-            name=_legend_text(metadata['observation_name']),
-            legendgroup=metadata['observation_name'],
-            marker=dict(color=metadata['observation_color']),
-            connectgaps=False,
-            **plot_kwargs),
-        )
-        plotted_objects += 1
 
-    palette = cycle(PALETTE)
-    for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
-        metadata = _extract_metadata_from_df(
-            timeseries_meta_df, fx_hash, 'forecast_hash')
-        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
-        data = _fill_timeseries(
-            timeseries_value_df[pair_idcs],
-            metadata['interval_length'],
-        )
-        fig.add_trace(go.Scattergl(
-            y=data['forecast_values'],
-            x=data.index,
-            name=_legend_text(metadata['forecast_name']),
-            legendgroup=metadata['forecast_name'],
-            marker=dict(color=next(palette)),
-            connectgaps=False,
-            **plot_kwargs),
-        )
-        plotted_objects += 1
+    if 'x' in axis:
+        ylabel = 'Probability (%)'
+    else:
+        ylabel = f'Data ({units})'
+        # adds observation traces to fig
+        _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
+
+    # add forecast traces that have correct axis to fig
+    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
+
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside')
-    fig.update_yaxes(title_text=f'Data ({units})', showgrid=True,
+    fig.update_yaxes(title_text=ylabel, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
                      fixedrange=True)
+    fig.update_layout(
+        legend=dict(font=dict(size=10)),
+    )
     return fig
 
 
@@ -353,6 +468,10 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fxhash, 'forecast_hash')
+        if metadata['axis'] == 'x':
+            # don't know how to represent probability forecasts on a
+            # physical value vs. physical value plot.
+            continue
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
 
@@ -852,24 +971,52 @@ def timeseries_plots(report):
 
     Returns
     -------
-    tuple of str
-        Tuple of string json specifications of plotly figures. The first member
-        of the tuple is the specification for the timeseries plot, and the
-        second is the specification of the scatter plot.
+    timeseries_spec: str
+        String json specification of the timeseries plot
+    scatter_spec: the
+        String json specification of the scatter plot
+    timeseries_prob_spec: None or str
+        If report contains a probabilistic forecast with axis='x',
+        string json specification of the probability vs. time plot.
+        Otherwise None.
     """
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
+
+    # data (units) vs time plot for the observation, deterministic fx,
+    # and y-axis probabilistic fx
     ts_fig = timeseries(
         value_df, meta_df, report.report_parameters.start,
-        report.report_parameters.end, units,
+        report.report_parameters.end, units, (None, 'y'),
         report.raw_report.timezone)
     ts_fig.update_layout(
         plot_bgcolor=PLOT_BGCOLOR,
         font=dict(size=14),
         margin=PLOT_MARGINS,
-
     )
+
+    # probability vs time plot for the x-axis probabilistic fx
+    if any(
+            (
+                isinstance(pfxob.original.forecast, (
+                    datamodel.ProbabilisticForecast,
+                    datamodel.ProbabilisticForecastConstantValue)) and
+                pfxob.original.forecast.axis == 'x')
+            for pfxob in pfxobs
+            ):
+        ts_prob_fig = timeseries(
+            value_df, meta_df, report.report_parameters.start,
+            report.report_parameters.end, units, ('x',),
+            report.raw_report.timezone)
+        ts_prob_fig.update_layout(
+            plot_bgcolor=PLOT_BGCOLOR,
+            font=dict(size=14),
+            margin=PLOT_MARGINS,
+        )
+        ts_prob_fig_json = ts_prob_fig.to_json()
+    else:
+        ts_prob_fig_json = None
 
     # switch secondary plot based on forecast type
     pfxobs = report.raw_report.processed_forecasts_observations
@@ -890,4 +1037,5 @@ def timeseries_plots(report):
             height=500,
             autosize=False,
         )
-    return ts_fig.to_json(), scat_fig.to_json()
+
+    return ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json

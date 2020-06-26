@@ -86,9 +86,11 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         except Exception:
             logger.exception(
                 'Failed to make Plotly items for timeseries and scatterplot')
-            timeseries_specs = ('{}', '{}')
+            timeseries_specs = ('{}', '{}', '{}')
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
+        if timeseries_specs[2] is not None:
+            kwargs['timeseries_prob_spec'] = timeseries_specs[2]
 
     return kwargs
 
@@ -188,6 +190,9 @@ def _html_to_tex(value):
              .replace('<li>', '\\item ')
              .replace('</li>', '\n')
              .replace('</a>', '')
+             .replace('<=', '$\\leq$')
+             .replace("%", "\\%")
+             .replace('W/m^2', '$W/m^2$')
              )
     value = re.sub('\\<a.*\\>', '', value)
     return value
@@ -286,8 +291,10 @@ def _save_figures_to_pdf(tmpdir, report):
     for fig in report.raw_report.plots.figures:
         name = (
             fig.category + '+' + fig.metric + '+' +
-            fig.name + '.pdf'
-        ).replace('^', '-').replace(' ', '+').replace('_', '+')
+            fig.name
+        ).replace('^', '-').replace(' ', '+').replace('_', '+').replace(
+            '<=', 'lte').replace('%', 'pct').replace('.', '').replace('/', '-')
+        name += '.pdf'
         # handle characters that will cause problems for tex
         figpath = figdir / name
         figpath.write_bytes(base64.a85decode(fig.pdf))

@@ -20,6 +20,13 @@ def report_with_raw(report_dict, raw_report):
 
 
 @pytest.fixture
+def report_with_raw_xy(report_dict, raw_report_xy):
+    report_dict['raw_report'] = raw_report_xy(True)
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture
 def raw_report_pfxobs_values(raw_report):
     # Useful for testing the valid types for a ProcessedForecastObservation's
     # values fields which can be either pd.Series, str or None
@@ -115,7 +122,7 @@ def test_construct_metric_dataframe_no_values():
 
 @pytest.fixture
 def fxobs_name_mock(mocker):
-    def fn(obs_name, fx_name, agg=False):
+    def fn(obs_name, fx_name, agg=False, fxspec=None):
         if agg:
             obspec = datamodel.Aggregate
         else:
@@ -123,12 +130,37 @@ def fxobs_name_mock(mocker):
         fxobs = mocker.Mock()
         obs = mocker.Mock(spec=obspec)
         obs.name = obs_name
-        fx = mocker.Mock()
+        fx = mocker.Mock(spec=fxspec)
         fx.name = fx_name
         fxobs.forecast = fx
         fxobs.data_object = obs
         return fxobs
     return fn
+
+
+@pytest.mark.parametrize('obs_name,fx_name,fx_name_expected', [
+    ('obs', 'fx', 'fx'),
+    ('name', 'name', 'name Forecast')
+])
+def test__fx_name(fxobs_name_mock, obs_name, fx_name, fx_name_expected):
+    fxobs = fxobs_name_mock(obs_name, fx_name)
+    fx_name = figures._fx_name(fxobs.forecast, fxobs.data_object)
+    assert fx_name == fx_name_expected
+
+
+@pytest.mark.parametrize('axis,fx_name_expected', [
+    ('x', 'fx name Prob(x <= 10.0 MW)'),
+    ('y', 'fx name Prob(f <= x) = 10.0%')
+])
+def test__fx_name_prob(axis, fx_name_expected, fxobs_name_mock):
+    fxobs = fxobs_name_mock(
+        'obs name', 'fx name',
+        fxspec=datamodel.ProbabilisticForecastConstantValue)
+    fxobs.forecast.constant_value = 10.
+    fxobs.forecast.axis = axis
+    fxobs.forecast.units = 'MW'
+    fx_name = figures._fx_name(fxobs.forecast, fxobs.data_object)
+    assert fx_name == fx_name_expected
 
 
 @pytest.mark.parametrize('y_min,y_max,pad,expected', [
@@ -318,6 +350,9 @@ meta_df_data = [
         'interval_label': 'beginning',
         'interval_length': np.timedelta64(1, 'm'),
         'observation_color': '#abc',
+        'forecast_type': None,
+        'axis': None,
+        'constant_value': None
     }, {
         'pair_index': 1,
         'observation_name': 'obs two',
@@ -327,6 +362,9 @@ meta_df_data = [
         'interval_label': 'beginning',
         'interval_length': np.timedelta64(5, 'm'),
         'observation_color': '#ccc',
+        'forecast_type': None,
+        'axis': None,
+        'constant_value': None
     },
 ]
 
@@ -354,3 +392,19 @@ def test_construct_timeseries_dataframe_timeseries(report_with_raw):
     assert list(np.unique(ts_df['pair_index'])) == [0, 1, 2]
     assert (ts_df['observation_values'] == 100).all()
     assert (ts_df['forecast_values'] == 100).all()
+
+
+def test_timeseries_plots(report_with_raw):
+    ts_spec, scatter_spec, ts_prob_spec = figures.timeseries_plots(
+        report_with_raw)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+
+
+def test_timeseries_plots_xy(report_with_raw_xy):
+    ts_spec, scatter_spec, ts_prob_spec = figures.timeseries_plots(
+        report_with_raw_xy)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert isinstance(ts_prob_spec, str)
