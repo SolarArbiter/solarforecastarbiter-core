@@ -20,7 +20,7 @@ expected_metrics_json = """[{"name":"0 Day GFS GHI","abbrev":"0 Day GFS GHI","ca
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
         'solarforecastarbiter.reports.figures.plotly_figures.timeseries_plots')
-    mocked.return_value = ('{}', '{}')
+    mocked.return_value = ('{}', '{}', '{}')
 
 
 @pytest.fixture
@@ -59,6 +59,7 @@ def expected_kwargs(dash_url):
         if with_series:
             kwargs['timeseries_spec'] = '{}'
             kwargs['scatter_spec'] = '{}'
+            kwargs['timeseries_prob_spec'] = '{}'
         return kwargs
     return fn
 
@@ -96,6 +97,7 @@ def test__get_render_kwargs_with_series_exception(
     )
     assert kwargs['timeseries_spec'] == '{}'
     assert kwargs['scatter_spec'] == '{}'
+    assert kwargs['timeseries_prob_spec'] == '{}'
 
 
 @pytest.fixture(params=[0, 1, 2])
