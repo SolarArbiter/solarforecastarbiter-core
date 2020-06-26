@@ -999,10 +999,12 @@ def timeseries_plots(report):
 
     # probability vs time plot for the x-axis probabilistic fx
     if any(
-            isinstance(pfxob.original.forecast, (
-                datamodel.ProbabilisticForecast,
-                datamodel.ProbabilisticForecastConstantValue)) and
-            pfxob.original.forecast.axis == 'x' for pfxob in pfxobs
+            (
+                isinstance(pfxob.original.forecast, (
+                    datamodel.ProbabilisticForecast,
+                    datamodel.ProbabilisticForecastConstantValue)) and
+                pfxob.original.forecast.axis == 'x')
+            for pfxob in pfxobs
             ):
         ts_prob_fig = timeseries(
             value_df, meta_df, report.report_parameters.start,

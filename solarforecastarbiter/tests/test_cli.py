@@ -9,6 +9,7 @@ import tempfile
 
 import click
 from click.testing import CliRunner
+import numpy as np
 import pandas as pd
 import pytest
 import requests
@@ -326,6 +327,47 @@ def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
         assert res.exit_code == 0
         with open(outfile, 'rb') as f:
             assert f.read(4) == b'%PDF'
+
+
+def test_report_probabilistic(
+        cli_token, mocker, cdf_and_cv_report_objects, cdf_and_cv_report_data):
+    report, *_ = cdf_and_cv_report_objects
+
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report.replace(status=''))
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value=cdf_and_cv_report_data)
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + '/test_out.html'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', infile, outfile])
+        import shutil; shutil.rmtree('testoutput', ignore_errors=True); shutil.copytree(tmpdir, 'testoutput')
+    assert res.exit_code == 0
+
+
+def test_report_probabilistic_xy(
+        cli_token, mocker, cdf_and_cv_report_objects_xy,
+        cdf_and_cv_report_data_xy):
+    report, *_ = cdf_and_cv_report_objects_xy
+
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report.replace(status=''))
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value=cdf_and_cv_report_data_xy)
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + '/test_out.html'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', infile, outfile])
+        import shutil; shutil.rmtree('testoutput', ignore_errors=True); shutil.copytree(tmpdir, 'testoutput')
+    assert res.exit_code == 0
 
 
 @pytest.mark.parametrize('format_,res_code,suffix,called', [
