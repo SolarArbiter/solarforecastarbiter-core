@@ -112,6 +112,19 @@ Reports:
    datamodel.Report
 
 
+Cost:
+
+.. autosummary::
+   :toctree: generated/
+
+   datamodel.ConstantCost
+   datamodel.TimeOfDayCost
+   datamodel.DatetimeCost
+   datamodel.CostBand
+   datamodel.ErrorBandCost
+   datamodel.Cost
+
+
 All :py:mod:`~solarforecastarbiter.datamodel` objects have ``from_dict`` and
 ``to_dict`` methods:
 
@@ -297,6 +310,14 @@ NREL PVDAQ
    io.fetch.pvdaq.get_pvdaq_metadata
    io.fetch.pvdaq.get_pvdaq_data
 
+EIA
+---
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.eia.get_eia_data
+
 
 Reference observations
 ======================
@@ -322,6 +343,7 @@ files with site and observation metadata.
    io.reference_observations.surfrad
    io.reference_observations.arm
    io.reference_observations.pvdaq
+   io.reference_observations.eia
 
 SFA API
 =======
@@ -513,6 +535,17 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
 
+Functions to compute costs:
+
+.. autosummary::
+   :toctree: generated/
+
+   metrics.deterministic.constant_cost
+   metrics.deterministic.time_of_day_cost
+   metrics.deterministic.datetime_cost
+   metrics.deterministic.error_band_cost
+   metrics.deterministic.cost
+
 Functions to compute errors and deadbands:
 
 .. autosummary::
@@ -554,15 +587,6 @@ Functions to compute deterministic event forecast performance metrics:
     metrics.event.event_bias
     metrics.event.event_accuracy
 
-Value
------
-
-Functions to compute forecast valuation metrics:
-
-.. autosummary::
-    :toctree: generated/
-
-    metrics.valuation.fixed_error_cost
 
 Reports
 =======
@@ -680,9 +704,6 @@ Perform a sequence of validation steps. Used by the API to initiate validation.
    validation.tasks.validate_daily_dc_power
    validation.tasks.validate_daily_ac_power
    validation.tasks.validate_daily_defaults
-   validation.tasks.immediate_observation_validation
-   validation.tasks.daily_single_observation_validation
-   validation.tasks.daily_observation_validation
    validation.tasks.apply_immediate_validation
    validation.tasks.apply_daily_validation
    validation.tasks.apply_validation

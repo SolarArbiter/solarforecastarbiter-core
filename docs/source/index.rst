@@ -18,6 +18,7 @@ for more information about the Solar Forecast Arbiter project.
    contributing
    reference-observations
    reference-forecasts
+   cost
    api
    cli
    whatsnew/index
