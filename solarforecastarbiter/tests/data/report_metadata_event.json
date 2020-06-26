@@ -1,25 +1,26 @@
 {
-    "report_parameters": {
-        "name": "Weather Station Event Report",
-        "start": "2019-04-14T00:00:00Z",
-        "end": "2019-04-17T00:00:00Z",
-        "metrics": [
-            "pod",
-            "far",
-            "pofd",
-            "csi",
-            "ebias",
-            "ea"
-        ],
-        "categories": [
-            "total",
-            "date"
-        ],
-        "object_pairs": [
-            {
-                "observation": "991d15ce-7f66-11ea-96ae-0242ac150002",
-                "forecast": "24cbae4e-7ea6-11ea-86b1-0242ac150002"
-            }
-      ]
-    }
+  "report_parameters": {
+    "name": "Weather Station Event Report",
+    "start": "2019-04-14T00:00:00Z",
+    "end": "2019-04-17T00:00:00Z",
+    "missing_forecast": "forward",
+    "metrics": [
+      "pod",
+      "far",
+      "pofd",
+      "csi",
+      "ebias",
+      "ea"
+    ],
+    "categories": [
+      "total",
+      "date"
+    ],
+    "object_pairs": [
+      {
+        "observation": "991d15ce-7f66-11ea-96ae-0242ac150002",
+        "forecast": "24cbae4e-7ea6-11ea-86b1-0242ac150002"
+      }
+    ]
+  }
 }
