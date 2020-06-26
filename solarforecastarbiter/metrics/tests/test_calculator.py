@@ -28,7 +28,7 @@ EVENT_METRICS = list(event._MAP.keys())
 
 
 @pytest.fixture()
-def create_processed_fxobs(create_dt_index):
+def create_processed_fxobs(create_dt_index, banded_cost_params):
     def _create_processed_fxobs(fxobs, fx_values, obs_values,
                                 ref_values=None,
                                 interval_label=None):
@@ -59,7 +59,8 @@ def create_processed_fxobs(create_dt_index):
             observation_values=conv_obs_values,
             reference_forecast_values=ref_values,
             normalization_factor=fxobs.normalization,
-            uncertainty=fxobs.uncertainty
+            uncertainty=fxobs.uncertainty,
+            cost=banded_cost_params
             )
 
     return _create_processed_fxobs
@@ -195,6 +196,22 @@ def test_calculate_metrics_single_uncert(single_forecast_observation_uncert,
     expected_values = {None: (0.9 + 0.0005)/3, 100.: 0., 0.1: 0.3}
     expected = expected_values[single_forecast_observation_uncert.uncertainty]
     assert result[0].values[0].value == expected
+
+
+def test_calculate_metrics_explicit_cost(single_forecast_observation_uncert,
+                                         create_processed_fxobs,
+                                         constant_cost):
+    inp = [create_processed_fxobs(single_forecast_observation_uncert,
+                                  np.array([1.9, 1, 1.0005]),
+                                  np.array([1, 1, 1]))]
+    result = calculator.calculate_metrics(inp, ['total'], ['cost'])
+    assert isinstance(result, list)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
+    expected_values = {None: (0.9 + 5e-4), 100.: 0., 0.1: 0.3 * 3}
+    expected = expected_values[single_forecast_observation_uncert.uncertainty]
+    # float precision issues
+    assert abs(result[0].values[0].value - expected) < 1e-8
 
 
 def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
@@ -410,6 +427,19 @@ def test_calculate_deterministic_metrics_no_metrics(
         calculator.calculate_deterministic_metrics(
             proc_fx_obs, LIST_OF_CATEGORIES, []
         )
+
+
+def test_calculate_deterministic_metrics_no_cost_param(
+        create_processed_fxobs, single_forecast_observation):
+    proc_fx_obs = create_processed_fxobs(single_forecast_observation,
+                                         np.array([1]), np.array([1])).replace(
+                                             cost=None)
+
+    out = calculator.calculate_deterministic_metrics(
+            proc_fx_obs, LIST_OF_CATEGORIES, ['cost']
+    )
+    for o in out.values:
+        assert np.isnan(o.value)
 
 
 @pytest.mark.parametrize('fx_vals,obs_vals', [
