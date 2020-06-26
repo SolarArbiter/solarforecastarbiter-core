@@ -210,6 +210,12 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     index : bool, default False
         If False, use persistence of observed value. If True, use
         persistence of clear sky or AC power index.
+    load_data : function
+        Function to load the observation data 'value' series given
+        (observation, data_start, data_end) arguments. Typically,
+        calls `session.get_observation_values` and selects the 'value'
+        column. May also have data preloaded to then slice from
+        data_start to data_end.
 
     Returns
     -------
@@ -612,6 +618,10 @@ def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time,
 
 
 def _preload_load_data(session, obs, data_start, data_end):
+    """Fetch all the data required at once and slice as appropriate.
+    Much more efficient when generating many persistence forecasts from
+    the same observation.
+    """
     obs_data = session.get_observation_values(
         obs.observation_id, data_start, data_end
     ).tz_convert(obs.site.timezone)['value']
@@ -694,6 +704,7 @@ def make_latest_probabilistic_persistence_forecasts(
             except ValueError as e:
                 logger.error('Unable to generate persistence forecast: %s', e)
             else:
+                # api requires a post per constant value
                 cv_ids = [f.forecast_id for f in fx.constant_values]
                 for id_, fx_ser in zip(cv_ids, fx_list):
                     out[id_].append(fx_ser)
