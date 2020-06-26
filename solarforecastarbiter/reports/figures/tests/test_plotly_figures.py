@@ -318,6 +318,9 @@ meta_df_data = [
         'interval_label': 'beginning',
         'interval_length': np.timedelta64(1, 'm'),
         'observation_color': '#abc',
+        'forecast_type': None,
+        'axis': None,
+        'constant_value': None
     }, {
         'pair_index': 1,
         'observation_name': 'obs two',
@@ -327,6 +330,9 @@ meta_df_data = [
         'interval_label': 'beginning',
         'interval_length': np.timedelta64(5, 'm'),
         'observation_color': '#ccc',
+        'forecast_type': None,
+        'axis': None,
+        'constant_value': None
     },
 ]
 
