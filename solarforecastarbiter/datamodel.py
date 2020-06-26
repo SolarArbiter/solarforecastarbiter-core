@@ -1592,7 +1592,7 @@ class ReportParameters(BaseModel):
     object_pairs: Tuple[Union[ForecastObservation, ForecastAggregate], ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
-    missing_forecast : str = 'forward'
+    missing_forecast : str = 'drop'
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
 
