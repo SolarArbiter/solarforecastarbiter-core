@@ -191,6 +191,7 @@ def _html_to_tex(value):
              .replace('</li>', '\n')
              .replace('</a>', '')
              .replace('<=', '\\leq')
+             .replace("%", "\\%")
              )
     value = re.sub('\\<a.*\\>', '', value)
     return value

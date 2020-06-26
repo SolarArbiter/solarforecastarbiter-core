@@ -115,7 +115,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name | replace("<=", "$\leq$") | replace("%", "\%")} &
+    \VAR{pfxobs.name | html_to_tex} &
     \VAR{pfxobs.interval_label} &
     \VAR{pfxobs.interval_length.total_seconds()//60 | int} min &
     %- if pfxobs.original.observation is defined
@@ -199,7 +199,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
-    \VAR{pfxobs.name | replace("<=", "$\leq$") | replace("%", "\%")} & \VAR{pfxobs.original.data_object.name}
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
     %- for res in pfxobs.validation_results
     %- for qfilter in quality_filters
     %- if res.flag == qfilter
@@ -257,7 +257,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
-    \VAR{pfxobs.name | replace("<=", "$\leq$") | replace("%", "\%")}
+    \VAR{pfxobs.name | html_to_tex}
     %- for pstep in preproc_steps
     %- for res in pfxobs.preprocessing_results
     %- if res.name == pstep
