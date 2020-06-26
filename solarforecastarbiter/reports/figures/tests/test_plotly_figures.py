@@ -20,6 +20,13 @@ def report_with_raw(report_dict, raw_report):
 
 
 @pytest.fixture
+def report_with_raw_xy(report_dict, raw_report_xy):
+    report_dict['raw_report'] = raw_report_xy(True)
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture
 def raw_report_pfxobs_values(raw_report):
     # Useful for testing the valid types for a ProcessedForecastObservation's
     # values fields which can be either pd.Series, str or None
@@ -393,3 +400,11 @@ def test_timeseries_plots(report_with_raw):
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
     assert ts_prob_spec is None
+
+
+def test_timeseries_plots_xy(report_with_raw_xy):
+    ts_spec, scatter_spec, ts_prob_spec = figures.timeseries_plots(
+        report_with_raw_xy)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert isinstance(ts_prob_spec, str)

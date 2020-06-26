@@ -2157,7 +2157,7 @@ def cdf_and_cv_report_objects_xy(aggregate, ref_forecast_id):
     pfxobs1 = datamodel.ForecastObservation(
         pfx1,
         obs,
-        normalization=1000,
+        normalization=1000.,
         uncertainty=15.,
         reference_forecast=pfx_ref
     )
@@ -2175,7 +2175,7 @@ def cdf_and_cv_report_objects_xy(aggregate, ref_forecast_id):
     pfxcvobs0_2 = datamodel.ForecastObservation(
         cv0_1,
         obs,
-        normalization=1000,
+        normalization=1000.,
         reference_forecast=cv0_3.replace(forecast_id=ref_forecast_id)
     )
     pfxcvagg1_3 = datamodel.ForecastAggregate(
@@ -2679,6 +2679,164 @@ def pending_report(report_dict):
     report_dict['status'] = 'pending'
     report_dict['raw_report'] = None
     return datamodel.Report.from_dict(report_dict)
+
+
+@pytest.fixture()
+def raw_report_xy(
+        cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        report_metrics, preprocessing_result_types,
+        ref_forecast_id, fail_pdf, constant_cost):
+    (
+        report, observation,
+        cdf_forecast_0,  # axis = y
+        cdf_forecast_1,  # x
+        cv_forecast_0,   # y
+        cv_forecast_1,   # y
+        aggregate,
+        cdf_forecast_agg,  # x
+        cv_forecast_agg    # x
+        ) = cdf_and_cv_report_objects_xy
+
+    data = cdf_and_cv_report_data_xy
+
+    obs_values = data[observation]['value'].resample('1h').mean()
+    agg_values = data[aggregate]['value'].resample('1h').mean()
+
+    def gen(with_series):
+        valid_point_count = len(data[observation])
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
+        qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
+        proc_cdf_forecast_0 = datamodel.ProcessedForecastObservation(
+            cdf_forecast_0.name,
+            report.report_parameters.object_pairs[0],
+            cdf_forecast_0.interval_value_type,
+            cdf_forecast_0.interval_length,
+            cdf_forecast_0.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_0] if with_series else cdf_forecast_0.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=observation.uncertainty,
+            cost=cost
+        )
+        proc_cdf_forecast_1 = datamodel.ProcessedForecastObservation(
+            cdf_forecast_1.name,
+            report.report_parameters.object_pairs[1],
+            cdf_forecast_1.interval_value_type,
+            cdf_forecast_1.interval_length,
+            cdf_forecast_1.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_1] if with_series else cdf_forecast_1.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=15.,
+            normalization_factor=1000.,
+            cost=cost
+        )
+        proc_cv_forecast_0 = datamodel.ProcessedForecastObservation(
+            cv_forecast_0.name,
+            report.report_parameters.object_pairs[2],
+            cv_forecast_0.interval_value_type,
+            cv_forecast_0.interval_length,
+            cv_forecast_0.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_0] if with_series else cv_forecast_0.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=observation.uncertainty,
+            cost=cost
+        )
+        proc_cv_forecast_1 = datamodel.ProcessedForecastObservation(
+            cv_forecast_1.name,
+            report.report_parameters.object_pairs[3],
+            cv_forecast_1.interval_value_type,
+            cv_forecast_1.interval_length,
+            cv_forecast_1.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_1] if with_series else cv_forecast_1.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            normalization_factor=1000.,
+            reference_forecast_values=data[cv_forecast_1] if with_series else cv_forecast_1.forecast_id,  # NOQA: E501
+            cost=cost
+        )
+        proc_cdf_forecast_agg = datamodel.ProcessedForecastObservation(
+            cdf_forecast_agg.name,
+            report.report_parameters.object_pairs[4],
+            cdf_forecast_agg.interval_value_type,
+            cdf_forecast_agg.interval_length,
+            cdf_forecast_agg.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_agg] if with_series else cdf_forecast_agg.forecast_id,  # NOQA: E501
+            observation_values=agg_values if with_series else observation.observation_id,  # NOQA: E501
+            cost=cost
+        )
+        proc_cv_forecast_agg = datamodel.ProcessedForecastObservation(
+            cv_forecast_agg.name,
+            report.report_parameters.object_pairs[5],
+            cv_forecast_agg.interval_value_type,
+            cv_forecast_agg.interval_length,
+            cv_forecast_agg.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_agg] if with_series else cv_forecast_agg.forecast_id,  # NOQA: E501
+            observation_values=agg_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=15.,
+            cost=cost
+        )
+        figs = datamodel.RawReportPlots(
+            (
+                datamodel.PlotlyReportFigure.from_dict(
+                    {
+                        'name': 'mae tucson ghi',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
+                        'pdf': fail_pdf,
+                        'figure_type': 'bar',
+                        'category': 'total',
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
+                    }
+                ),), '4.5.3',
+        )
+        raw = datamodel.RawReport(
+            generated_at=report.report_parameters.end,
+            versions=(),
+            timezone=observation.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(
+                proc_cdf_forecast_0, proc_cdf_forecast_1, proc_cv_forecast_0,
+                proc_cv_forecast_1, proc_cdf_forecast_agg, proc_cv_forecast_agg
+                ))
+        return raw
+    return gen
 
 
 @pytest.fixture()
