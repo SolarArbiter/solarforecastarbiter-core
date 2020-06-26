@@ -7,6 +7,7 @@ import base64
 import itertools
 import datetime as dt
 import json
+import shutil
 
 
 import numpy as np
@@ -21,6 +22,11 @@ from solarforecastarbiter.metrics import preprocessing
 
 
 OK = int(0b10)  # OK version 0 (2)
+
+
+mark_skip_pdflatex = pytest.mark.skipif(
+    shutil.which('pdflatex') is None,
+    reason='PDF reports require pdflatex')
 
 
 @pytest.fixture()

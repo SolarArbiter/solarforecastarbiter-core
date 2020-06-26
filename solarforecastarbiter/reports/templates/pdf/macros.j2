@@ -37,7 +37,7 @@
     Name & Normalization & Deadband(\%) \\
     \midrule
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} \\
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} \\
     %- endfor
   \end{tabu}
 \end{table}
@@ -67,7 +67,7 @@
     \bottomrule
     \endlastfoot
     %- for fx_result in report_metrics
-    \VAR{fx_result.name}
+    \VAR{fx_result.name | html_to_tex}
     %- for metric in metric_ordering
     %- for mval in fx_result.values
     %- if mval.category == category and mval.metric == metric

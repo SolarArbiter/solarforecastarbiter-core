@@ -917,6 +917,7 @@ def output_pdf(fig):
     try:
         pdf = base64.a85encode(fig.to_image(format='pdf')).decode('utf-8')
     except Exception:
+        breakpoint()
         try:
             name = fig.layout.title['text'][3:-4]
         except Exception:
