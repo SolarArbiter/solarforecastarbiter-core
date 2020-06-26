@@ -1728,6 +1728,25 @@ def report_objects(aggregate, ref_forecast_id):
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
 
+@pytest.fixture
+def report_data(report_objects):
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series(1., index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    ref_fx = \
+        report_objects[0].report_parameters.object_pairs[1].reference_forecast
+    data = {
+        report_objects[2]: data,
+        report_objects[3]: data,
+        ref_fx: data,
+        report_objects[1]: obs,
+        report_objects[4]: obs,
+        report_objects[5]: data}
+    return data
+
+
 @pytest.fixture()
 def event_report_objects():
     tz = 'America/Phoenix'
@@ -2268,6 +2287,17 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
         cv_forecast_ref: cdf_fx_x_df[500.]
     }
     return data
+
+
+@pytest.fixture(params=['deterministic', 'prob_xy'])
+def various_report_objects_data(
+        report_objects, report_data,
+        cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        request):
+    if request.param == 'deterministic':
+        return report_objects, report_data
+    elif request.param == 'prob_xy':
+        return cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy
 
 
 @pytest.fixture()
