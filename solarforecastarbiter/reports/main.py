@@ -264,7 +264,6 @@ def compute_report(access_token, report_id, base_url=None):
     raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
     session = APISession(access_token, base_url=base_url)
-    import pdb; pdb.set_trace()
     fail_wrapper = capture_report_failure(report_id, session)
     report = fail_wrapper(session.get_report, err_msg=(
         'Failed to retrieve report. Perhaps the report does not exist, '
