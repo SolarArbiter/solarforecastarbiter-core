@@ -1578,3 +1578,22 @@ def test_real_apisession_get_observation_values_not_flagged(real_session):
     assert isinstance(out, np.ndarray)
     assert out.dtype == 'datetime64[D]'
     assert all(out == np.array(['2019-04-15'], dtype='datetime64[D]'))
+
+
+@pytest.mark.parametrize('ftype,expected_fn', [
+    ('forecast', 'get_forecast'),
+    ('event_forecast', 'get_forecast'),
+    ('probabilistic_forecast', 'get_probabilistic_forecast'),
+    ('probabilistic_forecast_constant_value',
+     'get_probabilistic_forecast_constant_value'),
+])
+def test_api_session_forecast_get_by_type(ftype, expected_fn):
+    test_session = api.APISession('token')
+    get_fn = test_session._forecast_get_by_type(ftype)
+    assert get_fn == getattr(test_session, expected_fn)
+
+
+def test_api_session_forecast_get_by_type_invalid_type():
+    test_session = api.APISession('token')
+    with pytest.raises(ValueError):
+        test_session._forecast_get_by_type('bad_type')

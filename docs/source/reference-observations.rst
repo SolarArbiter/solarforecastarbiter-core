@@ -145,5 +145,10 @@ Available Network Handlers
 
    :py:mod:`solarforecastarbiter.io.reference_observations.pvdaq`
 
+* EIA: U.S. Energy Information Adminstration Open Data\*
+  https://www.eia.gov/opendata/
+
+  :py:mod:`solarforecastarbiter.io.reference_observations.eia`
+
 \* Requesting data from these networks requires a valid api key for their
 associated api.

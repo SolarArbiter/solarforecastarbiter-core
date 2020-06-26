@@ -38,7 +38,8 @@ from solarforecastarbiter.io.reference_observations import (
     rtc,
     common,
     arm,
-    pvdaq
+    pvdaq,
+    eia
 )
 
 
@@ -51,12 +52,13 @@ NETWORKHANDLER_MAP = {
     'NREL MIDC': midc,
     'DOE RTC': rtc,
     'DOE ARM': arm,
-    'NREL PVDAQ': pvdaq
+    'NREL PVDAQ': pvdaq,
+    'EIA': eia,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ']
+                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ', 'EIA']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -94,6 +96,9 @@ https://www.arm.gov/
 
 NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition
 https://developer.nrel.gov/docs/solar/pvdaq-v3/
+
+EIA: U.S. Energy Information Administration Open Data
+https://www.eia.gov/opendata/
 """  # noqa: E501
 
 
