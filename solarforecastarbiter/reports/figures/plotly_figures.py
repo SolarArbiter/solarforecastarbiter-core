@@ -343,7 +343,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         # currently no need for a separate axis == x treatment either, so
         # removed an if statement on the axis.
         plot_kwargs = line_or_step_plotly(
-            metadata['interval_label'], metadata['forecast_type'])
+            metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],

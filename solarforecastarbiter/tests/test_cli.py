@@ -3,7 +3,6 @@ from functools import partial
 import logging
 from pathlib import Path
 import re
-import shutil
 import tempfile
 
 
