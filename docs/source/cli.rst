@@ -18,9 +18,8 @@ The supported tasks include:
 .. autosummary::
    :toctree: generated
 
-   dailyvalidation
+   validate
    referencedata
    fetchnwp
    referencenwp
    report
-

@@ -95,6 +95,9 @@ def _apply_deterministic_metric_func(metric, fx, obs, **kwargs):
         _kw['error_fnc'] = partial(
             deterministic.error_deadband, deadband=deadband_frac)
 
+    if metric == 'cost':
+        _kw['cost_params'] = kwargs['cost_params']
+
     # ref is an arg, but seems cleaner to handle as a kwarg here
     if metric in deterministic._REQ_REF_FX:
         _kw['ref'] = kwargs['ref_fx']
@@ -190,6 +193,8 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     # get uncertainty.
     deadband = processed_fx_obs.uncertainty
 
+    cost_params = processed_fx_obs.cost
+
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin
     if processed_fx_obs.interval_label == "ending":
@@ -214,7 +219,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
                 res = _apply_deterministic_metric_func(
                     metric_, group.forecast, group.observation,
                     ref_fx=group.reference, normalization=normalization,
-                    deadband=deadband)
+                    deadband=deadband, cost_params=cost_params)
 
                 # Change category label of the group from numbers
                 # to e.g. January or Monday

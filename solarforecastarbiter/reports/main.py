@@ -179,7 +179,7 @@ def create_raw_report_from_data(report, data):
         # Validate and resample
         processed_fxobs = preprocessing.process_forecast_observations(
             report_params.object_pairs, report_params.filters, data,
-            timezone)
+            timezone, costs=report_params.costs)
 
         # Calculate metrics, list of MetricResult
         metrics_list = calculator.calculate_metrics(
