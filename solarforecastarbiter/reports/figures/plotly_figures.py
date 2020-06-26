@@ -420,11 +420,6 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
                      fixedrange=True)
     fig.update_layout(
         legend=dict(font=dict(size=10)),
-        barmode='group',
-        bargap=0.,  # gap between bars of adjacent location coordinates.
-        bargroupgap=0.,  # gap between bars of the same location coordinate.
-        coloraxis_colorbar=dict(
-            yanchor="top", y=1, x=1.2, ticks="outside")
     )
     return fig
 
