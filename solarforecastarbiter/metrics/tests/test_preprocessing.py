@@ -876,7 +876,78 @@ def test_apply_fill(method):
         assert count == i_rand.sum()
 
 
-def test_apply_unsupported():
+@pytest.mark.parametrize("method,exp,exp_count", [
+    ('drop',
+     pd.Series([1], index=pd.date_range(start='2020-01-01T02:00',
+                                        periods=1,
+                                        freq='2h',
+                                        name='timestamp'),
+               dtype=np.float64),
+     0),
+    ('forward',
+     pd.Series([0, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
+                                                 periods=4,
+                                                 freq='2h',
+                                                 name='timestamp'),
+               dtype=np.float64),
+     3),
+    ('1',
+     pd.Series([1, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
+                                                 periods=4,
+                                                 freq='2h',
+                                                 name='timestamp'),
+               dtype=np.float64),
+     3),
+])
+def test_apply_fill_one_value(method, exp, exp_count):
+    # Single value
+    start = pd.to_datetime('2020-01-01T00:00')
+    end = pd.to_datetime('2020-01-01T6:00')
+    data = pd.Series([1], index=pd.date_range(start='2020-01-01T02:00',
+                                              periods=1,
+                                              freq='2h',
+                                              name='timestamp'),
+                     dtype=np.float64)
+    result, count = preprocessing.apply_fill(data, method,
+                                             start=start, end=end)
+    pd.testing.assert_series_equal(result, exp)
+    assert count == exp_count
+
+
+@pytest.mark.parametrize("method,exp,exp_count", [
+    ('drop',
+     pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
+               dtype=np.float64),
+     0),
+    ('forward',
+     pd.Series([0, 0], index=pd.date_range(start='2020-01-01T00:00',
+                                           periods=2,
+                                           freq='6h',
+                                           name='timestamp'),
+               dtype=np.float64),
+     2),
+    ('1',
+     pd.Series([1, 1], index=pd.date_range(start='2020-01-01T00:00',
+                                           periods=2,
+                                           freq='6h',
+                                           name='timestamp'),
+               dtype=np.float64),
+     2),
+])
+def test_apply_fill_no_values(method, exp, exp_count):
+    # Single value
+    start = pd.to_datetime('2020-01-01T00:00')
+    end = pd.to_datetime('2020-01-01T06:00')
+    # No values
+    data = pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
+                     dtype=np.float64)
+    result, count = preprocessing.apply_fill(data, method,
+                                             start=start, end=end)
+    pd.testing.assert_series_equal(result, exp)
+    assert count == exp_count
+
+
+def test_apply_fill_unsupported():
     n = 10
     dt_range = pd.date_range(start='2020-01-01T00:00',
                              periods=n,

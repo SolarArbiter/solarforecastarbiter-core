@@ -95,8 +95,12 @@ def apply_fill(fx_data, missing_forecast, start, end):
     # Create full datetime range at resolution
     if len(fx_data) > 2:
         data_res = pd.infer_freq(fx_data.index)
+    elif len(fx_data) == 2:
+        data_res = fx_data.index[1] - fx_data.index[0]
+    elif len(fx_data) == 1:
+        data_res = min(fx_data.index[0] - start, end - fx_data.index[0])
     else:
-        data_res = fx_data.index[1]-fx_data.index[0]
+        data_res = end - start
     full_dt_index = pd.date_range(start=start, end=end, freq=data_res,
                                   name=fx_data.index.name)
 
@@ -468,8 +472,8 @@ def process_forecast_observations(forecast_observations, filters,
             'Only filtering on Quality Flag is currently implemented')
     forecast_fill_map = FORECAST_FILL_STRING_MAP.copy()
     if missing_forecast not in forecast_fill_map.keys():
-        forecast_fill_map.update({missing_forecast:
-            FORECAST_FILL_CONST_STRING.format(missing_forecast)})
+        forecast_fill_map.update(
+            {missing_forecast: FORECAST_FILL_CONST_STRING.format(missing_forecast)})  # NOQA
     qfilter = _merge_quality_filters(filters)
     validated_observations = {}
     processed_fxobs = {}
