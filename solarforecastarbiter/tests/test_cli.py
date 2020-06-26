@@ -3,7 +3,6 @@ from functools import partial
 import logging
 from pathlib import Path
 import re
-import shutil
 import tempfile
 
 
@@ -15,6 +14,8 @@ import requests
 
 
 from solarforecastarbiter import cli, __version__
+
+from solarforecastarbiter.conftest import mark_skip_pdflatex
 
 
 @pytest.fixture()
@@ -296,9 +297,8 @@ def test_report_roundtrip(cli_token, mocker, report_objects, requests_mock):
         assert res.exit_code == 0
 
 
+@mark_skip_pdflatex
 def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
-    if shutil.which('pdflatex') is None:
-        pytest.skip('PDF reports require pdflatex')
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report_objects[0].replace(status=''))
     index = pd.date_range(
@@ -326,6 +326,54 @@ def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
         assert res.exit_code == 0
         with open(outfile, 'rb') as f:
             assert f.read(4) == b'%PDF'
+
+
+@pytest.mark.parametrize('outfmt', [
+    'html',
+    pytest.param('pdf', marks=mark_skip_pdflatex)
+])
+def test_report_probabilistic(
+        cli_token, mocker, cdf_and_cv_report_objects, cdf_and_cv_report_data,
+        outfmt):
+    report, *_ = cdf_and_cv_report_objects
+
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report.replace(status=''))
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value=cdf_and_cv_report_data)
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + f'/test_out.{outfmt}'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', infile, outfile])
+    assert res.exit_code == 0
+
+
+@pytest.mark.parametrize('outfmt', [
+    'html',
+    pytest.param('pdf', marks=mark_skip_pdflatex)
+])
+def test_report_probabilistic_xy(
+        cli_token, mocker, cdf_and_cv_report_objects_xy,
+        cdf_and_cv_report_data_xy, outfmt):
+    report, *_ = cdf_and_cv_report_objects_xy
+
+    mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
+                 return_value=report.replace(status=''))
+    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+                 return_value=cdf_and_cv_report_data_xy)
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        infile = tmpdir + '/report.json'
+        with open(infile, 'w') as f:
+            f.write('{}')
+        outfile = tmpdir + f'/test_out.{outfmt}'
+        res = runner.invoke(cli.report,
+                            ['-u user', '-p pass', infile, outfile])
+    assert res.exit_code == 0
 
 
 @pytest.mark.parametrize('format_,res_code,suffix,called', [

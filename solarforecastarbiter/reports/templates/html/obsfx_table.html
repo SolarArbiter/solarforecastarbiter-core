@@ -1,4 +1,5 @@
 {% include "obsfx_table_text" %}
+{% import "macros.j2" as macros with context %}
 <table class="table table-striped table-borderless obsfx-table" style="width:100%; ">
   <caption style="caption-side: top; text-align: center;">
     Table of data alignment parameters
@@ -57,7 +58,7 @@
         {{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min
       </td>
       <td>
-        <a href="{{ dash_url }}/forecasts/single/{{ pfxobs.original.forecast.forecast_id }}">
+        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.forecast) }}">
           {{ pfxobs.original.forecast.name }}
          </a>
       </td>
@@ -68,7 +69,7 @@
       </td>
       <td>
         {% if pfxobs.original.reference_forecast != none %}
-        <a href="{{ dash_url }}/forecasts/single/{{ pfxobs.original.reference_forecast.forecast_id }}">
+        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.reference_forecast.forecast_id) }}">
           {{ pfxobs.original.reference_forecast.name if pfxobs.original.reference_forecast != none else 'None' }}
         </a>
         {% else %}

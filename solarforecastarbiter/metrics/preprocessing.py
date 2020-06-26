@@ -434,7 +434,7 @@ def process_forecast_observations(forecast_observations, filters, data,
             logger.info('Processed data successfully for pair (%s, %s)',
                         fxobs.forecast.name, fxobs.data_object.name)
             name = _name_pfxobs(processed_fxobs.keys(),
-                                fxobs.forecast.name)
+                                fxobs.forecast)
             cost_name = fxobs.cost
             cost = costs_dict.get(cost_name)
             if cost_name is not None and cost is None:
@@ -461,7 +461,17 @@ def process_forecast_observations(forecast_observations, filters, data,
     return tuple(processed_fxobs.values())
 
 
-def _name_pfxobs(current_names, forecast_name, i=1):
+def _name_pfxobs(current_names, forecast, i=1):
+    if isinstance(forecast, str):
+        forecast_name = forecast
+    else:
+        forecast_name = forecast.name
+        if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
+            if forecast.axis == 'x':
+                forecast_name += \
+                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+            else:
+                forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
     if i > 99:
         logger.warning(
             'Limit of unique names for identically named forecasts reached.'

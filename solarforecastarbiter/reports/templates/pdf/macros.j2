@@ -37,7 +37,7 @@
     Name & Normalization & Deadband(\%) \\
     \midrule
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} \\
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} \\
     %- endfor
   \end{tabu}
 \end{table}
@@ -67,7 +67,7 @@
     \bottomrule
     \endlastfoot
     %- for fx_result in report_metrics
-    \VAR{fx_result.name}
+    \VAR{fx_result.name | html_to_tex}
     %- for metric in metric_ordering
     %- for mval in fx_result.values
     %- if mval.category == category and mval.metric == metric
@@ -115,7 +115,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name} &
+    \VAR{pfxobs.name | html_to_tex} &
     \VAR{pfxobs.interval_label} &
     \VAR{pfxobs.interval_length.total_seconds()//60 | int} min &
     %- if pfxobs.original.observation is defined
@@ -125,11 +125,23 @@
     %- endif
     \VAR{pfxobs.original.data_object.interval_label} &
     \VAR{pfxobs.original.data_object.interval_length.total_seconds()//60 | int} min &
+    %- if pfxobs.original.forecast.constant_values is defined
+    \href{\VAR{dash_url + '/forecasts/cdf/' + pfxobs.original.forecast.forecast_id}}{\VAR{pfxobs.original.forecast.name}} &
+    %- elif pfxobs.original.forecast.constant_value is defined
+    \href{\VAR{dash_url + '/forecasts/cdf/single/' + pfxobs.original.forecast.forecast_id}}{\VAR{pfxobs.original.forecast.name}} &
+    %- else
     \href{\VAR{dash_url + '/forecasts/single/' + pfxobs.original.forecast.forecast_id}}{\VAR{pfxobs.original.forecast.name}} &
+    %- endif
     \VAR{pfxobs.original.forecast.interval_label} &
     \VAR{pfxobs.original.forecast.interval_length.total_seconds()//60 | int} min &
     %- if pfxobs.original.reference_forecast != none
+    %- if pfxobs.original.reference_forecast.constant_values is defined
+    \href{\VAR{dash_url + '/forecasts/cdf/' + pfxobs.original.reference_forecast.forecast_id}}{\VAR{pfxobs.original.reference_forecast.name}} &
+    %- elif pfxobs.original.forecast.constant_value is defined
+    \href{\VAR{dash_url + '/forecasts/cdf/single/' + pfxobs.original.reference_forecast.forecast_id}}{\VAR{pfxobs.original.reference_forecast.name}} &
+    %- else
     \href{\VAR{dash_url + '/forecasts/single/' + pfxobs.original.reference_forecast.forecast_id}}{\VAR{pfxobs.original.reference_forecast.name}} &
+    %- endif
     \VAR{pfxobs.original.reference_forecast.interval_label} &
     \VAR{pfxobs.original.reference_forecast.interval_length.total_seconds()//60 | int} min
     %- else
@@ -187,7 +199,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
-    \VAR{pfxobs.name} & \VAR{pfxobs.original.data_object.name}
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
     %- for res in pfxobs.validation_results
     %- for qfilter in quality_filters
     %- if res.flag == qfilter
@@ -245,7 +257,7 @@
     \bottomrule
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
-    \VAR{pfxobs.name}
+    \VAR{pfxobs.name | html_to_tex}
     %- for pstep in preproc_steps
     %- for res in pfxobs.preprocessing_results
     %- if res.name == pstep

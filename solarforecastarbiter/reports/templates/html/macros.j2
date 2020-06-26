@@ -1,3 +1,13 @@
+{% macro forecast_route(forecast) %}
+{% if forecast.constant_values is defined %}
+forecasts/cdf/{{ forecast.forecast_id }}
+{% elif forecast.constant_value is defined %}
+forecasts/cdf/single/{{ forecast.forecast_id }}
+{% else %}
+forecasts/single/{{ forecast.forecast_id }}
+{% endif %}
+{% endmacro %}
+
 {% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
 <table class="table table-striped metric-table-fx-vert" style="width:100%;">
   <caption style="caption-side:top; text-align:center">

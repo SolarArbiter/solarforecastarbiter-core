@@ -51,7 +51,7 @@ with the reports or to create a new issue.
 
 \begin{itemize}
   %- for mesg in report.raw_report.messages
-  \item \VAR{mesg.message}
+  \item \VAR{mesg.message | html_to_tex}
   %- endfor
 \end{itemize}
 %- endif
@@ -110,8 +110,8 @@ available \href{\VAR{report_url}}{here}.
 %- endif
 \begin{figure}[H]
   \centering
-  \includegraphics[height=0.40\textheight]{\VAR{plot_id}}
-  \caption{\VAR{caption}}
+  \includegraphics[height=0.40\textheight]{\VAR{plot_id | replace('<=', 'lte') | replace('%', 'pct') | replace('/', '-') | replace('.', '') | replace('pdf', '.pdf')}}
+  \caption{\VAR{caption | html_to_tex}}
 \end{figure}
 %- endif
 %- endfor

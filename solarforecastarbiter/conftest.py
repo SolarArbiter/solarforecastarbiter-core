@@ -7,6 +7,7 @@ import base64
 import itertools
 import datetime as dt
 import json
+import shutil
 
 
 import numpy as np
@@ -18,6 +19,14 @@ import pytest
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
+
+
+OK = int(0b10)  # OK version 0 (2)
+
+
+mark_skip_pdflatex = pytest.mark.skipif(
+    shutil.which('pdflatex') is None,
+    reason='PDF reports require pdflatex')
 
 
 @pytest.fixture()
@@ -1978,6 +1987,290 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
 
 
 @pytest.fixture()
+def cdf_and_cv_report_data(cdf_and_cv_report_objects):
+    report, observation, cdf_forecast_0, cdf_forecast_1, \
+        cv_forecast_0, cv_forecast_1, aggregate, cdf_forecast_agg, \
+        cv_forecast_agg = cdf_and_cv_report_objects
+    cdf_forecast_ref = report.report_parameters.object_pairs[1].reference_forecast  # NOQA
+    cv_forecast_ref = report.report_parameters.object_pairs[3].reference_forecast  # NOQA
+    periods_1min = 60*24*7
+    obs_ser = pd.Series(np.arange(periods_1min)/60.,
+                        index=pd.date_range(start='2020-04-01T00:00:00',
+                                            periods=periods_1min,
+                                            freq='1min',
+                                            tz='MST',
+                                            name='timestamp'))
+    cdf_fx_df = pd.DataFrame({25.: np.arange(periods_1min/60),
+                              50.: np.arange(periods_1min/60)+1,
+                              75.: np.arange(periods_1min/60)+2},
+                             index=pd.date_range(start='2020-04-01T00:00:00',
+                                                 periods=periods_1min/60,
+                                                 freq='60min',
+                                                 tz='MST',
+                                                 name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = obs_df.resample('60T').asfreq()
+    agg_df['quality_flag'] = OK
+
+    data = {
+        observation: obs_df,
+        aggregate: agg_df,
+        cdf_forecast_0: cdf_fx_df,
+        cdf_forecast_1: cdf_fx_df,
+        cdf_forecast_agg: cdf_fx_df,
+        cdf_forecast_ref: cdf_fx_df,
+        cv_forecast_0: cdf_fx_df[25.],
+        cv_forecast_1: cdf_fx_df[50.],
+        cv_forecast_agg: cdf_fx_df[75.],
+        cv_forecast_ref: cdf_fx_df[50.]
+    }
+    return data
+
+
+@pytest.fixture()
+def cdf_and_cv_report_objects_xy(aggregate, ref_forecast_id):
+    tz = 'America/Denver'
+    start = pd.Timestamp('20200401T0000', tz=tz)
+    end = pd.Timestamp('20200407T2359', tz=tz)
+    site = datamodel.Site(
+        name="NOAA SOLRAD Albuquerque New Mexico",
+        latitude=35.03796,
+        longitude=-106.62211,
+        elevation=1617.0,
+        timezone="Etc/GMT+7",
+        site_id="c26ba076-7e49-11e9-bd90-0a580a8003e9",
+        provider="Reference",
+        extra_parameters=''
+    )
+    obs = datamodel.Observation(
+        name="Albuquerque New Mexico ghi",
+        variable="ghi",
+        interval_value_type="interval mean",
+        interval_length=pd.Timedelta("1min"),
+        interval_label="ending",
+        site=site,
+        uncertainty=1.0,
+        observation_id="c26ff506-7e49-11e9-beae-0a580a8003e9",
+        extra_parameters='',
+    )
+    cv0 = datamodel.ProbabilisticForecastConstantValue(
+        name="Day Ahead GEFS ghi",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="26a449ca-080b-11ea-aabd-0a580a8200e0",
+        axis='y',
+        constant_value=0.0,
+        extra_parameters='',
+    )
+    cv0_1 = cv0.replace(constant_value=25.0,
+                        forecast_id='26a6684c-080b-11ea-bab3-0a580a8200e0')
+    cv0_2 = cv0.replace(constant_value=50.0,
+                        forecast_id='26a82ba8-080b-11ea-a36b-0a580a8200e0')
+    cv0_3 = cv0.replace(constant_value=75.0,
+                        forecast_id='26a9e678-080b-11ea-8989-0a580a8200e0')
+    pfx0 = datamodel.ProbabilisticForecast(
+        name="Day Ahead GEFS ghi",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("1 days 00:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="269d757a-080b-11ea-8107-0a580a8200e0",
+        axis='y',
+        constant_values=(cv0_1, cv0_2, cv0_3),
+        extra_parameters='',
+    )
+    cv1 = datamodel.ProbabilisticForecastConstantValue(
+        name="Hour Ahead GEFS ghi (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="71ee6aff-7011-4610-bbae-2c9709ab1999",
+        constant_value=0.0,
+        axis='x',
+    )
+    cv1_1 = cv1.replace(constant_value=250.,
+                        forecast_id='71ee6aff-7011-4610-1111-2c9709ab1999')
+    cv1_2 = cv1.replace(constant_value=500.,
+                        forecast_id='71ee6aff-7011-4610-2222-2c9709ab1999')
+    cv1_3 = cv1.replace(constant_value=750.,
+                        forecast_id='71ee6aff-7011-4610-3333-2c9709ab1999')
+    pfx1 = datamodel.ProbabilisticForecast(
+        name="Hour Ahead GEFS ghi (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="26b514ec-080b-11ea-bbea-0a580a8200e0",
+        axis='x',
+        constant_values=(cv1_1, cv1_2, cv1_3),
+        extra_parameters='',
+    )
+    cvagg_1 = cv1.replace(constant_value=250.,
+                          forecast_id='1a6cc8c0-c433-432b-1111-31a1fac500d5')
+    cvagg_2 = cv1.replace(constant_value=500.,
+                          forecast_id='1a6cc8c0-c433-432b-2222-31a1fac500d5')
+    cvagg_3 = cv1.replace(constant_value=750.,
+                          forecast_id='1a6cc8c0-c433-432b-3333-31a1fac500d5')
+    pfx2 = datamodel.ProbabilisticForecast(
+        name="GHI Aggregate FX 60 (example only)",
+        issue_time_of_day=dt.time(7, 0),
+        lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
+        interval_length=pd.Timedelta("0 days 01:00:00"),
+        run_length=pd.Timedelta("0 days 01:00:00"),
+        interval_label="beginning",
+        interval_value_type="interval_mean",
+        variable="ghi",
+        site=site,
+        forecast_id="49220780-76ae-4b11-bef1-7a75bdc784e3",
+        axis='x',
+        constant_values=(cvagg_1, cvagg_2, cvagg_3),
+        extra_parameters='',
+    )
+
+    # CDFs
+    pfxobs0 = datamodel.ForecastObservation(
+        pfx0,
+        obs,
+        uncertainty=obs.uncertainty
+    )
+    pfx_ref = pfx1.replace(forecast_id=ref_forecast_id)
+    pfxobs1 = datamodel.ForecastObservation(
+        pfx1,
+        obs,
+        normalization=1000.,
+        uncertainty=15.,
+        reference_forecast=pfx_ref
+    )
+    pfx_agg = datamodel.ForecastAggregate(
+        pfx2,
+        aggregate
+    )
+
+    # single, constant values
+    pfxcvobs0_1 = datamodel.ForecastObservation(
+        cv0_1,
+        obs,
+        uncertainty=obs.uncertainty
+    )
+    pfxcvobs0_2 = datamodel.ForecastObservation(
+        cv0_1,
+        obs,
+        normalization=1000.,
+        reference_forecast=cv0_3.replace(forecast_id=ref_forecast_id)
+    )
+    pfxcvagg1_3 = datamodel.ForecastAggregate(
+        cv1_3,
+        aggregate,
+        uncertainty=15.,
+    )
+
+    quality_flag_filter = datamodel.QualityFlagFilter(
+        (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES"
+        )
+    )
+    timeofdayfilter = datamodel.TimeOfDayFilter((dt.time(6, 0),
+                                                 dt.time(8, 0)))
+    report_params = datamodel.ReportParameters(
+        name="Albuquerque GHI Forecast Analysis",
+        start=start,
+        end=end,
+        object_pairs=(pfxobs0, pfxobs1, pfxcvobs0_1, pfxcvobs0_2,
+                      pfx_agg, pfxcvagg1_3),
+        metrics=("crps", "bs", "bss", "unc"),
+        categories=("total", "date", "hour"),
+        filters=(quality_flag_filter, timeofdayfilter)
+    )
+    report = datamodel.Report(
+        report_id="1179f8c1-4d76-479c-a826-053d6b6e5116",
+        report_parameters=report_params
+    )
+    return report, obs, pfx0, pfx1, cv0_1, cv0_2, aggregate, pfx2, cv1_3
+
+
+@pytest.fixture
+def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
+    (
+        report, observation,
+        cdf_forecast_0,  # axis = y
+        cdf_forecast_1,  # x
+        cv_forecast_0,   # y
+        cv_forecast_1,   # y
+        aggregate,
+        cdf_forecast_agg,  # x
+        cv_forecast_agg    # x
+        ) = cdf_and_cv_report_objects_xy
+    cdf_forecast_ref = report.report_parameters.object_pairs[1].reference_forecast  # NOQA
+    cv_forecast_ref = report.report_parameters.object_pairs[3].reference_forecast  # NOQA
+    periods_1min = 60*24*7
+    obs_ser = pd.Series(np.arange(periods_1min)/60.,
+                        index=pd.date_range(start='2020-04-01T00:00:00',
+                                            periods=periods_1min,
+                                            freq='1min',
+                                            tz='MST',
+                                            name='timestamp'))
+    periods_1h = periods_1min / 60
+    hourly_index = pd.date_range(
+        start='2020-04-01T00:00:00',
+        periods=periods_1h,
+        freq='60min',
+        tz='MST',
+        name='timestamp')
+    cdf_fx_y_df = pd.DataFrame({
+        25.: np.arange(periods_1h),
+        50.: np.arange(periods_1h)+1,
+        75.: np.arange(periods_1h)+2},
+        index=hourly_index)
+    cdf_fx_x_df = pd.DataFrame({
+        250.: np.arange(periods_1h),
+        500.: np.arange(periods_1h)+1,
+        750.: np.arange(periods_1h)+2},
+        index=hourly_index)
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = obs_df.resample('60T').asfreq()
+    agg_df['quality_flag'] = OK
+
+    data = {
+        observation: obs_df,
+        aggregate: agg_df,
+        cdf_forecast_0: cdf_fx_y_df,
+        cdf_forecast_1: cdf_fx_x_df,
+        cdf_forecast_agg: cdf_fx_x_df,
+        cdf_forecast_ref: cdf_fx_x_df,
+        cv_forecast_0: cdf_fx_y_df[25.],
+        cv_forecast_1: cdf_fx_y_df[50.],
+        cv_forecast_agg: cdf_fx_x_df[750.],
+        cv_forecast_ref: cdf_fx_x_df[500.]
+    }
+    return data
+
+
+@pytest.fixture()
 def event_report_text():
     return b"""
     {"created_at": "2019-06-26T16:49:18+00:00",
@@ -2386,6 +2679,164 @@ def pending_report(report_dict):
     report_dict['status'] = 'pending'
     report_dict['raw_report'] = None
     return datamodel.Report.from_dict(report_dict)
+
+
+@pytest.fixture()
+def raw_report_xy(
+        cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        report_metrics, preprocessing_result_types,
+        ref_forecast_id, fail_pdf, constant_cost):
+    (
+        report, observation,
+        cdf_forecast_0,  # axis = y
+        cdf_forecast_1,  # x
+        cv_forecast_0,   # y
+        cv_forecast_1,   # y
+        aggregate,
+        cdf_forecast_agg,  # x
+        cv_forecast_agg    # x
+        ) = cdf_and_cv_report_objects_xy
+
+    data = cdf_and_cv_report_data_xy
+
+    obs_values = data[observation]['value'].resample('1h').mean()
+    agg_values = data[aggregate]['value'].resample('1h').mean()
+
+    def gen(with_series):
+        valid_point_count = len(data[observation])
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
+        qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
+        proc_cdf_forecast_0 = datamodel.ProcessedForecastObservation(
+            cdf_forecast_0.name,
+            report.report_parameters.object_pairs[0],
+            cdf_forecast_0.interval_value_type,
+            cdf_forecast_0.interval_length,
+            cdf_forecast_0.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_0] if with_series else cdf_forecast_0.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=observation.uncertainty,
+            cost=cost
+        )
+        proc_cdf_forecast_1 = datamodel.ProcessedForecastObservation(
+            cdf_forecast_1.name,
+            report.report_parameters.object_pairs[1],
+            cdf_forecast_1.interval_value_type,
+            cdf_forecast_1.interval_length,
+            cdf_forecast_1.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_1] if with_series else cdf_forecast_1.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=15.,
+            normalization_factor=1000.,
+            cost=cost
+        )
+        proc_cv_forecast_0 = datamodel.ProcessedForecastObservation(
+            cv_forecast_0.name,
+            report.report_parameters.object_pairs[2],
+            cv_forecast_0.interval_value_type,
+            cv_forecast_0.interval_length,
+            cv_forecast_0.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_0] if with_series else cv_forecast_0.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=observation.uncertainty,
+            cost=cost
+        )
+        proc_cv_forecast_1 = datamodel.ProcessedForecastObservation(
+            cv_forecast_1.name,
+            report.report_parameters.object_pairs[3],
+            cv_forecast_1.interval_value_type,
+            cv_forecast_1.interval_length,
+            cv_forecast_1.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_1] if with_series else cv_forecast_1.forecast_id,  # NOQA: E501
+            observation_values=obs_values if with_series else observation.observation_id,  # NOQA: E501
+            normalization_factor=1000.,
+            reference_forecast_values=data[cv_forecast_1] if with_series else cv_forecast_1.forecast_id,  # NOQA: E501
+            cost=cost
+        )
+        proc_cdf_forecast_agg = datamodel.ProcessedForecastObservation(
+            cdf_forecast_agg.name,
+            report.report_parameters.object_pairs[4],
+            cdf_forecast_agg.interval_value_type,
+            cdf_forecast_agg.interval_length,
+            cdf_forecast_agg.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cdf_forecast_agg] if with_series else cdf_forecast_agg.forecast_id,  # NOQA: E501
+            observation_values=agg_values if with_series else observation.observation_id,  # NOQA: E501
+            cost=cost
+        )
+        proc_cv_forecast_agg = datamodel.ProcessedForecastObservation(
+            cv_forecast_agg.name,
+            report.report_parameters.object_pairs[5],
+            cv_forecast_agg.interval_value_type,
+            cv_forecast_agg.interval_length,
+            cv_forecast_agg.interval_label,
+            valid_point_count=valid_point_count,
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=data[cv_forecast_agg] if with_series else cv_forecast_agg.forecast_id,  # NOQA: E501
+            observation_values=agg_values if with_series else observation.observation_id,  # NOQA: E501
+            uncertainty=15.,
+            cost=cost
+        )
+        figs = datamodel.RawReportPlots(
+            (
+                datamodel.PlotlyReportFigure.from_dict(
+                    {
+                        'name': 'mae tucson ghi',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
+                        'pdf': fail_pdf,
+                        'figure_type': 'bar',
+                        'category': 'total',
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
+                    }
+                ),), '4.5.3',
+        )
+        raw = datamodel.RawReport(
+            generated_at=report.report_parameters.end,
+            versions=(),
+            timezone=observation.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(
+                proc_cdf_forecast_0, proc_cdf_forecast_1, proc_cv_forecast_0,
+                proc_cv_forecast_1, proc_cdf_forecast_agg, proc_cv_forecast_agg
+                ))
+        return raw
+    return gen
 
 
 @pytest.fixture()
