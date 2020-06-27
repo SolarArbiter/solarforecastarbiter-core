@@ -366,7 +366,8 @@ def test_run_persistence_weekahead_olderrun(session, site_metadata, mocker):
     assert main.persistence.persistence_interval.call_count == 1
 
 
-def test_run_persistence_weekahead_not_midnight(session, site_metadata, mocker):
+def test_run_persistence_weekahead_not_midnight(
+        session, site_metadata, mocker):
     variable = 'net_load'
     observation = default_observation(
         site_metadata, variable=variable,
@@ -397,7 +398,8 @@ def test_run_persistence_weekahead_not_midnight(session, site_metadata, mocker):
     assert main.persistence.persistence_interval.call_count == 1
 
 
-def test_run_persistence_weekahead_early_runtime(session, site_metadata, mocker):
+def test_run_persistence_weekahead_early_runtime(
+        session, site_metadata, mocker):
     variable = 'net_load'
     observation = default_observation(
         site_metadata, variable=variable,
