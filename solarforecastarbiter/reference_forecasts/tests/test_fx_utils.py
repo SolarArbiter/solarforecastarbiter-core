@@ -99,8 +99,9 @@ def test_get_data_start_end_labels_1h_window_limit(site_metadata):
         interval_label='beginning')
     # ensure data no later than run time
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190422T1845Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
@@ -114,8 +115,9 @@ def test_get_data_start_end_labels_subhourly_window_limit(site_metadata):
         run_length=pd.Timedelta('5min'),  # test subhourly limit on window
         interval_label='beginning')
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190422T1940Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
@@ -128,9 +130,10 @@ def test_get_data_start_end_labels_obs_longer_than_fx_run(site_metadata):
         site_metadata,
         run_length=pd.Timedelta('5min'))
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     # obs interval cannot be longer than forecast interval
     with pytest.raises(ValueError) as excinfo:
-        utils.get_data_start_end(observation, forecast, run_time)
+        utils.get_data_start_end(observation, forecast, run_time, issue_time)
     assert ("observation.interval_length <= forecast.run_length" in
             str(excinfo.value))
 
@@ -143,9 +146,10 @@ def test_get_data_start_end_labels_obs_longer_than_1h(site_metadata):
         site_metadata,
         run_length=pd.Timedelta('5min'))
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     # obs interval cannot be longer than 1 hr
     with pytest.raises(ValueError) as excinfo:
-        utils.get_data_start_end(observation, forecast, run_time)
+        utils.get_data_start_end(observation, forecast, run_time, issue_time)
     assert 'observation.interval_length <= 1h' in str(excinfo.value)
 
 
@@ -161,11 +165,12 @@ def test_get_data_start_end_labels_obs_longer_than_1h_day_ahead(site_metadata):
         run_length=pd.Timedelta('1d'),  # day ahead
         interval_label='beginning')
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190423T0500Z')
     # day ahead doesn't care about obs interval length
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
-    assert data_start == pd.Timestamp('20190421T0000Z')
-    assert data_end == pd.Timestamp('20190422T0000Z')
+                                                    run_time, issue_time)
+    assert data_start == pd.Timestamp('20190421T0600Z')
+    assert data_end == pd.Timestamp('20190422T0600Z')
 
 
 def test_get_data_start_end_labels_obs_fx_instant_mismatch(site_metadata):
@@ -180,8 +185,9 @@ def test_get_data_start_end_labels_obs_fx_instant_mismatch(site_metadata):
         run_length=pd.Timedelta('1d'),
         interval_label='instant')            # if interval_label also instant
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     with pytest.raises(ValueError) as excinfo:
-        utils.get_data_start_end(observation, forecast, run_time)
+        utils.get_data_start_end(observation, forecast, run_time, issue_time)
     assert 'with identical interval length' in str(excinfo.value)
 
 
@@ -191,14 +197,15 @@ def test_get_data_start_end_labels_obs_fx_instant(site_metadata):
         interval_length=pd.Timedelta('5min'), interval_label='instant')
     forecast = default_forecast(
         site_metadata,
-        issue_time_of_day=dt.time(hour=5),
+        issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),  # interval_length must be equal
         run_length=pd.Timedelta('1d'),
         interval_label='instant')              # if interval_label also instant
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2300Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
     assert data_end == pd.Timestamp('20190421T235959Z')
 
@@ -209,14 +216,15 @@ def test_get_data_start_end_labels_obs_instant_fx_avg(site_metadata):
         interval_length=pd.Timedelta('5min'), interval_label='instant')
     forecast = default_forecast(
         site_metadata,
-        issue_time_of_day=dt.time(hour=5),
+        issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
         interval_label='beginning')
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2300Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
     assert data_end == pd.Timestamp('20190421T235959Z')
 
@@ -227,14 +235,15 @@ def test_get_data_start_end_labels_obs_instant_fx_avg_ending(site_metadata):
         interval_length=pd.Timedelta('5min'), interval_label='instant')
     forecast = default_forecast(
         site_metadata,
-        issue_time_of_day=dt.time(hour=5),
+        issue_time_of_day=dt.time(hour=0),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
         interval_label='ending')
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2300Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190421T000001Z')
     assert data_end == pd.Timestamp('20190422T0000Z')
 
@@ -251,14 +260,16 @@ def test_get_data_start_end_labels_obs_instant_fx_avg_intraday(site_metadata):
         interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('15min'),
         interval_label='ending')
+    issue_time = pd.Timestamp('20190422T2000Z')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
-                                                    run_time)
+                                                    run_time, issue_time)
     assert data_start == pd.Timestamp('20190422T193001Z')
     assert data_end == pd.Timestamp('20190422T1945Z')
 
 
 def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
     run_time = pd.Timestamp('20190422T1945Z')
+    issue_time = pd.Timestamp('20190422T2000Z')
     observation = default_observation(
         site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='ending')
@@ -270,7 +281,7 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
         run_length=pd.Timedelta('1d'),
         interval_label='instant')
     with pytest.raises(ValueError) as excinfo:
-        utils.get_data_start_end(observation, forecast, run_time)
+        utils.get_data_start_end(observation, forecast, run_time, issue_time)
     assert 'made from interval average obs' in str(excinfo.value)
 
 
@@ -290,18 +301,43 @@ def test_get_data_start_end_time_weekahead(site_metadata, variable,
         interval_length=pd.Timedelta('5min'), interval_label='beginning'
     )
 
-    run_time = pd.Timestamp('20190410T0630Z')
+    run_time = pd.Timestamp('20190410T2330Z')
+    issue_time = pd.Timestamp('20190410T2300Z')
+    # fx from 2019-04-11 00:00
     forecast = default_forecast(
         site_metadata, variable=variable,
-        issue_time_of_day=dt.time(hour=10),
+        issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1d'),
         interval_label='beginning')
     data_start, data_end = utils.get_data_start_end(
-        observation, forecast, run_time)
+        observation, forecast, run_time, issue_time)
     assert data_start == pd.Timestamp(expected_start)
     assert data_end == pd.Timestamp(expected_end)
+
+
+def test_get_data_start_end_time_weekahead_not_midnight(site_metadata):
+    variable = 'net_load'
+    observation = default_observation(
+        site_metadata, variable=variable,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning'
+    )
+
+    run_time = pd.Timestamp('20190410T1030Z')
+    issue_time = pd.Timestamp('20190410T1200Z')
+    # fx from 2019-04-11 12:00
+    forecast = default_forecast(
+        site_metadata, variable=variable,
+        issue_time_of_day=dt.time(hour=12),
+        lead_time_to_start=pd.Timedelta('1d'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
+        interval_label='beginning')
+    data_start, data_end = utils.get_data_start_end(
+        observation, forecast, run_time, issue_time)
+    assert data_start == pd.Timestamp('20190404T1200Z')
+    assert data_end == pd.Timestamp('20190405T1200Z')
 
 
 @pytest.fixture

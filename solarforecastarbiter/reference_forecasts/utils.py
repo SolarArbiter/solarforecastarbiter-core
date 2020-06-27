@@ -145,13 +145,6 @@ def _is_intraday(forecast):
     return forecast.run_length < pd.Timedelta('1d')
 
 
-def _check_midnight_to_midnight(forecast_start, forecast_end):
-    if (forecast_start.round('1d') != forecast_start or
-            forecast_end - forecast_start > pd.Timedelta('1d')):
-        raise ValueError(
-            'Day ahead persistence requires midnight to midnight periods')
-
-
 def _intraday_start_end(observation, forecast, run_time):
     """
     Time range of data to be used for intra-day persistence forecast.
@@ -175,13 +168,15 @@ def _intraday_start_end(observation, forecast, run_time):
     return data_start, data_end
 
 
-def _dayahead_start_end(run_time):
+def _dayahead_start_end(run_time, issue_time, forecast):
     """
     Time range of data to be used for day-ahead persistence forecast.
 
     Parameters
     ----------
     run_time : pd.Timestamp
+    issue_time : pd.Timestamp
+    forecast : datamodel.Forecast
 
     Returns
     -------
@@ -197,8 +192,10 @@ def _dayahead_start_end(run_time):
     until end of day. So, forecast *never* uses obs > 24 hr old at each
     valid time. Arguably too much for a reference forecast.
     """
-
-    data_end = run_time.floor('1d')
+    # data_end = last forecast time for next issue of run - 1 day
+    data_end = issue_time + forecast.lead_time_to_start + forecast.run_length
+    while data_end > run_time:
+        data_end -= pd.Timedelta('1d')
     data_start = data_end - pd.Timedelta('1d')
     return data_start, data_end
 
@@ -210,8 +207,8 @@ def _weekahead_start_end(issue_time, lead_time):
 
     Parameters
     ----------
-    run_time : pd.Timestamp
-    run_length : pd.Timedelta
+    issue_time : pd.Timestamp
+    lead_time : pd.Timedelta
 
     Returns
     -------
@@ -236,7 +233,7 @@ def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     return data_start, data_end
 
 
-def get_data_start_end(observation, forecast, run_time):
+def get_data_start_end(observation, forecast, run_time, issue_time):
     """
     Determine the data start and data end times for a persistence
     forecast.
@@ -246,6 +243,7 @@ def get_data_start_end(observation, forecast, run_time):
     observation : datamodel.Observation
     forecast : datamodel.Forecast
     run_time : pd.Timestamp
+    issue_time : pd.Timestamp
 
     Returns
     -------
@@ -257,11 +255,11 @@ def get_data_start_end(observation, forecast, run_time):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
-        issue_time = get_next_issue_time(forecast, run_time)
         data_start, data_end = _weekahead_start_end(
             issue_time, forecast.lead_time_to_start)
     else:
-        data_start, data_end = _dayahead_start_end(run_time)
+        data_start, data_end = _dayahead_start_end(
+            run_time, issue_time, forecast)
 
     _check_instant_compatibility(observation, forecast)
     # to ensure that each observation data point contributes to the correct

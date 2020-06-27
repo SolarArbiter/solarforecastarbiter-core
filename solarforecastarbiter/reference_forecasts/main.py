@@ -228,6 +228,8 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     ValueError
         If forecast and issue_time are incompatible.
     ValueError
+        If data is required from after run_time.
+    ValueError
         If persistence window < observation.interval_length.
     ValueError
         If forecast.run_length = 1 day and forecast period is not
@@ -253,13 +255,18 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
         forecast, issue_time, False)
     intraday = utils._is_intraday(forecast)
     if not intraday:
-        # raise ValueError if not intraday and not midnight to midnight
-        utils._check_midnight_to_midnight(forecast_start, forecast_end)
+        if forecast_end - forecast_start > pd.Timedelta('1d'):
+            raise ValueError(
+                'Persistence forecasts with longer than 1 day are '
+                'not currently supported')
 
     if load_data is None:
         load_data = _default_load_data(session)
     data_start, data_end = utils.get_data_start_end(
-        observation, forecast, run_time)
+        observation, forecast, run_time, issue_time)
+    if data_end > run_time:
+        raise ValueError(
+            'Persistence forecast requires data from after run_time')
 
     if isinstance(forecast, datamodel.ProbabilisticForecast):
         cvs = [f.constant_value for f in forecast.constant_values]
@@ -584,8 +591,8 @@ def generate_reference_persistence_forecast_parameters(
             next_issue_time = utils.find_next_issue_time_from_last_forecast(
                 fx, fx_maxt)
 
-        data_start, _ = utils.get_data_start_end(observation, fx,
-                                                 next_issue_time)
+        data_start, _ = utils.get_data_start_end(
+            observation, fx, next_issue_time, next_issue_time)
         issue_times = tuple(_issue_time_generator(
             observation, fx, obs_mint, obs_maxt,
             next_issue_time, max_run_time))
@@ -607,7 +614,7 @@ def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time,
     # last observation timestamp
     while next_issue_time <= max_run_time:
         data_start, data_end = utils.get_data_start_end(
-            observation, fx, next_issue_time)
+            observation, fx, next_issue_time, next_issue_time)
         if data_end > obs_maxt:
             break
 
