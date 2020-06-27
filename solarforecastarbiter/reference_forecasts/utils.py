@@ -203,7 +203,7 @@ def _dayahead_start_end(run_time):
     return data_start, data_end
 
 
-def _weekahead_start_end(run_time):
+def _weekahead_start_end(issue_time, lead_time):
     """
     Time range of data to be used for week-ahead persistence, aka, day of week
     persistence.
@@ -219,8 +219,8 @@ def _weekahead_start_end(run_time):
     data_end : pd.Timestamp
 
     """
-    data_end = run_time.ceil('1d') - pd.Timedelta('6d')
-    data_start = data_end - pd.Timedelta('1d')
+    data_start = issue_time + lead_time - pd.Timedelta('7d')
+    data_end = data_start + pd.Timedelta('1d')
     return data_start, data_end
 
 
@@ -257,7 +257,9 @@ def get_data_start_end(observation, forecast, run_time):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
-        data_start, data_end = _weekahead_start_end(run_time)
+        issue_time = get_next_issue_time(forecast, run_time)
+        data_start, data_end = _weekahead_start_end(
+            issue_time, forecast.lead_time_to_start)
     else:
         data_start, data_end = _dayahead_start_end(run_time)
 
