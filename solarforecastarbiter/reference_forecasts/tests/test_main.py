@@ -397,6 +397,28 @@ def test_run_persistence_weekahead_not_midnight(session, site_metadata, mocker):
     assert main.persistence.persistence_interval.call_count == 1
 
 
+def test_run_persistence_weekahead_early_runtime(session, site_metadata, mocker):
+    variable = 'net_load'
+    observation = default_observation(
+        site_metadata, variable=variable,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning')
+
+    site = site_metadata.replace(timezone='Etc/GMT+5')
+    forecast = default_forecast(
+        site, variable=variable,
+        issue_time_of_day=dt.time(hour=9),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1d'),
+        interval_label='beginning')
+    issue_time = pd.Timestamp('20190111T0900Z')
+    # data end = 2019-01-05T10:00
+    run_time = pd.Timestamp('2019-01-05T09:59Z')
+    with pytest.raises(ValueError):
+        main.run_persistence(session, observation, forecast, run_time,
+                             issue_time)
+
+
 def test_run_persistence_interval_index(session, site_metadata,
                                         obs_5min_begin):
     # index=True not supported for day ahead
