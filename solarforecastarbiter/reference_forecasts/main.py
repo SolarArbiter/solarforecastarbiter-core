@@ -661,10 +661,10 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
     for fx, obs, index, data_start, issue_times in params:
         load_data = _preload_load_data(session, obs, data_start, max_run_time)
         serlist = []
+        logger.info('Making persistence forecast for %s:%s from %s to %s',
+                    fx.name, fx.forecast_id, issue_times[0], issue_times[-1])
         for issue_time in issue_times:
             run_time = issue_time
-            logger.info('Making persistence forecast for %s:%s at %s',
-                        fx.name, fx.forecast_id, issue_time)
             try:
                 fx_ser = run_persistence(
                     session, obs, fx, run_time, issue_time,
@@ -700,10 +700,10 @@ def make_latest_probabilistic_persistence_forecasts(
     for fx, obs, index, data_start, issue_times in params:
         load_data = _preload_load_data(session, obs, data_start, max_run_time)
         out = defaultdict(list)
+        logger.info('Making persistence forecast for %s:%s from %s to %s',
+                    fx.name, fx.forecast_id, issue_times[0], issue_times[-1])
         for issue_time in issue_times:
             run_time = issue_time
-            logger.info('Making persistence forecast for %s:%s at %s',
-                        fx.name, fx.forecast_id, issue_time)
             try:
                 fx_list = run_persistence(
                     session, obs, fx, run_time, issue_time,
