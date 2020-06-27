@@ -36,7 +36,16 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
       pd.Timestamp('20190102T0500Z')]),
     ('11:00', '12h', '3h', pd.Timestamp('20190101T2300Z'),
      [pd.Timestamp('20190101T1100Z'), pd.Timestamp('20190101T2300Z'),
-      pd.Timestamp('20190102T1100Z')])
+      pd.Timestamp('20190102T1100Z')]),
+    ('05:00', '12h', '1h', pd.Timestamp('20190101T0000Z'),
+     [pd.Timestamp('20190101T0500Z'), pd.Timestamp('20190101T1700Z'),
+      pd.Timestamp('20190102T0500Z')]),
+    ('05:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
+     [pd.Timestamp('20181231T2300-06:00'), pd.Timestamp('20190101T1100-06:00'),
+      pd.Timestamp('20190101T2300-06:00')]),
+    ('10:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
+     [pd.Timestamp('20190101T0400-06:00'), pd.Timestamp('20190101T1600-06:00'),
+      pd.Timestamp('20190102T0400-06:00')])
 ])
 def test_issue_times_start(single_forecast, issuetime, rl, lt, start,
                            expected):

@@ -693,7 +693,7 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         forecast runs issued multiple times within one day (e.g. hourly),
         this specifies the first issue time of day. Additional issue times
         are uniquely determined by the first issue time and the run length &
-        issue frequency attribute.
+        issue frequency attribute. This is assumed to be a UTC time.
     lead_time_to_start : pandas.Timedelta
         The difference between the issue time and the start of the first
         forecast interval, e.g. 1 hour.
@@ -760,7 +760,7 @@ class EventForecast(Forecast):
         forecast runs issued multiple times within one day (e.g. hourly),
         this specifies the first issue time of day. Additional issue times
         are uniquely determined by the first issue time and the run length &
-        issue frequency attribute.
+        issue frequency attribute.  This is assumed to be a UTC time.
     lead_time_to_start : pandas.Timedelta
         The difference between the issue time and the start of the first
         forecast interval, e.g. 1 hour.
@@ -821,7 +821,7 @@ class ProbabilisticForecastConstantValue(
         forecast runs issued multiple times within one day (e.g. hourly),
         this specifies the first issue time of day. Additional issue times
         are uniquely determined by the first issue time and the run length &
-        issue frequency attribute.
+        issue frequency attribute. This is assumed to be a UTC time.
     lead_time_to_start : pandas.Timedelta
         The difference between the issue time and the start of the first
         forecast interval, e.g. 1 hour.
@@ -890,7 +890,7 @@ class ProbabilisticForecast(
         forecast runs issued multiple times within one day (e.g. hourly),
         this specifies the first issue time of day. Additional issue times
         are uniquely determined by the first issue time and the run length &
-        issue frequency attribute.
+        issue frequency attribute. This is assumed to be a UTC time.
     lead_time_to_start : pandas.Timedelta
         The difference between the issue time and the start of the first
         forecast interval, e.g. 1 hour.

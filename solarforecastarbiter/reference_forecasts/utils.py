@@ -30,7 +30,7 @@ def get_issue_times(forecast, start_from=None):
     else:
         issue = pd.Timestamp.combine(start_from.date(),
                                      forecast.issue_time_of_day).tz_localize(
-                                         start_from.tz)
+                                         'UTC')
     next_day = (issue + pd.Timedelta('1d')).floor('1d')
     # works even for midnight issue
     out = [issue]
@@ -39,6 +39,8 @@ def get_issue_times(forecast, start_from=None):
         out.append(issue)
     if start_from is None:
         out = [o.time() for o in out]
+    else:
+        out = [o.tz_convert(start_from.tz) for o in out]
     return out
 
 
