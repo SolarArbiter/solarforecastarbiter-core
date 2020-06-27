@@ -28,7 +28,11 @@ def get_issue_times(forecast, start_from=None):
         issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
                                      forecast.issue_time_of_day)
     else:
-        issue = pd.Timestamp.combine(start_from.date(),
+        if start_from.tz is not None:
+            start_date = start_from.astimezone('UTC').date()
+        else:
+            start_date = start_from.date()
+        issue = pd.Timestamp.combine(start_date,
                                      forecast.issue_time_of_day).tz_localize(
                                          'UTC')
     next_day = (issue + pd.Timedelta('1d')).floor('1d')

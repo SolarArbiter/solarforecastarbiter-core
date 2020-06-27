@@ -45,7 +45,11 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
       pd.Timestamp('20190101T2300-06:00')]),
     ('10:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
      [pd.Timestamp('20190101T0400-06:00'), pd.Timestamp('20190101T1600-06:00'),
-      pd.Timestamp('20190102T0400-06:00')])
+      pd.Timestamp('20190102T0400-06:00')]),
+    ('00:00', '6h', '1h', pd.Timestamp('20190101T1800-06:00'),
+     [pd.Timestamp('20190101T1800-06:00'), pd.Timestamp('20190102T0000-06:00'),
+      pd.Timestamp('20190102T0600-06:00'), pd.Timestamp('20190102T1200-06:00'),
+     pd.Timestamp('20190102T1800-06:00')])
 ])
 def test_issue_times_start(single_forecast, issuetime, rl, lt, start,
                            expected):
@@ -63,7 +67,8 @@ def test_issue_times_start(single_forecast, issuetime, rl, lt, start,
     (pd.Timestamp('20190501T1030Z'), pd.Timestamp('20190501T1100Z')),
     (pd.Timestamp('20190501T0030Z'), pd.Timestamp('20190501T0500Z')),
     (pd.Timestamp('20190501T2359Z'), pd.Timestamp('20190502T0500Z')),
-    (pd.Timestamp('20190501T2200Z'), pd.Timestamp('20190501T2300Z'))
+    (pd.Timestamp('20190501T2200Z'), pd.Timestamp('20190501T2300Z')),
+    (pd.Timestamp('20190501T0900-07:00'), pd.Timestamp('20190501T1000-07:00'))
 ])
 def test_get_next_issue_time(single_forecast, runtime, expected):
     fx = replace(
@@ -278,8 +283,8 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
     # data from the previous day (Tuesday 4/9)
     ("ghi", "20190409T0000Z", "20190410T0000Z"),
 ])
-def test_get_forecast_start_end_time_weekahead(site_metadata, variable,
-                                               expected_start, expected_end):
+def test_get_data_start_end_time_weekahead(site_metadata, variable,
+                                           expected_start, expected_end):
     observation = default_observation(
         site_metadata, variable=variable,
         interval_length=pd.Timedelta('5min'), interval_label='beginning'
@@ -319,6 +324,37 @@ def test_get_forecast_start_end_time_same_as_issue_time(
         forecast_hr_begin, issue_time, adjust_for_interval_label)
     assert fx_start == pd.Timestamp('20190422T0600')
     fx_end_exp = pd.Timestamp('20190422T0700')
+    if adjust_for_interval_label:
+        fx_end_exp -= pd.Timedelta('1n')
+    assert fx_end == fx_end_exp
+
+
+@pytest.mark.parametrize('adjust_for_interval_label', [True, False])
+@pytest.mark.parametrize('issue,exp_start,exp_end', [
+    # issue time at 5, 1hr lead/interval
+    (pd.Timestamp('20190422T0500'), pd.Timestamp('20190422T0600'),
+     pd.Timestamp('20190422T0700')),
+    (pd.Timestamp('20190422T0500Z'), pd.Timestamp('20190422T0600Z'),
+     pd.Timestamp('20190422T0700Z')),
+    (pd.Timestamp('20190422T0000-05:00'), pd.Timestamp('20190422T0100-05:00'),
+     pd.Timestamp('20190422T0200-05:00')),
+    (pd.Timestamp('20190421T2300-06:00'), pd.Timestamp('20190422T0000-06:00'),
+     pd.Timestamp('20190422T0100-06:00')),
+    (pd.Timestamp('20190422T0700-07:00'), pd.Timestamp('20190422T0800-07:00'),
+     pd.Timestamp('20190422T0900-07:00')),
+    # there is a gap since issue time is 5 and only hourly run
+    pytest.param(pd.Timestamp('20190422T1700-07:00'),
+                 pd.Timestamp('20190422T1800-07:00'),
+                 pd.Timestamp('20190422T1900-07:00'),
+                 marks=pytest.mark.xfail(strict=True)),
+])
+def test_get_forecast_start_end_time_tz(
+        forecast_hr_begin, adjust_for_interval_label, issue,
+        exp_start, exp_end):
+    fx_start, fx_end = utils.get_forecast_start_end(
+        forecast_hr_begin, issue, adjust_for_interval_label)
+    assert fx_start == exp_start
+    fx_end_exp = exp_end
     if adjust_for_interval_label:
         fx_end_exp -= pd.Timedelta('1n')
     assert fx_end == fx_end_exp
@@ -382,6 +418,12 @@ def test_get_forecast_start_end_time_instant(
           interval_label='beginning'),
      pd.Timestamp('2020-05-20T10:00Z'),
      pd.Timestamp('2020-05-20T11:00Z')),
+    (dict(issue_time_of_day=dt.time(hour=0),
+          lead_time_to_start=pd.Timedelta('0h'),
+          run_length='1h',
+          interval_label='beginning'),
+     pd.Timestamp('2020-05-20T10:00-07:00'),
+     pd.Timestamp('2020-05-20T11:00-07:00')),
     (dict(issue_time_of_day=dt.time(hour=0),
           lead_time_to_start=pd.Timedelta('0h'),
           run_length='1h',
