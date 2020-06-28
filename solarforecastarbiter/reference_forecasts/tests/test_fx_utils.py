@@ -191,19 +191,26 @@ def test_get_data_start_end_labels_obs_fx_instant_mismatch(site_metadata):
     assert 'with identical interval length' in str(excinfo.value)
 
 
-def test_get_data_start_end_labels_obs_fx_instant(site_metadata):
+@pytest.mark.parametrize('it,lead,issue', [
+    (23, '1h', '20190422T2300Z'),
+    (5, '19h', '20190422T0500Z')
+])
+def test_get_data_start_end_labels_obs_fx_instant(site_metadata, lead, issue,
+                                                  it):
     observation = default_observation(
         site_metadata,
         interval_length=pd.Timedelta('5min'), interval_label='instant')
+    # interval length of forecast and obs must be equal if interval label is
+    # instant
     forecast = default_forecast(
         site_metadata,
-        issue_time_of_day=dt.time(hour=23),
-        lead_time_to_start=pd.Timedelta('1h'),
-        interval_length=pd.Timedelta('5min'),  # interval_length must be equal
+        issue_time_of_day=dt.time(hour=it),
+        lead_time_to_start=pd.Timedelta(lead),
+        interval_length=pd.Timedelta('5min'),
         run_length=pd.Timedelta('1d'),
-        interval_label='instant')              # if interval_label also instant
-    run_time = pd.Timestamp('20190422T1945Z')
-    issue_time = pd.Timestamp('20190422T2300Z')
+        interval_label='instant')
+    issue_time = pd.Timestamp(issue)
+    run_time = issue_time - pd.Timedelta('75min')
     data_start, data_end = utils.get_data_start_end(observation, forecast,
                                                     run_time, issue_time)
     assert data_start == pd.Timestamp('20190421T0000Z')
@@ -296,7 +303,7 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
     ('1d', '20190409T2200Z', '20190410T2200Z', '20190410T2230Z', '23h'),
     ('2d', '20190408T0000Z', '20190410T0000Z', '20190410T2230Z', '1h'),
     ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T2300Z', '1h'),
-    # run time is too early compared to init time so data_end > run_time
+    # run time is too early compared to issue time so data_end > run_time
     # and that's ok.
     ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T1100Z', '1h'),
     ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T1100Z', '25h')
@@ -310,7 +317,6 @@ def test_get_data_start_end_time_dayahead(site_metadata, rl, rt, lt,
 
     run_time = pd.Timestamp(rt)
     issue_time = pd.Timestamp('20190410T2300Z')
-    # fx from 2019-04-11 00:00
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=23),

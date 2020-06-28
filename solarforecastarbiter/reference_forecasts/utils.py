@@ -6,8 +6,9 @@ from solarforecastarbiter.io import utils as io_utils
 
 
 def get_issue_times(forecast, start_from=None):
-    """
-    Return a list of the issue times for a given Forecast.
+    """Return a list of the issue times in a 24 hr period for a given
+    Forecast. If start_from is given, the output timestamps are
+    localized to the timezone of start_from.
 
     Parameters
     ----------
@@ -23,6 +24,7 @@ def get_issue_times(forecast, start_from=None):
         Either of datetime.time objects indicating the possible issue times, or
         pandas.Timestamp objects with the issues times for the particular day
         including the first issue time for the next day.
+
     """
     if start_from is None:
         issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
@@ -233,7 +235,12 @@ def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
 def get_data_start_end(observation, forecast, run_time, issue_time):
     """
     Determine the data start and data end times for a persistence
-    forecast.
+    forecast. For non-intraday persistence, the data start/end
+    only rely on the issue time and forecast parameters to ensure
+    that one can reason about what data was used for a particular
+    forecast instead of also having to know when the forecast was
+    made.
+
 
     Parameters
     ----------
