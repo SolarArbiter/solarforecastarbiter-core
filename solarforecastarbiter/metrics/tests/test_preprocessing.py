@@ -849,8 +849,7 @@ def test_process_forecast_observations_no_fx(
                                       proc_fxobs.observation_values.index)
 
 
-
-@pytest.mark.parametrize("method, pr_name, prref_name", [
+@pytest.mark.parametrize("method,pr_name,prref_name", [
     ('drop',
      preprocessing.FILL_RESULT_TOTAL_STRING.format(
         '', preprocessing.FORECAST_FILL_STRING_MAP['drop']),
@@ -870,7 +869,7 @@ def test_process_forecast_observations_no_fx(
      preprocessing.FILL_RESULT_TOTAL_STRING.format(
         '', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9')),
      preprocessing.FILL_RESULT_TOTAL_STRING.format(
-        'Reference ', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9'))),
+        'Reference ', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9'))),  # NOQA
 ])
 def test_process_forecast_observations_missing_forecast_types(
         report_objects, quality_filter, mocker, method, pr_name, prref_name):
@@ -882,19 +881,20 @@ def test_process_forecast_observations_missing_forecast_types(
                                             freq='15min',
                                             tz='MST',
                                             name='timestamp'))
-    obs_ser['quality_flag'] = OK
-    agg_ser = THREE_HOUR_SERIES
-    agg_ser['quality_flag'] = OK
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
     data = {
-        observation: obs_ser,
+        observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
         forecast_ref: THREE_HOUR_SERIES,
         forecast_agg: THREE_HOUR_SERIES,
-        aggregate: agg_ser
+        aggregate: agg_df
     }
     filters = [quality_filter]
-    #logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
@@ -905,7 +905,7 @@ def test_process_forecast_observations_missing_forecast_types(
         costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
-    #assert not logger.error.called
+    assert not logger.error.called
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
         assert all(isinstance(vr, datamodel.ValidationResult)

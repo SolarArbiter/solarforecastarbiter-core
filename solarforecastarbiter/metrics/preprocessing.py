@@ -519,7 +519,7 @@ def process_forecast_observations(forecast_observations, filters,
                                     for k, v in counts.items())
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=len(data[fxobs.data_object]) - len(obs_ser)), )
+                    count=int(len(data[fxobs.data_object]) - len(obs_ser))), )
                 validated_observations[fxobs.data_object] = (
                     obs_ser, val_results, preproc_results)
 
@@ -535,7 +535,7 @@ def process_forecast_observations(forecast_observations, filters,
         preproc_results += (datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format(
                 '', forecast_fill_map[missing_forecast]),
-            count=count), )
+            count=int(count)), )
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
             ref_ser, count = apply_fill(ref_ser, missing_forecast, start, end, freq)  # NOQA
@@ -544,7 +544,7 @@ def process_forecast_observations(forecast_observations, filters,
             preproc_results += (datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
                     "Reference ", forecast_fill_map[missing_forecast]),
-                count=count), )
+                count=int(count)), )
         else:
             ref_ser = None
 
@@ -553,7 +553,7 @@ def process_forecast_observations(forecast_observations, filters,
             forecast_values, observation_values, ref_fx_values, results = \
                 resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)
             preproc_results += tuple(datamodel.PreprocessingResult(
-                name=k, count=v) for k, v in results.items())
+                name=k, count=int(v)) for k, v in results.items())
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',

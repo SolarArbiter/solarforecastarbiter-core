@@ -1773,7 +1773,7 @@ class RawReport(BaseModel):
         the core library is used when rendering or recomputing the report.
     plots: :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
     metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
-    processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
+    processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ProcessedForecastObservation`
     messages: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMessage`
     data_checksum: str or None
         SHA-256 checksum of the raw data used in the report.
