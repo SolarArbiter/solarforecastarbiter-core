@@ -299,8 +299,11 @@ def serialize_timeseries(ser):
             'is supported')
     v = ser.copy()
     v.index.name = 'timestamp'
-    jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
-        orient='records', date_format='iso', date_unit='s')
+    if isinstance(v, pd.Series):
+        jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
+            orient='records', date_format='iso', date_unit='s')
+    else:
+        jsonvals = _dataframe_to_json(v)
     schema = {
         'version': 0,
         'orient': 'records',
