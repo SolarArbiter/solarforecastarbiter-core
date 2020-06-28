@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pytz
 
 
 from solarforecastarbiter.io import utils as io_utils
