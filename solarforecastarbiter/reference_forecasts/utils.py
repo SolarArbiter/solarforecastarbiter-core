@@ -1,52 +1,45 @@
 import numpy as np
 import pandas as pd
+import pytz
 
 
 from solarforecastarbiter.io import utils as io_utils
 
 
-def get_issue_times(forecast, start_from=None):
+def get_issue_times(forecast, start_from):
     """Return a list of the issue times in a 24 hr period for a given
-    Forecast. If start_from is given, the output timestamps are
-    localized to the timezone of start_from.
+    Forecast. The output timestamps are localized to the timezone of
+    `start_from`.
 
     Parameters
     ----------
     forecast : datamodel.Forecast
         Forecast object that contains the time information
-    start_from : pandas.Timestamp or None
-        If a timestamp, return the issues times for the same days as
-        `start_from`. If None, return datetime.time objects.
+    start_from : pandas.Timestamp
+        Return issue times from this same day in the same timezone
 
     Returns
     -------
     list
-        Either of datetime.time objects indicating the possible issue times, or
         pandas.Timestamp objects with the issues times for the particular day
         including the first issue time for the next day.
-
     """
-    if start_from is None:
-        issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
-                                     forecast.issue_time_of_day)
+    if start_from.tzinfo is not None:
+        start_date = start_from.astimezone('UTC').date()
     else:
-        if start_from.tz is not None:
-            start_date = start_from.astimezone('UTC').date()
-        else:
-            start_date = start_from.date()
-        issue = pd.Timestamp.combine(start_date,
-                                     forecast.issue_time_of_day).tz_localize(
-                                         'UTC')
+        start_date = start_from.date()
+    start_time = forecast.issue_time_of_day
+    issue = pd.Timestamp.combine(start_date, start_time)
+    if start_time.tzinfo is None:
+        issue = issue.tz_localize('UTC')
+    else:
+        issue = issue.tz_convert('UTC')
     next_day = (issue + pd.Timedelta('1d')).floor('1d')
     # works even for midnight issue
-    out = [issue]
+    out = [issue.tz_convert(start_from.tz)]
     while issue < next_day:
         issue += forecast.run_length
-        out.append(issue)
-    if start_from is None:
-        out = [o.time() for o in out]
-    else:
-        out = [o.tz_convert(start_from.tz) for o in out]
+        out.append(issue.tz_convert(start_from.tz))
     return out
 
 

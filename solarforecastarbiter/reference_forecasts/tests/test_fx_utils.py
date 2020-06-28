@@ -4,6 +4,7 @@ import datetime as dt
 
 import pandas as pd
 import pytest
+import pytz
 
 
 from solarforecastarbiter.reference_forecasts import utils
@@ -25,8 +26,9 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
         issue_time_of_day=dt.datetime.strptime(issuetime, '%H:%M').time(),
         run_length=pd.Timedelta(rl),
         lead_time_to_start=pd.Timedelta(lt))
-    out = utils.get_issue_times(fx)
-    assert out == expected
+    day = pd.Timestamp('20200101')
+    out = utils.get_issue_times(fx, day)
+    assert [o.time() for o in out] == expected
 
 
 @pytest.mark.parametrize('issuetime,rl,lt,start,expected', [
@@ -43,6 +45,9 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
     ('05:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
      [pd.Timestamp('20181231T2300-06:00'), pd.Timestamp('20190101T1100-06:00'),
       pd.Timestamp('20190101T2300-06:00')]),
+    ('05:00', '12h', '1h', pd.Timestamp('20190101T0900'),
+     [pd.Timestamp('20190101T0500'), pd.Timestamp('20190101T1700'),
+      pd.Timestamp('20190102T0500')]),
     ('10:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
      [pd.Timestamp('20190101T0400-06:00'), pd.Timestamp('20190101T1600-06:00'),
       pd.Timestamp('20190102T0400-06:00')]),
@@ -60,6 +65,17 @@ def test_issue_times_start(single_forecast, issuetime, rl, lt, start,
         lead_time_to_start=pd.Timedelta(lt))
     out = utils.get_issue_times(fx, start)
     assert out == expected
+
+
+def test_issue_times_localized(single_forecast):
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=pytz.timezone('Etc/GMT+7').localize(dt.time(12)),
+        run_length=pd.Timedelta('12h'),
+    )
+    out = utils.get_issue_times(fx, pd.Timestamp('20200601T1700-0500'))
+    assert out == [pd.Timestamp('20200601T1400-05:00'),
+                   pd.Timestamp('20200602T0200-05:00')]
 
 
 @pytest.mark.parametrize('runtime,expected', [
