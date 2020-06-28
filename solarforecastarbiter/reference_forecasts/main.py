@@ -232,10 +232,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     ValueError
         If persistence window < observation.interval_length.
     ValueError
-        If forecast.run_length = 1 day and forecast period is not
-        midnight to midnight.
-    ValueError
-        If forecast.run_length = 1 day and index=True.
+        If forecast.run_length => 1 day and index=True.
     ValueError
         If instantaneous forecast and instantaneous observation interval
         lengths do not match.
@@ -254,11 +251,6 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     forecast_start, forecast_end = utils.get_forecast_start_end(
         forecast, issue_time, False)
     intraday = utils._is_intraday(forecast)
-    if not intraday:
-        if forecast_end - forecast_start > pd.Timedelta('1d'):
-            raise ValueError(
-                'Persistence forecasts with longer than 1 day are '
-                'not currently supported')
 
     if load_data is None:
         load_data = _default_load_data(session)

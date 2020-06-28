@@ -285,23 +285,62 @@ def test_get_data_start_end_labels_obs_avg_fx_instant(site_metadata):
     assert 'made from interval average obs' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("variable,expected_start,expected_end", [
+@pytest.mark.parametrize('rl,expected_start,expected_end,rt,lt', [
+    ('1d', '20190409T0000Z', '20190410T0000Z', '20190410T2230Z', '1h'),
+    ('1d', '20190409T0000Z', '20190410T0000Z', '20190410T0001Z', '1h'),
+    ('1d', '20190409T0000Z', '20190410T0000Z', '20190410T0001Z', '25h'),
+    ('1d', '20190409T0000Z', '20190410T0000Z', '20190410T0001Z', '49h'),
+    ('1d', '20190408T2300Z', '20190409T2300Z', '20190410T2230Z', '24h'),
+    # quirky that 23h ahead uses more recent data than 1h ahead, but
+    # timestamps are maintained and end is before issue time
+    ('1d', '20190409T2200Z', '20190410T2200Z', '20190410T2230Z', '23h'),
+    ('2d', '20190408T0000Z', '20190410T0000Z', '20190410T2230Z', '1h'),
+    ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T2300Z', '1h'),
+    # run time is too early compared to init time so data_end > run_time
+    # and that's ok.
+    ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T1100Z', '1h'),
+    ('36h', '20190409T0000Z', '20190410T1200Z', '20190410T1100Z', '25h')
+])
+def test_get_data_start_end_time_dayahead(site_metadata, rl, rt, lt,
+                                          expected_start, expected_end):
+    observation = default_observation(
+        site_metadata,
+        interval_length=pd.Timedelta('5min'), interval_label='beginning'
+    )
+
+    run_time = pd.Timestamp(rt)
+    issue_time = pd.Timestamp('20190410T2300Z')
+    # fx from 2019-04-11 00:00
+    forecast = default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta(lt),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta(rl),
+        interval_label='beginning')
+    data_start, data_end = utils.get_data_start_end(
+        observation, forecast, run_time, issue_time)
+    assert data_start == pd.Timestamp(expected_start)
+    assert data_end == pd.Timestamp(expected_end)
+
+
+@pytest.mark.parametrize("variable,expected_start,expected_end,rl", [
     # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
     # data from the previous Thursday (4/4)
-    ("net_load", "20190404T0000Z", "20190405T0000Z"),
-
+    ("net_load", "20190404T0000Z", "20190405T0000Z", "1d"),
+    ("net_load", "20190404T0000Z", "20190407T0000Z", "3d"),
     # generate forecast on Wednesday 4/10 that applies to Thursday 4/11 using
     # data from the previous day (Tuesday 4/9)
-    ("ghi", "20190409T0000Z", "20190410T0000Z"),
+    ("ghi", "20190409T0000Z", "20190410T0000Z", "1d"),
 ])
-def test_get_data_start_end_time_weekahead(site_metadata, variable,
+def test_get_data_start_end_time_weekahead(site_metadata, variable, rl,
                                            expected_start, expected_end):
     observation = default_observation(
         site_metadata, variable=variable,
         interval_length=pd.Timedelta('5min'), interval_label='beginning'
     )
 
-    run_time = pd.Timestamp('20190410T2330Z')
+    run_time = pd.Timestamp('20190410T2230Z')
     issue_time = pd.Timestamp('20190410T2300Z')
     # fx from 2019-04-11 00:00
     forecast = default_forecast(
@@ -309,7 +348,7 @@ def test_get_data_start_end_time_weekahead(site_metadata, variable,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
-        run_length=pd.Timedelta('1d'),
+        run_length=pd.Timedelta(rl),
         interval_label='beginning')
     data_start, data_end = utils.get_data_start_end(
         observation, forecast, run_time, issue_time)

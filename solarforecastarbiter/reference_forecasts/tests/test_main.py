@@ -187,8 +187,6 @@ def test_run_persistence_interval_assert_data(
 def test_run_persistence_interval_two_day(
         session, site_metadata, obs_5min_begin,
         mocker):
-    run_time = pd.Timestamp('20190102T1945Z')
-    # day ahead, index = False
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=0),
@@ -196,6 +194,7 @@ def test_run_persistence_interval_two_day(
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
         interval_label='beginning')
+    run_time = pd.Timestamp('20190102T1945Z')
     issue_time = pd.Timestamp('20190103T0000Z')
     mocker.spy(main.persistence, 'persistence_interval')
     index = pd.date_range('20190101T0000Z', periods=24, freq='1h')
@@ -439,21 +438,30 @@ def test_run_persistence_interval_index(session, site_metadata,
     assert 'index=True not supported' in str(excinfo.value)
 
 
-def test_run_persistence_interval_too_long(session, site_metadata,
-                                           obs_5min_begin):
+def test_run_persistence_interval_long(session, site_metadata,
+                                       mocker, obs_5min_begin):
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=23),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
-        run_length=pd.Timedelta('48h'),  # too long
+        run_length=pd.Timedelta('48h'),
         interval_label='beginning')
     issue_time = pd.Timestamp('20190423T2300Z')
-    run_time = pd.Timestamp('20190422T1945Z')
-    with pytest.raises(ValueError) as excinfo:
-        main.run_persistence(session, obs_5min_begin, forecast, run_time,
-                             issue_time)
-    assert 'longer than 1 day' in str(excinfo.value)
+    run_time = pd.Timestamp('20190423T1945Z')
+    index = pd.date_range('20190421T0000Z', freq='1h', periods=48)
+    data = pd.Series([0, 1, 2] + [0] * 45, index=index)
+    mocker.spy(main.persistence, 'persistence_interval')
+    load_data = mocker.MagicMock(return_value=data)
+    out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                               issue_time, load_data=load_data)
+    assert load_data.call_args[0][1:] == (pd.Timestamp('20190421T0000Z'),
+                                          pd.Timestamp('20190423T0000Z'))
+    assert isinstance(out, pd.Series)
+    assert len(out) == 48
+    assert out.loc[pd.Timestamp('20190424T0100Z')] == 1
+    assert out.loc[pd.Timestamp('20190424T0200Z')] == 2
+    assert main.persistence.persistence_interval.call_count == 1
 
 
 def test_run_persistence_incompatible_issue(session, site_metadata,

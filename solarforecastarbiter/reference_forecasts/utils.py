@@ -168,13 +168,12 @@ def _intraday_start_end(observation, forecast, run_time):
     return data_start, data_end
 
 
-def _dayahead_start_end(run_time, issue_time, forecast):
+def _dayahead_start_end(issue_time, forecast):
     """
     Time range of data to be used for day-ahead persistence forecast.
 
     Parameters
     ----------
-    run_time : pd.Timestamp
     issue_time : pd.Timestamp
     forecast : datamodel.Forecast
 
@@ -185,22 +184,20 @@ def _dayahead_start_end(run_time, issue_time, forecast):
 
     Notes
     -----
-    Day-ahead persistence: tomorrow's forecast is equal to yesterday's
-    observations. So, forecast always uses obs > 24 hr old at each valid
-    time. Smarter approach might be to use today's observations up
-    until issue_time, and use yesterday's observations for issue_time
-    until end of day. So, forecast *never* uses obs > 24 hr old at each
-    valid time. Arguably too much for a reference forecast.
+    Day-ahead persistence: uses the most recently available data that
+    maintains same times in forecast and observation data,
+    but shifts observation period by a number of days to end before
+    issue time.
     """
     # data_end = last forecast time for next issue of run - 1 day
     data_end = issue_time + forecast.lead_time_to_start + forecast.run_length
-    while data_end > run_time:
-        data_end -= pd.Timedelta('1d')
-    data_start = data_end - pd.Timedelta('1d')
+    # data end should end before, not at issue time, so add the extra ns
+    data_end -= (data_end - issue_time + pd.Timedelta('1ns')).ceil('1d')
+    data_start = data_end - forecast.run_length
     return data_start, data_end
 
 
-def _weekahead_start_end(issue_time, lead_time):
+def _weekahead_start_end(issue_time, forecast):
     """
     Time range of data to be used for week-ahead persistence, aka, day of week
     persistence.
@@ -216,8 +213,8 @@ def _weekahead_start_end(issue_time, lead_time):
     data_end : pd.Timestamp
 
     """
-    data_start = issue_time + lead_time - pd.Timedelta('7d')
-    data_end = data_start + pd.Timedelta('1d')
+    data_start = issue_time + forecast.lead_time_to_start - pd.Timedelta('7d')
+    data_end = data_start + forecast.run_length
     return data_start, data_end
 
 
@@ -256,10 +253,9 @@ def get_data_start_end(observation, forecast, run_time, issue_time):
                                                    run_time)
     elif forecast.variable == 'net_load':
         data_start, data_end = _weekahead_start_end(
-            issue_time, forecast.lead_time_to_start)
+            issue_time, forecast)
     else:
-        data_start, data_end = _dayahead_start_end(
-            run_time, issue_time, forecast)
+        data_start, data_end = _dayahead_start_end(issue_time, forecast)
 
     _check_instant_compatibility(observation, forecast)
     # to ensure that each observation data point contributes to the correct
