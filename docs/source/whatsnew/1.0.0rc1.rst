@@ -55,6 +55,14 @@ API Changes
 * Removed :py:mod:`solarforecastarbiter.metrics.valuation` (:pull:`487`)
 * Add :py:func:`solarforecastarbiter.reference_forecasts.make_latest_probabilistic_persistence_forecasts`
   to generate reference probabilistic persistence forecasts (:pull:`490`)
+* Added a ``missing_forecast`` parameter to
+  :py:class:`solarforecastarbiter.datamodel.ReportParameters`
+  (:issue:`423`) (:pull:`493`)
+* Added :py:func:`solarforecastarbiter.metrics.preprocessing.apply_fill` that
+  applies filling missing or ``numpy.nan`` values. (:issue:`423`) (:pull:`493`)
+* Added new arguments `missing_forecast`, `start`, and `end` to
+  :py:func:`solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
+  (:issue:`423`) (:pull:`493`)
 
 
 Enhancements
@@ -80,6 +88,8 @@ Enhancements
   a constant cost factor, a time-of-day varying factor, a datetime varying
   factor, and a cost that depends on the magnitude of the error. (:pull:`487`)
   (:issue:`126`)
+* Added support for filling missing and ``numpy.nan` data for forecasts.
+  (:issue:`423`) (:pull:`493`)
 
 
 
