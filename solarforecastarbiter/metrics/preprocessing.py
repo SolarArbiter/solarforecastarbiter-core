@@ -62,7 +62,7 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
-def apply_fill(fx_data, missing_forecast, start, end):
+def apply_fill(fx_data, missing_forecast, start, end, interval_length):
     """
     Apply fill procedure to the data from the start to end timestamps.
 
@@ -75,6 +75,7 @@ def apply_fill(fx_data, missing_forecast, start, end):
         Currently supports : 'drop', 'forward', and bool or numeric value.
     start : pandas.Timestamp
     end : pandas.Timestamp
+    interval_length : pandas.Timedelta
 
     Returns
     -------
@@ -93,15 +94,7 @@ def apply_fill(fx_data, missing_forecast, start, end):
         orig_dtype = set(fx_data.dtypes).pop()
     missing_forecast = str(missing_forecast)
     # Create full datetime range at resolution
-    if len(fx_data) > 2:
-        data_res = pd.infer_freq(fx_data.index)
-    elif len(fx_data) == 2:
-        data_res = fx_data.index[1] - fx_data.index[0]
-    elif len(fx_data) == 1:
-        data_res = min(fx_data.index[0] - start, end - fx_data.index[0])
-    else:
-        data_res = end - start
-    full_dt_index = pd.date_range(start=start, end=end, freq=data_res,
+    full_dt_index = pd.date_range(start=start, end=end, freq=interval_length,
                                   name=fx_data.index.name)
 
     if missing_forecast == 'drop':
@@ -443,6 +436,15 @@ def _name_pfxobs(current_names, forecast, i=1):
         return forecast_name
 
 
+def _get_dtype(data):
+    if isinstance(data, pd.Series):
+        return data.dtype
+    elif isinstance(data, pd.DataFrame):
+        return list(set(data.dtypes))[0]
+    else:
+        return None
+
+
 def process_forecast_observations(forecast_observations, filters,
                                   missing_forecast, start, end,
                                   data, timezone, costs=tuple()):
@@ -525,15 +527,20 @@ def process_forecast_observations(forecast_observations, filters,
             validated_observations[fxobs.data_object])
 
         # Apply fill to forecasts
+        freq = fxobs.forecast.interval_length
         fx_ser = data[fxobs.forecast]
-        fx_ser, count = apply_fill(fx_ser, missing_forecast, start, end)
+        fx_ser, count = apply_fill(fx_ser, missing_forecast, start, end, freq)
+        if _get_dtype(fx_ser) == np.object:
+            fx_ser = fx_ser.astype(_get_dtype(obs_ser))
         preproc_results += (datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format(
                 '', forecast_fill_map[missing_forecast]),
             count=count), )
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
-            ref_ser, count = apply_fill(ref_ser, missing_forecast, start, end)
+            ref_ser, count = apply_fill(ref_ser, missing_forecast, start, end, freq)  # NOQA
+            if _get_dtype(ref_ser) == np.object:
+                ref_ser = ref_ser.astype(_get_dtype(obs_ser))
             preproc_results += (datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
                     "Reference ", forecast_fill_map[missing_forecast]),
