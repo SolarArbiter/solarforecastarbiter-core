@@ -63,7 +63,16 @@ def forecast_hr_begin(site_metadata):
     ('00:00', '6h', '1h', pd.Timestamp('20190101T1801-06:00'),
      [pd.Timestamp('20190101T0000-06:00'), pd.Timestamp('20190101T0600-06:00'),
       pd.Timestamp('20190101T1200-06:00'), pd.Timestamp('20190101T1800-06:00'),
-      pd.Timestamp('20190102T0000-06:00')])
+      pd.Timestamp('20190102T0000-06:00')]),
+    ('05:00', '24h', '1h', pd.Timestamp('20190101T0900'),
+     [pd.Timestamp('20190101T0500'), pd.Timestamp('20190102T0500')]),
+    ('05:00', '2d', '1h', pd.Timestamp('20190101T0900'),
+     [pd.Timestamp('20190101T0500'), pd.Timestamp('20190103T0500')]),
+    ('05:00', '36h', '1h', pd.Timestamp('20190101T0900'),
+     [pd.Timestamp('20190101T0500'), pd.Timestamp('20190102T1700')]),
+    ('12:00', '7d', '1h', pd.Timestamp('20190101T0900-07:00'),
+     [pd.Timestamp('20190101T0500-07:00'),
+      pd.Timestamp('20190108T0500-07:00')]),
 ])
 def test_issue_times(single_forecast, issuetime, rl, lt, start,
                      expected):

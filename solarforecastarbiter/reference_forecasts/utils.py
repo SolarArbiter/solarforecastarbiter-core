@@ -1,6 +1,3 @@
-import datetime as dt
-
-
 import numpy as np
 import pandas as pd
 import pytz
@@ -30,15 +27,18 @@ def get_issue_times(forecast, start_from):
     start_time = forecast.issue_time_of_day
     if start_time.tzinfo is None:
         start_time = pytz.utc.localize(start_time)
-    # is in utc
+    # work for forecasts over 1d run length
+    dayadj = pd.Timedelta(forecast.run_length).ceil('1d')
     earliest_start = pd.Timestamp.combine(
-        (start_from - pd.Timedelta('1d')).date(), start_time)
+        (start_from - dayadj).date(), start_time)
     possible_times = []
     for i in range(3):
-        start = earliest_start + pd.Timedelta(f'{i}d')
-        end = (start + pd.Timedelta('1d')).floor('1d')
+        start = earliest_start + i * dayadj
+        end = (start + dayadj).floor('1d')
         possible_times.extend(list(
             pd.date_range(start=start, end=end, freq=forecast.run_length)))
+    # broad range of times that should cover start_from and next time
+    # even after timezone conversion
     possible_times = pd.DatetimeIndex(possible_times).tz_convert(
         start_from.tz).drop_duplicates()
     startloc = possible_times.get_loc(start_from.floor('1d'), method='bfill')
