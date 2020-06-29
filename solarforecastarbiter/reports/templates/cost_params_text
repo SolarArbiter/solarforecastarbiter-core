@@ -1,0 +1,8 @@
+<p>
+  Below are the cost parameters defined for this report.  Each
+  forecast-observation pair may use one set of cost parameters to
+  calculate the cost metric.
+  See <a href="https://solarforecastarbiter-core.readthedocs.io/en/latest/cost.html">
+    the solarforecastarbiter-core documentation
+  </a> for a description of how these parameters are used.
+</p>
