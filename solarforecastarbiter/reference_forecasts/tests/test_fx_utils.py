@@ -73,6 +73,13 @@ def forecast_hr_begin(site_metadata):
     ('12:00', '7d', '1h', pd.Timestamp('20190101T0900-07:00'),
      [pd.Timestamp('20190101T0500-07:00'),
       pd.Timestamp('20190108T0500-07:00')]),
+    ('07:00', '12h', '1h',
+     pd.Timestamp('20200307T0100', tz='America/New_York'),
+     [pd.Timestamp('20200307T0200', tz='America/New_York'),
+      pd.Timestamp('20200307T1400', tz='America/New_York'),
+      # daylight savings
+      pd.Timestamp('20200308T0300', tz='America/New_York')]
+     )
 ])
 def test_issue_times(single_forecast, issuetime, rl, lt, start,
                      expected):
@@ -95,6 +102,19 @@ def test_issue_times_localized(single_forecast):
     assert out == [pd.Timestamp('20200601T0200-05:00'),
                    pd.Timestamp('20200601T1400-05:00'),
                    pd.Timestamp('20200602T0200-05:00')]
+
+
+def test_issue_times_localized_dst(single_forecast):
+    tzinfo = pd.Timestamp('20200308T0000', tz='America/New_York').tzinfo
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=dt.time(hour=2, tzinfo=tzinfo),
+        run_length=pd.Timedelta('12h'),
+    )
+    out = utils.get_issue_times(fx, pd.Timestamp('20200308T0100-0500'))
+    assert out == [pd.Timestamp('20200308T0300-04:00'),
+                   pd.Timestamp('20200308T1500-04:00'),
+                   pd.Timestamp('20200309T0300-04:00')]
 
 
 def test_issue_times_fx_gap(forecast_hr_begin):

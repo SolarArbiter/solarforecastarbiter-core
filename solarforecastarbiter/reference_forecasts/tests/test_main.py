@@ -250,6 +250,37 @@ def test_run_persistence_interval_tz(session, site_metadata, obs_5min_begin,
     assert main.persistence.persistence_interval.call_count == 1
 
 
+def test_run_persistence_interval_dst(session, site_metadata, obs_5min_begin,
+                                      mocker):
+    run_time = pd.Timestamp('20200308T0000', tz='America/New_York')
+    site = site_metadata.replace(timezone='America/New_York')
+    # day ahead, index = False
+    obs = obs_5min_begin.replace(site=site)
+    forecast = default_forecast(
+        site,
+        issue_time_of_day=dt.time(
+            hour=2, tzinfo=run_time.tzinfo),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('24h'),
+        interval_label='ending')
+    issue_time = pd.Timestamp('20200308T0300-04:00')
+    mocker.spy(main.persistence, 'persistence_interval')
+    index = pd.date_range('20200306T0300-05:00', periods=24, freq='1h')
+    data = pd.Series([0, 1, 2] + [0] * 21, index=index)
+    load_data = mocker.MagicMock(return_value=data)
+    out = main.run_persistence(session, obs, forecast, run_time,
+                               issue_time, load_data=load_data)
+    assert load_data.call_args[0][1:] == (pd.Timestamp('20200306T0300-05:00'),
+                                          pd.Timestamp('20200307T0300-05:00'))
+    assert isinstance(out, pd.Series)
+    assert len(out) == 24
+    assert out.loc['20200308T0500-04:00'] == 0
+    assert out.loc['20200308T0600-04:00'] == 1
+    assert out.loc['20200308T0700-04:00'] == 2
+    assert main.persistence.persistence_interval.call_count == 1
+
+
 def test_run_persistence_weekahead(session, site_metadata, mocker):
     variable = 'net_load'
     observation = default_observation(
