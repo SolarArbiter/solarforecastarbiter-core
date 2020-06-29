@@ -92,6 +92,33 @@ def test_issue_times(single_forecast, issuetime, rl, lt, start,
     assert out == expected
 
 
+def test_issue_times_high_freq(single_forecast):
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=dt.time(0),
+        run_length=pd.Timedelta('15min'),
+        interval_length=pd.Timedelta('5min'),
+        lead_time_to_start=pd.Timedelta('5min'))
+    out = utils.get_issue_times(fx, pd.Timestamp('20200501T0000-07:00'))
+    assert out == list(pd.date_range(
+        start='20200501T0000', end='20200502T0000', tz='Etc/GMT+7',
+        freq='15min'))
+
+
+def test_issue_times_high_freq_offset(single_forecast):
+    fx = replace(
+        single_forecast,
+        issue_time_of_day=pytz.timezone('Etc/GMT+7').localize(dt.time(1)),
+        run_length=pd.Timedelta('15min'),
+        interval_length=pd.Timedelta('5min'),
+        lead_time_to_start=pd.Timedelta('5min'))
+    out = utils.get_issue_times(fx, pd.Timestamp('20200501T0000-07:00'))
+    assert out == [pd.Timestamp('20200501T0000-07:00')] + list(
+        pd.date_range(
+            start='20200501T0100', end='20200502T0000', tz='Etc/GMT+7',
+            freq='15min'))
+
+
 def test_issue_times_localized(single_forecast):
     fx = replace(
         single_forecast,

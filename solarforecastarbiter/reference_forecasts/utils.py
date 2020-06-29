@@ -29,6 +29,8 @@ def get_issue_times(forecast, start_from):
         start_time = pytz.utc.localize(start_time)
     # work for forecasts over 1d run length
     dayadj = pd.Timedelta(forecast.run_length).ceil('1d')
+    # make broad range of times that should cover start_from and next time
+    # even after timezone conversion
     earliest_start = pd.Timestamp.combine(
         (start_from - dayadj).date(), start_time)
     possible_times = []
@@ -37,10 +39,9 @@ def get_issue_times(forecast, start_from):
         end = (start + dayadj).floor('1d')
         possible_times.extend(list(
             pd.date_range(start=start, end=end, freq=forecast.run_length)))
-    # broad range of times that should cover start_from and next time
-    # even after timezone conversion
     possible_times = pd.DatetimeIndex(possible_times).tz_convert(
         start_from.tz).drop_duplicates()
+    # then slice the broad range based on start_from day
     startloc = possible_times.get_loc(start_from.floor('1d'), method='bfill')
     endloc = possible_times.get_loc(
         (start_from + pd.Timedelta('1d')).floor('1d'), method='bfill') + 1
