@@ -209,7 +209,8 @@ def test_get_data_start_end_labels_obs_fx_instant_mismatch(site_metadata):
 
 @pytest.mark.parametrize('it,lead,issue', [
     (23, '1h', '20190422T2300Z'),
-    (5, '19h', '20190422T0500Z')
+    (5, '19h', '20190422T0500Z'),
+    (5, '19h', '20190422T0000-05:00')
 ])
 def test_get_data_start_end_labels_obs_fx_instant(site_metadata, lead, issue,
                                                   it):
@@ -374,6 +375,37 @@ def test_get_data_start_end_time_weekahead(site_metadata, variable, rl,
         interval_label='beginning')
     data_start, data_end = utils.get_data_start_end(
         observation, forecast, run_time, issue_time)
+    assert data_start == pd.Timestamp(expected_start)
+    assert data_end == pd.Timestamp(expected_end)
+
+
+@pytest.mark.parametrize("variable,expected_start,expected_end,rl,issue,run", [
+    ("net_load", "20190404T0000Z", "20190405T0000Z", "1d",
+     '20190410T1600-07:00', '20190410T1550-07:00'),
+    ("net_load", "20190410T2150Z", "20190410T2250Z", "12h",
+     '20190410T1600-07:00', '20190410T1550-07:00'),
+    ("ghi", "20190404T0000Z", "20190405T0000Z", "1d",
+     '20190405T1600-07:00', '20190405T1550-07:00'),
+    ("ghi", "20190404T0000Z", "20190405T0000Z", "1d",
+     '20190405T1600-07:00', '20190405T1750-05:00'),
+    ("ghi", "20190405T1450-07:00", "20190405T1550-07:00", "8h",
+     '20190405T1600-07:00', '20190405T1550-07:00'),
+])
+def test_get_data_start_end_time_tz(site_metadata, variable, rl, issue, run,
+                                    expected_start, expected_end):
+    observation = default_observation(
+        site_metadata, variable=variable,
+        interval_length=pd.Timedelta('5min'), interval_label='ending'
+    )
+    forecast = default_forecast(
+        site_metadata, variable=variable,
+        issue_time_of_day=dt.time(hour=23),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta(rl),
+        interval_label='beginning')
+    data_start, data_end = utils.get_data_start_end(
+        observation, forecast, pd.Timestamp(run), pd.Timestamp(issue))
     assert data_start == pd.Timestamp(expected_start)
     assert data_end == pd.Timestamp(expected_end)
 
