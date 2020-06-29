@@ -13,6 +13,7 @@
         <th colspan="1">Name</th>
         <th colspan="1">Normalization</th>
         <th colspan="1">Deadband (%)</th>
+        <th colspan="1">Cost Parameters</th>
     </tr>
     </thead>
     <tbody style="text-align: left; overflow-wrap: break-word;">
@@ -24,6 +25,9 @@
         </td>
         <td>
         {{ pfxobs.uncertainty }}
+        </td>
+        <td>
+        <a href="#cost-{{ pfxobs.cost.name }}">{{ pfxobs.cost.name }}</a>
         </td>
     </tr>
     {% endfor %}

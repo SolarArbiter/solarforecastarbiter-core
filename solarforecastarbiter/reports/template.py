@@ -2,6 +2,7 @@
 Inserts metadata and figures into the report template.
 """
 import base64
+import json
 import logging
 from pathlib import Path
 import re
@@ -95,6 +96,10 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     return kwargs
 
 
+def _pretty_json(val):
+    return json.dumps(val, indent=4, separators=(',', ':'))
+
+
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
     the report. If the report failed to compute, the template and kwargs will
@@ -128,6 +133,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         lstrip_blocks=True,
         trim_blocks=True
     )
+    env.filters['pretty_json'] = _pretty_json
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     if report.status == 'complete':
         template = env.get_template('body.html')
