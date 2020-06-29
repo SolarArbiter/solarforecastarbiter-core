@@ -11,6 +11,7 @@ import uuid
 import pandas as pd
 from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
+import pytz
 
 
 from solarforecastarbiter import datamodel
@@ -157,8 +158,7 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
 
 @pytest.mark.parametrize('il', ['ending', 'beginning'])
 def test_run_persistence_interval_assert_data(
-        session, site_metadata, obs_5min_begin,
-        mocker, il):
+        session, site_metadata, obs_5min_begin, mocker, il):
     run_time = pd.Timestamp('20190102T1945Z')
     # day ahead, index = False
     obs = obs_5min_begin.replace(interval_label=il)
@@ -187,8 +187,7 @@ def test_run_persistence_interval_assert_data(
 
 
 def test_run_persistence_interval_two_day(
-        session, site_metadata, obs_5min_begin,
-        mocker):
+        session, site_metadata, obs_5min_begin, mocker):
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=0),
@@ -218,18 +217,19 @@ def test_run_persistence_interval_two_day(
 @pytest.mark.parametrize('obsil', ['ending', 'beginning'])
 def test_run_persistence_interval_tz(session, site_metadata, obs_5min_begin,
                                      mocker, fxil, obsil):
-    run_time = pd.Timestamp('20190103T0345Z')
+    run_time = pd.Timestamp('20190102T2245-05:00')
     site = site_metadata.replace(timezone='Etc/GMT+5')
     # day ahead, index = False
-    obs = obs_5min_begin.replace(interval_label=obsil)
+    obs = obs_5min_begin.replace(site=site, interval_label=obsil)
     forecast = default_forecast(
         site,
-        issue_time_of_day=dt.time(hour=4),
+        issue_time_of_day=pytz.timezone('Etc/GMT+5').localize(
+            dt.time(hour=23)),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
         interval_label=fxil)
-    issue_time = pd.Timestamp('20190103T0400Z')
+    issue_time = pd.Timestamp('20190102T2300-05:00')
     mocker.spy(main.persistence, 'persistence_interval')
     index = pd.date_range('20190101T0500Z', periods=24, freq='1h')
     data = pd.Series([0, 1, 2] + [0] * 21, index=index)
