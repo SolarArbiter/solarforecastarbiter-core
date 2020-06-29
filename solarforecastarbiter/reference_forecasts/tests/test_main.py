@@ -155,11 +155,13 @@ def test_run_persistence_interval(session, site_metadata, obs_5min_begin,
     assert main.persistence.persistence_interval.call_count == 1
 
 
+@pytest.mark.parametrize('il', ['ending', 'beginning'])
 def test_run_persistence_interval_assert_data(
         session, site_metadata, obs_5min_begin,
-        mocker):
+        mocker, il):
     run_time = pd.Timestamp('20190102T1945Z')
     # day ahead, index = False
+    obs = obs_5min_begin.replace(interval_label=il)
     forecast = default_forecast(
         site_metadata,
         issue_time_of_day=dt.time(hour=23),
@@ -172,7 +174,7 @@ def test_run_persistence_interval_assert_data(
     index = pd.date_range('20190101T0000Z', periods=24, freq='1h')
     data = pd.Series([0, 1, 2] + [0] * 21, index=index)
     load_data = mocker.MagicMock(return_value=data)
-    out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+    out = main.run_persistence(session, obs, forecast, run_time,
                                issue_time, load_data=load_data)
     assert load_data.call_args[0][1:] == (pd.Timestamp('20190101T0000Z'),
                                           pd.Timestamp('20190102T0000Z'))
@@ -212,32 +214,39 @@ def test_run_persistence_interval_two_day(
     assert main.persistence.persistence_interval.call_count == 1
 
 
+@pytest.mark.parametrize('fxil', ['ending', 'beginning'])
+@pytest.mark.parametrize('obsil', ['ending', 'beginning'])
 def test_run_persistence_interval_tz(session, site_metadata, obs_5min_begin,
-                                     mocker):
+                                     mocker, fxil, obsil):
     run_time = pd.Timestamp('20190103T0345Z')
     site = site_metadata.replace(timezone='Etc/GMT+5')
     # day ahead, index = False
+    obs = obs_5min_begin.replace(interval_label=obsil)
     forecast = default_forecast(
         site,
         issue_time_of_day=dt.time(hour=4),
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('24h'),
-        interval_label='beginning')
+        interval_label=fxil)
     issue_time = pd.Timestamp('20190103T0400Z')
     mocker.spy(main.persistence, 'persistence_interval')
     index = pd.date_range('20190101T0500Z', periods=24, freq='1h')
     data = pd.Series([0, 1, 2] + [0] * 21, index=index)
     load_data = mocker.MagicMock(return_value=data)
-    out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+    out = main.run_persistence(session, obs, forecast, run_time,
                                issue_time, load_data=load_data)
     assert load_data.call_args[0][1:] == (pd.Timestamp('20190101T0500Z'),
                                           pd.Timestamp('20190102T0500Z'))
     assert isinstance(out, pd.Series)
     assert len(out) == 24
-    assert out.loc['20190103T0500Z'] == 0
-    assert out.loc['20190103T0600Z'] == 1
-    assert out.loc['20190103T0700Z'] == 2
+    if fxil == 'ending':
+        i = 6
+    else:
+        i = 5
+    assert out.loc[f'20190103T0{i}00Z'] == 0
+    assert out.loc[f'20190103T0{i+1}00Z'] == 1
+    assert out.loc[f'20190103T0{i+2}00Z'] == 2
     assert main.persistence.persistence_interval.call_count == 1
 
 
