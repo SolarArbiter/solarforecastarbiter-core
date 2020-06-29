@@ -11,27 +11,35 @@ from solarforecastarbiter.reference_forecasts import utils
 from solarforecastarbiter.conftest import default_forecast, default_observation
 
 
-@pytest.mark.parametrize('issuetime,rl,lt,expected', [
-    ('06:00', '1h', '1h', [dt.time(i) for i in range(6, 24)] + [dt.time(0)]),
-    ('00:00', '4h', '1h', [dt.time(0), dt.time(4), dt.time(8), dt.time(12),
-                           dt.time(16), dt.time(20), dt.time(0)]),
-    ('16:00', '8h', '3h', [dt.time(16), dt.time(0)]),
-    ('00:30', '4h', '120h', [dt.time(0, 30), dt.time(4, 30), dt.time(8, 30),
-                             dt.time(12, 30), dt.time(16, 30),
-                             dt.time(20, 30), dt.time(0, 30)])
-])
-def test_issue_times(single_forecast, issuetime, rl, lt, expected):
-    fx = replace(
-        single_forecast,
-        issue_time_of_day=dt.datetime.strptime(issuetime, '%H:%M').time(),
-        run_length=pd.Timedelta(rl),
-        lead_time_to_start=pd.Timedelta(lt))
-    day = pd.Timestamp('20200101')
-    out = utils.get_issue_times(fx, day)
-    assert [o.time() for o in out] == expected
+@pytest.fixture
+def forecast_hr_begin(site_metadata):
+    return default_forecast(
+        site_metadata,
+        issue_time_of_day=dt.time(hour=5),
+        lead_time_to_start=pd.Timedelta('1h'),
+        interval_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('1h'),
+        interval_label='beginning')
 
 
 @pytest.mark.parametrize('issuetime,rl,lt,start,expected', [
+    ('06:00', '1h', '1h', pd.Timestamp('20190101T0000Z'),
+     [pd.Timestamp('20190101T0000Z')] + list(
+         pd.date_range(start='20190101T0600Z', end='20190102T0000Z',
+                       freq='1h'))),
+    ('00:00', '4h', '1h', pd.Timestamp('20190101T0000Z'),
+     [pd.Timestamp('20190101T0000Z'), pd.Timestamp('20190101T0400Z'),
+      pd.Timestamp('20190101T0800Z'), pd.Timestamp('20190101T1200Z'),
+      pd.Timestamp('20190101T1600Z'), pd.Timestamp('20190101T2000Z'),
+      pd.Timestamp('20190102T0000Z')]),
+    ('16:00', '8h', '3h', pd.Timestamp('20190101T0000Z'),
+     [pd.Timestamp('20190101T0000Z'), pd.Timestamp('20190101T1600Z'),
+      pd.Timestamp('20190102T0000Z')]),
+    ('00:30', '4h', '120h', pd.Timestamp('20190101T0000Z'),
+     [pd.Timestamp('20190101T0030Z'), pd.Timestamp('20190101T0430Z'),
+      pd.Timestamp('20190101T0830Z'), pd.Timestamp('20190101T1230Z'),
+      pd.Timestamp('20190101T1630Z'), pd.Timestamp('20190101T2030Z'),
+      pd.Timestamp('20190102T0030Z')]),
     ('05:00', '6h', '1h', pd.Timestamp('20190101T0000Z'),
      [pd.Timestamp('20190101T0500Z'), pd.Timestamp('20190101T1100Z'),
       pd.Timestamp('20190101T1700Z'), pd.Timestamp('20190101T2300Z'),
@@ -43,21 +51,22 @@ def test_issue_times(single_forecast, issuetime, rl, lt, expected):
      [pd.Timestamp('20190101T0500Z'), pd.Timestamp('20190101T1700Z'),
       pd.Timestamp('20190102T0500Z')]),
     ('05:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
-     [pd.Timestamp('20181231T2300-06:00'), pd.Timestamp('20190101T1100-06:00'),
-      pd.Timestamp('20190101T2300-06:00')]),
+     [pd.Timestamp('20190101T1100-06:00'),
+      pd.Timestamp('20190101T2300-06:00'), pd.Timestamp('20190102T1100-06:00')
+      ]),
     ('05:00', '12h', '1h', pd.Timestamp('20190101T0900'),
      [pd.Timestamp('20190101T0500'), pd.Timestamp('20190101T1700'),
       pd.Timestamp('20190102T0500')]),
     ('10:00', '12h', '1h', pd.Timestamp('20190101T0900-06:00'),
      [pd.Timestamp('20190101T0400-06:00'), pd.Timestamp('20190101T1600-06:00'),
       pd.Timestamp('20190102T0400-06:00')]),
-    ('00:00', '6h', '1h', pd.Timestamp('20190101T1800-06:00'),
-     [pd.Timestamp('20190101T1800-06:00'), pd.Timestamp('20190102T0000-06:00'),
-      pd.Timestamp('20190102T0600-06:00'), pd.Timestamp('20190102T1200-06:00'),
-     pd.Timestamp('20190102T1800-06:00')])
+    ('00:00', '6h', '1h', pd.Timestamp('20190101T1801-06:00'),
+     [pd.Timestamp('20190101T0000-06:00'), pd.Timestamp('20190101T0600-06:00'),
+      pd.Timestamp('20190101T1200-06:00'), pd.Timestamp('20190101T1800-06:00'),
+      pd.Timestamp('20190102T0000-06:00')])
 ])
-def test_issue_times_start(single_forecast, issuetime, rl, lt, start,
-                           expected):
+def test_issue_times(single_forecast, issuetime, rl, lt, start,
+                     expected):
     fx = replace(
         single_forecast,
         issue_time_of_day=dt.datetime.strptime(issuetime, '%H:%M').time(),
@@ -74,8 +83,24 @@ def test_issue_times_localized(single_forecast):
         run_length=pd.Timedelta('12h'),
     )
     out = utils.get_issue_times(fx, pd.Timestamp('20200601T1700-0500'))
-    assert out == [pd.Timestamp('20200601T1400-05:00'),
+    assert out == [pd.Timestamp('20200601T0200-05:00'),
+                   pd.Timestamp('20200601T1400-05:00'),
                    pd.Timestamp('20200602T0200-05:00')]
+
+
+def test_issue_times_fx_gap(forecast_hr_begin):
+    # 1-4 utc should not be included in output as 5 is the first
+    # issue time for the day.
+    out = utils.get_issue_times(forecast_hr_begin,
+                                pd.Timestamp('20200505T2000-07:00'))
+    assert out == list(pd.date_range(
+        start=pd.Timestamp('20200505T0000-07:00'),
+        end=pd.Timestamp('20200505T1700-07:00'),
+        freq='1h')) + list(pd.date_range(
+            start=pd.Timestamp('20200505T2200-07:00'),
+            end=pd.Timestamp('20200506T0000-07:00'),
+            freq='1h'
+        ))
 
 
 @pytest.mark.parametrize('runtime,expected', [
@@ -433,17 +458,6 @@ def test_get_data_start_end_time_weekahead_not_midnight(site_metadata):
     assert data_end == pd.Timestamp('20190405T1200Z')
 
 
-@pytest.fixture
-def forecast_hr_begin(site_metadata):
-    return default_forecast(
-        site_metadata,
-        issue_time_of_day=dt.time(hour=5),
-        lead_time_to_start=pd.Timedelta('1h'),
-        interval_length=pd.Timedelta('1h'),
-        run_length=pd.Timedelta('1h'),
-        interval_label='beginning')
-
-
 @pytest.mark.parametrize('adjust_for_interval_label', [True, False])
 def test_get_forecast_start_end_time_same_as_issue_time(
         forecast_hr_begin, adjust_for_interval_label):
@@ -471,10 +485,10 @@ def test_get_forecast_start_end_time_same_as_issue_time(
      pd.Timestamp('20190422T0100-06:00')),
     (pd.Timestamp('20190422T0700-07:00'), pd.Timestamp('20190422T0800-07:00'),
      pd.Timestamp('20190422T0900-07:00')),
-    # there is a gap since issue time is 5 and only hourly run
-    pytest.param(pd.Timestamp('20190422T1700-07:00'),
-                 pd.Timestamp('20190422T1800-07:00'),
-                 pd.Timestamp('20190422T1900-07:00'),
+    # there is a gap in forecasts since issue time is 5 and only hourly run
+    pytest.param(pd.Timestamp('20190422T2000-07:00'),  # 3 utc
+                 pd.Timestamp('20190422T2100-07:00'),
+                 pd.Timestamp('20190422T2200-07:00'),
                  marks=pytest.mark.xfail(strict=True)),
 ])
 def test_get_forecast_start_end_time_tz(

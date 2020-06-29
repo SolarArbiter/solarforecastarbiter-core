@@ -1,14 +1,18 @@
+import datetime as dt
+
+
 import numpy as np
 import pandas as pd
+import pytz
 
 
 from solarforecastarbiter.io import utils as io_utils
 
 
 def get_issue_times(forecast, start_from):
-    """Return a list of the issue times in a 24 hr period for a given
-    Forecast. The output timestamps are localized to the timezone of
-    `start_from`.
+    """Return a list of the issue times for a given Forecast starting
+    from the date of start_from until the first issue time of the  next day.
+    The output timestamps are localized to the timezone of `start_from`.
 
     Parameters
     ----------
@@ -23,23 +27,24 @@ def get_issue_times(forecast, start_from):
         pandas.Timestamp objects with the issues times for the particular day
         including the first issue time for the next day.
     """
-    if start_from.tzinfo is not None:
-        start_date = start_from.astimezone('UTC').date()
-    else:
-        start_date = start_from.date()
     start_time = forecast.issue_time_of_day
-    issue = pd.Timestamp.combine(start_date, start_time)
     if start_time.tzinfo is None:
-        issue = issue.tz_localize('UTC')
-    else:
-        issue = issue.tz_convert('UTC')
-    next_day = (issue + pd.Timedelta('1d')).floor('1d')
-    # works even for midnight issue
-    out = [issue.tz_convert(start_from.tz)]
-    while issue < next_day:
-        issue += forecast.run_length
-        out.append(issue.tz_convert(start_from.tz))
-    return out
+        start_time = pytz.utc.localize(start_time)
+    # is in utc
+    earliest_start = pd.Timestamp.combine(
+        (start_from - pd.Timedelta('1d')).date(), start_time)
+    possible_times = []
+    for i in range(3):
+        start = earliest_start + pd.Timedelta(f'{i}d')
+        end = (start + pd.Timedelta('1d')).floor('1d')
+        possible_times.extend(list(
+            pd.date_range(start=start, end=end, freq=forecast.run_length)))
+    possible_times = pd.DatetimeIndex(possible_times).tz_convert(
+        start_from.tz).drop_duplicates()
+    startloc = possible_times.get_loc(start_from.floor('1d'), method='bfill')
+    endloc = possible_times.get_loc(
+        (start_from + pd.Timedelta('1d')).floor('1d'), method='bfill') + 1
+    return list(possible_times[startloc:endloc])
 
 
 def get_next_issue_time(forecast, run_time):
