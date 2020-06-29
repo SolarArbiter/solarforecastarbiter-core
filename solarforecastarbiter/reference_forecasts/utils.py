@@ -8,7 +8,7 @@ from solarforecastarbiter.io import utils as io_utils
 
 def get_issue_times(forecast, start_from):
     """Return a list of the issue times for a given Forecast starting
-    from the date of start_from until the first issue time of the  next day.
+    from the date of `start_from` until the first issue time of the next day.
     The output timestamps are localized to the timezone of `start_from`.
 
     Parameters
