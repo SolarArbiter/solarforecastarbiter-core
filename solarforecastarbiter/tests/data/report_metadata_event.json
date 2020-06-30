@@ -3,7 +3,7 @@
     "name": "Weather Station Event Report",
     "start": "2019-04-14T00:00:00Z",
     "end": "2019-04-17T00:00:00Z",
-    "missing_forecast": "forward",
+    "forecast_fill_method": "forward",
     "metrics": [
       "pod",
       "far",

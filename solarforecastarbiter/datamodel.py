@@ -1810,7 +1810,7 @@ class ReportParameters(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
-    missing_forecast : str
+    forecast_fill_method : {'drop', 'forward', float}
         Indicates what process to use for handling missing forecasts.
     object_pairs: Tuple of ForecastObservation or ForecastAggregate
         Paired Forecasts and Observations or Aggregates to be analyzed
@@ -1833,7 +1833,7 @@ class ReportParameters(BaseModel):
     object_pairs: Tuple[Union[ForecastObservation, ForecastAggregate], ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
-    missing_forecast: str = 'drop'
+    forecast_fill_method: str = 'drop'
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     costs: Tuple[Cost, ...] = tuple()

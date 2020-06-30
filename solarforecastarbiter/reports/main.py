@@ -180,7 +180,7 @@ def create_raw_report_from_data(report, data):
         processed_fxobs = preprocessing.process_forecast_observations(
             report_params.object_pairs,
             report_params.filters,
-            report_params.missing_forecast,
+            report_params.forecast_fill_method,
             report_params.start, report_params.end,
             data, timezone,
             costs=report_params.costs)

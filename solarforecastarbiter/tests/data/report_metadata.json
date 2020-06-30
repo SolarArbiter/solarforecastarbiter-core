@@ -4,7 +4,7 @@
     "name": "Desert Rock and Table Mountain GHI Forecast Analysis",
     "start": "2019-10-01T00:00:00Z",
     "end": "2019-10-07T23:59:00Z",
-    "missing_forecast": "forward",
+    "forecast_fill_method": "forward",
     "filters": [
       {
         "quality_flags": [

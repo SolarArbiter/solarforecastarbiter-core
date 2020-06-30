@@ -507,7 +507,7 @@ def test_process_forecast_observations(report_objects, quality_filter,
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -540,7 +540,7 @@ def test_process_probabilistic_forecast_observations(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -577,7 +577,7 @@ def test_process_probabilistic_forecast_observations_xy(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -620,7 +620,7 @@ def test_process_forecast_observations_no_data(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -664,7 +664,7 @@ def test_process_forecast_observations_no_cost(report_objects, quality_filter,
     obj_pairs[-1] = obj_pairs[-1].replace(cost='not in there')
     processed_fxobs_list = preprocessing.process_forecast_observations(
         obj_pairs, filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -721,7 +721,7 @@ def test_process_forecast_observations_resample_fail(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -758,7 +758,7 @@ def test_process_forecast_observations_same_name(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         fxobs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data, 'MST',
@@ -797,7 +797,7 @@ def test_process_forecast_observations_no_fx(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data_ser, 'MST',
@@ -829,7 +829,7 @@ def test_process_forecast_observations_no_fx(
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
         filters,
-        report.report_parameters.missing_forecast,
+        report.report_parameters.forecast_fill_method,
         report.report_parameters.start,
         report.report_parameters.end,
         data_df, 'MST',
@@ -871,7 +871,7 @@ def test_process_forecast_observations_no_fx(
      preprocessing.FILL_RESULT_TOTAL_STRING.format(
         'Reference ', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9'))),  # NOQA
 ])
-def test_process_forecast_observations_missing_forecast_types(
+def test_process_forecast_observations_forecast_fill_methods(
         report_objects, quality_filter, mocker, method, pr_name, prref_name):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
@@ -1019,34 +1019,26 @@ def test__validate_event_dtype(data):
     assert ser_conv.dtype == bool
 
 
-@pytest.mark.parametrize("data,exp", [
-    (pd.Series([1], dtype=np.int64), np.int64),
-    (pd.Series([1], dtype=np.float64), np.float64),
-    (pd.DataFrame({'1': [1], '2': [2]}, dtype=np.int64), np.int64),
-    (pd.DataFrame({'1': [1], '2': [2]}, dtype=np.float64), np.float64),
-    (np.array([0]), None)
-])
-def test__get_dtype(data, exp):
-    dtype = preprocessing._get_dtype(data)
-    assert dtype == exp
-
-
 @pytest.mark.parametrize("method", [
     ('drop'), ('forward'), ('1')
 ])
-def test_apply_fill(method):
+def test_apply_fill(method, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     n = 10
     dt_range = pd.date_range(start='2020-01-01T00:00',
-                             periods=n,
-                             freq='30min',
+                             periods=n+1,  # because ending is skipped
+                             freq=freq,
+                             closed=datamodel.CLOSED_MAPPING[label],
                              name='timestamp')
-    data = pd.Series([1]*n, index=dt_range)
+    data = pd.Series([1]*n, index=dt_range, dtype=float)
     i_rand = (np.append(0., np.round(np.random.rand(n-1))) == 1)
     data[i_rand] = np.nan
 
-    result, count = preprocessing.apply_fill(data, method,
-                                             dt_range[0], dt_range[-1],
-                                             dt_range.freq)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             dt_range[0]-freq, dt_range[-1])
     assert isinstance(result, pd.Series)
     assert isinstance(result.index, pd.DatetimeIndex)
     if method == 'drop':
@@ -1063,35 +1055,38 @@ def test_apply_fill(method):
                                         periods=1,
                                         freq='2h',
                                         name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      0),
     ('forward',
      pd.Series([0, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
                                                  periods=4,
                                                  freq='2h',
                                                  name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      3),
     ('1',
      pd.Series([1, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
                                                  periods=4,
                                                  freq='2h',
                                                  name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      3),
 ])
-def test_apply_fill_one_value(method, exp, exp_count):
+def test_apply_fill_one_value(method, exp, exp_count, single_forecast):
     # Single value
+    freq = pd.Timedelta('2h')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     start = pd.to_datetime('2020-01-01T00:00')
     end = pd.to_datetime('2020-01-01T6:00')
     data = pd.Series([1], index=pd.date_range(start='2020-01-01T02:00',
                                               periods=1,
-                                              freq='2h',
+                                              freq=freq,
                                               name='timestamp'),
-                     dtype=np.float64)
-    result, count = preprocessing.apply_fill(data, method,
-                                             start=start, end=end,
-                                             interval_length=data.index.freq)
+                     dtype=float)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             start=start-freq, end=end)
     pd.testing.assert_series_equal(result, exp)
     assert count == exp_count
 
@@ -1099,49 +1094,55 @@ def test_apply_fill_one_value(method, exp, exp_count):
 @pytest.mark.parametrize("method,exp,exp_count", [
     ('drop',
      pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      0),
     ('forward',
      pd.Series([0]*6, index=pd.date_range(start='2020-01-01T00:00',
                                           periods=6,
                                           freq='1h',
                                           name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      6),
     ('1',
      pd.Series([1]*6, index=pd.date_range(start='2020-01-01T00:00',
                                           periods=6,
                                           freq='1h',
                                           name='timestamp'),
-               dtype=np.float64),
+               dtype=float),
      6),
 ])
-def test_apply_fill_no_values(method, exp, exp_count):
+def test_apply_fill_no_values(method, exp, exp_count, single_forecast):
     # Single value
+    freq = pd.Timedelta('1h')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     start = pd.to_datetime('2020-01-01T00:00')
     end = pd.to_datetime('2020-01-01T05:00')
-    interval_length = pd.Timedelta('1h')
     # No values
     data = pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
-                     dtype=np.float64)
-    result, count = preprocessing.apply_fill(data, method,
-                                             start=start, end=end,
-                                             interval_length=interval_length)
+                     dtype=float)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             start=start-freq, end=end)
     pd.testing.assert_series_equal(result, exp)
     assert count == exp_count
 
 
-def test_apply_fill_unsupported():
+def test_apply_fill_unsupported(single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     n = 10
     dt_range = pd.date_range(start='2020-01-01T00:00',
                              periods=n,
                              freq='30min',
                              name='timestamp')
     with pytest.raises(ValueError):
-        preprocessing.apply_fill(pd.Series(range(n), index=dt_range),
-                                 'error',
-                                 dt_range[0], dt_range[-1],
-                                 interval_length=dt_range.freq)
+        preprocessing.apply_fill(pd.Series(range(n),
+                                           index=dt_range, dtype=float),
+                                 forecast, 'error',
+                                 dt_range[0]-freq, dt_range[-1])
 
 
 @pytest.mark.parametrize("input,exp,n_pre,n_post", [
@@ -1153,20 +1154,24 @@ def test_apply_fill_unsupported():
     ([1, 2], [1, 2], 0, 3),
     ([np.nan]*5, [], 0, 0)
 ])
-def test_apply_fill_drop(input, exp, n_pre, n_post):
+def test_apply_fill_drop(input, exp, n_pre, n_post, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     # convert list to series
     n = n_pre + len(input) + n_post
     dt_range = pd.date_range(start='2020-01-01T00:00',
-                             periods=n,
+                             periods=n+1,
                              freq='30min',
+                             closed=datamodel.CLOSED_MAPPING[label],
                              name='timestamp')
-    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
     expected = data.loc[data.isin(exp)]
 
     # as a Series
-    result, count = preprocessing.apply_fill(data, 'drop',
-                                             dt_range[0], dt_range[-1],
-                                             dt_range.freq)
+    result, count = preprocessing.apply_fill(data, forecast, 'drop',
+                                             dt_range[0], dt_range[-1]+freq)
     pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
     assert count == len(input) - len(exp)
@@ -1174,14 +1179,16 @@ def test_apply_fill_drop(input, exp, n_pre, n_post):
     # as a DataFrame with 3 columns
     df_data = pd.DataFrame({'1': input,
                             '2': input,
-                            '3': input}, index=dt_range[n_pre:n-n_post])
-    df_result, count = preprocessing.apply_fill(df_data, 'drop',
-                                                dt_range[0], dt_range[-1],
-                                                dt_range.freq)
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post],
+                           dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, 'drop',
+                                                dt_range[0], dt_range[-1]+freq)
     df_expected = pd.DataFrame({'1': exp,
                                 '2': exp,
-                                '3': exp}, index=expected.index)
-    df_expected = df_expected.astype(data.dtype)
+                                '3': exp},
+                               index=expected.index,
+                               dtype=float)
     pd.testing.assert_frame_equal(df_result, df_expected)
     assert count == (len(input) - len(exp)) * 3
 
@@ -1195,21 +1202,23 @@ def test_apply_fill_drop(input, exp, n_pre, n_post):
     ([1, 2], [1, 2, 2, 2, 2], 0, 3),
     ([np.nan]*5, [0, 0, 0, 0, 0], 0, 0)
 ])
-def test_apply_fill_forward(input, exp, n_pre, n_post):
+def test_apply_fill_forward(input, exp, n_pre, n_post, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     # convert list to series
     n = n_pre + len(input) + n_post
     dt_range = pd.date_range(start='2020-01-01T00:00',
                              periods=n,
                              freq='30min',
                              name='timestamp')
-    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
-    expected = pd.Series(exp, index=dt_range)
-    expected = expected.astype(data.dtype)
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
+    expected = pd.Series(exp, index=dt_range, dtype=float)
 
     # as a Series
-    result, count = preprocessing.apply_fill(data, 'forward',
-                                             dt_range[0], dt_range[-1],
-                                             dt_range.freq)
+    result, count = preprocessing.apply_fill(data, forecast, 'forward',
+                                             dt_range[0], dt_range[-1]+freq)
     pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
     assert count == data.isna().sum() + n_pre + n_post
@@ -1217,14 +1226,14 @@ def test_apply_fill_forward(input, exp, n_pre, n_post):
     # as a DataFrame with 3 columns
     df_data = pd.DataFrame({'1': input,
                             '2': input,
-                            '3': input}, index=dt_range[n_pre:n-n_post])
-    df_result, count = preprocessing.apply_fill(df_data, 'forward',
-                                                dt_range[0], dt_range[-1],
-                                                dt_range.freq)
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post], dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, 'forward',
+                                                dt_range[0], dt_range[-1]+freq)
     df_expected = pd.DataFrame({'1': exp,
                                 '2': exp,
-                                '3': exp}, index=dt_range)
-    df_expected = df_expected.astype(data.dtype)
+                                '3': exp},
+                               index=dt_range, dtype=float)
     pd.testing.assert_frame_equal(df_result, df_expected)
     assert count == (data.isna().sum() + n_pre + n_post)*3
 
@@ -1238,21 +1247,24 @@ def test_apply_fill_forward(input, exp, n_pre, n_post):
     ([1, 2], [1, 2, 100, 100, 100], 100, 0, 3),
     ([np.nan]*5, [100]*5, 100, 0, 0)
 ])
-def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
+def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post,
+                             single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
     # convert list to series
     n = n_pre + len(input) + n_post
     dt_range = pd.date_range(start='2020-01-01T00:00',
                              periods=n,
                              freq='30min',
                              name='timestamp')
-    data = pd.Series(input, index=dt_range[n_pre:n-n_post])
-    expected = pd.Series(exp, index=dt_range)
-    expected = expected.astype(data.dtype)
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
+    expected = pd.Series(exp, index=dt_range, dtype=float)
 
     # as a Series
-    result, count = preprocessing.apply_fill(data, fvalue,
-                                             dt_range[0], dt_range[-1],
-                                             dt_range.freq)
+    result, count = preprocessing.apply_fill(data, forecast, fvalue,
+                                             dt_range[0], dt_range[-1]+freq)
     pd.testing.assert_series_equal(result, expected,
                                    check_exact=True)
     assert count == data.isna().sum() + n_pre + n_post
@@ -1260,14 +1272,14 @@ def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
     # as a DataFrame with 3 columns
     df_data = pd.DataFrame({'1': input,
                             '2': input,
-                            '3': input}, index=dt_range[n_pre:n-n_post])
-    df_result, count = preprocessing.apply_fill(df_data, fvalue,
-                                                dt_range[0], dt_range[-1],
-                                                dt_range.freq)
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post], dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, fvalue,
+                                                dt_range[0], dt_range[-1]+freq)
     df_expected = pd.DataFrame({'1': exp,
                                 '2': exp,
-                                '3': exp}, index=dt_range)
-    df_expected = df_expected.astype(data.dtype)
+                                '3': exp},
+                               index=dt_range, dtype=float)
     pd.testing.assert_frame_equal(df_result, df_expected)
     assert count == (data.isna().sum() + n_pre + n_post)*3
 
@@ -1278,7 +1290,7 @@ def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
          '2': [10, np.nan, 30, np.nan, 50],
          '3': [np.nan, 200, 300, 400, np.nan]},
         index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
-        dtype=np.float64)),
+        dtype=float)),
 ])
 @pytest.mark.parametrize("method,exp,exp_count", [
     ('drop', pd.DataFrame(
@@ -1286,26 +1298,30 @@ def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post):
          '2': [30],
          '3': [300]},
         index=[pd.Timestamp('2020-01-01T02:00')],
-        dtype=np.float64),
+        dtype=float),
         4*3),
     ('forward', pd.DataFrame(
         {'1': [1, 2, 3, 4, 5],
          '2': [10, 10, 30, 30, 50],
          '3': [0, 200, 300, 400, 400]},
         index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
-        dtype=np.float64),
+        dtype=float),
         4),
     ('-1', pd.DataFrame(
         {'1': [1, 2, 3, 4, 5],
          '2': [10, -1, 30, -1, 50],
          '3': [-1, 200, 300, 400, -1]},
         index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
-        dtype=np.float64),
+        dtype=float),
         4),
 ])
-def test_apply_fill_unstratified_dataframe(data, method, exp, exp_count):
-    result, count = preprocessing.apply_fill(data, method,
-                                             data.index[0], data.index[-1],
-                                             data.index.freq)
+def test_apply_fill_unstratified_dataframe(data, method, exp, exp_count,
+                                           single_forecast):
+    freq = pd.Timedelta('1h')
+    label = 'instant'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             data.index[0], data.index[-1])
     pd.testing.assert_frame_equal(result, exp)
     assert count == exp_count

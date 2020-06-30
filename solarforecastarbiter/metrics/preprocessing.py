@@ -62,7 +62,7 @@ def apply_validation(obs_df, qfilter, handle_func):
         return validated_obs, counts
 
 
-def apply_fill(fx_data, missing_forecast, start, end, interval_length):
+def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
     """
     Apply fill procedure to the data from the start to end timestamps.
 
@@ -70,57 +70,65 @@ def apply_fill(fx_data, missing_forecast, start, end, interval_length):
     ----------
     fx_data : pandas.Series or pandas.DataFrame
         Forecast data with pandas.DatetimeIndex.
-    missing_forecast : str
+    forecast : datamodel.Forecast
+    forecast_fill_method : {'drop', 'forward', float}
         Indicates what process to use for handling missing forecasts.
-        Currently supports : 'drop', 'forward', and bool or numeric value.
+          * _'drop'_ drops all missing values for any row with a missing value.
+          * _'forward'_ fills missing values with the most recent real value.
+            If any leading missing values fill with zeros.
+          * _float_ fills any missing values with the given value.
     start : pandas.Timestamp
     end : pandas.Timestamp
-    interval_length : pandas.Timedelta
 
     Returns
     -------
-    pandas.Series or pandas.DataFrame
-    int : Number of values filled or dropped.
-
-    TODO
-    ----
-    - Add support for 'clearsky' fillin.
-
+    filled: pandas.Series or pandas.DataFrame
+        Forecast filled according to the specified logic
+    count : int
+        Number of values filled or dropped
     """
-    try:
-        orig_dtype = fx_data.dtype
-    except AttributeError:
-        # DataFrame must be all same dtypes
-        orig_dtype = set(fx_data.dtypes).pop()
-    missing_forecast = str(missing_forecast)
+    forecast_fill_method = str(forecast_fill_method)
     # Create full datetime range at resolution
-    full_dt_index = pd.date_range(start=start, end=end, freq=interval_length,
-                                  name=fx_data.index.name)
-
-    if missing_forecast == 'drop':
-        if isinstance(fx_data, pd.DataFrame):
-            count = fx_data.isna().any(axis=1).sum() * fx_data.shape[1]
+    full_dt_index = pd.date_range(
+        start=start, end=end, freq=forecast.interval_length,
+        closed=datamodel.CLOSED_MAPPING[forecast.interval_label],
+        name=fx_data.index.name)
+    try:
+        # Convert fill method to numeric as the same type as the original data.
+        const_fill_value = pd.to_numeric(forecast_fill_method).astype(float)
+        # Reindex with expected datetime range.
+        # Fills missing values with the given constant value.
+        filled = fx_data.reindex(index=full_dt_index)
+        count = filled.isna().sum()
+        filled.fillna(value=const_fill_value, inplace=True)
+    except ValueError:
+        if forecast_fill_method == 'drop':
+            # Drop any missing values.
+            # If data is a DataFrame any row that is missing a value is
+            # dropped for all columns.
+            if isinstance(fx_data, pd.DataFrame):
+                count = fx_data.isna().any(axis=1).sum() * fx_data.shape[1]
+            else:
+                count = fx_data.isna().sum()
+            filled = fx_data.dropna(how='any').astype(float)
+        elif forecast_fill_method == 'forward':
+            # Reindex with expected datetime range.
+            # Fills missing values with the most recent real value.
+            # If any leading missing values fill with zeros.
+            filled = fx_data.reindex(index=full_dt_index)
+            count = filled.isna().sum()
+            filled.fillna(method='ffill', inplace=True)
+            filled.fillna(value=0, inplace=True)
         else:
-            count = fx_data.isna().sum()
-        fx_data_proc = fx_data.dropna(how='any')
-    elif missing_forecast == 'forward':
-        fx_data_proc = fx_data.reindex(index=full_dt_index)
-        count = fx_data_proc.isna().sum()
-        fx_data_proc.fillna(method='ffill', inplace=True)
-        fx_data_proc.fillna(value=0, inplace=True)  # leading gap
-    elif missing_forecast.lstrip('-').replace('.', '').isnumeric():
-        fill_value = pd.to_numeric(missing_forecast).astype(orig_dtype)
-        fx_data_proc = fx_data.reindex(index=full_dt_index)
-        count = fx_data_proc.isna().sum()
-        fx_data_proc.fillna(value=fill_value, inplace=True)
-    else:
-        raise ValueError(f"Unsupported forecast missing data procedure: "
-                         f"{missing_forecast}")
+            raise ValueError(f"Unsupported forecast fill missing data method: "
+                             f"{forecast_fill_method}")
 
+    # If data provided as DataFrame count will be a series, so sum over that
+    # series to get the total count for all columns (Except for 'drop').
     if isinstance(count, pd.Series):
         count = count.sum()
 
-    return fx_data_proc.astype(orig_dtype), count
+    return filled, count
 
 
 def _resample_event_obs(obs, fx, obs_data):
@@ -410,43 +418,8 @@ def _merge_quality_filters(filters):
     return datamodel.QualityFlagFilter(tuple(combo))
 
 
-def _name_pfxobs(current_names, forecast, i=1):
-    if isinstance(forecast, str):
-        forecast_name = forecast
-    else:
-        forecast_name = forecast.name
-        if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
-            if forecast.axis == 'x':
-                forecast_name += \
-                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
-            else:
-                forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
-    if i > 99:
-        logger.warning(
-            'Limit of unique names for identically named forecasts reached.'
-            ' Aligned pairs may have duplicate names.')
-        return forecast_name
-    if forecast_name in current_names:
-        if i == 1:
-            new_name = f'{forecast_name}-{i:02d}'
-        else:
-            new_name = f'{forecast_name[:-3]}-{i:02d}'
-        return _name_pfxobs(current_names, new_name, i + 1)
-    else:
-        return forecast_name
-
-
-def _get_dtype(data):
-    if isinstance(data, pd.Series):
-        return data.dtype
-    elif isinstance(data, pd.DataFrame):
-        return list(set(data.dtypes))[0]
-    else:
-        return None
-
-
 def process_forecast_observations(forecast_observations, filters,
-                                  missing_forecast, start, end,
+                                  forecast_fill_method, start, end,
                                   data, timezone, costs=tuple()):
     """
     Convert ForecastObservations into ProcessedForecastObservations
@@ -458,7 +431,7 @@ def process_forecast_observations(forecast_observations, filters,
         Pairs to process
     filters : list of solarforecastarbiter.datamodel.BaseFilter
         Filters to apply to each pair.
-    missing_forecast : str
+    forecast_fill_method : str
         Indicates what process to use for handling missing forecasts.
         Currently supports : 'drop', 'forward', and bool or numeric value.
     start : pandas.Timestamp
@@ -486,9 +459,9 @@ def process_forecast_observations(forecast_observations, filters,
         logger.warning(
             'Only filtering on Quality Flag is currently implemented')
     forecast_fill_map = FORECAST_FILL_STRING_MAP.copy()
-    if missing_forecast not in forecast_fill_map.keys():
+    if forecast_fill_method not in forecast_fill_map.keys():
         forecast_fill_map.update(
-            {missing_forecast: FORECAST_FILL_CONST_STRING.format(missing_forecast)})  # NOQA
+            {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
     qfilter = _merge_quality_filters(filters)
     costs_dict = {c.name: c for c in costs}
     validated_observations = {}
@@ -527,23 +500,20 @@ def process_forecast_observations(forecast_observations, filters,
             validated_observations[fxobs.data_object])
 
         # Apply fill to forecasts
-        freq = fxobs.forecast.interval_length
         fx_ser = data[fxobs.forecast]
-        fx_ser, count = apply_fill(fx_ser, missing_forecast, start, end, freq)
-        if _get_dtype(fx_ser) == np.object:
-            fx_ser = fx_ser.astype(_get_dtype(obs_ser))
+        fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
+                                   forecast_fill_method, start, end)
         preproc_results += (datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format(
-                '', forecast_fill_map[missing_forecast]),
+                '', forecast_fill_map[forecast_fill_method]),
             count=int(count)), )
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
-            ref_ser, count = apply_fill(ref_ser, missing_forecast, start, end, freq)  # NOQA
-            if _get_dtype(ref_ser) == np.object:
-                ref_ser = ref_ser.astype(_get_dtype(obs_ser))
+            ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
+                                        forecast_fill_method, start, end)
             preproc_results += (datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
-                    "Reference ", forecast_fill_map[missing_forecast]),
+                    "Reference ", forecast_fill_map[forecast_fill_method]),
                 count=int(count)), )
         else:
             ref_ser = None
@@ -587,3 +557,29 @@ def process_forecast_observations(forecast_observations, filters,
             )
             processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())
+
+
+def _name_pfxobs(current_names, forecast, i=1):
+    if isinstance(forecast, str):
+        forecast_name = forecast
+    else:
+        forecast_name = forecast.name
+        if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
+            if forecast.axis == 'x':
+                forecast_name += \
+                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+            else:
+                forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
+    if i > 99:
+        logger.warning(
+            'Limit of unique names for identically named forecasts reached.'
+            ' Aligned pairs may have duplicate names.')
+        return forecast_name
+    if forecast_name in current_names:
+        if i == 1:
+            new_name = f'{forecast_name}-{i:02d}'
+        else:
+            new_name = f'{forecast_name[:-3]}-{i:02d}'
+        return _name_pfxobs(current_names, new_name, i + 1)
+    else:
+        return forecast_name
