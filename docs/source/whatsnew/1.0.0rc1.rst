@@ -55,6 +55,15 @@ API Changes
 * Removed :py:mod:`solarforecastarbiter.metrics.valuation` (:pull:`487`)
 * Add :py:func:`solarforecastarbiter.reference_forecasts.make_latest_probabilistic_persistence_forecasts`
   to generate reference probabilistic persistence forecasts (:pull:`490`)
+* :py:func:`solarforecastarbiter.io.api.get_probabilistic_forecast_values`
+  now returns a DataFrame with string column names. It previously returned a
+  DataFrame with floats for column names. For example, if the columns were
+  previously described by ``Float64Index([25.0, 50.0, 75.0], dtype='float64')``
+  they are now described by ``Index(['25.0', '50.0', '75.0'], dtype='object')``.
+  (:pull:`496`)
+* :py:func:`solarforecastarbiter.io.utils.serialize_timeseries` and
+  :py:func:`solarforecastarbiter.io.utils.deserialize_timeseries` can now
+  handle DataFrames in addition to Series. (:issue:`495`, :pull:`496`)
 
 
 Enhancements

@@ -266,9 +266,9 @@ b"""
 @pytest.fixture()
 def prob_forecast_values():
     return pd.DataFrame(
-        {'25': [0.0, 1, 2, 3, 4, 5],
-         '50': [1.0, 2, 3, 4, 5, 6],
-         '75': [2.0, 3, 4, 5, 6, 7]},
+        {'25.0': [0.0, 1, 2, 3, 4, 5],
+         '50.0': [1.0, 2, 3, 4, 5, 6],
+         '75.0': [2.0, 3, 4, 5, 6, 7]},
         index=pd.date_range(start='20190101T0600',
                             end='20190101T1100',
                             freq='1h',
@@ -2019,9 +2019,9 @@ def cdf_and_cv_report_data(cdf_and_cv_report_objects):
                                             freq='1min',
                                             tz='MST',
                                             name='timestamp'))
-    cdf_fx_df = pd.DataFrame({25.: np.arange(periods_1min/60),
-                              50.: np.arange(periods_1min/60)+1,
-                              75.: np.arange(periods_1min/60)+2},
+    cdf_fx_df = pd.DataFrame({'25.0': np.arange(periods_1min/60),
+                              '50.0': np.arange(periods_1min/60)+1,
+                              '75.0': np.arange(periods_1min/60)+2},
                              index=pd.date_range(start='2020-04-01T00:00:00',
                                                  periods=periods_1min/60,
                                                  freq='60min',
@@ -2039,10 +2039,10 @@ def cdf_and_cv_report_data(cdf_and_cv_report_objects):
         cdf_forecast_1: cdf_fx_df,
         cdf_forecast_agg: cdf_fx_df,
         cdf_forecast_ref: cdf_fx_df,
-        cv_forecast_0: cdf_fx_df[25.],
-        cv_forecast_1: cdf_fx_df[50.],
-        cv_forecast_agg: cdf_fx_df[75.],
-        cv_forecast_ref: cdf_fx_df[50.]
+        cv_forecast_0: cdf_fx_df['25.0'],
+        cv_forecast_1: cdf_fx_df['50.0'],
+        cv_forecast_agg: cdf_fx_df['75.0'],
+        cv_forecast_ref: cdf_fx_df['50.0']
     }
     return data
 
@@ -2260,14 +2260,14 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
         tz='MST',
         name='timestamp')
     cdf_fx_y_df = pd.DataFrame({
-        25.: np.arange(periods_1h),
-        50.: np.arange(periods_1h)+1,
-        75.: np.arange(periods_1h)+2},
+        '25.0': np.arange(periods_1h),
+        '50.0': np.arange(periods_1h)+1,
+        '75.0': np.arange(periods_1h)+2},
         index=hourly_index)
     cdf_fx_x_df = pd.DataFrame({
-        250.: np.arange(periods_1h),
-        500.: np.arange(periods_1h)+1,
-        750.: np.arange(periods_1h)+2},
+        '250.0': np.arange(periods_1h),
+        '500.0': np.arange(periods_1h)+1,
+        '750.0': np.arange(periods_1h)+2},
         index=hourly_index)
     obs_df = obs_ser.to_frame('value')
     obs_df['quality_flag'] = OK
@@ -2281,10 +2281,10 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
         cdf_forecast_1: cdf_fx_x_df,
         cdf_forecast_agg: cdf_fx_x_df,
         cdf_forecast_ref: cdf_fx_x_df,
-        cv_forecast_0: cdf_fx_y_df[25.],
-        cv_forecast_1: cdf_fx_y_df[50.],
-        cv_forecast_agg: cdf_fx_x_df[750.],
-        cv_forecast_ref: cdf_fx_x_df[500.]
+        cv_forecast_0: cdf_fx_y_df['25.0'],
+        cv_forecast_1: cdf_fx_y_df['50.0'],
+        cv_forecast_agg: cdf_fx_x_df['750.0'],
+        cv_forecast_ref: cdf_fx_x_df['500.0']
     }
     return data
 

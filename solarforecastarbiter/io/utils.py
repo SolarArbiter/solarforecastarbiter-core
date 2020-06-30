@@ -309,7 +309,7 @@ def serialize_timeseries(ser):
         v.index.name = 'timestamp'
         jsonvals = v.tz_convert('UTC').reset_index().to_json(
             orient='records', date_format='iso', date_unit='s')
-        column = v.columns.to_list()
+        column = v.columns.astype(str).to_list()
         dtype = v.dtypes.astype(str).to_list()
         objtype = 'DataFrame'
     schema = {
@@ -378,9 +378,10 @@ def deserialize_timeseries(data):
         out = df.set_index(schema['index'])
         # pd.read_json will set all column names to strings, so
         # columns originally specified with float names need to be
-        # mapped back into the right name dtype
-        str_col_map = {str(col): col for col in schema['column']}
-        out = out.rename(columns=str_col_map)
+        # mapped back into the right name dtype. this code is not needed
+        # if columns are always strings.
+        # str_col_map = {str(col): col for col in schema['column']}
+        # out = out.rename(columns=str_col_map)
         out = out.astype(dict(zip(schema['column'], schema['dtype'])))
     if out.index.tzinfo is None:
         out = out.tz_localize(schema['timezone'])

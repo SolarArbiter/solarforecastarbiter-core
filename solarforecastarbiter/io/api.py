@@ -782,9 +782,10 @@ class APISession(requests.Session):
         df_dict = {}
         prob_fx = self.get_probabilistic_forecast(forecast_id)
         for cv in prob_fx.constant_values:
-            df_dict[cv.constant_value] = self.get_probabilistic_forecast_constant_value_values(  # NOQA
-                forecast_id=cv.forecast_id, start=start, end=end,
-                interval_label=interval_label)
+            df_dict[str(cv.constant_value)] = \
+                self.get_probabilistic_forecast_constant_value_values(
+                    forecast_id=cv.forecast_id, start=start, end=end,
+                    interval_label=interval_label)
         return pd.DataFrame(df_dict)
 
     def post_observation_values(self, observation_id, observation_df,
