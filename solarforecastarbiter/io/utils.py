@@ -276,7 +276,7 @@ def serialize_timeseries(ser):
 
     Parameters
     ----------
-    ser : (pandas.Series, pandas.DataFrame)
+    ser : {pandas.Series, pandas.DataFrame}
        Must have a tz-localized datetime index
 
     Returns
@@ -336,7 +336,7 @@ def deserialize_timeseries(data):
 
     Returns
     -------
-    pandas.Series
+    pandas.Series or pandas.DataFrame
         Deserialized timeseries
 
     Raises
