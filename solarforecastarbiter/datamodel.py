@@ -64,6 +64,7 @@ COMMON_NAMES = {
 
 
 CLOSED_MAPPING = {
+    'event': None,
     'instant': None,
     'beginning': 'left',
     'ending': 'right'
