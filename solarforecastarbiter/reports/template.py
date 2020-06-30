@@ -272,6 +272,7 @@ def render_pdf(report, dash_url, max_runs=5):
         line_comment_prefix='%#'
     )
     env.filters['html_to_tex'] = _html_to_tex
+    env.filters['pretty_json'] = _pretty_json
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)

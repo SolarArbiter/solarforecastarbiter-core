@@ -56,6 +56,23 @@ with the reports or to create a new issue.
 \end{itemize}
 %- endif
 
+%- set costs = report.report_parameters.costs
+%- if costs | length > 0
+\subsection{Cost Parameters}
+Below are the cost parameters defined for this report.  Each
+forecast-observation pair may use one set of cost parameters to
+calculate the cost metric.  See
+\href{https://solarforecastarbiter-core.readthedocs.io/en/latest/cost.html}{the solarforecastarbiter-core documentation}
+for a description of how these parameters are used.
+%- for cost in costs
+\subsubsection{\VAR{cost.name}}
+\label{cost:\VAR{cost.name}}
+\begin{verbatim}
+  \VAR{cost.to_dict() | pretty_json }
+\end{verbatim}
+%- endfor
+%- endif
+
 \section{Data}
 
 This report includes forecast and observation data available from

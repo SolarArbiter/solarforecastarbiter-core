@@ -32,12 +32,12 @@
   \caption{Table of metrics metadata.}
   \small
   \begin{tabu} to \linewidth {
-      X[l] | l l
+      X[l] | l l l
     }
-    Name & Normalization & Deadband(\%) \\
+    Name & Normalization & Deadband(\%) & Cost Parameters\\
     \midrule
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} \\
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} & \hyperref[cost:\VAR{pfxobs.cost.name}]{\VAR{pfxobs.cost.name}} \\
     %- endfor
   \end{tabu}
 \end{table}
