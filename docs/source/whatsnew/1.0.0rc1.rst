@@ -55,14 +55,16 @@ API Changes
 * Removed :py:mod:`solarforecastarbiter.metrics.valuation` (:pull:`487`)
 * Add :py:func:`solarforecastarbiter.reference_forecasts.make_latest_probabilistic_persistence_forecasts`
   to generate reference probabilistic persistence forecasts (:pull:`490`)
-* Added a ``missing_forecast`` parameter to
-  :py:class:`solarforecastarbiter.datamodel.ReportParameters`
-  (:issue:`423`) (:pull:`493`)
-* Added :py:func:`solarforecastarbiter.metrics.preprocessing.apply_fill` that
-  applies filling missing or ``numpy.nan`` values. (:issue:`423`) (:pull:`493`)
-* Added new arguments `missing_forecast`, `start`, and `end` to
-  :py:func:`solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
-  (:issue:`423`) (:pull:`493`)
+* :py:func:`solarforecastarbiter.reference_forecasts.utils.get_data_start_end`
+  now requires an `issue_time` argument (:pull:`497`)
+  * Added a ``missing_forecast`` parameter to
+    :py:class:`solarforecastarbiter.datamodel.ReportParameters`
+    (:issue:`423`) (:pull:`493`)
+  * Added :py:func:`solarforecastarbiter.metrics.preprocessing.apply_fill` that
+    applies filling missing or ``numpy.nan`` values. (:issue:`423`) (:pull:`493`)
+  * Added new arguments `missing_forecast`, `start`, and `end` to
+    :py:func:`solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
+    (:issue:`423`) (:pull:`493`)
 
 
 Enhancements
@@ -88,9 +90,10 @@ Enhancements
   a constant cost factor, a time-of-day varying factor, a datetime varying
   factor, and a cost that depends on the magnitude of the error. (:pull:`487`)
   (:issue:`126`)
-* Added support for filling missing and ``numpy.nan` data for forecasts.
-  (:issue:`423`) (:pull:`493`)
-
+* Allow daily persistence forecasts to start at anytime instead of
+  restricted to midnight UTC (:pull:`497`) (:issue:`471`)
+  * Added support for filling missing and ``numpy.nan` data for forecasts.
+    (:issue:`423`) (:pull:`493`)
 
 
 Bug fixes
@@ -106,7 +109,8 @@ Bug fixes
 * Fixed an issue where data for object pairs with `forecast_type` of `event`
   caused an `AttributeError` in the
   :py:mod:`solarforecastarbiter.io.api` module. (:issue:`486`, :pull:`489`)
-
+* Fix ambiguity in forecast issue time of day (:pull:`497`)
+* Fix data start/end for day of week net load persistence (:pull:`497`)
 
 Contributors
 ~~~~~~~~~~~~
