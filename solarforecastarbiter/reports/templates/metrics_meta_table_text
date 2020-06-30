@@ -13,7 +13,7 @@ deadband is specified as a percentage of the observation value at each
 time. A value of <code>None</code> indicates that no deadband was
 applied for that observation/forecast pair.  The deadband is accounted
 for in the following metrics: MAE, MBE, RMSE, MAPE, NMAE, NMBE, NRMSE,
-Cost.  It is ignored for all other metrics.  See the
+Skill, Cost.  It is ignored for all other metrics.  See the
 <a href="https://solarforecastarbiter-core.readthedocs.io/en/latest/cost.html">
 solarforecastarbiter-core documentation</a> for a description of how
 the cost parameters are used to calculate Cost.</p>
