@@ -313,7 +313,7 @@ def serialize_timeseries(ser):
         dtype = v.dtypes.astype(str).to_list()
         objtype = 'DataFrame'
     schema = {
-        'version': 0,
+        'version': 1,
         'orient': 'records',
         'timezone': 'UTC',
         'column': column,
@@ -350,12 +350,12 @@ def deserialize_timeseries(data):
     if schema_str is None:
         raise ValueError('Could not locate schema in data string')
     schema = json.loads(schema_str.group(0))
-    try:
-        objtype_str = schema['objtype']
-    except KeyError:
-        # compatibility with data serialized and stored before this
-        # key was added and all data were Series
+    if schema['version'] == 0:
+        # compatibility with data serialized and stored before the
+        # objtype key was added to schema and DataFrames were suppored in v1
         objtype_str = 'Series'
+    else:
+        objtype_str = schema['objtype']
     # find between "data": and , or }, with only one set of []
     data_str = re.search('(?<="data":)\\s*\\[[^\\[\\]]*\\](?=\\s*(,|}))', data)
     if data_str is None:
