@@ -3350,6 +3350,211 @@ def raw_report_dict_with_event(fail_pdf):
                      ['platform', 'A-Computer']]}
 
 
+@pytest.fixture
+def raw_report_dict_with_prob(fail_pdf):
+    # prob fx xy fixture forecasts 0 and 2
+    site_d = {
+        'climate_zones': [],
+        'elevation': 1617.0,
+        'extra_parameters': '',
+        'latitude': 35.03796,
+        'longitude': -106.62211,
+        'name': 'NOAA SOLRAD Albuquerque New Mexico',
+        'provider': 'Reference',
+        'site_id': 'c26ba076-7e49-11e9-bd90-0a580a8003e9',
+        'timezone': 'Etc/GMT+7'
+        }
+    cvyd25 = {
+        'aggregate': None,
+        'axis': 'y',
+        'constant_value': 25.0,
+        'extra_parameters': '',
+        'forecast_id': '26a6684c-080b-11ea-bab3-0a580a8200e0',
+        'interval_label': 'beginning',
+        'interval_length': 60.0,
+        'interval_value_type': 'interval_mean',
+        'issue_time_of_day': '07:00',
+        'lead_time_to_start': 0.0,
+        'name': 'Day Ahead GEFS ghi',
+        'provider': '',
+        'run_length': 1440.0,
+        'variable': 'ghi',
+        'site': site_d}
+    cvyd50 = cvyd25.copy()
+    cvyd50.update(constant_value=50.0)
+    cvyd75 = cvyd25.copy()
+    cvyd75.update(constant_value=75.0)
+    return {
+        'data_checksum': None,
+        'generated_at': '2020-06-30T20:59:20+00:00',
+        'messages': [],
+        'metrics': (
+            {
+                'aggregate_id': None,
+                'forecast_id': '269d757a-080b-11ea-8107-0a580a8200e0',
+                'name': 'Day Ahead GEFS ghi',
+                'observation_id': 'c26ff506-7e49-11e9-beae-0a580a8003e9',
+                'values': [],
+            },
+            {
+                'aggregate_id': None,
+                'forecast_id': '26a6684c-080b-11ea-bab3-0a580a8200e0',
+                'name': 'Day Ahead GEFS ghi Prob(f <= x) = 25.0%',
+                'observation_id': 'c26ff506-7e49-11e9-beae-0a580a8003e9',
+                'values': [],
+            }
+        ),
+        'plots': {
+            'bokeh_version': None,
+            'figures': [],
+            'plotly_version': '4.5.3',
+            'script': None
+            },
+        'processed_forecasts_observations': (
+            {
+                'cost': None,
+                'forecast_values': '269d757a-080b-11ea-8107-0a580a8200e0',
+                'interval_label': 'beginning',
+                'interval_length': 60.0,
+                'interval_value_type': 'interval_mean',
+                'name': 'Day Ahead GEFS ghi',
+                'normalization_factor': np.nan,
+                'observation_values': '9f657636-7e49-11e9-b77f-0a580a8003e9',
+                'original': {
+                    'cost': None,
+                    'forecast': {
+                        'aggregate': None,
+                        'axis': 'y',
+                        'constant_values': (
+                            cvyd25,
+                            cvyd50,
+                            cvyd75
+                        ),
+                        'extra_parameters': '',
+                        'forecast_id': '269d757a-080b-11ea-8107-0a580a8200e0',
+                        'interval_label': 'beginning',
+                        'interval_length': 60.0,
+                        'interval_value_type': 'interval_mean',
+                        'issue_time_of_day': '07:00',
+                        'lead_time_to_start': 0.0,
+                        'name': 'Day Ahead GEFS ghi',
+                        'provider': '',
+                        'run_length': 1440.0,
+                        'site': site_d,
+                        'variable': 'ghi'
+                        },
+                    'normalization': np.nan,
+                    'observation': {
+                        'extra_parameters': '',
+                        'interval_label': 'ending',
+                        'interval_length': 1.0,
+                        'interval_value_type': 'interval_mean',
+                        'name': 'Albuquerque New Mexico ghi',
+                        'observation_id': 'c26ff506-7e49-11e9-beae-0a580a8003e9',  # NOQA: E501
+                        'provider': '',
+                        'site': site_d,
+                        'uncertainty': 1.0,
+                        'variable': 'ghi'
+                        },
+                    'reference_forecast': None,
+                    'uncertainty': 1.0
+                    },
+                'preprocessing_results': [
+                    {'count': 0,
+                     'name': 'TOTAL FLAGGED VALUES DISCARDED'},
+                    {'count': 0,
+                     'name': 'ProbabilisticForecast Values Discarded by Alignment'},  # NOQA: E501
+                    {'count': 0,
+                     'name': 'Observation Values Discarded by Alignment'},
+                    {'count': 0,
+                     'name': 'ProbabilisticForecast Undefined Values'},
+                    {'count': 0,
+                     'name': 'Observation Undefined Values'}
+                    ],
+                'reference_forecast_values': None,
+                'uncertainty': 1.0,
+                'valid_point_count': 168,
+                'validation_results': []
+                },
+            {
+                'cost': None,
+                'forecast_values': '269d757a-080b-11ea-8107-0a580a8200e0',
+                'interval_label': 'beginning',
+                'interval_length': 60.0,
+                'interval_value_type': 'interval_mean',
+                'name': 'Day Ahead GEFS ghi Prob(f <= x) = 25.0%',
+                'normalization_factor': np.nan,
+                'observation_values': '9f657636-7e49-11e9-b77f-0a580a8003e9',
+                'original': {
+                    'cost': None,
+                    'forecast': {
+                        'aggregate': None,
+                        'axis': 'y',
+                        'constant_value': 25.0,
+                        'extra_parameters': '',
+                        'forecast_id': '26a6684c-080b-11ea-bab3-0a580a8200e0',
+                        'interval_label': 'beginning',
+                        'interval_length': 60.0,
+                        'interval_value_type': 'interval_mean',
+                        'issue_time_of_day': '07:00',
+                        'lead_time_to_start': 0.0,
+                        'name': 'Day Ahead GEFS ghi Prob(f <= x) = 25.0%',
+                        'provider': '',
+                        'run_length': 1440.0,
+                        'site': site_d,
+                        'variable': 'ghi'
+                        },
+                    'normalization': np.nan,
+                    'observation': {
+                        'extra_parameters': '',
+                        'interval_label': 'ending',
+                        'interval_length': 1.0,
+                        'interval_value_type': 'interval_mean',
+                        'name': 'Albuquerque New Mexico ghi',
+                        'observation_id': 'c26ff506-7e49-11e9-beae-0a580a8003e9',  # NOQA: E501
+                        'provider': '',
+                        'site': site_d,
+                        'uncertainty': 1.0,
+                        'variable': 'ghi'
+                        },
+                    'reference_forecast': None,
+                    'uncertainty': 1.0
+                    },
+                'preprocessing_results': [
+                    {'count': 0,
+                     'name': 'TOTAL FLAGGED VALUES DISCARDED'},
+                    {'count': 0,
+                     'name': 'ProbabilisticForecastConstantValue Values Discarded by Alignment'},  # NOQA: E501
+                    {'count': 0,
+                     'name': 'Observation Values Discarded by Alignment'},
+                    {'count': 0,
+                     'name': 'ProbabilisticForecastConstantValue Undefined Values'},  # NOQA: E501
+                    {'count': 0,
+                     'name': 'Observation Undefined Values'}],
+                'reference_forecast_values': None,
+                'uncertainty': 1.0,
+                'valid_point_count': 168,
+                'validation_results': []
+                },
+            ),
+        'timezone': 'Etc/GMT+7',
+        'versions': [['solarforecastarbiter', '1.0b4+32.gc77b43d'],
+                     ['pvlib', '0.7.1'],
+                     ['pandas', '1.0.3'],
+                     ['numpy', '1.18.1'],
+                     ['bokeh', '1.4.0'],
+                     ['netcdf4', '1.5.3'],
+                     ['xarray', '0.15.0'],
+                     ['tables', '3.6.1'],
+                     ['numexpr', '2.6.9'],
+                     ['bottleneck', 'None'],
+                     ['jinja2', '2.10.3'],
+                     ['statsmodels', '0.11.0'],
+                     ['python', '3.7.1'],
+                     ['platform', 'A-Computer']]
+    }
+
+
 @pytest.fixture(scope='function')
 def remove_orca():
     # otherwise generating all pdfs for tests can take ages

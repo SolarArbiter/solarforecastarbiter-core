@@ -739,9 +739,12 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
         dict_ = input_dict.copy()
         if model != Forecast:
             return super().from_dict(dict_, raise_on_extra)
-        # allow loading EventForecasts from this method.
-        variable = dict_.get('variable')
-        if variable == 'event':
+        if dict_.get('constant_value', None) is not None:
+            return ProbabilisticForecastConstantValue.from_dict(
+                dict_, raise_on_extra)
+        elif dict_.get('constant_values', None) is not None:
+            return ProbabilisticForecast.from_dict(dict_, raise_on_extra)
+        elif dict_.get('variable') == 'event':
             return EventForecast.from_dict(dict_, raise_on_extra)
         else:
             return super().from_dict(dict_, raise_on_extra)
@@ -1883,3 +1886,11 @@ class Report(BaseModel):
     report_id: str = ''
     provider: str = ''
     __version__: int = 0  # should add version to api
+
+
+FORECAST_TYPE_MAPPING = {
+    'forecast': Forecast,
+    'event_forecast': EventForecast,
+    'probabilistic_forecast': ProbabilisticForecast,
+    'probabilistic_forecast_constant_value': ProbabilisticForecastConstantValue
+}
