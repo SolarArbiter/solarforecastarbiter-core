@@ -1,45 +1,51 @@
 import numpy as np
 import pandas as pd
+import pytz
 
 
 from solarforecastarbiter.io import utils as io_utils
 
 
-def get_issue_times(forecast, start_from=None):
-    """
-    Return a list of the issue times for a given Forecast.
+def get_issue_times(forecast, start_from):
+    """Return a list of the issue times for a given Forecast starting
+    from the date of `start_from` until the first issue time of the next day.
+    The output timestamps are localized to the timezone of `start_from`.
 
     Parameters
     ----------
     forecast : datamodel.Forecast
         Forecast object that contains the time information
-    start_from : pandas.Timestamp or None
-        If a timestamp, return the issues times for the same days as
-        `start_from`. If None, return datetime.time objects.
+    start_from : pandas.Timestamp
+        Return issue times from this same day in the same timezone
 
     Returns
     -------
     list
-        Either of datetime.time objects indicating the possible issue times, or
         pandas.Timestamp objects with the issues times for the particular day
         including the first issue time for the next day.
     """
-    if start_from is None:
-        issue = pd.Timestamp.combine(pd.Timestamp(0).date(),
-                                     forecast.issue_time_of_day)
-    else:
-        issue = pd.Timestamp.combine(start_from.date(),
-                                     forecast.issue_time_of_day).tz_localize(
-                                         start_from.tz)
-    next_day = (issue + pd.Timedelta('1d')).floor('1d')
-    # works even for midnight issue
-    out = [issue]
-    while issue < next_day:
-        issue += forecast.run_length
-        out.append(issue)
-    if start_from is None:
-        out = [o.time() for o in out]
-    return out
+    start_time = forecast.issue_time_of_day
+    if start_time.tzinfo is None:
+        start_time = pytz.utc.localize(start_time)
+    # work for forecasts over 1d run length
+    dayadj = pd.Timedelta(forecast.run_length).ceil('1d')
+    # make broad range of times that should cover start_from and next time
+    # even after timezone conversion
+    earliest_start = pd.Timestamp.combine(
+        (start_from - dayadj).date(), start_time)
+    possible_times = []
+    for i in range(3):
+        start = earliest_start + i * dayadj
+        end = (start + dayadj).floor('1d')
+        possible_times.extend(list(
+            pd.date_range(start=start, end=end, freq=forecast.run_length)))
+    possible_times = pd.DatetimeIndex(possible_times).tz_convert(
+        start_from.tz).drop_duplicates()
+    # then slice the broad range based on start_from day
+    startloc = possible_times.get_loc(start_from.floor('1d'), method='bfill')
+    endloc = possible_times.get_loc(
+        (start_from + pd.Timedelta('1d')).floor('1d'), method='bfill') + 1
+    return list(possible_times[startloc:endloc])
 
 
 def get_next_issue_time(forecast, run_time):
@@ -139,13 +145,6 @@ def _is_intraday(forecast):
     return forecast.run_length < pd.Timedelta('1d')
 
 
-def _check_midnight_to_midnight(forecast_start, forecast_end):
-    if (forecast_start.round('1d') != forecast_start or
-            forecast_end - forecast_start > pd.Timedelta('1d')):
-        raise ValueError(
-            'Day ahead persistence requires midnight to midnight periods')
-
-
 def _intraday_start_end(observation, forecast, run_time):
     """
     Time range of data to be used for intra-day persistence forecast.
@@ -169,13 +168,14 @@ def _intraday_start_end(observation, forecast, run_time):
     return data_start, data_end
 
 
-def _dayahead_start_end(run_time):
+def _dayahead_start_end(issue_time, forecast):
     """
     Time range of data to be used for day-ahead persistence forecast.
 
     Parameters
     ----------
-    run_time : pd.Timestamp
+    issue_time : pd.Timestamp
+    forecast : datamodel.Forecast
 
     Returns
     -------
@@ -184,28 +184,28 @@ def _dayahead_start_end(run_time):
 
     Notes
     -----
-    Day-ahead persistence: tomorrow's forecast is equal to yesterday's
-    observations. So, forecast always uses obs > 24 hr old at each valid
-    time. Smarter approach might be to use today's observations up
-    until issue_time, and use yesterday's observations for issue_time
-    until end of day. So, forecast *never* uses obs > 24 hr old at each
-    valid time. Arguably too much for a reference forecast.
+    Day-ahead persistence: uses the most recently available data that
+    maintains same times in forecast and observation data,
+    but shifts observation period by a number of days to end before
+    issue time.
     """
-
-    data_end = run_time.floor('1d')
-    data_start = data_end - pd.Timedelta('1d')
+    # data_end = last forecast time for next issue of run - 1 day
+    data_end = issue_time + forecast.lead_time_to_start + forecast.run_length
+    # data end should end before, not at issue time, so add the extra ns
+    data_end -= (data_end - issue_time + pd.Timedelta('1ns')).ceil('1d')
+    data_start = data_end - forecast.run_length
     return data_start, data_end
 
 
-def _weekahead_start_end(run_time):
+def _weekahead_start_end(issue_time, forecast):
     """
     Time range of data to be used for week-ahead persistence, aka, day of week
     persistence.
 
     Parameters
     ----------
-    run_time : pd.Timestamp
-    run_length : pd.Timedelta
+    issue_time : pd.Timestamp
+    lead_time : pd.Timedelta
 
     Returns
     -------
@@ -213,8 +213,8 @@ def _weekahead_start_end(run_time):
     data_end : pd.Timestamp
 
     """
-    data_end = run_time.ceil('1d') - pd.Timedelta('6d')
-    data_start = data_end - pd.Timedelta('1d')
+    data_start = issue_time + forecast.lead_time_to_start - pd.Timedelta('7d')
+    data_end = data_start + forecast.run_length
     return data_start, data_end
 
 
@@ -230,16 +230,22 @@ def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     return data_start, data_end
 
 
-def get_data_start_end(observation, forecast, run_time):
+def get_data_start_end(observation, forecast, run_time, issue_time):
     """
     Determine the data start and data end times for a persistence
-    forecast.
+    forecast. For non-intraday persistence, the data start/end
+    only rely on the issue time and forecast parameters to ensure
+    that one can reason about what data was used for a particular
+    forecast instead of also having to know when the forecast was
+    made.
+
 
     Parameters
     ----------
     observation : datamodel.Observation
     forecast : datamodel.Forecast
     run_time : pd.Timestamp
+    issue_time : pd.Timestamp
 
     Returns
     -------
@@ -251,9 +257,10 @@ def get_data_start_end(observation, forecast, run_time):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
-        data_start, data_end = _weekahead_start_end(run_time)
+        data_start, data_end = _weekahead_start_end(
+            issue_time, forecast)
     else:
-        data_start, data_end = _dayahead_start_end(run_time)
+        data_start, data_end = _dayahead_start_end(issue_time, forecast)
 
     _check_instant_compatibility(observation, forecast)
     # to ensure that each observation data point contributes to the correct

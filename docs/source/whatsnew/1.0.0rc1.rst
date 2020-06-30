@@ -64,6 +64,8 @@ API Changes
 * :py:func:`solarforecastarbiter.io.utils.serialize_timeseries` and
   :py:func:`solarforecastarbiter.io.utils.deserialize_timeseries` can now
   handle DataFrames in addition to Series. (:issue:`495`, :pull:`496`)
+* :py:func:`solarforecastarbiter.reference_forecasts.utils.get_data_start_end`
+  now requires an `issue_time` argument (:pull:`497`)
 
 
 Enhancements
@@ -89,7 +91,8 @@ Enhancements
   a constant cost factor, a time-of-day varying factor, a datetime varying
   factor, and a cost that depends on the magnitude of the error. (:pull:`487`)
   (:issue:`126`)
-
+* Allow daily peristence forecasts to start at anytime instead of
+  restricted to midnight UTC (:pull:`497`) (:issue:`471`)
 
 
 Bug fixes
@@ -105,7 +108,8 @@ Bug fixes
 * Fixed an issue where data for object pairs with `forecast_type` of `event`
   caused an `AttributeError` in the
   :py:mod:`solarforecastarbiter.io.api` module. (:issue:`486`, :pull:`489`)
-
+* Fix ambiguity in forecast issue time of day (:pull:`497`)
+* Fix data start/end for day of week net load persistence (:pull:`497`)
 
 Contributors
 ~~~~~~~~~~~~
