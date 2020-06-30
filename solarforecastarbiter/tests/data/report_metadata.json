@@ -1,82 +1,105 @@
 {
-    "_comment": "This file is not currently used for tests, but can be used with the CLI tool to generate a real report when using data from the prod. API.",
-    "report_parameters": {
-        "name": "Desert Rock and Table Mountain GHI Forecast Analysis",
-        "start": "2019-10-01T00:00:00Z",
-        "end": "2019-10-07T23:59:00Z",
-        "filters": [
-            {"quality_flags": [
-                "USER FLAGGED",
-                "NIGHTTIME",
-                "LIMITS EXCEEDED",
-                "STALE VALUES",
-                "INTERPOLATED VALUES",
-                "INCONSISTENT IRRADIANCE COMPONENTS"
-            ]
-            },
-            {"time_of_day_range": [
-                "12:00", "14:00"
-            ]
-            }
-        ],
-        "metrics": [
-            "mae",
-            "rmse",
-            "mbe",
-            "cost"
-        ],
-        "categories": [
-          "total",
-          "date",
-          "hour"
-        ],
-        "costs": [{
-            "name": "examplecost",
-            "type": "errorband",
-            "parameters": {
-                "bands": [
-                    {
-                        "error_range": [-2, 2],
-                        "cost_function": "timeofday",
-                        "cost_function_parameters": {
-                            "times": ["00:00", "12:00"],
-                            "cost": [1.0, 1.2],
-                            "aggregation": "sum",
-                            "fill": "forward",
-                            "net": true
-                        }
-                    },
-                    {
-                        "error_range": [2, "inf"],
-                        "cost_function": "constant",
-                        "cost_function_parameters": {
-                            "cost": 1.1,
-                            "aggregation": "sum",
-                            "net": false
-                        }
-                    },
-                    {
-                        "error_range": ["-inf", -2],
-                        "cost_function": "constant",
-                        "cost_function_parameters": {
-                            "cost": 1.1,
-                            "aggregation": "sum",
-                            "net": false
-                        }
-                    }
-                ]
-            }
-        }],
-        "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
-        "object_pairs": [
-          {"forecast": "2cfed5da-9a07-11e9-bc1f-0a580a8003d5",
-           "observation": "9e1c23da-7e49-11e9-9ec0-0a580a8003e9",
-           "cost": "examplecost"
-          },
-          {"forecast": "2c725aac-9a07-11e9-99c8-0a580a8003d5",
-           "observation": "9dfe124a-7e49-11e9-98c3-0a580a8003e9",
-           "cost": "examplecost"
-          }
+  "_comment": "This file is not currently used for tests, but can be used with the CLI tool to generate a real report when using data from the prod. API.",
+  "report_parameters": {
+    "name": "Desert Rock and Table Mountain GHI Forecast Analysis",
+    "start": "2019-10-01T00:00:00Z",
+    "end": "2019-10-07T23:59:00Z",
+    "forecast_fill_method": "forward",
+    "filters": [
+      {
+        "quality_flags": [
+          "USER FLAGGED",
+          "NIGHTTIME",
+          "LIMITS EXCEEDED",
+          "STALE VALUES",
+          "INTERPOLATED VALUES",
+          "INCONSISTENT IRRADIANCE COMPONENTS"
         ]
-    }
+      },
+      {
+        "time_of_day_range": [
+          "12:00",
+          "14:00"
+        ]
+      }
+    ],
+    "metrics": [
+      "mae",
+      "rmse",
+      "mbe",
+      "cost"
+    ],
+    "categories": [
+      "total",
+      "date",
+      "hour"
+    ],
+    "costs": [
+      {
+        "name": "examplecost",
+        "type": "errorband",
+        "parameters": {
+          "bands": [
+            {
+              "error_range": [
+                -2,
+                2
+              ],
+              "cost_function": "timeofday",
+              "cost_function_parameters": {
+                "times": [
+                  "00:00",
+                  "12:00"
+                ],
+                "cost": [
+                  1,
+                  1.2
+                ],
+                "aggregation": "sum",
+                "fill": "forward",
+                "net": true
+              }
+            },
+            {
+              "error_range": [
+                2,
+                "inf"
+              ],
+              "cost_function": "constant",
+              "cost_function_parameters": {
+                "cost": 1.1,
+                "aggregation": "sum",
+                "net": false
+              }
+            },
+            {
+              "error_range": [
+                "-inf",
+                -2
+              ],
+              "cost_function": "constant",
+              "cost_function_parameters": {
+                "cost": 1.1,
+                "aggregation": "sum",
+                "net": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "report_id": "56c67770-9832-11e9-a535-f4939feddd82",
+    "object_pairs": [
+      {
+        "forecast": "2cfed5da-9a07-11e9-bc1f-0a580a8003d5",
+        "observation": "9e1c23da-7e49-11e9-9ec0-0a580a8003e9",
+        "cost": "examplecost"
+      },
+      {
+        "forecast": "2c725aac-9a07-11e9-99c8-0a580a8003d5",
+        "observation": "9dfe124a-7e49-11e9-98c3-0a580a8003e9",
+        "cost": "examplecost"
+      }
+    ]
+  }
 }

@@ -15,8 +15,12 @@ logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
 VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
+FILL_RESULT_TOTAL_STRING = "Total {0}Forecast Values {1}"
 DISCARD_DATA_STRING = "Values Discarded by Alignment"
 UNDEFINED_DATA_STRING = "Undefined Values"
+FORECAST_FILL_CONST_STRING = "Filled with {0}"
+FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
+                            'forward': "Forward Filled"}
 
 
 def apply_validation(obs_df, qfilter, handle_func):
@@ -56,6 +60,78 @@ def apply_validation(obs_df, qfilter, handle_func):
         validated_obs = handle_func(obs_df.value, validation_df)
         counts = validation_df.astype(int).sum(axis=0).to_dict()
         return validated_obs, counts
+
+
+def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
+    """
+    Apply fill procedure to the data from the start to end timestamps.
+
+    Parameters
+    ----------
+    fx_data : pandas.Series or pandas.DataFrame
+        Forecast data with pandas.DatetimeIndex.
+    forecast : datamodel.Forecast
+    forecast_fill_method : {'drop', 'forward', float}
+        Indicates what process to use for handling missing forecasts.
+          * _'drop'_ drops all missing values for any row with a missing value.
+          * _'forward'_ fills missing values with the most recent real value.
+            If any leading missing values fill with zeros.
+          * _float_ fills any missing values with the given value.
+    start : pandas.Timestamp
+    end : pandas.Timestamp
+
+    Returns
+    -------
+    filled: pandas.Series or pandas.DataFrame
+        Forecast filled according to the specified logic
+    count : int
+        Number of values filled or dropped
+    """
+    forecast_fill_method = str(forecast_fill_method)
+    # Create full datetime range at resolution
+    full_dt_index = pd.date_range(
+        start=start, end=end, freq=forecast.interval_length,
+        closed=datamodel.CLOSED_MAPPING[forecast.interval_label],
+        name=fx_data.index.name)
+
+    if forecast_fill_method == 'drop':
+        # Drop any missing values.
+        # If data is a DataFrame any row that is missing a value is
+        # dropped for all columns.
+        if isinstance(fx_data, pd.DataFrame):
+            count = fx_data.isna().any(axis=1).sum() * fx_data.shape[1]
+        else:
+            count = fx_data.isna().sum()
+        filled = fx_data.dropna(how='any').astype(float)
+    elif forecast_fill_method == 'forward':
+        # Reindex with expected datetime range.
+        # Fills missing values with the most recent real value.
+        # If any leading missing values fill with zeros.
+        filled = fx_data.reindex(index=full_dt_index)
+        count = filled.isna().sum()
+        filled.fillna(method='ffill', inplace=True)
+        filled.fillna(value=0, inplace=True)
+    else:
+        # Value should be numeric
+        try:
+            const_fill_value = pd.to_numeric(
+                forecast_fill_method).astype(float)
+        except ValueError:
+            raise ValueError(
+                f"Unsupported forecast fill missing data method: "
+                f"{forecast_fill_method}")
+        # Reindex with expected datetime range.
+        # Fills missing values with the given constant value.
+        filled = fx_data.reindex(index=full_dt_index)
+        count = filled.isna().sum()
+        filled.fillna(value=const_fill_value, inplace=True)
+
+    # If data provided as DataFrame count will be a series, so sum over that
+    # series to get the total count for all columns (Except for 'drop').
+    if isinstance(count, pd.Series):
+        count = count.sum()
+
+    return filled, count
 
 
 def _resample_event_obs(obs, fx, obs_data):
@@ -345,8 +421,9 @@ def _merge_quality_filters(filters):
     return datamodel.QualityFlagFilter(tuple(combo))
 
 
-def process_forecast_observations(forecast_observations, filters, data,
-                                  timezone, costs=tuple()):
+def process_forecast_observations(forecast_observations, filters,
+                                  forecast_fill_method, start, end,
+                                  data, timezone, costs=tuple()):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -357,6 +434,13 @@ def process_forecast_observations(forecast_observations, filters, data,
         Pairs to process
     filters : list of solarforecastarbiter.datamodel.BaseFilter
         Filters to apply to each pair.
+    forecast_fill_method : str
+        Indicates what process to use for handling missing forecasts.
+        Currently supports : 'drop', 'forward', and bool or numeric value.
+    start : pandas.Timestamp
+        Start date and time for assessing forecast performance.
+    end : pandas.Timestamp
+        End date and time for assessing forecast performance.
     data : dict
         Dict with keys that are the Forecast/Observation/Aggregate object
         and values that are the corresponding pandas.Series/DataFrame for
@@ -377,6 +461,10 @@ def process_forecast_observations(forecast_observations, filters, data,
                 for filter_ in filters]):
         logger.warning(
             'Only filtering on Quality Flag is currently implemented')
+    forecast_fill_map = FORECAST_FILL_STRING_MAP.copy()
+    if forecast_fill_method not in forecast_fill_map.keys():
+        forecast_fill_map.update(
+            {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
     qfilter = _merge_quality_filters(filters)
     costs_dict = {c.name: c for c in costs}
     validated_observations = {}
@@ -407,25 +495,38 @@ def process_forecast_observations(forecast_observations, filters, data,
                                     for k, v in counts.items())
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=len(data[fxobs.data_object]) - len(obs_ser)), )
+                    count=(len(data[fxobs.data_object]) - len(obs_ser))), )
                 validated_observations[fxobs.data_object] = (
                     obs_ser, val_results, preproc_results)
 
         obs_ser, val_results, preproc_results = (
             validated_observations[fxobs.data_object])
 
-        # resample and align observations to forecast, create
-        # ProcessedForecastObservation
+        # Apply fill to forecasts
         fx_ser = data[fxobs.forecast]
+        fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
+                                   forecast_fill_method, start, end)
+        preproc_results += (datamodel.PreprocessingResult(
+            name=FILL_RESULT_TOTAL_STRING.format(
+                '', forecast_fill_map[forecast_fill_method]),
+            count=int(count)), )
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
+            ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
+                                        forecast_fill_method, start, end)
+            preproc_results += (datamodel.PreprocessingResult(
+                name=FILL_RESULT_TOTAL_STRING.format(
+                    "Reference ", forecast_fill_map[forecast_fill_method]),
+                count=int(count)), )
         else:
             ref_ser = None
+
+        # Resample and align and create processed pair
         try:
             forecast_values, observation_values, ref_fx_values, results = \
                 resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)
             preproc_results += tuple(datamodel.PreprocessingResult(
-                name=k, count=v) for k, v in results.items())
+                name=k, count=int(v)) for k, v in results.items())
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',

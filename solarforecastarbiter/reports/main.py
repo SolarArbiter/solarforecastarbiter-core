@@ -176,17 +176,21 @@ def create_raw_report_from_data(report, data):
         'solarforecastarbiter.metrics',
         'solarforecastarbiter.reports.figures.plotly_figures'],
                         ) as handler:
-        # Validate and resample
+        # Validate, fill forecast, and resample
         processed_fxobs = preprocessing.process_forecast_observations(
-            report_params.object_pairs, report_params.filters, data,
-            timezone, costs=report_params.costs)
+            report_params.object_pairs,
+            report_params.filters,
+            report_params.forecast_fill_method,
+            report_params.start, report_params.end,
+            data, timezone,
+            costs=report_params.costs)
 
-        # Calculate metrics, list of MetricResult
+        # Calculate metrics
         metrics_list = calculator.calculate_metrics(
             processed_fxobs,
             list(report_params.categories),
-            list(report_params.metrics)
-        )
+            list(report_params.metrics))
+
         report_plots = plotly_figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(

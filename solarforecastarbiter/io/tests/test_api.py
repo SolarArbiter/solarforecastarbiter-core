@@ -810,6 +810,7 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
             "name": "NREL MIDC OASIS GHI Forecast Analysis",
             "start": "2019-04-01T00:00:00-07:00",
             "end": "2019-04-04T23:59:00-07:00",
+            "forecast_fill_method": "forward",
             "filters": [
                 {'quality_flags': [
                     "USER FLAGGED",
@@ -882,6 +883,7 @@ def test_apisession_create_report_mult_costs(requests_mock, report_objects,
             "name": "NREL MIDC OASIS GHI Forecast Analysis",
             "start": "2019-04-01T00:00:00-07:00",
             "end": "2019-04-04T23:59:00-07:00",
+            "forecast_fill_method": "forward",
             "filters": [
                 {'quality_flags': [
                     "USER FLAGGED",
@@ -954,6 +956,7 @@ def test_apisession_create_report_no_costs(
             "name": "NREL MIDC OASIS GHI Forecast Analysis",
             "start": "2019-04-01T00:00:00-07:00",
             "end": "2019-04-04T23:59:00-07:00",
+            "forecast_fill_method": "forward",
             "filters": [
                 {'quality_flags': [
                     "USER FLAGGED",

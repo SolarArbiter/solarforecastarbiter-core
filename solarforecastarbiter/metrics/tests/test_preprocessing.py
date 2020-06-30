@@ -9,7 +9,7 @@ from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
 
 
-THREE_HOURS = pd.date_range(start='2019-03-31T12:00:00',
+THREE_HOURS = pd.date_range(start='2019-04-01T06:00:00',
                             periods=3,
                             freq='60min',
                             tz='MST',
@@ -36,7 +36,7 @@ EMPTY_OBJ_SERIES = pd.Series(
     index=pd.DatetimeIndex([], freq="10min", tz="MST", name="timestamp")
 )
 
-THIRTEEN_10MIN = pd.date_range(start='2019-03-31T12:00:00',
+THIRTEEN_10MIN = pd.date_range(start='2019-04-01T06:00:00',
                                periods=13,
                                freq='10min',
                                tz='MST',
@@ -485,7 +485,7 @@ def test_process_forecast_observations(report_objects, quality_filter,
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
-                        index=pd.date_range(start='2019-03-31T12:00:00',
+                        index=pd.date_range(start='2019-04-01T00:00:00',
                                             periods=8,
                                             freq='15min',
                                             tz='MST',
@@ -505,7 +505,13 @@ def test_process_forecast_observations(report_objects, quality_filter,
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.report_parameters.object_pairs, filters, data, 'MST')
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.warning.called
@@ -532,7 +538,13 @@ def test_process_probabilistic_forecast_observations(
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.report_parameters.object_pairs, filters, data, 'MST')
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.warning.called
@@ -563,7 +575,13 @@ def test_process_probabilistic_forecast_observations_xy(
     filters = [quality_filter, timeofdayfilter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.report_parameters.object_pairs, filters, data, 'MST')
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.warning.called
@@ -600,7 +618,13 @@ def test_process_forecast_observations_no_data(
     filters = [quality_filter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.report_parameters.object_pairs, filters, data, 'MST')
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.error.called
@@ -639,7 +663,12 @@ def test_process_forecast_observations_no_cost(report_objects, quality_filter,
     obj_pairs = list(report.report_parameters.object_pairs)
     obj_pairs[-1] = obj_pairs[-1].replace(cost='not in there')
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        obj_pairs, filters, data, 'MST', costs=report.report_parameters.costs)
+        obj_pairs, filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         report.report_parameters.object_pairs)
     assert logger.warning.called
@@ -667,7 +696,7 @@ def test_process_forecast_observations_resample_fail(
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
-                        index=pd.date_range(start='2019-03-31T12:00:00',
+                        index=pd.date_range(start='2019-04-01T00:00:00',
                                             periods=8,
                                             freq='15min',
                                             tz='MST',
@@ -690,7 +719,13 @@ def test_process_forecast_observations_resample_fail(
         'solarforecastarbiter.metrics.preprocessing.resample_and_align',
         side_effect=ValueError)
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        report.report_parameters.object_pairs, filters, data, 'MST')
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == 0
     assert logger.error.called
 
@@ -700,7 +735,7 @@ def test_process_forecast_observations_same_name(
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
-                        index=pd.date_range(start='2019-03-31T12:00:00',
+                        index=pd.date_range(start='2019-04-01T00:00:00',
                                             periods=8,
                                             freq='15min',
                                             tz='MST',
@@ -721,11 +756,170 @@ def test_process_forecast_observations_same_name(
     fxobs = report.report_parameters.object_pairs
     fxobs = list(fxobs) + [fxobs[0], fxobs[0]]
     processed_fxobs_list = preprocessing.process_forecast_observations(
-        fxobs, filters, data, 'MST')
+        fxobs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         fxobs)
     assert len(set(pfxobs.name for pfxobs in processed_fxobs_list)) == len(
         fxobs)
+
+
+def test_process_forecast_observations_no_fx(
+        report_objects, quality_filter, mocker):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    # as series
+    data_ser = {
+        observation: obs_df,
+        forecast_0: pd.Series([], name='value', dtype=np.object),
+        forecast_1: pd.Series([], name='value', dtype=np.object),
+        forecast_ref: pd.Series([], name='value', dtype=np.object),
+        forecast_agg: pd.Series([], name='value', dtype=np.object),
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data_ser, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
+    assert not logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+    # as dataframe
+    data_df = {
+        observation: obs_df,
+        forecast_0: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        forecast_1: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        forecast_ref: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        forecast_agg: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data_df, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
+    assert not logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        assert isinstance(proc_fxobs.forecast_values, pd.DataFrame)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+@pytest.mark.parametrize("method,pr_name,prref_name", [
+    ('drop',
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        '', preprocessing.FORECAST_FILL_STRING_MAP['drop']),
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        'Reference ', preprocessing.FORECAST_FILL_STRING_MAP['drop'])),
+    ('forward',
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        '', preprocessing.FORECAST_FILL_STRING_MAP['forward']),
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        'Reference ', preprocessing.FORECAST_FILL_STRING_MAP['forward'])),
+    ('-1',
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        '', preprocessing.FORECAST_FILL_CONST_STRING.format('-1')),
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        'Reference ', preprocessing.FORECAST_FILL_CONST_STRING.format('-1'))),
+    ('99.9',
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        '', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9')),
+     preprocessing.FILL_RESULT_TOTAL_STRING.format(
+        'Reference ', preprocessing.FORECAST_FILL_CONST_STRING.format('99.9'))),  # NOQA
+])
+def test_process_forecast_observations_forecast_fill_methods(
+        report_objects, quality_filter, mocker, method, pr_name, prref_name):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    data = {
+        observation: obs_df,
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
+    assert not logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        list_pr_names = [pr.name for pr in proc_fxobs.preprocessing_results]
+        assert pr_name in list_pr_names
+        if proc_fxobs.original.reference_forecast is not None:
+            assert prref_name in list_pr_names
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
 
 
 def test_name_pfxobs_recursion_limit():
@@ -818,9 +1012,316 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
 ])
 def test__validate_event_dtype(data):
     ser = pd.Series(data)
-    print(ser.head())
     ser_conv = preprocessing._validate_event_dtype(ser)
 
     pd.testing.assert_index_equal(ser.index, ser_conv.index,
                                   check_categorical=False)
     assert ser_conv.dtype == bool
+
+
+@pytest.mark.parametrize("method", [
+    ('drop'), ('forward'), ('1')
+])
+def test_apply_fill(method, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    n = 10
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n+1,  # because ending is skipped
+                             freq=freq,
+                             closed=datamodel.CLOSED_MAPPING[label],
+                             name='timestamp')
+    data = pd.Series([1]*n, index=dt_range, dtype=float)
+    i_rand = (np.append(0., np.round(np.random.rand(n-1))) == 1)
+    data[i_rand] = np.nan
+
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             dt_range[0]-freq, dt_range[-1])
+    assert isinstance(result, pd.Series)
+    assert isinstance(result.index, pd.DatetimeIndex)
+    if method == 'drop':
+        assert result.sum() == n - sum(i_rand)
+        assert count == i_rand.sum()
+    else:
+        assert result.sum() == n
+        assert count == i_rand.sum()
+
+
+@pytest.mark.parametrize("method,exp,exp_count", [
+    ('drop',
+     pd.Series([1], index=pd.date_range(start='2020-01-01T02:00',
+                                        periods=1,
+                                        freq='2h',
+                                        name='timestamp'),
+               dtype=float),
+     0),
+    ('forward',
+     pd.Series([0, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
+                                                 periods=4,
+                                                 freq='2h',
+                                                 name='timestamp'),
+               dtype=float),
+     3),
+    ('1',
+     pd.Series([1, 1, 1, 1], index=pd.date_range(start='2020-01-01T00:00',
+                                                 periods=4,
+                                                 freq='2h',
+                                                 name='timestamp'),
+               dtype=float),
+     3),
+])
+def test_apply_fill_one_value(method, exp, exp_count, single_forecast):
+    # Single value
+    freq = pd.Timedelta('2h')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    start = pd.to_datetime('2020-01-01T00:00')
+    end = pd.to_datetime('2020-01-01T6:00')
+    data = pd.Series([1], index=pd.date_range(start='2020-01-01T02:00',
+                                              periods=1,
+                                              freq=freq,
+                                              name='timestamp'),
+                     dtype=float)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             start=start-freq, end=end)
+    pd.testing.assert_series_equal(result, exp)
+    assert count == exp_count
+
+
+@pytest.mark.parametrize("method,exp,exp_count", [
+    ('drop',
+     pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
+               dtype=float),
+     0),
+    ('forward',
+     pd.Series([0]*6, index=pd.date_range(start='2020-01-01T00:00',
+                                          periods=6,
+                                          freq='1h',
+                                          name='timestamp'),
+               dtype=float),
+     6),
+    ('1',
+     pd.Series([1]*6, index=pd.date_range(start='2020-01-01T00:00',
+                                          periods=6,
+                                          freq='1h',
+                                          name='timestamp'),
+               dtype=float),
+     6),
+])
+def test_apply_fill_no_values(method, exp, exp_count, single_forecast):
+    # Single value
+    freq = pd.Timedelta('1h')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    start = pd.to_datetime('2020-01-01T00:00')
+    end = pd.to_datetime('2020-01-01T05:00')
+    # No values
+    data = pd.Series([], index=pd.DatetimeIndex([], name='timestamp'),
+                     dtype=float)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             start=start-freq, end=end)
+    pd.testing.assert_series_equal(result, exp)
+    assert count == exp_count
+
+
+def test_apply_fill_unsupported(single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'ending'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    n = 10
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    with pytest.raises(ValueError):
+        preprocessing.apply_fill(pd.Series(range(n),
+                                           index=dt_range, dtype=float),
+                                 forecast, 'error',
+                                 dt_range[0]-freq, dt_range[-1])
+
+
+@pytest.mark.parametrize("input,exp,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 3, 5], 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [2, 3, 4], 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 5], 0, 0),
+    ([3, 4, 5], [3, 4, 5], 2, 0),
+    ([1, 2], [1, 2], 0, 3),
+    ([np.nan]*5, [], 0, 0)
+])
+def test_apply_fill_drop(input, exp, n_pre, n_post, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n+1,
+                             freq='30min',
+                             closed=datamodel.CLOSED_MAPPING[label],
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
+    expected = data.loc[data.isin(exp)]
+
+    # as a Series
+    result, count = preprocessing.apply_fill(data, forecast, 'drop',
+                                             dt_range[0], dt_range[-1]+freq)
+    pd.testing.assert_series_equal(result, expected,
+                                   check_exact=True)
+    assert count == len(input) - len(exp)
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post],
+                           dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, 'drop',
+                                                dt_range[0], dt_range[-1]+freq)
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp},
+                               index=expected.index,
+                               dtype=float)
+    pd.testing.assert_frame_equal(df_result, df_expected)
+    assert count == (len(input) - len(exp)) * 3
+
+
+@pytest.mark.parametrize("input,exp,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 1, 3, 3, 5], 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [0, 2, 3, 4, 4], 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 1, 1, 1, 5], 0, 0),
+    ([3, 4, 5], [0, 0, 3, 4, 5], 2, 0),
+    ([1, 2], [1, 2, 2, 2, 2], 0, 3),
+    ([np.nan]*5, [0, 0, 0, 0, 0], 0, 0)
+])
+def test_apply_fill_forward(input, exp, n_pre, n_post, single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
+    expected = pd.Series(exp, index=dt_range, dtype=float)
+
+    # as a Series
+    result, count = preprocessing.apply_fill(data, forecast, 'forward',
+                                             dt_range[0], dt_range[-1]+freq)
+    pd.testing.assert_series_equal(result, expected,
+                                   check_exact=True)
+    assert count == data.isna().sum() + n_pre + n_post
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post], dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, 'forward',
+                                                dt_range[0], dt_range[-1]+freq)
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp},
+                               index=dt_range, dtype=float)
+    pd.testing.assert_frame_equal(df_result, df_expected)
+    assert count == (data.isna().sum() + n_pre + n_post)*3
+
+
+@pytest.mark.parametrize("input,exp,fvalue,n_pre,n_post", [
+    ([1, 2, 3, 4, 5], [1, 2, 3, 4, 5], 100, 0, 0),
+    ([1, np.nan, 3, np.nan, 5], [1, 100, 3, 100, 5], 100, 0, 0),
+    ([np.nan, 2, 3, 4, np.nan], [100, 2, 3, 4, 100], 100, 0, 0),
+    ([1, np.nan, np.nan, np.nan, 5], [1, 100, 100, 100, 5], 100, 0, 0),
+    ([3, 4, 5], [100, 100, 3, 4, 5], 100, 2, 0),
+    ([1, 2], [1, 2, 100, 100, 100], 100, 0, 3),
+    ([np.nan]*5, [100]*5, 100, 0, 0)
+])
+def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post,
+                             single_forecast):
+    freq = pd.Timedelta('30min')
+    label = 'beginning'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    # convert list to series
+    n = n_pre + len(input) + n_post
+    dt_range = pd.date_range(start='2020-01-01T00:00',
+                             periods=n,
+                             freq='30min',
+                             name='timestamp')
+    data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
+    expected = pd.Series(exp, index=dt_range, dtype=float)
+
+    # as a Series
+    result, count = preprocessing.apply_fill(data, forecast, fvalue,
+                                             dt_range[0], dt_range[-1]+freq)
+    pd.testing.assert_series_equal(result, expected,
+                                   check_exact=True)
+    assert count == data.isna().sum() + n_pre + n_post
+
+    # as a DataFrame with 3 columns
+    df_data = pd.DataFrame({'1': input,
+                            '2': input,
+                            '3': input},
+                           index=dt_range[n_pre:n-n_post], dtype=float)
+    df_result, count = preprocessing.apply_fill(df_data, forecast, fvalue,
+                                                dt_range[0], dt_range[-1]+freq)
+    df_expected = pd.DataFrame({'1': exp,
+                                '2': exp,
+                                '3': exp},
+                               index=dt_range, dtype=float)
+    pd.testing.assert_frame_equal(df_result, df_expected)
+    assert count == (data.isna().sum() + n_pre + n_post)*3
+
+
+@pytest.mark.parametrize("data", [
+    (pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, np.nan, 30, np.nan, 50],
+         '3': [np.nan, 200, 300, 400, np.nan]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=float)),
+])
+@pytest.mark.parametrize("method,exp,exp_count", [
+    ('drop', pd.DataFrame(
+        {'1': [3],
+         '2': [30],
+         '3': [300]},
+        index=[pd.Timestamp('2020-01-01T02:00')],
+        dtype=float),
+        4*3),
+    ('forward', pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, 10, 30, 30, 50],
+         '3': [0, 200, 300, 400, 400]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=float),
+        4),
+    ('-1', pd.DataFrame(
+        {'1': [1, 2, 3, 4, 5],
+         '2': [10, -1, 30, -1, 50],
+         '3': [-1, 200, 300, 400, -1]},
+        index=pd.date_range('2020-01-01T00:00', periods=5, freq='1h'),
+        dtype=float),
+        4),
+])
+def test_apply_fill_unstratified_dataframe(data, method, exp, exp_count,
+                                           single_forecast):
+    freq = pd.Timedelta('1h')
+    label = 'instant'
+    forecast = single_forecast.replace(interval_length=freq,
+                                       interval_label=label)
+    result, count = preprocessing.apply_fill(data, forecast, method,
+                                             data.index[0], data.index[-1])
+    pd.testing.assert_frame_equal(result, exp)
+    assert count == exp_count

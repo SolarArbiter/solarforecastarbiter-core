@@ -510,6 +510,7 @@ Functions for preparing the timeseries data before calculating metrics:
    :toctree: generated/
 
    metrics.preprocessing.apply_validation
+   metrics.preprocessing.apply_fill
    metrics.preprocessing.resample_and_align
    metrics.preprocessing.exclude
    metrics.preprocessing.process_forecast_observations

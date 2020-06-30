@@ -64,6 +64,7 @@ COMMON_NAMES = {
 
 
 CLOSED_MAPPING = {
+    'event': None,
     'instant': None,
     'beginning': 'left',
     'ending': 'right'
@@ -1773,7 +1774,7 @@ class RawReport(BaseModel):
         the core library is used when rendering or recomputing the report.
     plots: :py:class:`solarforecastarbiter.datamodel.RawReportPlots`
     metrics: tuple of :py:class:`solarforecastarbiter.datamodel.MetricResult`
-    processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMetatadata`
+    processed_forecasts_observations: tuple of :py:class:`solarforecastarbiter.datamodel.ProcessedForecastObservation`
     messages: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMessage`
     data_checksum: str or None
         SHA-256 checksum of the raw data used in the report.
@@ -1810,6 +1811,8 @@ class ReportParameters(BaseModel):
         Start time of the reporting period.
     end : pandas.Timestamp
         End time of the reporting period.
+    forecast_fill_method : {'drop', 'forward', float}
+        Indicates what process to use for handling missing forecasts.
     object_pairs: Tuple of ForecastObservation or ForecastAggregate
         Paired Forecasts and Observations or Aggregates to be analyzed
         in the report.
@@ -1831,6 +1834,7 @@ class ReportParameters(BaseModel):
     object_pairs: Tuple[Union[ForecastObservation, ForecastAggregate], ...]
     metrics: Tuple[str, ...] = ('mae', 'mbe', 'rmse')
     categories: Tuple[str, ...] = ('total', 'date', 'hour')
+    forecast_fill_method: str = 'drop'
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     costs: Tuple[Cost, ...] = tuple()
