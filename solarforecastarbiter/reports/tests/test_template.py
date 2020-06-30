@@ -285,7 +285,12 @@ def test_render_pdf_process_error(report_with_raw, dash_url, mocker):
         template.render_pdf(report_with_raw, dash_url)
 
 
-def test_link_filter():
-    text = 'stuf <a href="http://">link</a>'
+@pytest.mark.parametrize('text,exp', [
+    ('stuf <a href="http://">link</a>', 'stuf \\href{http://}{link}'),
+    ('a bunch\nstuf <a href="https://blah">\nlink\nmore\n</a>',
+     'a bunch\nstuf \\href{https://blah}{\nlink\nmore\n}'),
+    ('no link at all', 'no link at all')
+])
+def test_link_filter(text, exp):
     new = template._link_filter(text)
-    assert new == 'stuf \\href{http://}{link}'
+    assert new == exp

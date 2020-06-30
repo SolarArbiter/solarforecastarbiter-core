@@ -183,8 +183,8 @@ def render_html(report, dash_url=datamodel.DASH_URL,
 
 def _link_filter(value):
     match = re.search(
-        """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>\n?(.*?)\n?<\\/a>""",
-        value)
+        """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>(.*?)<\\/a>""",
+        value, re.DOTALL)
     if match:
         new = "\\href{" + match.group(2) + "}{" + match.group(4) + "}"
         out = value[:match.start()] + new + value[match.end():]
