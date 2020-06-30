@@ -884,6 +884,37 @@ def test_raw_report_event_forecast_loading(raw_report_dict_with_event):
         assert isinstance(fxobs.original.forecast, datamodel.EventForecast)
 
 
+@pytest.mark.parametrize('model', [
+    datamodel.Forecast,
+    datamodel.ProbabilisticForecast,
+])
+def test_prob_forecast_from_dict(model, prob_forecasts):
+    fx_dict = prob_forecasts.to_dict()
+    assert isinstance(
+        model.from_dict(fx_dict), datamodel.ProbabilisticForecast)
+
+
+@pytest.mark.parametrize('model', [
+    datamodel.Forecast,
+    datamodel.ProbabilisticForecastConstantValue,
+])
+def test_prob_forecast_constant_value_from_dict(
+        model, prob_forecast_constant_value):
+    fx_dict = prob_forecast_constant_value.to_dict()
+    assert isinstance(
+        model.from_dict(fx_dict), datamodel.ProbabilisticForecastConstantValue)
+
+
+def test_raw_report_prob_forecast_loading(raw_report_dict_with_prob):
+    raw_report = datamodel.RawReport.from_dict(raw_report_dict_with_prob)
+    assert isinstance(
+        raw_report.processed_forecasts_observations[0].original.forecast,
+        datamodel.ProbabilisticForecast)
+    assert isinstance(
+        raw_report.processed_forecasts_observations[1].original.forecast,
+        datamodel.ProbabilisticForecastConstantValue)
+
+
 @pytest.mark.parametrize('a,b', [
     ('constant', 'datetime'),
     ('constant', 'timeofday'),

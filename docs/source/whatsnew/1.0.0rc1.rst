@@ -121,6 +121,9 @@ Bug fixes
   :py:mod:`solarforecastarbiter.io.api` module. (:issue:`486`, :pull:`489`)
 * Fix ambiguity in forecast issue time of day (:pull:`497`)
 * Fix data start/end for day of week net load persistence (:pull:`497`)
+* Fix issue with inability to create ProbabilisticForecast and
+  ProbilisticForecastConstantValue from Forecast.from_dict.
+  (:issue:`502`, :pull:`503`)
 
 Contributors
 ~~~~~~~~~~~~
