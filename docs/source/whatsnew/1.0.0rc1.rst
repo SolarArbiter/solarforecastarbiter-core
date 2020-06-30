@@ -57,6 +57,15 @@ API Changes
   to generate reference probabilistic persistence forecasts (:pull:`490`)
 * :py:func:`solarforecastarbiter.reference_forecasts.utils.get_data_start_end`
   now requires an `issue_time` argument (:pull:`497`)
+* Added a ``forecast_fill_method`` parameter to
+  :py:class:`solarforecastarbiter.datamodel.ReportParameters`
+  (:issue:`423`) (:pull:`493`)
+* Added :py:func:`solarforecastarbiter.metrics.preprocessing.apply_fill` that
+  drops or fills missing or ``numpy.nan`` values with the last valid value or
+  with a float. (:issue:`423`) (:pull:`493`)
+* Added new arguments `forecast_fill_method`, `start`, and `end` to
+  :py:func:`solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
+  (:issue:`423`) (:pull:`493`)
 
 
 Enhancements
@@ -82,8 +91,10 @@ Enhancements
   a constant cost factor, a time-of-day varying factor, a datetime varying
   factor, and a cost that depends on the magnitude of the error.
   (:pull:`487`) (:pull:`501`) (:issue:`126`) (:issue:`492`)
-* Allow daily peristence forecasts to start at anytime instead of
+* Allow daily persistence forecasts to start at anytime instead of
   restricted to midnight UTC (:pull:`497`) (:issue:`471`)
+* Added support for filling missing and ``numpy.nan` data for forecasts.
+  (:issue:`423`) (:pull:`493`)
 
 
 Bug fixes

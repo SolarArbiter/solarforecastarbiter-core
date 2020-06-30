@@ -1719,6 +1719,7 @@ def report_objects(aggregate, ref_forecast_id):
         metrics=("mae", "rmse", "mbe", "s", "cost"),
         categories=("total", "date", "hour"),
         filters=(quality_flag_filter, timeofdayfilter),
+        forecast_fill_method='forward',
         costs=(cost,)
     )
     report = datamodel.Report(
@@ -1791,6 +1792,7 @@ def event_report_objects():
         object_pairs=(fxobs0, fxobs1),
         metrics=("pod", "far", "pofd", "csi", "ebias", "ea"),
         categories=("total", "date", "hour"),
+        forecast_fill_method='forward',
     )
 
     report = datamodel.Report(
@@ -1977,7 +1979,8 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
                       pfx_agg, pfxcvagg0_3),
         metrics=("crps", "bs", "bss", "unc"),
         categories=("total", "date", "hour"),
-        filters=(quality_flag_filter, timeofdayfilter)
+        filters=(quality_flag_filter, timeofdayfilter),
+        forecast_fill_method='forward',
     )
     report = datamodel.Report(
         report_id="1179f8c1-4d76-479c-a826-053d6b6e5116",
@@ -2282,6 +2285,7 @@ def event_report_text():
          "end": "2019-04-04T23:59:00-07:00",
          "metrics": ["pod", "far", "pofd", "csi", "ebias", "ea"],
          "categories": ["total", "date", "hour"],
+         "forecast_fill_method": "forward",
          "object_pairs": [
              {"forecast": "da2bc386-8712-11e9-a1c7-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9"},
@@ -2366,6 +2370,7 @@ def report_params_dict(report_objects, quality_filter_dict,
         'name': report_params.name,
         'start': report_params.start,
         'end': report_params.end,
+        'forecast_fill_method': report_params.forecast_fill_method,
         'object_pairs': (
             {'forecast': forecast_0.to_dict(),
              'observation': observation.to_dict(),
@@ -2420,6 +2425,7 @@ def report_text():
          "name": "NREL MIDC OASIS GHI Forecast Analysis",
          "start": "2019-04-01T00:00:00-07:00",
          "end": "2019-04-04T23:59:00-07:00",
+         "forecast_fill_method": "forward",
          "filters": [
              {"quality_flags": [
                  "USER FLAGGED",
