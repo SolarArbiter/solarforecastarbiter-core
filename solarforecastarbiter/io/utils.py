@@ -276,7 +276,7 @@ def serialize_timeseries(ser):
 
     Parameters
     ----------
-    ser : pandas.Series
+    ser : {pandas.Series, pandas.DataFrame}
        Must have a tz-localized datetime index
 
     Returns
@@ -290,23 +290,36 @@ def serialize_timeseries(ser):
         If the input is invalid
     """
     if not (
-            isinstance(ser, pd.Series) and
+            isinstance(ser, (pd.Series, pd.DataFrame)) and
             isinstance(ser.index, pd.DatetimeIndex) and
             ser.index.tzinfo is not None
     ):
         raise TypeError(
-            'Only pandas Series with a localized DatetimeIndex is supported')
+            'Only pandas Series or DataFrame with a localized DatetimeIndex '
+            'is supported')
     v = ser.copy()
     v.index.name = 'timestamp'
-    jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
-        orient='records', date_format='iso', date_unit='s')
+    if isinstance(v, pd.Series):
+        jsonvals = v.tz_convert('UTC').reset_index(name='value').to_json(
+            orient='records', date_format='iso', date_unit='s')
+        column = 'value'
+        dtype = str(v.dtype)
+        objtype = 'Series'
+    else:
+        v.index.name = 'timestamp'
+        jsonvals = v.tz_convert('UTC').reset_index().to_json(
+            orient='records', date_format='iso', date_unit='s')
+        column = v.columns.astype(str).to_list()
+        dtype = v.dtypes.astype(str).to_list()
+        objtype = 'DataFrame'
     schema = {
-        'version': 0,
+        'version': 1,
         'orient': 'records',
         'timezone': 'UTC',
-        'column': 'value',
+        'column': column,
         'index': 'timestamp',
-        'dtype': str(v.dtype),
+        'dtype': dtype,
+        'objtype': objtype
     }
     out = '{"schema":' + json.dumps(schema) + ',"data":' + jsonvals + '}'
     return out
@@ -323,7 +336,7 @@ def deserialize_timeseries(data):
 
     Returns
     -------
-    pandas.Series
+    pandas.Series or pandas.DataFrame
         Deserialized timeseries
 
     Raises
@@ -337,21 +350,45 @@ def deserialize_timeseries(data):
     if schema_str is None:
         raise ValueError('Could not locate schema in data string')
     schema = json.loads(schema_str.group(0))
+    if schema['version'] == 0:
+        # compatibility with data serialized and stored before the
+        # objtype key was added to schema and DataFrames were suppored in v1
+        objtype_str = 'Series'
+    else:
+        objtype_str = schema['objtype']
     # find between "data": and , or }, with only one set of []
     data_str = re.search('(?<="data":)\\s*\\[[^\\[\\]]*\\](?=\\s*(,|}))', data)
     if data_str is None:
         raise ValueError('Could not locate data key in data string')
     df = pd.read_json(data_str.group(0), orient=schema['orient'],
                       convert_dates=True)
-    if df.empty:
-        return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
-            [], tz=schema['timezone'], name='timestamp'),
-                         dtype=schema.get('dtype', float))
-    ser = df.set_index(schema['index'])[schema['column']].astype(
-        schema['dtype'])
-    if ser.index.tzinfo is None:
-        ser = ser.tz_localize(schema['timezone'])
-    return ser
+    if objtype_str == 'Series':
+        if df.empty:
+            return pd.Series([], name=schema['column'], index=pd.DatetimeIndex(
+                [], tz=schema['timezone'], name='timestamp'),
+                            dtype=schema.get('dtype', float))
+        out = df.set_index(schema['index'])[schema['column']].astype(
+            schema['dtype'])
+    elif objtype_str == 'DataFrame':
+        if df.empty:
+            try:
+                dtype = schema['dtype'][0]
+            except IndexError:
+                dtype = float
+            return pd.DataFrame(
+                [], columns=schema['column'], index=pd.DatetimeIndex(
+                    [], tz=schema['timezone'], name='timestamp'), dtype=dtype)
+        out = df.set_index(schema['index'])
+        # pd.read_json will set all column names to strings, so
+        # columns originally specified with float names need to be
+        # mapped back into the right name dtype. this code is not needed
+        # if columns are always strings.
+        # str_col_map = {str(col): col for col in schema['column']}
+        # out = out.rename(columns=str_col_map)
+        out = out.astype(dict(zip(schema['column'], schema['dtype'])))
+    if out.index.tzinfo is None:
+        out = out.tz_localize(schema['timezone'])
+    return out
 
 
 class HiddenToken:

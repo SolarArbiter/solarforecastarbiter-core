@@ -154,7 +154,7 @@ def construct_timeseries_dataframe(report):
                       datamodel.ProbabilisticForecast):
             for cvfx in pfxobs.original.forecast.constant_values:
                 value_frame_dict = _value_frame_dict(
-                    idx, pfxobs, column=cvfx.constant_value)
+                    idx, pfxobs, column=str(cvfx.constant_value))
                 # specify fx type so we know the const value fx came from a
                 # ProbabilisticForecast
                 meta_row_dict = _meta_row_dict(

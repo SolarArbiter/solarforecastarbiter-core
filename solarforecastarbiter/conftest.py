@@ -266,9 +266,9 @@ b"""
 @pytest.fixture()
 def prob_forecast_values():
     return pd.DataFrame(
-        {'25': [0.0, 1, 2, 3, 4, 5],
-         '50': [1.0, 2, 3, 4, 5, 6],
-         '75': [2.0, 3, 4, 5, 6, 7]},
+        {'25.0': [0.0, 1, 2, 3, 4, 5],
+         '50.0': [1.0, 2, 3, 4, 5, 6],
+         '75.0': [2.0, 3, 4, 5, 6, 7]},
         index=pd.date_range(start='20190101T0600',
                             end='20190101T1100',
                             freq='1h',
@@ -1729,6 +1729,25 @@ def report_objects(aggregate, ref_forecast_id):
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
 
 
+@pytest.fixture
+def report_data(report_objects):
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series(1., index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    ref_fx = \
+        report_objects[0].report_parameters.object_pairs[1].reference_forecast
+    data = {
+        report_objects[2]: data,
+        report_objects[3]: data,
+        ref_fx: data,
+        report_objects[1]: obs,
+        report_objects[4]: obs,
+        report_objects[5]: data}
+    return data
+
+
 @pytest.fixture()
 def event_report_objects():
     tz = 'America/Phoenix'
@@ -2003,9 +2022,9 @@ def cdf_and_cv_report_data(cdf_and_cv_report_objects):
                                             freq='1min',
                                             tz='MST',
                                             name='timestamp'))
-    cdf_fx_df = pd.DataFrame({25.: np.arange(periods_1min/60),
-                              50.: np.arange(periods_1min/60)+1,
-                              75.: np.arange(periods_1min/60)+2},
+    cdf_fx_df = pd.DataFrame({'25.0': np.arange(periods_1min/60),
+                              '50.0': np.arange(periods_1min/60)+1,
+                              '75.0': np.arange(periods_1min/60)+2},
                              index=pd.date_range(start='2020-04-01T00:00:00',
                                                  periods=periods_1min/60,
                                                  freq='60min',
@@ -2023,10 +2042,10 @@ def cdf_and_cv_report_data(cdf_and_cv_report_objects):
         cdf_forecast_1: cdf_fx_df,
         cdf_forecast_agg: cdf_fx_df,
         cdf_forecast_ref: cdf_fx_df,
-        cv_forecast_0: cdf_fx_df[25.],
-        cv_forecast_1: cdf_fx_df[50.],
-        cv_forecast_agg: cdf_fx_df[75.],
-        cv_forecast_ref: cdf_fx_df[50.]
+        cv_forecast_0: cdf_fx_df['25.0'],
+        cv_forecast_1: cdf_fx_df['50.0'],
+        cv_forecast_agg: cdf_fx_df['75.0'],
+        cv_forecast_ref: cdf_fx_df['50.0']
     }
     return data
 
@@ -2244,14 +2263,14 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
         tz='MST',
         name='timestamp')
     cdf_fx_y_df = pd.DataFrame({
-        25.: np.arange(periods_1h),
-        50.: np.arange(periods_1h)+1,
-        75.: np.arange(periods_1h)+2},
+        '25.0': np.arange(periods_1h),
+        '50.0': np.arange(periods_1h)+1,
+        '75.0': np.arange(periods_1h)+2},
         index=hourly_index)
     cdf_fx_x_df = pd.DataFrame({
-        250.: np.arange(periods_1h),
-        500.: np.arange(periods_1h)+1,
-        750.: np.arange(periods_1h)+2},
+        '250.0': np.arange(periods_1h),
+        '500.0': np.arange(periods_1h)+1,
+        '750.0': np.arange(periods_1h)+2},
         index=hourly_index)
     obs_df = obs_ser.to_frame('value')
     obs_df['quality_flag'] = OK
@@ -2265,12 +2284,23 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
         cdf_forecast_1: cdf_fx_x_df,
         cdf_forecast_agg: cdf_fx_x_df,
         cdf_forecast_ref: cdf_fx_x_df,
-        cv_forecast_0: cdf_fx_y_df[25.],
-        cv_forecast_1: cdf_fx_y_df[50.],
-        cv_forecast_agg: cdf_fx_x_df[750.],
-        cv_forecast_ref: cdf_fx_x_df[500.]
+        cv_forecast_0: cdf_fx_y_df['25.0'],
+        cv_forecast_1: cdf_fx_y_df['50.0'],
+        cv_forecast_agg: cdf_fx_x_df['750.0'],
+        cv_forecast_ref: cdf_fx_x_df['500.0']
     }
     return data
+
+
+@pytest.fixture(params=['deterministic', 'prob_xy'])
+def various_report_objects_data(
+        report_objects, report_data,
+        cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        request):
+    if request.param == 'deterministic':
+        return report_objects, report_data
+    elif request.param == 'prob_xy':
+        return cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy
 
 
 @pytest.fixture()
