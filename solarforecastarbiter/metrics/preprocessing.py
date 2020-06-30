@@ -93,35 +93,38 @@ def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
         start=start, end=end, freq=forecast.interval_length,
         closed=datamodel.CLOSED_MAPPING[forecast.interval_label],
         name=fx_data.index.name)
-    try:
-        # Convert fill method to numeric as the same type as the original data.
-        const_fill_value = pd.to_numeric(forecast_fill_method).astype(float)
+
+    if forecast_fill_method == 'drop':
+        # Drop any missing values.
+        # If data is a DataFrame any row that is missing a value is
+        # dropped for all columns.
+        if isinstance(fx_data, pd.DataFrame):
+            count = fx_data.isna().any(axis=1).sum() * fx_data.shape[1]
+        else:
+            count = fx_data.isna().sum()
+        filled = fx_data.dropna(how='any').astype(float)
+    elif forecast_fill_method == 'forward':
+        # Reindex with expected datetime range.
+        # Fills missing values with the most recent real value.
+        # If any leading missing values fill with zeros.
+        filled = fx_data.reindex(index=full_dt_index)
+        count = filled.isna().sum()
+        filled.fillna(method='ffill', inplace=True)
+        filled.fillna(value=0, inplace=True)
+    else:
+        # Value should be numeric
+        try:
+            const_fill_value = pd.to_numeric(
+                forecast_fill_method).astype(float)
+        except ValueError:
+            raise ValueError(
+                f"Unsupported forecast fill missing data method: "
+                f"{forecast_fill_method}")
         # Reindex with expected datetime range.
         # Fills missing values with the given constant value.
         filled = fx_data.reindex(index=full_dt_index)
         count = filled.isna().sum()
         filled.fillna(value=const_fill_value, inplace=True)
-    except ValueError:
-        if forecast_fill_method == 'drop':
-            # Drop any missing values.
-            # If data is a DataFrame any row that is missing a value is
-            # dropped for all columns.
-            if isinstance(fx_data, pd.DataFrame):
-                count = fx_data.isna().any(axis=1).sum() * fx_data.shape[1]
-            else:
-                count = fx_data.isna().sum()
-            filled = fx_data.dropna(how='any').astype(float)
-        elif forecast_fill_method == 'forward':
-            # Reindex with expected datetime range.
-            # Fills missing values with the most recent real value.
-            # If any leading missing values fill with zeros.
-            filled = fx_data.reindex(index=full_dt_index)
-            count = filled.isna().sum()
-            filled.fillna(method='ffill', inplace=True)
-            filled.fillna(value=0, inplace=True)
-        else:
-            raise ValueError(f"Unsupported forecast fill missing data method: "
-                             f"{forecast_fill_method}")
 
     # If data provided as DataFrame count will be a series, so sum over that
     # series to get the total count for all columns (Except for 'drop').
