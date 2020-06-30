@@ -2,6 +2,7 @@
 Inserts metadata and figures into the report template.
 """
 import base64
+import json
 import logging
 from pathlib import Path
 import re
@@ -95,6 +96,10 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     return kwargs
 
 
+def _pretty_json(val):
+    return json.dumps(val, indent=4, separators=(',', ':'))
+
+
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
     the report. If the report failed to compute, the template and kwargs will
@@ -128,6 +133,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         lstrip_blocks=True,
         trim_blocks=True
     )
+    env.filters['pretty_json'] = _pretty_json
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     if report.status == 'complete':
         template = env.get_template('body.html')
@@ -173,6 +179,19 @@ def render_html(report, dash_url=datamodel.DASH_URL,
         report, dash_url, with_timeseries, body_only)
     out = template.render(**kwargs)
     return out
+
+
+def _link_filter(value):
+    """convert html href markup to tex href markup"""
+    match = re.search(
+        """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>(.*?)<\\/a>""",
+        value, re.DOTALL)
+    if match:
+        new = "\\href{" + match.group(2) + "}{" + match.group(4) + "}"
+        out = value[:match.start()] + new + value[match.end():]
+        return out
+    else:
+        return value
 
 
 def _html_to_tex(value):
@@ -266,6 +285,8 @@ def render_pdf(report, dash_url, max_runs=5):
         line_comment_prefix='%#'
     )
     env.filters['html_to_tex'] = _html_to_tex
+    env.filters['link_filter'] = _link_filter
+    env.filters['pretty_json'] = _pretty_json
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)

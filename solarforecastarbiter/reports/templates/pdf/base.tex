@@ -56,6 +56,18 @@ with the reports or to create a new issue.
 \end{itemize}
 %- endif
 
+%- set costs = report.report_parameters.costs
+%- if costs | length > 0
+\subsection{Cost Parameters}
+%- for cost in costs
+\subsubsection{\VAR{cost.name}}
+\label{cost:\VAR{cost.name}}
+\begin{verbatim}
+  \VAR{cost.to_dict() | pretty_json }
+\end{verbatim}
+%- endfor
+%- endif
+
 \section{Data}
 
 This report includes forecast and observation data available from

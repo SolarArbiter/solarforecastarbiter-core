@@ -23,7 +23,7 @@ aforementioned basic costs depending on the size of the error is
 implemented.  This banded cost allows one to specify a cost similar to
 charges from transmission generator imbalance service as described in
 `FERC Order 890-B
-<https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`.
+<https://www.ferc.gov/whats-new/comm-meet/2008/061908/E-1.pdf>`_.
 Examples are provided below.
 
 Most cost models allow the specification of an `aggregation` and `net`
