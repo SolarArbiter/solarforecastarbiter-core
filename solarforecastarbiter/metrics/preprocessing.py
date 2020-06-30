@@ -495,7 +495,7 @@ def process_forecast_observations(forecast_observations, filters,
                                     for k, v in counts.items())
                 preproc_results = (datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=int(len(data[fxobs.data_object]) - len(obs_ser))), )
+                    count=(len(data[fxobs.data_object]) - len(obs_ser))), )
                 validated_observations[fxobs.data_object] = (
                     obs_ser, val_results, preproc_results)
 
