@@ -283,3 +283,9 @@ def test_render_pdf_process_error(report_with_raw, dash_url, mocker):
                      cmd='', returncode=1))
     with pytest.raises(subprocess.CalledProcessError):
         template.render_pdf(report_with_raw, dash_url)
+
+
+def test_link_filter():
+    text = 'stuf <a href="http://">link</a>'
+    new = template._link_filter(text)
+    assert new == 'stuf \\href{http://}{link}'

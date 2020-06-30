@@ -27,7 +27,7 @@
 %- endmacro
 
 %- macro metrics_meta_table()
-\VAR{metrics_meta_table_text() | html_to_tex}
+\VAR{metrics_meta_table_text() | link_filter | html_to_tex}
 \begin{table}[h]
   \caption{Table of metrics metadata.}
   \small

@@ -181,6 +181,18 @@ def render_html(report, dash_url=datamodel.DASH_URL,
     return out
 
 
+def _link_filter(value):
+    match = re.search(
+        """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>\n?(.*?)\n?<\\/a>""",
+        value)
+    if match:
+        new = "\\href{" + match.group(2) + "}{" + match.group(4) + "}"
+        out = value[:match.start()] + new + value[match.end():]
+        return out
+    else:
+        return value
+
+
 def _html_to_tex(value):
     value = (value
              .replace('<p>', '')
@@ -272,6 +284,7 @@ def render_pdf(report, dash_url, max_runs=5):
         line_comment_prefix='%#'
     )
     env.filters['html_to_tex'] = _html_to_tex
+    env.filters['link_filter'] = _link_filter
     env.filters['pretty_json'] = _pretty_json
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
