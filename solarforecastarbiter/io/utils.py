@@ -371,10 +371,13 @@ def deserialize_timeseries(data):
             schema['dtype'])
     elif objtype_str == 'DataFrame':
         if df.empty:
+            try:
+                dtype = schema['dtype'][0]
+            except IndexError:
+                dtype = float
             return pd.DataFrame(
                 [], columns=schema['column'], index=pd.DatetimeIndex(
-                    [], tz=schema['timezone'], name='timestamp'),
-                dtype=schema['dtype'][0])
+                    [], tz=schema['timezone'], name='timestamp'), dtype=dtype)
         out = df.set_index(schema['index'])
         # pd.read_json will set all column names to strings, so
         # columns originally specified with float names need to be

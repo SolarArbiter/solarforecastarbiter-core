@@ -222,23 +222,24 @@ def test_adjust_timeseries_for_interval_label_series(label, exp):
     pdt.assert_series_equal(exp, out)
 
 
-@pytest.mark.parametrize('ser', [
-    TEST_DATA['value'],
-    EMPTY_TIMESERIES,
-    pytest.param(EMPTY_SERIES, marks=[
+@pytest.mark.parametrize('inp,exp', [
+    (TEST_DATA['value'], '{"schema":{"version": 1, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64", "objtype": "Series"},"data":[{"timestamp":"2019-01-24T00:00:00Z","value":2.0},{"timestamp":"2019-01-24T00:01:00Z","value":43.9},{"timestamp":"2019-01-24T00:02:00Z","value":338.0},{"timestamp":"2019-01-24T00:03:00Z","value":-199.7},{"timestamp":"2019-01-24T00:04:00Z","value":0.32}]}'),  # NOQA: E501
+    (EMPTY_TIMESERIES, '{"schema":{"version": 1, "orient": "records", "timezone": "UTC", "column": "value", "index": "timestamp", "dtype": "float64", "objtype": "Series"},"data":[]}'),  # NOQA: E501
+    pytest.param(EMPTY_SERIES, '', marks=[
         pytest.mark.xfail(strict=True, type=TypeError)]),
-    pytest.param(pd.Series([], dtype=float, index=pd.DatetimeIndex([])),
+    pytest.param(pd.Series([], dtype=float, index=pd.DatetimeIndex([])), '',
                  marks=[pytest.mark.xfail(strict=True, type=TypeError)]),
-    TEST_DATAFRAME,
-    EMPTY_TIME_DATAFRAME,
-    pytest.param(EMPTY_DATAFRAME, marks=[
+    (TEST_DATAFRAME, '{"schema":{"version": 1, "orient": "records", "timezone": "UTC", "column": ["25.0", "50.0", "75.0"], "index": "timestamp", "dtype": ["float64", "float64", "float64"], "objtype": "DataFrame"},"data":[{"timestamp":"2019-01-01T13:00:00Z","25.0":0.0,"50.0":1.0,"75.0":2.0},{"timestamp":"2019-01-01T14:00:00Z","25.0":1.0,"50.0":2.0,"75.0":3.0},{"timestamp":"2019-01-01T15:00:00Z","25.0":2.0,"50.0":3.0,"75.0":4.0},{"timestamp":"2019-01-01T16:00:00Z","25.0":3.0,"50.0":4.0,"75.0":5.0},{"timestamp":"2019-01-01T17:00:00Z","25.0":4.0,"50.0":5.0,"75.0":6.0},{"timestamp":"2019-01-01T18:00:00Z","25.0":5.0,"50.0":6.0,"75.0":7.0}]}'),  # NOQA: E501
+    (EMPTY_TIME_DATAFRAME, '{"schema":{"version": 1, "orient": "records", "timezone": "UTC", "column": [], "index": "timestamp", "dtype": [], "objtype": "DataFrame"},"data":[]}'),  # NOQA: E501
+    pytest.param(EMPTY_DATAFRAME, '', marks=[
         pytest.mark.xfail(strict=True, type=TypeError)]),
 ])
-def test_serialize_timeseries(ser):
-    out = utils.serialize_timeseries(ser)
+def test_serialize_timeseries(inp, exp):
+    out = utils.serialize_timeseries(inp)
     outd = json.loads(out)
     assert 'schema' in outd
     assert 'data' in outd
+    assert out == exp
 
 
 @pytest.mark.parametrize('inp,exp', [
@@ -287,6 +288,8 @@ def test_deserialize_timeseries(inp, exp):
 
 
 @pytest.mark.parametrize('inp,exp', [
+    ('{"schema":{"version": 1, "orient": "records", "timezone": "UTC", "column": [], "index": "timestamp", "dtype": [], "objtype": "DataFrame"},"data":[]}',  # NOQA
+     EMPTY_TIME_DATAFRAME),
     ('{"schema": {"version": 1, "objtype": "DataFrame", "orient": "records", "timezone": "UTC", "column": [], "index": "timestamp", "dtype": ["float64"]}, "data": []}',  # NOQA
      EMPTY_TIME_DATAFRAME),
     ('{"schema": {"version": 1, "objtype": "DataFrame", "orient": "records", "timezone": "UTC", "column": ["25.0"], "index": "timestamp", "dtype": ["float64"]}, "data": [{"timestamp": "2019-01-01T00:00:00", "25.0": 1.0}], "other_stuff": {}}',  # NOQA

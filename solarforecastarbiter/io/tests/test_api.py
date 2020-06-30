@@ -584,6 +584,10 @@ def test_apisession_get_prob_forecast_values(
     for col in col_values:
         new_cv = copy.deepcopy(cvs_json)
         new_cv['constant_value'] = col
+        # fixture has keys like CV25
+        # we need to convert either float 25. or str '25.0' to int 25
+        # str(25.) == '25.0', int('25.0') raises ValueError, so we have
+        # to chain it all together
         new_cv['forecast_id'] = 'CV' + str(int(float(col)))
         new_cv['axis'] = 'y'
         cvs.append(new_cv)
