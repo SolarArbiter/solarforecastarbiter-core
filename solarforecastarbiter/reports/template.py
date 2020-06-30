@@ -182,6 +182,7 @@ def render_html(report, dash_url=datamodel.DASH_URL,
 
 
 def _link_filter(value):
+    """convert html href markup to tex href markup"""
     match = re.search(
         """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>(.*?)<\\/a>""",
         value, re.DOTALL)
