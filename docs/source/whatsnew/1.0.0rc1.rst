@@ -1,7 +1,7 @@
 .. _whatsnew_100rc1:
 
-1.0.0rc1 (????)
----------------
+1.0.0rc1 (July 1, 2020)
+-----------------------
 
 This is the first 1.0 release candidate.
 
@@ -102,7 +102,7 @@ Enhancements
   (:pull:`487`) (:pull:`501`) (:issue:`126`) (:issue:`492`)
 * Allow daily persistence forecasts to start at anytime instead of
   restricted to midnight UTC (:pull:`497`) (:issue:`471`)
-* Added support for filling missing and ``numpy.nan` data for forecasts.
+* Added support for filling missing and ``numpy.nan`` data for forecasts.
   (:issue:`423`) (:pull:`493`)
 
 
@@ -122,7 +122,7 @@ Bug fixes
 * Fix ambiguity in forecast issue time of day (:pull:`497`)
 * Fix data start/end for day of week net load persistence (:pull:`497`)
 * Fix issue with inability to create ProbabilisticForecast and
-  ProbilisticForecastConstantValue from Forecast.from_dict.
+  ProbabilisticForecastConstantValue from Forecast.from_dict.
   (:issue:`502`, :pull:`503`)
 
 Contributors
