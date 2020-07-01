@@ -102,17 +102,19 @@ def _pretty_json(val):
 
 def _figure_name_filter(value):
     """replace characters that may cause problems for html/javascript ids"""
-    return (value
-            .replace('^', '-')
-            .replace(' ', '-')
-            .replace('.', 'dot')
-            .replace('%', 'percent')
-            .replace('<', 'lt')
-            .replace('>', 'gt')
-            .replace('=', 'eq')
-            .replace('(', 'lp')
-            .replace(')', 'rp')
-            )
+    out = (value
+           .replace('^', '-')
+           .replace(' ', '-')
+           .replace('.', 'dot')
+           .replace('%', 'percent')
+           .replace('<', 'lt')
+           .replace('>', 'gt')
+           .replace('=', 'eq')
+           .replace('(', 'lp')
+           .replace(')', 'rp')
+    )
+    out = re.sub('[^\\w-]', 'special', out)
+    return out
 
 
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):

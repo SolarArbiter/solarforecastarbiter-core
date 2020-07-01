@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 
@@ -294,3 +295,28 @@ def test_render_pdf_process_error(report_with_raw, dash_url, mocker):
 def test_link_filter(text, exp):
     new = template._link_filter(text)
     assert new == exp
+
+
+NOTWORD = re.compile('[^\\w-]')
+
+
+def test_not_word():
+    assert NOTWORD.match('-') is None
+    assert NOTWORD.match('test') is None
+    assert NOTWORD.match('+') is not None
+    assert NOTWORD.match('*') is not None
+    assert NOTWORD.match('^') is not None
+    assert NOTWORD.match('%') is not None
+
+
+@pytest.mark.parametrize('val', [
+    'ac_power Prob(f <= 10.0%)',
+    'ac_power Prob(f <= 10MW) = 10.99%',
+    'ac_power Prob(f >= -all)',
+    '*!@#$%?.}{[]}<>,."',
+    'testit - now'
+])
+def test_figure_name_filter(val):
+    new = template._figure_name_filter(val)
+    match = NOTWORD.match(new)
+    assert match is None
