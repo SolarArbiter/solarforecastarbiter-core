@@ -367,19 +367,18 @@ def _check_ref_fx(fx, ref_fx, ref_data):
     if ref_fx is not None:
         if fx.interval_length != ref_fx.interval_length:
             raise ValueError(
-                'forecast.interval_length %s must match '
-                'reference_forecast.interval_length %s' %
-                (fx.interval_length, ref_fx.interval_length))
+                f'forecast.interval_length "{fx.interval_length}" must match '
+                'reference_forecast.interval_length '
+                f'"{ref_fx.interval_length}"')
         if fx.interval_label != ref_fx.interval_label:
             raise ValueError(
-                'forecast.interval_label %s must match '
-                'reference_forecast.interval_label %s' %
-                (fx.interval_label, ref_fx.interval_label))
+                f'forecast.interval_label "{fx.interval_label}" must match '
+                f'reference_forecast.interval_label "{ref_fx.interval_label}"')
         if isinstance(fx, datamodel.ProbabilisticForecast):
             if fx.axis != ref_fx.axis:
                 raise ValueError(
-                    'forecast.axis %s must match reference_forecast.axis %s' %
-                    (fx.axis, ref_fx.axis))
+                    f'forecast.axis "{fx.axis}" must match '
+                    f'reference_forecast.axis "{ref_fx.axis}"')
 
 
 def exclude(values, quality_flags=None):
