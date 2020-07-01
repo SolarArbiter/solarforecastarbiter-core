@@ -1,6 +1,7 @@
 .. currentmodule:: solarforecastarbiter
 
-#############
+.. _apiref:
+
 API reference
 #############
 
