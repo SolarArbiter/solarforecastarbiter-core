@@ -69,8 +69,10 @@
     %- for fx_result in report_metrics
     \VAR{fx_result.name | html_to_tex}
     %- for metric in metric_ordering
+    %- set ns = namespace(found=false)
     %- for mval in fx_result.values
     %- if mval.category == category and mval.metric == metric
+    %- set ns.found = true
     %- if -0.01 < mval.value < 0.01
     & \VAR{'%.2e' | format(mval.value)}
     %- else
@@ -78,6 +80,9 @@
     %- endif
     %- endif
     %- endfor
+    %- if not ns.found
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
