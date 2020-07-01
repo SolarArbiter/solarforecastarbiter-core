@@ -314,7 +314,7 @@ def test_not_word():
     'ac_power Prob(f <= 10MW) = 10.99%',
     'ac_power Prob(f >= -all)',
     '*!@#$%?.}{[]}<>,."',
-    'testit - now'
+    'testit - now\\ W/m^2'
 ])
 def test_figure_name_filter(val):
     new = template._figure_name_filter(val)
