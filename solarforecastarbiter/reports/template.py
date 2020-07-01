@@ -114,7 +114,7 @@ def _figure_name_filter(value):
            .replace(')', 'rp')
            .replace('/', 'fsl')
            .replace('\\', 'bsl')
-    )
+           )
     out = re.sub('[^\\w-]', 'special', out)
     return out
 
