@@ -100,6 +100,25 @@ def _pretty_json(val):
     return json.dumps(val, indent=4, separators=(',', ':'))
 
 
+def _figure_name_filter(value):
+    """replace characters that may cause problems for html/javascript ids"""
+    out = (value
+           .replace('^', '-')
+           .replace(' ', '-')
+           .replace('.', 'dot')
+           .replace('%', 'percent')
+           .replace('<', 'lt')
+           .replace('>', 'gt')
+           .replace('=', 'eq')
+           .replace('(', 'lp')
+           .replace(')', 'rp')
+           .replace('/', 'fsl')
+           .replace('\\', 'bsl')
+           )
+    out = re.sub('[^\\w-]', 'special', out)
+    return out
+
+
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
     the report. If the report failed to compute, the template and kwargs will
@@ -134,6 +153,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         trim_blocks=True
     )
     env.filters['pretty_json'] = _pretty_json
+    env.filters['figure_name_filter'] = _figure_name_filter
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     if report.status == 'complete':
         template = env.get_template('body.html')
