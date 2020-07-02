@@ -12,6 +12,7 @@ import tempfile
 
 from bokeh import __version__ as bokeh_version
 from jinja2 import Environment, PackageLoader, select_autoescape, ChoiceLoader
+from jinja2.runtime import Undefined
 from plotly import __version__ as plotly_version
 
 
@@ -96,12 +97,16 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     return kwargs
 
 
-def _pretty_json(val):
-    return json.dumps(val, indent=4, separators=(',', ':'))
+def _pretty_json(value):
+    if isinstance(value, Undefined):  # pragma: no cover
+        return value
+    return json.dumps(value, indent=4, separators=(',', ':'))
 
 
 def _figure_name_filter(value):
     """replace characters that may cause problems for html/javascript ids"""
+    if isinstance(value, Undefined):
+        return value
     out = (value
            .replace('^', '-')
            .replace(' ', '-')
@@ -203,6 +208,8 @@ def render_html(report, dash_url=datamodel.DASH_URL,
 
 def _link_filter(value):
     """convert html href markup to tex href markup"""
+    if isinstance(value, Undefined):  # pragma: no cover
+        return value
     match = re.search(
         """<a\\s+(?:[^>]*?\\s+)?href=(["'])(.*?)(["'])>(.*?)<\\/a>""",
         value, re.DOTALL)
@@ -215,6 +222,8 @@ def _link_filter(value):
 
 
 def _html_to_tex(value):
+    if isinstance(value, Undefined):
+        return value
     value = (value
              .replace('<p>', '')
              .replace('</p>', '\n')
