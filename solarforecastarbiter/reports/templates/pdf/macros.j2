@@ -264,11 +264,16 @@
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex}
     %- for pstep in preproc_steps
+    %- set ns = namespace(found=false)
     %- for res in pfxobs.preprocessing_results
     %- if res.name == pstep
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found:
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
