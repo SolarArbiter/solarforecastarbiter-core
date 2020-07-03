@@ -206,11 +206,16 @@
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
     %- for qfilter in quality_filters
+    %- set ns  = namespace(found=false)
     %- for res in pfxobs.validation_results
     %- if res.flag == qfilter
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
