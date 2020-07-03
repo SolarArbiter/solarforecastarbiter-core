@@ -134,11 +134,16 @@ forecasts/single/{{ forecast.forecast_id }}
       <tr>
       <td style="test-align: left">{{ qfilter }}</td>
       {% for proc_fxobs in proc_fxobs_list %}
+        {% set ns = namespace(found=false) %}
         {% for res in proc_fxobs.validation_results %}
           {% if res.flag == qfilter %}
+            {% set ns.found = true %}
             <td style="text-align: center">{{ res.count }}</td>
           {% endif %}
         {% endfor %}
+        {% if not ns.found %}
+          <td></td>
+        {% endif %}
       {% endfor %}
       </tr>
     {% endfor %}
@@ -175,11 +180,16 @@ forecasts/single/{{ forecast.forecast_id }}
       <tr>
       <td style="test-align: left">{{ pstep }}</td>
       {% for proc_fxobs in proc_fxobs_list %}
+        {% set ns = namespace(found=false) %}
         {% for res in proc_fxobs.preprocessing_results %}
           {% if res.name == pstep %}
+            {% set ns.found = true %}
             <td style="text-align: center">{{ res.count }}</td>
           {% endif %}
         {% endfor %}
+        {% if not ns.found %}
+          <td></td>
+        {% endif %}
       {% endfor %}
       </tr>
     {% endfor %}
