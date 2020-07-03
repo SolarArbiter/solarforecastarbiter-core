@@ -205,8 +205,8 @@
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
-    %- for res in pfxobs.validation_results
     %- for qfilter in quality_filters
+    %- for res in pfxobs.validation_results
     %- if res.flag == qfilter
     & \VAR{res.count}
     %- endif
