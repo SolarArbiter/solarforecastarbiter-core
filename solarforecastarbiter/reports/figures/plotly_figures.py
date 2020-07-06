@@ -679,8 +679,8 @@ def bar(df, metric):
     # than 5 pairs to problems with labels being cutt off.
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
     if x_values.map(len).max() > 15 or x_values.size > 6:
-        #plot_layout_args.pop('height')
-        # Adjust bottom margin so that long names are not cut off
+        # Set explicit height and set automargin on x axis to allow for dynamic
+        # sizing to accomodate long x axis labels
         plot_layout_args['height'] = 600
         x_axis_kwargs = {'automargin': True}
     fig = go.Figure()
