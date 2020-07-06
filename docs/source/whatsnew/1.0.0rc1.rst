@@ -129,7 +129,7 @@ Bug fixes
   ordering in PDF tables. (:issue:`504`, :issue:`512`, :pull:`513`)
 
 * Fix bug where long forecast names were cut off when used as x axis labels on
-  total metrics plots. (:pull:`515)
+  total metrics plots. (:pull:`515`)
 
 Contributors
 ~~~~~~~~~~~~
