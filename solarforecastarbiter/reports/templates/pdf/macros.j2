@@ -205,12 +205,17 @@
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
-    %- for res in pfxobs.validation_results
     %- for qfilter in quality_filters
+    %- set ns  = namespace(found=false)
+    %- for res in pfxobs.validation_results
     %- if res.flag == qfilter
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
@@ -264,11 +269,16 @@
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex}
     %- for pstep in preproc_steps
+    %- set ns = namespace(found=false)
     %- for res in pfxobs.preprocessing_results
     %- if res.name == pstep
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found:
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
