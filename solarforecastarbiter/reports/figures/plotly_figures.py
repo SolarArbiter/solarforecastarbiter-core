@@ -4,6 +4,7 @@ using Plotly.
 """
 import base64
 import calendar
+from copy import deepcopy
 import datetime as dt
 from itertools import cycle
 from pathlib import Path
@@ -668,24 +669,28 @@ def bar(df, metric):
     """  # NOQA
     data = df[(df['category'] == 'total') & (df['metric'] == metric)]
     y_range = None
+    x_axis_kwargs = {}
     x_values = data['abbrev']
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
     metric_name = datamodel.ALLOWED_METRICS[metric]
 
+    # remove height limit when long abbreviations are used or there are more
+    # than 5 pairs to problems with labels being cutt off.
+    plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
+    if x_values.map(len).max() > 15 or x_values.size > 6:
+        # Set explicit height and set automargin on x axis to allow for dynamic
+        # sizing to accomodate long x axis labels
+        plot_layout_args['height'] = 600
+        x_axis_kwargs = {'automargin': True}
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
-    # remove height limit when long abbreviations are used or there are more
-    # than 5 pairs to problems with labels being cutt off.
-    plot_layout_args = PLOT_LAYOUT_DEFAULTS.copy()
-    if x_values.map(len).max() > 15 or x_values.size > 6:
-        plot_layout_args.pop('height')
     fig.update_layout(
         title=f'<b>{metric_name}</b>',
         xaxis_title=metric_name,
         **plot_layout_args)
-    configure_axes(fig, None, y_range)
+    configure_axes(fig, x_axis_kwargs, y_range)
     return fig
 
 
