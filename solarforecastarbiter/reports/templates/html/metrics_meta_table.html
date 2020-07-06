@@ -28,7 +28,7 @@
         {{ pfxobs.uncertainty }}
         </td>
         <td>
-        <a href="#cost-{{ pfxobs.cost.name }}">{{ pfxobs.cost.name }}</a>
+        <a href="#cost-{{ pfxobs.cost.name | figure_name_filter }}">{{ pfxobs.cost.name }}</a>
         </td>
     </tr>
     {% endfor %}

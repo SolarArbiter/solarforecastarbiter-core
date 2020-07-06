@@ -37,7 +37,7 @@
     Name & Normalization & Deadband(\%) & Cost Parameters\\
     \midrule
     %- for pfxobs in report.raw_report.processed_forecasts_observations
-    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} & \hyperref[cost:\VAR{pfxobs.cost.name}]{\VAR{pfxobs.cost.name}} \\
+    \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.normalization_factor} & \VAR{pfxobs.uncertainty} & \hyperref[cost:\VAR{pfxobs.cost.name | html_to_tex | replace('_', '+')}]{\VAR{pfxobs.cost.name | html_to_tex}} \\
     %- endfor
   \end{tabu}
 \end{table}
@@ -69,8 +69,10 @@
     %- for fx_result in report_metrics
     \VAR{fx_result.name | html_to_tex}
     %- for metric in metric_ordering
+    %- set ns = namespace(found=false)
     %- for mval in fx_result.values
     %- if mval.category == category and mval.metric == metric
+    %- set ns.found = true
     %- if -0.01 < mval.value < 0.01
     & \VAR{'%.2e' | format(mval.value)}
     %- else
@@ -78,6 +80,9 @@
     %- endif
     %- endif
     %- endfor
+    %- if not ns.found
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
@@ -200,12 +205,17 @@
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
-    %- for res in pfxobs.validation_results
     %- for qfilter in quality_filters
+    %- set ns  = namespace(found=false)
+    %- for res in pfxobs.validation_results
     %- if res.flag == qfilter
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found
+    &
+    %- endif
     %- endfor
     \\
     %- endfor
@@ -259,11 +269,16 @@
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex}
     %- for pstep in preproc_steps
+    %- set ns = namespace(found=false)
     %- for res in pfxobs.preprocessing_results
     %- if res.name == pstep
+    %- set ns.found = true
     & \VAR{res.count}
     %- endif
     %- endfor
+    %- if not ns.found:
+    &
+    %- endif
     %- endfor
     \\
     %- endfor

@@ -60,8 +60,8 @@ with the reports or to create a new issue.
 %- if costs | length > 0
 \subsection{Cost Parameters}
 %- for cost in costs
-\subsubsection{\VAR{cost.name}}
-\label{cost:\VAR{cost.name}}
+\subsubsection{\VAR{cost.name | html_to_tex}}
+\label{cost:\VAR{cost.name | html_to_tex | replace('_', '+')}}
 \begin{verbatim}
   \VAR{cost.to_dict() | pretty_json }
 \end{verbatim}

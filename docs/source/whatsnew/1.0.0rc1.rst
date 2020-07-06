@@ -124,6 +124,10 @@ Bug fixes
 * Fix issue with inability to create ProbabilisticForecast and
   ProbabilisticForecastConstantValue from Forecast.from_dict.
   (:issue:`502`, :pull:`503`)
+* Fix missing cells in validation, preprocessing, and metrics tables when
+  an object did not contain the relevant data, and ensure correct
+  ordering in PDF tables. (:issue:`504`, :issue:`512`, :pull:`513`)
+
 
 Contributors
 ~~~~~~~~~~~~
