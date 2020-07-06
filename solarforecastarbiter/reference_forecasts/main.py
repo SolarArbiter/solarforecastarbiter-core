@@ -182,12 +182,14 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     averaged. The persistence window is automatically determined
     from the *forecast* attributes:
 
-      * Intraday persistence forecasts:
-           *window = forecast.run_length*.
-           No longer than 1 hour.
-      * Day ahead forecasts (all but net load) and week ahead forecasts (net
-        load only):
-          *window = forecast.interval_length*.
+    - Intraday persistence forecasts:
+
+      + ``window = forecast.run_length``. No longer than 1 hour.
+
+    - Day ahead forecasts (all but net load) and week ahead forecasts (net
+      load only):
+
+      + ``window = forecast.interval_length``.
 
     Users that would like more flexibility may use the lower-level
     functions in
