@@ -669,6 +669,7 @@ def bar(df, metric):
     """  # NOQA
     data = df[(df['category'] == 'total') & (df['metric'] == metric)]
     y_range = None
+    x_axis_kwargs = {}
     x_values = data['abbrev']
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
@@ -678,9 +679,10 @@ def bar(df, metric):
     # than 5 pairs to problems with labels being cutt off.
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
     if x_values.map(len).max() > 15 or x_values.size > 6:
-        plot_layout_args.pop('height')
+        #plot_layout_args.pop('height')
         # Adjust bottom margin so that long names are not cut off
-        plot_layout_args['margin']['b'] = 350
+        plot_layout_args['height'] = 600
+        x_axis_kwargs = {'automargin': True}
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
@@ -688,7 +690,7 @@ def bar(df, metric):
         title=f'<b>{metric_name}</b>',
         xaxis_title=metric_name,
         **plot_layout_args)
-    configure_axes(fig, None, y_range)
+    configure_axes(fig, x_axis_kwargs, y_range)
     return fig
 
 
