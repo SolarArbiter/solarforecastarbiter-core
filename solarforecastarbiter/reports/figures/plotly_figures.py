@@ -82,6 +82,25 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
     forecast_object = kwargs.pop('forecast_object', None)
     if forecast_object is None:
         forecast_object = pfxobs.original.forecast
+
+    # Check for a case where we're adding metadata for a constant value, but
+    # the pair contains a whole ProbabilisticForecast
+    if (isinstance(forecast_object,
+                   datamodel.ProbabilisticForecastConstantValue)
+        and
+        isinstance(pfxobs.original.forecast,
+                    datamodel.ProbabilisticForecast)):
+        distribution = str(hash((
+            pfxobs.original.forecast,
+            pfxobs.original.forecast.interval_length,
+            pfxobs.original.forecast.interval_value_type,
+            pfxobs.original.forecast.interval_label)))
+        forecast_name = _fx_name(
+            pfxobs.original.forecast, pfxobs.original.data_object)
+    else:
+        distribution = None
+        forecast_name = _fx_name(
+            forecast_object, pfxobs.original.data_object)
     try:
         axis = forecast_object.axis
     except AttributeError:
@@ -93,8 +112,7 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
     meta = {
         'pair_index': idx,
         'observation_name': _obs_name(pfxobs.original),
-        'forecast_name': _fx_name(
-            forecast_object, pfxobs.original.data_object),
+        'forecast_name': forecast_name,
         'interval_label': pfxobs.interval_label,
         'interval_length': pfxobs.interval_length,
         'forecast_type': pfxobs.original.__class__.__name__,
@@ -111,7 +129,8 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
             pfxobs.interval_value_type,
             pfxobs.interval_label))),
         'observation_color': _obs_color(
-            pfxobs.interval_length)
+            pfxobs.interval_length),
+        'distribution': distribution
     }
     meta.update(kwargs)
     return meta
@@ -332,7 +351,10 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     # along with the pair index. Then add traces in order of pair index.
     gos = []
     # construct graph objects in random hash order
-    for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
+    non_distribution_indices = timeseries_meta_df['distribution'] == None
+    non_distribution_meta = timeseries_meta_df[non_distribution_indices]
+    distribution_meta = timeseries_meta_df[~non_distribution_indices]
+    for fx_hash in np.unique(non_distribution_meta['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         if metadata['axis'] not in axis:
@@ -359,7 +381,43 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             **plot_kwargs)
         # collect in list
         gos.append((metadata['pair_index'], go_))
-    # Add traces in order of pair index
+    for dist_hash in np.unique(distribution_meta['distribution']):
+        # get all the constant values in the distribution
+        cv_indices = timeseries_meta_df['distribution'] == dist_hash
+
+        # sort constant values
+        cv_metadata = timeseries_meta_df[cv_indices]
+        constant_values = cv_metadata['constant_value'].sort_values()
+
+        # plot confidence intervals as filled areas.
+        first = True
+        for _, cv in cv_metadata.iterrows():
+            pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
+            data = _fill_timeseries(
+                timeseries_value_df[pair_idcs],
+                cv['interval_length'])
+            if first:
+                fill = None
+                first = False
+            else:
+                fill = 'tonexty'
+            go_ = go.Scatter(
+                x=data.index,
+                y=data['forecast_values'],
+                name=f'{cv["constant_value"]}%',
+                legendgroup=cv['forecast_name'],
+                hoverinfo='name',
+                mode='lines',
+                fill=fill,
+                fillcolor='rgb(0, 0, {x})'.format(x=255/100* cv['constant_value']),
+                line=dict(
+                    width=0.5,
+                    color='rgb(0, 0, {x})'.format(x=255/100* cv['constant_value'])
+                ),
+                #line_group=dist_hash
+            )
+            # Add traces in order of pair index
+            gos.append((cv['pair_index'], go_))
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
 
