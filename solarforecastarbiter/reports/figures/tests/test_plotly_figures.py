@@ -395,16 +395,18 @@ def test_construct_timeseries_dataframe_timeseries(report_with_raw):
 
 
 def test_timeseries_plots(report_with_raw):
-    ts_spec, scatter_spec, ts_prob_spec = figures.timeseries_plots(
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         report_with_raw)
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
     assert ts_prob_spec is None
+    assert not inc_dist
 
 
 def test_timeseries_plots_xy(report_with_raw_xy):
-    ts_spec, scatter_spec, ts_prob_spec = figures.timeseries_plots(
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         report_with_raw_xy)
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
     assert isinstance(ts_prob_spec, str)
+    assert inc_dist
