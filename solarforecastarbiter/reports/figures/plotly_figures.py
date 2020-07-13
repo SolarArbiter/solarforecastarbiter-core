@@ -95,12 +95,8 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
             pfxobs.original.forecast.interval_length,
             pfxobs.original.forecast.interval_value_type,
             pfxobs.original.forecast.interval_label)))
-        forecast_name = _fx_name(
-            pfxobs.original.forecast, pfxobs.original.data_object)
     else:
         distribution = None
-        forecast_name = _fx_name(
-            forecast_object, pfxobs.original.data_object)
     try:
         axis = forecast_object.axis
     except AttributeError:
@@ -112,7 +108,8 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
     meta = {
         'pair_index': idx,
         'observation_name': _obs_name(pfxobs.original),
-        'forecast_name': forecast_name,
+        'forecast_name': _fx_name(
+            forecast_object, pfxobs.original.data_object),
         'interval_label': pfxobs.interval_label,
         'interval_length': pfxobs.interval_length,
         'forecast_type': pfxobs.original.__class__.__name__,
@@ -345,6 +342,13 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         fig.add_trace(go_)
 
 
+def _ci_from_percentile(constant_value):
+    """Returns an appropriate confidence interval label based on a given
+    a percentile constant value.
+    """
+    return np.absolute(2 * (constant_value - 50)) / 100
+
+
 def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PALETTE)
     # construct graph objects in random hash order. collect them in a list
@@ -381,40 +385,79 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             **plot_kwargs)
         # collect in list
         gos.append((metadata['pair_index'], go_))
+
     for dist_hash in np.unique(distribution_meta['distribution']):
-        # get all the constant values in the distribution
+        # indices to constant values in the metadata df
         cv_indices = timeseries_meta_df['distribution'] == dist_hash
 
         # sort constant values
         cv_metadata = timeseries_meta_df[cv_indices]
-        constant_values = cv_metadata['constant_value'].sort_values()
+        cv_metadata = cv_metadata.sort_values('constant_value')
+        cv_metadata = cv_metadata.reset_index()
 
-        # plot confidence intervals as filled areas.
-        first = True
-        for _, cv in cv_metadata.iterrows():
+        target_color = _hexcode_to_rgb_tuple(next(palette))
+
+        def _ci_color(confidence_interval):
+            """Creates a color for shading confidence intervals by scaling rgb
+            components of `target_color`. Will return `target_color` for a 1.0
+            confidence interval and and black at 0.
+            """
+            rgb = tuple([confidence_interval*i for i in target_color])
+            return f'rgb({rgb[0]}, {rgb[1]}, {rgb[2]})'
+
+        # Plot confidence intervals
+        for idx, cv in cv_metadata.iterrows():
             pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
             data = _fill_timeseries(
                 timeseries_value_df[pair_idcs],
                 cv['interval_length'])
-            if first:
+
+            # Fill missing data with 0 to avoid plotly bugs encountered with
+            # go.Scatter fill and missing data.
+            data = data.fillna(0)
+
+            if idx == 0:
+                # The first value will act as the lower bound for other values
+                # to fill down to.
                 fill = None
-                first = False
+                showlegend = True
             else:
                 fill = 'tonexty'
+                showlegend = False
+
+            # Split name of the distribution from the current constant value
+            constant_label_index = cv['forecast_name'].find('Prob(')-1
+            fx_name = cv['forecast_name'][:constant_label_index]
+            cv_label = cv['forecast_name'][constant_label_index:]
+
+            # Since plotly always fills below the line for any constant below
+            # 50 %, use the previous value to mimic fill upward behavior. E.g.
+            # fill downward from 5% to 0% with the 1.0 interval.
+            if cv['constant_value'] <= 50 and idx != 0:
+                fill_value = cv_metadata.iloc[idx -1]['constant_value']
+            else:
+                fill_value = cv['constant_value']
+            interval = _ci_from_percentile(fill_value)
+
             go_ = go.Scatter(
                 x=data.index,
                 y=data['forecast_values'],
-                name=f'{cv["constant_value"]}%',
-                legendgroup=cv['forecast_name'],
-                hoverinfo='name',
+                name=_legend_text(fx_name),
+                hovertemplate=(
+                    f'<b>{ cv_label }<br>'
+                    '<b>Value<b>: %{y}<br>'
+                    '<b>Time<b>: %{x}<br>'
+                    f'<b>Confidence Interval</b>: { interval }'),
+                connectgaps=False,
                 mode='lines',
                 fill=fill,
-                fillcolor='rgb(0, 0, {x})'.format(x=255/100* cv['constant_value']),
+                showlegend=showlegend,
+                legendgroup=cv['distribution'],
+                fillcolor=_ci_color(interval),
                 line=dict(
-                    width=0.5,
-                    color='rgb(0, 0, {x})'.format(x=255/100* cv['constant_value'])
+                    width=1,
+                    color=_ci_color(interval),
                 ),
-                #line_group=dist_hash
             )
             # Add traces in order of pair index
             gos.append((cv['pair_index'], go_))
@@ -1102,3 +1145,9 @@ def timeseries_plots(report):
         )
 
     return ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json
+
+def _hexcode_to_rgb_tuple(hexcode):
+    """Turns a hexcode into a python 3-tuple of ints. Expects 6 digit hex code.
+    """
+    hexcode = hexcode.lstrip('#')
+    return tuple(int(hexcode[i:i+2], 16) for i in (0, 2, 4))
