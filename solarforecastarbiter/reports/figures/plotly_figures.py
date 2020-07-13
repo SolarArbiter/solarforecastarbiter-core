@@ -1089,6 +1089,9 @@ def timeseries_plots(report):
         If report contains a probabilistic forecast with axis='x',
         string json specification of the probability vs. time plot.
         Otherwise None.
+    includes_distribution: bool
+        True if the a plot was created for a pair containing a
+        ProbabilisticForecast.
     """
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
