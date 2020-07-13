@@ -89,7 +89,7 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
                    datamodel.ProbabilisticForecastConstantValue)
         and
         isinstance(pfxobs.original.forecast,
-                    datamodel.ProbabilisticForecast)):
+                   datamodel.ProbabilisticForecast)):
         distribution = str(hash((
             pfxobs.original.forecast,
             pfxobs.original.forecast.interval_length,
@@ -354,8 +354,9 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     # construct graph objects in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
     gos = []
+
     # construct graph objects in random hash order
-    non_distribution_indices = timeseries_meta_df['distribution'] == None
+    non_distribution_indices = timeseries_meta_df['distribution'].isna()
     non_distribution_meta = timeseries_meta_df[non_distribution_indices]
     distribution_meta = timeseries_meta_df[~non_distribution_indices]
     for fx_hash in np.unique(non_distribution_meta['forecast_hash']):
@@ -434,7 +435,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             # 50 %, use the previous value to mimic fill upward behavior. E.g.
             # fill downward from 5% to 0% with the 1.0 interval.
             if cv['constant_value'] <= 50 and idx != 0:
-                fill_value = cv_metadata.iloc[idx -1]['constant_value']
+                fill_value = cv_metadata.iloc[idx - 1]['constant_value']
             else:
                 fill_value = cv['constant_value']
             interval = _ci_from_percentile(fill_value)
@@ -446,8 +447,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 hovertemplate=(
                     f'<b>{ cv_label }<br>'
                     '<b>Value<b>: %{y}<br>'
-                    '<b>Time<b>: %{x}<br>'
-                    f'<b>Confidence Interval</b>: { interval }'),
+                    '<b>Time<b>: %{x}<br>'),
                 connectgaps=False,
                 mode='lines',
                 fill=fill,
@@ -455,10 +455,10 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 legendgroup=cv['distribution'],
                 fillcolor=_ci_color(interval),
                 line=dict(
-                    width=1,
                     color=_ci_color(interval),
                 ),
             )
+
             # Add traces in order of pair index
             gos.append((cv['pair_index'], go_))
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
@@ -511,7 +511,11 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
 
     # add forecast traces that have correct axis to fig
-    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
+    _plot_fx_timeseries(
+        fig,
+        timeseries_value_df,
+        timeseries_meta_df,
+        axis)
 
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
@@ -1143,8 +1147,15 @@ def timeseries_plots(report):
             height=500,
             autosize=False,
         )
+    includes_distribution = any(
+        (
+            isinstance(pfxob.original.forecast,
+                       datamodel.ProbabilisticForecast) and
+            pfxob.original.forecast.axis == 'y')
+        for pfxob in pfxobs)
+    return (ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json,
+            includes_distribution)
 
-    return ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json
 
 def _hexcode_to_rgb_tuple(hexcode):
     """Turns a hexcode into a python 3-tuple of ints. Expects 6 digit hex code.

@@ -94,6 +94,8 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         if timeseries_specs[2] is not None:
             kwargs['timeseries_prob_spec'] = timeseries_specs[2]
 
+        kwargs['includes_distribution'] = timeseries_specs[3]
+
     return kwargs
 
 
