@@ -88,7 +88,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         except Exception:
             logger.exception(
                 'Failed to make Plotly items for timeseries and scatterplot')
-            timeseries_specs = ('{}', '{}', '{}')
+            timeseries_specs = ('{}', '{}', '{}', False)
         kwargs['timeseries_spec'] = timeseries_specs[0]
         kwargs['scatter_spec'] = timeseries_specs[1]
         if timeseries_specs[2] is not None:
