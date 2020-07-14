@@ -15,6 +15,8 @@ import pandas as pd
 from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
 import numpy as np
+from matplotlib import cm
+from matplotlib.colors import Normalize
 
 
 from solarforecastarbiter import datamodel
@@ -45,6 +47,9 @@ OBS_PALETTE = gen_grays(_num_obs_colors)
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
             freq='10min', end='60min', periods=_num_obs_colors)
+
+# mapping to matplotlib's perceptually uniform sequential color pallettes
+PROBABILISTIC_PALLETES = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
@@ -387,6 +392,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         # collect in list
         gos.append((metadata['pair_index'], go_))
 
+    palette = cycle(PROBABILISTIC_PALLETES)
     for dist_hash in np.unique(distribution_meta['distribution']):
         # indices to constant values in the metadata df
         cv_indices = timeseries_meta_df['distribution'] == dist_hash
@@ -396,15 +402,12 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         cv_metadata = cv_metadata.sort_values('constant_value')
         cv_metadata = cv_metadata.reset_index()
 
-        target_color = _hexcode_to_rgb_tuple(next(palette))
-
-        def _ci_color(confidence_interval):
-            """Creates a color for shading confidence intervals by scaling rgb
-            components of `target_color`. Will return `target_color` for a 1.0
-            confidence interval and and black at 0.
-            """
-            rgb = tuple([confidence_interval*i for i in target_color])
-            return f'rgb({rgb[0]}, {rgb[1]}, {rgb[2]})'
+        # Get a colormap for mapping fill colors
+        color_map = cm.get_cmap(next(palette))
+        color_scaler = cm.ScalarMappable(
+            Normalize(vmin=0, vmax=1),
+            color_map,
+        )
 
         # Plot confidence intervals
         for idx, cv in cv_metadata.iterrows():
@@ -438,7 +441,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 fill_value = cv_metadata.iloc[idx - 1]['constant_value']
             else:
                 fill_value = cv['constant_value']
-            interval = _ci_from_percentile(fill_value)
+            interval = fill_value / 100 #_ci_from_percentile(fill_value)
 
             go_ = go.Scatter(
                 x=data.index,
@@ -453,9 +456,9 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 fill=fill,
                 showlegend=showlegend,
                 legendgroup=cv['distribution'],
-                fillcolor=_ci_color(interval),
+                fillcolor=color_scaler.to_rgba(interval),
                 line=dict(
-                    color=_ci_color(interval),
+                    color=color_scaler.to_rgba(interval),
                 ),
             )
 

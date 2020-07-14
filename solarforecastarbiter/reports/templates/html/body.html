@@ -101,8 +101,9 @@ right. Clicking on an item in the legend will hide/show it.</p>
 <div id="timeseries-div"></div>
 {% if includes_distribution %}
 <p>The timeseries plots above contain probabilistic forecast distributions.
-Confidence intervals are shaded in the color displayed in the legend. Brighter
-colors indicate larger intervals and converge to black at the median value.</p>
+Forecast percentiles are shaded in the color displayed in the legend. Brighter
+colors indicate percentiles closer to 0 or 100. Shading converges to black at
+the 50th percentile.</p>
 {% endif %}
 <div id="scatter-div"></div>
 
