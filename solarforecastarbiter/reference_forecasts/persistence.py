@@ -280,7 +280,10 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     # Consider putting the code within each if/else block below into its own
     # function with standard outputs clear_ref and clear_fx. But with only two
     # cases for now, it might be more clear to leave inline.
-    if isinstance(site, datamodel.SolarPowerPlant):
+    if (
+            isinstance(site, datamodel.SolarPowerPlant) and
+            observation.variable == 'ac_power'
+    ):
         # No temperature input is only OK so long as temperature effects
         # do not push the system above or below AC clip point.
         # It's only a reference forecast!

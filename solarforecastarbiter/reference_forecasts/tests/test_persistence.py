@@ -127,26 +127,37 @@ def uniform_data():
 
 
 @pytest.mark.parametrize(
-    'interval_label,expected_index,expected_ghi,expected_ac', (
+    'interval_label,expected_index,expected_ghi,expected_ac,obsscale', (
         ('beginning',
          ['20190404 1300', '20190404 1330'],
          [96.41150694741889, 91.6991546408236],
-         [99.28349914087346, 98.28165269708589]),
+         [99.28349914087346, 98.28165269708589],
+         1),
         ('ending',
          ['20190404 1330', '20190404 1400'],
          [96.2818141290749, 91.5132934827808],
-         [99.25690632023922, 98.2405479197069]))
+         [99.25690632023922, 98.2405479197069],
+         1),
+        # test clipped at 2x clearsky
+        ('beginning',
+         ['20190404 1300', '20190404 1330'],
+         [1926.5828549018618, 1832.4163238767312],
+         [395.9216674046528, 391.9265149579709],
+         50)
+    )
 )
 def test_persistence_scalar_index(
-        site_metadata, powerplant_metadata, uniform_data, interval_label,
-        expected_index, expected_ghi, expected_ac):
+        powerplant_metadata, uniform_data, interval_label,
+        expected_index, expected_ghi, expected_ac, obsscale):
+    # ac_capacity is 200 from above
     observation = default_observation(
-        site_metadata, interval_length='5min', interval_label='beginning')
+        powerplant_metadata, interval_length='5min',
+        interval_label='beginning')
     observation_ac = default_observation(
         powerplant_metadata, interval_length='5min',
         interval_label='beginning', variable='ac_power')
 
-    data = uniform_data
+    data = uniform_data * obsscale
     tz = data.index.tzinfo
     data_start = pd.Timestamp('20190404 1200', tz=tz)
     data_end = pd.Timestamp('20190404 1300', tz=tz)
