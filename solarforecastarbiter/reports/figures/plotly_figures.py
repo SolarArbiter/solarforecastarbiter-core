@@ -445,7 +445,9 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 # centered around the 50th percentile
                 fill_value = 2 * abs(fill_value - 50)
             else:
-                fill_value = cv['constant_value']
+                # convert to complement percentile to invert shading, such that
+                # bright colors appear at 0 and dark at 100 when plotted.
+                fill_value = 100 - cv['constant_value']
 
             fill_color = _get_fill_color(fill_value)
 
