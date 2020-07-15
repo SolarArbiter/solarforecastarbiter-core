@@ -16,7 +16,7 @@ from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
 import numpy as np
 from matplotlib import cm
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, rgb2hex
 
 
 from solarforecastarbiter import datamodel
@@ -48,8 +48,8 @@ OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
             freq='10min', end='60min', periods=_num_obs_colors)
 
-# mapping to matplotlib's perceptually uniform sequential color pallettes
-PROBABILISTIC_PALLETES = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
+# list of matplotlib's perceptually uniform sequential color pallettes
+PROBABILISTIC_PALETTES = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
@@ -347,13 +347,6 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         fig.add_trace(go_)
 
 
-def _ci_from_percentile(constant_value):
-    """Returns an appropriate confidence interval label based on a given
-    a percentile constant value.
-    """
-    return np.absolute(2 * (constant_value - 50)) / 100
-
-
 def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PALETTE)
     # construct graph objects in random hash order. collect them in a list
@@ -392,7 +385,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         # collect in list
         gos.append((metadata['pair_index'], go_))
 
-    palette = cycle(PROBABILISTIC_PALLETES)
+    palette = cycle(PROBABILISTIC_PALETTES)
     for dist_hash in np.unique(distribution_meta['distribution']):
         # indices to constant values in the metadata df
         cv_indices = timeseries_meta_df['distribution'] == dist_hash
@@ -409,6 +402,11 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             color_map,
         )
 
+        def _get_fill_color(percentile):
+            normalized_value = percentile / 100
+            return rgb2hex(color_scaler.to_rgba(normalized_value))
+
+        symmetric_percentiles = _percentiles_are_symmetric(cv_metadata)
         # Plot confidence intervals
         for idx, cv in cv_metadata.iterrows():
             pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
@@ -434,14 +432,22 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             fx_name = cv['forecast_name'][:constant_label_index]
             cv_label = cv['forecast_name'][constant_label_index:]
 
-            # Since plotly always fills below the line for any constant below
-            # 50 %, use the previous value to mimic fill upward behavior. E.g.
-            # fill downward from 5% to 0% with the 1.0 interval.
-            if cv['constant_value'] <= 50 and idx != 0:
-                fill_value = cv_metadata.iloc[idx - 1]['constant_value']
+            if symmetric_percentiles:
+                # Since plotly always fills below the line, for constants below
+                # 50 %, use the previous value to mimic fill upward behavior.
+                # E.g. fill downward from 5% to 0% with the 100% interval.
+                if cv['constant_value'] <= 50 and idx != 0:
+                    fill_value = cv_metadata.iloc[idx - 1]['constant_value']
+                else:
+                    fill_value = cv['constant_value']
+
+                # When constant values are symmetric, create credible intervals
+                # centered around the 50th percentile
+                fill_value = 2 * abs(fill_value - 50)
             else:
                 fill_value = cv['constant_value']
-            interval = fill_value / 100 #_ci_from_percentile(fill_value)
+
+            fill_color = _get_fill_color(fill_value)
 
             go_ = go.Scatter(
                 x=data.index,
@@ -456,9 +462,9 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 fill=fill,
                 showlegend=showlegend,
                 legendgroup=cv['distribution'],
-                fillcolor=color_scaler.to_rgba(interval),
+                fillcolor=fill_color,
                 line=dict(
-                    color=color_scaler.to_rgba(interval),
+                    color=fill_color,
                 ),
             )
 
@@ -1163,8 +1169,23 @@ def timeseries_plots(report):
             includes_distribution)
 
 
-def _hexcode_to_rgb_tuple(hexcode):
-    """Turns a hexcode into a python 3-tuple of ints. Expects 6 digit hex code.
+def _percentiles_are_symmetric(cv_df):
+    """Determines if a set of percentiles are symmetric around the 50th
+    percentile.
+
+    Parameters
+    ----------
+    cv_df: pandas.DataFrame
+        A dataframe containing metadata of all of the constant values for the
+        distribution.
+    Returns
+    -------
+    bool
     """
-    hexcode = hexcode.lstrip('#')
-    return tuple(int(hexcode[i:i+2], 16) for i in (0, 2, 4))
+    constant_values = cv_df['constant_value'].sort_values()
+    lower_bounds = constant_values[constant_values < 50]
+    upper_bounds = constant_values[constant_values > 50][::-1]
+    for l, u in zip(lower_bounds, upper_bounds):
+        if abs(50 - l) != abs(50 - u):
+            return False
+    return True

@@ -53,6 +53,7 @@ setup(
         'jsonschema',
         'plotly',
         'psutil',
+        'matplotlib',
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
