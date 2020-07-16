@@ -171,18 +171,26 @@ def test_run_persistence_interval_assert_data(
         interval_label='beginning')
     issue_time = pd.Timestamp('20190102T2300Z')
     mocker.spy(main.persistence, 'persistence_interval')
-    index = pd.date_range('20190101T0000Z', periods=24, freq='1h')
-    data = pd.Series([0, 1, 2] + [0] * 21, index=index)
+    data_start = pd.Timestamp('20190101T0000Z')
+    data_end = pd.Timestamp('20190102T0000Z')
+    index = pd.date_range(start=data_start, end=data_end, freq='1h')
+    data = pd.Series([0, 1, 2] + [0] * 22, index=index)
+    data = utils.adjust_timeseries_for_interval_label(
+        data, il, data_start, data_end)
     load_data = mocker.MagicMock(return_value=data)
     out = main.run_persistence(session, obs, forecast, run_time,
                                issue_time, load_data=load_data)
-    assert load_data.call_args[0][1:] == (pd.Timestamp('20190101T0000Z'),
-                                          pd.Timestamp('20190102T0000Z'))
+    assert load_data.call_args[0][1:] == (data_start, data_end)
     assert isinstance(out, pd.Series)
     assert len(out) == 24
-    assert out.loc['20190103T0000Z'] == 0
-    assert out.loc['20190103T0100Z'] == 1
-    assert out.loc['20190103T0200Z'] == 2
+    if il == 'ending':
+        assert out.loc['20190103T0000Z'] == 1
+        assert out.loc['20190103T0100Z'] == 2
+        assert out.loc['20190103T0200Z'] == 0
+    else:
+        assert out.loc['20190103T0000Z'] == 0
+        assert out.loc['20190103T0100Z'] == 1
+        assert out.loc['20190103T0200Z'] == 2
     assert main.persistence.persistence_interval.call_count == 1
 
 
@@ -231,22 +239,36 @@ def test_run_persistence_interval_tz(session, site_metadata, obs_5min_begin,
         interval_label=fxil)
     issue_time = pd.Timestamp('20190102T2300-05:00')
     mocker.spy(main.persistence, 'persistence_interval')
-    index = pd.date_range('20190101T0500Z', periods=24, freq='1h')
-    data = pd.Series([0, 1, 2] + [0] * 21, index=index)
+    data_start = pd.Timestamp('20190101T0500Z')
+    data_end = pd.Timestamp('20190102T0500Z')
+    index = pd.date_range(start=data_start, end=data_end, freq='1h')
+    data = pd.Series([0, 1, 2] + [0] * 22, index=index)
+    data = utils.adjust_timeseries_for_interval_label(
+        data, obsil, data_start, data_end)
     load_data = mocker.MagicMock(return_value=data)
     out = main.run_persistence(session, obs, forecast, run_time,
                                issue_time, load_data=load_data)
-    assert load_data.call_args[0][1:] == (pd.Timestamp('20190101T0500Z'),
-                                          pd.Timestamp('20190102T0500Z'))
+    assert load_data.call_args[0][1:] == (data_start, data_end)
     assert isinstance(out, pd.Series)
     assert len(out) == 24
-    if fxil == 'ending':
+    if fxil == 'ending' and obsil == 'ending':
         i = 6
-    else:
+    elif fxil == 'beginning' and obsil == 'beginning':
+        i = 6
+    elif fxil == 'ending' and obsil == 'beginning':
+        # obs: [0, 1) = 0, [1, 2) = 1, [2, 3) = 2, [3, 4) = 0
+        # fx: (0, 1] = 0, (1, 2] = 1, (2, 3] = 2, (3, 4] = 0
+        i = 7
+    elif fxil == 'beginning' and obsil == 'ending':
+        # obs: (0, 1] = 1, (1, 2] = 2, (2, 3] = 0, (3, 4] = 0
+        # fx: [0, 1) = 1, [1, 2) = 2, [2, 3) = 0, [3, 4) = 0
+        # persistence interval moves endpoint into wrong interval
+        # but alternative would require broader data start/end
         i = 5
-    assert out.loc[f'20190103T0{i}00Z'] == 0
-    assert out.loc[f'20190103T0{i+1}00Z'] == 1
-    assert out.loc[f'20190103T0{i+2}00Z'] == 2
+    assert out.loc[f'20190103T0{i}00Z'] == 1
+    assert out.loc[f'20190103T0{i+1}00Z'] == 2
+    assert out.loc[f'20190103T0{i+2}00Z'] == 0
+    assert out.iloc[-1] == 0
     assert main.persistence.persistence_interval.call_count == 1
 
 
