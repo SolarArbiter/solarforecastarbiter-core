@@ -15,6 +15,7 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel, pvmodel
+from solarforecastarbiter.utils import generate_continuous_chunks
 from solarforecastarbiter.io import api
 from solarforecastarbiter.io.fetch import nwp as fetch_nwp
 from solarforecastarbiter.io.utils import adjust_timeseries_for_interval_label
@@ -669,7 +670,8 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
                 serlist.append(fx_ser)
         if len(serlist) > 0:
             ser = pd.concat(serlist)
-            session.post_forecast_values(fx.forecast_id, ser)
+            for cser in generate_continuous_chunks(ser, fx.interval_length):
+                session.post_forecast_values(fx.forecast_id, cser)
 
 
 def make_latest_probabilistic_persistence_forecasts(
@@ -713,5 +715,7 @@ def make_latest_probabilistic_persistence_forecasts(
         for id_, serlist in out.items():
             if len(serlist) > 0:
                 ser = pd.concat(serlist)
-                session.post_probabilistic_forecast_constant_value_values(
-                    id_, ser)
+                for cser in generate_continuous_chunks(
+                        ser, fx.interval_length):
+                    session.post_probabilistic_forecast_constant_value_values(
+                        id_, cser)
