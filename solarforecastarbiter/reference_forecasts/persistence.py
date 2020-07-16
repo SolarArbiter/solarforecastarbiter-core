@@ -162,11 +162,15 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
                            forecast_start, forecast_end,
                            observation.interval_length)
 
+    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
     # get the data
     obs = load_data(observation, data_start, data_end)
-
+    obs_index = pd.date_range(start=data_start, end=data_end,
+                              freq=observation.interval_length,
+                              closed=closed_obs)
+    # put in nans if appropriate
+    obs = obs.reindex(obs_index)
     # average data within bins of length interval_length
-    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
     persistence_quantity = obs.resample(interval_length,
                                         closed=closed_obs).mean()
 
@@ -178,7 +182,8 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     # Construct the returned series.
     # Use values to strip the time information from resampled obs.
     # Raises ValueError if len(persistence_quantity) != len(fx_index), but
-    # that should never happen given the way we're calculating things here.
+    # that should never happen given the way we're calculating things here
+    # now that nans are insterted into obs for missing data.
     fx = pd.Series(persistence_quantity.values, index=fx_index)
     return fx
 

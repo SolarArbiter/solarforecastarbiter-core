@@ -117,6 +117,35 @@ def test_persistence_interval(site_metadata, obs_interval_label,
         assert_series_equal(fx, expected)
 
 
+def test_persistence_interval_missing_data(site_metadata):
+    # interval beginning obs
+    observation = default_observation(
+        site_metadata, interval_length='5min',
+        interval_label='ending')
+    tz = 'America/Phoenix'
+    data_index = pd.date_range(
+        start='20190404T1200', end='20190406', freq='5min', tz=tz)
+    # each element of data is equal to the hour value of its label
+    end = '20190406 0000'
+    data = pd.Series(data_index.hour, index=data_index, dtype=float)
+    data = data.shift(1)
+    data_start = pd.Timestamp('20190404 0000', tz=tz)
+    data_end = pd.Timestamp(end, tz=tz) - pd.Timedelta('1d')
+    forecast_start = pd.Timestamp('20190405 0000', tz=tz)
+    interval_length = pd.Timedelta('60min')
+
+    load_data = partial(load_data_base, data)
+
+    expected_index = pd.date_range(
+        start='20190405 0000', end=end, freq='60min', tz=tz, closed='right')
+    expected_vals = [None] * 12 + list(range(12, 24))
+    expected = pd.Series(expected_vals, index=expected_index, dtype=float)
+    fx = persistence.persistence_interval(
+        observation, data_start, data_end, forecast_start,
+        interval_length, 'ending', load_data)
+    assert_series_equal(fx, expected)
+
+
 @pytest.fixture
 def uniform_data():
     tz = 'America/Phoenix'
