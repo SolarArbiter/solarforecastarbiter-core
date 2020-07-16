@@ -425,3 +425,108 @@ def test_hijack_loggers(mocker):
     with utils.hijack_loggers(['testhijack']):
         assert logger.handlers[0] == new_handler
     assert logger.handlers[0] == old_handler
+
+
+@pytest.mark.parametrize('data,freq,expected', [
+    (pd.Series(index=pd.DatetimeIndex([]), dtype=float), '5min',
+     [pd.Series(index=pd.DatetimeIndex([]), dtype=float)]),
+    (pd.Series([1.0], index=pd.DatetimeIndex(['2020-01-01T00:00Z'])),
+     '5min',
+     [pd.Series([1.0], index=pd.DatetimeIndex(['2020-01-01T00:00Z']))]),
+    (pd.Series(
+        [1.0, 2.0, 3.0],
+        index=pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3)),
+     '1h',
+     [pd.Series(
+         [1.0, 2.0, 3.0],
+         index=pd.date_range('2020-01-01T00:00Z', freq='1h', periods=3))]),
+    (pd.Series(
+        [1.0, 2.0, 4.0],
+        index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z',
+                                '2020-01-01T04:00Z'])),
+     '1h',
+     [pd.Series(
+         [1.0, 2.0],
+         index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z'])),
+      pd.Series(
+          [4.0],
+          index=pd.DatetimeIndex(['2020-01-01T04:00Z'])),
+      ]),
+    (pd.Series(
+        [1.0, 3.0, 5.0],
+        index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T03:00Z',
+                                '2020-01-01T05:00Z'])),
+     '1h',
+     [pd.Series(
+         [1.0],
+         index=pd.DatetimeIndex(['2020-01-01T01:00Z'])),
+      pd.Series(
+         [3.0],
+         index=pd.DatetimeIndex(['2020-01-01T03:00Z'])),
+      pd.Series(
+          [5.0],
+          index=pd.DatetimeIndex(['2020-01-01T05:00Z'])),
+      ]),
+    (pd.DataFrame(index=pd.DatetimeIndex([]), dtype=float), '1h',
+     [pd.DataFrame(index=pd.DatetimeIndex([]), dtype=float)]),
+    (pd.DataFrame(
+        {'a': [1.0, 2.0, 4.0], 'b': [11.0, 12.0, 14.0]},
+        index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z',
+                                '2020-01-01T04:00Z'])),
+     '1h',
+     [pd.DataFrame(
+         {'a': [1.0, 2.0], 'b': [11.0, 12.0]},
+         index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z'])),
+      pd.DataFrame(
+          {'a': [4.0], 'b': [14.0]},
+          index=pd.DatetimeIndex(['2020-01-01T04:00Z'])),
+      ]),
+    (pd.DataFrame(
+        {'_cid': [1.0, 2.0, 4.0], '_cid0': [11.0, 12.0, 14.0]},
+        index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z',
+                                '2020-01-01T04:00Z'])),
+     '1h',
+     [pd.DataFrame(
+         {'_cid': [1.0, 2.0], '_cid0': [11.0, 12.0]},
+         index=pd.DatetimeIndex(['2020-01-01T01:00Z', '2020-01-01T02:00Z'])),
+      pd.DataFrame(
+          {'_cid': [4.0], '_cid0': [14.0]},
+          index=pd.DatetimeIndex(['2020-01-01T04:00Z'])),
+      ]),
+    (pd.DataFrame(
+        [[0.0, 1.0], [2.0, 3.0]],
+        columns=pd.MultiIndex.from_product([[0], ['a', 'b']]),
+        index=pd.DatetimeIndex(['2020-01-01T00:00Z', '2020-01-02T00:00Z'])),
+     '12h',
+     [pd.DataFrame(
+         [[0.0, 1.0]],
+         columns=pd.MultiIndex.from_product([[0], ['a', 'b']]),
+         index=pd.DatetimeIndex(['2020-01-01T00:00Z'])),
+      pd.DataFrame(
+          [[2.0, 3.0]],
+          columns=pd.MultiIndex.from_product([[0], ['a', 'b']]),
+          index=pd.DatetimeIndex(['2020-01-02T00:00Z']))]),
+])
+def test_generate_continuous_chunks(data, freq, expected):
+    lg = list(utils.generate_continuous_chunks(data, freq))
+    assert len(lg) == len(expected)
+    for i, g in enumerate(lg):
+        if isinstance(expected[i], pd.DataFrame):
+            pdt.assert_frame_equal(expected[i], g, check_column_type=False)
+        else:
+            pdt.assert_series_equal(expected[i], g)
+
+
+@pytest.mark.parametrize('data,freq,err', [
+    (pd.Series(dtype=float), '5min', TypeError),
+    (pd.DataFrame(dtype=float), '5min', TypeError),
+    ([], '5min', TypeError),
+    ([], 'no', TypeError),
+    (pd.Series(index=pd.DatetimeIndex([]), dtype=float), 'no', ValueError),
+    pytest.param(pd.Series(index=pd.DatetimeIndex([]), dtype=float),
+                 '5min', TypeError,
+                 marks=pytest.mark.xfail(strict=True))
+])
+def test_generate_continuous_chunks_errs(data, freq, err):
+    with pytest.raises(err):
+        list(utils.generate_continuous_chunks(data, freq))
