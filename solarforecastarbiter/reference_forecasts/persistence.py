@@ -478,6 +478,10 @@ def persistence_probabilistic(observation, data_start, data_end,
     obs = load_data(observation, data_start, data_end)
     obs = obs.resample(interval_length, closed=closed).mean()
 
+    if obs.empty:
+        return [pd.Series(None, dtype=float, index=fx_index)
+                for _ in constant_values]
+
     if axis == "x":
         cdf = ECDF(obs)
         forecasts = []
@@ -584,6 +588,8 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
     obs = obs.resample(interval_length, closed=closed).mean()
+    if obs.empty:
+        raise ValueError("Insufficient data to match by time of day")
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
     if obs.index.tzinfo is not None:
