@@ -441,7 +441,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 else:
                     fill_value = cv['constant_value']
 
-                # When constant values are symmetric, create credible intervals
+                # When constant values are symmetric, create intervals
                 # centered around the 50th percentile
                 fill_value = 2 * abs(fill_value - 50)
             else:
