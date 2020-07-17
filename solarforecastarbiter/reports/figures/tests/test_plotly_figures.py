@@ -410,3 +410,37 @@ def test_timeseries_plots_xy(report_with_raw_xy):
     assert isinstance(scatter_spec, str)
     assert isinstance(ts_prob_spec, str)
     assert inc_dist
+
+
+@pytest.fixture
+def report_with_raw_xy_asymmetric_cv(report_dict, raw_report_xy):
+    raw = raw_report_xy(True)
+    pfxobs = raw.processed_forecasts_observations
+    fx_cvs = pfxobs[0].original.forecast.constant_values
+    cv_1 = pfxobs[0].replace(
+        original=pfxobs[0].original.replace(
+            forecast=pfxobs[0].original.forecast.replace(
+                constant_values=(
+                    fx_cvs[0],
+                    fx_cvs[1],
+                    fx_cvs[2].replace(constant_value=85.0))
+            ),
+        ),
+        forecast_values=pfxobs[0].forecast_values.rename(
+            columns={'75.0': '85.0'})
+    )
+    raw = raw.replace(
+        processed_forecasts_observations=(cv_1, pfxobs[1], pfxobs[2])
+    )
+    report_dict['raw_report'] = raw
+    return datamodel.Report.from_dict(report_dict)
+
+
+def test_probabilistic_plotting_asymmetric_cv(
+        report_with_raw_xy_asymmetric_cv):
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        report_with_raw_xy_asymmetric_cv)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert isinstance(ts_prob_spec, str)
+    assert inc_dist
