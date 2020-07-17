@@ -428,7 +428,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
                 showlegend = False
 
             # Split name of the distribution from the current constant value
-            constant_label_index = cv['forecast_name'].find('Prob(')-1
+            constant_label_index = cv['forecast_name'].find('Prob(') - 1
             fx_name = cv['forecast_name'][:constant_label_index]
             cv_label = cv['forecast_name'][constant_label_index:]
 
