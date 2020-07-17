@@ -434,7 +434,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
 
             if symmetric_percentiles:
                 # Since plotly always fills below the line, for constants below
-                # 50 %, use the previous value to mimic fill upward behavior.
+                # 50%, use the previous value to mimic fill upward behavior.
                 # E.g. fill downward from 5% to 0% with the 100% interval.
                 if cv['constant_value'] <= 50 and idx != 0:
                     fill_value = cv_metadata.iloc[idx - 1]['constant_value']
