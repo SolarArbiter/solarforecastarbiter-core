@@ -15,7 +15,8 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-
+* Report plots of Probabilistic Forecast timeseries now include shading for
+  each provided percentile. (:pull: `519`)
 
 Bug fixes
 ~~~~~~~~~
