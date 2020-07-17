@@ -354,10 +354,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     gos = []
 
     # construct graph objects in random hash order
-    non_distribution_indices = timeseries_meta_df['distribution'].isna()
-    non_distribution_meta = timeseries_meta_df[non_distribution_indices]
-    distribution_meta = timeseries_meta_df[~non_distribution_indices]
-    for fx_hash in np.unique(non_distribution_meta['forecast_hash']):
+    for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
         if metadata['axis'] not in axis:
@@ -385,8 +382,16 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         # collect in list
         gos.append((metadata['pair_index'], go_))
 
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
+
+
+def _plot_fx_distribution_timeseries(
+        fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PROBABILISTIC_PALETTES)
-    for dist_hash in np.unique(distribution_meta['distribution']):
+    gos = []
+
+    for dist_hash in np.unique(timeseries_meta_df['distribution']):
         # indices to constant values in the metadata df
         cv_indices = timeseries_meta_df['distribution'] == dist_hash
 
@@ -522,7 +527,14 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
 
     # add forecast traces that have correct axis to fig
-    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
+    non_distribution_indices = timeseries_meta_df['distribution'].isna()
+    non_distribution_meta_df = timeseries_meta_df[non_distribution_indices]
+    distribution_meta_df = timeseries_meta_df[~non_distribution_indices]
+
+    _plot_fx_timeseries(
+        fig, timeseries_value_df, non_distribution_meta_df, axis)
+    _plot_fx_distribution_timeseries(
+        fig, timeseries_value_df, distribution_meta_df, axis)
 
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
