@@ -162,11 +162,15 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
                            forecast_start, forecast_end,
                            observation.interval_length)
 
+    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
     # get the data
     obs = load_data(observation, data_start, data_end)
-
+    obs_index = pd.date_range(start=data_start, end=data_end,
+                              freq=observation.interval_length,
+                              closed=closed_obs)
+    # put in nans if appropriate
+    obs = obs.reindex(obs_index)
     # average data within bins of length interval_length
-    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
     persistence_quantity = obs.resample(interval_length,
                                         closed=closed_obs).mean()
 
@@ -178,7 +182,8 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     # Construct the returned series.
     # Use values to strip the time information from resampled obs.
     # Raises ValueError if len(persistence_quantity) != len(fx_index), but
-    # that should never happen given the way we're calculating things here.
+    # that should never happen given the way we're calculating things here
+    # now that nans are insterted into obs for missing data.
     fx = pd.Series(persistence_quantity.values, index=fx_index)
     return fx
 
@@ -280,7 +285,10 @@ def persistence_scalar_index(observation, data_start, data_end, forecast_start,
     # Consider putting the code within each if/else block below into its own
     # function with standard outputs clear_ref and clear_fx. But with only two
     # cases for now, it might be more clear to leave inline.
-    if isinstance(site, datamodel.SolarPowerPlant):
+    if (
+            isinstance(site, datamodel.SolarPowerPlant) and
+            observation.variable == 'ac_power'
+    ):
         # No temperature input is only OK so long as temperature effects
         # do not push the system above or below AC clip point.
         # It's only a reference forecast!
@@ -470,6 +478,10 @@ def persistence_probabilistic(observation, data_start, data_end,
     obs = load_data(observation, data_start, data_end)
     obs = obs.resample(interval_length, closed=closed).mean()
 
+    if obs.empty:
+        return [pd.Series(None, dtype=float, index=fx_index)
+                for _ in constant_values]
+
     if axis == "x":
         cdf = ECDF(obs)
         forecasts = []
@@ -576,6 +588,8 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
     obs = obs.resample(interval_length, closed=closed).mean()
+    if obs.empty:
+        raise ValueError("Insufficient data to match by time of day")
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
     if obs.index.tzinfo is not None:

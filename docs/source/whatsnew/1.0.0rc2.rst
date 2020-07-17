@@ -1,0 +1,39 @@
+.. _whatsnew_100rc2:
+
+1.0.0rc2 (???)
+--------------
+
+This is the second 1.0 release candidate.
+
+
+API Changes
+~~~~~~~~~~~
+* Added :py:func:`solarforecastarbiter.utils.generate_continuous_chunks` to
+  split data into chunks with equal frequency to support operations such as
+  uploading forecast values. (:pull:`529`)
+
+
+Enhancements
+~~~~~~~~~~~~
+
+
+Bug fixes
+~~~~~~~~~
+* Fix bugs related to missing data in persistence functions
+  (:issue:`517`, :issue:`518`, :issue:`528`) and a bug in calculating
+  the clearksky curve for GHI persistence at a solar power plant
+  (:issue:`524`). (:pull:`529`)
+
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

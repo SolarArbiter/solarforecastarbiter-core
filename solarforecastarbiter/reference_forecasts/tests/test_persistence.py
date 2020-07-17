@@ -117,6 +117,35 @@ def test_persistence_interval(site_metadata, obs_interval_label,
         assert_series_equal(fx, expected)
 
 
+def test_persistence_interval_missing_data(site_metadata):
+    # interval beginning obs
+    observation = default_observation(
+        site_metadata, interval_length='5min',
+        interval_label='ending')
+    tz = 'America/Phoenix'
+    data_index = pd.date_range(
+        start='20190404T1200', end='20190406', freq='5min', tz=tz)
+    # each element of data is equal to the hour value of its label
+    end = '20190406 0000'
+    data = pd.Series(data_index.hour, index=data_index, dtype=float)
+    data = data.shift(1)
+    data_start = pd.Timestamp('20190404 0000', tz=tz)
+    data_end = pd.Timestamp(end, tz=tz) - pd.Timedelta('1d')
+    forecast_start = pd.Timestamp('20190405 0000', tz=tz)
+    interval_length = pd.Timedelta('60min')
+
+    load_data = partial(load_data_base, data)
+
+    expected_index = pd.date_range(
+        start='20190405 0000', end=end, freq='60min', tz=tz, closed='right')
+    expected_vals = [None] * 12 + list(range(12, 24))
+    expected = pd.Series(expected_vals, index=expected_index, dtype=float)
+    fx = persistence.persistence_interval(
+        observation, data_start, data_end, forecast_start,
+        interval_length, 'ending', load_data)
+    assert_series_equal(fx, expected)
+
+
 @pytest.fixture
 def uniform_data():
     tz = 'America/Phoenix'
@@ -127,26 +156,37 @@ def uniform_data():
 
 
 @pytest.mark.parametrize(
-    'interval_label,expected_index,expected_ghi,expected_ac', (
+    'interval_label,expected_index,expected_ghi,expected_ac,obsscale', (
         ('beginning',
          ['20190404 1300', '20190404 1330'],
          [96.41150694741889, 91.6991546408236],
-         [99.28349914087346, 98.28165269708589]),
+         [99.28349914087346, 98.28165269708589],
+         1),
         ('ending',
          ['20190404 1330', '20190404 1400'],
          [96.2818141290749, 91.5132934827808],
-         [99.25690632023922, 98.2405479197069]))
+         [99.25690632023922, 98.2405479197069],
+         1),
+        # test clipped at 2x clearsky
+        ('beginning',
+         ['20190404 1300', '20190404 1330'],
+         [1926.5828549018618, 1832.4163238767312],
+         [395.9216674046528, 391.9265149579709],
+         50)
+    )
 )
 def test_persistence_scalar_index(
-        site_metadata, powerplant_metadata, uniform_data, interval_label,
-        expected_index, expected_ghi, expected_ac):
+        powerplant_metadata, uniform_data, interval_label,
+        expected_index, expected_ghi, expected_ac, obsscale):
+    # ac_capacity is 200 from above
     observation = default_observation(
-        site_metadata, interval_length='5min', interval_label='beginning')
+        powerplant_metadata, interval_length='5min',
+        interval_label='beginning')
     observation_ac = default_observation(
         powerplant_metadata, interval_length='5min',
         interval_label='beginning', variable='ac_power')
 
-    data = uniform_data
+    data = uniform_data * obsscale
     tz = data.index.tzinfo
     data_start = pd.Timestamp('20190404 1200', tz=tz)
     data_end = pd.Timestamp('20190404 1300', tz=tz)
@@ -418,6 +458,8 @@ def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
 
     # insufficient observation data
     pytest.param([5.3, 7.3, 1.4] * 4, 'x', [50], None,
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+    pytest.param([], 'x', [50], None,
                  marks=pytest.mark.xfail(raises=ValueError, strict=True))
 ])
 def test_persistence_probabilistic_timeofday(site_metadata, obs_values, axis,
@@ -553,6 +595,8 @@ def test_persistence_probabilistic_timeofday_timezone(site_metadata, data_end,
     # constant_values = percentiles [%]
     # forecasts = variable values
     ([0] * 15 + [4] * 15, 'y', [50], [2]),
+
+    ([None] * 30, 'y', [50], [None])
 ])
 def test_persistence_probabilistic_resampling(
     site_metadata,
@@ -657,4 +701,47 @@ def test_persistence_probabilistic_timeofday_resample(
         pd.testing.assert_series_equal(
             fx,
             pd.Series(expected_values[i], index=expected_index, dtype=float)
+        )
+
+
+@pytest.mark.parametrize("interval_label", [
+    'beginning', 'ending'
+])
+@pytest.mark.parametrize('axis', ['x', 'y'])
+def test_persistence_probabilistic_no_data(
+        site_metadata, interval_label, axis):
+
+    tz = 'UTC'
+    interval_length = '5min'
+    observation = default_observation(
+        site_metadata,
+        interval_length=interval_length,
+        interval_label=interval_label
+    )
+
+    data_start = pd.Timestamp('20190513 1200', tz=tz)
+    data_end = pd.Timestamp('20190513 1230', tz=tz)
+    closed = datamodel.CLOSED_MAPPING[interval_label]
+
+    data = pd.Series([], index=pd.DatetimeIndex([], tz=tz), dtype=float)
+    forecast_start = pd.Timestamp('20190513 1230', tz=tz)
+    forecast_end = pd.Timestamp('20190513 1300', tz=tz)
+    interval_length = pd.Timedelta('5min')
+    load_data = partial(load_data_base, data)
+
+    expected_index = pd.date_range(start=forecast_start, end=forecast_end,
+                                   freq=interval_length, closed=closed)
+
+    forecasts = persistence.persistence_probabilistic(
+        observation, data_start, data_end, forecast_start, forecast_end,
+        interval_length, interval_label, load_data, axis, [0.0, 25.0, 50.0]
+    )
+    assert isinstance(forecasts, list)
+    for i, fx in enumerate(forecasts):
+        pd.testing.assert_index_equal(fx.index, expected_index,
+                                      check_categorical=False)
+
+        pd.testing.assert_series_equal(
+            fx,
+            pd.Series(None, index=expected_index, dtype=float)
         )

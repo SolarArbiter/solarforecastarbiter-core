@@ -263,3 +263,91 @@ def hijack_loggers(loggers, level=logging.INFO):
         logger = logging.getLogger(name)
         logger.handlers = old_handlers[name]
     del handler
+
+
+def _unique_key(try_key, keys, i=0):
+    if try_key in keys:
+        try_key += str(i)
+        i += 1
+        return _unique_key(try_key, keys, i)
+    else:
+        return try_key
+
+
+def generate_continuous_chunks(data, freq):
+    """
+    Generator to split data into continuous chunks with spacing of freq.
+
+    Parameters
+    ----------
+    data : pandas.Series or pandas.DataFrame
+        Data to apply func to. Must have a DatetimeIndex.
+    freq : pd.Timedelta
+        Expected frequency to split data into continuous chunks
+
+    Yields
+    ------
+    continuous_data : same as data
+        Each continuous chunk that conforms to freq
+
+    Raises
+    ------
+    TypeError
+        If data is not a pandas Series or DataFrame, or
+        does not have a DatetimeIndex
+    ValueError
+        If freq cannot be converted to a pandas.Timedelta
+
+    Examples
+    --------
+    The following code would post two forecast series ignoring the missing
+    period in the middle.
+
+    .. testsetup::
+
+        import pandas as pd
+        from solarforecastarbiter.io import api
+
+    >>> series = pd.Series(
+    ...     [1.0, 2.0, 3.0, 7.0, 8.0],
+    ...     index=[
+    ...         pd.Timestamp('2020-07-01T01:00Z'),
+    ...         pd.Timestamp('2020-07-01T02:00Z'),
+    ...         pd.Timestamp('2020-07-01T03:00Z'),
+    ...         pd.Timestamp('2020-07-01T07:00Z'),
+    ...         pd.Timestamp('2020-07-01T08:00Z'),
+    ...     ])
+    >>> session = api.APISession('token')
+    >>> for cser in generate_continuous_chunks(series, pd.Timedelta('1h')):
+    ...     session.post_forecast_values('forecast_id', cser)
+    """
+    if (
+            not isinstance(data, (pd.Series, pd.DataFrame)) or
+            not isinstance(data.index, pd.DatetimeIndex)
+    ):
+        raise TypeError(
+            'data must be a pandas Series or DataFrame with DatetimeIndex')
+    if not isinstance(freq, pd.Timedelta):
+        freq = pd.Timedelta(freq)
+
+    # first value is NaT, rest are timedeltas
+    index_ser = data.index.to_series()
+    delta = index_ser.diff()
+    if len(delta) < 2:
+        yield data
+        return
+
+    flags = delta != freq
+
+    group_key = '_cid'
+    if isinstance(data, pd.DataFrame):
+        keys = data.columns
+        group_key = _unique_key(group_key, keys)
+        data[group_key] = flags.cumsum()
+    elif isinstance(data, pd.Series):
+        keys = data.name
+        data = pd.DataFrame(
+            {keys: data, group_key: flags.cumsum()})
+
+    for _, group in data.groupby(group_key):
+        yield group[keys]
