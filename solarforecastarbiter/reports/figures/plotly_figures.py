@@ -522,11 +522,7 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
 
     # add forecast traces that have correct axis to fig
-    _plot_fx_timeseries(
-        fig,
-        timeseries_value_df,
-        timeseries_meta_df,
-        axis)
+    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
 
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
