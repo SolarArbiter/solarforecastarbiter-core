@@ -88,6 +88,82 @@ def brier_skill_score(obs, fx, fx_prob, ref, ref_prob):
     return skill
 
 
+def quantile_score(obs, fx, fx_prob):
+    """Quantile Score (QS).
+
+        QS = 1/n sum_{i=1}^n (obs_i - fx_i) * (1{obs_i >= fx_i} - p_i)
+
+    where n is the number of forecasts, obs_i is an observation, fx_i is a
+    forecast, 1{obs_i >= fx_i} is an indicator function (1 if obs_i >= fx_i, 0
+    otherwise) and p_i is the probability.
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observations (physical unit).
+    fx : (n,) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+
+    Returns
+    -------
+    qs : float
+        The Quantile Score, with the same units as the observations.
+
+    Examples
+    --------
+    >>> obs = [5]  # observation [MW]
+    >>> fx = [4]   # forecast [MW]
+    >>> fx_prob = [50]  # probability [%]
+    >>> quantile_score(obs, fx, fx_prob)
+    0.5   # score [MW]
+
+    """
+
+    indicator = np.where(obs <= fx, 1.0, 0.0)  # 1 if obs <= fx, 0 otherwise
+    p = fx_prob / 100.0
+    qs = np.mean((obs - fx) * (indicator - p))
+    return qs
+
+
+def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
+    """Quantile Skill Score (QSS).
+
+        QSS = 1 - QS_fx / QS_ref
+
+    where QS_fx is the Quantile Score of the evaluated forecast and QS_ref is
+    the Quantile Score of a reference forecast.
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observations (physical unit).
+    fx : (n,) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    ref : (n,) array_like
+        Reference forecast (physical units) of the right-hand-side of a CDF
+        interval.
+    ref_prob : (n,) array_like
+        Probability [%] associated with the reference forecast.
+
+    Returns
+    -------
+    skill : float
+        The Quantile Skill Score [unitless].
+
+    """
+
+    qs_fx = quantile_score(obs, fx, fx_prob)
+    qs_ref = quantile_score(obs, ref, ref_prob)
+    skill = 1.0 - qs_fx / qs_ref
+    return skill
+
+
 def _unique_forecasts(f):
     """Convert forecast probabilities to a set of unique values.
 
