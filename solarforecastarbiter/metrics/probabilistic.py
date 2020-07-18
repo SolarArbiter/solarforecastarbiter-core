@@ -478,6 +478,8 @@ _MAP = {
     'rel': (reliability, 'REL'),
     'res': (resolution, 'RES'),
     'unc': (uncertainty, 'UNC'),
+    'qs': (quantile_score, 'QS'),
+    'qss': (quantile_skill_score, 'QSS'),
     # 'sh': (sharpness, 'SH'),  # TODO
     'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
@@ -485,7 +487,7 @@ _MAP = {
 __all__ = [m[0].__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
-_REQ_REF_FX = ['bss']
+_REQ_REF_FX = ['bss', 'qss']
 
 # Functions that require normalized factor
 _REQ_NORM = []
