@@ -456,6 +456,8 @@ def _plot_fx_distribution_timeseries(
 
             fill_color = _get_fill_color(fill_value)
 
+            plot_kwargs = line_or_step_plotly(cv['interval_label'])
+
             go_ = go.Scatter(
                 x=data.index,
                 y=data['forecast_values'],
@@ -473,6 +475,7 @@ def _plot_fx_distribution_timeseries(
                 line=dict(
                     color=fill_color,
                 ),
+                **plot_kwargs,
             )
 
             # Add traces in order of pair index
