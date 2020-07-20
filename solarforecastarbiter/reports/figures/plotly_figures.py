@@ -15,6 +15,8 @@ import pandas as pd
 from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
 import numpy as np
+from matplotlib import cm
+from matplotlib.colors import Normalize, rgb2hex
 
 
 from solarforecastarbiter import datamodel
@@ -45,6 +47,9 @@ OBS_PALETTE = gen_grays(_num_obs_colors)
 OBS_PALETTE.reverse()
 OBS_PALETTE_TD_RANGE = pd.timedelta_range(
             freq='10min', end='60min', periods=_num_obs_colors)
+
+# list of matplotlib's perceptually uniform sequential color pallettes
+PROBABILISTIC_PALETTES = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
 
 PLOT_BGCOLOR = '#FFF'
 PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
@@ -82,6 +87,21 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
     forecast_object = kwargs.pop('forecast_object', None)
     if forecast_object is None:
         forecast_object = pfxobs.original.forecast
+
+    # Check for a case where we're adding metadata for a constant value, but
+    # the pair contains a whole ProbabilisticForecast
+    if (isinstance(forecast_object,
+                   datamodel.ProbabilisticForecastConstantValue)
+        and
+        isinstance(pfxobs.original.forecast,
+                   datamodel.ProbabilisticForecast)):
+        distribution = str(hash((
+            pfxobs.original.forecast,
+            pfxobs.original.forecast.interval_length,
+            pfxobs.original.forecast.interval_value_type,
+            pfxobs.original.forecast.interval_label)))
+    else:
+        distribution = None
     try:
         axis = forecast_object.axis
     except AttributeError:
@@ -111,7 +131,8 @@ def _meta_row_dict(idx, pfxobs, **kwargs):
             pfxobs.interval_value_type,
             pfxobs.interval_label))),
         'observation_color': _obs_color(
-            pfxobs.interval_length)
+            pfxobs.interval_length),
+        'distribution': distribution
     }
     meta.update(kwargs)
     return meta
@@ -331,6 +352,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     # construct graph objects in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
     gos = []
+
     # construct graph objects in random hash order
     for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
@@ -359,7 +381,105 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             **plot_kwargs)
         # collect in list
         gos.append((metadata['pair_index'], go_))
-    # Add traces in order of pair index
+
+    for idx, go_ in sorted(gos, key=lambda x: x[0]):
+        fig.add_trace(go_)
+
+
+def _plot_fx_distribution_timeseries(
+        fig, timeseries_value_df, timeseries_meta_df, axis):
+    palette = cycle(PROBABILISTIC_PALETTES)
+    gos = []
+
+    for dist_hash in np.unique(timeseries_meta_df['distribution']):
+        # indices to constant values in the metadata df
+        cv_indices = timeseries_meta_df['distribution'] == dist_hash
+
+        # sort constant values
+        cv_metadata = timeseries_meta_df[cv_indices]
+        cv_metadata = cv_metadata.sort_values('constant_value')
+        cv_metadata = cv_metadata.reset_index()
+
+        # Get a colormap for mapping fill colors
+        color_map = cm.get_cmap(next(palette))
+        color_scaler = cm.ScalarMappable(
+            Normalize(vmin=0, vmax=1),
+            color_map,
+        )
+
+        def _get_fill_color(percentile):
+            normalized_value = percentile / 100
+            return rgb2hex(color_scaler.to_rgba(normalized_value))
+
+        symmetric_percentiles = _percentiles_are_symmetric(cv_metadata)
+        # Plot confidence intervals
+        for idx, cv in cv_metadata.iterrows():
+            pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
+            data = _fill_timeseries(
+                timeseries_value_df[pair_idcs],
+                cv['interval_length'])
+
+            # Fill missing data with 0 to avoid plotly bugs encountered with
+            # go.Scatter fill and missing data.
+            data = data.fillna(0)
+
+            if idx == 0:
+                # The first value will act as the lower bound for other values
+                # to fill down to.
+                fill = None
+                showlegend = True
+            else:
+                fill = 'tonexty'
+                showlegend = False
+
+            # Split name of the distribution from the current constant value
+            constant_label_index = cv['forecast_name'].find('Prob(') - 1
+            fx_name = cv['forecast_name'][:constant_label_index]
+            cv_label = cv['forecast_name'][constant_label_index:]
+
+            if symmetric_percentiles:
+                # Since plotly always fills below the line, for constants below
+                # 50%, use the previous value to mimic fill upward behavior.
+                # E.g. fill downward from 5% to 0% with the 100% interval.
+                if cv['constant_value'] <= 50 and idx != 0:
+                    fill_value = cv_metadata.iloc[idx - 1]['constant_value']
+                else:
+                    fill_value = cv['constant_value']
+
+                # When constant values are symmetric, create intervals
+                # centered around the 50th percentile
+                fill_value = 2 * abs(fill_value - 50)
+            else:
+                # convert to complement percentile to invert shading, such that
+                # bright colors appear at 0 and dark at 100 when plotted.
+                fill_value = 100 - cv['constant_value']
+
+            fill_color = _get_fill_color(fill_value)
+
+            plot_kwargs = line_or_step_plotly(cv['interval_label'])
+
+            go_ = go.Scatter(
+                x=data.index,
+                y=data['forecast_values'],
+                name=_legend_text(fx_name),
+                hovertemplate=(
+                    f'<b>{ cv_label }<br>'
+                    '<b>Value<b>: %{y}<br>'
+                    '<b>Time<b>: %{x}<br>'),
+                connectgaps=False,
+                mode='lines',
+                fill=fill,
+                showlegend=showlegend,
+                legendgroup=cv['distribution'],
+                fillcolor=fill_color,
+                line=dict(
+                    color=fill_color,
+                ),
+                **plot_kwargs,
+            )
+
+            # Add traces in order of pair index
+            gos.append((cv['pair_index'], go_))
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
 
@@ -410,7 +530,14 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
 
     # add forecast traces that have correct axis to fig
-    _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis)
+    non_distribution_indices = timeseries_meta_df['distribution'].isna()
+    non_distribution_meta_df = timeseries_meta_df[non_distribution_indices]
+    distribution_meta_df = timeseries_meta_df[~non_distribution_indices]
+
+    _plot_fx_timeseries(
+        fig, timeseries_value_df, non_distribution_meta_df, axis)
+    _plot_fx_distribution_timeseries(
+        fig, timeseries_value_df, distribution_meta_df, axis)
 
     fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
@@ -984,6 +1111,9 @@ def timeseries_plots(report):
         If report contains a probabilistic forecast with axis='x',
         string json specification of the probability vs. time plot.
         Otherwise None.
+    includes_distribution: bool
+        True if the a plot was created for a pair containing a
+        ProbabilisticForecast.
     """
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
@@ -1042,5 +1172,33 @@ def timeseries_plots(report):
             height=500,
             autosize=False,
         )
+    includes_distribution = any(
+        (
+            isinstance(pfxob.original.forecast,
+                       datamodel.ProbabilisticForecast) and
+            pfxob.original.forecast.axis == 'y')
+        for pfxob in pfxobs)
+    return (ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json,
+            includes_distribution)
 
-    return ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json
+
+def _percentiles_are_symmetric(cv_df):
+    """Determines if a set of percentiles are symmetric around the 50th
+    percentile.
+
+    Parameters
+    ----------
+    cv_df: pandas.DataFrame
+        A dataframe containing metadata of all of the constant values for the
+        distribution.
+    Returns
+    -------
+    bool
+    """
+    constant_values = cv_df['constant_value'].sort_values()
+    lower_bounds = constant_values[constant_values < 50]
+    upper_bounds = constant_values[constant_values > 50][::-1]
+    for l, u in zip(lower_bounds, upper_bounds):
+        if abs(50 - l) != abs(50 - u):
+            return False
+    return True

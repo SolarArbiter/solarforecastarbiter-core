@@ -99,6 +99,14 @@ observation data.</p>
 right. Clicking on an item in the legend will hide/show it.</p>
 
 <div id="timeseries-div"></div>
+{% if includes_distribution %}
+<p>For forecasts parameterized symmetrically around the 50th percentile,
+brighter colors indicate percentiles farther from the 50th percentile and
+darker colors indicate percentiles closer to the 50th percentile. For forecasts
+parameterized asymmetrically around the 50th percentile, brighter colors
+indicate smaller percentiles and darker colors indicate larger percentiles.
+Use the hover tool to determine the percentile.</p>
+{% endif %}
 <div id="scatter-div"></div>
 
 <script>
