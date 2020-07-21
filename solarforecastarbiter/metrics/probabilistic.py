@@ -91,11 +91,25 @@ def brier_skill_score(obs, fx, fx_prob, ref, ref_prob):
 def quantile_score(obs, fx, fx_prob):
     """Quantile Score (QS).
 
-        QS = 1/n sum_{i=1}^n (obs_i - fx_i) * (1{obs_i >= fx_i} - p_i)
+        QS = 1/n sum_{i=1}^n (fx_i - obs_i) * (p_i - 1{obs_i > fx_i})
 
     where n is the number of forecasts, obs_i is an observation, fx_i is a
-    forecast, 1{obs_i <= fx_i} is an indicator function (1 if obs_i <= fx_i, 0
-    otherwise) and p_i is the probability.
+    forecast, 1{obs_i > fx_i} is an indicator function (1 if obs_i > fx_i, 0
+    otherwise) and p_i is the probability that obs_i <= fx_i.
+
+    If obs > fx, then we have:
+
+        (fx - obs) < 0
+        (p - 1{obs > fx}) = (p - 1) <= 0
+        (fx - obs) * (p - 1) >= 0
+
+    If instead obs < fx, then we have:
+
+        (fx - obs) > 0
+        (p - 1{obs > fx}) = (p - 0) >= 0
+        (fx - obs) * p >= 0
+
+    Therefore, the quantile score is non-negative regardless of the obs and fx.
 
     Parameters
     ----------
@@ -114,20 +128,17 @@ def quantile_score(obs, fx, fx_prob):
 
     Examples
     --------
-    >>> obs = [4]  # observation [MW]
-    >>> fx = [5]   # forecast [MW]
-    >>> fx_prob = [50]  # probability [%]
-    >>> quantile_score(obs, fx, fx_prob)
-    0.5   # score [MW]
+    >>> obs = 100     # observation [MW]
+    >>> fx = 80       # forecast [MW]
+    >>> fx_prob = 60  # probability [%]
+    >>> quantile_score(obs, fx, fx_prob)   # score [W/m^2]
+    8.0
 
     """
 
     # Prob(obs <= fx) = p
     p = fx_prob / 100.0
-    idx = obs <= fx
-    qs_pos = p[idx] * np.abs(obs[idx] - fx[idx])
-    qs_neg = (1.0 - p[~idx]) * np.abs(obs[~idx] - fx[~idx])
-    qs = np.mean(np.concatenate([qs_pos, qs_neg]))
+    qs = np.mean((fx - obs) * (p - np.where(obs > fx, 1.0, 0.0)))
     return qs
 
 
@@ -158,6 +169,10 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
     -------
     skill : float
         The Quantile Skill Score [unitless].
+
+    See Also
+    --------
+    :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_score`
 
     """
 
@@ -303,7 +318,7 @@ def reliability(obs, fx, fx_prob):
         The reliability of the forecast [unitless], where a perfectly reliable
         forecast has value of 0.
 
-    See Also:
+    See Also
     ---------
     brier_decomposition : 3-component decomposition of the Brier Score
 
@@ -340,7 +355,7 @@ def resolution(obs, fx, fx_prob):
         The resolution of the forecast [unitless], where higher values are
         better.
 
-    See Also:
+    See Also
     ---------
     brier_decomposition : 3-component decomposition of the Brier Score
 
@@ -373,7 +388,7 @@ def uncertainty(obs, fx, fx_prob):
         The uncertainty [unitless], where lower values indicate the event being
         forecasted occurs rarely.
 
-    See Also:
+    See Also
     ---------
     brier_decomposition : 3-component decomposition of the Brier Score
 
