@@ -569,6 +569,8 @@ Functions to compute forecast probabilistic performance metrics:
 
     metrics.probabilistic.brier_score
     metrics.probabilistic.brier_skill_score
+    metrics.probabilistic.quantile_score
+    metrics.probabilistic.quantile_skill_score
     metrics.probabilistic.brier_decomposition
     metrics.probabilistic.reliability
     metrics.probabilistic.resolution
