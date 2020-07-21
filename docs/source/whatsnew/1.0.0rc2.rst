@@ -1,7 +1,7 @@
 .. _whatsnew_100rc2:
 
-1.0.0rc2 (???)
---------------
+1.0.0rc2 (July 21, 2020)
+------------------------
 
 This is the second 1.0 release candidate.
 
