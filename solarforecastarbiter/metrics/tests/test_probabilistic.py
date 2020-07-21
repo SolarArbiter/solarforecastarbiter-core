@@ -47,6 +47,7 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     (np.array([5]), np.array([4]), np.array([50]), 0.5),
     (np.array([4, 5]), np.array([5, 4]), np.array([50, 50]), 0.5),
     (np.array([2]), np.array([10]), np.array([80]), 6.4),
+    (np.array([100]), np.array([80]), np.array([60]), 8.0),
 ])
 def test_quantile_score(obs, fx, fx_prob, expected_value):
     assert prob.quantile_score(obs, fx, fx_prob) == expected_value
