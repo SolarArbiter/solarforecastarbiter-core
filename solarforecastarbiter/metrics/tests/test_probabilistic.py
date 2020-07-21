@@ -42,15 +42,24 @@ def test_brier_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     assert prob.brier_skill_score(obs, fx, fx_prob, ref, ref_prob) == value
 
 
-@pytest.mark.parametrize("obs,fx,fx_prob,expected_value", [
-    (np.array([4]), np.array([5]), np.array([50]), 0.5),
-    (np.array([5]), np.array([4]), np.array([50]), 0.5),
+@pytest.mark.parametrize("obs,fx,fx_prob,value", [
+    (4, 5, 50, 0.5),
+    (5, 4, 50, 0.5),
+    (2, 10, 80, 6.4),
+    (100, 80, 50, 10.0),
+    (100, 80, 60, 8.0),
     (np.array([4, 5]), np.array([5, 4]), np.array([50, 50]), 0.5),
-    (np.array([2]), np.array([10]), np.array([80]), 6.4),
-    (np.array([100]), np.array([80]), np.array([60]), 8.0),
 ])
-def test_quantile_score(obs, fx, fx_prob, expected_value):
-    assert prob.quantile_score(obs, fx, fx_prob) == expected_value
+def test_quantile_score(obs, fx, fx_prob, value):
+    assert prob.quantile_score(obs, fx, fx_prob) == value
+
+
+@pytest.mark.parametrize("obs,fx,fx_prob,ref,ref_prob,value", [
+    (4, 5, 50, 3, 50, 1 - 0.5 / 0.5),
+    (100, 80, 60, 80, 50, 1 - 8 / 10),
+])
+def test_quantile_skill_score(obs, fx, fx_prob, ref, ref_prob, value):
+    assert prob.quantile_skill_score(obs, fx, fx_prob, ref, ref_prob) == value
 
 
 @pytest.mark.parametrize("f,value", [
