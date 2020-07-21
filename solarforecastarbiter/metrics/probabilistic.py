@@ -94,7 +94,7 @@ def quantile_score(obs, fx, fx_prob):
         QS = 1/n sum_{i=1}^n (obs_i - fx_i) * (1{obs_i >= fx_i} - p_i)
 
     where n is the number of forecasts, obs_i is an observation, fx_i is a
-    forecast, 1{obs_i >= fx_i} is an indicator function (1 if obs_i >= fx_i, 0
+    forecast, 1{obs_i <= fx_i} is an indicator function (1 if obs_i <= fx_i, 0
     otherwise) and p_i is the probability.
 
     Parameters
@@ -114,17 +114,20 @@ def quantile_score(obs, fx, fx_prob):
 
     Examples
     --------
-    >>> obs = [5]  # observation [MW]
-    >>> fx = [4]   # forecast [MW]
+    >>> obs = [4]  # observation [MW]
+    >>> fx = [5]   # forecast [MW]
     >>> fx_prob = [50]  # probability [%]
     >>> quantile_score(obs, fx, fx_prob)
     0.5   # score [MW]
 
     """
 
-    indicator = np.where(obs <= fx, 1.0, 0.0)  # 1 if obs <= fx, 0 otherwise
+    # Prob(obs <= fx) = p
     p = fx_prob / 100.0
-    qs = np.mean((obs - fx) * (indicator - p))
+    idx = obs <= fx
+    qs_pos = p[idx] * np.abs(obs[idx] - fx[idx])
+    qs_neg = (1.0 - p[~idx]) * np.abs(obs[~idx] - fx[~idx])
+    qs = np.mean(np.concatenate([qs_pos, qs_neg]))
     return qs
 
 
