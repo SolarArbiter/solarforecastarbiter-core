@@ -319,7 +319,7 @@ def reliability(obs, fx, fx_prob):
         forecast has value of 0.
 
     See Also
-    ---------
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
@@ -356,7 +356,7 @@ def resolution(obs, fx, fx_prob):
         better.
 
     See Also
-    ---------
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
@@ -389,7 +389,7 @@ def uncertainty(obs, fx, fx_prob):
         forecasted occurs rarely.
 
     See Also
-    ---------
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
