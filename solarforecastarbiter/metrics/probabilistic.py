@@ -131,7 +131,7 @@ def quantile_score(obs, fx, fx_prob):
     >>> obs = 100     # observation [MW]
     >>> fx = 80       # forecast [MW]
     >>> fx_prob = 60  # probability [%]
-    >>> quantile_score(obs, fx, fx_prob)   # score [W/m^2]
+    >>> quantile_score(obs, fx, fx_prob)   # score [MW]
     8.0
 
     """
