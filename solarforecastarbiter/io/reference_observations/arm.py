@@ -42,7 +42,8 @@ def _determine_stream_vars(datastream):
     Parameters
     ----------
     datastream: str
-        Datastream name.
+        Datastream name, or the product name. This string is searched for
+        `met` or `qcrad` and returns a list of expected variables.
 
     Returns
     -------
@@ -141,23 +142,25 @@ def fetch(api, site, start, end, *, doe_arm_user_id, doe_arm_api_key):
     available_datastreams = site_extra_params['datastreams']
 
     datastreams = {}
-    # Set top-level keys to 'met' and 'qcrad' if meteorological or irradiance
-    # data exists at the site.
+    # Build a dict with top-level keys to 'met' and 'qcrad' if meteorological
+    # or irradiance  data exists at the site. This is to later group dataframes
+    # created from each datastream by the type of data found in the stream.
     for ds_type in ['met', 'qcrad']:
         if ds_type in available_datastreams:
-            # For each type of datastream determine which datastream to
-            # retrieve data for for each part of the requested timerange.
             ds_type_dict = {}
             streams = available_datastreams[ds_type]
 
-            # When a dict is present each key is a date range and values are
-            # the datastream valid for that period. We reorganize into a dict
-            # of {datastream: [start, end]} where the range tuple indicates
-            # available data within the requested timerange.
+            # When a dict is present each key is a datastream and value is
+            # a date range for which the datastream contains data. We need to
+            # determine which streams to use to get all of the requested data.
             if isinstance(streams, dict):
                 ds_type_dict.update(
                     find_stream_data_availability(streams, start, end))
             else:
+                # If a single string datastream name exists, we assume that all
+                # available data is contained in the stream. Deferring to the
+                # data fetch process, which will fail to retrieve data and
+                # continue gracefully.
                 ds_type_dict[streams] = (start, end)
             datastreams[ds_type] = ds_type_dict
 
@@ -273,9 +276,9 @@ def find_stream_data_availability(streams, start, end):
     Parameters
     ----------
     streams: dict
-        Dict where keys are iso8601 date ranges (`start/end`) indicating the
-        period of data available at that datastream, and values are
-        datastreams.
+        Dict where values are string datastream names and values are iso8601
+        date ranges `start/end` indicating the period of data available at
+        that datastream.
     start: datetime
         The start of the period to request data for.
     end: datetime
@@ -286,23 +289,24 @@ def find_stream_data_availability(streams, start, end):
     dict:
         Dict where keys are datastreams and values are two element lists of
         `[start datetime, end datetime]` that when considered together should
-        span all of the available data between start and end.
-
+        span all of the available data between the requested start and end.
     """
     stream_range_dict = {}
 
     # Find the overlap between each streams available data, and the requested
     # period
-    for date_range, datastream in streams.items():
+    for datastream, date_range in streams.items():
         stream_range = parse_iso_date_range(date_range)
         overlap = get_period_overlap(
             start, end, stream_range[0], stream_range[1])
         if overlap is None:
+            # The datastream did not contain any data within the requested
+            # range, we don't need to use it for this request.
             continue
         else:
             stream_range_dict[datastream] = overlap
 
-    # Remove the overlap between streams
+    # Remove any overlap between streams
     prev_start = None
     prev_end = None
     for datastream, date_range in stream_range_dict.items():
