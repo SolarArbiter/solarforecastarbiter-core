@@ -102,8 +102,7 @@ def test_request_arm_file(user_id, api_key, mocker):
         params={
             'user': f'{user_id}:{api_key}',
             'file': 'sgpqcrad1longC1.c1.cdf',
-        },
-        stream=True)
+        })
 
 
 def test_extract_arm_variables_exist(mocker):
