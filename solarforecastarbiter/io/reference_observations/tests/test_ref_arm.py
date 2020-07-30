@@ -20,8 +20,8 @@ def log(mocker):
     ('sgpmet', arm.DOE_ARM_SITE_VARIABLES['met']),
     ('badstream', []),
 ])
-def test__detemrine_site_vars(ds, expected):
-    assert arm._determine_site_vars(ds) == expected
+def test__detemrine_stream_vars(ds, expected):
+    assert arm._determine_stream_vars(ds) == expected
 
 
 @pytest.fixture
@@ -46,8 +46,8 @@ def test_initialize_site_obs(mock_api, mock_obs_creation):
 def test_initialize_site_obs_http_error(
         log, mock_api, mock_obs_creation_error):
     arm.initialize_site_observations(mock_api, site_objects[0])
-    assert log.error.call_count == 3
-    assert log.debug.call_count == 3
+    assert log.error.call_count == 6
+    assert log.debug.call_count == 6
 
 
 @pytest.fixture
@@ -93,3 +93,72 @@ def test_fetch(mocker, mock_api):
                      doe_arm_user_id='id', doe_arm_api_key='key')
     other_fetch.assert_called()
     assert data.empty
+
+
+@pytest.mark.parametrize('reqstart,reqend,availstart,availend,estart,eend', [
+    ('2020-01-01', '2020-02-01',
+     '2019-01-01', '2021-02-01',
+     '2020-01-01', '2020-02-01'),
+    ('2020-01-15', '2020-01-18',
+     '2020-01-01', '2020-02-01',
+     '2020-01-15', '2020-01-18'),
+    ('2020-01-15', '2020-03-18',
+     '2020-01-01', '2020-02-01',
+     '2020-01-15', '2020-02-01'),
+    ('2019-01-15', '2020-03-18',
+     '2020-01-01', '2020-02-01',
+     '2020-01-01', '2020-02-01'),
+    ('2019-01-15', '2020-01-18',
+     '2020-01-01', '2020-02-01',
+     '2020-01-01', '2020-01-18'),
+])
+def test_get_period_overlap(
+        reqstart, reqend, availstart, availend, estart, eend):
+    start, end = arm.get_period_overlap(
+        pd.Timestamp(reqstart),
+        pd.Timestamp(reqend),
+        pd.Timestamp(availstart),
+        pd.Timestamp(availend),
+    )
+    assert start == pd.Timestamp(estart)
+    assert end == pd.Timestamp(eend)
+
+
+@pytest.mark.parametrize('range_string,exstart,exend', [
+    ('2019-01-01/2021-01-01',
+     pd.Timestamp('2019-01-01', tz='utc'),
+     pd.Timestamp('2021-01-01', tz='utc')),
+    ('1994-11-13/2020-01-01',
+     pd.Timestamp('1994-11-13', tz='utc'),
+     pd.Timestamp('2020-01-01', tz='utc')),
+    ])
+def test_parse_iso_date_range(range_string, exstart, exend):
+    start, end = arm.parse_iso_date_range(range_string)
+    assert start == exstart
+    assert end == exend
+
+
+def test_parse_iso_date_range_now():
+    start, end = arm.parse_iso_date_range('2019-01-01/now')
+    assert start == pd.Timestamp('2019-01-01', tz='utc')
+    expected_end = pd.Timestamp.utcnow()
+    assert end.month == expected_end.month
+    assert end.day == expected_end.day
+    assert end.year == expected_end.year
+    assert end.hour == expected_end.hour
+
+
+@pytest.mark.parametrize('stream_dict,start,end,expected', [
+    ({'2020-01-01/2020-02-01': 'stream1',
+      '2019-01-01/2020-01-01': 'stream2'},
+     pd.Timestamp('2019-01-01', tz='utc'),
+     pd.Timestamp('2020-02-01', tz='utc'),
+     {'stream1': (pd.Timestamp('2020-01-01', tz='utc'),
+                  pd.Timestamp('2020-02-01', tz='utc')),
+      'stream2': (pd.Timestamp('2019-01-01', tz='utc'),
+                  pd.Timestamp('2020-01-01', tz='utc'))}),
+])
+def test_find_stream_data_availability(stream_dict, start, end, expected):
+    available_stream_dict = arm.find_stream_data_availability(
+        stream_dict, start, end)
+    assert available_stream_dict == expected

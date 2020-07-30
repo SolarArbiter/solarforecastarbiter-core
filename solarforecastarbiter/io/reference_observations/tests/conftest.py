@@ -25,9 +25,14 @@ def site_dicts():
             'elevation': 5,
             'timezone': 'Etc/GMT+8',
             'extra_parameters': {"network": "DOE ARM",
-                                 "network_api_id": 'qcradlong1',
-                                 "network_api_abbreviation": 'abbrv',
-                                 "observation_interval_length": 1},
+                                 "network_api_id": 'E13',
+                                 "network_api_abbreviation": 'sgp',
+                                 "observation_interval_length": 1,
+                                 "datastreams": {
+                                        'qcrad': 'sgpqcradlong1E13.c1',
+                                        'met': 'sgpmetE13.b1',
+                                     }
+                                 },
         },
         {
             'name': 'site2',
