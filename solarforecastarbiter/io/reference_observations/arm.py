@@ -1,6 +1,8 @@
 from functools import partial
+import json
 import logging
 import os
+from pkg_resources import resource_filename, Requirement
 
 
 import pandas as pd
@@ -12,11 +14,11 @@ from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
 
 
-logger = logging.getLogger('reference_data')
+DEFAULT_SITEFILE = resource_filename(
+    Requirement.parse('solarforecastarbiter'),
+    'solarforecastarbiter/io/reference_observations/'
+    'arm_reference_sites.json')
 
-
-# ARM data streams include 'met' for meteorological sites and 'qcrad' for
-# irradiance data.
 DOE_ARM_SITE_VARIABLES = {
     'qcrad': arm.IRRAD_VARIABLES,
     'met': arm.MET_VARIABLES,
@@ -31,15 +33,16 @@ DOE_ARM_VARIABLE_MAP = {
     'wspd_arith_mean': 'wind_speed',
 }
 
+logger = logging.getLogger('reference_data')
 
-def _determine_site_vars(datastream):
+
+def _determine_stream_vars(datastream):
     """Returns a list of variables available based on datastream name.
 
     Parameters
     ----------
     datastream: str
-        datastream field of the site. This should be found in the
-        `extra_parameters` field as `network_api_id`
+        Datastream name.
 
     Returns
     -------
@@ -70,9 +73,9 @@ def initialize_site_observations(api, site):
         logger.error(f'Failed to initialize observations  for {site.name} '
                      'extra parameters could not be loaded.')
         return
-    site_arm_vars = _determine_site_vars(site_extra_params['network_api_id'])
-    site_sfa_vars = [DOE_ARM_VARIABLE_MAP[v] for v in site_arm_vars]
-    for sfa_var in site_sfa_vars:
+
+    site_vars = site_variables_from_extra_params(site_extra_params)
+    for sfa_var in site_vars:
         logger.info(f'Creating {sfa_var} at {site.name}')
         try:
             common.create_observation(
@@ -100,9 +103,10 @@ def initialize_site_forecasts(api, site):
         logger.error('Failed to initialize reference forecasts for '
                      f'{site.name} extra parameters could not be loaded.')
         return
-    site_arm_vars = _determine_site_vars(site_extra_params['network_api_id'])
-    sfa_vars = [DOE_ARM_VARIABLE_MAP[v] for v in site_arm_vars]
-    common.create_forecasts(api, site, sfa_vars,
+
+    site_vars = site_variables_from_extra_params(site_extra_params)
+
+    common.create_forecasts(api, site, site_vars,
                             default_forecasts.TEMPLATE_FORECASTS)
 
 
@@ -133,17 +137,65 @@ def fetch(api, site, start, end, *, doe_arm_user_id, doe_arm_api_key):
         site_extra_params = common.decode_extra_parameters(site)
     except ValueError:
         return pd.DataFrame()
-    doe_arm_datastream = site_extra_params['network_api_id']
-    site_vars = _determine_site_vars(doe_arm_datastream)
-    obs_df = arm.fetch_arm(
-        doe_arm_user_id, doe_arm_api_key, doe_arm_datastream, site_vars,
-        start.tz_convert(site.timezone), end.tz_convert(site.timezone))
-    if obs_df.empty:
-        logger.warning(f'Data for site {site.name} contained no '
-                       f'entries from {start} to {end}.')
+
+    available_datastreams = site_extra_params['datastreams']
+
+    datastreams = {}
+    # Set top-level keys to 'met' and 'qcrad' if meteorological or irradiance
+    # data exists at the site.
+    for ds_type in ['met', 'qcrad']:
+        if ds_type in available_datastreams:
+            # For each type of datastream determine which datastream to
+            # retrieve data for for each part of the requested timerange.
+            ds_type_dict = {}
+            streams = available_datastreams[ds_type]
+
+            # When a dict is present each key is a date range and values are
+            # the datastream valid for that period. We reorganize into a dict
+            # of {datastream: [start, end]} where the range tuple indicates
+            # available data within the requested timerange.
+            if isinstance(streams, dict):
+                ds_type_dict.update(
+                    find_stream_data_availability(streams, start, end))
+            else:
+                ds_type_dict[streams] = (start, end)
+            datastreams[ds_type] = ds_type_dict
+
+    site_dfs = []
+
+    for stream_type in datastreams:
+        # Stitch together all the datastreams with similar data.
+        stream_type_dfs = []
+        for datastream, date_range in datastreams[stream_type].items():
+            stream_df = arm.fetch_arm(
+                doe_arm_user_id,
+                doe_arm_api_key,
+                datastream,
+                _determine_stream_vars(datastream),
+                date_range[0].tz_convert(site.timezone),
+                date_range[1].tz_convert(site.timezone)
+            )
+            if stream_df.empty:
+                logger.warning(f'Datastream {datastream} for site {site.name} '
+                               f'contained no entries from {start} to {end}.')
+            else:
+                stream_type_dfs.append(stream_df)
+        if stream_type_dfs:
+            # Concatenate all dataframes of similar data
+            stream_type_df = pd.concat(stream_type_dfs)
+            site_dfs.append(stream_type_df)
+
+    if site_dfs:
+        # Join dataframes with different variables along the index, this has
+        # the side effect of introducing missing data if any requests have
+        # failed.
+        obs_df = pd.concat(site_dfs, axis=1)
+        obs_df = obs_df.rename(columns=DOE_ARM_VARIABLE_MAP)
+        return obs_df
+    else:
+        logger.warning(f'Data for site {site.name} contained no entries from '
+                       f'{start} to {end}.')
         return pd.DataFrame()
-    obs_df = obs_df.rename(columns=DOE_ARM_VARIABLE_MAP)
-    return obs_df
 
 
 def update_observation_data(api, sites, observations, start, end):
@@ -176,3 +228,150 @@ def update_observation_data(api, sites, observations, start, end):
             api, partial(fetch, doe_arm_user_id=doe_arm_user_id,
                          doe_arm_api_key=doe_arm_api_key),
             site, observations, start, end)
+
+
+def adjust_site_parameters(site):
+    """Updates extra parameters with applicable datastreams from
+    `arm_reference_sites.json`
+
+    Parameters
+    ----------
+    site: dict
+
+    Returns
+    -------
+    dict
+        Copy of input with updated extra parameters.
+    """
+    with open(DEFAULT_SITEFILE) as fp:
+        sites_metadata = json.load(fp)['sites']
+
+    # ARM has multiple 'locations' at each 'site'. In the Solar Forecast
+    # Arbiter we store each 'location' as a site. We use the `network_api_id`
+    # to indicate location, and `network_api_abbreviation` together to indicate
+    # the arm site. This is necessary to use both because location ids are only
+    # unique for a given site.
+    arm_location_id = site['extra_parameters']['network_api_id']
+    arm_site_id = site['extra_parameters']['network_api_abbreviation']
+
+    for site_metadata in sites_metadata:
+        site_extra_params = json.loads(site_metadata['extra_parameters'])
+        if (
+            site_extra_params['network_api_id'] == arm_location_id
+            and site_extra_params['network_api_abbreviation'] == arm_site_id
+
+        ):
+            site_out = site.copy()
+            site_out['extra_parameters'] = site_extra_params
+            return site_out
+    return site
+
+
+def find_stream_data_availability(streams, start, end):
+    """Determines what date ranges to use for each datastream.
+
+    Parameters
+    ----------
+    streams: dict
+        Dict where keys are iso8601 date ranges (`start/end`) indicating the
+        period of data available at that datastream, and values are
+        datastreams.
+    start: datetime
+        The start of the period to request data for.
+    end: datetime
+        The end of the period to request data for.
+
+    Returns
+    -------
+    dict:
+        Dict where keys are datastreams and values are two element lists of
+        `[start datetime, end datetime]` that when considered together should
+        span all of the available data between start and end.
+
+    """
+    stream_range_dict = {}
+
+    # Find the overlap between each streams available data, and the requested
+    # period
+    for date_range, datastream in streams.items():
+        stream_range = parse_iso_date_range(date_range)
+        overlap = get_period_overlap(
+            start, end, stream_range[0], stream_range[1])
+        if overlap is None:
+            continue
+        else:
+            stream_range_dict[datastream] = overlap
+
+    # Remove the overlap between streams
+    prev_start = None
+    prev_end = None
+    for datastream, date_range in stream_range_dict.items():
+        if prev_start is not None:
+            # if end of this datastream overlaps previous start and the start
+            # of this datastream is before the previous end, move the end of
+            # this stream to the previous start to remove overlap
+            if date_range[1] > prev_start and date_range[0] < prev_start:
+                date_range[1] = prev_start
+        else:
+            prev_start = date_range[0]
+        if prev_end is not None:
+            # if start of this datastream is before the previous end, and the
+            # end of this datastream is after the previous end, move the start
+            # of this stream to the previous end to remove overlap
+            if date_range[0] < prev_end and date_range[1] > prev_end:
+                date_range[0] = prev_end
+        else:
+            prev_end = date_range[1]
+
+    return stream_range_dict
+
+
+def get_period_overlap(request_start, request_end, avail_start, avail_end):
+    """Finds period of overlap between the requested time range and the
+    available period.
+
+    Parameters
+    ----------
+    request_start: datetime-like
+        Start of the period of requested data.
+    request_end: datetime-like
+        End of the period of requested data.
+    avail_start: datetime-like
+        Start of the available data.
+    avail_end: datatime-like
+        End of available data.
+
+    Returns
+    -------
+    start, end: list of datetime or None
+        Start and end of overlapping period, or None if no overlap occurred.
+    """
+    if request_start < avail_end and request_end > avail_start:
+        if request_start < avail_start:
+            start = avail_start
+        else:
+            start = request_start
+        if request_end > avail_end:
+            end = avail_end
+        else:
+            end = request_end
+        return [start, end]
+    else:
+        return None
+
+
+def parse_iso_date_range(date_range_string):
+    """Parses a date range string in iso8601 format ("start date/end date")
+    into a tuple of pandas timestamps `(start, end)`.
+    """
+    start, end = date_range_string.split('/')
+    return (pd.Timestamp(start, tz='utc'), pd.Timestamp(end, tz='utc'))
+
+
+def site_variables_from_extra_params(site_extra_params):
+    """Return variables expected at the site, based on the content of the
+    `datastreams` attribute of the site's extra parameters.
+    """
+    return [DOE_ARM_VARIABLE_MAP[arm_var]
+            for stream_type in site_extra_params['datastreams'].keys()
+            for arm_var in _determine_stream_vars(stream_type)]
