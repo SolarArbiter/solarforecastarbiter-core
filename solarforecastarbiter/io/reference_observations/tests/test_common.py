@@ -211,8 +211,8 @@ observation_dict = {
                          '"network_api_abbreviation": "sgp", '
                          '"observation_interval_length": 1, '
                          '"datastreams": {'
-                            '"qcrad": "sgpqcradlong1E13.c1", '
-                            '"met": "sgpmetE13.b1"}}')
+                         '"qcrad": "sgpqcradlong1E13.c1", '
+                         '"met": "sgpmetE13.b1"}}')
 }
 test_kwarg_observation = Observation.from_dict(observation_dict)
 obs_kwargs = {
