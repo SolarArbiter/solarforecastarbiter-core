@@ -25,7 +25,7 @@ def site_dicts():
             'elevation': 5,
             'timezone': 'Etc/GMT+8',
             'extra_parameters': {"network": "DOE ARM",
-                                 "network_api_id": 'E13',
+                                 "network_api_id": 'B13',
                                  "network_api_abbreviation": 'sgp',
                                  "observation_interval_length": 1,
                                  "datastreams": {
