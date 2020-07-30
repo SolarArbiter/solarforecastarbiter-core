@@ -3,10 +3,14 @@ Documentation for the ARM Live Data Web Service can be found
 here: https://adc.arm.gov/armlive/
 """
 import json
+import logging
 import netCDF4
 import pandas as pd
 import requests
+import time
 
+
+logger = logging.getLogger('fetch')
 
 ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/query'
 ARM_FILES_DOWNLOAD_URL = 'https://adc.arm.gov/armlive/data/saveData'
@@ -82,7 +86,7 @@ def list_arm_filenames(user_id, api_key, datastream, start, end):
     return response['files']
 
 
-def request_arm_file(user_id, api_key, filename):
+def request_arm_file(user_id, api_key, filename, retries=5):
     """Get a file from ARM live in the form of a stream so that the python netCDF4
     module can read it.
 
@@ -94,6 +98,8 @@ def request_arm_file(user_id, api_key, filename):
         ARM live API access token.
     filename: string
         Filename to request
+    retries: int
+        Number of attempts remaining to successfully request data.
 
     Returns
     -------
@@ -101,13 +107,27 @@ def request_arm_file(user_id, api_key, filename):
         The API response in the form of a stream to be consumed by
         netCDF4.Dataset().
 
-    Notes
-    -----
-    The stream handle must be closed by the user.
+    Raises
+    ------
+    request.exceptions.ChunkedEncodingError
+        Reraises this error when all retries are exhausted.
     """
     params = {'user': f'{user_id}:{api_key}',
               'file': filename}
-    return requests.get(ARM_FILES_DOWNLOAD_URL, params=params, stream=True)
+
+    try:
+        request = requests.get(ARM_FILES_DOWNLOAD_URL, params=params)
+    except requests.exceptions.ChunkedEncodingError:
+        if retries > 0:
+            logger.debug(f'Retrying DOE ARM file {filename}: {retries}'
+                         'remaining.')
+            time.sleep((5 - retries) * 0.1)
+            return request_arm_file(user_id, api_key, filename, retries-1)
+        else:
+            logger.warning(f'Requesting ARM file {filename} failed')
+            raise
+    nc_data = request.content
+    return nc_data
 
 
 def retrieve_arm_dataset(user_id, api_key, filename):
@@ -129,8 +149,7 @@ def retrieve_arm_dataset(user_id, api_key, filename):
     """
     nc_data = request_arm_file(user_id, api_key, filename)
     nc_file = netCDF4.Dataset(f'/tmp/{filename}', mode='r',
-                              memory=nc_data.content)
-    nc_data.close()
+                              memory=nc_data)
     return nc_file
 
 
@@ -221,9 +240,13 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     datastream_dfs = []
     filenames = list_arm_filenames(user_id, api_key, datastream, start, end)
     for filename in filenames:
-        nc_file = retrieve_arm_dataset(user_id, api_key, filename)
-        datastream_df = extract_arm_variables(nc_file, variables)
-        datastream_dfs.append(datastream_df)
+        try:
+            nc_file = retrieve_arm_dataset(user_id, api_key, filename)
+        except requests.exceptions.ChunkedEncodingError:
+            logger.error(f'Request failed for DOE ARM file {filename} failed')
+        else:
+            datastream_df = extract_arm_variables(nc_file, variables)
+            datastream_dfs.append(datastream_df)
     if len(datastream_dfs) > 0:
         new_data = pd.concat(datastream_dfs)
         return new_data
