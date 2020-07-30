@@ -213,7 +213,7 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1.0,"E9: Ashton, Kansas",37.132999420166016,-97.26599884033205,372.0,E9,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1.0,"North Slope of Alaska (NSA), Barrow, Alaska",71.322998046875,-156.60899353027344,5.0,C1,nsa,America/Anchorage,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1.0,"Southern Great Plains (SGP), Anthony, Kansas",37.1509017944336,-98.36199951171876,417.0,E31,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
-1.0,"Lamont, OK (Extended and Co-located with C1)",36.60499954223633,-97.48500061035156,307.0,E13,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Lamont, Oklahoma",36.60499954223633,-97.48500061035156,307.0,E13,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1.0,"Southern Great Plains (SGP), Maple City, Kansas",37.06940078735352,-96.7605972290039,404.0,E34,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1.0,"Southern Great Plains (SGP), Marshall, Oklahoma",36.116600036621094,-97.51119995117188,326.0,E36,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1.0,"Southern Great Plains (SGP), Medford, Oklahoma",36.81900024414063,-97.81990051269531,335.0,E32,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
