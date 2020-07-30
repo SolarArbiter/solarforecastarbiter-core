@@ -24,15 +24,19 @@ def site_dicts():
             'longitude': 1,
             'elevation': 5,
             'timezone': 'Etc/GMT+8',
-            'extra_parameters': {"network": "DOE ARM",
-                                 "network_api_id": 'B13',
-                                 "network_api_abbreviation": 'sgp',
-                                 "observation_interval_length": 1,
-                                 "datastreams": {
-                                        'qcrad': 'sgpqcradlong1E13.c1',
-                                        'met': 'sgpmetE13.b1',
-                                     }
-                                 },
+            'extra_parameters': {
+                "network": "DOE ARM",
+                "network_api_id": 'B13',
+                "network_api_abbreviation": 'sgp',
+                "observation_interval_length": 1,
+                "datastreams": {
+                    'qcrad': 'sgpqcradlong1E13.c1',
+                    'met': {
+                        'sgpmetE13.b1': '2019-01-01/2020-01-01',  # noqa
+                        'sgpmetE13.b2': '2020-01-01/2021-01-01',  # noqa
+                    },
+                },
+            },
         },
         {
             'name': 'site2',

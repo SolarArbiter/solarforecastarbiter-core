@@ -212,7 +212,9 @@ observation_dict = {
                          '"observation_interval_length": 1, '
                          '"datastreams": {'
                          '"qcrad": "sgpqcradlong1E13.c1", '
-                         '"met": "sgpmetE13.b1"}}')
+                         '"met": {'
+                         '"sgpmetE13.b1": "2019-01-01/2020-01-01", '
+                         '"sgpmetE13.b2": "2020-01-01/2021-01-01"}}}')
 }
 test_kwarg_observation = Observation.from_dict(observation_dict)
 obs_kwargs = {

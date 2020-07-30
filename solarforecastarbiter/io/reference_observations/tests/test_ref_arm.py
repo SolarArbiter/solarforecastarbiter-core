@@ -95,6 +95,47 @@ def test_fetch(mocker, mock_api):
     assert data.empty
 
 
+mock_data = [[{'timestamp': '2020-01-01T0000Z', 'a': 5}],
+             [{'timestamp': '2020-01-01T0001Z', 'a': 6}],
+             [{'timestamp': '2020-01-01T0000Z', 'b': 5},
+              {'timestamp': '2020-01-01T0001Z', 'b': 6}]]
+
+
+def test_fetch_mocked_data(mocker, mock_api):
+    start = pd.Timestamp('20191231T0000Z')
+    end = pd.Timestamp('20200102T0000Z')
+    return_data = (d for d in mock_data)
+    other_fetch = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.fetch_arm')
+
+    def set_return(*args, **kwargs):
+        df_data = next(return_data)
+        return pd.DataFrame.from_records(df_data, index='timestamp')
+
+    other_fetch.side_effect = set_return
+
+    data = arm.fetch(mock_api, site_objects[0], start, end,
+                     doe_arm_user_id='id', doe_arm_api_key='key')
+    other_fetch.assert_called()
+    expected = pd.DataFrame.from_records(
+        [{'timestamp': '2020-01-01T0000Z', 'a': 5, 'b': 5},
+         {'timestamp': '2020-01-01T0001Z', 'a': 6, 'b': 6}],
+        index='timestamp')
+    pd.testing.assert_frame_equal(data, expected)
+
+
+def test_fetch_param_valueerror(mocker, mock_api):
+    decode_ep = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.arm.common'
+        '.decode_extra_parameters')
+    decode_ep.side_effect = ValueError
+    start = pd.Timestamp('20191231T0000Z')
+    end = pd.Timestamp('20200102T0000Z')
+    data = arm.fetch(mock_api, site_objects[0], start, end,
+                     doe_arm_user_id='id', doe_arm_api_key='key')
+    assert data.empty
+
+
 @pytest.mark.parametrize('reqstart,reqend,availstart,availend,estart,eend', [
     ('2020-01-01', '2020-02-01',
      '2019-01-01', '2021-02-01',
@@ -124,6 +165,16 @@ def test_get_period_overlap(
     assert end == pd.Timestamp(eend)
 
 
+def test_get_period_overlap_no_overlap():
+    overlap = arm.get_period_overlap(
+        pd.Timestamp('2020-01-01', tz='utc'),
+        pd.Timestamp('2020-02-01', tz='utc'),
+        pd.Timestamp('2020-02-02', tz='utc'),
+        pd.Timestamp('2020-03-01', tz='utc'),
+    )
+    assert overlap is None
+
+
 @pytest.mark.parametrize('range_string,exstart,exend', [
     ('2019-01-01/2021-01-01',
      pd.Timestamp('2019-01-01', tz='utc'),
@@ -149,16 +200,67 @@ def test_parse_iso_date_range_now():
 
 
 @pytest.mark.parametrize('stream_dict,start,end,expected', [
-    ({'stream1': '2020-01-01/2020-02-01',
+    ({'stream1': '2019-12-01/2020-02-01',
       'stream2': '2019-01-01/2020-01-01'},
+     pd.Timestamp('2019-01-01', tz='utc'),
+     pd.Timestamp('2020-02-01', tz='utc'),
+     {'stream1': [pd.Timestamp('2019-12-01', tz='utc'),
+                  pd.Timestamp('2020-02-01', tz='utc')],
+      'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
+                  pd.Timestamp('2019-12-01', tz='utc')]}),
+    ({'stream2': '2019-01-01/2020-01-01',
+      'stream1': '2019-12-01/2020-02-01'},
      pd.Timestamp('2019-01-01', tz='utc'),
      pd.Timestamp('2020-02-01', tz='utc'),
      {'stream1': [pd.Timestamp('2020-01-01', tz='utc'),
                   pd.Timestamp('2020-02-01', tz='utc')],
       'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
                   pd.Timestamp('2020-01-01', tz='utc')]}),
+    ({'stream2': '2019-01-01/2020-01-01',
+      'stream1': '2019-12-01/2020-02-01'},
+     pd.Timestamp('2019-01-01', tz='utc'),
+     pd.Timestamp('2019-03-01', tz='utc'),
+     {'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
+                  pd.Timestamp('2019-03-01', tz='utc')]}),
 ])
 def test_find_stream_data_availability(stream_dict, start, end, expected):
     available_stream_dict = arm.find_stream_data_availability(
         stream_dict, start, end)
     assert available_stream_dict == expected
+
+
+@pytest.mark.parametrize('site,expected_params', [
+    ({'extra_parameters': {
+         'network_api_id': 'E11',
+         'network_api_abbreviation': 'sgp'}
+      },
+     {'extra_parameters': {
+         "network_api_abbreviation": "sgp",
+         "attribution": "https://www.arm.gov/capabilities/vaps/qcrad",
+         "network": "DOE ARM",
+         "arm_site_id": "sgp",
+         "network_api_id": "E11",
+         "observation_interval_length": 1.0,
+         "datastreams": {
+             "met": "sgpmetE11.b1",
+             "qcrad": {
+                 "sgpqcrad1longE11.c2": "1995-06-30/2019-08-01",
+                 "sgpqcrad1longE11.c1": "2019-08-02/now"
+                }
+            }
+         }
+      }), ({
+         'extra_parameters': {
+            'network_api_id': 'dne',
+            'network_api_abbreviation': 'nsa'}
+      }, {
+        'extra_parameters': {
+            'network_api_id': 'dne',
+            'network_api_abbreviation': 'nsa'}
+      })
+])
+def test_adjust_site_parameters(site, expected_params):
+    adjusted = arm.adjust_site_parameters(site)
+    adjusted_params = adjusted['extra_parameters']
+    for k, v in adjusted_params.items():
+        assert adjusted_params[k] == expected_params['extra_parameters'][k]
