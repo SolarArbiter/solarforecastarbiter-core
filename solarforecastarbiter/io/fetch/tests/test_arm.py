@@ -5,6 +5,7 @@ import os
 from netCDF4 import Dataset
 import pandas as pd
 import pytest
+from requests.exceptions import ChunkedEncodingError
 
 
 from solarforecastarbiter.io.fetch import arm
@@ -129,3 +130,41 @@ def test_no_files(user_id, api_key, mocker):
     arm_df = arm.fetch_arm(user_id, api_key, 'ds_no_files',
                            ['down_short_hemisp'], start, end)
     assert arm_df.empty
+
+
+@pytest.mark.parametrize('num_failures', range(1, 5))
+def test_request_arm_file_retries(mocker, num_failures):
+    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    return_values = (d for d in [0, num_failures])
+
+    def get_response(*args, **kwargs):
+        call_no = next(return_values)
+        if call_no < num_failures:
+            raise ChunkedEncodingError
+        else:
+            response = mocker.MagicMock()
+            response.content = 'success'
+            return response
+
+    mocked_get.side_effect = get_response
+    the_response = arm.request_arm_file('user', 'ley', 'filename')
+    assert the_response == 'success'
+
+
+def test_request_arm_file_failure_after_retries(mocker):
+    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get.side_effect = ChunkedEncodingError
+    with pytest.raises(ChunkedEncodingError):
+        arm.request_arm_file('user', 'ley', 'filename')
+
+
+def test_fetch_arm_request_file_failure(mocker):
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 return_value=['afilename'])
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=ChunkedEncodingError)
+    mocked_log = mocker.patch('solarforecastarbiter.io.fetch.arm.logger')
+    data = arm.fetch_arm('user', 'key', 'stream', ['ghi'], 'start', 'end')
+    mocked_log.error.assert_called_with(
+            f'Request failed for DOE ARM file afilename failed')
+    assert data.empty
