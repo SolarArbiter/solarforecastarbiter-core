@@ -149,14 +149,14 @@ def test_parse_iso_date_range_now():
 
 
 @pytest.mark.parametrize('stream_dict,start,end,expected', [
-    ({'2020-01-01/2020-02-01': 'stream1',
-      '2019-01-01/2020-01-01': 'stream2'},
+    ({'stream1': '2020-01-01/2020-02-01',
+      'stream2': '2019-01-01/2020-01-01'},
      pd.Timestamp('2019-01-01', tz='utc'),
      pd.Timestamp('2020-02-01', tz='utc'),
-     {'stream1': (pd.Timestamp('2020-01-01', tz='utc'),
-                  pd.Timestamp('2020-02-01', tz='utc')),
-      'stream2': (pd.Timestamp('2019-01-01', tz='utc'),
-                  pd.Timestamp('2020-01-01', tz='utc'))}),
+     {'stream1': [pd.Timestamp('2020-01-01', tz='utc'),
+                  pd.Timestamp('2020-02-01', tz='utc')],
+      'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
+                  pd.Timestamp('2020-01-01', tz='utc')]}),
 ])
 def test_find_stream_data_availability(stream_dict, start, end, expected):
     available_stream_dict = arm.find_stream_data_availability(
