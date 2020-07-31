@@ -10,9 +10,10 @@ API Changes
 ~~~~~~~~~~~
 
 
-
 Enhancements
 ~~~~~~~~~~~~
+* Update DOE ARM reference dataset with previously missing irradiance data.
+  (:pull:`536)
 
 
 Bug fixes
