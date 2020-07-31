@@ -10,7 +10,7 @@ import requests
 import time
 
 
-logger = logging.getLogger('fetch')
+logger = logging.getLogger(__name__)
 
 ARM_FILES_LIST_URL = 'https://adc.arm.gov/armlive/data/query'
 ARM_FILES_DOWNLOAD_URL = 'https://adc.arm.gov/armlive/data/saveData'
