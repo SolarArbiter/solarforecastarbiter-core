@@ -166,5 +166,5 @@ def test_fetch_arm_request_file_failure(mocker):
     mocked_log = mocker.patch('solarforecastarbiter.io.fetch.arm.logger')
     data = arm.fetch_arm('user', 'key', 'stream', ['ghi'], 'start', 'end')
     mocked_log.error.assert_called_with(
-            f'Request failed for DOE ARM file afilename failed')
+            f'Request failed for DOE ARM file afilename')
     assert data.empty
