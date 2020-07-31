@@ -20,7 +20,7 @@ def log(mocker):
     ('sgpmet', arm.DOE_ARM_SITE_VARIABLES['met']),
     ('badstream', []),
 ])
-def test__detemrine_stream_vars(ds, expected):
+def test__determine_stream_vars(ds, expected):
     assert arm._determine_stream_vars(ds) == expected
 
 
