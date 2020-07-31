@@ -243,7 +243,7 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
         try:
             nc_file = retrieve_arm_dataset(user_id, api_key, filename)
         except requests.exceptions.ChunkedEncodingError:
-            logger.error(f'Request failed for DOE ARM file {filename} failed')
+            logger.error(f'Request failed for DOE ARM file {filename}')
         else:
             datastream_df = extract_arm_variables(nc_file, variables)
             datastream_dfs.append(datastream_df)
