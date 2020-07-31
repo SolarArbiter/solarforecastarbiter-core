@@ -249,11 +249,19 @@ def adjust_site_parameters(site):
     with open(DEFAULT_SITEFILE) as fp:
         sites_metadata = json.load(fp)['sites']
 
-    # ARM has multiple 'locations' at each 'site'. In the Solar Forecast
-    # Arbiter we store each 'location' as a site. We use the `network_api_id`
-    # to indicate location, and `network_api_abbreviation` together to indicate
-    # the arm site. This is necessary to use both because location ids are only
-    # unique for a given site.
+    # ARM has multiple 'locations' at each 'site'. For example, the Southern
+    # Great Plains (SGP) ARM site has many locations throughout Oklahoma, and
+    # neighboring states. Each location is identified by a code, e.g. Byron
+    # Oklahoma is location `E11` at the SGP site, and it's data is accessed via
+    # datastreams with the pattern `sgp<product>e11.<data-level>` where product
+    # indicates the contents of the datastream (we are interested in `met` and
+    # `qcrad1long` products) and data-level indicates quality and any
+    # processing applied to the data. In the Solar Forecast Arbiter we store
+    # each 'location' as a SFA site. We use the `network_api_id` to indicate
+    # the ARM site's location code and `network_api_abbreviation` to represent
+    # ARM "site code (e.g. `sgp`). Both of these keys must be used to  identify
+    # a site in the Solar Forecast Arbiter, because ARM's location ids are only
+    # unique for a given ARM site.
     arm_location_id = site['extra_parameters']['network_api_id']
     arm_site_id = site['extra_parameters']['network_api_abbreviation']
 
@@ -271,7 +279,8 @@ def adjust_site_parameters(site):
 
 
 def find_stream_data_availability(streams, start, end):
-    """Determines what date ranges to use for each datastream.
+    """Determines what date ranges to use for each datastream. Date ranges of
+    each stream must not overlap.
 
     Parameters
     ----------
@@ -286,7 +295,7 @@ def find_stream_data_availability(streams, start, end):
 
     Returns
     -------
-    dict:
+    dict
         Dict where keys are datastreams and values are two element lists of
         `[start datetime, end datetime]` that when considered together should
         span all of the available data between the requested start and end.
@@ -305,28 +314,6 @@ def find_stream_data_availability(streams, start, end):
             continue
         else:
             stream_range_dict[datastream] = overlap
-
-    # Remove any overlap between streams
-    prev_start = None
-    prev_end = None
-    for datastream, date_range in stream_range_dict.items():
-        if prev_start is not None:
-            # if end of this datastream overlaps previous start and the start
-            # of this datastream is before the previous end, move the end of
-            # this stream to the previous start to remove overlap
-            if date_range[1] > prev_start and date_range[0] < prev_start:
-                date_range[1] = prev_start
-        else:
-            prev_start = date_range[0]
-        if prev_end is not None:
-            # if start of this datastream is before the previous end, and the
-            # end of this datastream is after the previous end, move the start
-            # of this stream to the previous end to remove overlap
-            if date_range[0] < prev_end and date_range[1] > prev_end:
-                date_range[0] = prev_end
-        else:
-            prev_end = date_range[1]
-
     return stream_range_dict
 
 

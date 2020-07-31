@@ -99,7 +99,8 @@ def request_arm_file(user_id, api_key, filename, retries=5):
     filename: string
         Filename to request
     retries: int
-        Number of attempts remaining to successfully request data after ChunkedEncodingError.
+        Number of attempts remaining to successfully request data after
+        ChunkedEncodingError.
 
     Returns
     -------

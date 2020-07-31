@@ -201,22 +201,20 @@ def test_parse_iso_date_range_now():
 
 @pytest.mark.parametrize('stream_dict,start,end,expected', [
     ({'stream1': '2019-12-01/2020-02-01',
-      'stream2': '2019-01-01/2020-01-01'},
+      'stream2': '2019-01-01/2019-12-01'},
      pd.Timestamp('2019-01-01', tz='utc'),
      pd.Timestamp('2020-02-01', tz='utc'),
      {'stream1': [pd.Timestamp('2019-12-01', tz='utc'),
                   pd.Timestamp('2020-02-01', tz='utc')],
       'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
                   pd.Timestamp('2019-12-01', tz='utc')]}),
-    ({'stream2': '2019-01-01/2020-01-01',
+    ({'stream2': '2019-01-01/2019-12-01',
       'stream1': '2019-12-01/2020-02-01'},
-     pd.Timestamp('2019-01-01', tz='utc'),
+     pd.Timestamp('2019-12-12', tz='utc'),
      pd.Timestamp('2020-02-01', tz='utc'),
-     {'stream1': [pd.Timestamp('2020-01-01', tz='utc'),
-                  pd.Timestamp('2020-02-01', tz='utc')],
-      'stream2': [pd.Timestamp('2019-01-01', tz='utc'),
-                  pd.Timestamp('2020-01-01', tz='utc')]}),
-    ({'stream2': '2019-01-01/2020-01-01',
+     {'stream1': [pd.Timestamp('2019-12-12', tz='utc'),
+                  pd.Timestamp('2020-02-01', tz='utc')]}),
+    ({'stream2': '2019-01-01/2019-12-01',
       'stream1': '2019-12-01/2020-02-01'},
      pd.Timestamp('2019-01-01', tz='utc'),
      pd.Timestamp('2019-03-01', tz='utc'),
@@ -244,7 +242,7 @@ def test_find_stream_data_availability(stream_dict, start, end, expected):
          "datastreams": {
              "met": "sgpmetE11.b1",
              "qcrad": {
-                 "sgpqcrad1longE11.c2": "1995-06-30/2019-08-01",
+                 "sgpqcrad1longE11.c2": "1995-06-30/2019-08-02",
                  "sgpqcrad1longE11.c1": "2019-08-02/now"
                 }
             }
