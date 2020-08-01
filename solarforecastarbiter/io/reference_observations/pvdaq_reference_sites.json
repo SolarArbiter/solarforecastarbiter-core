@@ -1,7 +1,7 @@
 {
     "sites": [
         {
-            "name": "NREL x-Si #1",
+            "name": "NREL x-Si 1",
             "latitude": 39.7406,
             "longitude": -105.1774,
             "elevation": 1785.050170898438,
@@ -21,7 +21,7 @@
             }
         },
         {
-            "name": "NREL CIS #1",
+            "name": "NREL CIS 1",
             "latitude": 39.7404,
             "longitude": -105.1774,
             "elevation": 1783.616333007812,
@@ -81,7 +81,7 @@
             }
         },
         {
-            "name": "NREL Ribbon Si #1c",
+            "name": "NREL Ribbon Si 1c",
             "latitude": 39.7407,
             "longitude": -105.1773,
             "elevation": 1784.211669921875,
@@ -101,7 +101,7 @@
             }
         },
         {
-            "name": "NREL x-Si #6",
+            "name": "NREL x-Si 6",
             "latitude": 39.742,
             "longitude": -105.1727,
             "elevation": 1777.210815429688,
@@ -121,7 +121,7 @@
             }
         },
         {
-            "name": "NREL x-Si #7",
+            "name": "NREL x-Si 7",
             "latitude": 39.7416,
             "longitude": -105.1734,
             "elevation": 1775.096069335938,
@@ -241,7 +241,7 @@
             }
         },
         {
-            "name": "Integrator #2 - Site A",
+            "name": "Integrator 2 - Site A",
             "latitude": 40.8061,
             "longitude": -73.8849,
             "elevation": 6.965095996856689,
@@ -261,7 +261,7 @@
             }
         },
         {
-            "name": "Integrator #2 - Site C",
+            "name": "Integrator 2 - Site C",
             "latitude": 40.4335,
             "longitude": -74.5106,
             "elevation": 35.21721267700195,
@@ -361,7 +361,7 @@
             }
         },
         {
-            "name": "NREL CIGS#12",
+            "name": "NREL CIGS 12",
             "latitude": 39.7405,
             "longitude": -105.1774,
             "elevation": 1784.451416015625,
@@ -463,13 +463,13 @@
     ],
     "observations": [
         {
-            "name": "NREL x-Si #1 ac_power",
+            "name": "NREL x-Si 1 ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #1",
+                "name": "NREL x-Si 1",
                 "latitude": 39.7406,
                 "longitude": -105.1774,
                 "elevation": 1785.050170898438,
@@ -494,13 +494,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #1 dc_power",
+            "name": "NREL x-Si 1 dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #1",
+                "name": "NREL x-Si 1",
                 "latitude": 39.7406,
                 "longitude": -105.1774,
                 "elevation": 1785.050170898438,
@@ -525,13 +525,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #1 ambient_temp",
+            "name": "NREL x-Si 1 ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #1",
+                "name": "NREL x-Si 1",
                 "latitude": 39.7406,
                 "longitude": -105.1774,
                 "elevation": 1785.050170898438,
@@ -556,13 +556,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #1 poa_irradiance",
+            "name": "NREL x-Si 1 poa_irradiance",
             "variable": "poa_global",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #1",
+                "name": "NREL x-Si 1",
                 "latitude": 39.7406,
                 "longitude": -105.1774,
                 "elevation": 1785.050170898438,
@@ -587,13 +587,13 @@
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIS #1 ac_power",
+            "name": "NREL CIS 1 ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIS #1",
+                "name": "NREL CIS 1",
                 "latitude": 39.7404,
                 "longitude": -105.1774,
                 "elevation": 1783.616333007812,
@@ -618,13 +618,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIS #1 dc_power",
+            "name": "NREL CIS 1 dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIS #1",
+                "name": "NREL CIS 1",
                 "latitude": 39.7404,
                 "longitude": -105.1774,
                 "elevation": 1783.616333007812,
@@ -649,13 +649,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIS #1 ambient_temp",
+            "name": "NREL CIS 1 ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIS #1",
+                "name": "NREL CIS 1",
                 "latitude": 39.7404,
                 "longitude": -105.1774,
                 "elevation": 1783.616333007812,
@@ -680,13 +680,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 10, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIS #1 poa_irradiance",
+            "name": "NREL CIS 1 poa_irradiance",
             "variable": "poa_global",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIS #1",
+                "name": "NREL CIS 1",
                 "latitude": 39.7404,
                 "longitude": -105.1774,
                 "elevation": 1783.616333007812,
@@ -990,13 +990,13 @@
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL Ribbon Si #1c ac_power",
+            "name": "NREL Ribbon Si 1c ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL Ribbon Si #1c",
+                "name": "NREL Ribbon Si 1c",
                 "latitude": 39.7407,
                 "longitude": -105.1773,
                 "elevation": 1784.211669921875,
@@ -1021,13 +1021,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL Ribbon Si #1c dc_power",
+            "name": "NREL Ribbon Si 1c dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL Ribbon Si #1c",
+                "name": "NREL Ribbon Si 1c",
                 "latitude": 39.7407,
                 "longitude": -105.1773,
                 "elevation": 1784.211669921875,
@@ -1052,13 +1052,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL Ribbon Si #1c ambient_temp",
+            "name": "NREL Ribbon Si 1c ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL Ribbon Si #1c",
+                "name": "NREL Ribbon Si 1c",
                 "latitude": 39.7407,
                 "longitude": -105.1773,
                 "elevation": 1784.211669921875,
@@ -1083,13 +1083,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL Ribbon Si #1c poa_irradiance",
+            "name": "NREL Ribbon Si 1c poa_irradiance",
             "variable": "poa_global",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL Ribbon Si #1c",
+                "name": "NREL Ribbon Si 1c",
                 "latitude": 39.7407,
                 "longitude": -105.1773,
                 "elevation": 1784.211669921875,
@@ -1114,13 +1114,13 @@
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #6 ac_power",
+            "name": "NREL x-Si 6 ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #6",
+                "name": "NREL x-Si 6",
                 "latitude": 39.742,
                 "longitude": -105.1727,
                 "elevation": 1777.210815429688,
@@ -1145,13 +1145,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #6 dc_power",
+            "name": "NREL x-Si 6 dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #6",
+                "name": "NREL x-Si 6",
                 "latitude": 39.742,
                 "longitude": -105.1727,
                 "elevation": 1777.210815429688,
@@ -1176,13 +1176,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #6 ambient_temp",
+            "name": "NREL x-Si 6 ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #6",
+                "name": "NREL x-Si 6",
                 "latitude": 39.742,
                 "longitude": -105.1727,
                 "elevation": 1777.210815429688,
@@ -1207,13 +1207,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #7 ac_power",
+            "name": "NREL x-Si 7 ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #7",
+                "name": "NREL x-Si 7",
                 "latitude": 39.7416,
                 "longitude": -105.1734,
                 "elevation": 1775.096069335938,
@@ -1238,13 +1238,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #7 dc_power",
+            "name": "NREL x-Si 7 dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #7",
+                "name": "NREL x-Si 7",
                 "latitude": 39.7416,
                 "longitude": -105.1734,
                 "elevation": 1775.096069335938,
@@ -1269,13 +1269,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #7 ambient_temp",
+            "name": "NREL x-Si 7 ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #7",
+                "name": "NREL x-Si 7",
                 "latitude": 39.7416,
                 "longitude": -105.1734,
                 "elevation": 1775.096069335938,
@@ -1300,13 +1300,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL x-Si #7 poa_irradiance",
+            "name": "NREL x-Si 7 poa_irradiance",
             "variable": "poa_global",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL x-Si #7",
+                "name": "NREL x-Si 7",
                 "latitude": 39.7416,
                 "longitude": -105.1734,
                 "elevation": 1775.096069335938,
@@ -1579,13 +1579,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1208, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
-            "name": "Integrator #2 - Site A ac_power",
+            "name": "Integrator 2 - Site A ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 15.0,
             "interval_label": "beginning",
             "site": {
-                "name": "Integrator #2 - Site A",
+                "name": "Integrator 2 - Site A",
                 "latitude": 40.8061,
                 "longitude": -73.8849,
                 "elevation": 6.965095996856689,
@@ -1610,13 +1610,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1232, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
         },
         {
-            "name": "Integrator #2 - Site C ac_power_metered_A",
+            "name": "Integrator 2 - Site C ac_power_metered_A",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 15.0,
             "interval_label": "beginning",
             "site": {
-                "name": "Integrator #2 - Site C",
+                "name": "Integrator 2 - Site C",
                 "latitude": 40.4335,
                 "longitude": -74.5106,
                 "elevation": 35.21721267700195,
@@ -2261,13 +2261,13 @@
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
         },
         {
-            "name": "NREL CIGS#12 ac_power",
+            "name": "NREL CIGS 12 ac_power",
             "variable": "ac_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIGS#12",
+                "name": "NREL CIGS 12",
                 "latitude": 39.7405,
                 "longitude": -105.1774,
                 "elevation": 1784.451416015625,
@@ -2292,13 +2292,13 @@
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIGS#12 dc_power",
+            "name": "NREL CIGS 12 dc_power",
             "variable": "dc_power",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIGS#12",
+                "name": "NREL CIGS 12",
                 "latitude": 39.7405,
                 "longitude": -105.1774,
                 "elevation": 1784.451416015625,
@@ -2323,13 +2323,13 @@
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIGS#12 ambient_temp",
+            "name": "NREL CIGS 12 ambient_temp",
             "variable": "air_temperature",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIGS#12",
+                "name": "NREL CIGS 12",
                 "latitude": 39.7405,
                 "longitude": -105.1774,
                 "elevation": 1784.451416015625,
@@ -2354,13 +2354,13 @@
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
         },
         {
-            "name": "NREL CIGS#12 poa_irradiance",
+            "name": "NREL CIGS 12 poa_irradiance",
             "variable": "poa_global",
             "interval_value_type": "interval_mean",
             "interval_length": 1.0,
             "interval_label": "beginning",
             "site": {
-                "name": "NREL CIGS#12",
+                "name": "NREL CIGS 12",
                 "latitude": 39.7405,
                 "longitude": -105.1774,
                 "elevation": 1784.451416015625,
