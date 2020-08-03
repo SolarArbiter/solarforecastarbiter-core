@@ -222,7 +222,6 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 1.0,"Southern Great Plains (SGP), Ringwood, Oklahoma",36.430999755859375,-98.28399658203124,414.0,sgpmetE15.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
 1.0,"Southern Great Plains (SGP), Tryon, Oklahoma",35.86149978637695,-97.06950378417969,309.0,sgpmetE35.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
 1,NREL x-Si 1,39.7406,-105.1774,1785.050170898438,4,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
-1,NREL CIS 1,39.7404,-105.1774,1783.616333007812,10,,America/Denver,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
 1,Silicor Materials,39.7404,-105.1772,1782.188354492188,33,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
 15,Andre Agassi Preparatory Academy - Building A,36.1952,-115.1582,625.3253173828125,34,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
 1,NREL Ribbon Si 1c,39.7407,-105.1773,1784.211669921875,39,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
