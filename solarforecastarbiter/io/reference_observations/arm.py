@@ -299,13 +299,22 @@ def find_stream_data_availability(streams, start, end):
         Dict where keys are datastreams and values are two element lists of
         `[start datetime, end datetime]` that when considered together should
         span all of the available data between the requested start and end.
+
+    Raises
+    ------
+    ValueError
+        If streams in the dictionary have overlapping ranges.
     """
     stream_range_dict = {}
+    streams_with_ranges = [(stream, parse_iso_date_range(date_range))
+                           for stream, date_range in streams.items()]
+    streams_overlap = detect_stream_overlap(streams_with_ranges)
+    if streams_overlap:
+        raise ValueError(f'Overlapping datastreams found in {streams.keys()}.')
 
     # Find the overlap between each streams available data, and the requested
     # period
-    for datastream, date_range in streams.items():
-        stream_range = parse_iso_date_range(date_range)
+    for datastream, stream_range in streams_with_ranges:
         overlap = get_period_overlap(
             start, end, stream_range[0], stream_range[1])
         if overlap is None:
@@ -366,3 +375,28 @@ def site_variables_from_extra_params(site_extra_params):
     return [DOE_ARM_VARIABLE_MAP[arm_var]
             for stream_type in site_extra_params['datastreams'].keys()
             for arm_var in _determine_stream_vars(stream_type)]
+
+
+def detect_stream_overlap(stream_list):
+    """Detects if a list of streams contain any overlap
+
+    Parameters
+    ----------
+    stream_list: list of 3-tuples
+        List of (datastream, (start, end)) where datastream is a string, start
+        and end are pandas timestamps.
+
+    Returns
+    -------
+    bool
+        Returns True if any of the stream's ranges overlap,  otherwise False.
+    """
+    overlap = []
+    for i, stream in enumerate(stream_list):
+        date_range = stream[1]
+        for j, other_stream in enumerate(stream_list[:i] + stream_list[i+1:]):
+            other_date_range = other_stream[1]
+            overlap.append(get_period_overlap(
+                date_range[0], date_range[1],
+                other_date_range[0], other_date_range[1]))
+    return any(overlap)

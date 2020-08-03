@@ -227,6 +227,21 @@ def test_find_stream_data_availability(stream_dict, start, end, expected):
     assert available_stream_dict == expected
 
 
+@pytest.mark.parametrize('stream_dict', [
+    ({'stream1': '2019-12-01/2020-02-01',
+      'stream2': '2019-01-01/2020-01-01'}),
+    ({'stream1': '2019-12-01/2020-02-01',
+      'stream2': '2019-01-01/2020-01-01',
+      'stream3': '2020-01-20/2020-03-01'}),
+])
+def test_find_stream_data_availability_overlap(stream_dict):
+    with pytest.raises(ValueError):
+        arm.find_stream_data_availability(
+            stream_dict,
+            pd.Timestamp('2019-12-12', tz='utc'),
+            pd.Timestamp('2020-02-01', tz='utc'))
+
+
 @pytest.mark.parametrize('site,expected_params', [
     ({'extra_parameters': {
          'network_api_id': 'E11',
@@ -262,3 +277,23 @@ def test_adjust_site_parameters(site, expected_params):
     adjusted_params = adjusted['extra_parameters']
     for k, v in adjusted_params.items():
         assert adjusted_params[k] == expected_params['extra_parameters'][k]
+
+
+@pytest.mark.parametrize('stream_list,expected', [
+    ([('stream1', (pd.Timestamp('2019-12-01'), pd.Timestamp('2020-02-01'))),
+      ('stream2', (pd.Timestamp('2019-01-01'), pd.Timestamp('2019-12-01')))],
+     False),
+    ([('stream1', (pd.Timestamp('2019-12-01'), pd.Timestamp('2020-02-01'))),
+      ('stream2', (pd.Timestamp('2019-01-01'), pd.Timestamp('2019-12-15')))],
+     True),
+    ([('stream1', (pd.Timestamp('2019-12-01'), pd.Timestamp('2020-02-01'))),
+      ('stream2', (pd.Timestamp('2019-01-01'), pd.Timestamp('2019-12-01'))),
+      ('stream3', (pd.Timestamp('2020-02-01'), pd.Timestamp('2020-12-01')))],
+     False),
+    ([('stream1', (pd.Timestamp('2019-12-01'), pd.Timestamp('2020-02-01'))),
+      ('stream2', (pd.Timestamp('2019-01-01'), pd.Timestamp('2019-12-15'))),
+      ('stream3', (pd.Timestamp('2020-02-01'), pd.Timestamp('2020-12-01')))],
+     True),
+])
+def test_detect_stream_overlap(stream_list, expected):
+    assert arm.detect_stream_overlap(stream_list) == expected
