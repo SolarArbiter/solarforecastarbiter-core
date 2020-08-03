@@ -149,8 +149,10 @@ def test_fetch_fail_nonexistenttime(session, site, mocker, log):
     start = pd.Timestamp('2020-01-01T0000Z')
     end = pd.Timestamp('2020-01-02T0000Z')
     api_key = 'nopethepope'
-    df = pd.DataFrame({'ac_power': 0}, index=['2020-03-08 02:00:00'])
-    mocker.patch('solarforecastarbiter.io.fetch.pvdaq.get_pvdaq_data', df)
+    index = pd.DatetimeIndex(['2020-03-08 02:00:00'])
+    df = pd.DataFrame({'ac_power': 0}, index=index)
+    patch = mocker.patch('solarforecastarbiter.io.fetch.pvdaq.get_pvdaq_data')
+    patch.return_value = df
     out = pvdaq.fetch(session, site, start, end,
                       nrel_pvdaq_api_key=api_key)
     assert log.warning.call_count == 1
