@@ -106,7 +106,7 @@
             "longitude": -98.17279815673828,
             "elevation": 373.0,
             "timezone": "America/Chicago",
-            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E38\", \"datastreams\": {\"met\": \"sgpmetE38.b1\", \"qcrad\": {\"sgpqcrad1longE38.c2\": \"2011-08-23/2019-07-19\" ,  \"sgpqcrad1longE38.c1\": \"2017-07-19/now\"}}}"
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E38\", \"datastreams\": {\"met\": \"sgpmetE38.b1\", \"qcrad\": {\"sgpqcrad1longE38.c2\": \"2011-08-23/2017-07-19\" ,  \"sgpqcrad1longE38.c1\": \"2017-07-19/now\"}}}"
         },
         {
             "name": "Southern Great Plains (SGP), Ringwood, Oklahoma",
