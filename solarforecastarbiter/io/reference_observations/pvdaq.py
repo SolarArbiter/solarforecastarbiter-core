@@ -6,6 +6,7 @@ from pkg_resources import resource_filename, Requirement
 
 
 import pandas as pd
+from pytz.exceptions import NonExistentTimeError
 
 
 from solarforecastarbiter.datamodel import Observation
@@ -140,7 +141,12 @@ def fetch(api, site, start, end, *, nrel_pvdaq_api_key):
                        f' between {start} and {end}.')
         return pd.DataFrame()
     obs_df = _watts_to_mw(obs_df)
-    obs_df = obs_df.tz_localize(site.timezone)
+    try:
+        obs_df = obs_df.tz_localize(site.timezone)
+    except NonExistentTimeError as e:
+        logger.warning(f'Could not localize data for site {site.name} '
+                       f'due to DST issue: {e}')
+        return pd.DataFrame()
     return obs_df
 
 
