@@ -165,10 +165,12 @@ def quantile_score(obs, fx, fx_prob):
 def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
     """Quantile Skill Score (QSS).
 
+    .. math::
+
         QSS = 1 - QS_fx / QS_ref
 
-    where QS_fx is the Quantile Score of the evaluated forecast and QS_ref is
-    the Quantile Score of a reference forecast.
+    where :math:`QS_fx` is the Quantile Score of the evaluated forecast and
+    :math:`QS_ref` is the Quantile Score of a reference forecast.
 
     Parameters
     ----------
