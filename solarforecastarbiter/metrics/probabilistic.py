@@ -93,7 +93,7 @@ def quantile_score(obs, fx, fx_prob):
 
     .. math::
 
-        \\text{QS} = 1/n \\sum_{i=1}^n (fx_i - obs_i) * (p - 1\{obs_i > fx_i\})
+        \\text{QS} = \\frac{1}{n} \\sum_{i=1}^n (fx_i - obs_i) * (p - 1\{obs_i > fx_i\})
 
     where :math:`n` is the number of forecasts, :math:`obs_i` is an
     observation, :math:`fx_i` is a forecast, :math:`1\{obs_i > fx_i\}` is an
@@ -167,10 +167,11 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
 
     .. math::
 
-        QSS = 1 - QS_fx / QS_ref
+        \\text{QSS} = 1 - \\text{QS}_{\\text{fx}} / \\text{QS}_{\\text{ref}}
 
-    where :math:`QS_fx` is the Quantile Score of the evaluated forecast and
-    :math:`QS_ref` is the Quantile Score of a reference forecast.
+    where :math:`\\text{QS}_{\\text{fx}}` is the Quantile Score of the
+    evaluated forecast and :math:`\\text{QS}_{\\text{ref}}` is the Quantile
+    Score of a reference forecast.
 
     Parameters
     ----------
