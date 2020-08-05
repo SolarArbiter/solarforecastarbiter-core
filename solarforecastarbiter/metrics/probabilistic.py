@@ -91,19 +91,26 @@ def brier_skill_score(obs, fx, fx_prob, ref, ref_prob):
 def quantile_score(obs, fx, fx_prob):
     """Quantile Score (QS).
 
-        QS = 1/n sum_{i=1}^n (fx_i - obs_i) * (p_i - 1{obs_i > fx_i})
+    .. math::
 
-    where n is the number of forecasts, obs_i is an observation, fx_i is a
-    forecast, 1{obs_i > fx_i} is an indicator function (1 if obs_i > fx_i, 0
-    otherwise) and p_i is the probability that obs_i <= fx_i.
+        QS = 1/n sum_{i=1}^n (fx_i - obs_i) * (p - 1{obs_i > fx_i})
 
-    If obs > fx, then we have:
+    where :math:`n` is the number of forecasts, :math:`obs_i` is an
+    observation, :math:`fx_i` is a forecast, :math:`1{obs_i > fx_i}` is an
+    indicator function (1 if :math:`obs_i > fx_i`, 0 otherwise) and :math:`p`
+    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_
+
+    If :math:`obs > fx`, then we have:
+
+    .. math::
 
         (fx - obs) < 0
         (p - 1{obs > fx}) = (p - 1) <= 0
         (fx - obs) * (p - 1) >= 0
 
-    If instead obs < fx, then we have:
+    If instead :math:`obs < fx`, then we have:
+
+    .. math::
 
         (fx - obs) > 0
         (p - 1{obs > fx}) = (p - 0) >= 0
@@ -126,6 +133,11 @@ def quantile_score(obs, fx, fx_prob):
     qs : float
         The Quantile Score, with the same units as the observations.
 
+    Notes
+    -----
+    Quantile score is meant to be computed for a single probability of
+    :math:`n` samples.
+
     Examples
     --------
     >>> obs = 100     # observation [MW]
@@ -133,6 +145,14 @@ def quantile_score(obs, fx, fx_prob):
     >>> fx_prob = 60  # probability [%]
     >>> quantile_score(obs, fx, fx_prob)   # score [MW]
     8.0
+
+    References
+    ----------
+    .. [1] Koenker and Bassett, Jr. (1978) "Regression Quantiles", Econometrica
+           46 (1), pp. 33-50. doi: 10.2307/1913643
+    .. [2] Bouallegue, Pinson and Friederichs (2015) "Quantile forecast
+       discrimination ability and value", Quarterly Journal of the Royal
+       Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
 
     """
 
