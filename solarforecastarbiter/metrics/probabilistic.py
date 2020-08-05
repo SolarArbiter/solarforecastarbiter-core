@@ -154,7 +154,7 @@ def quantile_score(obs, fx, fx_prob):
        discrimination ability and value", Quarterly Journal of the Royal
        Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
 
-    """
+    """  # NOQA: E501,W605
 
     # Prob(obs <= fx) = p
     p = fx_prob / 100.0
