@@ -104,17 +104,17 @@ def quantile_score(obs, fx, fx_prob):
 
     .. math::
 
-        (fx - obs) < 0
-        (p - 1{obs > fx}) = (p - 1) <= 0
-        (fx - obs) * (p - 1) >= 0
+        (fx - obs) &< 0 \\
+        (p - 1{obs > fx}) &= (p - 1) <= 0 \\
+        (fx - obs) * (p - 1) &>= 0
 
     If instead :math:`obs < fx`, then we have:
 
     .. math::
 
-        (fx - obs) > 0
-        (p - 1{obs > fx}) = (p - 0) >= 0
-        (fx - obs) * p >= 0
+        (fx - obs) &> 0 \\
+        (p - 1{obs &> fx}) = (p - 0) >= 0 \\
+        (fx - obs) * p & >= 0
 
     Therefore, the quantile score is non-negative regardless of the obs and fx.
 
