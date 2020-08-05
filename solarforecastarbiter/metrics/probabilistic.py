@@ -93,34 +93,28 @@ def quantile_score(obs, fx, fx_prob):
 
     .. math::
 
-        QS = 1/n sum_{i=1}^n (fx_i - obs_i) * (p - 1{obs_i > fx_i})
+        \\text{QS} = 1/n \\sum_{i=1}^n (fx_i - obs_i) * (p - 1\{obs_i > fx_i\})
 
     where :math:`n` is the number of forecasts, :math:`obs_i` is an
-    observation, :math:`fx_i` is a forecast, :math:`1{obs_i > fx_i}` is an
+    observation, :math:`fx_i` is a forecast, :math:`1\{obs_i > fx_i\}` is an
     indicator function (1 if :math:`obs_i > fx_i`, 0 otherwise) and :math:`p`
     is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_
 
     If :math:`obs > fx`, then we have:
 
     .. math::
-       :nowrap:
 
-        \begin{align}
-            (fx - obs) &< 0 \\
-            (p - 1{obs > fx}) &= (p - 1) <= 0 \\
-            (fx - obs) * (p - 1) &>= 0
-        \end{align}
+        (fx - obs) < 0 \\\\
+        (p - 1\{obs > fx\}) = (p - 1) <= 0 \\\\
+        (fx - obs) * (p - 1) >= 0
 
     If instead :math:`obs < fx`, then we have:
 
     .. math::
-       :nowrap:
 
-        \begin{eqnarray}
-            (fx - obs) &> 0 \\
-            (p - 1{obs > fx}) &= (p - 0) >= 0 \\
-            (fx - obs) * p &>= 0
-        \end{eqnarray}
+        (fx - obs) > 0 \\\\
+        (p - 1\{obs > fx\}) = (p - 0) >= 0 \\\\
+        (fx - obs) * p >= 0
 
     Therefore, the quantile score is non-negative regardless of the obs and fx.
 
