@@ -98,7 +98,7 @@ def quantile_score(obs, fx, fx_prob):
     where :math:`n` is the number of forecasts, :math:`obs_i` is an
     observation, :math:`fx_i` is a forecast, :math:`1\{obs_i > fx_i\}` is an
     indicator function (1 if :math:`obs_i > fx_i`, 0 otherwise) and :math:`p`
-    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_ [3]_
+    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_
 
     If :math:`obs > fx`, then we have:
 
@@ -150,10 +150,7 @@ def quantile_score(obs, fx, fx_prob):
     ----------
     .. [1] Koenker and Bassett, Jr. (1978) "Regression Quantiles", Econometrica
        46 (1), pp. 33-50. doi: 10.2307/1913643
-    .. [2] Bouallegue, Pinson and Friederichs (2015) "Quantile forecast
-       discrimination ability and value", Quarterly Journal of the Royal
-       Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
-    .. [3] Wilks (2020) "Forecast Verification". In "Statistical Methods in the
+    .. [2] Wilks (2020) "Forecast Verification". In "Statistical Methods in the
        Atmospheric Sciences" (3rd edition). Academic Press. ISBN: 9780123850225
 
     """  # NOQA: E501,W605
@@ -173,7 +170,7 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
 
     where :math:`\\text{QS}_{\\text{fx}}` is the Quantile Score of the
     evaluated forecast and :math:`\\text{QS}_{\\text{ref}}` is the Quantile
-    Score of a reference forecast.
+    Score of a reference forecast. [1]_
 
     Parameters
     ----------
@@ -194,6 +191,12 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
     -------
     skill : float
         The Quantile Skill Score [unitless].
+
+    References
+    ----------
+    .. [1] Bouallegue, Pinson and Friederichs (2015) "Quantile forecast
+       discrimination ability and value", Quarterly Journal of the Royal
+       Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
 
     See Also
     --------
