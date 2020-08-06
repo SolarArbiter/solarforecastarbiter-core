@@ -98,7 +98,7 @@ def quantile_score(obs, fx, fx_prob):
     where :math:`n` is the number of forecasts, :math:`obs_i` is an
     observation, :math:`fx_i` is a forecast, :math:`1\{obs_i > fx_i\}` is an
     indicator function (1 if :math:`obs_i > fx_i`, 0 otherwise) and :math:`p`
-    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_
+    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_ [3]_
 
     If :math:`obs > fx`, then we have:
 
@@ -149,10 +149,12 @@ def quantile_score(obs, fx, fx_prob):
     References
     ----------
     .. [1] Koenker and Bassett, Jr. (1978) "Regression Quantiles", Econometrica
-           46 (1), pp. 33-50. doi: 10.2307/1913643
+       46 (1), pp. 33-50. doi: 10.2307/1913643
     .. [2] Bouallegue, Pinson and Friederichs (2015) "Quantile forecast
        discrimination ability and value", Quarterly Journal of the Royal
        Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
+    .. [3] Wilks (2020) "Forecast Verification". In "Statistical Methods in the
+       Atmospheric Sciences" (3rd edition). Academic Press. ISBN: 9780123850225
 
     """  # NOQA: E501,W605
 
