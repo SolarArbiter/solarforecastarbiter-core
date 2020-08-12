@@ -198,6 +198,10 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
        discrimination ability and value", Quarterly Journal of the Royal
        Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
 
+    Notes
+    -----
+    This function returns 0 if QS_fx and QS_ref are both 0.
+
     See Also
     --------
     :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_score`
@@ -206,8 +210,16 @@ def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
 
     qs_fx = quantile_score(obs, fx, fx_prob)
     qs_ref = quantile_score(obs, ref, ref_prob)
-    skill = 1.0 - qs_fx / qs_ref
-    return skill
+
+    # avoid 0 / 0 --> nan
+    if qs_fx == qs_ref:
+        return 0.0
+    elif qs_ref == 0.0:
+        # avoid divide by 0
+        # typically caused by deadbands and short time periods
+        return np.NINF
+    else:
+        return 1.0 - qs_fx / qs_ref
 
 
 def _unique_forecasts(f):
