@@ -13,7 +13,11 @@ API Changes
 Enhancements
 ~~~~~~~~~~~~
 * Update DOE ARM reference dataset with previously missing irradiance data.
-  (:pull:`536)
+  This change introduced changes to the `extra_parameters` fields of DOE ARM
+  reference sites stored in the Solar Forecast Arbiter, and existing sites
+  must be updated with new fields. See the
+  `solarforecastarbiter/io/reference_observations/arm_reference_sites.json` for
+  examples and explanation of the new `extra_parameters` format. (:pull:`536`)
 
 
 Bug fixes
