@@ -408,6 +408,70 @@ def centered_root_mean_square(obs, fx):
     ))
 
 
+def _careful_ratio(obs_stat, fx_stat):
+    if obs_stat == fx_stat:
+        ratio = 1
+    elif obs_stat == 0.:
+        ratio = np.Inf
+    else:
+        ratio = fx_stat / obs_stat
+    return ratio
+
+
+def relative_euclidean_distance(obs, fx):
+    r"""Relative Euclidean distance (D):
+
+    .. math:: \text{D} = \sqrt{
+        \left( \frac{\overline{\text{fx}} - \overline{\text{obs}} }
+        { \overline{\text{obs}} } \right) ^ 2 +
+        \left( \frac{\sigma_{\text{fx}} - \sigma_{\text{obs}} }
+        { \sigma_{\text{obs}} } \right) ^ 2 +
+        \left( \textrm{corr} - 1 \right) ^ 2
+        }
+
+    where:
+
+    * :math:`\overline{\text{fx}}` is the forecast mean
+    * :math:`\overline{\text{obs}}` is the observation mean
+    * :math:`\sigma_{\text{fx}}` is the forecast standard deviation
+    * :math:`\sigma_{\text{obs}}` is the observation standard deviation
+    * :math:`\textrm{corr}` is the
+      :py:func:`Pearson correlation coefficient <pearson_correlation_coeff>`
+
+    Described in [1]_
+
+    Parameters
+    ----------
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+
+    Returns
+    -------
+    d : float
+        The relative Euclidean distance of the forecast.
+
+    References
+    ----------
+    .. [1] Wu et al. Journal of Geophysical Research : Atmospheres 117,
+       D12202, doi: 10.1029/2011JD016971 (2012)
+    """
+    obs_mean = np.mean(obs)
+    obs_stdev = np.std(obs)
+    fx_mean = np.mean(fx)
+    fx_stdev = np.std(fx)
+
+    mean_ratio = _careful_ratio(obs_mean, fx_mean)
+    stdev_ratio = _careful_ratio(obs_stdev, fx_stdev)
+
+    return np.sqrt(
+        (mean_ratio - 1) ** 2
+        + (stdev_ratio - 1) ** 2
+        + (pearson_correlation_coeff(obs, fx) - 1) ** 2
+    )
+
+
 def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 

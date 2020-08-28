@@ -1,5 +1,6 @@
 import datetime as dt
 from functools import partial
+from contextlib import nullcontext as does_not_raise
 
 
 import pandas as pd
@@ -7,6 +8,7 @@ from pandas.testing import assert_series_equal
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
+from scipy.stats import PearsonRConstantInputWarning
 
 
 from solarforecastarbiter import datamodel
@@ -147,16 +149,23 @@ def test_r(obs, fx, value):
     assert r == value
 
 
-@pytest.mark.parametrize("obs,fx", [
+@pytest.mark.parametrize("obs,fx,context", [
     # len(obs) < 2 or len(fx) < 2
-    (np.array([0]), np.array([1])),
+    (np.array([0]), np.array([1]), does_not_raise()),
 
     # len(obs) != len(fx)
-    (np.array([0, 1, 2]), np.array([0, 1, 2, 3])),
-    (np.array([2, 3, 4]), np.array([2, 3, 5, 6])),
+    (np.array([0, 1, 2]), np.array([0, 1, 2, 3]), does_not_raise()),
+    (np.array([2, 3, 4]), np.array([2, 3, 5, 6]), does_not_raise()),
+
+    # obs or fx have the same values
+    (np.array([1, 1, 1]), np.array([1, 2, 3]),
+     pytest.warns(PearsonRConstantInputWarning)),
+    (np.array([1, 2, 3]), np.array([1, 1, 1]),
+     pytest.warns(PearsonRConstantInputWarning)),
 ])
-def test_r_nan(obs, fx):
-    r = deterministic.pearson_correlation_coeff(obs, fx)
+def test_r_nan(obs, fx, context):
+    with context:
+        r = deterministic.pearson_correlation_coeff(obs, fx)
     assert np.isnan(r)
 
 
@@ -177,6 +186,25 @@ def test_r2(obs, fx, value):
 def test_crmse(obs, fx, value):
     crmse = deterministic.centered_root_mean_square(obs, fx)
     assert crmse == value
+
+
+@pytest.mark.parametrize("obs,fx,value,context", [
+    (np.array([0, 1]), np.array([0, 1]), 0.0, does_not_raise()),
+    (np.array([0, 1]), np.array([1, 2]), 2.0, does_not_raise()),
+    (np.array([1, 2]), np.array([0, 1]), 0.6666666666666667, does_not_raise()),
+    (np.array([-1, 1]), np.array([2, 3]), np.Inf, does_not_raise()),
+    (np.array([1, 1]), np.array([2, 3]), np.nan,
+     pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
+    (np.array([2, 3]), np.array([1, 1]), np.nan,
+     pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
+])
+def test_relative_euclidean_distance(obs, fx, value, context):
+    with context:
+        d = deterministic.relative_euclidean_distance(obs, fx)
+    if np.isnan(value):
+        assert np.isnan(d)
+    else:
+        assert d == value
 
 
 @pytest.mark.parametrize("obs,fx,value", [

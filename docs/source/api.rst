@@ -535,6 +535,7 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.forecast_skill
    metrics.deterministic.pearson_correlation_coeff
    metrics.deterministic.coeff_determination
+   metrics.deterministic.relative_euclidean_distance
    metrics.deterministic.kolmogorov_smirnov_integral
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
