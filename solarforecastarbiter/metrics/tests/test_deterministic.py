@@ -193,6 +193,8 @@ def test_crmse(obs, fx, value):
     (np.array([0, 1]), np.array([1, 2]), 2.0, does_not_raise()),
     (np.array([1, 2]), np.array([0, 1]), 0.6666666666666667, does_not_raise()),
     (np.array([-1, 1]), np.array([2, 3]), np.Inf, does_not_raise()),
+    (np.array([-2, 2]), np.array([3, -3]), 2.0615528128088303,
+     does_not_raise()),
     (np.array([1, 1]), np.array([2, 3]), np.nan,
      pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
     (np.array([2, 3]), np.array([1, 1]), np.nan,
@@ -200,11 +202,11 @@ def test_crmse(obs, fx, value):
 ])
 def test_relative_euclidean_distance(obs, fx, value, context):
     with context:
-        d = deterministic.relative_euclidean_distance(obs, fx)
+        out = deterministic.relative_euclidean_distance(obs, fx)
     if np.isnan(value):
-        assert np.isnan(d)
+        assert np.isnan(out)
     else:
-        assert d == value
+        assert out == value
 
 
 @pytest.mark.parametrize("obs,fx,value", [

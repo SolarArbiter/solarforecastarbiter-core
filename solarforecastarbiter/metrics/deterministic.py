@@ -410,7 +410,7 @@ def centered_root_mean_square(obs, fx):
 
 def _careful_ratio(obs_stat, fx_stat):
     if obs_stat == fx_stat:
-        ratio = 1
+        ratio = 1.
     elif obs_stat == 0.:
         ratio = np.Inf
     else:
@@ -452,6 +452,20 @@ def relative_euclidean_distance(obs, fx):
     d : float
         The relative Euclidean distance of the forecast.
 
+    Examples
+    --------
+    >>> relative_euclidean_distance(np.array([0, 1]), np.array([1, 2]))
+    2.0
+    # observation mean is 0, forecast mean is not 0. d --> inf
+    >>> relative_euclidean_distance(np.array([-1, 1]), np.array([2, 3]))
+    np.Inf
+    # both forecast and observation mean are 0. d is finite
+    >>> relative_euclidean_distance(np.array([-2, 2]), np.array([3, -3]))
+    2.0615528128088303
+    # variance of observation or forecast is 0. d --> nan
+    >>> relative_euclidean_distance(np.array([1, 1]), np.array([2, 3])
+    np.NaN
+
     References
     ----------
     .. [1] Wu et al. Journal of Geophysical Research : Atmospheres 117,
@@ -462,6 +476,7 @@ def relative_euclidean_distance(obs, fx):
     fx_mean = np.mean(fx)
     fx_stdev = np.std(fx)
 
+    # compute as a ratio so we can handle obs_mean = 0
     mean_ratio = _careful_ratio(obs_mean, fx_mean)
     stdev_ratio = _careful_ratio(obs_stdev, fx_stdev)
 
