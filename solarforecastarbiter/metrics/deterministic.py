@@ -1005,6 +1005,7 @@ _MAP = {
     'r': (pearson_correlation_coeff, 'r'),
     'r^2': (coeff_determination, 'R^2'),
     'crmse': (centered_root_mean_square, 'CRMSE'),
+    'd': (relative_euclidean_distance, 'Rel. Euc. Dist.'),
     'ksi': (kolmogorov_smirnov_integral, 'KSI'),
     'over': (over, 'OVER'),
     'cpi': (combined_performance_index, 'CPI'),
