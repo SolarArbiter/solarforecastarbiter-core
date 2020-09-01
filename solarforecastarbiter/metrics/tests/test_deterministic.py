@@ -199,6 +199,8 @@ def test_crmse(obs, fx, value):
      pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
     (np.array([2, 3]), np.array([1, 1]), np.nan,
      pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
+    (np.array([0, 0]), np.array([1, 2]), np.nan,
+     pytest.warns(PearsonRConstantInputWarning)),  # corr = nan
 ])
 def test_relative_euclidean_distance(obs, fx, value, context):
     with context:
