@@ -480,14 +480,13 @@ def generate_probabilistic_forecast_figure(
         return None
 
     fig = go.Figure()
-    timezone = forecast.site.timezone
     if 'x' in forecast.axis:
         ylabel = 'Probability (%)'
         _plot_probabilsitic_distribution_axis_x(fig, forecast, data)
     else:
         ylabel = f'Data ({forecast.units})'
         _plot_probabilsitic_distribution_axis_y(fig, forecast, data)
-    fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
+    fig.update_xaxes(title_text=f'Time (UTC)', showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside')
     fig.update_yaxes(title_text=ylabel, showgrid=True,
