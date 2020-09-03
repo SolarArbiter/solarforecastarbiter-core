@@ -383,7 +383,7 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
 
         if percentiles_are_symmetric:
             if constant_value <= 50 and i != 0:
-                fill_value = float(data.columns[i - 1])
+                fill_value = constant_values[i - 1]
             else:
                 fill_value = constant_value
             fill_value = 2 * abs(fill_value - 50)
@@ -414,6 +414,7 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
             **plot_kwargs,
         )
         fig.add_trace(go_)
+
 
 def _plot_probabilsitic_distribution_axis_x(fig, forecast, data):
     """
