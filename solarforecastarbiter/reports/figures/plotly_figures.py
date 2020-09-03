@@ -16,12 +16,12 @@ from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
 import numpy as np
 from matplotlib import cm
-from matplotlib.colors import Normalize, rgb2hex
+from matplotlib.colors import Normalize
 
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics.event import _event2count
-from solarforecastarbiter.plotting.utils import line_or_step_plotly
+import solarforecastarbiter.plotting.utils as plot_utils
 
 
 logger = logging.getLogger(__name__)
@@ -327,7 +327,7 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
+        plot_kwargs = plot_utils.line_or_step_plotly(metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
@@ -365,7 +365,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
         # probably treat axis == None and axis == y separately in the future.
         # currently no need for a separate axis == x treatment either, so
         # removed an if statement on the axis.
-        plot_kwargs = line_or_step_plotly(
+        plot_kwargs = plot_utils.line_or_step_plotly(
             metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
@@ -407,11 +407,8 @@ def _plot_fx_distribution_timeseries(
             color_map,
         )
 
-        def _get_fill_color(percentile):
-            normalized_value = percentile / 100
-            return rgb2hex(color_scaler.to_rgba(normalized_value))
-
-        symmetric_percentiles = _percentiles_are_symmetric(cv_metadata)
+        symmetric_percentiles = plot_utils.percentiles_are_symmetric(
+            cv_metadata['constant_value'].tolist())
         # Plot confidence intervals
         for idx, cv in cv_metadata.iterrows():
             pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
@@ -454,9 +451,10 @@ def _plot_fx_distribution_timeseries(
                 # bright colors appear at 0 and dark at 100 when plotted.
                 fill_value = 100 - cv['constant_value']
 
-            fill_color = _get_fill_color(fill_value)
+            fill_color = plot_utils.distribution_fill_color(
+                color_scaler, fill_value)
 
-            plot_kwargs = line_or_step_plotly(cv['interval_label'])
+            plot_kwargs = plot_utils.line_or_step_plotly(cv['interval_label'])
 
             go_ = go.Scatter(
                 x=data.index,
@@ -1180,27 +1178,3 @@ def timeseries_plots(report):
         for pfxob in pfxobs)
     return (ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json,
             includes_distribution)
-
-
-def _percentiles_are_symmetric(cv_df):
-    """Determines if a set of percentiles are symmetric around the 50th
-    percentile.
-
-    Parameters
-    ----------
-    cv_df: pandas.DataFrame
-        A dataframe containing metadata of all of the constant values for the
-        distribution.
-    Returns
-    -------
-    bool
-    """
-    constant_values = cv_df['constant_value'].sort_values()
-    lower_bounds = constant_values[constant_values < 50]
-    upper_bounds = constant_values[constant_values > 50][::-1]
-    if lower_bounds.size != upper_bounds.size:
-        return False
-    for l, u in zip(lower_bounds, upper_bounds):
-        if abs(50 - l) != abs(50 - u):
-            return False
-    return True
