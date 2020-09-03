@@ -336,3 +336,113 @@ def generate_observation_figure(observation, data, limit=pd.Timedelta('3d')):
     layout = _make_layout(figs)
     logger.info('Figure generated succesfully')
     return layout
+
+# New Plotly additions
+# TODO: move imports to top of module
+import plotly.graph_objects as go
+from matplotlib import cm
+from matplotlib.colors import Normalize, rgb2hex
+
+
+# TODO: move to utils?
+PLOT_BGCOLOR = '#FFF'
+PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
+PLOT_LAYOUT_DEFAULTS = {
+    'autosize': True,
+    'height': 250,
+    'margin': PLOT_MARGINS,
+    'plot_bgcolor': PLOT_BGCOLOR,
+    'font': {'size': 14}
+}
+
+
+def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
+    """
+    Plot all probabilistic forecast values for axis='y'
+    """
+    color_map = cm.get_cmap('viridis')
+    color_scaler = cm.ScalarMappable(
+        Normalize(vmin=0, vmax=1),
+        color_map,
+    )
+
+    def _get_fill_color(percentile):
+        normalized_value = percentile / 100
+        return rgb2hex(color_scaler.to_rgba(normalized_value))
+
+    for i, constant_value in enumerate(data.columns):
+        if i == 0:
+            fill = None
+        else:
+            fill = 'tonexty'
+        go_ = go.Scatter(
+            x=data.index,
+            y=data[constant_value],
+            name=f'{constant_value} %', # TODO: add units
+            hovertemplate=(
+                f'<b>{constant_value}</b><br>',
+                '<b>Value</b>: %{y}<br>'
+                '<b>Time</b>: %{x}<br>'),
+            connectgaps=False,
+            mode='lines',
+            fill=fill,
+            showlegend=True,
+            fillcolor=_get_fill_color(float(constant_value))
+        )
+        fig.add_trace(go_)
+
+def _plot_probabilsitic_distribution_axis_x(fig, forecast, values):
+    """
+    Plot all probabilistic forecast values for axis='x'
+    """
+    pass
+
+
+def generate_probabilistic_forecast_figure(
+        forecast, data, limit=pd.Timedelta('3d')):
+    """
+    Creates a plotly figure spec from api response for a probabilistic forecast
+    group.
+
+    Parameters
+    ----------
+    forecast : datamodel.ProbabilisticForecast
+    data : pandas.DataFrame
+        DataFrame with forecast values in each column, column names as the
+        constant values and a datetime index.
+    limit : pandas.Timedelta or None
+
+    Returns
+    -------
+    None
+        When the data is empty.
+    spec: str
+        Plotly json specification for the plot.
+    """
+    logger.info('Starting probabilistic forecast figure generation...')
+    if len(data.index) == 0:
+        return None
+
+    fig = go.Figure()
+    timezone = forecast.site.timezone
+    if 'x' in forecast.axis:
+        ylabel = 'Probability (%)'
+        _plot_probabilsitic_distribution_axis_x(fig, forecast, data)
+    else:
+        ylabel = f'Data ({forecast.units})'
+        _plot_probabilsitic_distribution_axis_y(fig, forecast, data)
+    fig.update_xaxes(title_text=f'Time ({timezone})', showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    fig.update_yaxes(title_text=ylabel, showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside',
+                     fixedrange=True)
+    first = data.index[0]
+    last = data.index[-1]
+    fig.update_layout(
+        title=build_figure_title(forecast.name, first, last),
+        legend=dict(font=dict(size=10)),
+        **PLOT_LAYOUT_DEFAULTS,
+    )
+    return fig.to_json()
