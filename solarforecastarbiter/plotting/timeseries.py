@@ -362,6 +362,8 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
         color_map,
     )
 
+    units = forecast.units
+
     percentiles_are_symmetric = plot_utils.percentiles_are_symmetric(
         data.columns.values.astype('float'))
 
@@ -393,7 +395,7 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
             name=f'{str(constant_value)} %',
             hovertemplate=(
                 f'<b>{str(constant_value)} %</b><br>'
-                '<b>Value</b>: %{y}<br>'
+                '<b>Value</b>: %{y} '+f'{units}<br>'
                 '<b>Time</b>: %{x}<br>'),
             connectgaps=False,
             showlegend=False,
@@ -407,11 +409,36 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
         )
         fig.add_trace(go_)
 
-def _plot_probabilsitic_distribution_axis_x(fig, forecast, values):
+def _plot_probabilsitic_distribution_axis_x(fig, forecast, data):
     """
     Plot all probabilistic forecast values for axis='x'
     """
-    pass
+    palette = iter(PALETTE * 3)
+
+    units = forecast.units
+
+    for constant_value in data.columns:
+        line_color = next(palette)
+
+        plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
+
+        go_ = go.Scatter(
+            x=data.index,
+            y=data[str(constant_value)],
+            name=f'{str(constant_value)} {units}',
+            hovertemplate=(
+                f'<b>{str(constant_value)} {units}</b><br>'
+                '<b>Value</b>: %{y} %<br>'
+                '<b>Time</b>: %{x}<br>'),
+            connectgaps=False,
+            showlegend=True,
+            mode='lines',
+            line=dict(
+                color=line_color,
+            ),
+            **plot_kwargs,
+        )
+        fig.add_trace(go_)
 
 
 def generate_probabilistic_forecast_figure(
