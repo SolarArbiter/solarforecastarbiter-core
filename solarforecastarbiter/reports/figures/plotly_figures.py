@@ -1198,6 +1198,8 @@ def _percentiles_are_symmetric(cv_df):
     constant_values = cv_df['constant_value'].sort_values()
     lower_bounds = constant_values[constant_values < 50]
     upper_bounds = constant_values[constant_values > 50][::-1]
+    if lower_bounds.size != upper_bounds.size:
+        return False
     for l, u in zip(lower_bounds, upper_bounds):
         if abs(50 - l) != abs(50 - u):
             return False
