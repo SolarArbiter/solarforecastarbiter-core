@@ -341,20 +341,26 @@ def generate_observation_figure(observation, data, limit=pd.Timedelta('3d')):
     return layout
 
 
-PLOT_BGCOLOR = '#FFF'
-PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 100, 'pad': 4}
-PLOT_LAYOUT_DEFAULTS = {
+PLOTLY_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 100, 'pad': 4}
+PLOTLY_LAYOUT_DEFAULTS = {
     'autosize': True,
     'height': 300,
-    'margin': PLOT_MARGINS,
-    'plot_bgcolor': PLOT_BGCOLOR,
+    'margin': PLOTLY_MARGINS,
+    'plot_bgcolor': '#FFF',
     'font': {'size': 14}
 }
 
 
 def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
     """
-    Plot all probabilistic forecast values for axis='y'
+    Plot all probabilistic forecast values for axis='y' by adding traces to
+    fig.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+    forecast: :py:class`solarforecastarbiter.datamodel.ProbabilisticForecast`
+    data: pd.DataFrame
     """
     color_map = cm.get_cmap('viridis')
     color_scaler = cm.ScalarMappable(
@@ -411,7 +417,14 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
 
 def _plot_probabilsitic_distribution_axis_x(fig, forecast, data):
     """
-    Plot all probabilistic forecast values for axis='x'
+    Plot all probabilistic forecast values for axis='x' by adding traces to
+    fig.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+    forecast: :py:class`solarforecastarbiter.datamodel.ProbabilisticForecast`
+    data: pd.DataFrame
     """
     palette = iter(PALETTE * 3)
 
@@ -486,6 +499,6 @@ def generate_probabilistic_forecast_figure(
     fig.update_layout(
         title=build_figure_title(forecast.name, first, last),
         legend=dict(font=dict(size=10)),
-        **PLOT_LAYOUT_DEFAULTS,
+        **PLOTLY_LAYOUT_DEFAULTS,
     )
     return fig.to_json()
