@@ -8,6 +8,9 @@ from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource, Label, HoverTool
 from bokeh.plotting import figure
 from bokeh import palettes
+from matplotlib import cm
+from matplotlib.colors import Normalize, rgb2hex
+import plotly.graph_objects as go
 import pandas as pd
 import pytz
 
@@ -337,19 +340,12 @@ def generate_observation_figure(observation, data, limit=pd.Timedelta('3d')):
     logger.info('Figure generated succesfully')
     return layout
 
-# New Plotly additions
-# TODO: move imports to top of module
-import plotly.graph_objects as go
-from matplotlib import cm
-from matplotlib.colors import Normalize, rgb2hex
 
-
-# TODO: move to utils?
 PLOT_BGCOLOR = '#FFF'
-PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
+PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 100, 'pad': 4}
 PLOT_LAYOUT_DEFAULTS = {
     'autosize': True,
-    'height': 250,
+    'height': 300,
     'margin': PLOT_MARGINS,
     'plot_bgcolor': PLOT_BGCOLOR,
     'font': {'size': 14}
@@ -366,28 +362,48 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
         color_map,
     )
 
-    def _get_fill_color(percentile):
-        normalized_value = percentile / 100
-        return rgb2hex(color_scaler.to_rgba(normalized_value))
+    percentiles_are_symmetric = plot_utils.percentiles_are_symmetric(
+        data.columns.values.astype('float'))
 
-    for i, constant_value in enumerate(data.columns):
+    # may not work for constant values that don't convert nicely from str/float
+    constant_values = data.columns.astype('float').sort_values()
+    for i, constant_value in enumerate(constant_values):
         if i == 0:
             fill = None
         else:
             fill = 'tonexty'
+
+        if percentiles_are_symmetric:
+            if constant_value <= 50 and i != 0:
+                fill_value = float(data.columns[i - 1])
+            else:
+                fill_value = constant_value
+            fill_value = 2 * abs(fill_value - 50)
+        else:
+            fill_value = 100 - constant_value
+
+        fill_color = plot_utils.distribution_fill_color(
+            color_scaler, fill_value)
+
+        plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
+
         go_ = go.Scatter(
             x=data.index,
-            y=data[constant_value],
-            name=f'{constant_value} %', # TODO: add units
+            y=data[str(constant_value)],
+            name=f'{str(constant_value)} %',
             hovertemplate=(
-                f'<b>{constant_value}</b><br>',
+                f'<b>{str(constant_value)} %</b><br>'
                 '<b>Value</b>: %{y}<br>'
                 '<b>Time</b>: %{x}<br>'),
             connectgaps=False,
+            showlegend=False,
             mode='lines',
             fill=fill,
-            showlegend=True,
-            fillcolor=_get_fill_color(float(constant_value))
+            fillcolor=fill_color,
+            line=dict(
+                color=fill_color,
+            ),
+            **plot_kwargs,
         )
         fig.add_trace(go_)
 

@@ -1,4 +1,5 @@
 import pandas as pd
+from matplotlib.colors import rgb2hex
 
 
 from solarforecastarbiter.datamodel import ALLOWED_VARIABLES, COMMON_NAMES
@@ -98,3 +99,42 @@ def line_or_step_plotly(interval_label):
             '"event", or "ending"')
 
     return plot_kwargs
+
+
+def distribution_fill_color(color_scaler, percentile):
+    """Returns a hex code for shading percentiles.
+    Parameters
+    ----------
+    color_scaler: matplotlib.cm.ScalarMappable
+
+    percentile: float
+
+    Returns
+    -------
+    str
+        Hex value of the color to use for shading.
+    """
+    normalized_value = percentile / 100
+    return rgb2hex(color_scaler.to_rgba(normalized_value))
+
+
+def percentiles_are_symmetric(constant_values):
+    """Determines if a list of percentile constant values are symmetric about
+    the 50th percentile.
+
+    Parameters
+    ----------
+    constant_values: list
+        List of float constant values
+    Returns
+    -------
+    bool
+        True if percentiles are symmetric about 50.
+    """
+    constant_values.sort()
+    lower_bounds = [cv for cv in constant_values if cv < 50]
+    upper_bounds = [cv for cv in constant_values if cv > 50][::-1]
+    for l, u in zip(lower_bounds, upper_bounds):
+        if abs(50 - l) != abs(50 - u):
+            return False
+    return True
