@@ -395,12 +395,14 @@ def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
 
         plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
 
+        forecast_name = f'Prob(f <= x) = {str(constant_value)}%'
+
         go_ = go.Scatter(
             x=data.index,
             y=data[str(constant_value)],
             name=f'{str(constant_value)} %',
             hovertemplate=(
-                f'<b>{str(constant_value)} %</b><br>'
+                f'<b>{forecast_name}</b><br>'
                 '<b>Value</b>: %{y} '+f'{units}<br>'
                 '<b>Time</b>: %{x}<br>'),
             connectgaps=False,
@@ -436,12 +438,13 @@ def _plot_probabilsitic_distribution_axis_x(fig, forecast, data):
 
         plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
 
+        forecast_name = f'Prob(x <= {str(constant_value)} {units})'
         go_ = go.Scatter(
             x=data.index,
             y=data[str(constant_value)],
-            name=f'{str(constant_value)} {units}',
+            name=forecast_name,
             hovertemplate=(
-                f'<b>{str(constant_value)} {units}</b><br>'
+                f'<b>{forecast_name}</b><br>'
                 '<b>Value</b>: %{y} %<br>'
                 '<b>Time</b>: %{x}<br>'),
             connectgaps=False,
