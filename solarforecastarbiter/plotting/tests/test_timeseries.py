@@ -197,8 +197,14 @@ def test_generate_probabilistic_forecast_figure_x_forecast(
 
 
 def test_generate_probabilistic_forecast_figure_y_forecast(
-        prob_forecasts_y, prob_forecast_random_data):
-    values = prob_forecast_random_data(prob_forecasts_y)
+        prob_forecasts_y,
+        prob_forecast_constant_value_y_factory,
+        prob_forecast_random_data,
+        ):
+    new_constant_values = [prob_forecast_constant_value_y_factory(5.0)]
+    prob_forecast = prob_forecasts_y.replace(
+        constant_values=new_constant_values)
+    values = prob_forecast_random_data(prob_forecast)
     fig = timeseries.generate_probabilistic_forecast_figure(
         prob_forecasts_y, values)
     assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
