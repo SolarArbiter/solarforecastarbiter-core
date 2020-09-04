@@ -209,7 +209,7 @@ def test_generate_probabilistic_forecast_figure_y_forecast(
         prob_forecasts_y, values)
     assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
     assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
-    assert fig['layout']['yaxis']['title']['text'] == 'Data (W/m^2)'
+    assert fig['layout']['yaxis']['title']['text'] == 'GHI (W/m^2)'
     fig_data = fig['data']
     assert len(fig_data) == 1
     assert len(fig_data[0]['x']) == values.index.size
@@ -242,7 +242,7 @@ def test_generate_probabilistic_forecast_figure_y_forecast_symmetric(
         prob_forecasts_y, values)
     assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
     assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
-    assert fig['layout']['yaxis']['title']['text'] == 'Data (W/m^2)'
+    assert fig['layout']['yaxis']['title']['text'] == 'GHI (W/m^2)'
     fig_data = fig['data']
     assert len(fig_data) == 5
     for trace in fig_data:
