@@ -3,6 +3,8 @@ from pandas.testing import assert_index_equal
 import pytest
 
 
+from matplotlib import cm
+from matplotlib.colors import Normalize
 from solarforecastarbiter.plotting import utils
 
 
@@ -73,3 +75,34 @@ def test_line_or_step(label, method):
 def test_line_or_step_plotly(label):
     out = utils.line_or_step_plotly(label)
     assert isinstance(out, dict)
+
+
+color_map = cm.get_cmap('viridis')
+color_scaler = cm.ScalarMappable(
+    Normalize(vmin=0, vmax=1),
+    color_map,
+)
+
+
+@pytest.mark.parametrize('percentile,expected', [
+    (100, '#fde725'),
+    (90, '#bddf26'),
+    (50, '#21918c'),
+    (20, '#414487'),
+    (5, '#471365'),
+    (1, '#450457'),
+])
+def test_distribution_fill_color(percentile, expected):
+    assert utils.distribution_fill_color(color_scaler, percentile) == expected
+
+
+@pytest.mark.parametrize('cvs,expected', [
+    ([5, 20, 50, 80, 95], True),
+    ([5.0, 20.0, 50.0, 80.0, 95.0], True),
+    ([5.0, 50.0, 80.0, 95.0], False),
+    ([5, 50, 8, 9], False),
+    ([5, 10, 20, 30, 50, 60, 70, 75, 80, 90], False),
+    ([5], False),
+])
+def test_percentiles_are_symmetric(cvs, expected):
+    assert utils.percentiles_are_symmetric(cvs) == expected
