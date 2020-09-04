@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 
 
 import bokeh
@@ -208,3 +209,48 @@ def test_generate_probabilistic_forecast_figure_y_forecast(
     assert len(fig_data[0]['x']) == values.index.size
     assert len(fig_data[0]['y']) == values.index.size
     assert not fig_data[0]['showlegend']
+
+
+@pytest.fixture
+def prob_forecast_constant_value_y_upper(
+        prob_forecast_constant_value_y_text,
+        _prob_forecast_constant_value_from_dict):
+    fx_dict = json.loads(prob_forecast_constant_value_y_text)
+    fx_dict['constant_value'] = 95.50
+    return _prob_forecast_constant_value_from_dict(fx_dict)
+
+
+def test_generate_probabilistic_forecast_figure_y_forecast_symmetric(
+        prob_forecasts_y,
+        prob_forecast_constant_value_y,
+        prob_forecast_constant_value_y_upper,
+        prob_forecast_random_data,
+        ):
+    new_constant_values = (
+        prob_forecast_constant_value_y,
+        prob_forecast_constant_value_y_upper,
+    )
+    prob_forecast = prob_forecasts_y.replace(
+        constant_values=new_constant_values)
+    values = prob_forecast_random_data(prob_forecast)
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts_y, values)
+    assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
+    assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
+    assert fig['layout']['yaxis']['title']['text'] == 'Data (W/m^2)'
+    fig_data = fig['data']
+    assert len(fig_data) == 2
+    assert len(fig_data[1]['x']) == values.index.size
+    assert len(fig_data[1]['y']) == values.index.size
+    assert len(fig_data[0]['x']) == values.index.size
+    assert len(fig_data[0]['y']) == values.index.size
+    assert fig_data[0]['fill'] is None
+    assert fig_data[1]['fill'] == 'tonexty'
+
+
+def test_generate_probabilistic_forecast_figure_empty_values(
+        prob_forecasts_y, prob_forecast_random_data):
+    values = pd.DataFrame()
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts_y, values)
+    assert fig is None
