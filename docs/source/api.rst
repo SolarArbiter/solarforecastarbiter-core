@@ -754,6 +754,7 @@ Time series plotting.
    plotting.timeseries.make_basic_timeseries
    plotting.timeseries.generate_forecast_figure
    plotting.timeseries.generate_observation_figure
+   plotting.timeseries.generate_probabilistic_forecast_figure
 
 Utils
 -----
