@@ -473,7 +473,7 @@ def generate_probabilistic_forecast_figure(
     -------
     None
         When the data is empty.
-    spec: str
+    figure: Plotly.graph_objects.Figure
         Plotly json specification for the plot.
     """
     logger.info('Starting probabilistic forecast figure generation...')
@@ -501,4 +501,4 @@ def generate_probabilistic_forecast_figure(
         legend=dict(font=dict(size=10)),
         **PLOTLY_LAYOUT_DEFAULTS,
     )
-    return fig.to_json()
+    return fig
