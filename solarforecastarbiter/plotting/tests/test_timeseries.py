@@ -212,24 +212,23 @@ def test_generate_probabilistic_forecast_figure_y_forecast(
 
 
 @pytest.fixture
-def prob_forecast_constant_value_y_upper(
+def prob_forecast_constant_value_y_factory(
         prob_forecast_constant_value_y_text,
         _prob_forecast_constant_value_from_dict):
-    fx_dict = json.loads(prob_forecast_constant_value_y_text)
-    fx_dict['constant_value'] = 95.50
-    return _prob_forecast_constant_value_from_dict(fx_dict)
+    def f(new_constant_value):
+        fx_dict = json.loads(prob_forecast_constant_value_y_text)
+        fx_dict['constant_value'] = new_constant_value
+        return _prob_forecast_constant_value_from_dict(fx_dict)
+    return f
 
 
 def test_generate_probabilistic_forecast_figure_y_forecast_symmetric(
         prob_forecasts_y,
-        prob_forecast_constant_value_y,
-        prob_forecast_constant_value_y_upper,
+        prob_forecast_constant_value_y_factory,
         prob_forecast_random_data,
         ):
-    new_constant_values = (
-        prob_forecast_constant_value_y,
-        prob_forecast_constant_value_y_upper,
-    )
+    new_constant_values = [prob_forecast_constant_value_y_factory(x)
+                           for x in [5.0, 10.0, 50.0, 90.0, 95.0]]
     prob_forecast = prob_forecasts_y.replace(
         constant_values=new_constant_values)
     values = prob_forecast_random_data(prob_forecast)
@@ -239,13 +238,13 @@ def test_generate_probabilistic_forecast_figure_y_forecast_symmetric(
     assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
     assert fig['layout']['yaxis']['title']['text'] == 'Data (W/m^2)'
     fig_data = fig['data']
-    assert len(fig_data) == 2
-    assert len(fig_data[1]['x']) == values.index.size
-    assert len(fig_data[1]['y']) == values.index.size
-    assert len(fig_data[0]['x']) == values.index.size
-    assert len(fig_data[0]['y']) == values.index.size
+    assert len(fig_data) == 5
+    for trace in fig_data:
+        assert len(trace['x']) == values.index.size
+        assert len(trace['y']) == values.index.size
     assert fig_data[0]['fill'] is None
-    assert fig_data[1]['fill'] == 'tonexty'
+    for trace in fig_data[1:]:
+        assert trace['fill'] == 'tonexty'
 
 
 def test_generate_probabilistic_forecast_figure_empty_values(
