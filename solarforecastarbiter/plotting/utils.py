@@ -131,7 +131,7 @@ def percentiles_are_symmetric(constant_values):
     bool
         True if percentiles are symmetric about 50.
     """
-    constant_values.sort()
+    constant_values = sorted(constant_values)
     lower_bounds = [cv for cv in constant_values if cv < 50]
     upper_bounds = [cv for cv in constant_values if cv > 50][::-1]
     if len(upper_bounds) != len(lower_bounds):
