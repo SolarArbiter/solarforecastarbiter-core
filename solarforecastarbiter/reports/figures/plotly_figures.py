@@ -327,7 +327,8 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = plot_utils.line_or_step_plotly(metadata['interval_label'])
+        plot_kwargs = plot_utils.line_or_step_plotly(
+            metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],

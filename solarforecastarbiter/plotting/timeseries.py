@@ -9,7 +9,7 @@ from bokeh.models import ColumnDataSource, Label, HoverTool
 from bokeh.plotting import figure
 from bokeh import palettes
 from matplotlib import cm
-from matplotlib.colors import Normalize, rgb2hex
+from matplotlib.colors import Normalize
 import plotly.graph_objects as go
 import pandas as pd
 import pytz

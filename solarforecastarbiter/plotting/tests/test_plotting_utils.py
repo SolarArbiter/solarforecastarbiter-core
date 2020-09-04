@@ -92,7 +92,7 @@ color_scaler = cm.ScalarMappable(
     (5, '#471365'),
     (1, '#450457'),
 ])
-def test_distribution_fill_color(percentile,expected):
+def test_distribution_fill_color(percentile, expected):
     assert utils.distribution_fill_color(color_scaler, percentile) == expected
 
 
@@ -101,7 +101,7 @@ def test_distribution_fill_color(percentile,expected):
     ([5.0, 20.0, 50.0, 80.0, 95.0], True),
     ([5.0, 50.0, 80.0, 95.0], False),
     ([5, 50, 8, 9], False),
-    ([5,10,20,30,50,60,70,75,80,90], False),
+    ([5, 10, 20, 30, 50, 60, 70, 75, 80, 90], False),
 ])
 def test_percentiles_are_symmetric(cvs, expected):
     assert utils.percentiles_are_symmetric(cvs) == expected
