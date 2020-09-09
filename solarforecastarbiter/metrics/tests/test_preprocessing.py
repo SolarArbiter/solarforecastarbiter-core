@@ -765,7 +765,7 @@ def test_process_forecast_observations_same_name(
         costs=report.report_parameters.costs)
     assert len(processed_fxobs_list) == len(
         fxobs)
-    assert len(set(pfxobs.name for pfxobs in processed_fxobs_list)) == len(
+    assert len({pfxobs.name for pfxobs in processed_fxobs_list}) == len(
         fxobs)
 
 

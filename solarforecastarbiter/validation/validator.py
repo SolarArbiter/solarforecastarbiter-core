@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Feb 15 14:08:20 2019
 
@@ -649,7 +648,7 @@ def detect_stale_values(x, window=6, rtol=1e-5, atol=1e-8):
         ValueError if window < 2
     """
     if window < 2:
-        raise ValueError('window set to {}, must be at least 2'.format(window))
+        raise ValueError(f'window set to {window}, must be at least 2')
 
     flags = x.rolling(window=window).apply(
         _all_close_to_first, raw=True, kwargs={'rtol': rtol, 'atol': atol}
@@ -696,7 +695,7 @@ def detect_interpolation(x, window=6, rtol=1e-5, atol=1e-8):
         ValueError if window < 3
     """
     if window < 3:
-        raise ValueError('window set to {}, must be at least 3'.format(window))
+        raise ValueError(f'window set to {window}, must be at least 3')
 
     # reduce window by 1 because we're passing the first difference
     flags = detect_stale_values(x.diff(periods=1), window=window-1, rtol=rtol,

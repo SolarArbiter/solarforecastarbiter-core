@@ -11,7 +11,7 @@ BAD_FILE = os.path.join(TEST_DATA_DIR, 'data', 'eia_caiso_bad.json')
 
 
 def test_get_eia_data(requests_mock):
-    with open(GOOD_FILE, "r") as f:
+    with open(GOOD_FILE) as f:
         content = f.read()
 
     requests_mock.register_uri(
@@ -32,7 +32,7 @@ def test_get_eia_data(requests_mock):
 
 
 def test_get_eia_data_bad(requests_mock):
-    with open(BAD_FILE, "r") as f:
+    with open(BAD_FILE) as f:
         content = f.read()
 
     requests_mock.register_uri(
