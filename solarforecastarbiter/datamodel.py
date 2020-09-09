@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
@@ -1845,7 +1844,7 @@ class ReportParameters(BaseModel):
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
         __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.data_object) for k in self.object_pairs)))
+            (k.forecast, k.data_object) for k in self.object_pairs))
         # ensure the metrics can be applied to the forecasts and observations
         for k in self.object_pairs:
             __check_metrics__(k.forecast, self.metrics)

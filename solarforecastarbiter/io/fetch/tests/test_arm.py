@@ -44,7 +44,7 @@ def test_format_date():
 
 
 def mocked_request_get_files(*args, **kwargs):
-    class Object(object):
+    class Object:
         pass
     response = Object()
     response.text = '{"files": ["filename1", "filename2"]}'

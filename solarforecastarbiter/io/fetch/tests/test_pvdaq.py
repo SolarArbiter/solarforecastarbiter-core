@@ -15,7 +15,7 @@ DATA_FILE_2019 = os.path.join(TEST_DATA_DIR, 'data', 'pvdaq_2019_data.csv')
 
 
 def test_get_pvdaq_metadata(requests_mock):
-    with open(SYSTEM_FILE, 'r') as f:
+    with open(SYSTEM_FILE) as f:
         content = f.read()
 
     requests_mock.register_uri(
@@ -56,7 +56,7 @@ def test_get_pvdaq_metadata(requests_mock):
 
 
 def test_get_pvdaq_data(requests_mock):
-    with open(DATA_FILE, 'r') as f:
+    with open(DATA_FILE) as f:
         content = f.read()
 
     requests_mock.register_uri(
@@ -74,7 +74,7 @@ def test_get_pvdaq_data(requests_mock):
 
 def test_get_pvdaq_data_2years(requests_mock):
 
-    with open(DATA_FILE, 'r') as f:
+    with open(DATA_FILE) as f:
         content = f.read()
 
     requests_mock.register_uri(
@@ -83,7 +83,7 @@ def test_get_pvdaq_data_2years(requests_mock):
         content=content.encode()
     )
 
-    with open(DATA_FILE_2019, 'r') as f:
+    with open(DATA_FILE_2019) as f:
         content_2019 = f.read()
 
     requests_mock.register_uri(
