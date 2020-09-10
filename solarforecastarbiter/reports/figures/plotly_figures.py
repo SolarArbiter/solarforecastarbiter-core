@@ -350,11 +350,11 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
 
 def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PALETTE)
-    # construct graph objects in random hash order. collect them in a list
+    # pull metadata to plot in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
-    gos = []
+    metadatas = []
 
-    # construct graph objects in random hash order
+    # pull metadata to plot in random hash order
     for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
@@ -362,6 +362,10 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             # we're looking at a different kind of forecast than what we wanted
             # to plot
             continue
+        # collect in list
+        metadatas.append((metadata['pair_index'], metadata))
+
+    for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         # probably treat axis == None and axis == y separately in the future.
         # currently no need for a separate axis == x treatment either, so
@@ -380,10 +384,6 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             legendgroup=metadata['forecast_name'],
             connectgaps=False,
             **plot_kwargs)
-        # collect in list
-        gos.append((metadata['pair_index'], go_))
-
-    for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
 
 
@@ -591,6 +591,9 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
 
     palette = cycle(PALETTE)
     fig = go.Figure()
+    # pull metadata to plot in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    metadatas = []
     # accumulate labels and plot objects for manual legend
     for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
@@ -599,18 +602,22 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             # don't know how to represent probability forecasts on a
             # physical value vs. physical value plot.
             continue
+        # collect in list
+        metadatas.append((metadata['pair_index'], metadata))
+
+    for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
-
-        fig.add_trace(go.Scattergl(
+        go_ = go.Scattergl(
             x=data['observation_values'],
             y=data['forecast_values'],
             name=_legend_text(metadata['forecast_name']),
             showlegend=True,
             legendgroup=metadata['forecast_name'],
-            marker=dict(color=next(palette)),
-            mode='markers'),
-        )
+            marker=dict(color=next(palette), opacity=0.4),
+            mode='markers')
+        fig.add_trace(go_)
+
     # compute new plot width accounting for legend label text width.
     # also considered using second figure for legend so it doesn't
     # distort the first when text length/size changes. unfortunately,
