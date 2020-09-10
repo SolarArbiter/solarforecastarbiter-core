@@ -51,6 +51,8 @@ DERIVED_MASKS = {
     'DAYTIME STALE VALUES': (np.logical_and, 'DAYTIME', 'STALE VALUES'),
     'DAYTIME INTERPOLATED VALUES': (
         np.logical_and, 'DAYTIME', 'INTERPOLATED VALUES'),
+    'NOT CLEARSKY': (np.logical_not, 'CLEARSKY'),
+    'DAYTIME NOT CLEARSKY': (np.logical_and, 'DAYTIME', 'NOT CLEARSKY'),
 }
 
 # should never change unless another VERSION IDENTIFIER is required
