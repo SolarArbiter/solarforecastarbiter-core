@@ -605,6 +605,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
         # collect in list
         metadatas.append((metadata['pair_index'], metadata))
 
+    # plot in order of pair index
     for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
@@ -618,23 +619,18 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             mode='markers')
         fig.add_trace(go_)
 
-    # compute new plot width accounting for legend label text width.
-    # also considered using second figure for legend so it doesn't
-    # distort the first when text length/size changes. unfortunately,
-    # that doesn't work due to bokeh's inability to communicate legend
-    # information across figures.
-    # widest part of the legend
     label = f'({units})'
     x_label = 'Observed ' + label
     y_label = 'Forecast ' + label
+    nticks = 10
     fig.update_xaxes(title_text=x_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
-                     range=scatter_range)
+                     range=scatter_range, nticks=nticks)
     fig.update_yaxes(title_text=y_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
-                     range=scatter_range)
+                     range=scatter_range, nticks=nticks)
     return fig
 
 
@@ -1100,8 +1096,8 @@ def raw_report_plots(report, metrics):
 
 
 def timeseries_plots(report):
-    """Return the bokeh components (script and div element) for timeseries
-    and scatter plots of the processed forecasts and observations.
+    """Return the components for timeseries and scatter plots of the
+    processed forecasts and observations.
 
     Parameters
     ----------
@@ -1174,9 +1170,10 @@ def timeseries_plots(report):
         scat_fig.update_layout(
             plot_bgcolor=PLOT_BGCOLOR,
             font=dict(size=14),
-            width=600,
-            height=500,
+            width=700,
+            height=600,
             autosize=False,
+            yaxis=dict(scaleanchor="x", scaleratio=1, constrain="domain"),
         )
     includes_distribution = any(
         (
