@@ -614,7 +614,7 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             name=_legend_text(metadata['forecast_name']),
             showlegend=True,
             legendgroup=metadata['forecast_name'],
-            marker=dict(color=next(palette), opacity=0.4),
+            marker=dict(color=next(palette), opacity=0.25),
             mode='markers')
         fig.add_trace(go_)
 

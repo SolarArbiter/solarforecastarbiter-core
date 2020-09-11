@@ -43,3 +43,4 @@ Contributors
 * Aidan Tuohy
 * Adam Wigington (:ghuser:`awig`)
 * David Larson (:ghuser:`dplarson`)
+* Will Hobbs (:ghuser:`williamhobbs`)
