@@ -32,6 +32,16 @@ def test_request_cli_access_token_real():
                                             'Thepassword123!') is not None
 
 
+def test_request_cli_access_token_mocked_kwargs(requests_mock):
+    m = requests_mock.register_uri(
+        'POST', 'https://solarforecastarbiter.auth0.com/oauth/token',
+        content=b'{"access_token": "token"}')
+    token = api.request_cli_access_token(
+        'test', 'pass', cert="some_certificate.crt")
+    assert m.request_history[0].cert == "some_certificate.crt"
+    assert token == 'token'
+
+
 def test_apisession_init(requests_mock):
     session = api.APISession('TOKEN')
     requests_mock.register_uri('GET', session.base_url)

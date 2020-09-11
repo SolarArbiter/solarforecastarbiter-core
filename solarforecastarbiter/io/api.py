@@ -28,13 +28,31 @@ BASE_URL = 'https://api.solarforecastarbiter.org'
 logger = logging.getLogger(__name__)
 
 
-def request_cli_access_token(user, password):
+def request_cli_access_token(user, password, **kwargs):
+    """Request an API access token from Auth0.
+
+    Parameters
+    ----------
+    user : str
+        Username
+    password : str
+        Password
+    kwargs
+        Passed to requests.post. Useful for handling SSL certificates,
+        navigating proxies, or other network complications. See requests
+        documentation for details.
+
+    Returns
+    -------
+    access_token : str
+    """
     req = requests.post(
         'https://solarforecastarbiter.auth0.com/oauth/token',
         data={'grant_type': 'password', 'username': user,
               'audience': BASE_URL,
               'password': password,
-              'client_id': 'c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7'})
+              'client_id': 'c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7'},
+        **kwargs)
     req.raise_for_status()
     return req.json()['access_token']
 
