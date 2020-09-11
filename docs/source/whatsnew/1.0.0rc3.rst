@@ -26,6 +26,9 @@ Enhancements
 
 * Add opacity to scatter plot markers to improve visibility. (:issue:`547`)
 
+* Add support for kwargs in
+  :py:func:`solarforecastarbiter.io.api.request_cli_access_token`. (:issue:`483`)
+
 Bug fixes
 ~~~~~~~~~
 * Fix PVDAQ time zones. (:issue:`537`) (:pull:`540`)
