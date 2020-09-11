@@ -1167,14 +1167,18 @@ def timeseries_plots(report):
             margin=PLOT_MARGINS,
         )
     else:
+        margin = PLOT_MARGINS.copy()
+        margin.pop('pad', None)
         scat_fig = scatter(value_df, meta_df, units)
         scat_fig.update_layout(
             plot_bgcolor=PLOT_BGCOLOR,
             font=dict(size=14),
             width=700,
-            height=600,
+            height=500,
             autosize=False,
-            yaxis=dict(scaleanchor="x", scaleratio=1, constrain="domain"),
+            xaxis=dict(scaleanchor="y", scaleratio=1, constrain="domain"),
+            yaxis=dict(constrain="domain"),
+            margin=margin,
         )
     includes_distribution = any(
         (
