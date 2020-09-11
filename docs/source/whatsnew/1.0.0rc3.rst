@@ -34,6 +34,8 @@ Bug fixes
   (:issue:`548`) (:pull:`562`)
 * Make scatter plot aspect ratio 1:1 and set same number of grid lines on
   the x and y axes. (:issue:`419`) (:pull:`562`)
+* Render ``W/m^2`` with a superscript in time series and scatter plots.
+  (:pull:`562`)
 
 Contributors
 ~~~~~~~~~~~~

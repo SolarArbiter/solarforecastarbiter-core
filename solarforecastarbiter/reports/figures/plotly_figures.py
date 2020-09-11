@@ -1120,6 +1120,7 @@ def timeseries_plots(report):
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
+    units = units.replace('^2', '<sup>2</sup>')
 
     # data (units) vs time plot for the observation, deterministic fx,
     # and y-axis probabilistic fx
