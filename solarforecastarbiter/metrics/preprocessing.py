@@ -338,13 +338,13 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
 
     # Return dict summarizing results
     results = {
-        type(fx).__name__ + " " + DISCARD_DATA_STRING:
+        fx.__blurb__ + " " + DISCARD_DATA_STRING:
             len(fx_data.dropna(how="any")) - len(fx_aligned),
-        type(obs).__name__ + " " + DISCARD_DATA_STRING:
+        obs.__blurb__ + " " + DISCARD_DATA_STRING:
             len(obs_resampled) - len(observation_values),
-        type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
+        fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(undefined_fx),
-        type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
+        obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(obs_data.isna().sum())
     }
 

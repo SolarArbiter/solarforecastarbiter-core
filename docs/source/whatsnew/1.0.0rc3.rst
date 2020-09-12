@@ -39,6 +39,8 @@ Bug fixes
   the x and y axes. (:issue:`419`) (:pull:`562`)
 * Render ``W/m^2`` with a superscript in time series and scatter plots.
   (:pull:`562`)
+* Render report preprocessing results with friendly names (e.g. Event Forecast)
+  instead of class names (e.g. EventForecast). (:issue:`406`)
 
 Contributors
 ~~~~~~~~~~~~
