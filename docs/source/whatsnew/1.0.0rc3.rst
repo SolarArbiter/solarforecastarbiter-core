@@ -44,6 +44,9 @@ Bug fixes
 * Correct incorrect timeseries plots used in reports for probabilistic
   forecasts with axis y. This bug was introduced in Release Candidate 2.
   (:issue: `568`) (:pull: `569`)
+* Adjust abbreviation of long reference forecast names to first abbreviate
+  some words and then cut entire words from the site name (:issue:`521`)
+  (:pull:`571`)
 
 Contributors
 ~~~~~~~~~~~~
