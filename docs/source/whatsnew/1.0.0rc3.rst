@@ -41,6 +41,9 @@ Bug fixes
   (:pull:`562`)
 * Render report preprocessing results with friendly names (e.g. Event Forecast)
   instead of class names (e.g. EventForecast). (:issue:`406`)
+* Correct incorrect timeseries plots used in reports for probabilistic
+  forecasts with axis y. This bug was introduced in Release Candidate 2.
+  (:issue: `568`) (:pull: `569`)
 
 Contributors
 ~~~~~~~~~~~~
