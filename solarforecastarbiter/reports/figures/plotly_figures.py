@@ -531,7 +531,10 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
     # add forecast traces that have correct axis to fig
     # get indices of probabilistic forecasts with axis y to create special
     # shaded distribution plots
-    y_distribution_indices = timeseries_meta_df['axis'] == 'y'
+    y_distribution_indices = (
+        timeseries_meta_df['distribution'].notna()
+        & (timeseries_meta_df['axis'] == 'y')
+    )
     non_y_distribution_meta_df = timeseries_meta_df[~y_distribution_indices]
     distribution_meta_df = timeseries_meta_df[y_distribution_indices]
 
