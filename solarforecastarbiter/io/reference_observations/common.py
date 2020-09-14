@@ -410,6 +410,20 @@ def site_name_no_network(site):
         return site.name
 
 
+def _make_fx_name(site_name, template_name, variable):
+    fx_name = f'{site_name} {template_name} {variable}'
+    # Some site names are too long and exceed the API's limits,
+    # in those cases. Use the abbreviated version.
+    if len(fx_name) > 63:
+        for old, new in (('Persistence', 'Pers.'), ('persistence', 'pers.')):
+            template_name = template_name.replace(old, new)
+        suffix = f'{template_name} {variable}'
+        while len(fx_name) > 63:
+            fx_name = f"{' '.join(site_name.split(' ')[:-1])} {suffix}"
+        logger.warning("Forecast name truncated to %s", fx_name)
+    return fx_name
+
+
 def create_one_forecast(api, site, template_forecast, variable,
                         creation_validation=lambda x: True, **extra_params):
     """Creates a new Forecast or ProbabilisticForecast for the variable
@@ -443,15 +457,7 @@ def create_one_forecast(api, site, template_forecast, variable,
     extra_parameters = json.loads(template_forecast.extra_parameters)
     extra_parameters.update(extra_params)
     site_name = site_name_no_network(site)
-    fx_name = f'{site_name} {template_forecast.name} {variable}'
-    # Some site names are too long and exceed the API's limits,
-    # in those cases. Use the abbreviated version.
-    if len(fx_name) > 63:
-        suffix = f'{template_forecast.name} {variable}'
-        site_len = 63 - len(suffix)
-        fx_name = f'{site_name[:site_len]} {suffix}'
-        logger.warning("Forecast name truncated to %s", fx_name)
-
+    fx_name = _make_fx_name(site_name, template_forecast.name, variable)
     # adjust issue_time_of_day to localtime for standard time, not DST
     issue_datetime = pd.Timestamp.combine(
         dt.date(2019, 2, 1), template_forecast.issue_time_of_day,
