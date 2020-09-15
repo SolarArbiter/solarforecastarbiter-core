@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Data classes and acceptable variables as defined by the SolarForecastArbiter
 Data Model document. Python 3.7 is required.
@@ -10,7 +9,7 @@ import itertools
 import json
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-from typing import Tuple, Union
+from typing import Tuple, Union, ClassVar
 
 
 import numpy as np
@@ -512,6 +511,7 @@ class Observation(BaseModel):
     --------
     :py:class:`solarforecastarbiter.datamodel.Site`
     """
+    __blurb__: ClassVar[str] = 'Observation'
     name: str
     variable: str
     interval_value_type: str
@@ -556,6 +556,7 @@ class AggregateObservation(BaseModel):
     :py:class:`solarforecastarbiter.datamodel.Observation`
     :py:class:`solarforecastarbiter.datamodel.Aggregate`
     """
+    __blurb__: ClassVar[str] = 'Aggregate Observation'
     observation: Observation
     effective_from: pd.Timestamp
     effective_until: Union[pd.Timestamp, None] = None
@@ -621,6 +622,7 @@ class Aggregate(BaseModel):
     --------
     :py:class:`solarforecastarbiter.datamodel.Observation`
     """
+    __blurb__: ClassVar[str] = 'Aggregate'
     name: str
     description: str
     variable: str
@@ -730,6 +732,8 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     :py:class:`solarforecastarbiter.datamodel.Site`
     :py:class:`solarforecastarbiter.datamodel.Aggregate`
     """
+    __blurb__: ClassVar[str] = 'Forecast'
+
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
@@ -794,6 +798,8 @@ class EventForecast(Forecast):
     --------
     :py:class:`solarforecastarbiter.datamodel.Forecast`
     """
+    __blurb__: ClassVar[str] = 'Event Forecast'
+
     def __post_init__(self):
         super().__post_init__()
 
@@ -866,6 +872,8 @@ class ProbabilisticForecastConstantValue(
     --------
     :py:class:`solarforecastarbiter.datamodel.ProbabilisticForecast`
     """
+    __blurb__: ClassVar[str] = 'Probabilistic Forecast Constant Value'
+
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
@@ -937,6 +945,8 @@ class ProbabilisticForecast(
     ProbabilisticForecastConstantValue
     Forecast
     """
+    __blurb__: ClassVar[str] = 'Probabilistic Forecast'
+
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
@@ -1845,7 +1855,7 @@ class ReportParameters(BaseModel):
     def __post_init__(self):
         # ensure that all forecast and observation units are the same
         __check_units__(*itertools.chain.from_iterable(
-            ((k.forecast, k.data_object) for k in self.object_pairs)))
+            (k.forecast, k.data_object) for k in self.object_pairs))
         # ensure the metrics can be applied to the forecasts and observations
         for k in self.object_pairs:
             __check_metrics__(k.forecast, self.metrics)

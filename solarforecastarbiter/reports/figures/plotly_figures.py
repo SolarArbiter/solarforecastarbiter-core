@@ -16,12 +16,12 @@ from plotly import __version__ as plotly_version
 import plotly.graph_objects as go
 import numpy as np
 from matplotlib import cm
-from matplotlib.colors import Normalize, rgb2hex
+from matplotlib.colors import Normalize
 
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics.event import _event2count
-from solarforecastarbiter.plotting.utils import line_or_step_plotly
+import solarforecastarbiter.plotting.utils as plot_utils
 
 
 logger = logging.getLogger(__name__)
@@ -327,7 +327,8 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash')
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
-        plot_kwargs = line_or_step_plotly(metadata['interval_label'])
+        plot_kwargs = plot_utils.line_or_step_plotly(
+            metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
@@ -349,11 +350,11 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
 
 def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
     palette = cycle(PALETTE)
-    # construct graph objects in random hash order. collect them in a list
+    # pull metadata to plot in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
-    gos = []
+    metadatas = []
 
-    # construct graph objects in random hash order
+    # pull metadata to plot in random hash order
     for fx_hash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, fx_hash, 'forecast_hash')
@@ -361,11 +362,15 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             # we're looking at a different kind of forecast than what we wanted
             # to plot
             continue
+        # collect in list
+        metadatas.append((metadata['pair_index'], metadata))
+
+    for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         # probably treat axis == None and axis == y separately in the future.
         # currently no need for a separate axis == x treatment either, so
         # removed an if statement on the axis.
-        plot_kwargs = line_or_step_plotly(
+        plot_kwargs = plot_utils.line_or_step_plotly(
             metadata['interval_label'])
         data = _fill_timeseries(
             timeseries_value_df[pair_idcs],
@@ -379,10 +384,6 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             legendgroup=metadata['forecast_name'],
             connectgaps=False,
             **plot_kwargs)
-        # collect in list
-        gos.append((metadata['pair_index'], go_))
-
-    for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
 
 
@@ -407,11 +408,8 @@ def _plot_fx_distribution_timeseries(
             color_map,
         )
 
-        def _get_fill_color(percentile):
-            normalized_value = percentile / 100
-            return rgb2hex(color_scaler.to_rgba(normalized_value))
-
-        symmetric_percentiles = _percentiles_are_symmetric(cv_metadata)
+        symmetric_percentiles = plot_utils.percentiles_are_symmetric(
+            cv_metadata['constant_value'].tolist())
         # Plot confidence intervals
         for idx, cv in cv_metadata.iterrows():
             pair_idcs = timeseries_value_df['pair_index'] == cv['pair_index']
@@ -454,9 +452,10 @@ def _plot_fx_distribution_timeseries(
                 # bright colors appear at 0 and dark at 100 when plotted.
                 fill_value = 100 - cv['constant_value']
 
-            fill_color = _get_fill_color(fill_value)
+            fill_color = plot_utils.distribution_fill_color(
+                color_scaler, fill_value)
 
-            plot_kwargs = line_or_step_plotly(cv['interval_label'])
+            plot_kwargs = plot_utils.line_or_step_plotly(cv['interval_label'])
 
             go_ = go.Scatter(
                 x=data.index,
@@ -530,12 +529,17 @@ def timeseries(timeseries_value_df, timeseries_meta_df,
         _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df)
 
     # add forecast traces that have correct axis to fig
-    non_distribution_indices = timeseries_meta_df['distribution'].isna()
-    non_distribution_meta_df = timeseries_meta_df[non_distribution_indices]
-    distribution_meta_df = timeseries_meta_df[~non_distribution_indices]
+    # get indices of probabilistic forecasts with axis y to create special
+    # shaded distribution plots
+    y_distribution_indices = (
+        timeseries_meta_df['distribution'].notna()
+        & (timeseries_meta_df['axis'] == 'y')
+    )
+    non_y_distribution_meta_df = timeseries_meta_df[~y_distribution_indices]
+    distribution_meta_df = timeseries_meta_df[y_distribution_indices]
 
     _plot_fx_timeseries(
-        fig, timeseries_value_df, non_distribution_meta_df, axis)
+        fig, timeseries_value_df, non_y_distribution_meta_df, axis)
     _plot_fx_distribution_timeseries(
         fig, timeseries_value_df, distribution_meta_df, axis)
 
@@ -592,6 +596,9 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
 
     palette = cycle(PALETTE)
     fig = go.Figure()
+    # pull metadata to plot in random hash order. collect them in a list
+    # along with the pair index. Then add traces in order of pair index.
+    metadatas = []
     # accumulate labels and plot objects for manual legend
     for fxhash in np.unique(timeseries_meta_df['forecast_hash']):
         metadata = _extract_metadata_from_df(
@@ -600,35 +607,35 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
             # don't know how to represent probability forecasts on a
             # physical value vs. physical value plot.
             continue
+        # collect in list
+        metadatas.append((metadata['pair_index'], metadata))
+
+    # plot in order of pair index
+    for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
-
-        fig.add_trace(go.Scattergl(
+        go_ = go.Scattergl(
             x=data['observation_values'],
             y=data['forecast_values'],
             name=_legend_text(metadata['forecast_name']),
             showlegend=True,
             legendgroup=metadata['forecast_name'],
-            marker=dict(color=next(palette)),
-            mode='markers'),
-        )
-    # compute new plot width accounting for legend label text width.
-    # also considered using second figure for legend so it doesn't
-    # distort the first when text length/size changes. unfortunately,
-    # that doesn't work due to bokeh's inability to communicate legend
-    # information across figures.
-    # widest part of the legend
+            marker=dict(color=next(palette), opacity=0.25),
+            mode='markers')
+        fig.add_trace(go_)
+
     label = f'({units})'
     x_label = 'Observed ' + label
     y_label = 'Forecast ' + label
+    nticks = 10
     fig.update_xaxes(title_text=x_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
-                     range=scatter_range)
+                     range=scatter_range, nticks=nticks)
     fig.update_yaxes(title_text=y_label, showgrid=True,
                      gridwidth=1, gridcolor='#CCC', showline=True,
                      linewidth=1, linecolor='black', ticks='outside',
-                     range=scatter_range)
+                     range=scatter_range, nticks=nticks)
     return fig
 
 
@@ -1094,8 +1101,8 @@ def raw_report_plots(report, metrics):
 
 
 def timeseries_plots(report):
-    """Return the bokeh components (script and div element) for timeseries
-    and scatter plots of the processed forecasts and observations.
+    """Return the components for timeseries and scatter plots of the
+    processed forecasts and observations.
 
     Parameters
     ----------
@@ -1118,6 +1125,7 @@ def timeseries_plots(report):
     value_df, meta_df = construct_timeseries_dataframe(report)
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
+    units = units.replace('^2', '<sup>2</sup>')
 
     # data (units) vs time plot for the observation, deterministic fx,
     # and y-axis probabilistic fx
@@ -1164,13 +1172,18 @@ def timeseries_plots(report):
             margin=PLOT_MARGINS,
         )
     else:
+        margin = PLOT_MARGINS.copy()
+        margin.pop('pad', None)
         scat_fig = scatter(value_df, meta_df, units)
         scat_fig.update_layout(
             plot_bgcolor=PLOT_BGCOLOR,
             font=dict(size=14),
-            width=600,
+            width=700,
             height=500,
             autosize=False,
+            xaxis=dict(scaleanchor="y", scaleratio=1, constrain="domain"),
+            yaxis=dict(constrain="domain"),
+            margin=margin,
         )
     includes_distribution = any(
         (
@@ -1180,25 +1193,3 @@ def timeseries_plots(report):
         for pfxob in pfxobs)
     return (ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json,
             includes_distribution)
-
-
-def _percentiles_are_symmetric(cv_df):
-    """Determines if a set of percentiles are symmetric around the 50th
-    percentile.
-
-    Parameters
-    ----------
-    cv_df: pandas.DataFrame
-        A dataframe containing metadata of all of the constant values for the
-        distribution.
-    Returns
-    -------
-    bool
-    """
-    constant_values = cv_df['constant_value'].sort_values()
-    lower_bounds = constant_values[constant_values < 50]
-    upper_bounds = constant_values[constant_values > 50][::-1]
-    for l, u in zip(lower_bounds, upper_bounds):
-        if abs(50 - l) != abs(50 - u):
-            return False
-    return True

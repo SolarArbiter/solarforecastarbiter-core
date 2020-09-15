@@ -408,6 +408,85 @@ def centered_root_mean_square(obs, fx):
     ))
 
 
+def _careful_ratio(obs_stat, fx_stat):
+    if obs_stat == fx_stat:
+        ratio = 1.
+    elif obs_stat == 0.:
+        ratio = np.Inf
+    else:
+        ratio = fx_stat / obs_stat
+    return ratio
+
+
+def relative_euclidean_distance(obs, fx):
+    r"""Relative Euclidean distance (D):
+
+    .. math:: \text{D} = \sqrt{
+        \left( \frac{\overline{\text{fx}} - \overline{\text{obs}} }
+        { \overline{\text{obs}} } \right) ^ 2 +
+        \left( \frac{\sigma_{\text{fx}} - \sigma_{\text{obs}} }
+        { \sigma_{\text{obs}} } \right) ^ 2 +
+        \left( \textrm{corr} - 1 \right) ^ 2
+        }
+
+    where:
+
+    * :math:`\overline{\text{fx}}` is the forecast mean
+    * :math:`\overline{\text{obs}}` is the observation mean
+    * :math:`\sigma_{\text{fx}}` is the forecast standard deviation
+    * :math:`\sigma_{\text{obs}}` is the observation standard deviation
+    * :math:`\textrm{corr}` is the
+      :py:func:`Pearson correlation coefficient <pearson_correlation_coeff>`
+
+    Described in [1]_
+
+    Parameters
+    ----------
+    obs : (n,) array-like
+        Observed values.
+    fx : (n,) array-like
+        Forecasted values.
+
+    Returns
+    -------
+    d : float
+        The relative Euclidean distance of the forecast.
+
+    Examples
+    --------
+    >>> relative_euclidean_distance(np.array([0, 1]), np.array([1, 2]))
+    2.0
+    # observation mean is 0, forecast mean is not 0. d --> inf
+    >>> relative_euclidean_distance(np.array([-1, 1]), np.array([2, 3]))
+    np.Inf
+    # both forecast and observation mean are 0. d is finite
+    >>> relative_euclidean_distance(np.array([-2, 2]), np.array([3, -3]))
+    2.0615528128088303
+    # variance of observation or forecast is 0. d --> nan
+    >>> relative_euclidean_distance(np.array([1, 1]), np.array([2, 3])
+    np.NaN
+
+    References
+    ----------
+    .. [1] Wu et al. Journal of Geophysical Research : Atmospheres 117,
+       D12202, doi: 10.1029/2011JD016971 (2012)
+    """
+    obs_mean = np.mean(obs)
+    obs_stdev = np.std(obs)
+    fx_mean = np.mean(fx)
+    fx_stdev = np.std(fx)
+
+    # compute as a ratio so we can handle obs_mean = 0
+    mean_ratio = _careful_ratio(obs_mean, fx_mean)
+    stdev_ratio = _careful_ratio(obs_stdev, fx_stdev)
+
+    return np.sqrt(
+        (mean_ratio - 1) ** 2
+        + (stdev_ratio - 1) ** 2
+        + (pearson_correlation_coeff(obs, fx) - 1) ** 2
+    )
+
+
 def kolmogorov_smirnov_integral(obs, fx, normed=False):
     """Kolmogorov-Smirnov Test Integral (KSI).
 
@@ -926,6 +1005,7 @@ _MAP = {
     'r': (pearson_correlation_coeff, 'r'),
     'r^2': (coeff_determination, 'R^2'),
     'crmse': (centered_root_mean_square, 'CRMSE'),
+    'd': (relative_euclidean_distance, 'Rel. Euc. Dist.'),
     'ksi': (kolmogorov_smirnov_integral, 'KSI'),
     'over': (over, 'OVER'),
     'cpi': (combined_performance_index, 'CPI'),

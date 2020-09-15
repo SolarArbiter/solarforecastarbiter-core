@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """Collection of Functions to convert API responses into python objects
 and vice versa.
 """

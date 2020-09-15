@@ -535,6 +535,7 @@ Functions to compute forecast deterministic performance metrics:
    metrics.deterministic.forecast_skill
    metrics.deterministic.pearson_correlation_coeff
    metrics.deterministic.coeff_determination
+   metrics.deterministic.relative_euclidean_distance
    metrics.deterministic.kolmogorov_smirnov_integral
    metrics.deterministic.over
    metrics.deterministic.combined_performance_index
@@ -569,6 +570,8 @@ Functions to compute forecast probabilistic performance metrics:
 
     metrics.probabilistic.brier_score
     metrics.probabilistic.brier_skill_score
+    metrics.probabilistic.quantile_score
+    metrics.probabilistic.quantile_skill_score
     metrics.probabilistic.brier_decomposition
     metrics.probabilistic.reliability
     metrics.probabilistic.resolution
@@ -751,6 +754,7 @@ Time series plotting.
    plotting.timeseries.make_basic_timeseries
    plotting.timeseries.generate_forecast_figure
    plotting.timeseries.generate_observation_figure
+   plotting.timeseries.generate_probabilistic_forecast_figure
 
 Utils
 -----

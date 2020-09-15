@@ -674,16 +674,38 @@ def test_create_one_forecast_issue_time(template_fx, tz, expected):
 
 def test_create_one_forecast_long_name(template_fx):
     api, template, site = template_fx
-    nn = ''.join(['n'] * 64)
+    nn = 'a ' + ''.join(['n'] * 64)
     fx = common.create_one_forecast(api, site.replace(name=nn), template,
                                     'ac_power')
-    assert fx.name == 'nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn Test Template ac_power'  # NOQA
+    assert fx.name == 'a Test Template ac_power'
     assert fx.variable == 'ac_power'
     assert fx.issue_time_of_day == dt.time(8)
     ep = json.loads(fx.extra_parameters)
     assert ep['is_reference_forecast']
     assert ep['model'] == 'gfs_quarter_deg_hourly_to_hourly_mean'
     assert 'piggyback_on' not in ep
+
+
+@pytest.mark.parametrize('tmpl,exp', [
+    ('Persistence 1hour ahead', 'The Site is really really really really Pers. 1hour ahead GHI'),  # NOQA
+    ('Persistence Fifteen-minute ahead', 'The Site is really really really really Pers. 15 min. ahead GHI'),  # NOQA
+    ('n' * 46, 'The Site is ' + 'n' * 46 + ' GHI'),
+    pytest.param(
+        'This is too long to be a template forecast name and will raise a value error',   # NOQA
+        '', marks=pytest.mark.xfail(strict=True, raises=ValueError))
+])
+def test_make_fx_name(tmpl, exp):
+    out = common._make_fx_name(
+        'The Site is really really really really long', tmpl, 'GHI')
+    assert out == exp
+
+
+def test_make_fx_name_long_site():
+    with pytest.raises(ValueError):
+        common._make_fx_name(
+            'a' * 14,
+            'r' * 49,
+            '')
 
 
 def test_create_one_forecast_piggy(template_fx):

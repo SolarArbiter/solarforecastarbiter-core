@@ -294,9 +294,8 @@ def calculate_power(dc_capacity, temperature_coefficient, dc_loss_factor,
     dc = pvlib.pvsystem.pvwatts_dc(poa_effective, pvtemps, dc_capacity,
                                    temperature_coefficient / 100)
     dc *= (1 - dc_loss_factor / 100)
-    # set eta values to turn off clipping in pvwatts_ac
-    ac = pvlib.pvsystem.pvwatts_ac(dc, dc_capacity, eta_inv_nom=1,
-                                   eta_inv_ref=1)
+    # set eta values to turn off clipping in pvwatts inverter model
+    ac = pvlib.inverter.pvwatts(dc, dc_capacity, eta_inv_nom=1, eta_inv_ref=1)
     ac = ac.clip(upper=ac_capacity)
     ac *= (1 - ac_loss_factor / 100)
     return ac

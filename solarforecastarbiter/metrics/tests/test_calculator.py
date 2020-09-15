@@ -372,9 +372,9 @@ def test_calculate_metrics_with_probablistic(single_observation,
     expected = {
         0: ('total', 'bs', '0', 0.8308500000000001),
         1: ('total', 'bss', '0', -0.010366947374821578),
-        5: ('year', 'bs', '2019', 0.8308500000000001),
-        9: ('year', 'unc', '2019', 0.08999999999999998),
-        10: ('month', 'bs', 'Aug', 0.8308500000000001)
+        7: ('year', 'bs', '2019', 0.8308500000000001),
+        11: ('year', 'unc', '2019', 0.08999999999999998),
+        14: ('month', 'bs', 'Aug', 0.8308500000000001)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():

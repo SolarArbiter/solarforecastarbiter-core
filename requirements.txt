@@ -7,7 +7,7 @@ numpy==1.18.2
 pandas==1.0.3
 plotly==4.5.3
 psutil==5.7.0
-pvlib==0.7.2
+pvlib==0.8.0
 python-dateutil==2.8.1
 requests==2.22.0
 scipy==1.4.1

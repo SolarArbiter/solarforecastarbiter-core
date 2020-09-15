@@ -8,6 +8,9 @@ from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource, Label, HoverTool
 from bokeh.plotting import figure
 from bokeh import palettes
+from matplotlib import cm
+from matplotlib.colors import Normalize
+import plotly.graph_objects as go
 import pandas as pd
 import pytz
 
@@ -336,3 +339,169 @@ def generate_observation_figure(observation, data, limit=pd.Timedelta('3d')):
     layout = _make_layout(figs)
     logger.info('Figure generated succesfully')
     return layout
+
+
+PLOTLY_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 100, 'pad': 4}
+PLOTLY_LAYOUT_DEFAULTS = {
+    'autosize': True,
+    'height': 300,
+    'margin': PLOTLY_MARGINS,
+    'plot_bgcolor': '#FFF',
+    'font': {'size': 14}
+}
+
+
+def _plot_probabilsitic_distribution_axis_y(fig, forecast, data):
+    """
+    Plot all probabilistic forecast values for axis='y' by adding traces to
+    fig.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+    forecast: :py:class`solarforecastarbiter.datamodel.ProbabilisticForecast`
+    data: pd.DataFrame
+    """
+    color_map = cm.get_cmap('viridis')
+    color_scaler = cm.ScalarMappable(
+        Normalize(vmin=0, vmax=1),
+        color_map,
+    )
+
+    units = forecast.units
+
+    percentiles_are_symmetric = plot_utils.percentiles_are_symmetric(
+        data.columns.values.astype('float'))
+
+    # may not work for constant values that don't convert nicely from str/float
+    constant_values = data.columns.astype('float').sort_values()
+    for i, constant_value in enumerate(constant_values):
+        if i == 0:
+            fill = None
+        else:
+            fill = 'tonexty'
+
+        if percentiles_are_symmetric:
+            if constant_value <= 50 and i != 0:
+                fill_value = constant_values[i - 1]
+            else:
+                fill_value = constant_value
+            fill_value = 2 * abs(fill_value - 50)
+        else:
+            fill_value = 100 - constant_value
+
+        fill_color = plot_utils.distribution_fill_color(
+            color_scaler, fill_value)
+
+        plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
+
+        forecast_name = f'Prob(f <= x) = {str(constant_value)}%'
+
+        go_ = go.Scatter(
+            x=data.index,
+            y=data[str(constant_value)],
+            name=f'{str(constant_value)} %',
+            hovertemplate=(
+                f'<b>{forecast_name}</b><br>'
+                '<b>Value</b>: %{y} '+f'{units}<br>'
+                '<b>Time</b>: %{x}<br>'),
+            connectgaps=False,
+            showlegend=False,
+            mode='lines',
+            fill=fill,
+            fillcolor=fill_color,
+            line=dict(
+                color=fill_color,
+            ),
+            **plot_kwargs,
+        )
+        fig.add_trace(go_)
+
+
+def _plot_probabilsitic_distribution_axis_x(fig, forecast, data):
+    """
+    Plot all probabilistic forecast values for axis='x' by adding traces to
+    fig.
+
+    Parameters
+    ----------
+    fig: plotly.graph_objects.Figure
+    forecast: :py:class`solarforecastarbiter.datamodel.ProbabilisticForecast`
+    data: pd.DataFrame
+    """
+    palette = iter(PALETTE * 3)
+
+    units = forecast.units
+
+    for constant_value in data.columns:
+        line_color = next(palette)
+
+        plot_kwargs = plot_utils.line_or_step_plotly(forecast.interval_label)
+
+        forecast_name = f'Prob(x <= {str(constant_value)} {units})'
+        go_ = go.Scatter(
+            x=data.index,
+            y=data[str(constant_value)],
+            name=forecast_name,
+            hovertemplate=(
+                f'<b>{forecast_name}</b><br>'
+                '<b>Value</b>: %{y} %<br>'
+                '<b>Time</b>: %{x}<br>'),
+            connectgaps=False,
+            showlegend=True,
+            mode='lines',
+            line=dict(
+                color=line_color,
+            ),
+            **plot_kwargs,
+        )
+        fig.add_trace(go_)
+
+
+def generate_probabilistic_forecast_figure(
+        forecast, data, limit=pd.Timedelta('3d')):
+    """
+    Creates a plotly figure spec from api response for a probabilistic forecast
+    group.
+
+    Parameters
+    ----------
+    forecast : datamodel.ProbabilisticForecast
+    data : pandas.DataFrame
+        DataFrame with forecast values in each column, column names as the
+        constant values and a datetime index.
+    limit : pandas.Timedelta or None
+
+    Returns
+    -------
+    None
+        When the data is empty.
+    figure: Plotly.graph_objects.Figure
+        Plotly json specification for the plot.
+    """
+    logger.info('Starting probabilistic forecast figure generation...')
+    if len(data.index) == 0:
+        return None
+
+    fig = go.Figure()
+    if 'x' in forecast.axis:
+        ylabel = 'Probability (%)'
+        _plot_probabilsitic_distribution_axis_x(fig, forecast, data)
+    else:
+        ylabel = plot_utils.format_variable_name(forecast.variable)
+        _plot_probabilsitic_distribution_axis_y(fig, forecast, data)
+    fig.update_xaxes(title_text=f'Time (UTC)', showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside')
+    fig.update_yaxes(title_text=ylabel, showgrid=True,
+                     gridwidth=1, gridcolor='#CCC', showline=True,
+                     linewidth=1, linecolor='black', ticks='outside',
+                     fixedrange=True)
+    first = data.index[0]
+    last = data.index[-1]
+    fig.update_layout(
+        title=build_figure_title(forecast.name, first, last),
+        legend=dict(font=dict(size=10)),
+        **PLOTLY_LAYOUT_DEFAULTS,
+    )
+    return fig

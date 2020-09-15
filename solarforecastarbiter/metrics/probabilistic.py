@@ -88,6 +88,140 @@ def brier_skill_score(obs, fx, fx_prob, ref, ref_prob):
     return skill
 
 
+def quantile_score(obs, fx, fx_prob):
+    """Quantile Score (QS).
+
+    .. math::
+
+        \\text{QS} = \\frac{1}{n} \\sum_{i=1}^n (fx_i - obs_i) * (p - 1\\{obs_i > fx_i\\})
+
+    where :math:`n` is the number of forecasts, :math:`obs_i` is an
+    observation, :math:`fx_i` is a forecast, :math:`1\\{obs_i > fx_i\\}` is an
+    indicator function (1 if :math:`obs_i > fx_i`, 0 otherwise) and :math:`p`
+    is the probability that :math:`obs_i <= fx_i`. [1]_ [2]_
+
+    If :math:`obs > fx`, then we have:
+
+    .. math::
+
+        (fx - obs) < 0 \\\\
+        (p - 1\\{obs > fx\\}) = (p - 1) <= 0 \\\\
+        (fx - obs) * (p - 1) >= 0
+
+    If instead :math:`obs < fx`, then we have:
+
+    .. math::
+
+        (fx - obs) > 0 \\\\
+        (p - 1\\{obs > fx\\}) = (p - 0) >= 0 \\\\
+        (fx - obs) * p >= 0
+
+    Therefore, the quantile score is non-negative regardless of the obs and fx.
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observations (physical unit).
+    fx : (n,) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+
+    Returns
+    -------
+    qs : float
+        The Quantile Score, with the same units as the observations.
+
+    Notes
+    -----
+    Quantile score is meant to be computed for a single probability of
+    :math:`n` samples.
+
+    Examples
+    --------
+    >>> obs = 100     # observation [MW]
+    >>> fx = 80       # forecast [MW]
+    >>> fx_prob = 60  # probability [%]
+    >>> quantile_score(obs, fx, fx_prob)   # score [MW]
+    8.0
+
+    References
+    ----------
+    .. [1] Koenker and Bassett, Jr. (1978) "Regression Quantiles", Econometrica
+       46 (1), pp. 33-50. doi: 10.2307/1913643
+    .. [2] Wilks (2020) "Forecast Verification". In "Statistical Methods in the
+       Atmospheric Sciences" (3rd edition). Academic Press. ISBN: 9780123850225
+
+    """  # NOQA: E501,W605
+
+    # Prob(obs <= fx) = p
+    p = fx_prob / 100.0
+    qs = np.mean((fx - obs) * (p - np.where(obs > fx, 1.0, 0.0)))
+    return qs
+
+
+def quantile_skill_score(obs, fx, fx_prob, ref, ref_prob):
+    """Quantile Skill Score (QSS).
+
+    .. math::
+
+        \\text{QSS} = 1 - \\text{QS}_{\\text{fx}} / \\text{QS}_{\\text{ref}}
+
+    where :math:`\\text{QS}_{\\text{fx}}` is the Quantile Score of the
+    evaluated forecast and :math:`\\text{QS}_{\\text{ref}}` is the Quantile
+    Score of a reference forecast. [1]_
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observations (physical unit).
+    fx : (n,) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF interval,
+        e.g., fx = 10 MW is interpreted as forecasting <= 10 MW.
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    ref : (n,) array_like
+        Reference forecast (physical units) of the right-hand-side of a CDF
+        interval.
+    ref_prob : (n,) array_like
+        Probability [%] associated with the reference forecast.
+
+    Returns
+    -------
+    skill : float
+        The Quantile Skill Score [unitless].
+
+    References
+    ----------
+    .. [1] Bouallegue, Pinson and Friederichs (2015) "Quantile forecast
+       discrimination ability and value", Quarterly Journal of the Royal
+       Meteorological Society 141, pp. 3415-3424. doi: 10.1002/qj.2624
+
+    Notes
+    -----
+    This function returns 0 if QS_fx and QS_ref are both 0.
+
+    See Also
+    --------
+    :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_score`
+
+    """
+
+    qs_fx = quantile_score(obs, fx, fx_prob)
+    qs_ref = quantile_score(obs, ref, ref_prob)
+
+    # avoid 0 / 0 --> nan
+    if qs_fx == qs_ref:
+        return 0.0
+    elif qs_ref == 0.0:
+        # avoid divide by 0
+        # typically caused by deadbands and short time periods
+        return np.NINF
+    else:
+        return 1.0 - qs_fx / qs_ref
+
+
 def _unique_forecasts(f):
     """Convert forecast probabilities to a set of unique values.
 
@@ -224,8 +358,8 @@ def reliability(obs, fx, fx_prob):
         The reliability of the forecast [unitless], where a perfectly reliable
         forecast has value of 0.
 
-    See Also:
-    ---------
+    See Also
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
@@ -261,8 +395,8 @@ def resolution(obs, fx, fx_prob):
         The resolution of the forecast [unitless], where higher values are
         better.
 
-    See Also:
-    ---------
+    See Also
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
@@ -294,8 +428,8 @@ def uncertainty(obs, fx, fx_prob):
         The uncertainty [unitless], where lower values indicate the event being
         forecasted occurs rarely.
 
-    See Also:
-    ---------
+    See Also
+    --------
     brier_decomposition : 3-component decomposition of the Brier Score
 
     """
@@ -402,6 +536,8 @@ _MAP = {
     'rel': (reliability, 'REL'),
     'res': (resolution, 'RES'),
     'unc': (uncertainty, 'UNC'),
+    'qs': (quantile_score, 'QS'),
+    'qss': (quantile_skill_score, 'QSS'),
     # 'sh': (sharpness, 'SH'),  # TODO
     'crps': (continuous_ranked_probability_score, 'CRPS'),
 }
@@ -409,7 +545,7 @@ _MAP = {
 __all__ = [m[0].__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
-_REQ_REF_FX = ['bss']
+_REQ_REF_FX = ['bss', 'qss']
 
 # Functions that require normalized factor
 _REQ_NORM = []
