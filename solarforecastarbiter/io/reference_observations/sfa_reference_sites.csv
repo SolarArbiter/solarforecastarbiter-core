@@ -206,21 +206,20 @@ interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abb
 5,Selawik AK,66.56,-159.0,7.0,AK_Selawik_28_E,AK_Selawik_28_E,America/Anchorage,"Diamond, H. J., T. R. Karl, M. A. Palecki, C. B. Baker, J. E. Bell, R. D. Leeper, D. R. Easterling, J. H. Lawrimore, T. P. Meyers, M. R. Helfert, G. Goodge, and P. W. Thorne, 2013: U.S. Climate Reference Network after one decade of operations: status and assessment. Bull. Amer. Meteor. Soc., 94, 489-498. doi: 10.1175/BAMS-D-12-00170.1",NOAA USCRN
 5,Denali AK,63.45,-150.87,678.0,AK_Denali_27_N,AK_Denali_27_N,America/Anchorage,"Diamond, H. J., T. R. Karl, M. A. Palecki, C. B. Baker, J. E. Bell, R. D. Leeper, D. R. Easterling, J. H. Lawrimore, T. P. Meyers, M. R. Helfert, G. Goodge, and P. W. Thorne, 2013: U.S. Climate Reference Network after one decade of operations: status and assessment. Bull. Amer. Meteor. Soc., 94, 489-498. doi: 10.1175/BAMS-D-12-00170.1",NOAA USCRN
 5,Toolik Lake AK,68.64,-149.39,750.0,AK_Toolik_Lake_5_ENE,AK_Toolik_Lake_5_ENE,America/Anchorage,"Diamond, H. J., T. R. Karl, M. A. Palecki, C. B. Baker, J. E. Bell, R. D. Leeper, D. R. Easterling, J. H. Lawrimore, T. P. Meyers, M. R. Helfert, G. Goodge, and P. W. Thorne, 2013: U.S. Climate Reference Network after one decade of operations: status and assessment. Bull. Amer. Meteor. Soc., 94, 489-498. doi: 10.1175/BAMS-D-12-00170.1",NOAA USCRN
-1.0,"E11: Byron, Oklahoma",36.88100051879883,-98.28500366210938,367.5,sgpqcrad1longE11.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"E12: Pawhuska, Oklahoma",36.84099960327149,-96.427001953125,328.0,sgpqcrad1longE12.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"E33: Newkirk, Oklahoma",36.92549896240234,-97.08170318603516,356.0,sgpqcrad1longE33.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"E34: Maple City, Kansas",37.06940078735352,-96.7605972290039,404.0,sgpqcrad1longE34.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"E37: Waukomis, Oklahoma",36.31060028076172,-97.9280014038086,387.0,sgpqcrad1longE37.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"E9: Ashton, Kansas",37.132999420166016,-97.26599884033205,372.0,sgpqcrad1longE9.c1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"North Slope of Alaska (NSA), Barrow, Alaska",71.322998046875,-156.60899353027344,5.0,nsametC1.b1,nsa,America/Anchorage,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Anthony, Kansas",37.1509017944336,-98.36199951171876,417.0,sgpmetE31.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Lamont, Oklahoma",36.60499954223633,-97.48500061035156,307.0,sgpmetE13.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Maple City, Kansas",37.06940078735352,-96.7605972290039,404.0,sgpmetE34.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Marshall, Oklahoma",36.116600036621094,-97.51119995117188,326.0,sgpmetE36.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Medford, Oklahoma",36.81900024414063,-97.81990051269531,335.0,sgpmetE32.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Omega, Oklahoma",35.87969970703125,-98.17279815673828,373.0,sgpmetE38.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Ringwood, Oklahoma",36.430999755859375,-98.28399658203124,414.0,sgpmetE15.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
-1.0,"Southern Great Plains (SGP), Tryon, Oklahoma",35.86149978637695,-97.06950378417969,309.0,sgpmetE35.b1,sgp,America/Chicago,"https://www.arm.gov/capabilities/vaps/qcrad",DOE ARM
+1.0,"E11: Byron, Oklahoma",36.88100051879883,-98.28500366210938,367.5,E11,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"E12: Pawhuska, Oklahoma",36.84099960327149,-96.427001953125,328.0,E12,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"E33: Newkirk, Oklahoma",36.925498962402344,-97.08170318603516,356.0,E33,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"E37: Waukomis, Oklahoma",36.31060028076172,-97.9280014038086,387.0,E37,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"E9: Ashton, Kansas",37.132999420166016,-97.26599884033205,372.0,E9,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"North Slope of Alaska (NSA), Barrow, Alaska",71.322998046875,-156.60899353027344,5.0,C1,nsa,America/Anchorage,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Anthony, Kansas",37.1509017944336,-98.36199951171876,417.0,E31,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Lamont, Oklahoma",36.60499954223633,-97.48500061035156,307.0,E13,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Maple City, Kansas",37.06940078735352,-96.7605972290039,404.0,E34,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Marshall, Oklahoma",36.116600036621094,-97.51119995117188,326.0,E36,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Medford, Oklahoma",36.81900024414063,-97.81990051269531,335.0,E32,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Omega, Oklahoma",35.87969970703125,-98.17279815673828,373.0,E38,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Ringwood, Oklahoma",36.430999755859375,-98.28399658203124,414.0,E15,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
+1.0,"Southern Great Plains (SGP), Tryon, Oklahoma",35.86149978637695,-97.06950378417969,309.0,E35,sgp,America/Chicago,https://www.arm.gov/capabilities/vaps/qcrad,DOE ARM
 1,NREL x-Si 1,39.7406,-105.1774,1785.050170898438,4,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
 1,Silicor Materials,39.7404,-105.1772,1782.188354492188,33,,Etc/GMT+7,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ
 15,Andre Agassi Preparatory Academy - Building A,36.1952,-115.1582,625.3253173828125,34,,Etc/GMT+8,https://developer.nrel.gov/docs/solar/pvdaq-v3/,NREL PVDAQ

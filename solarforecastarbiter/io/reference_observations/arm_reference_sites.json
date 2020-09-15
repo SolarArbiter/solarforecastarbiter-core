@@ -1,0 +1,128 @@
+{
+    "comment": ["Each arm site includes a 'datastreams' field in it's extra ",
+                "parameters used to retrieve data for the site. This field ",
+                "may contain the keys 'met' for meteorological data and ",
+                "'qcrad' for irradiance data. Values can be either a single ",
+                "string datastream name indicating that the datastream ",
+                "should be used for all sites, or a json object with keys ",
+                "being datastream names and values being the date range to ",
+                "use that datastream for in format <start>/<end> where ",
+                "the value 'now' can be used as the <end> value to indicate ",
+                "currently available data. When configuring multiple ",
+                "datastreams, their date ranges should *not* overlap."
+    ],
+    "sites": [
+        {
+            "name": "E11: Byron, Oklahoma",
+            "latitude": 36.88100051879883,
+            "longitude": -98.28500366210938,
+            "elevation": 367.5,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E11\", \"datastreams\": {\"met\": \"sgpmetE11.b1\", \"qcrad\": {\"sgpqcrad1longE11.c2\": \"1995-06-30/2019-08-02\", \"sgpqcrad1longE11.c1\": \"2019-08-02/now\"}}}"
+        },
+        {
+            "name": "E12: Pawhuska, Oklahoma",
+            "latitude": 36.84099960327149,
+            "longitude": -96.427001953125,
+            "elevation": 328.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E12\", \"datastreams\": {\"qcrad\": {\"sgpqcrad1longE12.c2\": \"1996-01-19/2019-08-26\" ,\"sgpqcrad1longE12.c1\": \"2019-08-26/now\"}}}"
+        },
+        {
+            "name": "E33: Newkirk, Oklahoma",
+            "latitude": 36.925498962402344,
+            "longitude": -97.08170318603516,
+            "elevation": 356.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E33\", \"datastreams\": {\"met\": \"sgpmetE33.b1\", \"qcrad\": {\"sgpqcrad1longE33.c2\": \"2011-08-17/2017-07-14\", \"sgpqcrad1longE33.c1\": \"2017-07-14/now\"}}}"
+        },
+        {
+            "name": "E37: Waukomis, Oklahoma",
+            "latitude": 36.31060028076172,
+            "longitude": -97.9280014038086,
+            "elevation": 387.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E37\", \"datastreams\": {\"met\": \"sgpmetE37.b1\", \"qcrad\": {\"sgpqcrad1longE37.c2\": \"2011-09-28/2019-06-21\", \"sgpqcrad1longE37.c1\": \"2019-06-21/now\"}}}"
+        },
+        {
+            "name": "E9: Ashton, Kansas",
+            "latitude": 37.132999420166016,
+            "longitude": -97.26599884033205,
+            "elevation": 372.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E9\", \"datastreams\": {\"met\": \"sgpmetE9.b1\", \"qcrad\": { \"sgpqcrad1longE9.c2\" :\"1994-01-12/2018-05-31\",  \"sgpqcrad1longE9.c1\": \"2018-05-31/now\"}}}"
+        },
+        {
+            "name": "North Slope of Alaska (NSA), Barrow, Alaska",
+            "latitude": 71.322998046875,
+            "longitude": -156.60899353027344,
+            "elevation": 5.0,
+            "timezone": "America/Anchorage",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"nsa\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"nsa\", \"network_api_id\": \"C1\", \"datastreams\": {\"met\": \"nsametC1.b1\", \"qcrad\": \"nsaqcrad1longC1.c1\"}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Anthony, Kansas",
+            "latitude": 37.1509017944336,
+            "longitude": -98.36199951171876,
+            "elevation": 417.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E31\", \"datastreams\": {\"met\": \"sgpmetE31.b1\", \"qcrad\": {\"sgpqcrad1longE31.c2\": \"2011-10-13/2016-12-02\", \"sgpqcrad1longE31.c1\": \"2016-12-02/now\"}}}"
+        },
+        {
+            "name": "Lamont, OK (Extended and Co-located with C1)",
+            "latitude": 36.60499954223633,
+            "longitude": -97.48500061035156,
+            "elevation": 307.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E13\", \"datastreams\": {\"met\": \"sgpmetE13.b1\", \"qcrad\": {\"sgpqcrad1longE13.c2\": \"1994-01-07/2019-08-28\", \"sgpqcrad1longE13.c1\": \"2019-08-28/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Maple City, Kansas",
+            "latitude": 37.06940078735352,
+            "longitude": -96.7605972290039,
+            "elevation": 404.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E34\", \"datastreams\": {\"met\": \"sgpmetE34.b1\", \"qcrad\": {\"sgpqcrad1longe34.c2\": \"2011-09-02/2017-07-15\" , \"sgpqcrad1longE34.c1\": \"2017-07-15/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Marshall, Oklahoma",
+            "latitude": 36.116600036621094,
+            "longitude": -97.51119995117188,
+            "elevation": 326.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E36\", \"datastreams\": {\"met\": \"sgpmetE36.b1\", \"qcrad\": {\"sgpqcrad1longE36.c2\": \"2011-09-28/2019-06-25\", \"sgpqcrad1longE36.c1\": \"2019-06-25/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Medford, Oklahoma",
+            "latitude": 36.81900024414063,
+            "longitude": -97.81990051269531,
+            "elevation": 335.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E32\", \"datastreams\": {\"met\": \"sgpmetE32.b1\", \"qcrad\": {\"sgpqcrad1longE32.c2\": \"2012-02-04/2019-06-13\", \"sgpqcrad1longE32.c1\": \"2019-06-13/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Omega, Oklahoma",
+            "latitude": 35.87969970703125,
+            "longitude": -98.17279815673828,
+            "elevation": 373.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E38\", \"datastreams\": {\"met\": \"sgpmetE38.b1\", \"qcrad\": {\"sgpqcrad1longE38.c2\": \"2011-08-23/2017-07-19\" ,  \"sgpqcrad1longE38.c1\": \"2017-07-19/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Ringwood, Oklahoma",
+            "latitude": 36.430999755859375,
+            "longitude": -98.28399658203124,
+            "elevation": 414.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E15\", \"datastreams\": {\"met\": \"sgpmetE15.b1\", \"qcrad\": {\"sgpqcrad1longe15.c2\": \"1994-01-12/2019-08-20\" , \"sgpqcrad1longe15.c1\": \"2019-08-20/now\"}}}"
+        },
+        {
+            "name": "Southern Great Plains (SGP), Tryon, Oklahoma",
+            "latitude": 35.86149978637695,
+            "longitude": -97.06950378417969,
+            "elevation": 309.0,
+            "timezone": "America/Chicago",
+            "extra_parameters": "{\"observation_interval_length\": 1.0, \"network_api_abbreviation\": \"sgp\", \"attribution\": \"https://www.arm.gov/capabilities/vaps/qcrad\", \"network\": \"DOE ARM\", \"arm_site_id\": \"sgp\", \"network_api_id\": \"E35\", \"datastreams\": {\"met\": \"sgpmetE35.b1\", \"qcrad\": { \"sgpqcrad1longE35.c2\": \"2011-10-05/2017-07-20\", \"sgpqcrad1longE35.c1\": \"2017-07-20/now\" }}}"
+        }
+    ]
+}

@@ -12,9 +12,15 @@ API Changes
   :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_score`
   :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_skill_score` (:issue:`520`) (:pull:`530`)
 
-
 Enhancements
 ~~~~~~~~~~~~
+* Update DOE ARM reference dataset with previously missing irradiance data.
+  This change introduced changes to the `extra_parameters` fields of DOE ARM
+  reference sites stored in the Solar Forecast Arbiter, and existing sites
+  must be updated with new fields. See the
+  `solarforecastarbiter/io/reference_observations/arm_reference_sites.json` for
+  examples and explanation of the new `extra_parameters` format. (:pull:`536`)
+  
 * Add :py:func:`solarforecastarbiter.metrics.deterministic.relative_euclidean_distance`
   (:issue:`542`, :pull:`549`)
 
