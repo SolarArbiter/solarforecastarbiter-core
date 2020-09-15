@@ -1,7 +1,7 @@
 .. _whatsnew_100rc3:
 
-1.0.0rc3 (Estimated August, 2020)
----------------------------------
+1.0.0rc3 (September 15, 2020)
+-----------------------------
 
 This is the third 1.0 release candidate.
 
@@ -20,7 +20,7 @@ Enhancements
   must be updated with new fields. See the
   `solarforecastarbiter/io/reference_observations/arm_reference_sites.json` for
   examples and explanation of the new `extra_parameters` format. (:pull:`536`)
-  
+
 * Add :py:func:`solarforecastarbiter.metrics.deterministic.relative_euclidean_distance`
   (:issue:`542`, :pull:`549`)
 
