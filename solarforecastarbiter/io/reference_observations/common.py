@@ -419,6 +419,7 @@ def _make_fx_name(site_name, template_name, variable):
             template_name = template_name.replace(old, new)
         suffix = f'{template_name} {variable}'
         while len(fx_name) > 63:
+            # drop the last word
             fx_name = f"{' '.join(site_name.split(' ')[:-1])} {suffix}"
         logger.warning("Forecast name truncated to %s", fx_name)
     return fx_name
