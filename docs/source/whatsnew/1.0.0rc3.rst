@@ -49,7 +49,7 @@ Bug fixes
   (:pull:`571`)
 * Fixed issue with UO SRML reference data fetching that resulted in posting
   NaN values for data that had not yet been included in SRML files.
-  (:issue: `543`)(:pull: `` )
+  (:issue:`543`)(:pull:`572` )
 
 Contributors
 ~~~~~~~~~~~~

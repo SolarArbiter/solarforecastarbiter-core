@@ -160,10 +160,7 @@ def fetch(api, site, start, end):
     # adjust power from watts to megawatts
     for column in power_columns:
         all_period_data[column] = all_period_data[column] / 1000000
-    all_period_data = all_period_data[var_columns]
-
-    # slice to within timerange
-    all_period_data = all_period_data[start:end]
+    all_period_data = all_period_data.loc[start:end, var_columns]
 
     # remove possible trailing NaNs, it is necessary to do this after slicing
     # because SRML data has nighttime data prefilled with 0s through the end of
