@@ -687,8 +687,8 @@ def test_create_one_forecast_long_name(template_fx):
 
 
 @pytest.mark.parametrize('tmpl,exp', [
-    ('Persistence 1hour ahead', 'The Site is really really really really Pers. 1hour ahead GHI'),  # NOQA
-    ('Persistence Fifteen-minute ahead', 'The Site is really really really really Pers. 15 min. ahead GHI'),  # NOQA
+    ('Persistence 1hour ahead', 'The Site is really really really really Pers 1hour ahead GHI'),  # NOQA
+    ('Persistence Fifteen-minute ahead', 'The Site is really really really really Pers 15 min ahead GHI'),  # NOQA
     ('n' * 46, 'The Site is ' + 'n' * 46 + ' GHI'),
     pytest.param(
         'This is too long to be a template forecast name and will raise a value error',   # NOQA
