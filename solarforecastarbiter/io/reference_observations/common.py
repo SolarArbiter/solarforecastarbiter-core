@@ -416,10 +416,10 @@ def _make_fx_name(site_name, template_name, variable):
     # in those cases. Use the abbreviated version.
     if len(fx_name) > 63:
         for old, new in (
-            ('Persistence', 'Pers.'),
-            ('persistence', 'pers.'),
-            ('Fifteen-minute', '15 min.'),
-            ('Five-minute', '5 min.'),
+            ('Persistence', 'Pers'),
+            ('persistence', 'pers'),
+            ('Fifteen-minute', '15 min'),
+            ('Five-minute', '5 min'),
         ):
             template_name = template_name.replace(old, new)
         suffix = f'{template_name} {variable}'
