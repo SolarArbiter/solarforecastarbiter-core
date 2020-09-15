@@ -1,7 +1,9 @@
 import datetime as dt
+import json
 
 
 import bokeh
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -163,3 +165,97 @@ def test_generate_observation_figure_empty(ghi_observation_metadata, rc):
     assert timeseries.generate_observation_figure(ghi_observation_metadata,
                                                   pd.DataFrame(),
                                                   return_components=rc) is None
+
+
+@pytest.fixture
+def prob_forecast_random_data():
+    def f(forecast):
+        frequency = pd.tseries.frequencies.to_offset(forecast.interval_length)
+        start = pd.Timestamp('2020-01-01T00:00Z')
+        end = pd.Timestamp('2020-01-03T00:00Z')
+        idx = pd.date_range(start, end, freq=frequency)
+        df = pd.DataFrame(index=idx)
+        for cv in [c.constant_value for c in forecast.constant_values]:
+            df[str(cv)] = np.random.rand(idx.size)
+        return df
+    return f
+
+
+def test_generate_probabilistic_forecast_figure_x_forecast(
+        prob_forecasts, prob_forecast_random_data):
+    values = prob_forecast_random_data(prob_forecasts)
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts, values)
+    assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
+    assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
+    assert fig['layout']['yaxis']['title']['text'] == 'Probability (%)'
+    fig_data = fig['data']
+    assert len(fig_data) == 1
+    assert len(fig_data[0]['x']) == values.index.size
+    assert len(fig_data[0]['y']) == values.index.size
+    assert fig_data[0]['showlegend']
+
+
+def test_generate_probabilistic_forecast_figure_y_forecast(
+        prob_forecasts_y,
+        prob_forecast_constant_value_y_factory,
+        prob_forecast_random_data,
+        ):
+    new_constant_values = [prob_forecast_constant_value_y_factory(5.0)]
+    prob_forecast = prob_forecasts_y.replace(
+        constant_values=new_constant_values)
+    values = prob_forecast_random_data(prob_forecast)
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts_y, values)
+    assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
+    assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
+    assert fig['layout']['yaxis']['title']['text'] == 'GHI (W/m^2)'
+    fig_data = fig['data']
+    assert len(fig_data) == 1
+    assert len(fig_data[0]['x']) == values.index.size
+    assert len(fig_data[0]['y']) == values.index.size
+    assert not fig_data[0]['showlegend']
+
+
+@pytest.fixture
+def prob_forecast_constant_value_y_factory(
+        prob_forecast_constant_value_y_text,
+        _prob_forecast_constant_value_from_dict):
+    def f(new_constant_value):
+        fx_dict = json.loads(prob_forecast_constant_value_y_text)
+        fx_dict['constant_value'] = new_constant_value
+        return _prob_forecast_constant_value_from_dict(fx_dict)
+    return f
+
+
+def test_generate_probabilistic_forecast_figure_y_forecast_symmetric(
+        prob_forecasts_y,
+        prob_forecast_constant_value_y_factory,
+        prob_forecast_random_data,
+        ):
+    new_constant_values = [prob_forecast_constant_value_y_factory(x)
+                           for x in [5.0, 10.0, 50.0, 90.0, 95.0]]
+    prob_forecast = prob_forecasts_y.replace(
+        constant_values=new_constant_values)
+    values = prob_forecast_random_data(prob_forecast)
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts_y, values)
+    assert fig['layout']['title']['text'] == 'DA GHI 2020-01-01 00:00 to 2020-01-03 00:00 UTC'  # NOQA: E501
+    assert fig['layout']['xaxis']['title']['text'] == 'Time (UTC)'
+    assert fig['layout']['yaxis']['title']['text'] == 'GHI (W/m^2)'
+    fig_data = fig['data']
+    assert len(fig_data) == 5
+    for trace in fig_data:
+        assert len(trace['x']) == values.index.size
+        assert len(trace['y']) == values.index.size
+    assert fig_data[0]['fill'] is None
+    for trace in fig_data[1:]:
+        assert trace['fill'] == 'tonexty'
+
+
+def test_generate_probabilistic_forecast_figure_empty_values(
+        prob_forecasts_y, prob_forecast_random_data):
+    values = pd.DataFrame()
+    fig = timeseries.generate_probabilistic_forecast_figure(
+        prob_forecasts_y, values)
+    assert fig is None

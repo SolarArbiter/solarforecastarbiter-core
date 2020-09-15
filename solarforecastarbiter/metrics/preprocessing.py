@@ -338,13 +338,13 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
 
     # Return dict summarizing results
     results = {
-        type(fx).__name__ + " " + DISCARD_DATA_STRING:
+        fx.__blurb__ + " " + DISCARD_DATA_STRING:
             len(fx_data.dropna(how="any")) - len(fx_aligned),
-        type(obs).__name__ + " " + DISCARD_DATA_STRING:
+        obs.__blurb__ + " " + DISCARD_DATA_STRING:
             len(obs_resampled) - len(observation_values),
-        type(fx).__name__ + " " + UNDEFINED_DATA_STRING:
+        fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(undefined_fx),
-        type(obs).__name__ + " " + UNDEFINED_DATA_STRING:
+        obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(obs_data.isna().sum())
     }
 
@@ -455,7 +455,29 @@ def process_forecast_observations(forecast_observations, filters,
     Returns
     -------
     list of ProcessedForecastObservation
-    """  # NOQA
+
+    Notes
+    -----
+    The logic is as follows.
+
+    For each forecast, observation pair in ``forecast_observations``:
+
+      1. Remove observation data points with ``quality_flag`` in filters.
+         Remaining observation series is discontinuous.
+      2. Fill missing forecast data points according to
+         ``forecast_fill_method``.
+      3. Fill missing reference forecast data points according to
+         ``forecast_fill_method``.
+      4. Resample observations to match forecast intervals. A minimum of 10% of
+         the observation intervals within a forecast interval must be valid
+         (not flagged or previously missing) else the resampled observation is
+         NaN.
+      5. Drop remaining NaN observation and forecast values.
+      6. Align observations to match forecast times. Observation times for
+         which there is not a matching forecast time are dropped.
+      7. Create :py:class:`~solarforecastarbiter.datamodel.ProcessedForecastObservation`
+         with resampled, aligned data and metadata.
+    """  # NOQA: E501
     if not all([isinstance(filter_, datamodel.QualityFlagFilter)
                 for filter_ in filters]):
         logger.warning(

@@ -32,6 +32,16 @@ def test_request_cli_access_token_real():
                                             'Thepassword123!') is not None
 
 
+def test_request_cli_access_token_mocked_kwargs(requests_mock):
+    m = requests_mock.register_uri(
+        'POST', 'https://solarforecastarbiter.auth0.com/oauth/token',
+        content=b'{"access_token": "token"}')
+    token = api.request_cli_access_token(
+        'test', 'pass', cert="some_certificate.crt")
+    assert m.request_history[0].cert == "some_certificate.crt"
+    assert token == 'token'
+
+
 def test_apisession_init(requests_mock):
     session = api.APISession('TOKEN')
     requests_mock.register_uri('GET', session.base_url)
@@ -1401,7 +1411,7 @@ def test_real_apisession_get_observation_values(real_session):
         '123e4567-e89b-12d3-a456-426655440000',
         start, end)
     assert isinstance(obs, pd.DataFrame)
-    assert set(obs.columns) == set(['value', 'quality_flag'])
+    assert set(obs.columns) == {'value', 'quality_flag'}
     assert len(obs.index) > 0
     pdt.assert_frame_equal(obs.loc[start:end], obs)
 
@@ -1414,7 +1424,7 @@ def test_real_apisession_get_observation_values_tz(real_session):
         '123e4567-e89b-12d3-a456-426655440000',
         start, end)
     assert isinstance(obs, pd.DataFrame)
-    assert set(obs.columns) == set(['value', 'quality_flag'])
+    assert set(obs.columns) == {'value', 'quality_flag'}
     assert len(obs.index) > 0
     end = end.tz_convert(start.tzinfo)
     pdt.assert_frame_equal(obs.loc[start:end], obs)
@@ -1536,7 +1546,7 @@ def test_real_apisession_get_aggregate_values(real_session):
         '458ffc27-df0b-11e9-b622-62adb5fd6af0',
         start, end)
     assert isinstance(agg, pd.DataFrame)
-    assert set(agg.columns) == set(['value', 'quality_flag'])
+    assert set(agg.columns) == {'value', 'quality_flag'}
     assert len(agg.index) > 0
     pdt.assert_frame_equal(agg.loc[start:end], agg)
 

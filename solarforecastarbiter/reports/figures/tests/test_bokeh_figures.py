@@ -320,9 +320,9 @@ def no_stray_phantomjs():  # pragma: no cover
         for pid in os.listdir('/proc'):
             if pid.isdigit():
                 try:
-                    with open(f'/proc/{pid}/cmdline', 'r') as f:
+                    with open(f'/proc/{pid}/cmdline') as f:
                         cmd = f.read()
-                except IOError:
+                except OSError:
                     continue
                 else:
                     if 'phantomjs' in cmd:
