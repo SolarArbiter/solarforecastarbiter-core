@@ -415,12 +415,22 @@ def _make_fx_name(site_name, template_name, variable):
     # Some site names are too long and exceed the API's limits,
     # in those cases. Use the abbreviated version.
     if len(fx_name) > 63:
-        for old, new in (('Persistence', 'Pers.'), ('persistence', 'pers.')):
+        for old, new in (
+            ('Persistence', 'Pers.'),
+            ('persistence', 'pers.'),
+            ('Fifteen-minute', '15 min.'),
+            ('Five-minute', '5 min.'),
+        ):
             template_name = template_name.replace(old, new)
         suffix = f'{template_name} {variable}'
+        # ensure suffix not more than 50 characters to allow
+        # for some site identification in the name
+        if len(suffix) > 50:
+            raise ValueError('Template forecast name is too long')
         while len(fx_name) > 63:
             # drop the last word
-            fx_name = f"{' '.join(site_name.split(' ')[:-1])} {suffix}"
+            site_name = ' '.join(site_name.split(' ')[:-1])
+            fx_name = f"{site_name} {suffix}"
         logger.warning("Forecast name truncated to %s", fx_name)
     return fx_name
 

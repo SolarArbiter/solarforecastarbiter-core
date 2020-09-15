@@ -681,9 +681,18 @@ def test_create_one_forecast_long_name(template_fx):
     assert 'piggyback_on' not in ep
 
 
-def test_make_fx_name_replace():
-    out = common._make_fx_name('The Site is really really really really long', 'Persistence 1hour ahead', 'GHI')  # NOQA
-    assert out == 'The Site is really really really really Pers. 1hour ahead GHI'  # NOQA
+@pytest.mark.parametrize('tmpl,exp', [
+    ('Persistence 1hour ahead', 'The Site is really really really really Pers. 1hour ahead GHI'),  # NOQA
+    ('Persistence Fifteen-minute ahead', 'The Site is really really really really Pers. 15 min. ahead GHI'),  # NOQA
+    ('n' * 46, 'The Site is ' + 'n' * 46 + ' GHI'),
+    pytest.param(
+        'This is too long to be a template forecast name and will raise a value error',   # NOQA
+        '', marks=pytest.mark.xfail(strict=True, raises=ValueError))
+])
+def test_make_fx_name(tmpl, exp):
+    out = common._make_fx_name(
+        'The Site is really really really really long', tmpl, 'GHI')
+    assert out == exp
 
 
 def test_create_one_forecast_piggy(template_fx):
