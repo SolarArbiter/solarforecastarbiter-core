@@ -47,6 +47,9 @@ Bug fixes
 * Adjust abbreviation of long reference forecast names to first abbreviate
   some words and then cut entire words from the site name (:issue:`521`)
   (:pull:`571`)
+* Fixed issue with UO SRML reference data fetching that resulted in posting
+  NaN values for data that had not yet been included in SRML files.
+  (:issue: `543`)(:pull: `` )
 
 Contributors
 ~~~~~~~~~~~~

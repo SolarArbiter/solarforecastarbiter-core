@@ -69,19 +69,25 @@ def test_data():
 
 
 @pytest.mark.parametrize('start,end,exp', [
-    (dt.datetime(2019, 1, 10), dt.datetime(2019, 3, 11),
+    (dt.datetime(2019, 1, 10, tzinfo=dt.timezone.utc),
+     dt.datetime(2019, 3, 11, tzinfo=dt.timezone.utc),
      [(2019, 1), (2019, 2), (2019, 3)]),
-    (dt.datetime(2019, 11, 10), dt.datetime(2020, 2, 11),
+    (dt.datetime(2019, 11, 10, tzinfo=dt.timezone.utc),
+     dt.datetime(2020, 2, 11, tzinfo=dt.timezone.utc),
      [(2019, 11), (2019, 12), (2020, 1), (2020, 2)]),
-    (dt.datetime(2019, 11, 10), dt.datetime(2019, 11, 11),
+    (dt.datetime(2019, 11, 10, tzinfo=dt.timezone.utc),
+     dt.datetime(2019, 11, 11, tzinfo=dt.timezone.utc),
      [(2019, 11)]),
-    (dt.datetime(2019, 11, 10), dt.datetime(2021, 2, 11),
+    (dt.datetime(2019, 11, 10, tzinfo=dt.timezone.utc),
+     dt.datetime(2021, 2, 11, tzinfo=dt.timezone.utc),
      [(2019, 11), (2019, 12), (2020, 1), (2020, 2), (2020, 3),
       (2020, 4), (2020, 5), (2020, 6), (2020, 7), (2020, 8),
       (2020, 9), (2020, 10), (2020, 11), (2020, 12), (2021, 1),
       (2021, 2)]),
-    (dt.datetime(2019, 10, 1), dt.datetime(2019, 9, 1), []),
-    (dt.datetime(2019, 10, 1), dt.datetime(2018, 11, 1), [])
+    (dt.datetime(2019, 10, 1, tzinfo=dt.timezone.utc),
+     dt.datetime(2019, 9, 1, tzinfo=dt.timezone.utc), []),
+    (dt.datetime(2019, 10, 1, tzinfo=dt.timezone.utc),
+     dt.datetime(2018, 11, 1, tzinfo=dt.timezone.utc), [])
 ])
 def test_fetch(mocker, single_site, start, end, exp):
     rd = mocker.patch(
@@ -93,7 +99,8 @@ def test_fetch(mocker, single_site, start, end, exp):
 
 
 @pytest.mark.parametrize('start,end', [
-    (dt.datetime(2019, 1, 10), dt.datetime(2019, 3, 11)),
+    (dt.datetime(2019, 1, 10, tzinfo=dt.timezone.utc),
+     dt.datetime(2020, 3, 11, 8, 1, tzinfo=dt.timezone.utc)),
 ])
 def test_fetch_power_conversion(
         mocker, single_site, start, end, test_data):
