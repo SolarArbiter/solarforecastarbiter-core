@@ -39,6 +39,7 @@ Bug fixes
 ~~~~~~~~~
 * Fix PVDAQ time zones. (:issue:`537`) (:pull:`540`)
 * Fix missing PVDAQ sites. (:issue:`539`) (:pull:`540`)
+* Converted NOAA USCRN site elevation to meters. (:pull:`545`)
 * Fix non-deterministic order and color in time series and scatter plots.
   (:issue:`548`) (:pull:`562`)
 * Make scatter plot aspect ratio 1:1 and set same number of grid lines on
