@@ -130,8 +130,6 @@ def fetch(api, site, start, end):
     TypeError
         If start and end have different timezones, or if they do not include a
         timezone.
-    ValueError
-        If no data is available at the site between start and end.
     """
     month_dfs = []
     start_year = start.year
