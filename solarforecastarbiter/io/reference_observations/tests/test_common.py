@@ -695,6 +695,14 @@ def test_make_fx_name(tmpl, exp):
     assert out == exp
 
 
+def test_make_fx_name_long_site():
+    with pytest.raises(ValueError):
+        common._make_fx_name(
+            'a' * 14,
+            'r' * 49,
+            '')
+
+
 def test_create_one_forecast_piggy(template_fx):
     api, template, site = template_fx
     fx = common.create_one_forecast(api, site, template, 'ac_power',

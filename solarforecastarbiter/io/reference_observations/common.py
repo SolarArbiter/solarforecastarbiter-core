@@ -423,10 +423,10 @@ def _make_fx_name(site_name, template_name, variable):
         ):
             template_name = template_name.replace(old, new)
         suffix = f'{template_name} {variable}'
-        # ensure suffix not more than 50 characters to allow
-        # for some site identification in the name
-        if len(suffix) > 50:
-            raise ValueError('Template forecast name is too long')
+        # ensure name can containe at least first word of site
+        # name and the suffix
+        if (len(site_name.split(' ')[0]) + len(suffix)) > 62:
+            raise ValueError('Template/site name too long together')
         while len(fx_name) > 63:
             # drop the last word
             site_name = ' '.join(site_name.split(' ')[:-1])
