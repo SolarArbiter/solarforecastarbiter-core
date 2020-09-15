@@ -116,14 +116,20 @@ def fetch(api, site, start, end):
     site : :py:class:`solarforecastarbiter.datamodel.Site`
         Site object with the appropriate metadata.
     start : datetime
-        The beginning of the period to request data for.
+        The beginning of the period to request data for. Must include timezone.
     end : datetime
-        The end of the period to request data for.
+        The end of the period to request data for. Must include timezone.
 
     Returns
     -------
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
+
+    Raises
+    ------
+    TypeError
+        If start and end have different timezones, or if they do not include a
+        timezone.
     """
     month_dfs = []
     start_year = start.year
@@ -154,7 +160,16 @@ def fetch(api, site, start, end):
     # adjust power from watts to megawatts
     for column in power_columns:
         all_period_data[column] = all_period_data[column] / 1000000
-    all_period_data = all_period_data[var_columns]
+    all_period_data = all_period_data.loc[start:end, var_columns]
+
+    # remove possible trailing NaNs, it is necessary to do this after slicing
+    # because SRML data has nighttime data prefilled with 0s through the end of
+    # the month. This may not be effective if a given site has more than a 24
+    # hour lag, which will cause last_valid_index to return the latest
+    # timestamp just before sunrise, but will suffice for the typical lag on
+    # the order of hours.
+    all_period_data = all_period_data[:all_period_data.last_valid_index()]
+
     return all_period_data
 
 
@@ -183,7 +198,7 @@ def initialize_site_observations(api, site):
     different instruments.
     """
     # Request ~month old data at initialization to ensure we get a response.
-    start = pd.Timestamp.now() - pd.Timedelta('30 days')
+    start = pd.Timestamp.utcnow() - pd.Timedelta('30 days')
     end = start
     try:
         extra_params = common.decode_extra_parameters(site)
