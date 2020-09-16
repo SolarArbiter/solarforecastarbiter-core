@@ -1,6 +1,6 @@
 .. _whatsnew_100rc3:
 
-1.0.0rc3 (September 15, 2020)
+1.0.0rc3 (September 16, 2020)
 -----------------------------
 
 This is the third 1.0 release candidate.
@@ -10,7 +10,8 @@ API Changes
 ~~~~~~~~~~~
 * Added quantile score and skill score metrics
   :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_score`
-  :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_skill_score` (:issue:`520`) (:pull:`530`)
+  :py:func:`solarforecastarbiter.metrics.probabilistic.quantile_skill_score`
+  (:issue:`520`) (:pull:`530`)
 
 Enhancements
 ~~~~~~~~~~~~
@@ -50,7 +51,7 @@ Bug fixes
   instead of class names (e.g. EventForecast). (:issue:`406`)
 * Correct incorrect timeseries plots used in reports for probabilistic
   forecasts with axis y. This bug was introduced in Release Candidate 2.
-  (:issue: `568`) (:pull: `569`)
+  (:issue:`568`) (:pull:`569`)
 * Adjust abbreviation of long reference forecast names to first abbreviate
   some words and then cut entire words from the site name (:issue:`521`)
   (:pull:`571`)
