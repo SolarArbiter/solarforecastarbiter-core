@@ -45,26 +45,30 @@ def _solpos_night_instantaneous(observation, values):
     return solar_position, night_flag
 
 
+def _resample_date_range(interval_length, closed, freq, values):
+    data_start, data_end = values.index[0], values.index[-1]
+    if closed == 'left':
+        data_end += interval_length
+    elif closed == 'right':
+        data_start -= interval_length
+    else:
+        raise ValueError("closed must be 'left' or 'right'")
+    obs_range = pd.date_range(start=data_start, end=data_end, freq=freq,
+                              closed=closed)
+    return obs_range
+
+
 def _solpos_night_resample(observation, values):
     # similar approach as in persistence_scalar_index.
     # Calculate solar position and clearsky at 1 minute resolution to
     # reduce errors from changing solar position during interval.
     # Later, nighttime bools will be resampled over the interval
     closed = datamodel.CLOSED_MAPPING[observation.interval_label]
-    data_start, data_end = values.index[0], values.index[-1]
     freq = pd.Timedelta('1min')
+    interval_length = observation.interval_length
     # need to calculate solar position for instants before or after the
     # first/last labels depending on the interval label convention.
-    if closed == 'left':
-        data_end += observation.interval_length
-    elif closed == 'right':
-        data_start -= observation.interval_length
-    else:
-        raise ValueError('Invalid observation.interval_length '
-                         f'{observation.interval_length}. Use '
-                         '_solpos_night_instantaneous')
-    obs_range = pd.date_range(start=data_start, end=data_end, freq=freq,
-                              closed=closed)
+    obs_range = _resample_date_range(interval_length, closed, freq, values)
     # could add logic to remove points from obs_range where there are
     # gaps in values. that would reduce computation time in some situations
     solar_position = pvmodel.calculate_solar_position(
@@ -74,7 +78,7 @@ def _solpos_night_resample(observation, values):
     night_flag = validator.check_irradiance_day_night(
         solar_position['zenith'],
         closed=closed,
-        interval_length=observation.interval_length,
+        interval_length=interval_length,
         solar_zenith_interval_length=freq,
         _return_mask=True
     )
@@ -82,7 +86,7 @@ def _solpos_night_resample(observation, values):
     # Best to return high res solar position and adapt downstream functions
     # but that is left for future work
     solar_position = solar_position.resample(
-        observation.interval_length, closed=closed, label=closed
+        interval_length, closed=closed, label=closed
     ).mean()
     # put gaps back in the data
     night_flag = night_flag.loc[values.index]
