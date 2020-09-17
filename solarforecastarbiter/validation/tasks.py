@@ -29,6 +29,14 @@ def _validate_stale_interpolated(observation, values):
 
 
 def _solpos_night(observation, values):
+    closed = datamodel.CLOSED_MAPPING[observation.interval_label]
+    if closed is None:
+        return _solpos_night_instantaneous(observation, values)
+    else:
+        return _solpos_night_resample(observation, values)
+
+
+def _solpos_night_instantaneous(observation, values):
     solar_position = pvmodel.calculate_solar_position(
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, values.index)
@@ -88,8 +96,8 @@ def _solpos_night_resample(observation, values):
         observation.interval_length, closed=closed, label=closed
     ).mean()
     # put gaps back in the data
-    night_flag.loc[values.index]
-    solar_position.loc[values.index]
+    night_flag = night_flag.loc[values.index]
+    solar_position = solar_position.loc[values.index]
     return solar_position, night_flag
 
 

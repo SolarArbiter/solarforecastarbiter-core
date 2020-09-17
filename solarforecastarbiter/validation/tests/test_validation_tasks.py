@@ -17,7 +17,7 @@ def make_observation(single_site):
     def f(variable):
         return Observation(
             name='test', variable=variable, interval_value_type='mean',
-            interval_length=pd.Timedelta('1hr'), interval_label='beginning',
+            interval_length=pd.Timedelta('1hr'), interval_label='ending',
             site=single_site, uncertainty=0.1, observation_id='OBSID',
             provider='Organization 1', extra_parameters='')
     return f
