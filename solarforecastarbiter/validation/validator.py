@@ -557,22 +557,61 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
 
 
 @mask_flags('NIGHTTIME')
-def check_irradiance_day_night(solar_zenith, max_zenith=87):
+def check_irradiance_day_night(
+        solar_zenith, max_zenith=87, closed=None, interval_length=None,
+        solar_zenith_interval_length=None, fraction_of_interval=0.1,
+        ):
     """ Checks for day/night periods based on solar zenith.
+
+    Interval average data may be analyzed by supplying higher resolution
+    solar zenith data and parameters that describe the desired intervals.
 
     Parameters
     ----------
     solar_zenith : Series
-        Solar zenith angle in degrees
-    max_zenith : maximum zenith angle for a daylight time
+        Solar zenith angle in degrees.
+    max_zenith : float
+        Maximum zenith angle for a daylight time.
+    closed : {None, 'left', 'right'}
+        None for instantaneous data, 'left' for interval beginning labeled
+        data, 'right' for interval ending labeled data.
+    interval_length : None or Timedelta
+        Interval length to resample day/night periods to.
+    solar_zenith_interval_length : None or Timedelta
+        Required if solar_zenith contains gaps and closed is not None.
+    fraction_of_interval : float
+        The fraction of the points in an interval that must be daytime
+        in order to mark the interval as daytime.
 
     Returns
     -------
     flags : Series
-        True when solar zenith is less than max_zenith.
+        True when solar zenith is less than max_zenith (closed == None),
+        or when sufficient points within an interval are less than
+        max_zenith (closed != None).
     """
-    flags = _check_limits(solar_zenith, ub=max_zenith)
-    return flags
+    # True = daytime. False = nighttime.
+    daytime = _check_limits(solar_zenith, ub=max_zenith)
+    if closed is None:
+        # instantaneous or event data
+        return daytime
+    else:
+        # number of daytime minutes within the interval
+        daytime_sum = daytime.resample(
+            interval_length, closed=closed, label=closed
+        ).sum()
+        # if not provided, try to interval length for normalization
+        if solar_zenith_interval_length is None:
+            solar_zenith_interval_length = pd.infer_freq(
+                solar_zenith.index, warn=False)
+        # If points corresponding to fraction_of_interval is daytime,
+        # then the interval is daytime
+        count_threshold = int(
+            interval_length * fraction_of_interval
+            / solar_zenith_interval_length
+            )
+        daytime = daytime_sum > count_threshold
+        return daytime
 
 
 @mask_flags('UNEVEN FREQUENCY')

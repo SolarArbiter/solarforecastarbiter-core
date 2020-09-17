@@ -46,12 +46,10 @@ def _solpos_night_instantaneous(observation, values):
 
 
 def _solpos_night_resample(observation, values):
-    # copied from persistence.py...
-    # Calculate solar position and clearsky for obs time range.
-    # if data is instantaneous, calculate at the obs time.
-    # else (if data is interval average), calculate at 1 minute resolution to
+    # similar approach as in persistence_scalar_index.
+    # Calculate solar position and clearsky at 1 minute resolution to
     # reduce errors from changing solar position during interval.
-    # Later, nighttime be resampled over the interval
+    # Later, nighttime bools will be resampled over the interval
     closed = datamodel.CLOSED_MAPPING[observation.interval_label]
     data_start, data_end = values.index[0], values.index[-1]
     freq = pd.Timedelta('1min')
@@ -62,9 +60,9 @@ def _solpos_night_resample(observation, values):
     elif closed == 'right':
         data_start -= observation.interval_length
     else:
-        # instantaneous or event obs. maybe skip all this and call out
-        # to the function we currently call _solpos_night instead
-        freq = observation.interval_length
+        raise ValueError('Invalid observation.interval_length '
+                         f'{observation.interval_length}. Use '
+                         '_solpos_night_instantaneous')
     obs_range = pd.date_range(start=data_start, end=data_end, freq=freq,
                               closed=closed)
     # could add logic to remove points from obs_range where there are
@@ -73,21 +71,12 @@ def _solpos_night_resample(observation, values):
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, obs_range
     )
-    # True = daytime. False = nighttime.
-    daytime_1min = validator.check_irradiance_day_night(
-        solar_position['zenith'], _return_mask=False
-    )
-    # number of daytime minutes within the interval
-    daytime_sum = daytime_1min.resample(
-        observation.interval_length, closed=closed, label=closed
-    ).sum()
-    # If 10% of an interval is daytime, then the interval is daytime
-    count_threshold = int(observation.interval_length / freq * 0.1)
-    daytime = daytime_sum > count_threshold
-    # Convert the bools into a bitmask (need to do this manually because
-    # we set _return_mask=False in the call to the validator function).
-    night_flag = quality_mapping.convert_bool_flags_to_flag_mask(
-        daytime, 'NIGHTTIME', True
+    night_flag = validator.check_irradiance_day_night(
+        solar_position['zenith'],
+        closed=closed,
+        interval_length=observation.interval_length,
+        solar_zenith_interval_length=freq,
+        _return_mask=True
     )
     # Better to use average solar position in downstream functions
     # Best to return high res solar position and adapt downstream functions
