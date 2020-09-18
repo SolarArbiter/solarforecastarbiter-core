@@ -581,9 +581,8 @@ def check_irradiance_day_night(solar_zenith, max_zenith=87):
 def check_irradiance_day_night_interval(
         solar_zenith, closed, interval_length,
         solar_zenith_interval_length=None, fraction_of_interval=0.1,
-        max_zenith=87,
-        ):
-    """ Checks for day/night periods based on solar zenith.
+        max_zenith=87):
+    """Check for day/night periods based on solar zenith.
 
     Interval average data may be analyzed by supplying higher resolution
     solar zenith data and parameters that describe the desired intervals.
@@ -598,6 +597,7 @@ def check_irradiance_day_night_interval(
     interval_length : Timedelta
         Interval length to resample day/night periods to.
     solar_zenith_interval_length : None or Timedelta
+        If None, attempt to infer.
         Required if solar_zenith contains gaps and closed is not None.
     fraction_of_interval : float
         The fraction of the points in an interval that must be daytime
@@ -609,7 +609,8 @@ def check_irradiance_day_night_interval(
     -------
     flags : Series
         True when sufficient points within an interval are less than
-        max_zenith.
+        max_zenith. Index conforms to solar_zenith resampled to
+        interval_length.
     """
     # True = daytime. False = nighttime.
     daytime = _check_limits(solar_zenith, ub=max_zenith)

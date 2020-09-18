@@ -237,6 +237,57 @@ def test_check_irradiance_day_night():
     assert_series_equal(result, expected)
 
 
+@pytest.mark.parametrize('closed,expected', (
+    ('left', pd.Series([False, True], index=pd.DatetimeIndex(
+        ['20200917 0000', '20200917 0100']))),
+    ('right', pd.Series([False, True], index=pd.DatetimeIndex(
+        ['20200917 0100', '20200917 0200'])))
+))
+def test_check_irradiance_day_night_interval(closed, expected):
+    interval_length = pd.Timedelta('1h')
+    index = pd.date_range(
+        start='20200917 0000', end='20200917 0200', closed=closed,
+        freq='5min')
+    solar_zenith = pd.Series([89]*11 + [80]*13, index=index)
+    result = validator.check_irradiance_day_night_interval(
+        solar_zenith, closed, interval_length
+    )
+    assert_series_equal(result, expected)
+
+
+def test_check_irradiance_day_night_interval_no_infer():
+    interval_length = pd.Timedelta('1h')
+    closed = 'left'
+    index = pd.DatetimeIndex(
+        ['20200917 0100', '20200917 0200', '20200917 0400'])
+    solar_zenith = pd.Series([0]*3, index=index)
+    with pytest.raises(ValueError):
+        validator.check_irradiance_day_night_interval(
+            solar_zenith, closed, interval_length
+        )
+
+
+def test_check_irradiance_day_night_interval_irregular():
+    interval_length = pd.Timedelta('1h')
+    solar_zenith_interval_length = pd.Timedelta('5min')
+    closed = 'left'
+    index1 = pd.date_range(
+        start='20200917 0000', end='20200917 0100', closed=closed,
+        freq=solar_zenith_interval_length)
+    index2 = pd.date_range(
+        start='20200917 0200', end='20200917 0300', closed=closed,
+        freq=solar_zenith_interval_length)
+    index = index1.union(index2)
+    solar_zenith = pd.Series([89]*11 + [80]*13, index=index)
+    result = validator.check_irradiance_day_night_interval(
+        solar_zenith, closed, interval_length,
+        solar_zenith_interval_length=solar_zenith_interval_length
+    )
+    expected = pd.Series([False, False, True], index=pd.DatetimeIndex(
+        ['20200917 0000', '20200917 0100', '20200917 0200']))
+    assert_series_equal(result, expected)
+
+
 def test_check_timestamp_spacing(times):
     assert_series_equal(
         validator.check_timestamp_spacing(times, times.freq),
