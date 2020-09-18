@@ -75,10 +75,11 @@ def _solpos_night_resample(observation, values):
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, obs_range
     )
-    night_flag = validator.check_irradiance_day_night(
+    # get the night flag as bitmask
+    night_flag = validator.check_irradiance_day_night_interval(
         solar_position['zenith'],
-        closed=closed,
-        interval_length=interval_length,
+        closed,
+        interval_length,
         solar_zenith_interval_length=freq,
         _return_mask=True
     )
@@ -88,7 +89,8 @@ def _solpos_night_resample(observation, values):
     solar_position = solar_position.resample(
         interval_length, closed=closed, label=closed
     ).mean()
-    # put gaps back in the data
+    # return series with same index as input values
+    # i.e. put any gaps back in the data
     night_flag = night_flag.loc[values.index]
     solar_position = solar_position.loc[values.index]
     return solar_position, night_flag
