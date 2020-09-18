@@ -28,6 +28,11 @@ def _validate_stale_interpolated(observation, values):
     return stale_flag, interpolation_flag
 
 
+# three functions to handle solar position and nighttime flags.
+# 1. _solpos_night dispatches to one of
+# 2. _solpos_night_instantaneous for instantaneous observations or
+# 3. _solpos_night_resample for interval average observations
+
 def _solpos_night(observation, values):
     closed = datamodel.CLOSED_MAPPING[observation.interval_label]
     if closed is None:
@@ -46,6 +51,7 @@ def _solpos_night_instantaneous(observation, values):
 
 
 def _resample_date_range(interval_length, closed, freq, values):
+    # consider moving this to utils
     data_start, data_end = values.index[0], values.index[-1]
     if closed == 'left':
         data_end += interval_length
@@ -116,14 +122,18 @@ def validate_ghi(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, ghi_limit_flag, ghi_clearsky_flag, cloud_free_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_ghi_limits_QCRad`,
-        :py:func:`.validator.check_ghi_clearsky`,
-        :py:func:`.validator.detect_clearsky_ghi` respectively
-    """  # NOQA
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_irradiance_day_night` or
+        :py:func:`.validator.check_irradiance_day_night_interval`
+    ghi_limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_ghi_limits_QCRad`
+    ghi_clearsky_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_ghi_clearsky`
+    cloud_free_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_clearsky_ghi`
+    """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     clearsky = pvmodel.calculate_clearsky(
