@@ -12,12 +12,12 @@ from solarforecastarbiter.validation.quality_mapping import (
     DAILY_VALIDATION_FLAG)
 
 
-@pytest.fixture()
-def make_observation(single_site):
+@pytest.fixture(params=['beginning', 'ending', 'instant'])
+def make_observation(single_site, request):
     def f(variable):
         return Observation(
             name='test', variable=variable, interval_value_type='mean',
-            interval_length=pd.Timedelta('1hr'), interval_label='ending',
+            interval_length=pd.Timedelta('1hr'), interval_label=request.param,
             site=single_site, uncertainty=0.1, observation_id='OBSID',
             provider='Organization 1', extra_parameters='')
     return f
@@ -43,25 +43,40 @@ def daily_index(single_site):
                                tz=single_site.timezone)]))
 
 
+def nighttime_func_mask(obs, index):
+    if obs.interval_label == 'beginning':
+        flag = [0, 0, 0, 0, 0]
+        func = 'check_irradiance_day_night_interval'
+    elif obs.interval_label == 'ending':
+        flag = [1, 0, 0, 0, 0]
+        func = 'check_irradiance_day_night_interval'
+    else:
+        flag = [1, 0, 0, 0, 0]
+        func = 'check_irradiance_day_night'
+    flag = pd.Series(flag, index=index)
+    mask = flag * DESCRIPTION_MASK_MAPPING['NIGHTTIME']
+    return func, mask
+
+
 def test_validate_ghi(mocker, make_observation, default_index):
+    obs = make_observation('ghi')
+    data = pd.Series([10, 1000, -100, 500, 300], index=default_index)
+    night_func, night_mask = nighttime_func_mask(obs, data.index)
     mocks = [mocker.patch.object(validator, f,
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
-                       'check_irradiance_day_night',
+                       night_func,
                        'check_ghi_limits_QCRad',
                        'check_ghi_clearsky',
                        'detect_clearsky_ghi']]
-    obs = make_observation('ghi')
-    data = pd.Series([10, 1000, -100, 500, 300], index=default_index)
     flags = tasks.validate_ghi(obs, data)
     for mock in mocks:
         assert mock.called
 
     expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0], index=data.index) *
-                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                night_mask,
                 pd.Series([0, 1, 1, 0, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
                 pd.Series([0, 1, 0, 1, 0], index=data.index) *
@@ -629,22 +644,22 @@ def test_fetch_and_validate_observation_relative_humidity(
 
 
 def test_validate_ac_power(mocker, make_observation, default_index):
+    obs = make_observation('ac_power')
+    data = pd.Series([0, 1, -1, 0.001, 0.001], index=default_index)
+    night_func, night_mask = nighttime_func_mask(obs, data.index)
     mocks = [mocker.patch.object(validator, f,
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
-                       'check_irradiance_day_night',
+                       night_func,
                        'check_ac_power_limits']]
-    obs = make_observation('ac_power')
-    data = pd.Series([0, 1, -1, 0.001, 0.001], index=default_index)
     flags = tasks.validate_ac_power(obs, data)
     for mock in mocks:
         assert mock.called
 
     expected = (pd.Series([0, 0, 0, 0, 1], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0], index=data.index) *
-                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                night_mask,
                 pd.Series([0, 1, 1, 0, 0], index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'])
     for flag, exp in zip(flags, expected):
