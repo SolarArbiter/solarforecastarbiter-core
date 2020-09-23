@@ -97,8 +97,8 @@ def _solpos_night_resample(observation, values):
     ).mean()
     # return series with same index as input values
     # i.e. put any gaps back in the data
-    night_flag = night_flag.loc[values.index]
-    solar_position = solar_position.loc[values.index]
+    night_flag = night_flag.reindex(values.index)
+    solar_position = solar_position.reindex(values.index)
     return solar_position, night_flag
 
 
