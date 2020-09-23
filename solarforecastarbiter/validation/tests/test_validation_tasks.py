@@ -58,6 +58,21 @@ def nighttime_func_mask(obs, index):
     return func, mask
 
 
+def nighttime_func_mask_daily(obs, daily_index):
+    if obs.interval_label == 'beginning':
+        flag = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
+        func = 'check_irradiance_day_night_interval'
+    elif obs.interval_label == 'ending':
+        flag = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0]
+        func = 'check_irradiance_day_night_interval'
+    else:
+        flag = [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
+        func = 'check_irradiance_day_night'
+    flag = pd.Series(flag, index=daily_index)
+    mask = flag * DESCRIPTION_MASK_MAPPING['NIGHTTIME']
+    return func, mask
+
+
 def test_validate_ghi(mocker, make_observation, default_index):
     obs = make_observation('ghi')
     data = pd.Series([10, 1000, -100, 500, 300], index=default_index)
@@ -756,21 +771,22 @@ def test_fetch_and_validate_observation_dc_power(mocker, make_observation,
 
 
 def test_validate_daily_ghi(mocker, make_observation, daily_index):
+    obs = make_observation('ghi')
+    data = pd.Series(
+        # 8     9     10   11   12  13    14   15  16  17  18  19  23
+        [10, 1000, -100, 500, 300, 300, 300, 300, 175, 0, 100, 0, 0],
+        index=daily_index)
+    night_func, night_mask = nighttime_func_mask_daily(obs, data.index)
     mocks = [mocker.patch.object(validator, f,
                                  new=mocker.MagicMock(
                                      wraps=getattr(validator, f)))
              for f in ['check_timestamp_spacing',
-                       'check_irradiance_day_night',
+                       night_func,
                        'check_ghi_limits_QCRad',
                        'check_ghi_clearsky',
                        'detect_clearsky_ghi',
                        'detect_stale_values',
                        'detect_interpolation']]
-    obs = make_observation('ghi')
-    data = pd.Series(
-        # 8     9     10   11   12  13    14   15  16  17  18  19  23
-        [10, 1000, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
-        index=daily_index)
     flags = tasks.validate_daily_ghi(obs, data)
     for mock in mocks:
         assert mock.called
@@ -778,9 +794,7 @@ def test_validate_daily_ghi(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-                          index=data.index) *
-                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                night_mask,
                 pd.Series([0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
@@ -903,18 +917,19 @@ def test_fetch_and_validate_observation_ghi_zeros(mocker, make_observation,
 
 
 def test_validate_daily_dc_power(mocker, make_observation, daily_index):
-    mocks = [mocker.patch.object(validator, f,
-                                 new=mocker.MagicMock(
-                                     wraps=getattr(validator, f)))
-             for f in ['check_timestamp_spacing',
-                       'check_irradiance_day_night',
-                       'detect_stale_values',
-                       'detect_interpolation']]
     obs = make_observation('dc_power')
     data = pd.Series(
         # 8     9     10   11   12  13    14   15  16  17  18  19  23
         [0, 1000, -100, 500, 300, 300, 300, 300, 100, 0, 100, 0, 0],
         index=daily_index)
+    night_func, night_mask = nighttime_func_mask_daily(obs, data.index)
+    mocks = [mocker.patch.object(validator, f,
+                                 new=mocker.MagicMock(
+                                     wraps=getattr(validator, f)))
+             for f in ['check_timestamp_spacing',
+                       night_func,
+                       'detect_stale_values',
+                       'detect_interpolation']]
     flags = tasks.validate_daily_dc_power(obs, data)
     for mock in mocks:
         assert mock.called
@@ -922,9 +937,7 @@ def test_validate_daily_dc_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-                          index=data.index) *
-                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                night_mask,
                 pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
@@ -999,19 +1012,20 @@ def test_fetch_and_validate_observation_dc_power_daily(
 
 
 def test_validate_daily_ac_power(mocker, make_observation, daily_index):
-    mocks = [mocker.patch.object(validator, f,
-                                 new=mocker.MagicMock(
-                                     wraps=getattr(validator, f)))
-             for f in ['check_timestamp_spacing',
-                       'check_irradiance_day_night',
-                       'detect_stale_values',
-                       'detect_interpolation',
-                       'detect_clipping']]
     obs = make_observation('ac_power')
     data = pd.Series(
         # 8     9     10   11   12  13    14   15  16  17  18  19  23
         [0, 100, -100, 100, 300, 300, 300, 300, 100, 0, 100, 0, 0],
         index=daily_index)
+    night_func, night_mask = nighttime_func_mask_daily(obs, data.index)
+    mocks = [mocker.patch.object(validator, f,
+                                 new=mocker.MagicMock(
+                                     wraps=getattr(validator, f)))
+             for f in ['check_timestamp_spacing',
+                       night_func,
+                       'detect_stale_values',
+                       'detect_interpolation',
+                       'detect_clipping']]
     flags = tasks.validate_daily_ac_power(obs, data)
     for mock in mocks:
         assert mock.called
@@ -1019,9 +1033,7 @@ def test_validate_daily_ac_power(mocker, make_observation, daily_index):
     expected = (pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['UNEVEN FREQUENCY'],
-                pd.Series([1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-                          index=data.index) *
-                DESCRIPTION_MASK_MAPPING['NIGHTTIME'],
+                night_mask,
                 pd.Series([0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
                           index=data.index) *
                 DESCRIPTION_MASK_MAPPING['LIMITS EXCEEDED'],
