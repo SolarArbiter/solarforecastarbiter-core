@@ -598,7 +598,7 @@ def check_irradiance_day_night_interval(
         Interval length to resample day/night periods to.
     solar_zenith_interval_length : None or Timedelta
         If None, attempt to infer.
-        Required if solar_zenith contains gaps and closed is not None.
+        Required if solar_zenith contains gaps.
     fraction_of_interval : float
         The fraction of the points in an interval that must be daytime
         in order to mark the interval as daytime.
@@ -611,6 +611,12 @@ def check_irradiance_day_night_interval(
         True when sufficient points within an interval are less than
         max_zenith. Index conforms to solar_zenith resampled to
         interval_length.
+
+    Raises
+    ------
+    ValueError
+        If solar_zenith contains gaps and solar_zenith_interval_length is not
+        provided.
     """
     # True = daytime. False = nighttime.
     daytime = _check_limits(solar_zenith, ub=max_zenith)
@@ -619,10 +625,15 @@ def check_irradiance_day_night_interval(
         interval_length, closed=closed, label=closed
     ).sum()
     # if not provided, try to interval length for normalization.
-    # this will fail if the index has gaps.
+    # this will raise if the index has gaps.
     if solar_zenith_interval_length is None:
         solar_zenith_interval_length = pd.infer_freq(
             solar_zenith.index, warn=False)
+        if solar_zenith_interval_length is None:
+            raise ValueError(
+                'solar_zenith.index contains gaps so the freq could not be '
+                'inferred and solar_zenith_interval_length was not provided. '
+                'Fill the gaps or pass solar_zenith_interval_length.')
     # If points corresponding to fraction_of_interval is daytime,
     # then the interval is daytime
     count_threshold = int(

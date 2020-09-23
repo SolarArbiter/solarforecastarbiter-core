@@ -261,7 +261,7 @@ def test_check_irradiance_day_night_interval_no_infer():
     index = pd.DatetimeIndex(
         ['20200917 0100', '20200917 0200', '20200917 0400'])
     solar_zenith = pd.Series([0]*3, index=index)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='contains gaps'):
         validator.check_irradiance_day_night_interval(
             solar_zenith, closed, interval_length
         )
