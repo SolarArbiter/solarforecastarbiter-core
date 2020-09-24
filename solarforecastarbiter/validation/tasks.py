@@ -336,8 +336,10 @@ def validate_ac_power(observation, values):
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
+    day_night = \
+        ~quality_mapping.convert_mask_into_dataframe(night_flag)['NIGHTTIME']
     ac_limit_flag = validator.check_ac_power_limits(
-        values, solar_position['apparent_zenith'],
+        values, day_night,
         observation.site.modeling_parameters.ac_capacity, _return_mask=True)
     return timestamp_flag, night_flag, ac_limit_flag
 
@@ -363,8 +365,10 @@ def validate_dc_power(observation, values):
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
+    day_night = \
+        ~quality_mapping.convert_mask_into_dataframe(night_flag)['NIGHTTIME']
     dc_limit_flag = validator.check_dc_power_limits(
-        values, solar_position['apparent_zenith'],
+        values, day_night,
         observation.site.modeling_parameters.dc_capacity, _return_mask=True)
     return timestamp_flag, night_flag, dc_limit_flag
 

@@ -399,18 +399,18 @@ def check_rh_limits(rh, rh_limits=(0, 100)):
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_ac_power_limits(power, solar_zenith, capacity,
+def check_ac_power_limits(power, day_night, capacity,
                           capacity_limit_low=-0.05,
                           capacity_limit_high_day=1.05,
                           capacity_limit_high_night=0.05):
-    """ Checks for extreme AC power.
+    """Check for extreme AC power.
 
     Parameters
     ----------
     power : Series
         DC or AC power.
-    solar_zenith : Series
-        Solar zenith angle in degrees.
+    day_night : Series
+        True for day time points, False for night time points.
     capacity : float
         AC capacity.
     capacity_limit_low : float
@@ -425,16 +425,15 @@ def check_ac_power_limits(power, solar_zenith, capacity,
     flags : Series
         True for values that are within the limits:
           * power > capacity * capacity_limit_low, AND
-            * power < capacity * capacity_limit_high_day AND solar_zenith < 93, OR
-            * power < capacity * capacity_limit_high_night AND solar_zenith > 93
+            * power < capacity * capacity_limit_high_day AND day_night, OR
+            * power < capacity * capacity_limit_high_night AND NOT day_night
 
     Notes
     -----
     Day time is defined as zenith < 93 degrees.
-    """  # noqa: E501
-
+    """
     flags = _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         )
 
@@ -442,18 +441,18 @@ def check_ac_power_limits(power, solar_zenith, capacity,
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_dc_power_limits(power, solar_zenith, capacity,
+def check_dc_power_limits(power, day_night, capacity,
                           capacity_limit_low=-0.05,
                           capacity_limit_high_day=1.20,
                           capacity_limit_high_night=0.05):
-    """ Checks for extreme AC power.
+    """Check for extreme AC power.
 
     Parameters
     ----------
     power : Series
         DC or AC power.
-    solar_zenith : Series
-        Solar zenith angle in degrees.
+    day_night : Series
+        True for day time points, False for night time points.
     capacity : float
         DC capacity.
     capacity_limit_low : float
@@ -468,16 +467,11 @@ def check_dc_power_limits(power, solar_zenith, capacity,
     flags : Series
         True for values that are within the limits:
           * power > capacity * capacity_limit_low, AND
-            * power < capacity * capacity_limit_high_day AND solar_zenith < 93, OR
-            * power < capacity * capacity_limit_high_night AND solar_zenith > 93
-
-    Notes
-    -----
-    Day time is defined as zenith < 93 degrees.
-    """  # noqa: E501
-
+            * power < capacity * capacity_limit_high_day AND day_night, OR
+            * power < capacity * capacity_limit_high_night AND NOT day_night
+    """
     flags = _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         )
 
@@ -485,7 +479,7 @@ def check_dc_power_limits(power, solar_zenith, capacity,
 
 
 def _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         ):
 
@@ -493,9 +487,6 @@ def _check_power_limits(
     capacity_low = capacity * capacity_limit_low
     capacity_high_day = capacity * capacity_limit_high_day
     capacity_high_night = capacity * capacity_limit_high_night
-
-    # True for daytime values
-    day_night = check_day_night(solar_zenith, max_zenith=93)
 
     flag_low = _check_limits(power, lb=capacity_low)
     flag_high_day = _check_limits(power, ub=capacity_high_day) & day_night

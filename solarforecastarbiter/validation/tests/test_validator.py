@@ -142,11 +142,10 @@ def test_check_ac_power_limits():
     index = pd.date_range(
         start='20200401 0700', freq='2h', periods=6, tz='UTC')
     power = pd.Series([0, -0.1, 0.1, 1, 1.1, -0.1], index=index)
-    # not precise zenith - just for day/night flagging
-    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    day_night = pd.Series([0, 0, 0, 1, 1, 1], index=index, dtype='bool')
     capacity = 1.
     expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
-    out = validator.check_ac_power_limits(power, solar_zenith, capacity)
+    out = validator.check_ac_power_limits(power, day_night, capacity)
     assert_series_equal(out, expected)
 
 
@@ -154,11 +153,10 @@ def test_check_dc_power_limits():
     index = pd.date_range(
         start='20200401 0700', freq='2h', periods=6, tz='UTC')
     power = pd.Series([0, -0.1, 0.1, 1, 1.3, -0.1], index=index)
-    # not precise zenith - just for day/night flagging
-    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    day_night = pd.Series([0, 0, 0, 1, 1, 1], index=index, dtype='bool')
     capacity = 1.
     expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
-    out = validator.check_dc_power_limits(power, solar_zenith, capacity)
+    out = validator.check_dc_power_limits(power, day_night, capacity)
     assert_series_equal(out, expected)
 
 
