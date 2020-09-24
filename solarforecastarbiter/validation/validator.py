@@ -495,7 +495,7 @@ def _check_power_limits(
     capacity_high_night = capacity * capacity_limit_high_night
 
     # True for daytime values
-    day_night = check_irradiance_day_night(solar_zenith, max_zenith=93)
+    day_night = check_day_night(solar_zenith, max_zenith=93)
 
     flag_low = _check_limits(power, lb=capacity_low)
     flag_high_day = _check_limits(power, ub=capacity_high_day) & day_night
@@ -557,7 +557,7 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
 
 
 @mask_flags('NIGHTTIME')
-def check_irradiance_day_night(solar_zenith, max_zenith=87):
+def check_day_night(solar_zenith, max_zenith=87):
     """ Checks for day/night periods based on solar zenith.
 
     Parameters
@@ -578,7 +578,7 @@ def check_irradiance_day_night(solar_zenith, max_zenith=87):
 
 
 @mask_flags('NIGHTTIME')
-def check_irradiance_day_night_interval(
+def check_day_night_interval(
         solar_zenith, closed, interval_length,
         solar_zenith_interval_length=None, fraction_of_interval=0.1,
         max_zenith=87):

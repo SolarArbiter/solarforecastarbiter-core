@@ -227,13 +227,13 @@ def test_check_poa_clearsky(mocker, times):
     assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night():
+def test_check_day_night():
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
              datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
     expected = pd.Series(data=[True, False], index=times)
     solar_zenith = pd.Series(data=[11.8, 114.3], index=times)
-    result = validator.check_irradiance_day_night(solar_zenith)
+    result = validator.check_day_night(solar_zenith)
     assert_series_equal(result, expected)
 
 
@@ -243,31 +243,31 @@ def test_check_irradiance_day_night():
     ('right', pd.Series([False, True], index=pd.DatetimeIndex(
         ['20200917 0100', '20200917 0200'])))
 ))
-def test_check_irradiance_day_night_interval(closed, expected):
+def test_check_day_night_interval(closed, expected):
     interval_length = pd.Timedelta('1h')
     index = pd.date_range(
         start='20200917 0000', end='20200917 0200', closed=closed,
         freq='5min')
     solar_zenith = pd.Series([89]*11 + [80]*13, index=index)
-    result = validator.check_irradiance_day_night_interval(
+    result = validator.check_day_night_interval(
         solar_zenith, closed, interval_length
     )
     assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night_interval_no_infer():
+def test_check_day_night_interval_no_infer():
     interval_length = pd.Timedelta('1h')
     closed = 'left'
     index = pd.DatetimeIndex(
         ['20200917 0100', '20200917 0200', '20200917 0400'])
     solar_zenith = pd.Series([0]*3, index=index)
     with pytest.raises(ValueError, match='contains gaps'):
-        validator.check_irradiance_day_night_interval(
+        validator.check_day_night_interval(
             solar_zenith, closed, interval_length
         )
 
 
-def test_check_irradiance_day_night_interval_irregular():
+def test_check_day_night_interval_irregular():
     interval_length = pd.Timedelta('1h')
     solar_zenith_interval_length = pd.Timedelta('5min')
     closed = 'left'
@@ -279,7 +279,7 @@ def test_check_irradiance_day_night_interval_irregular():
         freq=solar_zenith_interval_length)
     index = index1.union(index2)
     solar_zenith = pd.Series([89]*11 + [80]*13, index=index)
-    result = validator.check_irradiance_day_night_interval(
+    result = validator.check_day_night_interval(
         solar_zenith, closed, interval_length,
         solar_zenith_interval_length=solar_zenith_interval_length
     )

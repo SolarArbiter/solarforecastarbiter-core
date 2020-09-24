@@ -45,8 +45,8 @@ def _solpos_night_instantaneous(observation, values):
     solar_position = pvmodel.calculate_solar_position(
         observation.site.latitude, observation.site.longitude,
         observation.site.elevation, values.index)
-    night_flag = validator.check_irradiance_day_night(solar_position['zenith'],
-                                                      _return_mask=True)
+    night_flag = validator.check_day_night(solar_position['zenith'],
+                                           _return_mask=True)
     return solar_position, night_flag
 
 
@@ -82,7 +82,7 @@ def _solpos_night_resample(observation, values):
         observation.site.elevation, obs_range
     )
     # get the night flag as bitmask
-    night_flag = validator.check_irradiance_day_night_interval(
+    night_flag = validator.check_day_night_interval(
         solar_position['zenith'],
         closed,
         interval_length,

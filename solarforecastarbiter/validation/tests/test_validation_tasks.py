@@ -46,13 +46,13 @@ def daily_index(single_site):
 def nighttime_func_mask(obs, index):
     if obs.interval_label == 'beginning':
         flag = [0, 0, 0, 0, 0]
-        func = 'check_irradiance_day_night_interval'
+        func = 'check_day_night_interval'
     elif obs.interval_label == 'ending':
         flag = [1, 0, 0, 0, 0]
-        func = 'check_irradiance_day_night_interval'
+        func = 'check_day_night_interval'
     else:
         flag = [1, 0, 0, 0, 0]
-        func = 'check_irradiance_day_night'
+        func = 'check_day_night'
     flag = pd.Series(flag, index=index, dtype='int')
     mask = flag * DESCRIPTION_MASK_MAPPING['NIGHTTIME']
     return func, mask
@@ -61,13 +61,13 @@ def nighttime_func_mask(obs, index):
 def nighttime_func_mask_daily(obs, index):
     if obs.interval_label == 'beginning':
         flag = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
-        func = 'check_irradiance_day_night_interval'
+        func = 'check_day_night_interval'
     elif obs.interval_label == 'ending':
         flag = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0]
-        func = 'check_irradiance_day_night_interval'
+        func = 'check_day_night_interval'
     else:
         flag = [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
-        func = 'check_irradiance_day_night'
+        func = 'check_day_night'
     flag = pd.Series(flag, index=index)
     mask = flag * DESCRIPTION_MASK_MAPPING['NIGHTTIME']
     return func, mask
