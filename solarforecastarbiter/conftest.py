@@ -1626,7 +1626,7 @@ def report_objects(aggregate, ref_forecast_id):
         name="University of Arizona OASIS ghi",
         variable="ghi",
         interval_value_type="interval_mean",
-        interval_length=pd.Timedelta("15min"),
+        interval_length=pd.Timedelta("1min"),
         interval_label="ending",
         site=site,
         uncertainty=1.0,
