@@ -427,10 +427,6 @@ def check_ac_power_limits(power, day_night, capacity,
           * power > capacity * capacity_limit_low, AND
             * power < capacity * capacity_limit_high_day AND day_night, OR
             * power < capacity * capacity_limit_high_night AND NOT day_night
-
-    Notes
-    -----
-    Day time is defined as zenith < 93 degrees.
     """
     flags = _check_power_limits(
         power, day_night, capacity, capacity_limit_low,
@@ -549,7 +545,7 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
 
 @mask_flags('NIGHTTIME')
 def check_day_night(solar_zenith, max_zenith=87):
-    """ Checks for day/night periods based on solar zenith.
+    """Check for day/night periods based on solar zenith.
 
     Parameters
     ----------

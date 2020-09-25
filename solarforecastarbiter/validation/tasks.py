@@ -125,8 +125,8 @@ def validate_ghi(observation, values):
     timestamp_flag : pandas.Series
         Bitmask from :py:func:`.validator.check_timestamp_spacing`
     night_flag : pandas.Series
-        Bitmask from :py:func:`.validator.check_irradiance_day_night` or
-        :py:func:`.validator.check_irradiance_day_night_interval`
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
     ghi_limit_flag : pandas.Series
         Bitmask from :py:func:`.validator.check_ghi_limits_QCRad`
     ghi_clearsky_flag : pandas.Series
@@ -164,11 +164,13 @@ def validate_dni(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, dni_limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_dni_limits_QCRad` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    dni_limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_dni_limits_QCRad`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
@@ -192,11 +194,13 @@ def validate_dhi(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, dhi_limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_dhi_limits_QCRad` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    dhi_limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_dhi_limits_QCRad`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
@@ -220,11 +224,13 @@ def validate_poa_global(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, poa_clearsky_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_poa_clearsky` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    poa_clearsky_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_poa_clearsky`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
@@ -254,16 +260,18 @@ def validate_air_temperature(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, temp_limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_temperature_limits` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_temperature_limits`
     """
     timestamp_flag, night_flag = validate_defaults(observation, values)
-    temp_limit_flag = validator.check_temperature_limits(
+    limit_flag = validator.check_temperature_limits(
         values, _return_mask=True)
-    return timestamp_flag, night_flag, temp_limit_flag
+    return timestamp_flag, night_flag, limit_flag
 
 
 def validate_wind_speed(observation, values):
@@ -279,16 +287,17 @@ def validate_wind_speed(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, wind_limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_wind_limits` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.wind_limit_flag`
     """
     timestamp_flag, night_flag = validate_defaults(observation, values)
-    wind_limit_flag = validator.check_wind_limits(values,
-                                                  _return_mask=True)
-    return timestamp_flag, night_flag, wind_limit_flag
+    limit_flag = validator.check_wind_limits(values, _return_mask=True)
+    return timestamp_flag, night_flag, limit_flag
 
 
 def validate_relative_humidity(observation, values):
@@ -304,15 +313,17 @@ def validate_relative_humidity(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, rh_limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_rh_limits` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_rh_limits`
     """
     timestamp_flag, night_flag = validate_defaults(observation, values)
-    rh_limit_flag = validator.check_rh_limits(values, _return_mask=True)
-    return timestamp_flag, night_flag, rh_limit_flag
+    limit_flag = validator.check_rh_limits(values, _return_mask=True)
+    return timestamp_flag, night_flag, limit_flag
 
 
 def validate_ac_power(observation, values):
@@ -328,20 +339,22 @@ def validate_ac_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_power_limits`
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_ac_power_limits`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
     day_night = \
         ~quality_mapping.convert_mask_into_dataframe(night_flag)['NIGHTTIME']
-    ac_limit_flag = validator.check_ac_power_limits(
+    limit_flag = validator.check_ac_power_limits(
         values, day_night,
         observation.site.modeling_parameters.ac_capacity, _return_mask=True)
-    return timestamp_flag, night_flag, ac_limit_flag
+    return timestamp_flag, night_flag, limit_flag
 
 
 def validate_dc_power(observation, values):
@@ -357,11 +370,13 @@ def validate_dc_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, limit_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_power_limits`
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_dc_power_limits`
     """
     solar_position, dni_extra, timestamp_flag, night_flag = _solpos_dni_extra(
         observation, values)
@@ -386,10 +401,11 @@ def validate_defaults(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night` respectively
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
     """
     timestamp_flag = _validate_timestamp(observation, values)
     _, night_flag = _solpos_night(observation, values)
@@ -411,11 +427,12 @@ def validate_daily_ghi(observation, values):
 
     Returns
     -------
-    *ghi_flags, stale_flag, interpolation_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validate_ghi`,
-        :py:func:`.validator.detect_stale_values`,
-        :py:func:`.validator.detect_interpolation`
+    *ghi_flags
+        Bitmasks from :py:func:`.tasks.validate_ghi`
+    stale_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_stale_values`
+    interpolation_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_interpolation`
     """
     ghi_flags = validate_ghi(observation, values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
@@ -436,14 +453,18 @@ def validate_daily_dc_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_power_limits`,
-        :py:func:`.validator.detect_stale_values`,
-        :py:func:`.validator.detect_interpolation`
-    """  # NOQA: E501
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_dc_power_limits`
+    stale_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_stale_values`
+    interpolation_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_interpolation`
+    """
     timestamp_flag, night_flag, dc_limit_flag = validate_dc_power(observation,
                                                                   values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
@@ -465,15 +486,18 @@ def validate_daily_ac_power(observation, values):
 
     Returns
     -------
-    timestamp_flag, night_flag, limit_flag, stale_flag, interpolation_flag, clipping_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.validator.check_timestamp_spacing`,
-        :py:func:`.validator.check_irradiance_day_night`,
-        :py:func:`.validator.check_power_limits`,
-        :py:func:`.validator.detect_stale_values`,
-        :py:func:`.validator.detect_interpolation`,
-        :py:func:`.validator.detect_clipping`
-    """  # NOQA: E501
+    timestamp_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_timestamp_spacing`
+    night_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_day_night` or
+        :py:func:`.validator.check_day_night_interval`
+    limit_flag : pandas.Series
+        Bitmask from :py:func:`.validator.check_ac_power_limits`
+    stale_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_stale_values`
+    interpolation_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_interpolation`
+    """
     timestamp_flag, night_flag, ac_limit_flag = validate_ac_power(observation,
                                                                   values)
     stale_flag, interpolation_flag = _validate_stale_interpolated(observation,
@@ -500,11 +524,12 @@ def validate_daily_defaults(observation, values):
 
     Returns
     -------
-    *variable_immediate_flags, stale_flag, interpolation_flag : pandas.Series
-        Integer bitmask series from
-        :py:func:`.tasks.validate_{variable}`,
-        :py:func:`.validator.detect_stale_values`,
-        :py:func:`.validator.detect_interpolation`
+    *variable_immediate_flags
+        Bitmasks from :py:func:`.tasks.validate_{variable}`
+    stale_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_stale_values`
+    interpolation_flag : pandas.Series
+        Bitmask from :py:func:`.validator.detect_interpolation`
     """
     immediate_func = IMMEDIATE_VALIDATION_FUNCS.get(
         observation.variable, validate_defaults)
@@ -538,7 +563,8 @@ DAILY_VALIDATION_FUNCS = {
 
 def apply_immediate_validation(observation, observation_values):
     """
-    Applies the appropriate validation functions to the observation_values.
+    Apply the appropriate validation functions to the observation_values.
+
     Only the USER_FLAGGED flag is propagated if the series has been
     previously validated.
 
@@ -571,9 +597,11 @@ def apply_immediate_validation(observation, observation_values):
 
 
 def apply_daily_validation(observation, observation_values):
-    """Applies the appropriate daily validation functions to the
-    observation_values.  Only the USER_FLAGGED flag is propagated if
-    the series has been previously validated.
+    """
+    Apply the appropriate daily validation functions to the observation_values.
+
+    Only the USER_FLAGGED flag is propagated if the series has been previously
+    validated.
 
     Parameters
     ----------
