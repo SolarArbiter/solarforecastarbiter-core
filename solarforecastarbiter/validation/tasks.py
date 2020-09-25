@@ -58,7 +58,7 @@ def _resample_date_range(interval_length, closed, freq, values):
     elif closed == 'right':
         data_start -= interval_length
     else:
-        raise ValueError("closed must be 'left' or 'right'")
+        raise ValueError("closed must be left or right")  # pragma: no cover
     obs_range = pd.date_range(start=data_start, end=data_end, freq=freq,
                               closed=closed)
     return obs_range
