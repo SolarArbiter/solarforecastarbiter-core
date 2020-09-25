@@ -1437,6 +1437,17 @@ def test_apply_validation_bad_df(make_observation, mocker):
             dtype=float))
 
 
+def test_apply_validation_inconsistent_interval(make_observation):
+    obs = make_observation('ghi')
+    index = pd.date_range(start='20200924', end='20200925', freq='1min')
+    data = pd.DataFrame({'value': 1, 'quality_flag': 2}, index=index)
+    if obs.interval_label == 'instant':
+        pass
+    else:
+        with pytest.raises(KeyError, match='Missing times'):
+            tasks.apply_validation(obs, data)
+
+
 def test_apply_validation_agg(aggregate, mocker):
     data = pd.DataFrame({'value': [1], 'quality_flag': [0]},
                         index=pd.DatetimeIndex(
