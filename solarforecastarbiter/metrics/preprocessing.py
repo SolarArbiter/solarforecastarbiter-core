@@ -462,26 +462,32 @@ def process_forecast_observations(forecast_observations, filters,
 
     For each forecast, observation pair in ``forecast_observations``:
 
-      1. Remove observation data points with ``quality_flag`` in filters.
-         Remaining observation series is discontinuous.
-      2. Fill missing forecast data points according to
+      1. Fill missing forecast data points according to
          ``forecast_fill_method``.
-      3. Fill missing reference forecast data points according to
+      2. Fill missing reference forecast data points according to
          ``forecast_fill_method``.
-      4. Resample observations to match forecast intervals. A minimum of 10% of
-         the observation intervals within a forecast interval must be valid
-         (not flagged or previously missing) else the resampled observation is
-         NaN.
+      3. Remove observation data points with ``quality_flag`` in
+         filters. Remaining observation series is discontinuous.
+      4. Resample observations to match forecast intervals. A minimum of
+         10% of the observation intervals within a forecast interval
+         must be valid (not flagged or previously missing) else the
+         resampled observation is NaN.
       5. Drop remaining NaN observation and forecast values.
-      6. Align observations to match forecast times. Observation times for
-         which there is not a matching forecast time are dropped.
-      7. Create :py:class:`~solarforecastarbiter.datamodel.ProcessedForecastObservation`
+      6. Align observations to match forecast times. Observation times
+         for which there is not a matching forecast time are dropped.
+      7. Create
+         :py:class:`~solarforecastarbiter.datamodel.ProcessedForecastObservation`
          with resampled, aligned data and metadata.
     """  # NOQA: E501
     if not all([isinstance(filter_, datamodel.QualityFlagFilter)
                 for filter_ in filters]):
         logger.warning(
             'Only filtering on Quality Flag is currently implemented')
+    # what's the point of copying the fill map, potentially adding a new key,
+    # and then only accessing one key?
+    # this would make more sense to me (wholmgren):
+    # forecast_fill_str = FORECAST_FILL_STRING_MAP.get(forecast_fill_method,
+    #     FORECAST_FILL_CONST_STRING.format(forecast_fill_method))
     forecast_fill_map = FORECAST_FILL_STRING_MAP.copy()
     if forecast_fill_method not in forecast_fill_map.keys():
         forecast_fill_map.update(
@@ -491,7 +497,28 @@ def process_forecast_observations(forecast_observations, filters,
     validated_observations = {}
     processed_fxobs = {}
     for fxobs in forecast_observations:
-        # validate observation or aggregate data
+        preproc_results = []
+
+        # Apply fill to forecast and reference forecast
+        fx_ser = data[fxobs.forecast]
+        fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
+                                   forecast_fill_method, start, end)
+        preproc_results.append(datamodel.PreprocessingResult(
+            name=FILL_RESULT_TOTAL_STRING.format(
+                '', forecast_fill_map[forecast_fill_method]),
+            count=int(count)))
+        if fxobs.reference_forecast is not None:
+            ref_ser = data[fxobs.reference_forecast]
+            ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
+                                        forecast_fill_method, start, end)
+            preproc_results.append(datamodel.PreprocessingResult(
+                name=FILL_RESULT_TOTAL_STRING.format(
+                    "Reference ", forecast_fill_map[forecast_fill_method]),
+                count=int(count)))
+        else:
+            ref_ser = None
+
+        # validate observation or aggregate data if not already done
         if fxobs.data_object not in validated_observations:
             try:
                 obs_ser, counts = apply_validation(
@@ -503,9 +530,9 @@ def process_forecast_observations(forecast_observations, filters,
                     'Failed to validate data for %s. %s',
                     fxobs.data_object.name, e)
                 # store empty data in validated_observations
-                preproc_results = (datamodel.PreprocessingResult(
+                preproc_obs_results = datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=-1), )
+                    count=-1)
                 validated_observations[fxobs.data_object] = (
                     pd.Series([], name='value', index=pd.DatetimeIndex(
                         [], name='timestamp', tz='UTC'), dtype=float),
@@ -514,40 +541,24 @@ def process_forecast_observations(forecast_observations, filters,
                 # store validated data in validated_observations
                 val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
                                     for k, v in counts.items())
-                preproc_results = (datamodel.PreprocessingResult(
+                preproc_obs_results = datamodel.PreprocessingResult(
                     name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=(len(data[fxobs.data_object]) - len(obs_ser))), )
+                    count=(len(data[fxobs.data_object]) - len(obs_ser)))
                 validated_observations[fxobs.data_object] = (
-                    obs_ser, val_results, preproc_results)
+                    obs_ser, val_results, preproc_obs_results)
 
-        obs_ser, val_results, preproc_results = (
+        # pull validated observation/aggregate data from cache
+        obs_ser, val_results, preproc_obs_results = (
             validated_observations[fxobs.data_object])
-
-        # Apply fill to forecasts
-        fx_ser = data[fxobs.forecast]
-        fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
-                                   forecast_fill_method, start, end)
-        preproc_results += (datamodel.PreprocessingResult(
-            name=FILL_RESULT_TOTAL_STRING.format(
-                '', forecast_fill_map[forecast_fill_method]),
-            count=int(count)), )
-        if fxobs.reference_forecast is not None:
-            ref_ser = data[fxobs.reference_forecast]
-            ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
-                                        forecast_fill_method, start, end)
-            preproc_results += (datamodel.PreprocessingResult(
-                name=FILL_RESULT_TOTAL_STRING.format(
-                    "Reference ", forecast_fill_map[forecast_fill_method]),
-                count=int(count)), )
-        else:
-            ref_ser = None
+        preproc_results.append(preproc_obs_results)
 
         # Resample and align and create processed pair
         try:
             forecast_values, observation_values, ref_fx_values, results = \
                 resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)
-            preproc_results += tuple(datamodel.PreprocessingResult(
-                name=k, count=int(v)) for k, v in results.items())
+            preproc_results.extend(
+                [datamodel.PreprocessingResult(name=k, count=int(v))
+                 for k, v in results.items()])
         except Exception as e:
             logger.error(
                 'Failed to resample and align data for pair (%s, %s): %s',
@@ -555,8 +566,7 @@ def process_forecast_observations(forecast_observations, filters,
         else:
             logger.info('Processed data successfully for pair (%s, %s)',
                         fxobs.forecast.name, fxobs.data_object.name)
-            name = _name_pfxobs(processed_fxobs.keys(),
-                                fxobs.forecast)
+            name = _name_pfxobs(processed_fxobs.keys(), fxobs.forecast)
             cost_name = fxobs.cost
             cost = costs_dict.get(cost_name)
             if cost_name is not None and cost is None:
@@ -571,7 +581,7 @@ def process_forecast_observations(forecast_observations, filters,
                 interval_label=fxobs.forecast.interval_label,
                 valid_point_count=len(forecast_values),
                 validation_results=val_results,
-                preprocessing_results=preproc_results,
+                preprocessing_results=tuple(preproc_results),
                 forecast_values=forecast_values,
                 observation_values=observation_values,
                 reference_forecast_values=ref_fx_values,
