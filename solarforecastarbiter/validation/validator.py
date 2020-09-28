@@ -556,7 +556,7 @@ def check_day_night(solar_zenith, max_zenith=87):
 
     Returns
     -------
-    flags : Series
+    daytime : Series
         True when solar zenith is less than max_zenith.
     """
     # True = daytime. False = nighttime.
@@ -594,7 +594,7 @@ def check_day_night_interval(
 
     Returns
     -------
-    flags : Series
+    daytime : Series
         True when sufficient points within an interval are less than
         max_zenith. Index conforms to solar_zenith resampled to
         interval_length.
