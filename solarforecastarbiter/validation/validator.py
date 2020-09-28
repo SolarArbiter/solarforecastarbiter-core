@@ -37,6 +37,8 @@ QCRAD_CONSISTENCY = {
             {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
              'ratio_bounds': [0.0, 1.10]}}}
 
+DAY_NIGHT_MAX_ZENITH = 87.
+
 
 def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
     """ Returns True where lb < (or <=) val < (or <=) ub
@@ -544,7 +546,7 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
 
 
 @mask_flags('NIGHTTIME')
-def check_day_night(solar_zenith, max_zenith=87):
+def check_day_night(solar_zenith, max_zenith=DAY_NIGHT_MAX_ZENITH):
     """Check for day/night periods based on solar zenith.
 
     Parameters
@@ -568,7 +570,7 @@ def check_day_night(solar_zenith, max_zenith=87):
 def check_day_night_interval(
         solar_zenith, closed, interval_length,
         solar_zenith_interval_length=None, fraction_of_interval=0.1,
-        max_zenith=87):
+        max_zenith=DAY_NIGHT_MAX_ZENITH):
     """Check for day/night periods based on solar zenith.
 
     Interval average data may be analyzed by supplying higher resolution
