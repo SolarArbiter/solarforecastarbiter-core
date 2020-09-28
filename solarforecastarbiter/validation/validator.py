@@ -37,6 +37,8 @@ QCRAD_CONSISTENCY = {
             {'zenith_bounds': [75, 93], 'ghi_bounds': [50, np.Inf],
              'ratio_bounds': [0.0, 1.10]}}}
 
+DAY_NIGHT_MAX_ZENITH = 87.
+
 
 def _check_limits(val, lb=None, ub=None, lb_ge=False, ub_le=False):
     """ Returns True where lb < (or <=) val < (or <=) ub
@@ -399,18 +401,18 @@ def check_rh_limits(rh, rh_limits=(0, 100)):
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_ac_power_limits(power, solar_zenith, capacity,
+def check_ac_power_limits(power, day_night, capacity,
                           capacity_limit_low=-0.05,
                           capacity_limit_high_day=1.05,
                           capacity_limit_high_night=0.05):
-    """ Checks for extreme AC power.
+    """Check for extreme AC power.
 
     Parameters
     ----------
     power : Series
         DC or AC power.
-    solar_zenith : Series
-        Solar zenith angle in degrees.
+    day_night : Series
+        True for day time points, False for night time points.
     capacity : float
         AC capacity.
     capacity_limit_low : float
@@ -425,16 +427,11 @@ def check_ac_power_limits(power, solar_zenith, capacity,
     flags : Series
         True for values that are within the limits:
           * power > capacity * capacity_limit_low, AND
-            * power < capacity * capacity_limit_high_day AND solar_zenith < 93, OR
-            * power < capacity * capacity_limit_high_night AND solar_zenith > 93
-
-    Notes
-    -----
-    Day time is defined as zenith < 93 degrees.
-    """  # noqa: E501
-
+            * power < capacity * capacity_limit_high_day AND day_night, OR
+            * power < capacity * capacity_limit_high_night AND NOT day_night
+    """
     flags = _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         )
 
@@ -442,18 +439,18 @@ def check_ac_power_limits(power, solar_zenith, capacity,
 
 
 @mask_flags('LIMITS EXCEEDED')
-def check_dc_power_limits(power, solar_zenith, capacity,
+def check_dc_power_limits(power, day_night, capacity,
                           capacity_limit_low=-0.05,
                           capacity_limit_high_day=1.20,
                           capacity_limit_high_night=0.05):
-    """ Checks for extreme AC power.
+    """Check for extreme AC power.
 
     Parameters
     ----------
     power : Series
         DC or AC power.
-    solar_zenith : Series
-        Solar zenith angle in degrees.
+    day_night : Series
+        True for day time points, False for night time points.
     capacity : float
         DC capacity.
     capacity_limit_low : float
@@ -468,16 +465,11 @@ def check_dc_power_limits(power, solar_zenith, capacity,
     flags : Series
         True for values that are within the limits:
           * power > capacity * capacity_limit_low, AND
-            * power < capacity * capacity_limit_high_day AND solar_zenith < 93, OR
-            * power < capacity * capacity_limit_high_night AND solar_zenith > 93
-
-    Notes
-    -----
-    Day time is defined as zenith < 93 degrees.
-    """  # noqa: E501
-
+            * power < capacity * capacity_limit_high_day AND day_night, OR
+            * power < capacity * capacity_limit_high_night AND NOT day_night
+    """
     flags = _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         )
 
@@ -485,7 +477,7 @@ def check_dc_power_limits(power, solar_zenith, capacity,
 
 
 def _check_power_limits(
-        power, solar_zenith, capacity, capacity_limit_low,
+        power, day_night, capacity, capacity_limit_low,
         capacity_limit_high_day, capacity_limit_high_night
         ):
 
@@ -493,9 +485,6 @@ def _check_power_limits(
     capacity_low = capacity * capacity_limit_low
     capacity_high_day = capacity * capacity_limit_high_day
     capacity_high_night = capacity * capacity_limit_high_night
-
-    # True for daytime values
-    day_night = check_irradiance_day_night(solar_zenith, max_zenith=93)
 
     flag_low = _check_limits(power, lb=capacity_low)
     flag_high_day = _check_limits(power, ub=capacity_high_day) & day_night
@@ -557,22 +546,90 @@ def check_poa_clearsky(poa_global, poa_clearsky, kt_max=1.1):
 
 
 @mask_flags('NIGHTTIME')
-def check_irradiance_day_night(solar_zenith, max_zenith=87):
-    """ Checks for day/night periods based on solar zenith.
+def check_day_night(solar_zenith, max_zenith=DAY_NIGHT_MAX_ZENITH):
+    """Check for day/night periods based on solar zenith.
 
     Parameters
     ----------
     solar_zenith : Series
-        Solar zenith angle in degrees
-    max_zenith : maximum zenith angle for a daylight time
+        Solar zenith angle in degrees.
+    max_zenith : float
+        Maximum zenith angle for a daylight time.
 
     Returns
     -------
-    flags : Series
+    daytime : Series
         True when solar zenith is less than max_zenith.
     """
-    flags = _check_limits(solar_zenith, ub=max_zenith)
-    return flags
+    # True = daytime. False = nighttime.
+    daytime = _check_limits(solar_zenith, ub=max_zenith)
+    return daytime
+
+
+@mask_flags('NIGHTTIME')
+def check_day_night_interval(
+        solar_zenith, closed, interval_length,
+        solar_zenith_interval_length=None, fraction_of_interval=0.1,
+        max_zenith=DAY_NIGHT_MAX_ZENITH):
+    """Check for day/night periods based on solar zenith.
+
+    Interval average data may be analyzed by supplying higher resolution
+    solar zenith data and parameters that describe the desired intervals.
+
+    Parameters
+    ----------
+    solar_zenith : Series
+        Solar zenith angle in degrees.
+    closed : {'left', 'right'}
+        None for instantaneous data, 'left' for interval beginning labeled
+        data, 'right' for interval ending labeled data.
+    interval_length : Timedelta
+        Interval length to resample day/night periods to.
+    solar_zenith_interval_length : None or Timedelta
+        If None, attempt to infer.
+        Required if solar_zenith contains gaps.
+    fraction_of_interval : float
+        The fraction of the points in an interval that must be daytime
+        in order to mark the interval as daytime.
+    max_zenith : float
+        Maximum zenith angle for a daylight time.
+
+    Returns
+    -------
+    daytime : Series
+        True when sufficient points within an interval are less than
+        max_zenith. Index conforms to solar_zenith resampled to
+        interval_length.
+
+    Raises
+    ------
+    ValueError
+        If solar_zenith contains gaps and solar_zenith_interval_length is not
+        provided.
+    """
+    # True = daytime. False = nighttime.
+    daytime = _check_limits(solar_zenith, ub=max_zenith)
+    # number of daytime minutes within the interval
+    daytime_sum = daytime.resample(
+        interval_length, closed=closed, label=closed
+    ).sum()
+    # if not provided, try to interval length for normalization.
+    # this will raise if the index has gaps.
+    if solar_zenith_interval_length is None:
+        solar_zenith_interval_length = pd.infer_freq(
+            solar_zenith.index, warn=False)
+        if solar_zenith_interval_length is None:
+            raise ValueError(
+                'solar_zenith.index contains gaps so the freq could not be '
+                'inferred and solar_zenith_interval_length was not provided. '
+                'Fill the gaps or pass solar_zenith_interval_length.')
+    # If points corresponding to fraction_of_interval is daytime,
+    # then the interval is daytime
+    count_threshold = int(
+        interval_length * fraction_of_interval / solar_zenith_interval_length
+    )
+    daytime = daytime_sum > count_threshold
+    return daytime
 
 
 @mask_flags('UNEVEN FREQUENCY')

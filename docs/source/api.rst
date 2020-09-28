@@ -679,7 +679,8 @@ Functions to perform validation.
    validation.validator.check_dc_power_limits
    validation.validator.check_ghi_clearsky
    validation.validator.check_poa_clearsky
-   validation.validator.check_irradiance_day_night
+   validation.validator.check_day_night
+   validation.validator.check_day_night_interval
    validation.validator.check_timestamp_spacing
    validation.validator.detect_stale_values
    validation.validator.detect_interpolation

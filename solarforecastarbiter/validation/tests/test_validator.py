@@ -142,11 +142,10 @@ def test_check_ac_power_limits():
     index = pd.date_range(
         start='20200401 0700', freq='2h', periods=6, tz='UTC')
     power = pd.Series([0, -0.1, 0.1, 1, 1.1, -0.1], index=index)
-    # not precise zenith - just for day/night flagging
-    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    day_night = pd.Series([0, 0, 0, 1, 1, 1], index=index, dtype='bool')
     capacity = 1.
     expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
-    out = validator.check_ac_power_limits(power, solar_zenith, capacity)
+    out = validator.check_ac_power_limits(power, day_night, capacity)
     assert_series_equal(out, expected)
 
 
@@ -154,11 +153,10 @@ def test_check_dc_power_limits():
     index = pd.date_range(
         start='20200401 0700', freq='2h', periods=6, tz='UTC')
     power = pd.Series([0, -0.1, 0.1, 1, 1.3, -0.1], index=index)
-    # not precise zenith - just for day/night flagging
-    solar_zenith = pd.Series([180, 150, 120, 80, 50, 30], index=index)
+    day_night = pd.Series([0, 0, 0, 1, 1, 1], index=index, dtype='bool')
     capacity = 1.
     expected = pd.Series([1, 0, 0, 1, 0, 0], index=index).astype(bool)
-    out = validator.check_dc_power_limits(power, solar_zenith, capacity)
+    out = validator.check_dc_power_limits(power, day_night, capacity)
     assert_series_equal(out, expected)
 
 
@@ -227,13 +225,72 @@ def test_check_poa_clearsky(mocker, times):
     assert_series_equal(result, expected)
 
 
-def test_check_irradiance_day_night():
+def test_check_day_night():
     MST = pytz.timezone('MST')
     times = [datetime(2018, 6, 15, 12, 0, 0, tzinfo=MST),
              datetime(2018, 6, 15, 22, 0, 0, tzinfo=MST)]
     expected = pd.Series(data=[True, False], index=times)
     solar_zenith = pd.Series(data=[11.8, 114.3], index=times)
-    result = validator.check_irradiance_day_night(solar_zenith)
+    result = validator.check_day_night(solar_zenith)
+    assert_series_equal(result, expected)
+
+
+@pytest.mark.parametrize('closed,solar_zenith,expected', (
+    ('left', [89]*11 + [80]*13,
+     pd.Series([False, True], index=pd.DatetimeIndex(
+            ['20200917 0000', '20200917 0100']))),
+    ('right', [89]*11 + [80]*13,
+     pd.Series([False, True], index=pd.DatetimeIndex(
+        ['20200917 0100', '20200917 0200']))),
+    ('left', [89]*10 + [80]*14,
+     pd.Series([True, True], index=pd.DatetimeIndex(
+            ['20200917 0000', '20200917 0100']))),
+    ('right', [89]*10 + [80]*14,
+     pd.Series([True, True], index=pd.DatetimeIndex(
+        ['20200917 0100', '20200917 0200'])))
+))
+def test_check_day_night_interval(closed, solar_zenith, expected):
+    interval_length = pd.Timedelta('1h')
+    index = pd.date_range(
+        start='20200917 0000', end='20200917 0200', closed=closed,
+        freq='5min')
+    solar_zenith = pd.Series(solar_zenith, index=index)
+    result = validator.check_day_night_interval(
+        solar_zenith, closed, interval_length
+    )
+    assert_series_equal(result, expected)
+
+
+def test_check_day_night_interval_no_infer():
+    interval_length = pd.Timedelta('1h')
+    closed = 'left'
+    index = pd.DatetimeIndex(
+        ['20200917 0100', '20200917 0200', '20200917 0400'])
+    solar_zenith = pd.Series([0]*3, index=index)
+    with pytest.raises(ValueError, match='contains gaps'):
+        validator.check_day_night_interval(
+            solar_zenith, closed, interval_length
+        )
+
+
+def test_check_day_night_interval_irregular():
+    interval_length = pd.Timedelta('1h')
+    solar_zenith_interval_length = pd.Timedelta('5min')
+    closed = 'left'
+    index1 = pd.date_range(
+        start='20200917 0000', end='20200917 0100', closed=closed,
+        freq=solar_zenith_interval_length)
+    index2 = pd.date_range(
+        start='20200917 0200', end='20200917 0300', closed=closed,
+        freq=solar_zenith_interval_length)
+    index = index1.union(index2)
+    solar_zenith = pd.Series([89]*11 + [80]*13, index=index)
+    result = validator.check_day_night_interval(
+        solar_zenith, closed, interval_length,
+        solar_zenith_interval_length=solar_zenith_interval_length
+    )
+    expected = pd.Series([False, False, True], index=pd.DatetimeIndex(
+        ['20200917 0000', '20200917 0100', '20200917 0200']))
     assert_series_equal(result, expected)
 
 
