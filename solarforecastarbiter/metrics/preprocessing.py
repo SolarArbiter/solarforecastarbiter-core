@@ -269,13 +269,13 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
     observation_values : pandas.Series
     reference_forecast_values : pandas.Series or pandas.DataFrame or None
     results : dict
+        Keys are strings and values are typically integers that
+        describe number of discarded and undefined data points.
 
     Notes
     -----
-    In the case where the `interval_label` of the `obs` and `fx` do not match,
-    this function currently returns a `ProcessedForecastObservation` object
-    with a `interval_label` the same as the `fx`, regardless of whether the
-    `interval_length` of the `fx` and `obs` are the same or different.
+    This function does not currently account for mismatches in the
+    `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
 
     Raises
     ------
@@ -458,9 +458,14 @@ def process_forecast_observations(forecast_observations, filters,
 
     Notes
     -----
-    The logic is as follows.
+    In the case where the `interval_label` of the `obs` and `fx` do not
+    match, this function currently returns a
+    `ProcessedForecastObservation` object with a `interval_label` the
+    same as the `fx`, regardless of whether the `interval_length` of the
+    `fx` and `obs` are the same or different.
 
-    For each forecast, observation pair in ``forecast_observations``:
+    The processing logic is as follows. For each forecast, observation
+    pair in ``forecast_observations``:
 
       1. Fill missing forecast data points according to
          ``forecast_fill_method``.
@@ -494,7 +499,9 @@ def process_forecast_observations(forecast_observations, filters,
             {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
     qfilter = _merge_quality_filters(filters)
     costs_dict = {c.name: c for c in costs}
+    # a cache so we don't waste time revalidating repeated obs
     validated_observations = {}
+    # we never use the processed_fxobs keys, so should be a list
     processed_fxobs = {}
     for fxobs in forecast_observations:
         preproc_results = []
@@ -518,7 +525,7 @@ def process_forecast_observations(forecast_observations, filters,
         else:
             ref_ser = None
 
-        # validate observation or aggregate data if not already done
+        # validate observation/aggregate data if not in cache
         if fxobs.data_object not in validated_observations:
             try:
                 obs_ser, counts = apply_validation(
