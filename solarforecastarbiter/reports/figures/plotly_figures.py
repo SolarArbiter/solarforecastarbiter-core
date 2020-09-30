@@ -66,7 +66,7 @@ PLOT_LAYOUT_DEFAULTS = {
 # present. The length of the longest label of the plot will be multiplies by
 # this value and added o the height of PLOT_LAYOUT_DEFAULTS to determine the
 # new height.
-X_LABEL_HEIGHT_FACTOR = 9
+X_LABEL_HEIGHT_FACTOR = 10
 
 # If for some reason, the fail.pdf (just a pdf with some text that
 # pdf generation failed) is unavailable, use an empty pdf
