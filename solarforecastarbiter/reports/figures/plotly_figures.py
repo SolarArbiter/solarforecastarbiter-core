@@ -931,7 +931,10 @@ def bar_subdivisions(df, category, metric):
     elif category == 'year':
         x_axis_kwargs = {'dtick': 1}
     elif category == 'date':
-        x_axis_kwargs = {'dtick': '1d'}
+        x_axis_kwargs = {'tickformatstops': [
+            dict(dtickrange=[None, 604800000], value='%b %e'),
+            ]
+        }
     else:
         x_axis_kwargs = {}
 
