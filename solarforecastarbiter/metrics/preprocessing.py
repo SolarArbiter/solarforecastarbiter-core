@@ -489,11 +489,12 @@ def process_forecast_observations(forecast_observations, filters,
          ``forecast_fill_method``.
       3. Remove observation data points with ``quality_flag`` in
          filters. Remaining observation series is discontinuous.
-      4. Resample observations to match forecast intervals. A minimum of
-         10% of the observation intervals within a forecast interval
-         must be valid (not flagged or previously missing) else the
+      4. Resample observations to match forecast intervals. If at least
+         10% of the observation intervals within a forecast interval are
+         valid (not missing or matching ``filters``), the interval is
+         value is computed from all subintervals. Otherwise the
          resampled observation is NaN.
-      5. Drop remaining NaN observation and forecast values.
+      5. Drop NaN observation values.
       6. Align observations to match forecast times. Observation times
          for which there is not a matching forecast time are dropped.
       7. Create
