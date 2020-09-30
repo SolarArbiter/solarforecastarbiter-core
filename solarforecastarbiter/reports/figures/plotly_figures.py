@@ -785,6 +785,9 @@ def abbreviate(x, limit=3):
         elif c.upper() == c:
             # probably an acronym
             out = c
+        elif c == 'Prob(f' or c == 'Prob(x':
+            # special case for probabilistic forecast labelling
+            out = c
         else:
             out = f'{c[0:limit]}.'
         out_components.append(out)
