@@ -23,45 +23,6 @@ FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
                             'forward': "Forward Filled"}
 
 
-def apply_validation(obs_df, qfilter, handle_func):
-    """
-    Apply validation steps based on provided filters to the data.
-
-    Parameters
-    ----------
-    obs_df : pandas.DataFrame
-        The observation data with 'value' and 'quality_flag' columns
-    qfilter : solarforecastarbiter.datamodel.QualityFlagFilter
-    handle_func : function
-        Function that handles how `quality_flags` will be used.
-        See solarforecastarbiter.metrics.preprocessing.exclude as an
-        example.
-
-    Returns
-    -------
-    validated_obs : pandas.Series
-        The validated timeseries data as pandas.Series.
-    counts : dict
-        Dict where keys are qfilter.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
-    """
-    # List of flags from filter
-    if not isinstance(qfilter, datamodel.QualityFlagFilter):
-        raise TypeError(f"{qfilter} not a QualityFlagFilter")
-    filters = qfilter.quality_flags
-
-    if obs_df.empty:
-        return obs_df.value, {f: 0 for f in filters}
-    else:
-        validation_df = quality_mapping.convert_mask_into_dataframe(
-            obs_df['quality_flag'])
-        validation_df = validation_df[list(filters)]
-        validated_obs = handle_func(obs_df.value, validation_df)
-        counts = validation_df.astype(int).sum(axis=0).to_dict()
-        return validated_obs, counts
-
-
 def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
     """
     Apply fill procedure to the data from the start to end timestamps.
@@ -134,9 +95,8 @@ def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
     return filled, count
 
 
-def _resample_event_obs(obs, fx, obs_data):
-    """
-    Resample the event observation.
+def _resample_event_obs(obs, fx, obs_data, quality_flag):
+    """Resample the event observation.
 
     Parameters
     ----------
@@ -151,21 +111,32 @@ def _resample_event_obs(obs, fx, obs_data):
     -------
     obs_resampled : pandas.Series
         Timeseries data of the Observation resampled to match the Forecast.
+    counts : dict
+        Dict where keys are quality_flag.quality_flags and values
+        are integers indicating the number of points filtered
+        for the given flag.
 
     Raises
     ------
-    RuntimeError
+    ValueError
         If the Forecast and Observation do not have the same interval length.
-
     """
-
     if fx.interval_length != obs.interval_length:
         raise ValueError("Event observation and forecast time-series "
                          "must have matching interval length.")
-    else:
-        obs_resampled = obs_data
 
-    return obs_resampled
+    # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
+    obs_flags = quality_mapping.convert_mask_into_dataframe(
+        obs_data['quality_flag'])
+    obs_flags['ISNAN'] = obs_data['value'].isna()
+    quality_flags_to_exclude = quality_flag.quality_flags + ('ISNAN', )
+    validation_df = obs_flags[list(quality_flags_to_exclude)]
+    to_discard = validation_df.any(axis=1)
+
+    obs_resampled = obs_data[~to_discard]
+    counts = validation_df.astype(int).sum(axis=0).to_dict()
+
+    return obs_resampled, counts
 
 
 def _validate_event_dtype(ser):
@@ -200,8 +171,8 @@ def _validate_event_dtype(ser):
                         "convert {} to boolean.".format(ser.dtype))
 
 
-def _resample_obs(obs, fx, obs_data):
-    """
+def _resample_obs(obs, fx, obs_data, quality_flag):
+    """Resample observations.
 
     Parameters
     ----------
@@ -209,45 +180,135 @@ def _resample_obs(obs, fx, obs_data):
         The Observation being resampled.
     fx : datamodel.Forecast
         The corresponding Forecast.
-    obs_data : pandas.Series
-        Timeseries data of the observation/aggregate after processing the
-        quality flag column.
+    obs_data : pandas.DataFrame
+        Timeseries of values and quality flags of the
+        observation/aggregate data.
+    quality_flag : solarforecastarbiter.datamodel.QualityFlagFilter
+        Flags to process and apply as filters during resampling.
 
     Returns
     -------
     obs_resampled : pandas.Series
         The observation time-series resampled to match the forecast
         time-series.
-
+    counts : dict
+        Dict where keys are quality_flag.quality_flags and values
+        are integers indicating the number of points filtered
+        for the given flag.
     """
+    if fx.interval_length < obs.interval_length:
+        raise ValueError(
+            'Cannot resample observation to match forecast because '
+            'fx.interval_length < obs.interval_length.')
 
-    # Resample observation, checking for invalid interval_length and that
-    # the Series has data:
-    if fx.interval_length > obs.interval_length and not obs_data.empty:
-        closed = datamodel.CLOSED_MAPPING[fx.interval_label]
-        obs_resampled = obs_data.resample(
-            fx.interval_length,
-            label=closed,
-            closed=closed
-        ).agg(["mean", "count"])
+    if obs_data.empty:
+        return obs_data
 
-        # Drop intervals if too many samples missing
-        count_threshold = int(
-            fx.interval_length / obs.interval_length * 0.1
-        )
-        obs_resampled = obs_resampled["mean"].where(
-            obs_resampled["count"] >= count_threshold
-        )
+    # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
+    obs_flags = quality_mapping.convert_mask_into_dataframe(
+        obs_data['quality_flag'])
+    obs_flags['ISNAN'] = obs_data['value'].isna()
+
+    closed = datamodel.CLOSED_MAPPING[obs.interval_label]
+
+    # DataFrame describing number of points in each interval that are flagged
+    resampled_flags_count = obs_flags.resample(
+        fx.interval_length, closed=closed, label=closed).sum()
+
+    # Series to track if a given resampled interval should be discarded
+    to_discard = pd.Series(0, index=resampled_flags_count.index)
+    # dict to track number of resampled intervals discarded for each flag
+    counts = {}
+
+    # more than 10% of points in interval were flagged
+    # TODO: let quality flag metadata specify this fraction and
+    # put line in loop below
+    threshold = (0.1 * fx.interval_length / obs.interval_length)
+    # NAN always included in flags to drop
+    quality_flags_to_exclude = quality_flag.quality_flags + ('ISNAN', )
+    for flag in quality_flags_to_exclude:
+        flagged = resampled_flags_count[flag] > threshold
+        to_discard += flagged
+        counts[flag] = flagged.sum()
+
+    # resample using all of the data
+    resampled_values = obs_data['value'].resample(
+        fx.interval_length, closed=closed, label=closed).mean()
+    # discard the intervals with too many flagged sub-interval points.
+    obs_resampled = resampled_values[~to_discard]
+
+    return obs_resampled, counts
+
+
+def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flag):
+    """Filter and resample the observation to the forecast interval length.
+
+    Parameters
+    ----------
+    fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
+        Pair of forecast and observation.
+    fx_data : pandas.Series or pandas.DataFrame
+        Timeseries data of the forecast.
+    obs_data : pandas.DataFrame
+        Timeseries of values and quality flags of the
+        observation/aggregate data.
+    ref_data : pandas.Series or pandas.DataFrame or None
+        Timeseries data of the reference forecast.
+    quality_flag : solarforecastarbiter.datamodel.QualityFlagFilter
+        Flags to process and apply as filters during resampling.
+
+    Returns
+    -------
+    forecast_values : pandas.Series or pandas.DataFrame
+        Same as input data except may be coerced to a safer dtype.
+    observation_values : pandas.Series
+        Observation values filtered and resampled.
+    counts : dict
+        Dict where keys are quality_flag.quality_flags and values
+        are integers indicating the number of points filtered
+        for the given flag.
+
+    Notes
+    -----
+    This function does not currently account for mismatches in the
+    `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
+
+    Raises
+    ------
+    ValueError
+        If fx_obs.reference_forecast is not None but ref_data is None
+        or vice versa
+    ValueError
+        If fx_obs.reference_forecast.interval_label or interval_length
+        does not match fx_obs.forecast.interval_label or interval_length
+    ValueError
+        If fx_obs.forecast.interval_length is less than
+        fx_obs.observation.interval_length
+    ValueError
+        If fx_obs.forecast is an EventForecast and
+        fx_obs.forecast.interval_length is not equal to
+        fx_obs.observation.interval_length
+    """  # noqa: E501
+    fx = fx_obs.forecast
+    obs = fx_obs.data_object
+    ref_fx = fx_obs.reference_forecast
+
+    # raise ValueError if intervals don't match
+    _check_ref_fx(fx, ref_fx, ref_data)
+
+    # Resample based on forecast type
+    if isinstance(fx, datamodel.EventForecast):
+        fx_data = _validate_event_dtype(fx_data)
+        obs_data = _validate_event_dtype(obs_data)
+        obs_resampled, counts = _resample_event_obs(obs, fx, obs_data)
     else:
-        obs_resampled = obs_data
+        obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flag)
 
-    return obs_resampled
+    return fx_data, obs_resampled, counts
 
 
-def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
-    """
-    Resample the observation to the forecast interval length and align to
-    remove overlap.
+def align(fx_obs, fx_data, obs_data, ref_data, tz):
+    """Align the observation data to the forecast data.
 
     Parameters
     ----------
@@ -256,8 +317,8 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
     fx_data : pandas.Series or pandas.DataFrame
         Timeseries data of the forecast.
     obs_data : pandas.Series
-        Timeseries data of the observation/aggregate after processing the quality
-        flag column.
+        Timeseries data of the observation/aggregate after processing the
+        quality flag column.
     ref_data : pandas.Series or pandas.DataFrame or None
         Timeseries data of the reference forecast.
     tz : str
@@ -285,32 +346,17 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
     ValueError
         If fx_obs.reference_forecast.interval_label or interval_length
         does not match fx_obs.forecast.interval_label or interval_length
-
-    Todo
-    ----
-      * Add other resampling functions (besides mean like first, last, median)
     """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
     ref_fx = fx_obs.reference_forecast
 
-    # raise ValueError if intervals don't match
-    _check_ref_fx(fx, ref_fx, ref_data)
-
-    # Resample based on forecast type
-    if isinstance(fx, datamodel.EventForecast):
-        fx_data = _validate_event_dtype(fx_data)
-        obs_data = _validate_event_dtype(obs_data)
-        obs_resampled = _resample_event_obs(obs, fx, obs_data)
-    else:
-        obs_resampled = _resample_obs(obs, fx, obs_data)
-
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and
     # forecasts, and missing periods
-    obs_resampled = obs_resampled.dropna(how="any")
-    obs_aligned, fx_aligned = obs_resampled.align(fx_data.dropna(how="any"),
-                                                  'inner')
+    obs_data = obs_data.dropna(how="any")
+    obs_aligned, fx_aligned = obs_data.align(
+        fx_data.dropna(how="any"), 'inner')
     # another alignment step if reference forecast exists.
     # here we drop points that don't exist in all 3 series.
     # could set reference forecast to NaN where missing instead.
@@ -341,7 +387,7 @@ def resample_and_align(fx_obs, fx_data, obs_data, ref_data, tz):
         fx.__blurb__ + " " + DISCARD_DATA_STRING:
             len(fx_data.dropna(how="any")) - len(fx_aligned),
         obs.__blurb__ + " " + DISCARD_DATA_STRING:
-            len(obs_resampled) - len(observation_values),
+            len(obs_data) - len(observation_values),
         fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(undefined_fx),
         obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
@@ -379,36 +425,6 @@ def _check_ref_fx(fx, ref_fx, ref_data):
                 raise ValueError(
                     f'forecast.axis "{fx.axis}" must match '
                     f'reference_forecast.axis "{ref_fx.axis}"')
-
-
-def exclude(values, quality_flags=None):
-    """
-    Return a timeseries with all questionable values removed.
-    All NaN values will be removed first and then iff `quality_flag` is set
-    (not 0) the corresponding values will also be removed.
-
-    Parameters
-    ----------
-    values : pandas.Series
-        Timeseries values.
-    quality_flags : pandas.DataFrame
-        Timeseries of quality flags. Default is None.
-
-    Returns
-    -------
-    pandas.Series :
-        Timeseries of values excluding non-quality values.
-    """
-    # Missing values
-    bad_idx = values.isna()
-
-    # Handle quality flags
-    if quality_flags is not None:
-        consolidated_flag = quality_flags.any(axis=1)
-        bad_quality_idx = (consolidated_flag != 0)
-        bad_idx = bad_idx | bad_quality_idx
-
-    return values[~bad_idx]
 
 
 def _merge_quality_filters(filters):
@@ -499,8 +515,6 @@ def process_forecast_observations(forecast_observations, filters,
             {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
     qfilter = _merge_quality_filters(filters)
     costs_dict = {c.name: c for c in costs}
-    # a cache so we don't waste time revalidating repeated obs
-    validated_observations = {}
     # we never use the processed_fxobs keys, so should be a list
     processed_fxobs = {}
     for fxobs in forecast_observations:
@@ -525,50 +539,35 @@ def process_forecast_observations(forecast_observations, filters,
         else:
             ref_ser = None
 
-        # validate observation/aggregate data if not in cache
-        if fxobs.data_object not in validated_observations:
-            try:
-                obs_ser, counts = apply_validation(
-                    data[fxobs.data_object],
-                    qfilter,
-                    exclude)
-            except Exception as e:
-                logger.error(
-                    'Failed to validate data for %s. %s',
-                    fxobs.data_object.name, e)
-                # store empty data in validated_observations
-                preproc_obs_results = datamodel.PreprocessingResult(
-                    name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=-1)
-                validated_observations[fxobs.data_object] = (
-                    pd.Series([], name='value', index=pd.DatetimeIndex(
-                        [], name='timestamp', tz='UTC'), dtype=float),
-                    (), preproc_results)
-            else:
-                # store validated data in validated_observations
-                val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
-                                    for k, v in counts.items())
-                preproc_obs_results = datamodel.PreprocessingResult(
-                    name=VALIDATION_RESULT_TOTAL_STRING,
-                    count=(len(data[fxobs.data_object]) - len(obs_ser)))
-                validated_observations[fxobs.data_object] = (
-                    obs_ser, val_results, preproc_obs_results)
+        # filter and resample observation/aggregate data
+        obs_data = data[fxobs]
+        forecast_values, observation_values, counts = filter_resample(
+            fxobs, fx_ser, obs_data, ref_ser, qfilter)
 
-        # pull validated observation/aggregate data from cache
-        obs_ser, val_results, preproc_obs_results = (
-            validated_observations[fxobs.data_object])
+        # store validated data in validated_observations
+        val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
+                            for k, v in counts.items())
+
+        # this count value no longer makes sense because the first object
+        # is at a different interval than the second.
+        # might need to add a 'total' to counts, exclude from the
+        # ValidationResult comprehension above, and use it here.
+        preproc_obs_results = datamodel.PreprocessingResult(
+            name=VALIDATION_RESULT_TOTAL_STRING,
+            count=(len(data[fxobs.data_object]) - len(observation_values)))
         preproc_results.append(preproc_obs_results)
 
-        # Resample and align and create processed pair
+        # Align and create processed pair
         try:
             forecast_values, observation_values, ref_fx_values, results = \
-                resample_and_align(fxobs, fx_ser, obs_ser, ref_ser, timezone)
+                align(fxobs, forecast_values, observation_values, ref_ser,
+                      timezone)
             preproc_results.extend(
                 [datamodel.PreprocessingResult(name=k, count=int(v))
                  for k, v in results.items()])
         except Exception as e:
             logger.error(
-                'Failed to resample and align data for pair (%s, %s): %s',
+                'Failed to align data for pair (%s, %s): %s',
                 fxobs.forecast.name, fxobs.data_object.name, e)
         else:
             logger.info('Processed data successfully for pair (%s, %s)',
