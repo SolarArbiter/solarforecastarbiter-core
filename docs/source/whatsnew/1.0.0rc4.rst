@@ -1,7 +1,7 @@
 .. _whatsnew_100rc4:
 
 1.0.0rc4 (Estimated October, 2020)
----------------------------------
+----------------------------------
 
 This is the forth 1.0 release candidate.
 
@@ -36,4 +36,3 @@ Contributors
 * Aidan Tuohy
 * Adam Wigington (:ghuser:`awig`)
 * David Larson (:ghuser:`dplarson`)
-* Will Hobbs (:ghuser:`williamhobbs`)
