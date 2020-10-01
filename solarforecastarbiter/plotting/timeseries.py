@@ -347,6 +347,7 @@ PLOTLY_LAYOUT_DEFAULTS = {
     'height': 300,
     'margin': PLOTLY_MARGINS,
     'plot_bgcolor': '#FFF',
+    'title_font_size': 16,
     'font': {'size': 14}
 }
 

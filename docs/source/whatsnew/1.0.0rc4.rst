@@ -1,0 +1,38 @@
+.. _whatsnew_100rc4:
+
+1.0.0rc4 (Estimated October, 2020)
+----------------------------------
+
+This is the forth 1.0 release candidate.
+
+
+API Changes
+~~~~~~~~~~~
+
+
+
+Enhancements
+~~~~~~~~~~~~
+
+
+Bug fixes
+~~~~~~~~~
+* Allow for scaling of x axis tick frequency on report metric plots to avoid
+  crowding for *date* category. (:issue:`578`) (:pull:`581`)
+* Fix spacing of plot titles to avoid long names running out of container and
+  Plotly toolbar overlap. (:issue:`577`) (:pull:`581`)
+* Dynamically calculate plot height to avoid truncating long forecast names
+  in total metric plots. (:issue:`576`) (:pull:`581`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

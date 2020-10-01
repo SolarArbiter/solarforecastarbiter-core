@@ -52,14 +52,21 @@ OBS_PALETTE_TD_RANGE = pd.timedelta_range(
 PROBABILISTIC_PALETTES = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
 
 PLOT_BGCOLOR = '#FFF'
-PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 50, 'pad': 4}
+PLOT_MARGINS = {'l': 50, 'r': 50, 'b': 50, 't': 100, 'pad': 4}
 PLOT_LAYOUT_DEFAULTS = {
     'autosize': True,
     'height': 250,
     'margin': PLOT_MARGINS,
     'plot_bgcolor': PLOT_BGCOLOR,
+    'title_font_size': 16,
     'font': {'size': 14}
 }
+
+# Used to adjust plot height when many x axis labels or long labels  are
+# present. The length of the longest label of the plot will be multiplies by
+# this value and added o the height of PLOT_LAYOUT_DEFAULTS to determine the
+# new height.
+X_LABEL_HEIGHT_FACTOR = 10
 
 # If for some reason, the fail.pdf (just a pdf with some text that
 # pdf generation failed) is unavailable, use an empty pdf
@@ -778,6 +785,9 @@ def abbreviate(x, limit=3):
         elif c.upper() == c:
             # probably an acronym
             out = c
+        elif c == 'Prob(f' or c == 'Prob(x':
+            # special case for probabilistic forecast labelling
+            out = c
         else:
             out = f'{c[0:limit]}.'
         out_components.append(out)
@@ -814,8 +824,13 @@ def bar(df, metric):
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
     if x_values.map(len).max() > 15 or x_values.size > 6:
         # Set explicit height and set automargin on x axis to allow for dynamic
-        # sizing to accomodate long x axis labels
-        plot_layout_args['height'] = 600
+        # sizing to accomodate long x axis labels. Height is set based on
+        # length of longest x axis label, due to a failure that can occur when
+        # plotly determines there is not enough space for automargins to work.
+        max_name_length = x_values.map(len).max()
+        plot_height = plot_layout_args['height'] + (
+            max_name_length * X_LABEL_HEIGHT_FACTOR)
+        plot_layout_args['height'] = plot_height
         x_axis_kwargs = {'automargin': True}
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
@@ -919,7 +934,17 @@ def bar_subdivisions(df, category, metric):
     elif category == 'year':
         x_axis_kwargs = {'dtick': 1}
     elif category == 'date':
-        x_axis_kwargs = {'dtick': '1d'}
+        # Sets a '{month} {day}' tick label format when zoomed in to one week
+        # of data. Plotly's default behavior at this zoom range is to display
+        # date and time, which causes crowding. Ranges are defined in
+        # miliseconds, with 604800000 being 7 days, and None being the absolute
+        # minimum. When zoomed out beyond one week, Plotly's default behavior
+        # takes over and intelligently displays day, month and year reducing to
+        # month and year as the user zooms out further.
+        x_axis_kwargs = {'tickformatstops': [
+            dict(dtickrange=[None, 604800000], value='%b %e'),
+            ]
+        }
     else:
         x_axis_kwargs = {}
 
