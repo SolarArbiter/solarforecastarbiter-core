@@ -1,9 +1,9 @@
-.. _whatsnew_100rc3:
+.. _whatsnew_100rc4:
 
-1.0.0rc3 (Estimated August, 2020)
+1.0.0rc4 (Estimated October, 2020)
 ---------------------------------
 
-This is the third 1.0 release candidate.
+This is the forth 1.0 release candidate.
 
 
 API Changes
