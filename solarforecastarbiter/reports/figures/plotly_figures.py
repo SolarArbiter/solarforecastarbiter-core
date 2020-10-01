@@ -831,9 +831,8 @@ def bar(df, metric):
         plot_height = plot_layout_args['height'] + (
             max_name_length * X_LABEL_HEIGHT_FACTOR)
         plot_layout_args['height'] = plot_height
-        x_axis_kwargs = {'automargin': True}
-        if x_values.size > 6:
-            x_axis_kwargs.update({'tickangle': 90.0})
+        x_axis_kwargs = {'automargin': True,
+                         'tickangle': 90.0}
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
