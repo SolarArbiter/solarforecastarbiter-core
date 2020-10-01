@@ -934,8 +934,13 @@ def bar_subdivisions(df, category, metric):
     elif category == 'year':
         x_axis_kwargs = {'dtick': 1}
     elif category == 'date':
-        # Sets a '{month} {day}' tick label format when zoomed in. Plotly's
-        # default behavior is to display full date and time.
+        # Sets a '{month} {day}' tick label format when zoomed in to one week
+        # of data. Plotly's default behavior at this zoom range is to display
+        # date and time, which causes crowding. Ranges are defined in
+        # miliseconds, with 604800000 being 7 days, and None being the absolute
+        # minimum. When zoomed out beyond one week, Plotly's default behavior
+        # takes over and intelligently displays day, month and year reducing to
+        # month and year as the user zooms out further.
         x_axis_kwargs = {'tickformatstops': [
             dict(dtickrange=[None, 604800000], value='%b %e'),
             ]
