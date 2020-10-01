@@ -66,7 +66,7 @@ PLOT_LAYOUT_DEFAULTS = {
 # present. The length of the longest label of the plot will be multiplies by
 # this value and added o the height of PLOT_LAYOUT_DEFAULTS to determine the
 # new height.
-X_LABEL_HEIGHT_FACTOR = 10
+X_LABEL_HEIGHT_FACTOR = 11
 
 # If for some reason, the fail.pdf (just a pdf with some text that
 # pdf generation failed) is unavailable, use an empty pdf
@@ -831,7 +831,8 @@ def bar(df, metric):
         plot_height = plot_layout_args['height'] + (
             max_name_length * X_LABEL_HEIGHT_FACTOR)
         plot_layout_args['height'] = plot_height
-        x_axis_kwargs = {'automargin': True}
+        x_axis_kwargs = {'automargin': True,
+                         'tickangle': 90.0}
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          marker=go.bar.Marker(color=palette)))
