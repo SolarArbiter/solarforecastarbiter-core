@@ -934,6 +934,8 @@ def bar_subdivisions(df, category, metric):
     elif category == 'year':
         x_axis_kwargs = {'dtick': 1}
     elif category == 'date':
+        # Sets a '{month} {day}' tick label format when zoomed in. Plotly's
+        # default behavior is to display full date and time.
         x_axis_kwargs = {'tickformatstops': [
             dict(dtickrange=[None, 604800000], value='%b %e'),
             ]
