@@ -24,7 +24,7 @@ from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
-    DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
+    DESCRIPTION_MASK_MAPPING, DERIVED_MASKS, DISCARD_BEFORE_RESAMPLE
 
 
 DASH_URL = 'https://dashboard.solarforecastarbiter.org'
@@ -1379,17 +1379,19 @@ class QualityFlagFilter(BaseFilter):
         ``DERIVED_MASKS`` keys.
         These periods will be excluded from the analysis.
     """
-    quality_flags: Tuple[str, ...] = (
-        'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
-        'DAYTIME STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
-    )
+    type: str
+    # could define these defaults in BITMASK_DESCRIPTION_DICT
+    resample_threshold_percentage: float = 0.1
+    discard_before_resample: Union[bool, None] = None
 
     def __post_init__(self):
         allowed_flags = (
             list(DESCRIPTION_MASK_MAPPING.keys()) + list(DERIVED_MASKS.keys()))
-        if not all(flag in allowed_flags for flag in self.quality_flags):
-            raise ValueError('Quality flags must be in '
+        if self.type not in allowed_flags:
+            raise ValueError('type must be in '
                              'BITMASK_DESCRIPTION_DICT or DERIVED_MASKS')
+        if self.discard_before_resample is None:
+            self.discard_before_resample = type in DISCARD_BEFORE_RESAMPLE
 
 
 @dataclass(frozen=True)

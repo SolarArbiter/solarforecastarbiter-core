@@ -171,7 +171,7 @@ def _validate_event_dtype(ser):
                         "convert {} to boolean.".format(ser.dtype))
 
 
-def _resample_obs(obs, fx, obs_data, quality_flag):
+def _resample_obs(obs, fx, obs_data, quality_flags):
     """Resample observations.
 
     Parameters
@@ -183,7 +183,7 @@ def _resample_obs(obs, fx, obs_data, quality_flag):
     obs_data : pandas.DataFrame
         Timeseries of values and quality flags of the
         observation/aggregate data.
-    quality_flag : solarforecastarbiter.datamodel.QualityFlagFilter
+    quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
 
     Returns
@@ -204,35 +204,48 @@ def _resample_obs(obs, fx, obs_data, quality_flag):
     if obs_data.empty:
         return obs_data
 
+    # label convention when resampling
+    closed = datamodel.CLOSED_MAPPING[obs.interval_label]
+
     # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
     obs_flags = quality_mapping.convert_mask_into_dataframe(
         obs_data['quality_flag'])
     obs_flags['ISNAN'] = obs_data['value'].isna()
 
-    closed = datamodel.CLOSED_MAPPING[obs.interval_label]
+    # determine the points that should never contribute
+    discard_before_resample_flag_types = [
+        f.type for f in quality_flags if f.discard_before_resample
+    ]
+    discard_before_resample = obs_flags[discard_before_resample_flag_types]
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    to_discard_before_resample = discard_before_resample.any(axis=1)
 
     # DataFrame describing number of points in each interval that are flagged
     resampled_flags_count = obs_flags.resample(
         fx.interval_length, closed=closed, label=closed).sum()
+    to_discard_before_resample_count = to_discard_before_resample.resample(
+        fx.interval_length, closed=closed, label=closed).sum()
 
     # Series to track if a given resampled interval should be discarded
     to_discard = pd.Series(0, index=resampled_flags_count.index)
-    # dict to track number of resampled intervals discarded for each flag
-    counts = {}
 
-    # more than 10% of points in interval were flagged
-    # TODO: let quality flag metadata specify this fraction and
-    # put line in loop below
-    threshold = (0.1 * fx.interval_length / obs.interval_length)
-    # NAN always included in flags to drop
-    quality_flags_to_exclude = quality_flag.quality_flags + ('ISNAN', )
-    for flag in quality_flags_to_exclude:
-        flagged = resampled_flags_count[flag] > threshold
+    interval_ratio = fx.interval_length / obs.interval_length
+    discard_after_resample_flags = [
+        f for f in quality_flags if not f.discard_before_resample
+    ]
+    for flag in discard_after_resample_flags:
+        threshold = flag.resample_threshold_percentage * interval_ratio
+        flagged = resampled_flags_count[flag.type] > threshold
         to_discard += flagged
-        counts[flag] = flagged.sum()
+        counts[flag.type] = flagged.sum()
+
+    # determine intervals with too many pre-resampling points removed
+    flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
+    to_discard += flagged
+    counts['PRE-RESAMPLE EXCEEDED'] = flagged.sum()
 
     # resample using all of the data
-    resampled_values = obs_data['value'].resample(
+    resampled_values = obs_data[~to_discard_before_resample, 'value'].resample(
         fx.interval_length, closed=closed, label=closed).mean()
     # discard the intervals with too many flagged sub-interval points.
     obs_resampled = resampled_values[~to_discard]
@@ -514,7 +527,6 @@ def process_forecast_observations(forecast_observations, filters,
     if forecast_fill_method not in forecast_fill_map.keys():
         forecast_fill_map.update(
             {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
-    qfilter = _merge_quality_filters(filters)
     costs_dict = {c.name: c for c in costs}
     # we never use the processed_fxobs keys, so should be a list
     processed_fxobs = {}
@@ -543,7 +555,7 @@ def process_forecast_observations(forecast_observations, filters,
         # filter and resample observation/aggregate data
         obs_data = data[fxobs]
         forecast_values, observation_values, counts = filter_resample(
-            fxobs, fx_ser, obs_data, ref_ser, qfilter)
+            fxobs, fx_ser, obs_data, ref_ser, filters)
 
         # store validated data in validated_observations
         val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
