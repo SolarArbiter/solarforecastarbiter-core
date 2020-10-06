@@ -22,7 +22,7 @@ Bug fixes
 * Fix spacing of plot titles to avoid long names running out of container and
   Plotly toolbar overlap. (:issue:`577`) (:pull:`581`)
 * Dynamically calculate plot height to avoid truncating long forecast names
-  in total metric plots. (:issue:`576`) (:pull:`581`) (:pull:`581`)
+  in total metric plots. (:issue:`576`) (:pull:`581`) (:pull:`582`)
 
 
 Contributors
