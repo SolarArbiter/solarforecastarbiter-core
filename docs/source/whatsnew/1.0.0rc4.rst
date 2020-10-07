@@ -23,6 +23,7 @@ Bug fixes
   Plotly toolbar overlap. (:issue:`577`) (:pull:`581`)
 * Dynamically calculate plot height to avoid truncating long forecast names
   in total metric plots. (:issue:`576`) (:pull:`581`)
+* Fix GEFS file fetching for upgraded model (:issue:`544`) (:pull:`584`)
 
 
 Contributors
