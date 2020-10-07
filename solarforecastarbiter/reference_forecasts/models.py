@@ -596,6 +596,7 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
 def _unmix_various_gefs_intervals(init_time, start_floored, end_ceil,
                                   cloud_cover_mixed):
     """unmix intervals for each kind of interval length in GEFS forecast"""
+    # 195hr is only in index for post Sept 2020 GEFS
     if init_time + pd.Timedelta('195hr') in cloud_cover_mixed.index:
         end_3h = init_time + pd.Timedelta('240hr')
     else:
