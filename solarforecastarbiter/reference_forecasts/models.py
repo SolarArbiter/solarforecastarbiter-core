@@ -510,7 +510,7 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     latitude : float
     longitude : float
     elevation : float
-    init_tiem : pd.Timestamp
+    init_time : pd.Timestamp
         Full datetime of a model initialization
     start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
