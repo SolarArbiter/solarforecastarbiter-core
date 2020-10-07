@@ -510,7 +510,7 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
     latitude : float
     longitude : float
     elevation : float
-    init_time : pd.Timestamp
+    init_tiem : pd.Timestamp
         Full datetime of a model initialization
     start : pd.Timestamp
         Forecast start. Forecast is inclusive of this instant if
@@ -596,7 +596,10 @@ def gefs_half_deg_to_hourly_mean(latitude, longitude, elevation,
 def _unmix_various_gefs_intervals(init_time, start_floored, end_ceil,
                                   cloud_cover_mixed):
     """unmix intervals for each kind of interval length in GEFS forecast"""
-    end_3h = init_time + pd.Timedelta('192hr')
+    if init_time + pd.Timedelta('195hr') in cloud_cover_mixed.index:
+        end_3h = init_time + pd.Timedelta('240hr')
+    else:
+        end_3h = init_time + pd.Timedelta('192hr')
 
     cloud_covers = []
 
