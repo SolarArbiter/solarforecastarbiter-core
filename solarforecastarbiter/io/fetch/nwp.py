@@ -172,9 +172,9 @@ HRRR_SUBHOURLY = {
 
 # each GEFS stat_or_member is treated separately
 # really makes use of async capabilities
-GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
+GEFS_0P50_RAW = {'endpoint': 'filter_gefs_atmos_0p50a.pl',
                  'file': 'ge{stat_or_member}.t{init_hr:02d}z.pgrb2a.0p50.f{valid_hr:03d}',  # NOQA
-                 'dir': '/gefs.{init_date}/{init_hr}/pgrb2ap5',
+                 'dir': '/gefs.{init_date}/{init_hr}/atmos/pgrb2ap5',
                  'lev_2_m_above_ground': 'on',
                  'lev_10_m_above_ground': 'on',
                  'lev_entire_atmosphere': 'on',
@@ -185,8 +185,8 @@ GEFS_0P50_RAW = {'endpoint': 'filter_gens_0p50.pl',
                  'var_UGRD': 'on',
                  'var_VGRD': 'on',
                  'update_freq': '6h',
-                 'valid_hr_gen': lambda x: chain(range(0, 192, 3),
-                                                 range(192, 385, 6)),
+                 'valid_hr_gen': lambda x: chain(range(0, 240, 3),
+                                                 range(240, 385, 6)),
                  'time_between_fcst_hrs': 60,
                  'delay_to_first_forecast': '280min',
                  'avg_max_run_length': '60min',
