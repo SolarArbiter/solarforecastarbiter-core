@@ -1369,8 +1369,7 @@ class BaseFilter(BaseModel):
 
 @dataclass(frozen=True)
 class QualityFlagFilter(BaseFilter):
-    """
-    Class representing quality flag filters to be applied in a report.
+    """Quality flag filters to be applied in a report.
 
     Parameters
     ----------
@@ -1378,20 +1377,35 @@ class QualityFlagFilter(BaseFilter):
         Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` or
         ``DERIVED_MASKS`` keys.
         These periods will be excluded from the analysis.
+    discard_before_resample : bool, default True
+        Determines if points should be discarded before resampling or
+        during resampling (when ``resample_threshold_percentage`` is
+        exceeded).
+    resample_threshold_percentage : float, default 10.
+        The percentage of points in a resampled interval that must be
+        flagged for the resampled interval to be flagged.
+        Ignored if ``discard_before_resample`` is True.
+
+    Notes
+    -----
+    If ``discard_before_resample`` is ``False``, the ``quality_flags``
+    are considered during the resampling operation. The
+    ``quality_flags`` of the raw observations are combined with ``OR``,
+    the total number of points within a resample period is computed.
     """
-    type: str
-    # could define these defaults in BITMASK_DESCRIPTION_DICT
-    resample_threshold_percentage: float = 0.1
-    discard_before_resample: Union[bool, None] = None
+    quality_flags: Tuple[str, ...] = (
+        'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
+        'DAYTIME STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
+    )
+    discard_before_resample: bool = True
+    resample_threshold_percentage: float = 10.
 
     def __post_init__(self):
         allowed_flags = (
             list(DESCRIPTION_MASK_MAPPING.keys()) + list(DERIVED_MASKS.keys()))
-        if self.type not in allowed_flags:
-            raise ValueError('type must be in '
+        if not all(flag in allowed_flags for flag in self.quality_flags):
+            raise ValueError('Quality flags must be in '
                              'BITMASK_DESCRIPTION_DICT or DERIVED_MASKS')
-        if self.discard_before_resample is None:
-            self.discard_before_resample = type in DISCARD_BEFORE_RESAMPLE
 
 
 @dataclass(frozen=True)

@@ -213,31 +213,37 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     obs_flags['ISNAN'] = obs_data['value'].isna()
 
     # determine the points that should never contribute
-    discard_before_resample_flag_types = [
-        f.type for f in quality_flags if f.discard_before_resample
-    ]
-    discard_before_resample = obs_flags[discard_before_resample_flag_types]
+    # combine unique elements of tuple of tuples
+    discard_before_resample_flags = set()
+    for f in filter(lambda x: x.discard_before_resample, quality_flags):
+        discard_before_resample_flags |= set(f.quality_flags)
+    discard_before_resample = obs_flags[discard_before_resample_flags]
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
 
-    # DataFrame describing number of points in each interval that are flagged
-    resampled_flags_count = obs_flags.resample(
-        fx.interval_length, closed=closed, label=closed).sum()
+    # track number of points discarded before resampling in each interval
     to_discard_before_resample_count = to_discard_before_resample.resample(
         fx.interval_length, closed=closed, label=closed).sum()
 
     # Series to track if a given resampled interval should be discarded
-    to_discard = pd.Series(0, index=resampled_flags_count.index)
+    to_discard = pd.Series(0, index=to_discard_before_resample_count.index)
 
+    # will be used to determine threshold number of points
     interval_ratio = fx.interval_length / obs.interval_length
-    discard_after_resample_flags = [
-        f for f in quality_flags if not f.discard_before_resample
-    ]
-    for flag in discard_after_resample_flags:
-        threshold = flag.resample_threshold_percentage * interval_ratio
-        flagged = resampled_flags_count[flag.type] > threshold
+
+    for f in filter(lambda x: not x.discard_before_resample, quality_flags):
+        filter_name = ' OR '.join(f.quality_flags)
+        # Reduce DataFrame with relevant flags to bool series.
+        # could add a QualityFlagFilter.logic key to control
+        # OR (.any(axis=1)) vs. AND (.all(axis=1))
+        obs_ser = obs_flags[f.quality_flags].any(axis=1)
+        # Series describing number of points in each interval that are flagged
+        resampled_flags_count = obs_ser.resample(
+            fx.interval_length, closed=closed, label=closed).sum()
+        threshold = f.resample_threshold_percentage * interval_ratio
+        flagged = resampled_flags_count > threshold
         to_discard += flagged
-        counts[flag.type] = flagged.sum()
+        counts[filter_name] = flagged.sum()
 
     # determine intervals with too many pre-resampling points removed
     flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
@@ -253,7 +259,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     return obs_resampled, counts
 
 
-def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flag):
+def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
     """Filter and resample the observation to the forecast interval length.
 
     Parameters
@@ -267,7 +273,7 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flag):
         observation/aggregate data.
     ref_data : pandas.Series or pandas.DataFrame or None
         Timeseries data of the reference forecast.
-    quality_flag : solarforecastarbiter.datamodel.QualityFlagFilter
+    quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
 
     Returns
@@ -285,6 +291,27 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flag):
     -----
     This function does not currently account for mismatches in the
     `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
+
+    The keep/exclude result of each element of the ``quality_flags``
+    tuple is combined with the OR operation.
+
+    For ``quality_flags`` tuple elements where
+    ``QualityFlagFilter.discard_before_resample`` is ``False``, the
+    ``QualityFlagFilter.quality_flags`` are considered during the
+    resampling operation. The flags of the raw observations are combined
+    with ``OR``, the total number of flagged points within a resample
+    period is computed, and intervals are discarded where
+    ``QualityFlagFilter.resample_threshold_percentage`` is exceeded.
+
+    Therefore, the following examples can produce different results:
+
+    >>> # separate flags. OR computed after resampling.
+    >>> qflag_1 = QualityFlagFilter(('NIGHTTIME', ), discard_before_resample=False)
+    >>> qflag_2 = QualityFlagFilter(('CLEARSKY', ), discard_before_resample=False)
+
+    >>> # combined flags. OR computed during resampling.
+    >>> qflag_combined = QualityFlagFilter(('NIGHTTIME', 'CLEARSKY'),
+            discard_before_resample=False)
 
     Raises
     ------
@@ -315,7 +342,7 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flag):
         obs_data = _validate_event_dtype(obs_data)
         obs_resampled, counts = _resample_event_obs(obs, fx, obs_data)
     else:
-        obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flag)
+        obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flags)
 
     return fx_data, obs_resampled, counts
 
