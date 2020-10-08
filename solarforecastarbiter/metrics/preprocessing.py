@@ -189,8 +189,9 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     Returns
     -------
     obs_resampled : pandas.Series
-        The observation time-series resampled to match the forecast
-        time-series.
+        The observation time series resampled to match the forecast
+        interval_length. Time series will have missing labels where
+        values failed validation.
     counts : dict
         Dict where keys are quality_flag.quality_flags and values
         are integers indicating the number of points filtered
@@ -226,7 +227,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         fx.interval_length, closed=closed, label=closed).sum()
 
     # Series to track if a given resampled interval should be discarded
-    to_discard = pd.Series(0, index=to_discard_before_resample_count.index)
+    to_discard = pd.Series(False, index=to_discard_before_resample_count.index)
 
     # will be used to determine threshold number of points
     interval_ratio = fx.interval_length / obs.interval_length
@@ -242,19 +243,25 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             fx.interval_length, closed=closed, label=closed).sum()
         threshold = f.resample_threshold_percentage * interval_ratio
         flagged = resampled_flags_count > threshold
-        to_discard += flagged
+        to_discard |= flagged
         counts[filter_name] = flagged.sum()
 
     # determine intervals with too many pre-resampling points removed
     flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
-    to_discard += flagged
+    to_discard |= flagged
     counts['PRE-RESAMPLE EXCEEDED'] = flagged.sum()
 
     # resample using all of the data
-    resampled_values = obs_data[~to_discard_before_resample, 'value'].resample(
-        fx.interval_length, closed=closed, label=closed).mean()
+    resampled_values = \
+        obs_data.loc[~to_discard_before_resample, 'value'].resample(
+            fx.interval_length, closed=closed, label=closed).mean()
     # discard the intervals with too many flagged sub-interval points.
-    obs_resampled = resampled_values[~to_discard]
+    # resampled_values.index does not contain labels for intervals for
+    # which all sub-intervals were discarded, so care is needed in the
+    # next indexing operation.
+    labels_to_keep = to_discard.index[~to_discard]
+    obs_resampled = resampled_values.loc[
+        resampled_values.index.intersection(labels_to_keep)]
 
     return obs_resampled, counts
 
@@ -580,7 +587,7 @@ def process_forecast_observations(forecast_observations, filters,
             ref_ser = None
 
         # filter and resample observation/aggregate data
-        obs_data = data[fxobs]
+        obs_data = data[fxobs.data_object]
         forecast_values, observation_values, counts = filter_resample(
             fxobs, fx_ser, obs_data, ref_ser, filters)
 

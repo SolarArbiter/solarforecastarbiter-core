@@ -1391,7 +1391,9 @@ class QualityFlagFilter(BaseFilter):
     If ``discard_before_resample`` is ``False``, the ``quality_flags``
     are considered during the resampling operation. The
     ``quality_flags`` of the raw observations are combined with ``OR``,
-    the total number of points within a resample period is computed.
+    the total number of flagged points within a resample period is
+    computed, and intervals are discarded where
+    ``resample_threshold_percentage`` is exceeded.
     """
     quality_flags: Tuple[str, ...] = (
         'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
