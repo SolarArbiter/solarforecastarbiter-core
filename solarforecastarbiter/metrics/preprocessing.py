@@ -474,15 +474,6 @@ def _check_ref_fx(fx, ref_fx, ref_data):
                     f'reference_forecast.axis "{ref_fx.axis}"')
 
 
-def _merge_quality_filters(filters):
-    """Merge any quality flag filters into one single QualityFlagFilter"""
-    combo = set()
-    for filter_ in filters:
-        if isinstance(filter_, datamodel.QualityFlagFilter):
-            combo |= set(filter_.quality_flags)
-    return datamodel.QualityFlagFilter(tuple(combo))
-
-
 def process_forecast_observations(forecast_observations, filters,
                                   forecast_fill_method, start, end,
                                   data, timezone, costs=tuple()):

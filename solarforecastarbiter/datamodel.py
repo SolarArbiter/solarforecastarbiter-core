@@ -1423,6 +1423,9 @@ class TimeOfDayFilter(BaseFilter):
         set the corresponding quality_flag.
     """
     time_of_day_range: Tuple[datetime.time, datetime.time]
+    # add these?
+    # discard_before_resample: bool = True
+    # resample_threshold_percentage: float = 10.
 
 
 @dataclass(frozen=True)
@@ -1442,6 +1445,9 @@ class ValueFilter(BaseFilter):
     # TODO: implement. Also add Aggregate
     metadata: Union[Observation, Forecast]
     value_range: Tuple[float, float]
+    # add these?
+    # discard_before_resample: bool = True
+    # resample_threshold_percentage: float = 10.
 
 
 def __check_metrics__(fx, metrics):

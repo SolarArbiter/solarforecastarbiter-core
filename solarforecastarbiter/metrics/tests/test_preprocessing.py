@@ -389,95 +389,83 @@ def test_resample_and_align_prob_constant_value(
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize('obs,somecounts', [
-    (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                  columns=['value', 'quality_flag']),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [OK, OK, OK]},
-                  index=THREE_HOURS),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [NT_UF, NT_UF, NT_UF]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [CSE_NT, CSE, OK]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
-])
-@pytest.mark.parametrize('handle_func', [preprocessing.exclude])
-@pytest.mark.parametrize('filter_', [
-    datamodel.QualityFlagFilter(
-        (
-            "USER FLAGGED",
-            "NIGHTTIME",
-            "LIMITS EXCEEDED",
-            "STALE VALUES",
-            "INTERPOLATED VALUES",
-            "INCONSISTENT IRRADIANCE COMPONENTS",
-        )
-    ),
-    pytest.param(
-        datamodel.TimeOfDayFilter((dt.time(12, 0),
-                                   dt.time(14, 0))),
-        marks=pytest.mark.xfail(strict=True, type=TypeError)
-    )
-])
-def test_apply_validation(obs, handle_func, filter_, somecounts):
-    result, counts = preprocessing.apply_validation(obs, filter_,
-                                                    handle_func)
+# @pytest.mark.parametrize('obs,somecounts', [
+#     (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
+#                   columns=['value', 'quality_flag']),
+#      {'USER FLAGGED': 0}),
+#     (pd.DataFrame({'value': [1., 2., 3.],
+#                    'quality_flag': [OK, OK, OK]},
+#                   index=THREE_HOURS),
+#      {'USER FLAGGED': 0}),
+#     (pd.DataFrame({'value': [1., 2., 3.],
+#                    'quality_flag': [NT_UF, NT_UF, NT_UF]},
+#                   index=THREE_HOURS),
+#      {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
+#     (pd.DataFrame({'value': [1., 2., 3.],
+#                    'quality_flag': [CSE_NT, CSE, OK]},
+#                   index=THREE_HOURS),
+#      {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
+# ])
+# @pytest.mark.parametrize('handle_func', [preprocessing.exclude])
+# @pytest.mark.parametrize('filter_', [
+#     datamodel.QualityFlagFilter(
+#         (
+#             "USER FLAGGED",
+#             "NIGHTTIME",
+#             "LIMITS EXCEEDED",
+#             "STALE VALUES",
+#             "INTERPOLATED VALUES",
+#             "INCONSISTENT IRRADIANCE COMPONENTS",
+#         )
+#     ),
+#     pytest.param(
+#         datamodel.TimeOfDayFilter((dt.time(12, 0),
+#                                    dt.time(14, 0))),
+#         marks=pytest.mark.xfail(strict=True, type=TypeError)
+#     )
+# ])
+# def test_apply_validation(obs, handle_func, filter_, somecounts):
+#     result, counts = preprocessing.apply_validation(obs, filter_,
+#                                                     handle_func)
 
-    # Check length and timestamps of observation
-    assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
-        len(result)
-    if not result.empty:
-        assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-            result.index)
-    assert set(filter_.quality_flags) == set(counts.keys())
-    for k, v in somecounts.items():
-        assert counts.get(k, v) == v
-
-
-@pytest.mark.parametrize('values,qflags,expectation', [
-    (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [0, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [0, 1, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[True, False, True]]),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [1, 1, 0], 2: [0, 1, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, True]]),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [1, 1, 1], 2: [1, 1, 1]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, False]]),
-    (pd.Series([np.NaN, np.NaN, np.NaN], index=THREE_HOURS),
-        None,
-        THREE_HOUR_SERIES[[False, False, False]]),
-    (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.DataFrame({1: [0, 0, 0], 2: [0, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[True, False, True]]),
-    (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.DataFrame({1: [1, 1, 0], 2: [1, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, True]])
-])
-def test_exclude(values, qflags, expectation):
-    result = preprocessing.exclude(values, qflags)
-    pd.testing.assert_series_equal(result, expectation, check_names=False)
+#     # Check length and timestamps of observation
+#     assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
+#         len(result)
+#     if not result.empty:
+#         assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
+#             result.index)
+#     assert set(filter_.quality_flags) == set(counts.keys())
+#     for k, v in somecounts.items():
+#         assert counts.get(k, v) == v
 
 
-def test_merge_quality_filters():
-    filters = [
-        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
-                                     'CLIPPED VALUES')),
-        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
-        datamodel.QualityFlagFilter(())
-    ]
-    out = preprocessing._merge_quality_filters(filters)
-    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
-                                      'CLIPPED VALUES', 'SHADED'}
+# @pytest.mark.parametrize('values,qflags,expectation', [
+#     (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
+#     (THREE_HOUR_SERIES,
+#         pd.DataFrame({1: [0, 0, 0]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES),
+#     (THREE_HOUR_SERIES,
+#         pd.DataFrame({1: [0, 1, 0]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES[[True, False, True]]),
+#     (THREE_HOUR_SERIES,
+#         pd.DataFrame({1: [1, 1, 0], 2: [0, 1, 0]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES[[False, False, True]]),
+#     (THREE_HOUR_SERIES,
+#         pd.DataFrame({1: [1, 1, 1], 2: [1, 1, 1]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES[[False, False, False]]),
+#     (pd.Series([np.NaN, np.NaN, np.NaN], index=THREE_HOURS),
+#         None,
+#         THREE_HOUR_SERIES[[False, False, False]]),
+#     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
+#         pd.DataFrame({1: [0, 0, 0], 2: [0, 0, 0]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES[[True, False, True]]),
+#     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
+#         pd.DataFrame({1: [1, 1, 0], 2: [1, 0, 0]}, index=THREE_HOURS),
+#         THREE_HOUR_SERIES[[False, False, True]])
+# ])
+# def test_exclude(values, qflags, expectation):
+#     result = preprocessing.exclude(values, qflags)
+#     pd.testing.assert_series_equal(result, expectation, check_names=False)
 
 
 def test_process_forecast_observations(report_objects, quality_filter,
