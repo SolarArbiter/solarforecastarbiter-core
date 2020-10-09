@@ -1,4 +1,3 @@
-import time
 import json
 import datetime as dt
 import numpy as np
@@ -104,8 +103,7 @@ def test_resample_and_align(
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+    local_tz = "Etc/GMT+7"
 
     fx_vals, obs_vals, ref_vals, res_dict = preprocessing.resample_and_align(
             fx_obs, fx_series, obs_series, None, local_tz)
@@ -182,8 +180,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     obs_series = pd.Series(index=ts_obs, data=np.random.rand(len(ts_obs)) + 10)
     fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+    local_tz = "Etc/GMT+7"
 
     fx_out, obs_out, ref_out, res_dict = preprocessing.resample_and_align(
         fx_obs, fx_series, obs_series, None, local_tz)
@@ -389,83 +386,53 @@ def test_resample_and_align_prob_constant_value(
                                   check_categorical=False)
 
 
-# @pytest.mark.parametrize('obs,somecounts', [
-#     (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-#                   columns=['value', 'quality_flag']),
-#      {'USER FLAGGED': 0}),
-#     (pd.DataFrame({'value': [1., 2., 3.],
-#                    'quality_flag': [OK, OK, OK]},
-#                   index=THREE_HOURS),
-#      {'USER FLAGGED': 0}),
-#     (pd.DataFrame({'value': [1., 2., 3.],
-#                    'quality_flag': [NT_UF, NT_UF, NT_UF]},
-#                   index=THREE_HOURS),
-#      {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
-#     (pd.DataFrame({'value': [1., 2., 3.],
-#                    'quality_flag': [CSE_NT, CSE, OK]},
-#                   index=THREE_HOURS),
-#      {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
-# ])
-# @pytest.mark.parametrize('handle_func', [preprocessing.exclude])
-# @pytest.mark.parametrize('filter_', [
-#     datamodel.QualityFlagFilter(
-#         (
-#             "USER FLAGGED",
-#             "NIGHTTIME",
-#             "LIMITS EXCEEDED",
-#             "STALE VALUES",
-#             "INTERPOLATED VALUES",
-#             "INCONSISTENT IRRADIANCE COMPONENTS",
-#         )
-#     ),
-#     pytest.param(
-#         datamodel.TimeOfDayFilter((dt.time(12, 0),
-#                                    dt.time(14, 0))),
-#         marks=pytest.mark.xfail(strict=True, type=TypeError)
-#     )
-# ])
-# def test_apply_validation(obs, handle_func, filter_, somecounts):
-#     result, counts = preprocessing.apply_validation(obs, filter_,
-#                                                     handle_func)
+@pytest.mark.parametrize('obs,somecounts', [
+    (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
+                  columns=['value', 'quality_flag']),
+     {'USER FLAGGED': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [OK, OK, OK]},
+                  index=THREE_HOURS),
+     {'USER FLAGGED': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [NT_UF, NT_UF, NT_UF]},
+                  index=THREE_HOURS),
+     {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
+    (pd.DataFrame({'value': [1., 2., 3.],
+                   'quality_flag': [CSE_NT, CSE, OK]},
+                  index=THREE_HOURS),
+     {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
+])
+@pytest.mark.parametrize('filter_', [
+    datamodel.QualityFlagFilter(
+        (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES",
+            "INCONSISTENT IRRADIANCE COMPONENTS",
+        )
+    ),
+    pytest.param(
+        datamodel.TimeOfDayFilter((dt.time(12, 0),
+                                   dt.time(14, 0))),
+        marks=pytest.mark.xfail(strict=True, type=TypeError)
+    )
+])
+def test_apply_validation(obs, filter_, somecounts):
+    result, counts = preprocessing.apply_validation(obs, filter_,
+                                                    handle_func)
 
-#     # Check length and timestamps of observation
-#     assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
-#         len(result)
-#     if not result.empty:
-#         assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-#             result.index)
-#     assert set(filter_.quality_flags) == set(counts.keys())
-#     for k, v in somecounts.items():
-#         assert counts.get(k, v) == v
-
-
-# @pytest.mark.parametrize('values,qflags,expectation', [
-#     (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
-#     (THREE_HOUR_SERIES,
-#         pd.DataFrame({1: [0, 0, 0]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES),
-#     (THREE_HOUR_SERIES,
-#         pd.DataFrame({1: [0, 1, 0]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES[[True, False, True]]),
-#     (THREE_HOUR_SERIES,
-#         pd.DataFrame({1: [1, 1, 0], 2: [0, 1, 0]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES[[False, False, True]]),
-#     (THREE_HOUR_SERIES,
-#         pd.DataFrame({1: [1, 1, 1], 2: [1, 1, 1]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES[[False, False, False]]),
-#     (pd.Series([np.NaN, np.NaN, np.NaN], index=THREE_HOURS),
-#         None,
-#         THREE_HOUR_SERIES[[False, False, False]]),
-#     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-#         pd.DataFrame({1: [0, 0, 0], 2: [0, 0, 0]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES[[True, False, True]]),
-#     (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-#         pd.DataFrame({1: [1, 1, 0], 2: [1, 0, 0]}, index=THREE_HOURS),
-#         THREE_HOUR_SERIES[[False, False, True]])
-# ])
-# def test_exclude(values, qflags, expectation):
-#     result = preprocessing.exclude(values, qflags)
-#     pd.testing.assert_series_equal(result, expectation, check_names=False)
+    # Check length and timestamps of observation
+    assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
+        len(result)
+    if not result.empty:
+        assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
+            result.index)
+    assert set(filter_.quality_flags) == set(counts.keys())
+    for k, v in somecounts.items():
+        assert counts.get(k, v) == v
 
 
 def test_process_forecast_observations(report_objects, quality_filter,
@@ -937,8 +904,7 @@ def test_resample_and_align_event(single_event_forecast_observation,
 
     fxobs = single_event_forecast_observation
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+    local_tz = "Etc/GMT+7"
 
     fx_vals, obs_vals, ref_vals, results = preprocessing.resample_and_align(
         fxobs, fx_series, obs_series, None, local_tz
@@ -969,6 +935,8 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
                              single_event_observation_text,
                              fx_interval_length, obs_interval_length):
 
+    quality_flags = (datamodel.QualityFlagFilter(('NIGHTTIME', )), )
+
     fx_dict = json.loads(single_event_forecast_text)
     fx_dict['site'] = single_site
     fx_dict.update({"interval_length": fx_interval_length})
@@ -981,12 +949,19 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
 
     freq = pd.Timedelta(f"{obs_interval_length}min")
     index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
-    obs_series = pd.Series(np.random.randint(0, 2, len(index), dtype=bool),
-                           index=index)
+    obs_series = pd.Series(1, dtype=bool, index=index)
+    obs_flags = pd.Series(2, index=index)
+    obs_flags.iloc[0] = 18
+    obs_series.iloc[1] = np.nan
+    obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
-    obs_resampled = preprocessing._resample_event_obs(fx, obs, obs_series)
-    pd.testing.assert_index_equal(obs_series.index, obs_resampled.index,
+    obs_resampled, counts = preprocessing._resample_event_obs(
+        fx, obs, obs_data, quality_flags)
+    pd.testing.assert_index_equal(index[2:], obs_resampled.index,
                                   check_categorical=False)
+    assert counts['NIGHTTIME'] == 1
+    assert counts['ISNAN'] == 1
+    assert len(counts) == 2
 
 
 @pytest.mark.parametrize("data", [

@@ -95,7 +95,7 @@ def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
     return filled, count
 
 
-def _resample_event_obs(obs, fx, obs_data, quality_flag):
+def _resample_event_obs(obs, fx, obs_data, quality_flags):
     """Resample the event observation.
 
     Parameters
@@ -106,6 +106,8 @@ def _resample_event_obs(obs, fx, obs_data, quality_flag):
         The corresponding Forecast.
     obs_data : pd.Series
         Timeseries data of the event observation.
+    quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
+        Flags to process and apply as filters during resampling.
 
     Returns
     -------
@@ -125,16 +127,23 @@ def _resample_event_obs(obs, fx, obs_data, quality_flag):
         raise ValueError("Event observation and forecast time-series "
                          "must have matching interval length.")
 
-    # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
+    # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED, but many of
+    # these are not valid for event obs! Arguably only USER FLAGGED and
+    # NIGHTTIME are valid for event obs.
     obs_flags = quality_mapping.convert_mask_into_dataframe(
         obs_data['quality_flag'])
     obs_flags['ISNAN'] = obs_data['value'].isna()
-    quality_flags_to_exclude = quality_flag.quality_flags + ('ISNAN', )
-    validation_df = obs_flags[list(quality_flags_to_exclude)]
-    to_discard = validation_df.any(axis=1)
 
-    obs_resampled = obs_data[~to_discard]
-    counts = validation_df.astype(int).sum(axis=0).to_dict()
+    # determine the points that should never contribute
+    # combine unique elements of tuple of tuples
+    discard_before_resample_flags = set(['ISNAN'])
+    for f in filter(lambda x: x.discard_before_resample, quality_flags):
+        discard_before_resample_flags |= set(f.quality_flags)
+    discard_before_resample = obs_flags[discard_before_resample_flags]
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    to_discard_before_resample = discard_before_resample.any(axis=1)
+
+    obs_resampled = obs_data[~to_discard_before_resample]
 
     return obs_resampled, counts
 
@@ -215,7 +224,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
 
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
-    discard_before_resample_flags = set()
+    discard_before_resample_flags = set('ISNAN')
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
@@ -233,11 +242,13 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     interval_ratio = fx.interval_length / obs.interval_length
 
     for f in filter(lambda x: not x.discard_before_resample, quality_flags):
-        filter_name = ' OR '.join(f.quality_flags)
+        # do put ISNAN in both the before and during resample exclude?
+        quality_flags_to_exclude = f.quality_flags + ('ISNAN', )
+        filter_name = ' OR '.join(quality_flags_to_exclude)
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))
-        obs_ser = obs_flags[f.quality_flags].any(axis=1)
+        obs_ser = obs_flags[quality_flags_to_exclude].any(axis=1)
         # Series describing number of points in each interval that are flagged
         resampled_flags_count = obs_ser.resample(
             fx.interval_length, closed=closed, label=closed).sum()
