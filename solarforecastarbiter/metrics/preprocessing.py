@@ -528,7 +528,7 @@ def process_forecast_observations(forecast_observations, filters,
 
     Returns
     -------
-    list of ProcessedForecastObservation
+    tuple of ProcessedForecastObservation
 
     Notes
     -----
@@ -566,19 +566,18 @@ def process_forecast_observations(forecast_observations, filters,
             'Other filters will be discarded.')
         filters = [
             f for f in filters if isinstance(f, datamodel.QualityFlagFilter)]
-    # what's the point of copying the fill map, potentially adding a new key,
-    # and then only accessing one key?
-    # this would make more sense to me (wholmgren):
-    # forecast_fill_str = FORECAST_FILL_STRING_MAP.get(forecast_fill_method,
-    #     FORECAST_FILL_CONST_STRING.format(forecast_fill_method))
-    forecast_fill_map = FORECAST_FILL_STRING_MAP.copy()
-    if forecast_fill_method not in forecast_fill_map.keys():
-        forecast_fill_map.update(
-            {forecast_fill_method: FORECAST_FILL_CONST_STRING.format(forecast_fill_method)})  # NOQA
+    # create string for tracking forecast fill results.
+    # this approach supports known methods or filling with contant values.
+    forecast_fill_str = FORECAST_FILL_STRING_MAP.get(
+        forecast_fill_method,
+        FORECAST_FILL_CONST_STRING.format(forecast_fill_method)
+    )
     costs_dict = {c.name: c for c in costs}
-    # we never use the processed_fxobs keys, so should be a list
+    # accumulate ProcessedForecastObservations in a dict.
+    # use a dict so we can keep track of existing names and avoid repeats.
     processed_fxobs = {}
     for fxobs in forecast_observations:
+        # accumulate PreprocessingResults from various stages in a list
         preproc_results = []
 
         # Apply fill to forecast and reference forecast
@@ -586,8 +585,7 @@ def process_forecast_observations(forecast_observations, filters,
         fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
                                    forecast_fill_method, start, end)
         preproc_results.append(datamodel.PreprocessingResult(
-            name=FILL_RESULT_TOTAL_STRING.format(
-                '', forecast_fill_map[forecast_fill_method]),
+            name=FILL_RESULT_TOTAL_STRING.format('', forecast_fill_str),
             count=int(count)))
         if fxobs.reference_forecast is not None:
             ref_ser = data[fxobs.reference_forecast]
@@ -595,7 +593,7 @@ def process_forecast_observations(forecast_observations, filters,
                                         forecast_fill_method, start, end)
             preproc_results.append(datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
-                    "Reference ", forecast_fill_map[forecast_fill_method]),
+                    "Reference ", forecast_fill_str),
                 count=int(count)))
         else:
             ref_ser = None
