@@ -116,10 +116,10 @@ def test_align(
     assert res_dict == expected_result
 
 
-def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
+def test_align_fx_aggregate(single_forecast_aggregate):
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, ref, res_dict = preprocessing.resample_and_align(
+    fx_values, obs_values, ref, res_dict = preprocessing.align(
         single_forecast_aggregate, fx_series, obs_series, None, 'UTC')
 
     pd.testing.assert_index_equal(fx_values.index,
@@ -136,8 +136,9 @@ def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
     ("ending", "beginning", "5min", "5min", "5min"),
     ("ending", "beginning", "5min", "1h", "1h"),
 ])
-def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
-                                           length_obs, length_fx, freq):
+def test_filter_resample_interval_label(site_metadata, label_obs, label_fx,
+                                        length_obs, length_fx, freq,
+                                        quality_filter):
 
     observation = datamodel.Observation(
         site=site_metadata, name='dummy obs', variable='ghi',
@@ -172,12 +173,11 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
         name='timestamp'
     )
     obs_series = pd.Series(index=ts_obs, data=np.random.rand(len(ts_obs)) + 10)
+    obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': 2})
     fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
 
-    local_tz = "Etc/GMT+7"
-
-    fx_out, obs_out, ref_out, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, local_tz)
+    fx_out, obs_out, res_dict = preprocessing.filter_resample(
+        fx_obs, fx_series, obs_data, None, [quality_filter])
 
     assert obs_out.index.freq == freq
 
@@ -190,8 +190,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     ("US/Central", "US/Pacific", ["20190701T2200", "20190701T2300"]),
     ("US/Pacific", "US/Eastern", ["20190702T0300", "20190702T0400"]),
 ])
-def test_resample_and_align_timezone(site_metadata, interval_label, tz,
-                                     local_tz, local_ts):
+def test_align_timezone(site_metadata, interval_label, tz, local_tz, local_ts):
 
     expected_dt = pd.DatetimeIndex(local_ts, tz=local_tz)
 
@@ -225,14 +224,13 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     assert_index_equal(obs_values.index, expected_dt, check_categorical=False)
 
 
-def test_resample_and_align_with_ref(
-        single_forecast_observation_reffx):
+def test_align_with_ref(single_forecast_observation_reffx):
     tz = 'UTC'
     fx_obs = single_forecast_observation_reffx
     fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, ref_series, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -245,8 +243,7 @@ def test_resample_and_align_with_ref(
                                   check_categorical=False)
 
 
-def test_resample_and_align_ref_less_fx(
-        single_forecast_observation_reffx):
+def test_align_ref_less_fx(single_forecast_observation_reffx):
     tz = 'UTC'
     fx_obs = single_forecast_observation_reffx
     nine_hour_series = pd.concat([
@@ -256,7 +253,7 @@ def test_resample_and_align_ref_less_fx(
     fx_series = THREE_HOUR_SERIES
     ref_series = nine_hour_series
     obs_series = nine_hour_series
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, ref_series, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -269,8 +266,9 @@ def test_resample_and_align_ref_less_fx(
                                   check_categorical=False)
 
 
-def test_resample_and_align_ref_error_None(
-        single_forecast_observation, single_forecast_observation_reffx):
+def test_filter_resample_ref_error_None(
+        single_forecast_observation, single_forecast_observation_reffx,
+        quality_filter):
     tz = 'UTC'
 
     # no ref_fx object, but supplied ref_fx series
@@ -279,7 +277,7 @@ def test_resample_and_align_ref_error_None(
     ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
+        preprocessing.filter_resample(
             fx_obs, fx_series, obs_series, ref_series, tz)
 
     # ref_fx object, but no supplied ref_fx series
@@ -288,18 +286,16 @@ def test_resample_and_align_ref_error_None(
     ref_series = None
     obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.filter_resample(
+            fx_obs, fx_series, obs_series, ref_series, [quality_filter])
 
 
 @pytest.mark.parametrize('attr,value', [
     ('interval_label', 'ending'),
     ('interval_length', pd.Timedelta('20min')),
 ])
-def test_resample_and_align_ref_error(
-        single_forecast_observation_reffx, attr, value):
-    tz = 'UTC'
-
+def test_filter_resample_ref_error(single_forecast_observation_reffx, attr,
+                                   value, quality_filter):
     changes = {attr: value}
     # ref_fx object parameters are inconsistent with fx object parameters
     ref_fx = single_forecast_observation_reffx.reference_forecast.replace(
@@ -310,12 +306,12 @@ def test_resample_and_align_ref_error(
     ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.filter_resample(
+            fx_obs, fx_series, obs_series, ref_series, [quality_filter])
 
 
-def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
-    tz = 'UTC'
+def test_filter_resample_ref_error_prob(
+        prob_forecasts, single_observation, quality_filter):
     cv = prob_forecasts.constant_values[0].replace(axis='y')
     ref_fx = prob_forecasts.replace(axis='y', constant_values=(cv,))
     fx_obs = datamodel.ForecastObservation(
@@ -326,11 +322,11 @@ def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
     ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.filter_resample(
+            fx_obs, fx_series, obs_series, ref_series, quality_filter)
 
 
-def test_resample_and_align_prob(prob_forecasts, single_observation):
+def test_align_prob(prob_forecasts, single_observation):
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
@@ -340,7 +336,7 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
     fx_data = THREE_HOUR_SERIES.to_frame()
     obs_data = THREE_HOUR_SERIES
     ref_data = THREE_HOUR_SERIES.to_frame()
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   ref_values.index,
@@ -353,7 +349,7 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
                                   check_categorical=False)
 
 
-def test_resample_and_align_prob_constant_value(
+def test_align_prob_constant_value(
         prob_forecast_constant_value, single_observation):
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
@@ -364,7 +360,7 @@ def test_resample_and_align_prob_constant_value(
     fx_data = THREE_HOUR_SERIES
     obs_data = THREE_HOUR_SERIES
     ref_data = THREE_HOUR_SERIES
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   ref_values.index,
@@ -375,55 +371,6 @@ def test_resample_and_align_prob_constant_value(
     pd.testing.assert_index_equal(obs_values.index,
                                   THREE_HOURS,
                                   check_categorical=False)
-
-
-@pytest.mark.parametrize('obs,somecounts', [
-    (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                  columns=['value', 'quality_flag']),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [OK, OK, OK]},
-                  index=THREE_HOURS),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [NT_UF, NT_UF, NT_UF]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [CSE_NT, CSE, OK]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
-])
-@pytest.mark.parametrize('filter_', [
-    datamodel.QualityFlagFilter(
-        (
-            "USER FLAGGED",
-            "NIGHTTIME",
-            "LIMITS EXCEEDED",
-            "STALE VALUES",
-            "INTERPOLATED VALUES",
-            "INCONSISTENT IRRADIANCE COMPONENTS",
-        )
-    ),
-    pytest.param(
-        datamodel.TimeOfDayFilter((dt.time(12, 0),
-                                   dt.time(14, 0))),
-        marks=pytest.mark.xfail(strict=True, type=TypeError)
-    )
-])
-def test_apply_validation(obs, filter_, somecounts):
-    result, counts = preprocessing.apply_validation(obs, filter_,
-                                                    handle_func)
-
-    # Check length and timestamps of observation
-    assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
-        len(result)
-    if not result.empty:
-        assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-            result.index)
-    assert set(filter_.quality_flags) == set(counts.keys())
-    for k, v in somecounts.items():
-        assert counts.get(k, v) == v
 
 
 def test_process_forecast_observations(report_objects, quality_filter,
