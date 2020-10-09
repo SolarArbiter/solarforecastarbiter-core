@@ -252,17 +252,22 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         # Series describing number of points in each interval that are flagged
         resampled_flags_count = obs_ser.resample(
             fx.interval_length, closed=closed, label=closed).sum()
-        threshold = f.resample_threshold_percentage * interval_ratio
+        threshold = f.resample_threshold_percentage / 100. * interval_ratio
         flagged = resampled_flags_count > threshold
         to_discard |= flagged
         counts[filter_name] = flagged.sum()
 
     # determine intervals with too many pre-resampling points removed
+    # this is equivalent to the old apply_validation + exlude pattern, but
+    # not sure we actually want to do this in our new paradigm.
+    # and should it always be 10%? should it be controlled by
+    # resampled_threshold_percentage on a filter by filter basis?
     flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
     to_discard |= flagged
     counts['PRE-RESAMPLE EXCEEDED'] = flagged.sum()
 
-    # resample using all of the data
+    # resample using all of the data except for what was flagged by the
+    # discard before resample process.
     resampled_values = \
         obs_data.loc[~to_discard_before_resample, 'value'].resample(
             fx.interval_length, closed=closed, label=closed).mean()

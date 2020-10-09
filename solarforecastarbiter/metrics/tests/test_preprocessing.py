@@ -373,6 +373,61 @@ def test_align_prob_constant_value(
                                   check_categorical=False)
 
 
+@pytest.mark.parametrize("quality_flags", [
+    (datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED')), ),
+    (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+     datamodel.QualityFlagFilter(('USER FLAGGED', )))
+])
+@pytest.mark.parametrize(
+    "fx_int_length,obs_int_length,obs_data,fx_data,obs_exp,counts_exp", [
+        (60, 60,
+         pd.DataFrame(
+            {'value': [np.nan] + [1.]*3, 'quality_flag': [18, 3, 19, 2]},
+            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
+         pd.Series(
+            [1.]*4,
+            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
+         pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+         {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
+          'PRE-RESAMPLE EXCEEDED': 3}),
+        (60, 15,
+         pd.DataFrame(
+            {'value': [np.nan]*5 + list(range(6, 13)),
+             'quality_flag': [2]*4 + [19, 19, 2, 2, 3, 18, 2, 2]},
+            index=pd.date_range(
+                start="20200301T00Z", periods=12, freq='15min')),
+         pd.Series(
+            [1.]*4,
+            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
+         pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+         {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+          'PRE-RESAMPLE EXCEEDED': 9}),
+])
+def test_filter_resample(single_site, single_observation,
+                         single_observation_text, single_forecast_text,
+                         fx_int_length, obs_int_length, obs_data,
+                         fx_data, obs_exp, quality_flags, counts_exp):
+    fx_dict = json.loads(single_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict.update({"interval_length": fx_int_length})
+    fx = datamodel.Forecast.from_dict(fx_dict)
+
+    obs_dict = json.loads(single_observation_text)
+    obs_dict['site'] = single_site
+    obs_dict.update({"interval_length": obs_int_length})
+    obs = datamodel.Observation.from_dict(obs_dict)
+
+    fx_obs = datamodel.ForecastObservation(fx, obs)
+
+    fx_out, obs_resampled, counts = preprocessing.filter_resample(
+        fx_obs, fx_data, obs_data, None, quality_flags)
+
+    assert_series_equal(fx_out, fx_data)  # no change for non-event fx
+    assert_series_equal(obs_resampled, obs_exp, check_names=False)
+
+    assert counts == counts_exp
+
+
 def test_process_forecast_observations(report_objects, quality_filter,
                                        timeofdayfilter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
