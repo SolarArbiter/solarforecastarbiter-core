@@ -224,7 +224,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
 
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
-    discard_before_resample_flags = set('ISNAN')
+    discard_before_resample_flags = set(['ISNAN'])
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
@@ -242,7 +242,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     interval_ratio = fx.interval_length / obs.interval_length
 
     for f in filter(lambda x: not x.discard_before_resample, quality_flags):
-        # do put ISNAN in both the before and during resample exclude?
+        # should we put ISNAN in both the before and during resample exclude?
         quality_flags_to_exclude = f.quality_flags + ('ISNAN', )
         filter_name = ' OR '.join(quality_flags_to_exclude)
         # Reduce DataFrame with relevant flags to bool series.
