@@ -375,8 +375,9 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     fx_data : pandas.Series or pandas.DataFrame
         Timeseries data of the forecast.
     obs_data : pandas.Series
-        Timeseries data of the observation/aggregate after processing the
-        quality flag column.
+        Timeseries data of the observation/aggregate after processing
+        the quality flag column and resampling to match
+        fx_obs.forecast.interval_length.
     ref_data : pandas.Series or pandas.DataFrame or None
         Timeseries data of the reference forecast.
     tz : str
@@ -396,6 +397,11 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     This function does not currently account for mismatches in the
     `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
 
+    If ``obs_data`` will be subsampled if it is higher frequency than
+    fx_data, but users should not rely on this behavior. Instead, use
+    :py:func:`~.filter_resample` to match the input observations to the
+    forecast data.
+
     Raises
     ------
     ValueError
@@ -410,8 +416,8 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     ref_fx = fx_obs.reference_forecast
 
     # Align (forecast is unchanged)
-    # Remove non-corresponding observations and
-    # forecasts, and missing periods
+    # Remove non-corresponding observations and forecasts, and missing periods
+    undefined_obs = obs_data.isna().sum()
     obs_data = obs_data.dropna(how="any")
     obs_aligned, fx_aligned = obs_data.align(
         fx_data.dropna(how="any"), 'inner')
@@ -449,7 +455,7 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
         fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(undefined_fx),
         obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
-            int(obs_data.isna().sum())
+            int(undefined_obs)
     }
 
     if ref_data is not None:
