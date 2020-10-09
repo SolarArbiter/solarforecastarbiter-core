@@ -923,6 +923,11 @@ def test_resample_and_align_event(single_event_forecast_observation,
                                   check_categorical=False)
 
 
+@pytest.mark.parametrize("quality_flags", [
+    (datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED')), ),
+    (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+     datamodel.QualityFlagFilter(('USER FLAGGED', )))
+])
 @pytest.mark.parametrize("fx_interval_length, obs_interval_length", [
     (60, 60),
     (5, 5),
@@ -933,10 +938,8 @@ def test_resample_and_align_event(single_event_forecast_observation,
 ])
 def test__resample_event_obs(single_site, single_event_forecast_text,
                              single_event_observation_text,
-                             fx_interval_length, obs_interval_length):
-
-    quality_flags = (datamodel.QualityFlagFilter(('NIGHTTIME', )), )
-
+                             fx_interval_length, obs_interval_length,
+                             quality_flags):
     fx_dict = json.loads(single_event_forecast_text)
     fx_dict['site'] = single_site
     fx_dict.update({"interval_length": fx_interval_length})
@@ -953,15 +956,17 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     obs_flags = pd.Series(2, index=index)
     obs_flags.iloc[0] = 18
     obs_series.iloc[1] = np.nan
+    obs_flags.iloc[2] = 3
     obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
     obs_resampled, counts = preprocessing._resample_event_obs(
         fx, obs, obs_data, quality_flags)
-    pd.testing.assert_index_equal(index[2:], obs_resampled.index,
+    pd.testing.assert_index_equal(index[3:], obs_resampled.index,
                                   check_categorical=False)
     assert counts['NIGHTTIME'] == 1
     assert counts['ISNAN'] == 1
-    assert len(counts) == 2
+    assert counts['USER FLAGGED'] == 1
+    assert len(counts) == 3
 
 
 @pytest.mark.parametrize("data", [
