@@ -352,13 +352,15 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
     ref_fx = fx_obs.reference_forecast
 
     # raise ValueError if intervals don't match
+    # move this to align?
     _check_ref_fx(fx, ref_fx, ref_data)
 
     # Resample based on forecast type
     if isinstance(fx, datamodel.EventForecast):
         fx_data = _validate_event_dtype(fx_data)
-        obs_data = _validate_event_dtype(obs_data)
-        obs_resampled, counts = _resample_event_obs(obs, fx, obs_data)
+        obs_data['value'] = _validate_event_dtype(obs_data['value'])
+        obs_resampled, counts = _resample_event_obs(
+            obs, fx, obs_data, quality_flags)
     else:
         obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flags)
 

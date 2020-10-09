@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pandas.testing import (
+    assert_frame_equal, assert_index_equal, assert_series_equal)
+
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
 
@@ -106,12 +109,8 @@ def test_align(
 
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(fx_vals.index,
-                                  obs_vals.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_vals.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
+    assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
 
     expected_result = create_preprocessing_result(expected_res)
     assert res_dict == expected_result
@@ -879,6 +878,7 @@ def test_name_pfxobs_recursion_limit():
     assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'
 
 
+@pytest.mark.parametrize('dtype', ['int', 'bool', 'float'])
 @pytest.mark.parametrize("obs_index,fx_index,expected_dt", [
     (THREE_HOURS, THREE_HOURS, THREE_HOURS),
     (THIRTEEN_10MIN, THIRTEEN_10MIN, THIRTEEN_10MIN),
@@ -889,33 +889,37 @@ def test_name_pfxobs_recursion_limit():
     pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
                  marks=pytest.mark.xfail(strict=True, type=ValueError)),
 ])
-def test_resample_and_align_event(single_event_forecast_observation,
-                                  obs_index, fx_index, expected_dt):
-
-    obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
-    fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)
-    obs_series = pd.Series(obs_values, index=obs_index)
-    fx_series = pd.Series(fx_values, index=fx_index)
+def test_filter_resample_event(single_event_forecast_observation,
+                               obs_index, fx_index, expected_dt, dtype):
+    # leave detailed tests to other functions
+    # this one needs to check that
+    # 1. fx_data is returned with correct type
+    # 2. obs_resampled is returned with correct type
+    obs_values = pd.Series(
+        np.random.randint(0, 2, size=len(obs_index)),
+        dtype=dtype, index=obs_index)
+    fx_values = np.random.randint(0, 2, size=len(fx_index))
+    obs_data = pd.DataFrame({'value': obs_values, 'quality_flag': 2})
+    fx_series = pd.Series(fx_values, index=fx_index, dtype=dtype)
 
     fxobs = single_event_forecast_observation
 
-    local_tz = "Etc/GMT+7"
+    quality_flags = (datamodel.QualityFlagFilter(('USER FLAGGED', )), )
 
-    fx_vals, obs_vals, ref_vals, results = preprocessing.resample_and_align(
-        fxobs, fx_series, obs_series, None, local_tz
+    fx_vals, obs_vals, results = preprocessing.filter_resample(
+        fxobs, fx_series, obs_data, None, quality_flags
     )
+
+    expected_obs = obs_vals.copy()
+    expected_obs['value'] = obs_vals.astype(bool)
+    expected_fx = fx_vals.astype(bool)
+    assert_frame_equal(obs_vals, expected_obs)
+    assert_series_equal(fx_vals, expected_fx)
 
     assert isinstance(results, dict)
 
-    # Localize datetimeindex
-    expected_dt = expected_dt.tz_convert(local_tz)
-
-    pd.testing.assert_index_equal(fx_vals.index,
-                                  obs_vals.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_vals.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
+    assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
 
 
 @pytest.mark.parametrize("quality_flags", [
