@@ -550,10 +550,6 @@ def test_process_probabilistic_forecast_observations_xy(
 
 def test_process_forecast_observations_no_data(
         report_objects, quality_filter, mocker):
-    # appears that we only protected against missing obs/aggregate data,
-    # but did not protect against missing forecast data. 2020-10 refactoring
-    # removed the protection against missing obs data. we should treat
-    # missing data consistently, so which direction to go in?
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     agg_df = THREE_HOUR_SERIES.to_frame('value')
@@ -575,8 +571,47 @@ def test_process_forecast_observations_no_data(
         report.report_parameters.end,
         data, 'MST',
         costs=report.report_parameters.costs)
-    assert len(processed_fxobs_list) == len(
-        report.report_parameters.object_pairs)
+    assert len(processed_fxobs_list) == 1
+    assert logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+def test_process_forecast_observations_no_fx(
+        report_objects, quality_filter, mocker):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-03-31T12:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = NT_UF
+    # missing forecast_0 and forecast_ref
+    data = {
+        observation: obs_df,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == 1
     assert logger.error.called
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
@@ -666,7 +701,7 @@ def test_process_forecast_observations_resample_fail(
     filters = [quality_filter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     mocker.patch(
-        'solarforecastarbiter.metrics.preprocessing.resample_and_align',
+        'solarforecastarbiter.metrics.preprocessing.filter_resample',
         side_effect=ValueError)
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
@@ -719,7 +754,7 @@ def test_process_forecast_observations_same_name(
         fxobs)
 
 
-def test_process_forecast_observations_no_fx(
+def test_process_forecast_observations_empty_fx(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast

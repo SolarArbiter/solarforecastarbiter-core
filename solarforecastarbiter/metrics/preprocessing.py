@@ -588,15 +588,37 @@ def process_forecast_observations(forecast_observations, filters,
         # accumulate PreprocessingResults from various stages in a list
         preproc_results = []
 
+        # extract fx and obs data from data dict
+        try:
+            fx_ser = data[fxobs.forecast]
+        except KeyError as e:
+            logger.error(
+                'Failed to find data for forecast %s: %s',
+                fxobs.forecast.name, e)
+            continue
+
+        try:
+            obs_data = data[fxobs.data_object]
+        except KeyError as e:
+            logger.error(
+                'Failed to find data for observation %s: %s',
+                fxobs.data_object.name, e)
+            continue
+
         # Apply fill to forecast and reference forecast
-        fx_ser = data[fxobs.forecast]
         fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
                                    forecast_fill_method, start, end)
         preproc_results.append(datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format('', forecast_fill_str),
             count=int(count)))
         if fxobs.reference_forecast is not None:
-            ref_ser = data[fxobs.reference_forecast]
+            try:
+                ref_ser = data[fxobs.reference_forecast]
+            except KeyError as e:
+                logger.error(
+                    'Failed to find data for reference forecast %s: %s',
+                    fxobs.forecast.name, e)
+                continue
             ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
                                         forecast_fill_method, start, end)
             preproc_results.append(datamodel.PreprocessingResult(
@@ -607,9 +629,14 @@ def process_forecast_observations(forecast_observations, filters,
             ref_ser = None
 
         # filter and resample observation/aggregate data
-        obs_data = data[fxobs.data_object]
-        forecast_values, observation_values, counts = filter_resample(
-            fxobs, fx_ser, obs_data, ref_ser, filters)
+        try:
+            forecast_values, observation_values, counts = filter_resample(
+                fxobs, fx_ser, obs_data, ref_ser, filters)
+        except Exception as e:
+            logger.error(
+                'Failed to filter and resample data for pair (%s, %s): %s',
+                fxobs.forecast.name, fxobs.data_object.name, e)
+            continue
 
         # store validated data in validated_observations
         val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
@@ -636,33 +663,34 @@ def process_forecast_observations(forecast_observations, filters,
             logger.error(
                 'Failed to align data for pair (%s, %s): %s',
                 fxobs.forecast.name, fxobs.data_object.name, e)
-        else:
-            logger.info('Processed data successfully for pair (%s, %s)',
-                        fxobs.forecast.name, fxobs.data_object.name)
-            name = _name_pfxobs(processed_fxobs.keys(), fxobs.forecast)
-            cost_name = fxobs.cost
-            cost = costs_dict.get(cost_name)
-            if cost_name is not None and cost is None:
-                logger.warning(
-                    'Cannot calculate cost metrics for %s, cost parameters '
-                    'not supplied for cost: %s', name, cost_name)
-            processed = datamodel.ProcessedForecastObservation(
-                name=name,
-                original=fxobs,
-                interval_value_type=fxobs.forecast.interval_value_type,
-                interval_length=fxobs.forecast.interval_length,
-                interval_label=fxobs.forecast.interval_label,
-                valid_point_count=len(forecast_values),
-                validation_results=val_results,
-                preprocessing_results=tuple(preproc_results),
-                forecast_values=forecast_values,
-                observation_values=observation_values,
-                reference_forecast_values=ref_fx_values,
-                normalization_factor=fxobs.normalization,
-                uncertainty=fxobs.uncertainty,
-                cost=cost
-            )
-            processed_fxobs[name] = processed
+            continue
+
+        logger.info('Processed data successfully for pair (%s, %s)',
+                    fxobs.forecast.name, fxobs.data_object.name)
+        name = _name_pfxobs(processed_fxobs.keys(), fxobs.forecast)
+        cost_name = fxobs.cost
+        cost = costs_dict.get(cost_name)
+        if cost_name is not None and cost is None:
+            logger.warning(
+                'Cannot calculate cost metrics for %s, cost parameters '
+                'not supplied for cost: %s', name, cost_name)
+        processed = datamodel.ProcessedForecastObservation(
+            name=name,
+            original=fxobs,
+            interval_value_type=fxobs.forecast.interval_value_type,
+            interval_length=fxobs.forecast.interval_length,
+            interval_label=fxobs.forecast.interval_label,
+            valid_point_count=len(forecast_values),
+            validation_results=val_results,
+            preprocessing_results=tuple(preproc_results),
+            forecast_values=forecast_values,
+            observation_values=observation_values,
+            reference_forecast_values=ref_fx_values,
+            normalization_factor=fxobs.normalization,
+            uncertainty=fxobs.uncertainty,
+            cost=cost
+        )
+        processed_fxobs[name] = processed
     return tuple(processed_fxobs.values())
 
 
