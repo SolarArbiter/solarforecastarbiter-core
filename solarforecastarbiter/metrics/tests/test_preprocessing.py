@@ -550,6 +550,10 @@ def test_process_probabilistic_forecast_observations_xy(
 
 def test_process_forecast_observations_no_data(
         report_objects, quality_filter, mocker):
+    # appears that we only protected against missing obs/aggregate data,
+    # but did not protect against missing forecast data. 2020-10 refactoring
+    # removed the protection against missing obs data. we should treat
+    # missing data consistently, so which direction to go in?
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     agg_df = THREE_HOUR_SERIES.to_frame('value')
