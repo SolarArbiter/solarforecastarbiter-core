@@ -217,15 +217,12 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, None, local_tz)
 
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_values.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_values.index, obs_values.index,
+                       check_categorical=False)
+    assert_index_equal(obs_values.index, expected_dt, check_categorical=False)
 
 
 def test_resample_and_align_with_ref(
