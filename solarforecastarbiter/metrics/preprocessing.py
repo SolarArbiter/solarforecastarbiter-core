@@ -292,6 +292,9 @@ def _calc_discard_before_resample(
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
 
+    # TODO: add filters for time of day and value, OR with
+    # to_discard_before_resample, add discarded number to counts
+
     return to_discard_before_resample, counts
 
 
@@ -351,9 +354,11 @@ def _calc_discard_after_resample(
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))
-        obs_ser = obs_flags[quality_flags_to_exclude].any(axis=1)
+        obs_flag_ser = obs_flags[quality_flags_to_exclude].any(axis=1)
+        # TODO: add time of day and value boolean tests here,
+        # then OR with obs_ser and adjust filter_name.
         # Series describing number of points in each interval that are flagged
-        resampled_flags_count = obs_ser.resample(
+        resampled_flags_count = obs_flag_ser.resample(
             fx_interval_length, closed=closed, label=closed).sum()
         threshold = (
             quality_flag.resample_threshold_percentage / 100. * interval_ratio)
