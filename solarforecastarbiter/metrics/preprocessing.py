@@ -350,7 +350,7 @@ def _calc_discard_after_resample(
         quality_flags_to_exclude = list(quality_flag.quality_flags) + ['ISNAN']
         filter_name = ' OR '.join(quality_flags_to_exclude)
         if quality_flag.discard_before_resample:
-            filter_name = 'PRE-RESAMPLE EXCEEDED: ' + filter_name
+            filter_name = 'DISCARD BEFORE RESAMPLE: ' + filter_name
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))

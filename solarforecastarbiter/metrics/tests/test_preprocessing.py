@@ -378,7 +378,7 @@ def test_align_prob_constant_value(
             index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
          pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
          {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
-          'PRE-RESAMPLE EXCEEDED': 3}),
+          'DISCARD BEFORE RESAMPLE': 3}),
         (60, 15,
          pd.DataFrame(
             {'value': [np.nan]*5 + list(range(6, 13)),
@@ -390,7 +390,7 @@ def test_align_prob_constant_value(
             index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
          pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
          {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
-          'PRE-RESAMPLE EXCEEDED': 9}),
+          'DISCARD BEFORE RESAMPLE': 9}),
 ])
 def test_filter_resample(single_site, single_observation,
                          single_observation_text, single_forecast_text,
