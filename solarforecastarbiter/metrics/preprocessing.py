@@ -483,7 +483,7 @@ def check_reference_forecast_consistency(fx_obs, ref_data):
 
     if ref_fx is not None and ref_data is None:
         raise ValueError(
-            'ref_data must be supplied if fx_obs.reference_forecast is not'
+            'ref_data must be supplied if fx_obs.reference_forecast is not '
             'None')
     elif ref_fx is None and ref_data is not None:
         raise ValueError(
@@ -650,8 +650,9 @@ def process_forecast_observations(forecast_observations, filters,
         # filter and resample observation/aggregate data
         try:
             forecast_values, observation_values, counts = filter_resample(
-                fxobs, fx_data, obs_data, ref_data, filters)
+                fxobs, fx_data, obs_data, filters)
         except Exception as e:
+            # should figure out the specific exception types to catch
             logger.error(
                 'Failed to filter and resample data for pair (%s, %s): %s',
                 fxobs.forecast.name, fxobs.data_object.name, e)
