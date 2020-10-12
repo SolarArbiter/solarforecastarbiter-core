@@ -282,7 +282,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     return obs_resampled, counts
 
 
-def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
+def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
     """Filter and resample the observation to the forecast interval length.
 
     Parameters
@@ -294,8 +294,6 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
     obs_data : pandas.DataFrame
         Timeseries of values and quality flags of the
         observation/aggregate data.
-    ref_data : pandas.Series or pandas.DataFrame or None
-        Timeseries data of the reference forecast.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
 
@@ -339,12 +337,6 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
     Raises
     ------
     ValueError
-        If fx_obs.reference_forecast is not None but ref_data is None
-        or vice versa
-    ValueError
-        If fx_obs.reference_forecast.interval_label or interval_length
-        does not match fx_obs.forecast.interval_label or interval_length
-    ValueError
         If fx_obs.forecast.interval_length is less than
         fx_obs.observation.interval_length
     ValueError
@@ -354,11 +346,6 @@ def filter_resample(fx_obs, fx_data, obs_data, ref_data, quality_flags):
     """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
-    ref_fx = fx_obs.reference_forecast
-
-    # raise ValueError if intervals don't match
-    # move this to align?
-    _check_ref_fx(fx, ref_fx, ref_data)
 
     # Resample based on forecast type
     if isinstance(fx, datamodel.EventForecast):
@@ -472,7 +459,28 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     return forecast_values, observation_values, ref_values, results
 
 
-def _check_ref_fx(fx, ref_fx, ref_data):
+def check_reference_forecast_consistency(fx_obs, ref_data):
+    """Filter and resample the observation to the forecast interval length.
+
+    Parameters
+    ----------
+    fx_obs : solarforecastarbiter.datamodel.ForecastObservation, solarforecastarbiter.datamodel.ForecastAggregate
+        Pair of forecast and observation.
+    ref_data : pandas.Series or pandas.DataFrame or None
+        Timeseries data of the reference forecast.
+
+    Raises
+    ------
+    ValueError
+        If fx_obs.reference_forecast is not None but ref_data is None
+        or vice versa
+    ValueError
+        If fx_obs.reference_forecast.interval_label or interval_length
+        does not match fx_obs.forecast.interval_label or interval_length
+    """  # noqa: E501
+    fx = fx_obs.forecast
+    ref_fx = fx_obs.reference_forecast
+
     if ref_fx is not None and ref_data is None:
         raise ValueError(
             'ref_data must be supplied if fx_obs.reference_forecast is not'
@@ -595,7 +603,7 @@ def process_forecast_observations(forecast_observations, filters,
 
         # extract fx and obs data from data dict
         try:
-            fx_ser = data[fxobs.forecast]
+            fx_data = data[fxobs.forecast]
         except KeyError as e:
             logger.error(
                 'Failed to find data for forecast %s: %s',
@@ -611,32 +619,38 @@ def process_forecast_observations(forecast_observations, filters,
             continue
 
         # Apply fill to forecast and reference forecast
-        fx_ser, count = apply_fill(fx_ser, fxobs.forecast,
-                                   forecast_fill_method, start, end)
+        fx_data, count = apply_fill(fx_data, fxobs.forecast,
+                                    forecast_fill_method, start, end)
         preproc_results.append(datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format('', forecast_fill_str),
             count=int(count)))
         if fxobs.reference_forecast is not None:
             try:
-                ref_ser = data[fxobs.reference_forecast]
+                ref_data = data[fxobs.reference_forecast]
             except KeyError as e:
                 logger.error(
                     'Failed to find data for reference forecast %s: %s',
                     fxobs.forecast.name, e)
                 continue
-            ref_ser, count = apply_fill(ref_ser, fxobs.reference_forecast,
-                                        forecast_fill_method, start, end)
+            ref_data, count = apply_fill(ref_data, fxobs.reference_forecast,
+                                         forecast_fill_method, start, end)
             preproc_results.append(datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
                     "Reference ", forecast_fill_str),
                 count=int(count)))
         else:
-            ref_ser = None
+            ref_data = None
+
+        try:
+            check_reference_forecast_consistency(fxobs, ref_data)
+        except ValueError as e:
+            logger.error('Incompatible reference forecast: %s', e)
+            continue
 
         # filter and resample observation/aggregate data
         try:
             forecast_values, observation_values, counts = filter_resample(
-                fxobs, fx_ser, obs_data, ref_ser, filters)
+                fxobs, fx_data, obs_data, ref_data, filters)
         except Exception as e:
             logger.error(
                 'Failed to filter and resample data for pair (%s, %s): %s',
@@ -659,7 +673,7 @@ def process_forecast_observations(forecast_observations, filters,
         # Align and create processed pair
         try:
             forecast_values, observation_values, ref_fx_values, results = \
-                align(fxobs, forecast_values, observation_values, ref_ser,
+                align(fxobs, forecast_values, observation_values, ref_data,
                       timezone)
             preproc_results.extend(
                 [datamodel.PreprocessingResult(name=k, count=int(v))

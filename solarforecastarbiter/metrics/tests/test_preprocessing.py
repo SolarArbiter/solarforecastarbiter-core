@@ -177,7 +177,7 @@ def test_filter_resample_interval_label(site_metadata, label_obs, label_fx,
     fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
 
     fx_out, obs_out, res_dict = preprocessing.filter_resample(
-        fx_obs, fx_series, obs_data, None, [quality_filter])
+        fx_obs, fx_series, obs_data, [quality_filter])
 
     assert obs_out.index.freq == freq
 
@@ -266,64 +266,53 @@ def test_align_ref_less_fx(single_forecast_observation_reffx):
                                   check_categorical=False)
 
 
-def test_filter_resample_ref_error_None(
-        single_forecast_observation, single_forecast_observation_reffx,
-        quality_filter):
-    tz = 'UTC'
-
+def test_check_reference_forecast_consistency_None(
+        single_forecast_observation, single_forecast_observation_reffx):
     # no ref_fx object, but supplied ref_fx series
     fx_obs = single_forecast_observation
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.filter_resample(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
     # ref_fx object, but no supplied ref_fx series
     fx_obs = single_forecast_observation_reffx
-    fx_series = THREE_HOUR_SERIES
     ref_series = None
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.filter_resample(
-            fx_obs, fx_series, obs_series, ref_series, [quality_filter])
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
 @pytest.mark.parametrize('attr,value', [
     ('interval_label', 'ending'),
     ('interval_length', pd.Timedelta('20min')),
 ])
-def test_filter_resample_ref_error(single_forecast_observation_reffx, attr,
-                                   value, quality_filter):
+def test_check_reference_forecast_consistency_error(
+        single_forecast_observation_reffx, attr, value):
     changes = {attr: value}
     # ref_fx object parameters are inconsistent with fx object parameters
     ref_fx = single_forecast_observation_reffx.reference_forecast.replace(
         **changes)
     fx_obs = single_forecast_observation_reffx.replace(
         reference_forecast=ref_fx)
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.filter_resample(
-            fx_obs, fx_series, obs_series, ref_series, [quality_filter])
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
-def test_filter_resample_ref_error_prob(
-        prob_forecasts, single_observation, quality_filter):
+def test_check_reference_forecast_consistency_error_prob(
+        prob_forecasts, single_observation):
     cv = prob_forecasts.constant_values[0].replace(axis='y')
     ref_fx = prob_forecasts.replace(axis='y', constant_values=(cv,))
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
         single_observation,
         reference_forecast=ref_fx)
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.filter_resample(
-            fx_obs, fx_series, obs_series, ref_series, quality_filter)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
 def test_align_prob(prob_forecasts, single_observation):
@@ -420,7 +409,7 @@ def test_filter_resample(single_site, single_observation,
     fx_obs = datamodel.ForecastObservation(fx, obs)
 
     fx_out, obs_resampled, counts = preprocessing.filter_resample(
-        fx_obs, fx_data, obs_data, None, quality_flags)
+        fx_obs, fx_data, obs_data, quality_flags)
 
     assert_series_equal(fx_out, fx_data)  # no change for non-event fx
     assert_series_equal(obs_resampled, obs_exp, check_names=False)
@@ -945,7 +934,7 @@ def test_filter_resample_event(single_event_forecast_observation,
     quality_flags = (datamodel.QualityFlagFilter(('USER FLAGGED', )), )
 
     fx_vals, obs_vals, results = preprocessing.filter_resample(
-        fxobs, fx_series, obs_data, None, quality_flags
+        fxobs, fx_series, obs_data, quality_flags
     )
 
     expected_obs = obs_vals.copy()
