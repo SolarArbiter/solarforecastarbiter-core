@@ -341,10 +341,13 @@ def _calc_discard_after_resample(
     # track number of flagged intervals in a dict
     counts = {}
 
-    for f in filter(lambda x: not x.discard_before_resample, quality_flags):
+    def apply_flag(quality_flag):
         # should we put ISNAN in both the before and during resample exclude?
-        quality_flags_to_exclude = f.quality_flags + ('ISNAN', )
+        # use list to ensure column selection works
+        quality_flags_to_exclude = list(quality_flag.quality_flags) + ['ISNAN']
         filter_name = ' OR '.join(quality_flags_to_exclude)
+        if quality_flag.discard_before_resample:
+            filter_name = 'PRE-RESAMPLE EXCEEDED: ' + filter_name
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))
@@ -352,19 +355,18 @@ def _calc_discard_after_resample(
         # Series describing number of points in each interval that are flagged
         resampled_flags_count = obs_ser.resample(
             fx_interval_length, closed=closed, label=closed).sum()
-        threshold = f.resample_threshold_percentage / 100. * interval_ratio
+        threshold = (
+            quality_flag.resample_threshold_percentage / 100. * interval_ratio)
         flagged = resampled_flags_count > threshold
+        return filter_name, flagged
+
+    # apply to all quality_flag objects, including those with
+    # discard_before_resample == True. This ensures that we throw out
+    # resampled intervals that have too few points.
+    for quality_flag in quality_flags:
+        filter_name, flagged = apply_flag(quality_flag)
         to_discard_after_resample |= flagged
         counts[filter_name] = flagged.sum()
-
-    # determine intervals with too many pre-resampling points removed
-    # this is equivalent to the old apply_validation + exlude pattern, but
-    # not sure we actually want to do this in our new paradigm.
-    # and should it always be 10%? should it be controlled by
-    # resampled_threshold_percentage on a filter by filter basis?
-    flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
-    to_discard_after_resample |= flagged
-    counts['PRE-RESAMPLE EXCEEDED'] = flagged.sum()
 
     return to_discard_after_resample, counts
 
