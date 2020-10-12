@@ -1,4 +1,5 @@
 import base64
+import json
 import shutil
 
 
@@ -465,3 +466,85 @@ def test_bar_height_tick_adjustment(
     assert out.layout.height == height
     assert out.layout.xaxis.tickangle == tickangle
     assert out.layout.xaxis.automargin
+
+
+def test_construct_timeseries_dataframe_timeseries_no_forecast_data(
+        report_with_raw, replace_pfxobs_attrs):
+    missing_fx = replace_pfxobs_attrs(report_with_raw, forecast_values=None)
+    ts_df, _ = figures.construct_timeseries_dataframe(missing_fx)
+    assert ts_df.empty
+
+
+def test_timeseries_plots_missing_fx_data(
+        report_with_raw, report_with_raw_xy, replace_pfxobs_attrs):
+    missing_values = replace_pfxobs_attrs(
+        report_with_raw,
+        forecast_values=None
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+
+    assert ts_spec is None
+    assert scatter_spec is None
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_missing_some_fx_data(
+        report_with_raw, report_with_raw_xy, replace_pfxobs_attrs):
+    pfxobs = report_with_raw.raw_report.processed_forecasts_observations
+    missing_values = report_with_raw.replace(
+        raw_report=report_with_raw.raw_report.replace(
+            processed_forecasts_observations=(
+                pfxobs[0],
+                pfxobs[1],
+                pfxobs[2].replace(forecast_values=None)
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+
+    ts_spec_dict = json.loads(ts_spec)
+    missing_fx = pfxobs[-1].original.forecast
+    assert missing_fx.name not in [k['name'] for k in ts_spec_dict['data']]
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_missing_obs_data(
+        report_with_raw, replace_pfxobs_attrs):
+    missing_obs = replace_pfxobs_attrs(
+        report_with_raw,
+        observation_values=None
+    )
+    _, scat_plot, _, _ = figures.timeseries_plots(missing_obs)
+    assert scat_plot is None
+
+
+def test_timeseries_plots_missing_prob_fx_data(
+        report_with_raw_xy, report_with_raw, replace_pfxobs_attrs):
+    non_cdf = report_with_raw.raw_report.processed_forecasts_observations
+    missing_values = replace_pfxobs_attrs(
+        report_with_raw_xy,
+        forecast_values=None
+    )
+    raw = missing_values.raw_report
+    missing_values = missing_values.replace(
+        raw_report=raw.replace(
+            processed_forecasts_observations=(
+                raw.processed_forecasts_observations + non_cdf
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert not inc_dist

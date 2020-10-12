@@ -81,7 +81,10 @@ def _value_frame_dict(idx, pfxobs, column=None):
     if column is None:
         forecast_values = pfxobs.forecast_values
     else:
-        forecast_values = pfxobs.forecast_values[column]
+        if pfxobs.forecast_values is not None:
+            forecast_values = pfxobs.forecast_values[column]
+        else:
+            forecast_values = None
     value_frame_dict = {
         'pair_index': idx,
         'observation_values': pfxobs.observation_values,
@@ -184,6 +187,8 @@ def construct_timeseries_dataframe(report):
             for cvfx in pfxobs.original.forecast.constant_values:
                 value_frame_dict = _value_frame_dict(
                     idx, pfxobs, column=str(cvfx.constant_value))
+                if value_frame_dict['forecast_values'] is None:
+                    continue
                 # specify fx type so we know the const value fx came from a
                 # ProbabilisticForecast
                 meta_row_dict = _meta_row_dict(
@@ -195,11 +200,16 @@ def construct_timeseries_dataframe(report):
                 idx += 1
         else:
             value_frame_dict = _value_frame_dict(idx, pfxobs)
+            if value_frame_dict['forecast_values'] is None:
+                continue
             meta_row_dict = _meta_row_dict(idx, pfxobs)
             value_frames.append(pd.DataFrame(value_frame_dict))
             meta_rows.append(meta_row_dict)
             idx += 1
-    data = pd.concat(value_frames)
+    if value_frames:
+        data = pd.concat(value_frames)
+    else:
+        data = pd.DataFrame()
     metadata = pd.DataFrame(meta_rows)
     # convert data to report timezone
     data = data.tz_convert(report.raw_report.timezone)
@@ -340,6 +350,8 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
             timeseries_value_df[pair_idcs],
             metadata['interval_length'],
         )
+        if data['observation_values'].isnull().all():
+            continue
         go_ = go.Scattergl(
             y=data['observation_values'],
             x=data.index,
@@ -621,6 +633,11 @@ def scatter(timeseries_value_df, timeseries_meta_df, units):
     for idx, metadata in sorted(metadatas, key=lambda x: x[0]):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
+
+        if data['observation_values'].isnull().all():
+            # observation values were not included, skip pair
+            continue
+
         go_ = go.Scattergl(
             x=data['observation_values'],
             y=data['forecast_values'],
@@ -676,6 +693,8 @@ def event_histogram(timeseries_value_df, timeseries_meta_df):
         pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
         data = timeseries_value_df[pair_idcs]
 
+        if data['observation_values'].isnull().all():
+            continue
         tp, fp, tn, fn = _event2count(data["observation_values"],
                                       data["forecast_values"])
         x = ["True Pos.", "False Pos.", "True Neg.", "False Neg."]
@@ -1142,9 +1161,11 @@ def timeseries_plots(report):
     Returns
     -------
     timeseries_spec: str
-        String json specification of the timeseries plot
-    scatter_spec: the
-        String json specification of the scatter plot
+        String json specification of the timeseries plot. None if no
+        forecast values are available.
+    scatter_spec: None or str
+        String json specification of the scatter plot. None if no observation
+        values are available.
     timeseries_prob_spec: None or str
         If report contains a probabilistic forecast with axis='x',
         string json specification of the probability vs. time plot.
@@ -1154,6 +1175,11 @@ def timeseries_plots(report):
         ProbabilisticForecast.
     """
     value_df, meta_df = construct_timeseries_dataframe(report)
+
+    if value_df.empty:
+        # No forecast data, don't plot anything
+        return None, None, None, False
+
     pfxobs = report.raw_report.processed_forecasts_observations
     units = pfxobs[0].original.forecast.units
     units = units.replace('^2', '<sup>2</sup>')
@@ -1169,6 +1195,10 @@ def timeseries_plots(report):
         font=dict(size=14),
         margin=PLOT_MARGINS,
     )
+    if ts_fig.data:
+        ts_fig_json = ts_fig.to_json()
+    else:
+        ts_fig_json = None
 
     # probability vs time plot for the x-axis probabilistic fx
     if any(
@@ -1188,7 +1218,10 @@ def timeseries_plots(report):
             font=dict(size=14),
             margin=PLOT_MARGINS,
         )
-        ts_prob_fig_json = ts_prob_fig.to_json()
+        if ts_prob_fig.data:
+            ts_prob_fig_json = ts_prob_fig.to_json()
+        else:
+            ts_prob_fig_json = None
     else:
         ts_prob_fig_json = None
 
@@ -1216,11 +1249,15 @@ def timeseries_plots(report):
             yaxis=dict(constrain="domain"),
             margin=margin,
         )
-    includes_distribution = any(
+    if scat_fig.data:
+        scat_fig_json = scat_fig.to_json()
+    else:
+        scat_fig_json = None
+    includes_distribution = ts_prob_fig_json is not None and any(
         (
             isinstance(pfxob.original.forecast,
                        datamodel.ProbabilisticForecast) and
             pfxob.original.forecast.axis == 'y')
         for pfxob in pfxobs)
-    return (ts_fig.to_json(), scat_fig.to_json(), ts_prob_fig_json,
+    return (ts_fig_json, scat_fig_json, ts_prob_fig_json,
             includes_distribution)
