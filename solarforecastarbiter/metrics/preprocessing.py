@@ -222,6 +222,67 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         obs_data['quality_flag'])
     obs_flags['ISNAN'] = obs_data['value'].isna()
 
+    # determine the points that should be discarded before resampling.
+    to_discard_before_resample, counts = _calc_discard_before_resample(
+        obs_flags, quality_flags, fx.interval_length, closed)
+
+    # resample using all of the data except for what was flagged by the
+    # discard before resample process.
+    resampled_values = \
+        obs_data.loc[~to_discard_before_resample, 'value'].resample(
+            fx.interval_length, closed=closed, label=closed).mean()
+
+    # determine the intervals that have too many flagged points
+    to_discard_after_resample, after_resample_counts = \
+        _calc_discard_after_resample(
+            obs_flags,
+            quality_flags,
+            to_discard_before_resample,
+            fx.interval_length,
+            obs.interval_length,
+            closed
+        )
+
+    # discard the intervals with too many flagged sub-interval points.
+    # resampled_values.index does not contain labels for intervals for
+    # which all points were discarded, so care is needed in the next
+    # indexing operation.
+    good_labels = to_discard_after_resample.index[~to_discard_after_resample]
+    obs_resampled = resampled_values.loc[
+        resampled_values.index.intersection(good_labels)]
+
+    # merge the counts dictionaries
+    counts.update(after_resample_counts)
+
+    return obs_resampled, counts
+
+
+def _calc_discard_before_resample(
+        obs_flags, quality_flags, fx_interval_length, closed
+        ):
+    """Determine intervals to discard before resampling.
+
+    Parameters
+    ----------
+    obs_flags : pd.DataFrame
+        Output of convert_mask_into_dataframe, plus ISNAN.
+    quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
+        Flags to process and apply as filters during resampling.
+    fx_interval_length : pd.Timedelta
+        Forecast interval length to resample to.
+    closed : {'left', 'right', None}
+        Interval label convention.
+
+    Returns
+    -------
+    to_discard_before_resample : pd.Series
+        Indicates if a point should be discarded (True) or kept (False)
+        before the resample.
+    counts : dict
+        Dict where keys are quality_flag.quality_flags and values
+        are integers indicating the number of points filtered
+        for the given flag.
+    """
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
     discard_before_resample_flags = set(['ISNAN'])
@@ -231,15 +292,54 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
 
-    # track number of points discarded before resampling in each interval
+    return to_discard_before_resample, counts
+
+
+def _calc_discard_after_resample(
+        obs_flags, quality_flags, to_discard_before_resample,
+        fx_interval_length, obs_interval_length, closed
+        ):
+    """Determine intervals to discard after resampling.
+
+    Parameters
+    ----------
+    obs_flags : pd.DataFrame
+        Output of convert_mask_into_dataframe, plus ISNAN.
+    quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
+        Flags to process and apply as filters during resampling.
+    to_discard_before_resample : pd.Series
+        Boolean Series indicating if a point should be discarded before
+        resampling. Used when determining if too many points
+    fx_interval_length : pd.Timedelta
+        Forecast interval length to resample to.
+    obs_interval_length : pd.Timedelta
+        Observation interval length.
+    closed : {'left', 'right', None}
+        Interval label convention.
+
+    Returns
+    -------
+    to_discard_after_resample : pd.Series
+        Indicates if a point should be discarded (True) or kept (False)
+        before the resample.
+    counts : dict
+        Dict where keys are quality_flag.quality_flags and values
+        are integers indicating the number of points filtered
+        for the given flag.
+    """
+    # number of points discarded before resampling in each interval
     to_discard_before_resample_count = to_discard_before_resample.resample(
-        fx.interval_length, closed=closed, label=closed).sum()
+        fx_interval_length, closed=closed, label=closed).sum()
 
     # Series to track if a given resampled interval should be discarded
-    to_discard = pd.Series(False, index=to_discard_before_resample_count.index)
+    to_discard_after_resample = pd.Series(
+        False, index=to_discard_before_resample_count.index)
 
     # will be used to determine threshold number of points
-    interval_ratio = fx.interval_length / obs.interval_length
+    interval_ratio = fx_interval_length / obs_interval_length
+
+    # track number of flagged intervals in a dict
+    counts = {}
 
     for f in filter(lambda x: not x.discard_before_resample, quality_flags):
         # should we put ISNAN in both the before and during resample exclude?
@@ -251,10 +351,10 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         obs_ser = obs_flags[quality_flags_to_exclude].any(axis=1)
         # Series describing number of points in each interval that are flagged
         resampled_flags_count = obs_ser.resample(
-            fx.interval_length, closed=closed, label=closed).sum()
+            fx_interval_length, closed=closed, label=closed).sum()
         threshold = f.resample_threshold_percentage / 100. * interval_ratio
         flagged = resampled_flags_count > threshold
-        to_discard |= flagged
+        to_discard_after_resample |= flagged
         counts[filter_name] = flagged.sum()
 
     # determine intervals with too many pre-resampling points removed
@@ -263,23 +363,10 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     # and should it always be 10%? should it be controlled by
     # resampled_threshold_percentage on a filter by filter basis?
     flagged = to_discard_before_resample_count > (0.1 * interval_ratio)
-    to_discard |= flagged
+    to_discard_after_resample |= flagged
     counts['PRE-RESAMPLE EXCEEDED'] = flagged.sum()
 
-    # resample using all of the data except for what was flagged by the
-    # discard before resample process.
-    resampled_values = \
-        obs_data.loc[~to_discard_before_resample, 'value'].resample(
-            fx.interval_length, closed=closed, label=closed).mean()
-    # discard the intervals with too many flagged sub-interval points.
-    # resampled_values.index does not contain labels for intervals for
-    # which all sub-intervals were discarded, so care is needed in the
-    # next indexing operation.
-    labels_to_keep = to_discard.index[~to_discard]
-    obs_resampled = resampled_values.loc[
-        resampled_values.index.intersection(labels_to_keep)]
-
-    return obs_resampled, counts
+    return to_discard_after_resample, counts
 
 
 def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
