@@ -548,3 +548,26 @@ def test_timeseries_plots_missing_prob_fx_data(
     assert isinstance(scatter_spec, str)
     assert ts_prob_spec is None
     assert not inc_dist
+
+
+def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
+    pfxobs = report_with_raw_xy.raw_report.processed_forecasts_observations
+    only_x = report_with_raw_xy.replace(
+        raw_report=report_with_raw_xy.raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pair
+                for pair in pfxobs if pair.original.forecast.axis == 'x'
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        only_x)
+    ts_spec_dict = json.loads(ts_spec)
+    assert len(ts_spec_dict['data']) == 1
+    obs_name = pfxobs[0].original.observation.name
+    assert ts_spec_dict['data'][0]['name'] == obs_name
+    assert isinstance(ts_spec, str)
+    assert scatter_spec is None
+    assert isinstance(ts_prob_spec, str)
+    assert not inc_dist
