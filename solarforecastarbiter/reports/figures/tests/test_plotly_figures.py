@@ -589,3 +589,24 @@ def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
     assert scatter_spec is None
     assert isinstance(ts_prob_spec, str)
     assert not inc_dist
+
+
+def test_timeseries_plots_only_x_axis_data_no_obs(
+        report_with_raw_xy, replace_pfxobs_attrs):
+    pfxobs = report_with_raw_xy.raw_report.processed_forecasts_observations
+    only_x = report_with_raw_xy.replace(
+        raw_report=report_with_raw_xy.raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pair
+                for pair in pfxobs if pair.original.forecast.axis == 'x'
+            )
+        )
+    )
+
+    only_x = replace_pfxobs_attrs(only_x, observation_values=None)
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        only_x)
+    assert ts_spec is None
+    assert scatter_spec is None
+    assert isinstance(ts_prob_spec, str)
+    assert not inc_dist
