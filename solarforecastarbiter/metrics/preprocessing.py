@@ -753,7 +753,7 @@ def process_forecast_observations(forecast_observations, filters,
             continue
 
         # store validated data in validated_observations
-        val_results = tuple(datamodel.ValidationResult(flag=k, count=v)
+        val_results = tuple(datamodel.ValidationResult(flag=k, count=int(v))
                             for k, v in counts.items())
 
         # this count value no longer makes sense because the first object
