@@ -1379,17 +1379,21 @@ class QualityFlagFilter(BaseFilter):
         These periods will be excluded from the analysis.
     discard_before_resample : bool, default True
         Determines if points should be discarded before resampling or
-        during resampling (when ``resample_threshold_percentage`` is
-        exceeded).
+        only during resampling (when ``resample_threshold_percentage``
+        is exceeded).
     resample_threshold_percentage : float, default 10.
         The percentage of points in a resampled interval that must be
         flagged for the resampled interval to be flagged.
-        Ignored if ``discard_before_resample`` is True.
 
     Notes
     -----
+    If ``discard_before_resample`` is ``True``, the ``quality_flags``
+    are applied to the data before it is resampled. During resampling,
+    intervals are discarded if ``resample_threshold_percentage`` is
+    exceeded.
+
     If ``discard_before_resample`` is ``False``, the ``quality_flags``
-    are considered during the resampling operation. The
+    are only considered during the resampling operation. The
     ``quality_flags`` of the raw observations are combined with ``OR``,
     the total number of flagged points within a resample period is
     computed, and intervals are discarded where
