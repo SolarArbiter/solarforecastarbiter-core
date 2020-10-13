@@ -24,7 +24,7 @@ from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
 from solarforecastarbiter.validation.quality_mapping import \
-    DESCRIPTION_MASK_MAPPING, DERIVED_MASKS, DISCARD_BEFORE_RESAMPLE
+    DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
 
 DASH_URL = 'https://dashboard.solarforecastarbiter.org'
