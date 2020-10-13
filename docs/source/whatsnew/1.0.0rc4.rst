@@ -28,6 +28,7 @@ API Changes
   ``preprocessing.exclude``, and ``preprocessing.resample_and_align``.
   (:issue:`556`, :pull:`580`)
 
+
 Enhancements
 ~~~~~~~~~~~~
 * Add :py:func:`validation.validator.check_day_night_interval` for determining
