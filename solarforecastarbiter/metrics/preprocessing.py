@@ -205,8 +205,15 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         Dict where keys are quality_flag.quality_flags and values
         are integers indicating the number of points filtered
         for the given flag.
+
+    Raises
+    ------
+    ValueError
+        If fx.interval_length < obs.interval_length
     """
     if fx.interval_length < obs.interval_length:
+        # typically impossible to reach this because ForecastObservation init
+        # prevents it
         raise ValueError(
             'Cannot resample observation to match forecast because '
             'fx.interval_length < obs.interval_length.')
@@ -598,15 +605,6 @@ def check_reference_forecast_consistency(fx_obs, ref_data):
                 raise ValueError(
                     f'forecast.axis "{fx.axis}" must match '
                     f'reference_forecast.axis "{ref_fx.axis}"')
-
-
-def _merge_quality_filters(filters):
-    """Merge any quality flag filters into one single QualityFlagFilter"""
-    combo = set()
-    for filter_ in filters:
-        if isinstance(filter_, datamodel.QualityFlagFilter):
-            combo |= set(filter_.quality_flags)
-    return datamodel.QualityFlagFilter(tuple(combo))
 
 
 def process_forecast_observations(forecast_observations, filters,

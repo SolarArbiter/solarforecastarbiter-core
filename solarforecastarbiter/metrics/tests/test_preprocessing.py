@@ -508,6 +508,15 @@ def test_filter_resample(single_site, single_observation,
     assert counts == counts_exp
 
 
+def test__resample_obs_interval_incompatible(single_forecast_observation):
+    fx = single_forecast_observation.forecast.replace(
+        interval_length=pd.Timedelta('1min'))
+    with pytest.raises(ValueError,
+                       match='fx.interval_length < obs.interval_length'):
+        preprocessing._resample_obs(
+            single_forecast_observation.observation, fx, None, None)
+
+
 def test_process_forecast_observations(report_objects, quality_filter,
                                        timeofdayfilter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
@@ -680,6 +689,40 @@ def test_process_forecast_observations_no_fx(
     data = {
         observation: obs_df,
         forecast_1: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == 1
+    assert logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+def test_process_forecast_observations_bad_reference_data(
+        report_objects, quality_filter, mocker):
+    """Ensure check_reference_forecast_consistency is called and handled."""
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = NT_UF
+    data = {
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: None,
         forecast_agg: THREE_HOUR_SERIES,
         aggregate: agg_df
     }
