@@ -496,15 +496,6 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     fx_data, but users should not rely on this behavior. Instead, use
     :py:func:`~.filter_resample` to match the input observations to the
     forecast data.
-
-    Raises
-    ------
-    ValueError
-        If fx_obs.reference_forecast is not None but ref_data is None
-        or vice versa
-    ValueError
-        If fx_obs.reference_forecast.interval_label or interval_length
-        does not match fx_obs.forecast.interval_label or interval_length
     """  # noqa: E501
     fx = fx_obs.forecast
     obs = fx_obs.data_object
