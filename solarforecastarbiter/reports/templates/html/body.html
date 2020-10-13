@@ -116,13 +116,14 @@ Plotly.newPlot("timeseries-div", ts_plot);
 {% endif %}
 
 <div id="scatter-div"></div>
-<script>
+
 {% if scatter_spec is defined %}
+<script>
 scat_plot = JSON.parse('{{ scatter_spec | safe }}');
 Object.assign(scat_plot,{config: {responsive: true}});
 Plotly.newPlot("scatter-div", scat_plot);
-{% endif %}
 </script>
+{% endif %}
 
 {% if timeseries_prob_spec is defined %}
 <p>The plot below shows probability vs. time for probabilistic forecasts
