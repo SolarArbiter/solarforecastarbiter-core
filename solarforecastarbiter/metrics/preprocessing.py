@@ -716,28 +716,21 @@ def process_forecast_observations(forecast_observations, filters,
         preproc_results.append(datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format('', forecast_fill_str),
             count=int(count)))
+
+        ref_data = data.get(fxobs.reference_forecast, None)
+        try:
+            check_reference_forecast_consistency(fxobs, ref_data)
+        except ValueError as e:
+            logger.error('Incompatible reference forecast and data: %s', e)
+            continue
+
         if fxobs.reference_forecast is not None:
-            try:
-                ref_data = data[fxobs.reference_forecast]
-            except KeyError as e:
-                logger.error(
-                    'Failed to find data for reference forecast %s: %s',
-                    fxobs.forecast.name, e)
-                continue
             ref_data, count = apply_fill(ref_data, fxobs.reference_forecast,
                                          forecast_fill_method, start, end)
             preproc_results.append(datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
                     "Reference ", forecast_fill_str),
                 count=int(count)))
-        else:
-            ref_data = None
-
-        try:
-            check_reference_forecast_consistency(fxobs, ref_data)
-        except ValueError as e:
-            logger.error('Incompatible reference forecast: %s', e)
-            continue
 
         # filter and resample observation/aggregate data
         try:

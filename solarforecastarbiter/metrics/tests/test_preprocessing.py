@@ -717,9 +717,18 @@ def test_process_forecast_observations_bad_reference_data(
     """Ensure check_reference_forecast_consistency is called and handled."""
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
     agg_df = THREE_HOUR_SERIES.to_frame('value')
-    agg_df['quality_flag'] = NT_UF
+    agg_df['quality_flag'] = OK
     data = {
+        observation: obs_df,
         forecast_0: THREE_HOUR_SERIES,
         forecast_1: THREE_HOUR_SERIES,
         forecast_ref: None,
@@ -736,8 +745,9 @@ def test_process_forecast_observations_bad_reference_data(
         report.report_parameters.end,
         data, 'MST',
         costs=report.report_parameters.costs)
-    assert len(processed_fxobs_list) == 1
-    assert logger.error.called
+    assert len(processed_fxobs_list) == 2
+    logger.error.assert_called_once()
+    assert 'Incompatible reference forecast' in logger.error.call_args[0][0]
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
         assert isinstance(proc_fxobs.forecast_values, pd.Series)
