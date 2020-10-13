@@ -1,5 +1,7 @@
 .. _whatsnew_100rc4:
 
+.. py:currentmodule:: solarforecastarbiter
+
 1.0.0rc4 (Estimated October, 2020)
 ----------------------------------
 
@@ -21,11 +23,12 @@ API Changes
   ``discard_before_resample`` and ``resample_threshold_percentage`` that
   control how the filter will be applied when resampling.
   (:issue:`556`, :pull:`580`)
-* New functions :py:func:`preprocessing.filter_resample`,
-  :py:func:`preprocessing.align`, and
-  :py:func:`preprocessing.check_reference_forecast_consistency`
-  replace functions ``preprocessing.apply_validation``,
-  ``preprocessing.exclude``, and ``preprocessing.resample_and_align``.
+* New functions :py:func:`metrics.preprocessing.filter_resample`,
+  :py:func:`metrics.preprocessing.align`, and
+  :py:func:`metrics.preprocessing.check_reference_forecast_consistency`
+  replace functions ``metrics.preprocessing.apply_validation``,
+  ``metrics.preprocessing.exclude``, and
+  ``metrics.preprocessing.resample_and_align``.
   (:issue:`556`, :pull:`580`)
 
 
@@ -33,6 +36,10 @@ Enhancements
 ~~~~~~~~~~~~
 * Add :py:func:`validation.validator.check_day_night_interval` for determining
   day/night status for non-instantaneous intervals. (:issue:`577`, :pull:`579`)
+* Allow users to render reports without full access to the time series data of
+  the report's forecasts and observations. Users with limited permissions on a
+  report may need to instantiate a :py:class:`datamodel.Report` object from an
+  api response from the ``/reports`` endpoint manually. (:pull:`585`)
 
 
 Bug fixes

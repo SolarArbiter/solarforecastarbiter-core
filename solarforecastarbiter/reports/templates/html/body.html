@@ -107,12 +107,18 @@ parameterized asymmetrically around the 50th percentile, brighter colors
 indicate smaller percentiles and darker colors indicate larger percentiles.
 Use the hover tool to determine the percentile.</p>
 {% endif %}
-<div id="scatter-div"></div>
 
 <script>
 ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
 Object.assign(ts_plot,{config: {responsive: true}});
 Plotly.newPlot("timeseries-div", ts_plot);
+</script>
+{% endif %}
+
+<div id="scatter-div"></div>
+
+{% if scatter_spec is defined %}
+<script>
 scat_plot = JSON.parse('{{ scatter_spec | safe }}');
 Object.assign(scat_plot,{config: {responsive: true}});
 Plotly.newPlot("scatter-div", scat_plot);
