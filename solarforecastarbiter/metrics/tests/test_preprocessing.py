@@ -793,16 +793,6 @@ def test_process_forecast_observations_align_fail(
     assert len(processed_fxobs_list) == 0
     logger.error.assert_called()
     assert 'Failed to align' in logger.error.call_args[0][0]
-    for proc_fxobs in processed_fxobs_list:
-        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
-        assert all(isinstance(vr, datamodel.ValidationResult)
-                   for vr in proc_fxobs.validation_results)
-        assert all(isinstance(pr, datamodel.PreprocessingResult)
-                   for pr in proc_fxobs.preprocessing_results)
-        assert isinstance(proc_fxobs.forecast_values, pd.Series)
-        assert isinstance(proc_fxobs.observation_values, pd.Series)
-        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
-                                      proc_fxobs.observation_values.index)
 
 
 def test_process_forecast_observations_no_cost(report_objects, quality_filter,
