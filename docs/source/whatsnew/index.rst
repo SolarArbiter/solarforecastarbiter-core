@@ -9,6 +9,7 @@ These are new features and improvements of note in each release.
 .. toctree::
    :maxdepth: 2
 
+   1.0.0rc4
    1.0.0rc3
    1.0.0rc2
    1.0.0rc1
