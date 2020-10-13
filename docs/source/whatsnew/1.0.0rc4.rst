@@ -44,7 +44,7 @@ Bug fixes
   now use average solar position over the interval, rather than the solar
   position at the interval label. (:pull:`579`)
 * Filtering on flags such as NIGHTTIME may now be applied after resampling so
-  that interval averages are still calculted correctly.
+  that interval averages are still calculated correctly.
   (:issue:`556`, :pull:`580`)
 * Allow for scaling of x axis tick frequency on report metric plots to avoid
   crowding for *date* category. (:issue:`578`) (:pull:`581`)
