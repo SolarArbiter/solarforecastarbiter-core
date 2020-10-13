@@ -262,6 +262,11 @@ def metric_dataframe():
 def test_bar(metric_dataframe):
     out = figures.bar(metric_dataframe, 'mae')
     assert isinstance(out, graph_objects.Figure)
+    plot_spec = out.to_dict()
+    layout = plot_spec['layout']
+    assert 'automargin' not in layout['xaxis']
+    assert 'tickangle' not in layout['xaxis']
+    assert layout['height'] == figures.PLOT_LAYOUT_DEFAULTS['height']
 
 
 def test_bar_no_metric(metric_dataframe):
@@ -444,3 +449,19 @@ def test_probabilistic_plotting_asymmetric_cv(
     assert isinstance(scatter_spec, str)
     assert isinstance(ts_prob_spec, str)
     assert inc_dist
+
+
+@pytest.mark.parametrize('new_name,tickangle,height', [
+    ('some what long name used when test',
+     45, 250 + 34 * figures.X_LABEL_HEIGHT_FACTOR),
+    ('very long name used when test very long names with plot tick angle',
+     90, 250 + 66 * figures.X_LABEL_HEIGHT_FACTOR),
+])
+def test_bar_height_tick_adjustment(
+        metric_dataframe, new_name, tickangle, height):
+    metric_dataframe['abbrev'] = new_name
+    out = figures.bar(metric_dataframe, 'mae')
+    assert isinstance(out, graph_objects.Figure)
+    assert out.layout.height == height
+    assert out.layout.xaxis.tickangle == tickangle
+    assert out.layout.xaxis.automargin

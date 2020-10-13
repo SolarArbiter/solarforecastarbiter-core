@@ -126,6 +126,7 @@ def test_gfs_quarter_deg_to_hourly_mean(latitude, longitude, start, end,
     ('20190520T0300Z', '20190522T0000Z', '20190515T0000Z'),
     ('20190525T1200Z', '20190531T0000Z', '20190515T0000Z'),
     ('20190515T0300Z', '20190531T0000Z', '20190515T0000Z'),
+    ('20201003T0100Z', '20201017T0000Z', '20201003T0000Z'),
 ])
 def test_gefs_half_deg_to_hourly_mean(start, end, init_time):
     start = pd.Timestamp(start)
