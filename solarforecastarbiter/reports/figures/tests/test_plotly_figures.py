@@ -544,10 +544,22 @@ def test_timeseries_plots_missing_prob_fx_data(
 
     ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         missing_values)
+    ts_spec_dict = json.loads(ts_spec)
+    assert len(ts_spec_dict['data'])
+    plotted_names = [p['name'] for p in ts_spec_dict['data']]
+    should_plot = [fxobs.original.forecast.name
+                   for fxobs in non_cdf]
+    should_plot += [fxobs.original.observation.name
+                    if hasattr(fxobs.original, 'observation')
+                    else fxobs.original.aggregate.name
+                    for fxobs in non_cdf]
+    should_plot = list(map(figures._legend_text, should_plot))
+    for name in plotted_names:
+        assert name in should_plot
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
     assert ts_prob_spec is None
-    assert not inc_dist
+    assert inc_dist
 
 
 def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
@@ -564,9 +576,15 @@ def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
     ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         only_x)
     ts_spec_dict = json.loads(ts_spec)
-    assert len(ts_spec_dict['data']) == 1
-    obs_name = pfxobs[0].original.observation.name
-    assert ts_spec_dict['data'][0]['name'] == obs_name
+    obs_names = sorted(list(set(
+        figures._legend_text(fxobs.original.observation.name)
+        if hasattr(fxobs.original, 'observation')
+        else figures._legend_text(fxobs.original.aggregate.name)
+        for fxobs in pfxobs)
+    ))
+
+    assert len(ts_spec_dict['data']) == len(obs_names)
+    assert [p['name'] for p in ts_spec_dict['data']] == obs_names
     assert isinstance(ts_spec, str)
     assert scatter_spec is None
     assert isinstance(ts_prob_spec, str)
