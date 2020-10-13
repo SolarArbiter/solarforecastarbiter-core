@@ -3,20 +3,48 @@
 1.0.0rc4 (Estimated October, 2020)
 ----------------------------------
 
-This is the forth 1.0 release candidate.
-
+This is the fourth 1.0 release candidate.
 
 API Changes
 ~~~~~~~~~~~
-
-
+* Changed ``validation.validator.check_irradiance_day_night`` to
+  :py:func:`validation.validator.check_day_night`. This function is now only
+  recommended for instantaneous values. See new function
+  :py:func:`validation.validator.check_day_night_interval` for
+  non-instantaneous values. (:issue:`465`, :issue:`577`, :pull:`579`)
+* :py:func:`validation.validator.check_ac_power_limits` and
+  :py:func:`validation.validator.check_dc_power_limits` now accept a Series of
+  day/night bools instead of a Series of solar zenith. This allows for a more
+  careful calculation of day/night bools for non-instantaneous intervals
+  without complicating the AC/DC limit functions. (:issue:`577`, :pull:`579`)
+* :py:class:`datamodel.QualityFlagFilter` has two new keyword arguments:
+  ``discard_before_resample`` and ``resample_threshold_percentage`` that
+  control how the filter will be applied when resampling.
+  (:issue:`556`, :pull:`580`)
+* New functions :py:func:`preprocessing.filter_resample`,
+  :py:func:`preprocessing.align`, and
+  :py:func:`preprocessing.check_reference_forecast_consistency`
+  replace functions ``preprocessing.apply_validation``,
+  ``preprocessing.exclude``, and ``preprocessing.resample_and_align``.
+  (:issue:`556`, :pull:`580`)
 
 Enhancements
 ~~~~~~~~~~~~
+* Add :py:func:`validation.validator.check_day_night_interval` for determining
+  day/night status for non-instantaneous intervals. (:issue:`577`, :pull:`579`)
 
 
 Bug fixes
 ~~~~~~~~~
+* Night time validation flag for non-instantaneous data is now calculated
+  based on the percentage of night time points in the interval, rather than
+  the night time flag at the interval label. (:issue:`577`, :pull:`579`)
+* Irradiance limit flags and clear sky exceeded flag for non-instantaneous data
+  now use average solar position over the interval, rather than the solar
+  position at the interval label. (:pull:`579`)
+* Filtering on flags such as NIGHTTIME may now be applied after resampling so
+  that interval averages are still calculted correctly.
+  (:issue:`556`, :pull:`580`)
 * Allow for scaling of x axis tick frequency on report metric plots to avoid
   crowding for *date* category. (:issue:`578`) (:pull:`581`)
 * Fix spacing of plot titles to avoid long names running out of container and
