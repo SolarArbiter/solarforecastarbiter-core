@@ -48,10 +48,24 @@ THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0., 13., 1.)/6)+1,
                                   index=THIRTEEN_10MIN)
 
 # Bitwise-flag integers (only test validated and versioned data)
+UF = int(0b11)  # User flagged, version 0 (3)
+NT = int(0b10010)  # Nighttime, version 0 (18)
 NT_UF = int(0b10011)  # Nighttime, User Flagged and version 0 (19)
 CSE_NT = int(0b1000010010)  # Clearsky exceeded, nighttime, and version 0 (530)
 CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
 OK = int(0b10)  # OK version 0 (2)
+
+FOUR_HOUR_DF = pd.DataFrame(
+    {'value': [np.nan] + [1.]*3, 'quality_flag': [NT, UF, NT_UF, OK]},
+    index=pd.date_range(start="20200301T00Z", periods=4, freq='H'))
+
+FOUR_HOUR_SERIES = pd.Series(
+    [1.]*4, index=pd.date_range(start="20200301T00Z", periods=4, freq='H'))
+
+SIXTEEN_15MIN_DF = pd.DataFrame(
+    {'value': [np.nan]*5 + list(range(6, 17)),
+     'quality_flag': [OK]*4 + [NT_UF, NT_UF, OK, OK, UF, NT] + [OK]*5 + [CSE]},
+    index=pd.date_range(start="20200301T00Z", periods=16, freq='15min'))
 
 
 def create_preprocessing_result(counts):
@@ -362,40 +376,108 @@ def test_align_prob_constant_value(
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize("quality_flags", [
-    (datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED')), ),
-    (datamodel.QualityFlagFilter(('NIGHTTIME', )),
-     datamodel.QualityFlagFilter(('USER FLAGGED', )))
-])
 @pytest.mark.parametrize(
-    "fx_int_length,obs_int_length,obs_data,fx_data,obs_exp,counts_exp", [
-        (60, 60,
-         pd.DataFrame(
-            {'value': [np.nan] + [1.]*3, 'quality_flag': [18, 3, 19, 2]},
-            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
-         pd.Series(
-            [1.]*4,
-            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
-         pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
-         {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
-          'DISCARD BEFORE RESAMPLE': 3}),
-        (60, 15,
-         pd.DataFrame(
-            {'value': [np.nan]*5 + list(range(6, 13)),
-             'quality_flag': [2]*4 + [19, 19, 2, 2, 3, 18, 2, 2]},
-            index=pd.date_range(
-                start="20200301T00Z", periods=12, freq='15min')),
-         pd.Series(
-            [1.]*4,
-            index=pd.date_range(start="20200301T00Z", periods=4, freq='H')),
-         pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
-         {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
-          'DISCARD BEFORE RESAMPLE': 9}),
-])
+    "qfs,fx_int_length,obs_int_length,obs_data,fx_data,obs_exp,counts_exp",
+    [
+        (
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
+            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+             datamodel.QualityFlagFilter(('USER FLAGGED', ))),
+            60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
+            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 2,
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # all but last interval are discarded because
+            # resample_threshold_percentage exceeded
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                resample_threshold_percentage=50)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # only first all-nan interval is discarded
+            pd.Series([7.5, 11.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 1}
+        ),
+        (
+            (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+             datamodel.QualityFlagFilter(('USER FLAGGED', ))),
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 3,
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=30)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            (datamodel.QualityFlagFilter(
+                ('NIGHTTIME', ),
+                discard_before_resample=False,
+                resample_threshold_percentage=30),
+             datamodel.QualityFlagFilter(
+                ('USER FLAGGED', ),
+                discard_before_resample=False,
+                resample_threshold_percentage=30)),
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([10.5, 14.5], index=FOUR_HOUR_SERIES.index[2:]),
+            {'ISNAN': 5, 'NIGHTTIME OR ISNAN': 2, 'USER FLAGGED OR ISNAN': 2}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=100)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # only first all-nan interval is discarded
+            pd.Series([7.0, 10.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 0}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=100),
+             datamodel.QualityFlagFilter(
+                ('CLEARSKY EXCEEDED', ),
+                discard_before_resample=True,
+                resample_threshold_percentage=0)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # discard first all-nan interval, 2nd interval with 1 nan,
+            # last interval with 1 cs exceeded.
+            pd.Series([10.5], index=[FOUR_HOUR_SERIES.index[2]]),
+            {'ISNAN': 5, 'CLEARSKY EXCEEDED': 1,
+             'NIGHTTIME OR USER FLAGGED OR ISNAN': 0,
+             'DISCARD BEFORE RESAMPLE: CLEARSKY EXCEEDED OR ISNAN': 3}
+        ),
+    ]
+)
 def test_filter_resample(single_site, single_observation,
                          single_observation_text, single_forecast_text,
                          fx_int_length, obs_int_length, obs_data,
-                         fx_data, obs_exp, quality_flags, counts_exp):
+                         fx_data, obs_exp, qfs, counts_exp):
     fx_dict = json.loads(single_forecast_text)
     fx_dict['site'] = single_site
     fx_dict.update({"interval_length": fx_int_length})
@@ -409,7 +491,7 @@ def test_filter_resample(single_site, single_observation,
     fx_obs = datamodel.ForecastObservation(fx, obs)
 
     fx_out, obs_resampled, counts = preprocessing.filter_resample(
-        fx_obs, fx_data, obs_data, quality_flags)
+        fx_obs, fx_data, obs_data, qfs)
 
     assert_series_equal(fx_out, fx_data)  # no change for non-event fx
     assert_series_equal(obs_resampled, obs_exp, check_names=False)
