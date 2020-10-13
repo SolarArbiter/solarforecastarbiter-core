@@ -31,6 +31,11 @@ THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", freq="60min",
 THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value",
                                     dtype='float64')
 
+EMPTY_DF = pd.DataFrame(
+        [], columns=['value', 'quality_flag'],
+        index=pd.DatetimeIndex([], name='timestamp', tz='UTC')
+    ).astype({'value': float, 'quality_flag': int})
+
 EMPTY_OBJ_SERIES = pd.Series(
     [],
     dtype=object,
@@ -379,6 +384,10 @@ def test_align_prob_constant_value(
 @pytest.mark.parametrize(
     "qfs,fx_int_length,obs_int_length,obs_data,fx_data,obs_exp,counts_exp",
     [
+        (
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 60, EMPTY_DF, FOUR_HOUR_SERIES, EMPTY_DF['value'], {}
+        ),
         (
             [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
             60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,

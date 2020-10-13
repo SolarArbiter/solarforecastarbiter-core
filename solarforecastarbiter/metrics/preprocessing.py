@@ -212,7 +212,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             'fx.interval_length < obs.interval_length.')
 
     if obs_data.empty:
-        return obs_data
+        return obs_data['value'], {}
 
     # label convention when resampling
     closed = datamodel.CLOSED_MAPPING[obs.interval_label]
