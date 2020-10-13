@@ -97,9 +97,9 @@ def test__get_render_kwargs_with_series_exception(
         dash_url,
         True
     )
-    assert kwargs['timeseries_spec'] == '{}'
-    assert kwargs['scatter_spec'] == '{}'
-    assert kwargs['timeseries_prob_spec'] == '{}'
+    assert 'timeseries_spec' not in kwargs
+    assert 'scatter_spec' not in kwargs
+    assert 'timeseries_prob_spec' not in kwargs
 
 
 @pytest.fixture(params=[0, 1, 2])
@@ -321,3 +321,49 @@ def test_figure_name_filter(val):
     new = template._figure_name_filter(val)
     match = NOTWORD.match(new)
     assert match is None
+
+
+def test__get_render_kwargs_with_missing_fx_data(
+        report_with_raw, dash_url):
+    raw_report = report_with_raw.raw_report
+    missing_data = report_with_raw.replace(
+        raw_report=raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pfxobs.replace(forecast_values=None)
+                for pfxobs in raw_report.processed_forecasts_observations
+            )
+        )
+    )
+
+    kwargs = template._get_render_kwargs(
+        missing_data,
+        dash_url,
+        True
+    )
+    assert 'timeseries_spec' not in kwargs
+    assert 'scatter_spec' not in kwargs
+    assert 'timeseries_prob_spec' not in kwargs
+    assert not kwargs['includes_distribution']
+
+
+def test__get_render_kwargs_with_missing_obs_data(
+        report_with_raw, dash_url):
+    raw_report = report_with_raw.raw_report
+    missing_data = report_with_raw.replace(
+        raw_report=raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pfxobs.replace(observation_values=None)
+                for pfxobs in raw_report.processed_forecasts_observations
+            )
+        )
+    )
+
+    kwargs = template._get_render_kwargs(
+        missing_data,
+        dash_url,
+        True
+    )
+    assert 'timeseries_spec' in kwargs
+    assert 'scatter_spec' not in kwargs
+    assert 'timeseries_prob_spec' not in kwargs
+    assert not kwargs['includes_distribution']

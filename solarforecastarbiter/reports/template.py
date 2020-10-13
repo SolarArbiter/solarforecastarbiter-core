@@ -56,9 +56,10 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     dash_url: str
         URL of the Solar Forecast arbiter dashboard to use when building links.
     with_timeseries: bool
-        Whether or not to include timeseries plots. If an error occurs, sets
-        `timeseries_script` to an empty string and `timeseries_div` will
-        contain a <div> element for warning the user of the failure.
+        Whether or not to include timeseries plots. If an error occurs when
+        trying to generate timeseries plots, the `timeseries_spec`,
+        `scatter_spec`, and `timeseries_prob_spec` arguments will not be
+        defined.
 
     Returns
     -------
@@ -82,19 +83,24 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
 
     plot_plotly = getattr(report_plots, 'plotly_version', None)
     kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
+
     if with_timeseries:
         try:
             timeseries_specs = plotly_figures.timeseries_plots(report)
         except Exception:
             logger.exception(
                 'Failed to make Plotly items for timeseries and scatterplot')
-            timeseries_specs = ('{}', '{}', '{}', False)
-        kwargs['timeseries_spec'] = timeseries_specs[0]
-        kwargs['scatter_spec'] = timeseries_specs[1]
-        if timeseries_specs[2] is not None:
-            kwargs['timeseries_prob_spec'] = timeseries_specs[2]
+        else:
+            if timeseries_specs[0] is not None:
+                kwargs['timeseries_spec'] = timeseries_specs[0]
 
-        kwargs['includes_distribution'] = timeseries_specs[3]
+            if timeseries_specs[1] is not None:
+                kwargs['scatter_spec'] = timeseries_specs[1]
+
+            if timeseries_specs[2] is not None:
+                kwargs['timeseries_prob_spec'] = timeseries_specs[2]
+
+            kwargs['includes_distribution'] = timeseries_specs[3]
 
     return kwargs
 

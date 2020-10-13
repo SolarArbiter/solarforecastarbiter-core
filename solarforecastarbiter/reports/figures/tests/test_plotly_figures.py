@@ -1,4 +1,5 @@
 import base64
+import json
 import shutil
 
 
@@ -465,3 +466,200 @@ def test_bar_height_tick_adjustment(
     assert out.layout.height == height
     assert out.layout.xaxis.tickangle == tickangle
     assert out.layout.xaxis.automargin
+
+
+def test_construct_timeseries_dataframe_timeseries_no_forecast_data(
+        report_with_raw, replace_pfxobs_attrs):
+    missing_fx = replace_pfxobs_attrs(report_with_raw, forecast_values=None)
+    ts_df, _ = figures.construct_timeseries_dataframe(missing_fx)
+    assert ts_df.empty
+
+
+def test_timeseries_plots_missing_fx_data(
+        report_with_raw, report_with_raw_xy, replace_pfxobs_attrs):
+    missing_values = replace_pfxobs_attrs(
+        report_with_raw,
+        forecast_values=None
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+
+    # assert that all plotting is skipped if forecasts are not included.
+    assert ts_spec is None
+    assert scatter_spec is None
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_missing_some_fx_data(
+        report_with_raw, report_with_raw_xy, replace_pfxobs_attrs):
+    pfxobs = report_with_raw.raw_report.processed_forecasts_observations
+    missing_values = report_with_raw.replace(
+        raw_report=report_with_raw.raw_report.replace(
+            processed_forecasts_observations=(
+                pfxobs[0],
+                pfxobs[1],
+                pfxobs[2].replace(forecast_values=None)
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+
+    ts_spec_dict = json.loads(ts_spec)
+    missing_fx = pfxobs[-1].original.forecast
+
+    # assert missing forecast does not exist in the data/legend when it's name
+    # is still available as metadata.
+    assert missing_fx.name not in [k['name'] for k in ts_spec_dict['data']]
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_missing_obs_data(
+        report_with_raw, replace_pfxobs_attrs):
+    missing_obs = replace_pfxobs_attrs(
+        report_with_raw,
+        observation_values=None
+    )
+    _, scat_plot, _, _ = figures.timeseries_plots(missing_obs)
+    # assert scatterplots are not created when obs data is missing
+    assert scat_plot is None
+
+
+def test_timeseries_plots_missing_prob_fx_data(
+        report_with_raw_xy, report_with_raw, replace_pfxobs_attrs):
+    non_cdf = report_with_raw.raw_report.processed_forecasts_observations
+    missing_values = replace_pfxobs_attrs(
+        report_with_raw_xy,
+        forecast_values=None
+    )
+    raw = missing_values.raw_report
+    missing_values = missing_values.replace(
+        raw_report=raw.replace(
+            processed_forecasts_observations=(
+                raw.processed_forecasts_observations + non_cdf
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        missing_values)
+    ts_spec_dict = json.loads(ts_spec)
+    assert len(ts_spec_dict['data'])
+
+    # assert that only non-probabilistic forecasts and observations were
+    # plotted in absence of data for probabilistic forecasts.
+    plotted_names = [p['name'] for p in ts_spec_dict['data']]
+    should_plot = [fxobs.original.forecast.name
+                   for fxobs in non_cdf]
+    should_plot += [fxobs.original.observation.name
+                    if hasattr(fxobs.original, 'observation')
+                    else fxobs.original.aggregate.name
+                    for fxobs in non_cdf]
+    should_plot = list(map(figures._legend_text, should_plot))
+    for name in plotted_names:
+        assert name in should_plot
+
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert inc_dist
+
+
+def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
+    pfxobs = report_with_raw_xy.raw_report.processed_forecasts_observations
+    only_x = report_with_raw_xy.replace(
+        raw_report=report_with_raw_xy.raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pair
+                for pair in pfxobs if pair.original.forecast.axis == 'x'
+            )
+        )
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        only_x)
+    ts_spec_dict = json.loads(ts_spec)
+    obs_names = sorted(list(set(
+        figures._legend_text(fxobs.original.observation.name)
+        if hasattr(fxobs.original, 'observation')
+        else figures._legend_text(fxobs.original.aggregate.name)
+        for fxobs in pfxobs)
+    ))
+    # assert that only observations appear on the timeseries plot
+    assert len(ts_spec_dict['data']) == len(obs_names)
+    assert [p['name'] for p in ts_spec_dict['data']] == obs_names
+
+    assert isinstance(ts_spec, str)
+    assert scatter_spec is None
+    assert isinstance(ts_prob_spec, str)
+    assert not inc_dist
+
+
+def test_timeseries_plots_only_x_axis_data_no_obs(
+        report_with_raw_xy, replace_pfxobs_attrs):
+    pfxobs = report_with_raw_xy.raw_report.processed_forecasts_observations
+    only_x = report_with_raw_xy.replace(
+        raw_report=report_with_raw_xy.raw_report.replace(
+            processed_forecasts_observations=tuple(
+                pair
+                for pair in pfxobs if pair.original.forecast.axis == 'x'
+            )
+        )
+    )
+
+    only_x = replace_pfxobs_attrs(only_x, observation_values=None)
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        only_x)
+    # assert that only the probability/time plot exists, since we only had
+    # forecast data with axis=x
+    assert ts_spec is None
+    assert scatter_spec is None
+    assert isinstance(ts_prob_spec, str)
+    assert not inc_dist
+
+
+@pytest.fixture
+def event_report_with_raw(report_with_raw, single_event_forecast_observation):
+    raw = report_with_raw.raw_report
+    pfxobs = raw.processed_forecasts_observations
+    event_report = report_with_raw.replace(
+        raw_report=raw.replace(
+            processed_forecasts_observations=(
+                pfxobs[0].replace(
+                    original=single_event_forecast_observation),
+                )
+            )
+        )
+    return event_report
+
+
+def test_timeseries_plots_event_data(event_report_with_raw):
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        event_report_with_raw)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_event_data_no_obs(
+        event_report_with_raw, replace_pfxobs_attrs):
+    event_report = replace_pfxobs_attrs(
+        event_report_with_raw,
+        observation_values=None
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        event_report)
+    # assert forecast is plotted, but histogram is skipped without observation
+    # data.
+    assert isinstance(ts_spec, str)
+    assert scatter_spec is None
+    assert ts_prob_spec is None
+    assert not inc_dist

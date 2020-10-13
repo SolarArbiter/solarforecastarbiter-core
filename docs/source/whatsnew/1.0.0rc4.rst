@@ -13,7 +13,11 @@ API Changes
 
 Enhancements
 ~~~~~~~~~~~~
-
+* Allow users to render reports without full access to the time series data of
+  the report's forecasts and observations. Users with limited permissions on a
+  report may need to instantiate a
+  :py:class:`solarforecastarbiter.datamode.Report` object from an api response
+  from the `/reports` endpoint manually. (:pull:`585`)
 
 Bug fixes
 ~~~~~~~~~
