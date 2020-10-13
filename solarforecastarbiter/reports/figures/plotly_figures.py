@@ -357,6 +357,7 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
             x=data.index,
             name=_legend_text(metadata['observation_name']),
             legendgroup=metadata['observation_name'],
+            showlegend=True,
             marker=dict(color=metadata['observation_color']),
             connectgaps=False,
             **plot_kwargs)
@@ -1253,7 +1254,7 @@ def timeseries_plots(report):
         scat_fig_json = scat_fig.to_json()
     else:
         scat_fig_json = None
-    includes_distribution = ts_prob_fig_json is not None and any(
+    includes_distribution = ts_fig_json is not None and any(
         (
             isinstance(pfxob.original.forecast,
                        datamodel.ProbabilisticForecast) and
