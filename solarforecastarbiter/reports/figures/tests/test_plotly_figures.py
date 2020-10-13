@@ -485,6 +485,7 @@ def test_timeseries_plots_missing_fx_data(
     ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         missing_values)
 
+    # assert that all plotting is skipped if forecasts are not included.
     assert ts_spec is None
     assert scatter_spec is None
     assert ts_prob_spec is None
@@ -509,6 +510,9 @@ def test_timeseries_plots_missing_some_fx_data(
 
     ts_spec_dict = json.loads(ts_spec)
     missing_fx = pfxobs[-1].original.forecast
+
+    # assert missing forecast does not exist in the data/legend when it's name
+    # is still available as metadata.
     assert missing_fx.name not in [k['name'] for k in ts_spec_dict['data']]
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
@@ -523,6 +527,7 @@ def test_timeseries_plots_missing_obs_data(
         observation_values=None
     )
     _, scat_plot, _, _ = figures.timeseries_plots(missing_obs)
+    # assert scatterplots are not created when obs data is missing
     assert scat_plot is None
 
 
@@ -546,6 +551,9 @@ def test_timeseries_plots_missing_prob_fx_data(
         missing_values)
     ts_spec_dict = json.loads(ts_spec)
     assert len(ts_spec_dict['data'])
+
+    # assert that only non-probabilistic forecasts and observations were
+    # plotted in absence of data for probabilistic forecasts.
     plotted_names = [p['name'] for p in ts_spec_dict['data']]
     should_plot = [fxobs.original.forecast.name
                    for fxobs in non_cdf]
@@ -556,6 +564,7 @@ def test_timeseries_plots_missing_prob_fx_data(
     should_plot = list(map(figures._legend_text, should_plot))
     for name in plotted_names:
         assert name in should_plot
+
     assert isinstance(ts_spec, str)
     assert isinstance(scatter_spec, str)
     assert ts_prob_spec is None
@@ -582,9 +591,10 @@ def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
         else figures._legend_text(fxobs.original.aggregate.name)
         for fxobs in pfxobs)
     ))
-
+    # assert that only observations appear on the timeseries plot
     assert len(ts_spec_dict['data']) == len(obs_names)
     assert [p['name'] for p in ts_spec_dict['data']] == obs_names
+
     assert isinstance(ts_spec, str)
     assert scatter_spec is None
     assert isinstance(ts_prob_spec, str)
@@ -606,7 +616,50 @@ def test_timeseries_plots_only_x_axis_data_no_obs(
     only_x = replace_pfxobs_attrs(only_x, observation_values=None)
     ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
         only_x)
+    # assert that only the probability/time plot exists, since we only had
+    # forecast data with axis=x
     assert ts_spec is None
     assert scatter_spec is None
     assert isinstance(ts_prob_spec, str)
+    assert not inc_dist
+
+
+@pytest.fixture
+def event_report_with_raw(report_with_raw, single_event_forecast_observation):
+    raw = report_with_raw.raw_report
+    pfxobs = raw.processed_forecasts_observations
+    event_report = report_with_raw.replace(
+        raw_report=raw.replace(
+            processed_forecasts_observations=(
+                pfxobs[0].replace(
+                    original=single_event_forecast_observation),
+                )
+            )
+        )
+    return event_report
+
+
+def test_timeseries_plots_event_data(event_report_with_raw):
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        event_report_with_raw)
+    assert isinstance(ts_spec, str)
+    assert isinstance(scatter_spec, str)
+    assert ts_prob_spec is None
+    assert not inc_dist
+
+
+def test_timeseries_plots_event_data_no_obs(
+        event_report_with_raw, replace_pfxobs_attrs):
+    event_report = replace_pfxobs_attrs(
+        event_report_with_raw,
+        observation_values=None
+    )
+
+    ts_spec, scatter_spec, ts_prob_spec, inc_dist = figures.timeseries_plots(
+        event_report)
+    # assert forecast is plotted, but histogram is skipped without observation
+    # data.
+    assert isinstance(ts_spec, str)
+    assert scatter_spec is None
+    assert ts_prob_spec is None
     assert not inc_dist
