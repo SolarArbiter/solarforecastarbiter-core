@@ -2345,14 +2345,18 @@ def quality_filter():
 
 @pytest.fixture()
 def quality_filter_dict():
-    return {'quality_flags': (
-        "USER FLAGGED",
-        "NIGHTTIME",
-        "LIMITS EXCEEDED",
-        "STALE VALUES",
-        "INTERPOLATED VALUES",
-        "INCONSISTENT IRRADIANCE COMPONENTS",
-    )}
+    return {
+        'quality_flags': (
+            "USER FLAGGED",
+            "NIGHTTIME",
+            "LIMITS EXCEEDED",
+            "STALE VALUES",
+            "INTERPOLATED VALUES",
+            "INCONSISTENT IRRADIANCE COMPONENTS",
+        ),
+        'discard_before_resample': True,
+        'resample_threshold_percentage': 10.
+        }
 
 
 @pytest.fixture()

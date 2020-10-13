@@ -820,14 +820,18 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
             "end": "2019-04-04T23:59:00-07:00",
             "forecast_fill_method": "forward",
             "filters": [
-                {'quality_flags': [
-                    "USER FLAGGED",
-                    "NIGHTTIME",
-                    "LIMITS EXCEEDED",
-                    "STALE VALUES",
-                    "INTERPOLATED VALUES",
-                    "INCONSISTENT IRRADIANCE COMPONENTS",
-                ]},
+                {
+                    'quality_flags': [
+                        "USER FLAGGED",
+                        "NIGHTTIME",
+                        "LIMITS EXCEEDED",
+                        "STALE VALUES",
+                        "INTERPOLATED VALUES",
+                        "INCONSISTENT IRRADIANCE COMPONENTS",
+                    ],
+                    'discard_before_resample': True,
+                    'resample_threshold_percentage': 10.
+                },
                 {'time_of_day_range': ['12:00', '14:00']}],
             "metrics": ["mae", "rmse", "mbe", "s", "cost"],
             "categories": ["total", "date", "hour"],
@@ -893,14 +897,18 @@ def test_apisession_create_report_mult_costs(requests_mock, report_objects,
             "end": "2019-04-04T23:59:00-07:00",
             "forecast_fill_method": "forward",
             "filters": [
-                {'quality_flags': [
-                    "USER FLAGGED",
-                    "NIGHTTIME",
-                    "LIMITS EXCEEDED",
-                    "STALE VALUES",
-                    "INTERPOLATED VALUES",
-                    "INCONSISTENT IRRADIANCE COMPONENTS",
-                ]},
+                {
+                    'quality_flags': [
+                        "USER FLAGGED",
+                        "NIGHTTIME",
+                        "LIMITS EXCEEDED",
+                        "STALE VALUES",
+                        "INTERPOLATED VALUES",
+                        "INCONSISTENT IRRADIANCE COMPONENTS",
+                    ],
+                    'discard_before_resample': True,
+                    'resample_threshold_percentage': 10.
+                },
                 {'time_of_day_range': ['12:00', '14:00']}],
             "metrics": ["mae", "rmse", "mbe", "s", "cost"],
             "categories": ["total", "date", "hour"],
@@ -966,14 +974,18 @@ def test_apisession_create_report_no_costs(
             "end": "2019-04-04T23:59:00-07:00",
             "forecast_fill_method": "forward",
             "filters": [
-                {'quality_flags': [
-                    "USER FLAGGED",
-                    "NIGHTTIME",
-                    "LIMITS EXCEEDED",
-                    "STALE VALUES",
-                    "INTERPOLATED VALUES",
-                    "INCONSISTENT IRRADIANCE COMPONENTS",
-                ]},
+                {
+                    'quality_flags': [
+                        "USER FLAGGED",
+                        "NIGHTTIME",
+                        "LIMITS EXCEEDED",
+                        "STALE VALUES",
+                        "INTERPOLATED VALUES",
+                        "INCONSISTENT IRRADIANCE COMPONENTS",
+                    ],
+                    'discard_before_resample': True,
+                    'resample_threshold_percentage': 10.
+                },
                 {'time_of_day_range': ['12:00', '14:00']}],
             "metrics": ["mae", "rmse", "mbe", "s", "cost"],
             "categories": ["total", "date", "hour"],
