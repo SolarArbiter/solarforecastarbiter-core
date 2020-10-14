@@ -402,6 +402,7 @@ def _plot_fx_timeseries(fig, timeseries_value_df, timeseries_meta_df, axis):
             x=data.index,
             name=_legend_text(metadata['forecast_name']),
             legendgroup=metadata['forecast_name'],
+            showlegend=True,
             connectgaps=False,
             **plot_kwargs)
         fig.add_trace(go_)
