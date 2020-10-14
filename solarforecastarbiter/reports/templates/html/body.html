@@ -3,6 +3,32 @@
 {% set report_name = report.report_parameters.name %}
 
 {% block body %}
+<style type="text/css" scoped>
+  #report-block .report-table-wrapper{
+      max-width: 100%;
+      max-height: 100%;
+      position: relative;
+      overflow-x: scroll;
+  }
+  #report-block .report-table-wrapper caption{
+      max-width: 40vw;
+  }
+  #report-block .report-table-wrapper table.table{
+      overflow: unset;
+      table-layout: auto;
+  }
+  #report-block .report-table-wrapper table.table tr th:first-child,
+  #report-block .report-table-wrapper table.table tr td:first-child{
+      position: -webkit-sticky;
+      position: sticky;
+      left: 0;
+      top: auto;
+      background-color: #fff;
+      border-right: #dee2e6;
+      width: fit-content;
+      font-weight: 700
+  }
+</style>
 {% block report_title %}
 <h1 id="report-title">{{ report_name }}</h1>
 {% endblock %}
