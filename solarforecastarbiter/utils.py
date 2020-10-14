@@ -136,11 +136,9 @@ def compute_aggregate(data, interval_length, interval_label,
     unique_ids = {ao['observation_id'] for ao in aggregate_observations}
     valid_mask = {obs_id: _observation_valid(
         new_index, obs_id, aggregate_observations) for obs_id in unique_ids}
+    expected_observations = {k for k,v in valid_mask.items() if v.any()}
 
-    missing_from_data_dict = {
-        ao['observation_id'] for ao in aggregate_observations
-        if ao['observation_deleted_at'] is None
-        } - set(data.keys())
+    missing_from_data_dict = expected_observations - set(data.keys())
 
     if missing_from_data_dict:
         raise KeyError(
