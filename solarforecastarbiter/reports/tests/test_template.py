@@ -144,7 +144,7 @@ def test_render_html_body_only(report_with_raw, dash_url, with_series,
                                mocked_timeseries_plots):
     rendered = template.render_html(
         report_with_raw, dash_url, with_series, True)
-    assert rendered[:22] == '<h1 id="report-title">'
+    assert rendered[:30] == '<style type="text/css" scoped>'
 
 
 def test_render_html_full_html(report_with_raw, dash_url, with_series,
