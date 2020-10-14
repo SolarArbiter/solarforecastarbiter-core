@@ -510,10 +510,10 @@ Functions for preparing the timeseries data before calculating metrics:
 .. autosummary::
    :toctree: generated/
 
-   metrics.preprocessing.apply_validation
+   metrics.preprocessing.check_reference_forecast_consistency
    metrics.preprocessing.apply_fill
-   metrics.preprocessing.resample_and_align
-   metrics.preprocessing.exclude
+   metrics.preprocessing.filter_resample
+   metrics.preprocessing.align
    metrics.preprocessing.process_forecast_observations
 
 Deterministic

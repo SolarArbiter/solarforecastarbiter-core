@@ -53,6 +53,12 @@ DERIVED_MASKS = {
         np.logical_and, 'DAYTIME', 'INTERPOLATED VALUES'),
 }
 
+# flags that should typically be discarded before resampling because they
+# represent truly bad data
+DISCARD_BEFORE_RESAMPLE = [
+    'USER FLAGGED', 'LIMITS EXCEEDED', 'INCONSISTENT IRRADIANCE COMPONENTS'
+]
+
 # should never change unless another VERSION IDENTIFIER is required
 VERSION_MASK = 0b1110
 LATEST_VERSION = max(BITMASK_DESCRIPTION_DICT.keys())

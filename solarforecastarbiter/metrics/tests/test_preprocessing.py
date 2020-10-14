@@ -1,9 +1,11 @@
-import time
 import json
 import datetime as dt
 import numpy as np
 import pandas as pd
 import pytest
+
+from pandas.testing import (
+    assert_frame_equal, assert_index_equal, assert_series_equal)
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
@@ -29,6 +31,11 @@ THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", freq="60min",
 THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value",
                                     dtype='float64')
 
+EMPTY_DF = pd.DataFrame(
+        [], columns=['value', 'quality_flag'],
+        index=pd.DatetimeIndex([], name='timestamp', tz='UTC')
+    ).astype({'value': float, 'quality_flag': int})
+
 EMPTY_OBJ_SERIES = pd.Series(
     [],
     dtype=object,
@@ -46,24 +53,33 @@ THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0., 13., 1.)/6)+1,
                                   index=THIRTEEN_10MIN)
 
 # Bitwise-flag integers (only test validated and versioned data)
+UF = int(0b11)  # User flagged, version 0 (3)
+NT = int(0b10010)  # Nighttime, version 0 (18)
 NT_UF = int(0b10011)  # Nighttime, User Flagged and version 0 (19)
 CSE_NT = int(0b1000010010)  # Clearsky exceeded, nighttime, and version 0 (530)
 CSE = int(0b1000000010)  # Clearsky exceeded and version 0 (514)
 OK = int(0b10)  # OK version 0 (2)
 
+FOUR_HOUR_DF = pd.DataFrame(
+    {'value': [np.nan] + [1.]*3, 'quality_flag': [NT, UF, NT_UF, OK]},
+    index=pd.date_range(start="20200301T00Z", periods=4, freq='H'))
+
+FOUR_HOUR_SERIES = pd.Series(
+    [1.]*4, index=pd.date_range(start="20200301T00Z", periods=4, freq='H'))
+
+SIXTEEN_15MIN_DF = pd.DataFrame(
+    {'value': [np.nan]*5 + list(range(6, 17)),
+     'quality_flag': [OK]*4 + [NT_UF, NT_UF, OK, OK, UF, NT] + [OK]*5 + [CSE]},
+    index=pd.date_range(start="20200301T00Z", periods=16, freq='15min'))
+
 
 def create_preprocessing_result(counts):
-    """Create preprocessing results in order as
-    1. Forecast Undefined Values,
-    2. Forecast Values Discarded by Alignment,
-    3. Observation Undefined Values,
-    4. Observation Values Discarded by Alignment
-    """
+    """Create preprocessing results in order that matches align function."""
     return {
-        "Forecast " + preprocessing.UNDEFINED_DATA_STRING: counts[0],
-        "Forecast " + preprocessing.DISCARD_DATA_STRING: counts[1],
-        "Observation " + preprocessing.UNDEFINED_DATA_STRING: counts[2],
-        "Observation " + preprocessing.DISCARD_DATA_STRING: counts[3]
+        "Forecast " + preprocessing.DISCARD_DATA_STRING: counts[0],
+        "Observation " + preprocessing.DISCARD_DATA_STRING: counts[1],
+        "Forecast " + preprocessing.UNDEFINED_DATA_STRING: counts[2],
+        "Observation " + preprocessing.UNDEFINED_DATA_STRING: counts[3],
     }
 
 
@@ -73,16 +89,17 @@ def create_preprocessing_result(counts):
                          ['beginning', 'ending'])
 @pytest.mark.parametrize('fx_series,obs_series,expected_dt,expected_res', [
     (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*4),
-    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0]*4),
+    # document behavior in undesireable case with higher frequency obs data.
+    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0, 10, 0, 0]),
     (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*4),
-    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 1, 1, 0]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [1, 0, 0, 1]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0, 1, 0]),  # NOQA
-    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),  # NOQA
-    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 0, 0, 3]),  # NOQA
-    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),
+    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0, 0, 1]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [0, 1, 1, 0]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 0, 1, 1]),  # NOQA
+    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),  # NOQA
+    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),  # NOQA
+    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),
 ])
-def test_resample_and_align(
+def test_align(
         site_metadata, obs_interval_label, fx_interval_label, fx_series,
         obs_series, expected_dt, expected_res):
     # Create the ForecastObservation to match interval_lengths of data
@@ -104,30 +121,24 @@ def test_resample_and_align(
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+    local_tz = "Etc/GMT+7"
 
-    fx_vals, obs_vals, ref_vals, res_dict = preprocessing.resample_and_align(
+    fx_vals, obs_vals, ref_vals, res_dict = preprocessing.align(
             fx_obs, fx_series, obs_series, None, local_tz)
 
-    # Localize datetimeindex
     expected_dt = expected_dt.tz_convert(local_tz)
 
-    pd.testing.assert_index_equal(fx_vals.index,
-                                  obs_vals.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_vals.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
+    assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
 
     expected_result = create_preprocessing_result(expected_res)
     assert res_dict == expected_result
 
 
-def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
+def test_align_fx_aggregate(single_forecast_aggregate):
     fx_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, ref, res_dict = preprocessing.resample_and_align(
+    fx_values, obs_values, ref, res_dict = preprocessing.align(
         single_forecast_aggregate, fx_series, obs_series, None, 'UTC')
 
     pd.testing.assert_index_equal(fx_values.index,
@@ -144,8 +155,9 @@ def test_resample_and_align_fx_aggregate(single_forecast_aggregate):
     ("ending", "beginning", "5min", "5min", "5min"),
     ("ending", "beginning", "5min", "1h", "1h"),
 ])
-def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
-                                           length_obs, length_fx, freq):
+def test_filter_resample_interval_label(site_metadata, label_obs, label_fx,
+                                        length_obs, length_fx, freq,
+                                        quality_filter):
 
     observation = datamodel.Observation(
         site=site_metadata, name='dummy obs', variable='ghi',
@@ -180,13 +192,11 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
         name='timestamp'
     )
     obs_series = pd.Series(index=ts_obs, data=np.random.rand(len(ts_obs)) + 10)
+    obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': 2})
     fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
-
-    fx_out, obs_out, ref_out, res_dict = preprocessing.resample_and_align(
-        fx_obs, fx_series, obs_series, None, local_tz)
+    fx_out, obs_out, res_dict = preprocessing.filter_resample(
+        fx_obs, fx_series, obs_data, [quality_filter])
 
     assert obs_out.index.freq == freq
 
@@ -199,8 +209,7 @@ def test_resample_and_align_interval_label(site_metadata, label_obs, label_fx,
     ("US/Central", "US/Pacific", ["20190701T2200", "20190701T2300"]),
     ("US/Pacific", "US/Eastern", ["20190702T0300", "20190702T0400"]),
 ])
-def test_resample_and_align_timezone(site_metadata, interval_label, tz,
-                                     local_tz, local_ts):
+def test_align_timezone(site_metadata, interval_label, tz, local_tz, local_ts):
 
     expected_dt = pd.DatetimeIndex(local_ts, tz=local_tz)
 
@@ -226,25 +235,21 @@ def test_resample_and_align_timezone(site_metadata, interval_label, tz,
     fx_obs = datamodel.ForecastObservation(forecast=forecast,
                                            observation=observation)
 
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, None, local_tz)
 
-    pd.testing.assert_index_equal(fx_values.index,
-                                  obs_values.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_values.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_values.index, obs_values.index,
+                       check_categorical=False)
+    assert_index_equal(obs_values.index, expected_dt, check_categorical=False)
 
 
-def test_resample_and_align_with_ref(
-        single_forecast_observation_reffx):
+def test_align_with_ref(single_forecast_observation_reffx):
     tz = 'UTC'
     fx_obs = single_forecast_observation_reffx
     fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
     obs_series = THREE_HOUR_SERIES
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, ref_series, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -257,8 +262,7 @@ def test_resample_and_align_with_ref(
                                   check_categorical=False)
 
 
-def test_resample_and_align_ref_less_fx(
-        single_forecast_observation_reffx):
+def test_align_ref_less_fx(single_forecast_observation_reffx):
     tz = 'UTC'
     fx_obs = single_forecast_observation_reffx
     nine_hour_series = pd.concat([
@@ -268,7 +272,7 @@ def test_resample_and_align_ref_less_fx(
     fx_series = THREE_HOUR_SERIES
     ref_series = nine_hour_series
     obs_series = nine_hour_series
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_series, obs_series, ref_series, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   obs_values.index,
@@ -281,68 +285,56 @@ def test_resample_and_align_ref_less_fx(
                                   check_categorical=False)
 
 
-def test_resample_and_align_ref_error_None(
+def test_check_reference_forecast_consistency_None(
         single_forecast_observation, single_forecast_observation_reffx):
-    tz = 'UTC'
-
     # no ref_fx object, but supplied ref_fx series
     fx_obs = single_forecast_observation
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
     # ref_fx object, but no supplied ref_fx series
     fx_obs = single_forecast_observation_reffx
-    fx_series = THREE_HOUR_SERIES
     ref_series = None
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
 @pytest.mark.parametrize('attr,value', [
     ('interval_label', 'ending'),
     ('interval_length', pd.Timedelta('20min')),
 ])
-def test_resample_and_align_ref_error(
+def test_check_reference_forecast_consistency_error(
         single_forecast_observation_reffx, attr, value):
-    tz = 'UTC'
-
     changes = {attr: value}
     # ref_fx object parameters are inconsistent with fx object parameters
     ref_fx = single_forecast_observation_reffx.reference_forecast.replace(
         **changes)
     fx_obs = single_forecast_observation_reffx.replace(
         reference_forecast=ref_fx)
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
-def test_resample_and_align_ref_error_prob(prob_forecasts, single_observation):
-    tz = 'UTC'
+def test_check_reference_forecast_consistency_error_prob(
+        prob_forecasts, single_observation):
     cv = prob_forecasts.constant_values[0].replace(axis='y')
     ref_fx = prob_forecasts.replace(axis='y', constant_values=(cv,))
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
         single_observation,
         reference_forecast=ref_fx)
-    fx_series = THREE_HOUR_SERIES
     ref_series = THREE_HOUR_SERIES
-    obs_series = THREE_HOUR_SERIES
     with pytest.raises(ValueError):
-        preprocessing.resample_and_align(
-            fx_obs, fx_series, obs_series, ref_series, tz)
+        preprocessing.check_reference_forecast_consistency(
+            fx_obs, ref_series)
 
 
-def test_resample_and_align_prob(prob_forecasts, single_observation):
+def test_align_prob(prob_forecasts, single_observation):
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
         prob_forecasts,
@@ -352,7 +344,7 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
     fx_data = THREE_HOUR_SERIES.to_frame()
     obs_data = THREE_HOUR_SERIES
     ref_data = THREE_HOUR_SERIES.to_frame()
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   ref_values.index,
@@ -365,7 +357,7 @@ def test_resample_and_align_prob(prob_forecasts, single_observation):
                                   check_categorical=False)
 
 
-def test_resample_and_align_prob_constant_value(
+def test_align_prob_constant_value(
         prob_forecast_constant_value, single_observation):
     tz = 'UTC'
     fx_obs = datamodel.ForecastObservation(
@@ -376,7 +368,7 @@ def test_resample_and_align_prob_constant_value(
     fx_data = THREE_HOUR_SERIES
     obs_data = THREE_HOUR_SERIES
     ref_data = THREE_HOUR_SERIES
-    fx_values, obs_values, ref_values, _ = preprocessing.resample_and_align(
+    fx_values, obs_values, ref_values, _ = preprocessing.align(
         fx_obs, fx_data, obs_data, ref_data, tz)
     pd.testing.assert_index_equal(fx_values.index,
                                   ref_values.index,
@@ -389,95 +381,140 @@ def test_resample_and_align_prob_constant_value(
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize('obs,somecounts', [
-    (pd.DataFrame(index=pd.DatetimeIndex([], name='timestamp'),
-                  columns=['value', 'quality_flag']),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [OK, OK, OK]},
-                  index=THREE_HOURS),
-     {'USER FLAGGED': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [NT_UF, NT_UF, NT_UF]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 3, 'USER FLAGGED': 3, 'STALE VALUES': 0}),
-    (pd.DataFrame({'value': [1., 2., 3.],
-                   'quality_flag': [CSE_NT, CSE, OK]},
-                  index=THREE_HOURS),
-     {'NIGHTTIME': 1, 'USER FLAGGED': 0, 'CLEARSKY EXCEEDED': 2}),
-])
-@pytest.mark.parametrize('handle_func', [preprocessing.exclude])
-@pytest.mark.parametrize('filter_', [
-    datamodel.QualityFlagFilter(
+@pytest.mark.parametrize(
+    "qfs,fx_int_length,obs_int_length,obs_data,fx_data,obs_exp,counts_exp",
+    [
         (
-            "USER FLAGGED",
-            "NIGHTTIME",
-            "LIMITS EXCEEDED",
-            "STALE VALUES",
-            "INTERPOLATED VALUES",
-            "INCONSISTENT IRRADIANCE COMPONENTS",
-        )
-    ),
-    pytest.param(
-        datamodel.TimeOfDayFilter((dt.time(12, 0),
-                                   dt.time(14, 0))),
-        marks=pytest.mark.xfail(strict=True, type=TypeError)
-    )
-])
-def test_apply_validation(obs, handle_func, filter_, somecounts):
-    result, counts = preprocessing.apply_validation(obs, filter_,
-                                                    handle_func)
-
-    # Check length and timestamps of observation
-    assert len(obs[obs.quality_flag.isin([OK, CSE])]) == \
-        len(result)
-    if not result.empty:
-        assert obs[obs.quality_flag.isin([OK, CSE])].index.equals(
-            result.index)
-    assert set(filter_.quality_flags) == set(counts.keys())
-    for k, v in somecounts.items():
-        assert counts.get(k, v) == v
-
-
-@pytest.mark.parametrize('values,qflags,expectation', [
-    (THREE_HOUR_SERIES, None, THREE_HOUR_SERIES),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [0, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [0, 1, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[True, False, True]]),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [1, 1, 0], 2: [0, 1, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, True]]),
-    (THREE_HOUR_SERIES,
-        pd.DataFrame({1: [1, 1, 1], 2: [1, 1, 1]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, False]]),
-    (pd.Series([np.NaN, np.NaN, np.NaN], index=THREE_HOURS),
-        None,
-        THREE_HOUR_SERIES[[False, False, False]]),
-    (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.DataFrame({1: [0, 0, 0], 2: [0, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[True, False, True]]),
-    (pd.Series([1., np.NaN, 3.], index=THREE_HOURS),
-        pd.DataFrame({1: [1, 1, 0], 2: [1, 0, 0]}, index=THREE_HOURS),
-        THREE_HOUR_SERIES[[False, False, True]])
-])
-def test_exclude(values, qflags, expectation):
-    result = preprocessing.exclude(values, qflags)
-    pd.testing.assert_series_equal(result, expectation, check_names=False)
-
-
-def test_merge_quality_filters():
-    filters = [
-        datamodel.QualityFlagFilter(('USER FLAGGED', 'NIGHTTIME',
-                                     'CLIPPED VALUES')),
-        datamodel.QualityFlagFilter(('SHADED', 'NIGHTTIME',)),
-        datamodel.QualityFlagFilter(())
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 60, EMPTY_DF, FOUR_HOUR_SERIES, EMPTY_DF['value'], {}
+        ),
+        (
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
+            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+             datamodel.QualityFlagFilter(('USER FLAGGED', ))),
+            60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
+            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 2,
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # all but last interval are discarded because
+            # resample_threshold_percentage exceeded
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                resample_threshold_percentage=50)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # only first all-nan interval is discarded
+            pd.Series([7.5, 11.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 1}
+        ),
+        (
+            (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+             datamodel.QualityFlagFilter(('USER FLAGGED', ))),
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 3,
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=30)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+        ),
+        (
+            (datamodel.QualityFlagFilter(
+                ('NIGHTTIME', ),
+                discard_before_resample=False,
+                resample_threshold_percentage=30),
+             datamodel.QualityFlagFilter(
+                ('USER FLAGGED', ),
+                discard_before_resample=False,
+                resample_threshold_percentage=30)),
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            pd.Series([10.5, 14.5], index=FOUR_HOUR_SERIES.index[2:]),
+            {'ISNAN': 5, 'NIGHTTIME OR ISNAN': 2, 'USER FLAGGED OR ISNAN': 2}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=100)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # only first all-nan interval is discarded
+            pd.Series([7.0, 10.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 0}
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME', 'USER FLAGGED'),
+                discard_before_resample=False,
+                resample_threshold_percentage=100),
+             datamodel.QualityFlagFilter(
+                ('CLEARSKY EXCEEDED', ),
+                discard_before_resample=True,
+                resample_threshold_percentage=0)],
+            60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
+            # discard first all-nan interval, 2nd interval with 1 nan,
+            # last interval with 1 cs exceeded.
+            pd.Series([10.5], index=[FOUR_HOUR_SERIES.index[2]]),
+            {'ISNAN': 5, 'CLEARSKY EXCEEDED': 1,
+             'NIGHTTIME OR USER FLAGGED OR ISNAN': 0,
+             'DISCARD BEFORE RESAMPLE: CLEARSKY EXCEEDED OR ISNAN': 3}
+        ),
     ]
-    out = preprocessing._merge_quality_filters(filters)
-    assert set(out.quality_flags) == {'USER FLAGGED', 'NIGHTTIME',
-                                      'CLIPPED VALUES', 'SHADED'}
+)
+def test_filter_resample(single_site, single_observation,
+                         single_observation_text, single_forecast_text,
+                         fx_int_length, obs_int_length, obs_data,
+                         fx_data, obs_exp, qfs, counts_exp):
+    fx_dict = json.loads(single_forecast_text)
+    fx_dict['site'] = single_site
+    fx_dict.update({"interval_length": fx_int_length})
+    fx = datamodel.Forecast.from_dict(fx_dict)
+
+    obs_dict = json.loads(single_observation_text)
+    obs_dict['site'] = single_site
+    obs_dict.update({"interval_length": obs_int_length})
+    obs = datamodel.Observation.from_dict(obs_dict)
+
+    fx_obs = datamodel.ForecastObservation(fx, obs)
+
+    fx_out, obs_resampled, counts = preprocessing.filter_resample(
+        fx_obs, fx_data, obs_data, qfs)
+
+    assert_series_equal(fx_out, fx_data)  # no change for non-event fx
+    assert_series_equal(obs_resampled, obs_exp, check_names=False)
+
+    assert counts == counts_exp
+
+
+def test__resample_obs_interval_incompatible(single_forecast_observation):
+    fx = single_forecast_observation.forecast.replace(
+        interval_length=pd.Timedelta('1min'))
+    with pytest.raises(ValueError,
+                       match='fx.interval_length < obs.interval_length'):
+        preprocessing._resample_obs(
+            single_forecast_observation.observation, fx, None, None)
 
 
 def test_process_forecast_observations(report_objects, quality_filter,
@@ -625,8 +662,7 @@ def test_process_forecast_observations_no_data(
         report.report_parameters.end,
         data, 'MST',
         costs=report.report_parameters.costs)
-    assert len(processed_fxobs_list) == len(
-        report.report_parameters.object_pairs)
+    assert len(processed_fxobs_list) == 1
     assert logger.error.called
     for proc_fxobs in processed_fxobs_list:
         assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
@@ -634,6 +670,129 @@ def test_process_forecast_observations_no_data(
         assert isinstance(proc_fxobs.observation_values, pd.Series)
         pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
                                       proc_fxobs.observation_values.index)
+
+
+def test_process_forecast_observations_no_fx(
+        report_objects, quality_filter, mocker):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-03-31T12:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = NT_UF
+    # missing forecast_0 and forecast_ref
+    data = {
+        observation: obs_df,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == 1
+    assert logger.error.called
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+def test_process_forecast_observations_bad_reference_data(
+        report_objects, quality_filter, mocker):
+    """Ensure check_reference_forecast_consistency is called and handled."""
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    data = {
+        observation: obs_df,
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: None,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == 2
+    logger.error.assert_called_once()
+    assert 'Incompatible reference forecast' in logger.error.call_args[0][0]
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+
+
+def test_process_forecast_observations_align_fail(
+        report_objects, quality_filter, mocker):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    data = {
+        observation: obs_df,
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    mocker.patch('solarforecastarbiter.metrics.preprocessing.align',
+                 side_effect=Exception('boo'))
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs)
+    assert len(processed_fxobs_list) == 0
+    logger.error.assert_called()
+    assert 'Failed to align' in logger.error.call_args[0][0]
 
 
 def test_process_forecast_observations_no_cost(report_objects, quality_filter,
@@ -716,7 +875,7 @@ def test_process_forecast_observations_resample_fail(
     filters = [quality_filter]
     logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
     mocker.patch(
-        'solarforecastarbiter.metrics.preprocessing.resample_and_align',
+        'solarforecastarbiter.metrics.preprocessing.filter_resample',
         side_effect=ValueError)
     processed_fxobs_list = preprocessing.process_forecast_observations(
         report.report_parameters.object_pairs,
@@ -769,7 +928,7 @@ def test_process_forecast_observations_same_name(
         fxobs)
 
 
-def test_process_forecast_observations_no_fx(
+def test_process_forecast_observations_empty_fx(
         report_objects, quality_filter, mocker):
     report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects  # NOQA
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
@@ -929,6 +1088,7 @@ def test_name_pfxobs_recursion_limit():
     assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'
 
 
+@pytest.mark.parametrize('dtype', ['int', 'bool', 'float'])
 @pytest.mark.parametrize("obs_index,fx_index,expected_dt", [
     (THREE_HOURS, THREE_HOURS, THREE_HOURS),
     (THIRTEEN_10MIN, THIRTEEN_10MIN, THIRTEEN_10MIN),
@@ -939,36 +1099,44 @@ def test_name_pfxobs_recursion_limit():
     pytest.param(THIRTEEN_10MIN, THREE_HOURS, [],
                  marks=pytest.mark.xfail(strict=True, type=ValueError)),
 ])
-def test_resample_and_align_event(single_event_forecast_observation,
-                                  obs_index, fx_index, expected_dt):
-
-    obs_values = np.random.randint(0, 2, size=len(obs_index), dtype=bool)
-    fx_values = np.random.randint(0, 2, size=len(fx_index), dtype=bool)
-    obs_series = pd.Series(obs_values, index=obs_index)
-    fx_series = pd.Series(fx_values, index=fx_index)
+def test_filter_resample_event(single_event_forecast_observation,
+                               obs_index, fx_index, expected_dt, dtype):
+    # leave detailed tests to other functions
+    # this one needs to check that
+    # 1. fx_data is returned with correct type
+    # 2. obs_resampled is returned with correct type
+    obs_values = pd.Series(
+        np.random.randint(0, 2, size=len(obs_index)),
+        dtype=dtype, index=obs_index)
+    fx_values = np.random.randint(0, 2, size=len(fx_index))
+    obs_data = pd.DataFrame({'value': obs_values, 'quality_flag': 2})
+    fx_series = pd.Series(fx_values, index=fx_index, dtype=dtype)
 
     fxobs = single_event_forecast_observation
 
-    # Use local tz
-    local_tz = f"Etc/GMT{int(time.timezone/3600):+d}"
+    quality_flags = (datamodel.QualityFlagFilter(('USER FLAGGED', )), )
 
-    fx_vals, obs_vals, ref_vals, results = preprocessing.resample_and_align(
-        fxobs, fx_series, obs_series, None, local_tz
+    fx_vals, obs_vals, results = preprocessing.filter_resample(
+        fxobs, fx_series, obs_data, quality_flags
     )
+
+    expected_obs = obs_vals.copy()
+    expected_obs['value'] = obs_vals.astype(bool)
+    expected_fx = fx_vals.astype(bool)
+    assert_frame_equal(obs_vals, expected_obs)
+    assert_series_equal(fx_vals, expected_fx)
 
     assert isinstance(results, dict)
 
-    # Localize datetimeindex
-    expected_dt = expected_dt.tz_convert(local_tz)
-
-    pd.testing.assert_index_equal(fx_vals.index,
-                                  obs_vals.index,
-                                  check_categorical=False)
-    pd.testing.assert_index_equal(obs_vals.index,
-                                  expected_dt,
-                                  check_categorical=False)
+    assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
+    assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
 
 
+@pytest.mark.parametrize("quality_flags", [
+    (datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED')), ),
+    (datamodel.QualityFlagFilter(('NIGHTTIME', )),
+     datamodel.QualityFlagFilter(('USER FLAGGED', )))
+])
 @pytest.mark.parametrize("fx_interval_length, obs_interval_length", [
     (60, 60),
     (5, 5),
@@ -979,8 +1147,8 @@ def test_resample_and_align_event(single_event_forecast_observation,
 ])
 def test__resample_event_obs(single_site, single_event_forecast_text,
                              single_event_observation_text,
-                             fx_interval_length, obs_interval_length):
-
+                             fx_interval_length, obs_interval_length,
+                             quality_flags):
     fx_dict = json.loads(single_event_forecast_text)
     fx_dict['site'] = single_site
     fx_dict.update({"interval_length": fx_interval_length})
@@ -993,12 +1161,21 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
 
     freq = pd.Timedelta(f"{obs_interval_length}min")
     index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
-    obs_series = pd.Series(np.random.randint(0, 2, len(index), dtype=bool),
-                           index=index)
+    obs_series = pd.Series(1, dtype=bool, index=index)
+    obs_flags = pd.Series(2, index=index)
+    obs_flags.iloc[0] = 18
+    obs_series.iloc[1] = np.nan
+    obs_flags.iloc[2] = 3
+    obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
-    obs_resampled = preprocessing._resample_event_obs(fx, obs, obs_series)
-    pd.testing.assert_index_equal(obs_series.index, obs_resampled.index,
+    obs_resampled, counts = preprocessing._resample_event_obs(
+        fx, obs, obs_data, quality_flags)
+    pd.testing.assert_index_equal(index[3:], obs_resampled.index,
                                   check_categorical=False)
+    assert counts['NIGHTTIME'] == 1
+    assert counts['ISNAN'] == 1
+    assert counts['USER FLAGGED'] == 1
+    assert len(counts) == 3
 
 
 @pytest.mark.parametrize("data", [

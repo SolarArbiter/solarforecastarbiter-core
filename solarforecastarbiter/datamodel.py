@@ -1369,8 +1369,7 @@ class BaseFilter(BaseModel):
 
 @dataclass(frozen=True)
 class QualityFlagFilter(BaseFilter):
-    """
-    Class representing quality flag filters to be applied in a report.
+    """Quality flag filters to be applied in a report.
 
     Parameters
     ----------
@@ -1378,11 +1377,34 @@ class QualityFlagFilter(BaseFilter):
         Strings corresponding to ``BITMASK_DESCRIPTION_DICT`` or
         ``DERIVED_MASKS`` keys.
         These periods will be excluded from the analysis.
+    discard_before_resample : bool, default True
+        Determines if points should be discarded before resampling or
+        only during resampling (when ``resample_threshold_percentage``
+        is exceeded).
+    resample_threshold_percentage : float, default 10.
+        The percentage of points in a resampled interval that must be
+        flagged for the resampled interval to be flagged.
+
+    Notes
+    -----
+    If ``discard_before_resample`` is ``True``, the ``quality_flags``
+    are applied to the data before it is resampled. During resampling,
+    intervals are discarded if ``resample_threshold_percentage`` is
+    exceeded.
+
+    If ``discard_before_resample`` is ``False``, the ``quality_flags``
+    are only considered during the resampling operation. The
+    ``quality_flags`` of the raw observations are combined with ``OR``,
+    the total number of flagged points within a resample period is
+    computed, and intervals are discarded where
+    ``resample_threshold_percentage`` is exceeded.
     """
     quality_flags: Tuple[str, ...] = (
         'UNEVEN FREQUENCY', 'LIMITS EXCEEDED', 'CLEARSKY EXCEEDED',
         'DAYTIME STALE VALUES', 'INCONSISTENT IRRADIANCE COMPONENTS'
     )
+    discard_before_resample: bool = True
+    resample_threshold_percentage: float = 10.
 
     def __post_init__(self):
         allowed_flags = (
@@ -1405,6 +1427,9 @@ class TimeOfDayFilter(BaseFilter):
         set the corresponding quality_flag.
     """
     time_of_day_range: Tuple[datetime.time, datetime.time]
+    # add these?
+    # discard_before_resample: bool = True
+    # resample_threshold_percentage: float = 10.
 
 
 @dataclass(frozen=True)
@@ -1424,6 +1449,9 @@ class ValueFilter(BaseFilter):
     # TODO: implement. Also add Aggregate
     metadata: Union[Observation, Forecast]
     value_range: Tuple[float, float]
+    # add these?
+    # discard_before_resample: bool = True
+    # resample_threshold_percentage: float = 10.
 
 
 def __check_metrics__(fx, metrics):
