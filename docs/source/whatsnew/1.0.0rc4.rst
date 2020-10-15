@@ -60,6 +60,9 @@ Bug fixes
 * Dynamically calculate plot height to avoid truncating long forecast names
   in total metric plots. (:issue:`576`) (:pull:`581`) (:pull:`582`)
 * Fix GEFS file fetching for upgraded model (:issue:`544`) (:pull:`584`)
+* Fixed issue with overlapping table entries for report metric, validation, and
+  preprocessing tables. Tables are now horizontally scrollable to avoid overlap
+  of columns. (:issue:`418`) (:pull:`588`)
 
 
 Contributors

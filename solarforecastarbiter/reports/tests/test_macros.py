@@ -21,8 +21,9 @@ def macro_test_template():
     return fn
 
 
-metric_table_fx_vert_format = """<table class="table table-striped metric-table-fx-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+metric_table_fx_vert_format = """<div class="report-table-wrapper">
+<table class="table table-striped metric-table-fx-vert" style="width:100%;">
+  <caption style="caption-side:top; text-align: left">
     Table of {} metrics
   </caption>
   <thead>
@@ -46,6 +47,7 @@ metric_table_fx_vert_format = """<table class="table table-striped metric-table-
       </tr>
   </tbody>
 </table>
+</div>
 """
 
 
@@ -111,8 +113,9 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
             category, 5, expected_metric[0].name)
 
 
-validation_table_format = """<table class="table table-striped validation-table" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+validation_table_format = """<div class="report-table-wrapper">
+<table class="table table-striped validation-table" style="width:100%;">
+  <caption style="caption-side:top; text-align: left">
     Table of data validation results
   </caption>
   <thead>
@@ -153,6 +156,7 @@ validation_table_format = """<table class="table table-striped validation-table"
       </tr>
   </tbody>
 </table>
+</div>
 """
 
 
@@ -173,8 +177,9 @@ def test_validation_table(report_with_raw, macro_test_template):
         *qfilters)
 
 
-preprocessing_table_format = """<table class="table table-striped preprocessing-table" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+preprocessing_table_format = """<div class="report-table-wrapper">
+<table class="table table-striped preprocessing-table" style="width:100%;">
+  <caption style="caption-side:top; text-align: left">
     Table of data preprocessing results
   </caption>
   <thead>
@@ -216,6 +221,7 @@ preprocessing_table_format = """<table class="table table-striped preprocessing-
       </tr>
   </tbody>
 </table>
+</div>
 """
 
 
