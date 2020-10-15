@@ -71,8 +71,9 @@ def _make_aggregate_index(data, interval_length, interval_label,
         start, end, freq=interval_length, tz=timezone)
 
 
-def compute_aggregate(new_index, data, interval_length, interval_label,
-                      timezone, agg_func, aggregate_observations):
+def compute_aggregate(data, interval_length, interval_label,
+                      timezone, agg_func, aggregate_observations,
+                      new_index=None):
     """
     Computes an aggregate quantity according to agg_func of the data.
     This function assumes the data has an interval_value_type of
@@ -83,8 +84,6 @@ def compute_aggregate(new_index, data, interval_length, interval_label,
 
     Parameters
     ----------
-    new_index : pandas.DatetimeIndex
-        The index to resample data to.
     data : dict of pandas.DataFrames
         With keys 'observation_id' corresponding to observation in
         aggregate_observations. DataFrames must have 'value' and 'quality_flag'
@@ -103,6 +102,9 @@ def compute_aggregate(new_index, data, interval_length, interval_label,
         Each dict should have 'observation_id' (string),
         'effective_from' (timestamp), 'effective_until' (timestamp or None),
         and 'observation_deleted_at' (timestamp or None) fields.
+    new_index : pandas.DatetimeIndex
+        The index to resample data to. Will attempt to infer an index if not
+        provided.
 
     Returns
     -------
@@ -133,6 +135,9 @@ def compute_aggregate(new_index, data, interval_length, interval_label,
         + Or, if interval_label is not beginning or ending
 
     """
+    if new_index is None:
+        new_index = _make_aggregate_index(
+            data, interval_length, interval_label, timezone)
     unique_ids = {ao['observation_id'] for ao in aggregate_observations}
     valid_mask = {obs_id: _observation_valid(
         new_index, obs_id, aggregate_observations) for obs_id in unique_ids}
