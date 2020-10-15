@@ -128,7 +128,8 @@ def compute_aggregate(data, interval_length, interval_label,
           columns
 
     ValueError
-        If interval_length is not a divisor of one day
+        If interval_length is not a divisor of one day and an index is not
+        provided.
 
         + Or, if an observation has been deleted but the data is required for
           the aggregate

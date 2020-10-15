@@ -1,6 +1,7 @@
 import logging
 
 
+import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -75,7 +76,7 @@ def test_compute_aggregate_empty_data(aggobs, ids):
     data = {}
     with pytest.raises(KeyError):
         utils.compute_aggregate(data, '1h', 'ending',
-                                'UTC', 'sum', aggobs[:2])
+                                'UTC', 'sum', aggobs[:2], nindex)
 
 
 @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -197,6 +198,60 @@ def test_compute_aggregate_bad_cols():
     with pytest.raises(KeyError):
         utils.compute_aggregate(data, '1h', 'ending', 'UTC',
                                 'mean', [_make_aggobs('a')])
+
+
+def test_compute_aggregate_index_provided(aggobs, ids):
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:3]}
+    the_index = nindex.copy()[::2]
+    agg = utils.compute_aggregate(data, '1h', 'ending',
+                                  'UTC', 'sum', aggobs[:-2], the_index)
+    pdt.assert_frame_equal(agg, pd.DataFrame(
+        {'value': pd.Series([2.0, 2.0, 2.0, 2.0, 3.0],
+                            index=the_index),
+         'quality_flag':  pd.Series([0]*5, index=the_index)})
+        )
+
+
+@pytest.mark.parametrize('dfindex,missing_idx', [
+    (pd.date_range(start='20191004T0000Z', freq='1h', periods=11), -1),
+    (pd.date_range(start='20191003T2300Z', freq='1h', periods=11), 0),
+])
+def test_compute_aggregate_missing_values_with_index(
+        aggobs, ids, dfindex, missing_idx):
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:3]}
+    agg = utils.compute_aggregate(data, '1h', 'ending',
+                                  'UTC', 'sum', aggobs[:-2], dfindex)
+    assert pd.isnull(agg['value'][missing_idx])
+
+
+def test_compute_aggregate_partial_missing_values_with_index(aggobs, ids):
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:2]}
+    data[ids[2]] = pd.DataFrame({'value': [1] * 5, 'quality_flag': [0] * 5},
+                                index=nindex[5:])
+    agg = utils.compute_aggregate(data, '1h', 'ending',
+                                  'UTC', 'sum', aggobs[:-2], nindex)
+    expected = pd.DataFrame(
+        {'value': pd.Series(
+            [np.nan, np.nan, np.nan, np.nan, np.nan, 1.0, 2.0, 3.0, 3.0, 3.0],
+            index=nindex),
+         'quality_flag':  pd.Series([0]*10, index=nindex)}
+        )
+    pdt.assert_frame_equal(agg, expected)
+
+
+def test_compute_aggregate_missing_obs_with_index(aggobs, ids):
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:2]}
+    with pytest.raises(KeyError):
+        utils.compute_aggregate(data, '1h', 'ending', 'UTC', 'sum',
+                                aggobs[:-2], nindex)
 
 
 def test__observation_valid(aggobs):
