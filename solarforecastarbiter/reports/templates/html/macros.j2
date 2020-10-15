@@ -11,7 +11,7 @@ forecasts/single/{{ forecast.forecast_id }}
 {% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
 <div class="report-table-wrapper">
 <table class="table table-striped metric-table-fx-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+  <caption style="caption-side:top; text-align: left">
     Table of {{ category }} metrics
   </caption>
   <thead>
@@ -111,7 +111,7 @@ forecasts/single/{{ forecast.forecast_id }}
 {% macro validation_table(proc_fxobs_list, quality_filters) %}
 <div class="report-table-wrapper">
 <table class="table table-striped validation-table" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+  <caption style="caption-side:top; text-align: left">
     Table of data validation results
   </caption>
   <thead>
@@ -167,7 +167,7 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endfor %}
 <div class="report-table-wrapper">
 <table class="table table-striped preprocessing-table" style="width:100%;">
-  <caption style="caption-side:top; text-align:center">
+  <caption style="caption-side:top; text-align: left">
     Table of data preprocessing results
   </caption>
   <thead>
