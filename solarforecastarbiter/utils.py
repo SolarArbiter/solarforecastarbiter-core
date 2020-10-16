@@ -134,6 +134,7 @@ def compute_aggregate(data, interval_length, interval_label,
         + Or, if an observation has been deleted but the data is required for
           the aggregate
         + Or, if interval_label is not beginning or ending
+        + Or, if data is empty and an index is provided.
 
     """
     if new_index is None:
