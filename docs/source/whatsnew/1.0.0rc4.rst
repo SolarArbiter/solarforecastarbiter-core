@@ -63,6 +63,8 @@ Bug fixes
 * Fixed issue with overlapping table entries for report metric, validation, and
   preprocessing tables. Tables are now horizontally scrollable to avoid overlap
   of columns. (:issue:`418`) (:pull:`588`)
+* Fix bug where aggregate computation failed when an observation wasn't present
+  outside its effective range. (:issue:`587`)(:pull:`590`)
 
 
 Contributors
