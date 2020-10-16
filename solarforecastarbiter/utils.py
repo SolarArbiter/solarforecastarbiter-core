@@ -144,6 +144,11 @@ def compute_aggregate(data, interval_length, interval_label,
         new_index, obs_id, aggregate_observations) for obs_id in unique_ids}
     expected_observations = {k for k, v in valid_mask.items() if v.any()}
 
+    # Raise an exception if no observations are valid
+    if len(expected_observations) == 0:
+        raise ValueError(
+            'No effective observations in data')
+
     missing_from_data_dict = expected_observations - set(data.keys())
 
     if missing_from_data_dict:

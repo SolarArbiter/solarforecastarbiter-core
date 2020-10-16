@@ -254,6 +254,25 @@ def test_compute_aggregate_missing_obs_with_index(aggobs, ids):
                                 aggobs[:-2], nindex)
 
 
+def test_compute_aggregate_out_of_effective(aggobs, ids):
+    limited_aggobs = [aggob
+                      for aggob in aggobs
+                      if aggob['effective_until'] is not None]
+    data = {id_: pd.DataFrame({'value': [1] * 10, 'quality_flag': [0] * 10},
+                              index=nindex)
+            for id_ in ids[:3]}
+    max_time = pd.Series([o['effective_until'] for o in limited_aggobs]).max()
+    ooe_index = pd.date_range(
+        max_time + pd.Timedelta('1H'),
+        max_time + pd.Timedelta('25H'),
+        freq='60min'
+    )
+    with pytest.raises(ValueError) as e:
+        utils.compute_aggregate(data, '1h', 'ending', 'UTC', 'sum',
+                                limited_aggobs, ooe_index)
+    assert str(e.value) == 'No effective observations in data'
+
+
 def test__observation_valid(aggobs):
     out = utils._observation_valid(
         nindex, 'f2844284-ea0a-11e9-a7da-f4939feddd82', aggobs)
