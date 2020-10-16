@@ -30,6 +30,9 @@ API Changes
   ``metrics.preprocessing.exclude``, and
   ``metrics.preprocessing.resample_and_align``.
   (:issue:`556`, :pull:`580`)
+* Added `new_index` argument to :py:func:`utils.compute_aggregate` to define
+  an index for the computed aggregate. (:issue:`587`)(:pull:`590`)
+
 
 
 Enhancements
@@ -63,8 +66,9 @@ Bug fixes
 * Fixed issue with overlapping table entries for report metric, validation, and
   preprocessing tables. Tables are now horizontally scrollable to avoid overlap
   of columns. (:issue:`418`) (:pull:`588`)
-* Fix bug where aggregate computation failed when an observation wasn't present
-  outside its effective range. (:issue:`587`)(:pull:`590`)
+* Fixed bug causing `KeyError` to be raised raised when computing aggregate
+  outside an included observations `effective_from` and `effective_until`.
+  (:issue:`587`)(:pull:`590`)
 
 
 Contributors
