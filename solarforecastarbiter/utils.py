@@ -72,7 +72,8 @@ def _make_aggregate_index(data, interval_length, interval_label,
 
 
 def compute_aggregate(data, interval_length, interval_label,
-                      timezone, agg_func, aggregate_observations):
+                      timezone, agg_func, aggregate_observations,
+                      new_index=None):
     """
     Computes an aggregate quantity according to agg_func of the data.
     This function assumes the data has an interval_value_type of
@@ -101,6 +102,9 @@ def compute_aggregate(data, interval_length, interval_label,
         Each dict should have 'observation_id' (string),
         'effective_from' (timestamp), 'effective_until' (timestamp or None),
         and 'observation_deleted_at' (timestamp or None) fields.
+    new_index : pandas.DatetimeIndex
+        The index to resample data to. Will attempt to infer an index if not
+        provided.
 
     Returns
     -------
@@ -124,23 +128,29 @@ def compute_aggregate(data, interval_length, interval_label,
           columns
 
     ValueError
-        If interval_length is not a divisor of one day
+        If interval_length is not a divisor of one day and an index is not
+        provided.
 
         + Or, if an observation has been deleted but the data is required for
           the aggregate
         + Or, if interval_label is not beginning or ending
+        + Or, if data is empty and an index is provided.
 
     """
-    new_index = _make_aggregate_index(
-        data, interval_length, interval_label, timezone)
+    if new_index is None:
+        new_index = _make_aggregate_index(
+            data, interval_length, interval_label, timezone)
     unique_ids = {ao['observation_id'] for ao in aggregate_observations}
     valid_mask = {obs_id: _observation_valid(
         new_index, obs_id, aggregate_observations) for obs_id in unique_ids}
+    expected_observations = {k for k, v in valid_mask.items() if v.any()}
 
-    missing_from_data_dict = {
-        ao['observation_id'] for ao in aggregate_observations
-        if ao['observation_deleted_at'] is None
-        } - set(data.keys())
+    # Raise an exception if no observations are valid
+    if len(expected_observations) == 0:
+        raise ValueError(
+            'No effective observations in data')
+
+    missing_from_data_dict = expected_observations - set(data.keys())
 
     if missing_from_data_dict:
         raise KeyError(
