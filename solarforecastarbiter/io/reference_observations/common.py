@@ -148,8 +148,8 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         Defaults to 'ending'
     interval_value_type: string
         Defaults to 'interval_mean'
-    uncertainty: float
-        Defaults to 0.
+    uncertainty: float or None
+        Defaults to None.
 
     Returns
     -------
@@ -190,7 +190,7 @@ def create_observation(api, site, variable, extra_params=None, **kwargs):
         'interval_value_type': kwargs.get('interval_value_type',
                                           'interval_mean'),
         'site': site,
-        'uncertainty': kwargs.get('uncertainty', 0),
+        'uncertainty': kwargs.get('uncertainty'),
         'variable': variable,
         'extra_parameters': json.dumps(extra_parameters)
     })

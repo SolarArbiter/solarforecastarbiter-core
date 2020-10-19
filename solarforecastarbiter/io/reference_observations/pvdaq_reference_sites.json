@@ -468,7 +468,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -499,7 +499,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -530,7 +530,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -561,7 +561,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 4, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -592,7 +592,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -623,7 +623,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -654,7 +654,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -685,7 +685,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 33, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -716,7 +716,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -747,7 +747,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -778,7 +778,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -809,7 +809,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -840,7 +840,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 34, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -871,7 +871,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -902,7 +902,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -933,7 +933,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -964,7 +964,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 39, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -995,7 +995,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1026,7 +1026,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1057,7 +1057,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 50, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1088,7 +1088,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1119,7 +1119,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1150,7 +1150,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1181,7 +1181,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 51, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -1212,7 +1212,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"inv1_ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1199, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1243,7 +1243,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"inv1_dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1199, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1274,7 +1274,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1200, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1305,7 +1305,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1201, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1336,7 +1336,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1201, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1367,7 +1367,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power_metered\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1202, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 5, \"resample_how\": \"first\"}"
@@ -1398,7 +1398,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1208, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -1429,7 +1429,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1208, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -1460,7 +1460,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1232, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1491,7 +1491,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power_metered_A\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1234, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1522,7 +1522,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1553,7 +1553,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1584,7 +1584,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1615,7 +1615,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1646,7 +1646,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1276, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1677,7 +1677,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1708,7 +1708,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1739,7 +1739,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1770,7 +1770,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1801,7 +1801,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1277, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1832,7 +1832,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"inv1_ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1863,7 +1863,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"inv1_dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1894,7 +1894,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1925,7 +1925,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1956,7 +1956,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1278, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 15, \"resample_how\": \"first\"}"
@@ -1987,7 +1987,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2018,7 +2018,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2049,7 +2049,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2080,7 +2080,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2111,7 +2111,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"wind_speed\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1283, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2142,7 +2142,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2173,7 +2173,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2204,7 +2204,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2235,7 +2235,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1289, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2266,7 +2266,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power_metered\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1332, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"mean\"}"
@@ -2297,7 +2297,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2328,7 +2328,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2359,7 +2359,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2390,7 +2390,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1403, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2421,7 +2421,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ac_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2452,7 +2452,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temp\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2483,7 +2483,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2514,7 +2514,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1423, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2545,7 +2545,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"AC_PowerA\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2576,7 +2576,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"ambient_temperature\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2607,7 +2607,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"dc_power\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"
@@ -2638,7 +2638,7 @@
                     "tracking_type": "fixed"
                 }
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "observation_id": "",
             "provider": "",
             "extra_parameters": "{\"network_data_label\": \"poa_irradiance\", \"network\": \"NREL PVDAQ\", \"network_api_id\": 1426, \"network_api_abbreviation\": \"pvdaq\", \"observation_interval_length\": 1, \"resample_how\": \"first\"}"

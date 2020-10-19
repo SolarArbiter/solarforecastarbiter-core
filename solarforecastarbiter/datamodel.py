@@ -497,9 +497,10 @@ class Observation(BaseModel):
         average, indicates an instantaneous value, or indicates an event.
     site : Site
         The site that this Observation was generated for.
-    uncertainty : float
+    uncertainty : float or None
         A measure of the uncertainty of the observation values. The format
-        will be determined later.
+        will be determined later. None indicates that the uncertainty is
+        unknown for this Observation.
     observation_id : str, optional
         UUID of the observation in the API
     provider : str, optional
@@ -518,7 +519,7 @@ class Observation(BaseModel):
     interval_length: pd.Timedelta
     interval_label: str
     site: Site
-    uncertainty: float
+    uncertainty: Union[float, None]
     observation_id: str = ''
     provider: str = ''
     extra_parameters: str = ''
