@@ -66,8 +66,8 @@ Bug fixes
 * Fixed issue with overlapping table entries for report metric, validation, and
   preprocessing tables. Tables are now horizontally scrollable to avoid overlap
   of columns. (:issue:`418`) (:pull:`588`)
-* Fixed bug causing `KeyError` to be raised raised when computing aggregate
-  outside an included observations `effective_from` and `effective_until`.
+* Fixed bug causing `KeyError` to be raised when computing an aggregate
+  outside an included observation's `effective_from` and `effective_until`.
   (:issue:`587`)(:pull:`590`)
 
 
