@@ -539,7 +539,7 @@ def ac_power_observation_metadata(powerplant_metadata):
         name='Albuquerque Baseline AC Power', variable='ac_power',
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+        interval_label='instant', site=powerplant_metadata, uncertainty=1.)
     return ac_power_meta
 
 
@@ -549,7 +549,7 @@ def dc_power_observation_metadata(powerplant_metadata):
         name='Albuquerque Baseline DC Power', variable='dc_power',
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+        interval_label='instant', site=powerplant_metadata, uncertainty=1.)
     return dc_power_meta
 
 
@@ -559,7 +559,7 @@ def wind_speed_observation_metadata(powerplant_metadata):
         name='Albuquerque Baseline Wind Speed', variable='wind_speed',
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=powerplant_metadata, uncertainty=1)
+        interval_label='instant', site=powerplant_metadata, uncertainty=1.)
     return wind_speed_meta
 
 
@@ -568,7 +568,7 @@ def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
         interval_value_type='mean', interval_length=pd.Timedelta('5min'),
-        interval_label=request.param, site=powerplant_metadata, uncertainty=1)
+        interval_label=request.param, site=powerplant_metadata, uncertainty=1.)
     return ac_power_meta
 
 
@@ -578,14 +578,14 @@ def ghi_observation_metadata(site_metadata):
         name='Albuquerque Baseline GHI', variable='ghi',
         interval_value_type='instantaneous',
         interval_length=pd.Timedelta('5min'),
-        interval_label='instant', site=site_metadata, uncertainty=1)
+        interval_label='instant', site=site_metadata, uncertainty=1.)
     return ghi_meta
 
 
 def default_observation(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        interval_value_type='mean', uncertainty=1, interval_length='1h',
+        interval_value_type='mean', uncertainty=1., interval_length='1h',
         interval_label='beginning'):
     """
     Helpful when you want to test a couple of parameters and don't
@@ -804,7 +804,7 @@ def many_observations_text():
     "observation_id": "123e4567-e89b-12d3-a456-426655440000",
     "provider": "Organization 1",
     "site_id": "123e4567-e89b-12d3-a456-426655440001",
-    "uncertainty": 0.1,
+    "uncertainty": null,
     "variable": "ghi"
   }
 ]"""  # NOQA
@@ -2493,13 +2493,13 @@ def report_text():
              {"forecast": "68a1c22c-87b5-11e9-bf88-0a580a8200ae",
               "observation": "9f657636-7e49-11e9-b77f-0a580a8003e9",
               "normalization": "1000",
-              "uncertainty": "15",
+              "uncertainty": "15.",
               "cost": "example cost",
               "reference_forecast": "refbc386-8712-11e9-a1c7-0a580a8200ae"},
              {"forecast": "49220780-76ae-4b11-bef1-7a75bdc784e3",
               "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
               "cost": "example cost",
-              "uncertainty": "5"}
+              "uncertainty": "5."}
          ]
      },
      "raw_report": null,

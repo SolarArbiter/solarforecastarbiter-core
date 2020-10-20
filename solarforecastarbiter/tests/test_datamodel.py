@@ -1032,3 +1032,12 @@ def test_cost_from_json(cost_json):
     cjson, exp = cost_json
     out = datamodel.Cost.from_dict(json.loads(cjson))
     assert out == exp
+
+
+def test_forecastobservation_null_uncertainty(
+        single_forecast, many_observations):
+    obs = many_observations[-1]
+    assert obs.uncertainty is None
+    assert datamodel.ForecastObservation.from_dict({
+        'forecast': single_forecast.to_dict(), 'observation': obs.to_dict(),
+        'uncertainty': 'observation_uncertainty'}).uncertainty is None
