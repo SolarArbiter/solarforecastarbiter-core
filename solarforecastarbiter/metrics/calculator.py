@@ -203,11 +203,7 @@ def calculate_deterministic_metrics(processed_fx_obs, categories, metrics):
     metric_vals = []
     # Calculate metrics
     for category in set(categories):
-        # total (special category)
-        if category == 'total':
-            index_category = lambda x: 0  # NOQA: E731
-        else:
-            index_category = getattr(df.index, category)
+        index_category = _index_category(category, df)
 
         # Calculate each metric
         for metric_ in metrics:
@@ -395,11 +391,7 @@ def _calculate_probabilistic_metrics_from_df(data_df, categories, metrics,
 
     # Calculate metrics
     for category in set(categories):
-        # total (special category)
-        if category == 'total':
-            index_category = lambda x: 0  # NOQA: E731
-        else:
-            index_category = getattr(data_df.index, category)
+        index_category = _index_category(category, data_df)
 
         # Calculate each metric
         for metric_ in set(metrics):
@@ -565,11 +557,7 @@ def calculate_event_metrics(proc_fx_obs, categories, metrics):
     metric_vals = []
     # Calculate metrics
     for category in set(categories):
-        # total (special category)
-        if category == 'total':
-            index_category = lambda x: 0  # NOQA
-        else:
-            index_category = getattr(df.index, category)
+        index_category = _index_category(category, df)
 
         # Calculate each metric
         for metric_ in set(metrics):
@@ -595,3 +583,22 @@ def calculate_event_metrics(proc_fx_obs, categories, metrics):
                                        datamodel.ALLOWED_EVENT_METRICS)
     calc_metrics = datamodel.MetricResult.from_dict(out)
     return calc_metrics
+
+
+def _index_category(category, df):
+    # total (special category)
+    if category == 'total':
+        index_category = lambda x: 0  # NOQA: E731
+    elif category == 'season':
+        index_category = _season_from_months(df.index.month)
+    else:
+        index_category = getattr(df.index, category)
+    return index_category
+
+
+def _season_from_months(months):
+    """Compute season (DJF, MAM, JJA, SON) from month ordinal"""
+    # Copied from xarray. see xarray license in LICENSES
+    seasons = np.array(["DJF", "MAM", "JJA", "SON"])
+    months = np.asarray(months)
+    return seasons[(months // 3) % 4]

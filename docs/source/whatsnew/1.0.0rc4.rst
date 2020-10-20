@@ -43,6 +43,7 @@ Enhancements
   the report's forecasts and observations. Users with limited permissions on a
   report may need to instantiate a :py:class:`datamodel.Report` object from an
   api response from the ``/reports`` endpoint manually. (:pull:`585`)
+* Add seasons to metrics category options. (:issue:`552`, :pull:``)
 
 
 Bug fixes
