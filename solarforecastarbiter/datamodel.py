@@ -75,6 +75,7 @@ CLOSED_MAPPING = {
 ALLOWED_CATEGORIES = {
     'total': 'Total',
     'year': 'Year',
+    'season': 'Season',
     'month': 'Month of the year',
     'hour': 'Hour of the day',
     'date': 'Date',
@@ -87,6 +88,7 @@ ALLOWED_CATEGORIES = {
 CATEGORY_BLURBS = {
     'total': "Metric totals for the entire selected period.",
     'year': "Metrics per year.",
+    'season': "Metrics per season.",
     'month': "Metrics per month.",
     'hour': "Metrics per hour of the day.",
     'date': "Metrics per individual date.",

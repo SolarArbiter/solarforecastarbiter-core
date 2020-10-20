@@ -337,9 +337,10 @@ def test_calculate_metrics_with_probablistic(single_observation,
     expected = {
         0: ('total', 'crps', '0', 17.247),
         1: ('year', 'crps', '2019', 17.247),
-        2: ('month', 'crps', 'Aug', 17.247),
-        3: ('hour', 'crps', '0', 19.801000000000002),
-        4: ('hour', 'crps', '1', 19.405)
+        2: ('season', 'crps', 'JJA', 17.247),
+        3: ('month', 'crps', 'Aug', 17.247),
+        4: ('hour', 'crps', '0', 19.801000000000002),
+        5: ('hour', 'crps', '1', 19.405)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -374,7 +375,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
         1: ('total', 'bss', '0', -0.010366947374821578),
         7: ('year', 'bs', '2019', 0.8308500000000001),
         11: ('year', 'unc', '2019', 0.08999999999999998),
-        14: ('month', 'bs', 'Aug', 0.8308500000000001)
+        21: ('month', 'bs', 'Aug', 0.8308500000000001)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -525,6 +526,8 @@ def verify_metric_result(result, pair, categories, metrics):
             grps = [calendar.day_abbr[g] for g in grps]
         elif cat == 'total':
             grps = ['0']
+        elif cat == 'season':
+            grps = ['JJA']
         assert {str(g) for g in grps} == cat_grps
     for val in result.values:
         assert (
@@ -1238,6 +1241,8 @@ def test_calculate_event_metrics(single_event_forecast_observation, categories,
             grps = [calendar.day_abbr[g] for g in grps]
         elif cat == 'total':
             grps = ['0']
+        elif cat == 'season':
+            grps = ["MAM"]
         assert {str(g) for g in grps} == cat_grps
     for val in result.values:
         assert (
