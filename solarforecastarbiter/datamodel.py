@@ -112,6 +112,12 @@ ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())
 ALLOWED_COST_AGG_OPTIONS = tuple(_AGG_OPTIONS.keys())
 ALLOWED_COST_FILL_OPTIONS = tuple(_FILL_OPTIONS.keys())
 
+ALLOWED_QUALITY_FLAGS = tuple([
+    k for k in DESCRIPTION_MASK_MAPPING.keys()
+    if not k.startswith('VERSION IDENTIFIER') and
+    not k.startswith("RESERVED")
+]) + tuple(DERIVED_MASKS.keys())
+
 
 def _time_conv(inp):
     if isinstance(inp, datetime.time):
@@ -1410,9 +1416,8 @@ class QualityFlagFilter(BaseFilter):
     resample_threshold_percentage: float = 10.
 
     def __post_init__(self):
-        allowed_flags = (
-            list(DESCRIPTION_MASK_MAPPING.keys()) + list(DERIVED_MASKS.keys()))
-        if not all(flag in allowed_flags for flag in self.quality_flags):
+        if not all(flag in ALLOWED_QUALITY_FLAGS
+                   for flag in self.quality_flags):
             raise ValueError('Quality flags must be in '
                              'BITMASK_DESCRIPTION_DICT or DERIVED_MASKS')
 
