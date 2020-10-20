@@ -1416,7 +1416,8 @@ class QualityFlagFilter(BaseFilter):
     resample_threshold_percentage: float = 10.
 
     def __post_init__(self):
-        if not all(flag in ALLOWED_QUALITY_FLAGS for flag in self.quality_flags):
+        if not all(flag in ALLOWED_QUALITY_FLAGS
+                   for flag in self.quality_flags):
             raise ValueError('Quality flags must be in '
                              'BITMASK_DESCRIPTION_DICT or DERIVED_MASKS')
 
