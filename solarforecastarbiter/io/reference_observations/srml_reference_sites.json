@@ -28,7 +28,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -59,7 +59,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -90,7 +90,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -121,7 +121,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -152,7 +152,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -183,7 +183,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -214,7 +214,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -245,7 +245,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -276,7 +276,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -338,7 +338,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -369,7 +369,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -400,7 +400,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         },
         {
@@ -431,7 +431,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -462,7 +462,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "ac_power"
         },
         {
@@ -493,7 +493,7 @@
                 "site_id": "",
                 "timezone": "Etc/GMT+8"
             },
-            "uncertainty": 0,
+            "uncertainty": null,
             "variable": "dc_power"
         }
     ],

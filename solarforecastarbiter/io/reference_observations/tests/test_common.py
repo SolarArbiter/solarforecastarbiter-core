@@ -34,7 +34,7 @@ site_test_observation = Observation.from_dict({
     'interval_value_type': 'interval_mean',
     'interval_length': 1,
     'site': site_objects[0],
-    'uncertainty': 0,
+    'uncertainty': 0.,
     'extra_parameters': ('{"network": "DOE ARM", '
                          '"observation_interval_length": 1,'
                          '"network_api_id": "api_id", '
@@ -154,7 +154,7 @@ observation_long_site_name = Observation.from_dict({
     'interval_value_type': 'interval_mean',
     'interval_length': 1,
     'site': long_site_name,
-    'uncertainty': 0,
+    'uncertainty': None,
     'extra_parameters': ('{"network": "DOE ARM", "network_api_abbreviation": '
                          '"site_abbrev", "network_api_id": "thing", '
                          '"observation_interval_length": 1}'),
@@ -177,7 +177,7 @@ observation_with_extra_params = Observation.from_dict({
     'interval_value_type': 'interval_mean',
     'interval_length': 5,
     'site': site_objects[0],
-    'uncertainty': 0,
+    'uncertainty': None,
     'extra_parameters': '{"network": "", "observation_interval_length": 5}'
 })
 observation_params = {
@@ -205,7 +205,7 @@ observation_dict = {
     'interval_value_type': 'instantaneous',
     'interval_length': 1,
     'site': site_objects[0],
-    'uncertainty': 2,
+    'uncertainty': 2.,
     'extra_parameters': ('{"network": "DOE ARM", '
                          '"network_api_id": "B13", '
                          '"network_api_abbreviation": "sgp", '
@@ -221,7 +221,7 @@ obs_kwargs = {
     'interval_label': 'beginning',
     'name': 'just observation',
     'interval_value_type': 'instantaneous',
-    'uncertainty': 2,
+    'uncertainty': 2.,
 }
 
 observation_dict_resample_mean = observation_dict.copy()
@@ -474,7 +474,7 @@ def site_obs():
             'interval_value_type': 'interval_mean',
             'interval_length': '5',
             'site': site,
-            'uncertainty': 0,
+            'uncertainty': 0.,
             'extra_parameters': site.extra_parameters
         }) for site in site_objects[:2]]
 

@@ -117,7 +117,7 @@ def site_to_obs(site):
         'interval_value_type': 'interval_mean',
         'interval_length': interval_length,
         'site': site,
-        'uncertainty': 0,
+        'uncertainty': None,
         'extra_parameters': site.extra_parameters
     })
 
