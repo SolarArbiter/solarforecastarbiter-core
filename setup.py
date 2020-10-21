@@ -12,7 +12,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
              'asynctest', 'requests-mock'],
-    'fetch': ['aiohttp'],
+    'fetch': ['aiohttp', 'loky', 'psutil'],
     'log': ['sentry-sdk'],
     'cli': ['click'],
     'plotting': ['bokeh', 'selenium']
