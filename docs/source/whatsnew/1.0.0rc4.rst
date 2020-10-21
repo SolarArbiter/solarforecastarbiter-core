@@ -72,6 +72,9 @@ Bug fixes
 * Fixed bug causing `KeyError` to be raised when computing an aggregate
   outside an included observation's `effective_from` and `effective_until`.
   (:issue:`587`)(:pull:`590`)
+* Fixed bug in processe management when fetching NWP files which caused the
+  script to hang indefinitely if a process were killed by the OS
+  (:issue:`343`) (:pull:`594`)
 
 
 Contributors
