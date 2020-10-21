@@ -578,7 +578,6 @@ async def optimize_netcdf(nctmpfile, final_path):
     try:
         await run_in_executor(_optimize_netcdf, nctmpfile, tmp_path)
     except Exception:
-        tmp_path.unlink()
         raise
     else:
         tmp_path.rename(final_path)
