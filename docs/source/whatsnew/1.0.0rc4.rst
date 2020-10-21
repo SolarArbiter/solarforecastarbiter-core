@@ -48,6 +48,8 @@ Enhancements
   indicate an unknown uncertainty (:pull:`591`)
 * Update :py:func:`io.utils.ensure_timestamps` to raise a descriptive TypeError
   for missing arguments to the underlying function (:issue:`498`)(:pull:`595`)
+* Interval label, interval value type, and aggregate type are now validated
+  when creating datamodel objects (:issue:`213`) (:pull:`596`)
 
 
 Bug fixes
