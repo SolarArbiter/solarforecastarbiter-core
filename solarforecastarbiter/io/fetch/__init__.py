@@ -1,38 +1,34 @@
 import asyncio
-import atexit
 from functools import partial, wraps
 import logging
-import multiprocessing as mp
 import signal
 import threading
 
 
 import aiohttp
+from loky import get_reusable_executor
 
 
-CLUSTER = None
+WORKERS = 1
 
 
 def ignore_interrupt():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def start_cluster(max_workers=4, maxtasksperchild=5):
-    global CLUSTER
-    mp.set_start_method("forkserver")
-    CLUSTER = mp.Pool(max_workers, maxtasksperchild=maxtasksperchild,
-                      initializer=ignore_interrupt)
-    atexit.register(CLUSTER.terminate)
-    return
+def update_num_workers(max_workers):
+    global WORKERS
+    WORKERS = max_workers
 
 
 async def run_in_executor(func, *args, **kwargs):
-    exc = partial(CLUSTER.apply, func, args, kwargs)
+    exc = get_reusable_executor(max_workers=WORKERS)
     # uses the asyncio default thread pool executor to then
     # apply the function on the pool of processes
     # inefficient, but ProcessPoolExecutor will not restart
     # processes in case of memory leak
-    res = await asyncio.get_event_loop().run_in_executor(None, exc)
+    res = await asyncio.get_event_loop().run_in_executor(
+        exc, partial(func, *args, **kwargs))
     return res
 
 

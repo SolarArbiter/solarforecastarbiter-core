@@ -16,7 +16,7 @@ import sentry_sdk
 from solarforecastarbiter import __version__
 from solarforecastarbiter.io import nwp
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
-from solarforecastarbiter.io.fetch import start_cluster
+from solarforecastarbiter.io.fetch import update_num_workers
 from solarforecastarbiter.io.reference_observations import reference_data
 from solarforecastarbiter.io.utils import mock_raw_report_endpoints
 import solarforecastarbiter.reference_forecasts.main as reference_forecasts
@@ -240,7 +240,7 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
     set_log_level(verbose)
     from solarforecastarbiter.io.fetch import nwp
     nwp.check_wgrib2()
-    start_cluster(workers, 4)
+    update_num_workers(workers)
     basepath = Path(save_directory)
     if netcdf_only:
         path_to_files = basepath
