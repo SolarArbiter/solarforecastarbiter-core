@@ -412,17 +412,17 @@ def test_ensure_timestamps_omitted_args():
     def f(start, end, a, *, other):  # pragma: no cover
         return start, end
 
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(
+            TypeError, match="missing a required argument: 'end'"):
         start, end = f('2020-01-01T00:00Z')
-    assert str(err.value) == "missing a required argument: 'end'"
 
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(
+            TypeError, match="missing a required argument: 'a'"):
         start, end = f('2020-01-01T00:00Z', '2020-01-02T00:00Z')
-    assert str(err.value) == "missing a required argument: 'a'"
 
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(
+            TypeError, match="missing a required argument: 'other'"):
         start, end = f('2020-01-01T00:00Z', end='2020-01-02T00:00Z', a=0)
-    assert str(err.value) == "missing a required argument: 'other'"
 
     f('2020-01-01T00:00Z', '2020-01-02T00:00Z', 0, other=None)
     with pytest.raises(ValueError):
