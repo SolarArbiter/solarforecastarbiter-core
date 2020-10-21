@@ -407,6 +407,28 @@ def test_ensure_timestamps_err():
         start, end = f('', '2019-09-01T12:00Z', 'blah')
 
 
+def test_ensure_timestamps_omitted_args():
+    @utils.ensure_timestamps('start', 'end', 'other')
+    def f(start, end, a, *, other):  # pragma: no cover
+        return start, end
+
+    with pytest.raises(TypeError) as err:
+        start, end = f('2020-01-01T00:00Z')
+    assert str(err.value) == "missing a required argument: 'end'"
+
+    with pytest.raises(TypeError) as err:
+        start, end = f('2020-01-01T00:00Z', '2020-01-02T00:00Z')
+    assert str(err.value) == "missing a required argument: 'a'"
+
+    with pytest.raises(TypeError) as err:
+        start, end = f('2020-01-01T00:00Z', end='2020-01-02T00:00Z', a=0)
+    assert str(err.value) == "missing a required argument: 'other'"
+
+    f('2020-01-01T00:00Z', '2020-01-02T00:00Z', 0, other=None)
+    with pytest.raises(ValueError):
+        f('2020-01-01T00:00Z', '2020-01-02T00:00Z', 0, other='a')
+
+
 def test_load_report_values(raw_report, report_objects):
     _, obs, fx0, fx1, agg, fxagg = report_objects
     ser = pd.Series(np.random.random(10),
