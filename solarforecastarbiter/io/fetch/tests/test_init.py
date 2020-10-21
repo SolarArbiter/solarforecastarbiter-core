@@ -1,4 +1,7 @@
+import multiprocessing as mp
+import os
 import subprocess
+import time
 
 
 import pytest
@@ -28,3 +31,21 @@ def startcluster():
 async def test_cluster_error(bad, err, startcluster):
     with pytest.raises(err):
         await fetch.run_in_executor(bad)
+
+
+def getpid():
+    return mp.current_process().pid
+
+
+def longrunning():
+    time.sleep(3)
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(5, method='thread')
+async def test_cluster_external_kill(startcluster):
+    pid = await fetch.run_in_executor(getpid)
+    long = fetch.run_in_executor(longrunning)
+    os.kill(pid, 9)
+    with pytest.raises(Exception):
+        await long
