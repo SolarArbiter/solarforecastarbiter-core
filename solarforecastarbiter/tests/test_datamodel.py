@@ -346,7 +346,7 @@ def test_invalid_variable(single_site):
     with pytest.raises(ValueError):
         datamodel.Observation(
             name='test', variable='noway',
-            interval_value_type='mean',
+            interval_value_type='interval_mean',
             interval_length=pd.Timedelta('1min'),
             interval_label='beginning',
             site=single_site,

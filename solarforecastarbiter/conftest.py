@@ -567,7 +567,7 @@ def wind_speed_observation_metadata(powerplant_metadata):
 def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        interval_value_type='mean', interval_length=pd.Timedelta('5min'),
+        interval_value_type='interval_mean', interval_length=pd.Timedelta('5min'),
         interval_label=request.param, site=powerplant_metadata, uncertainty=1.)
     return ac_power_meta
 
@@ -585,7 +585,7 @@ def ghi_observation_metadata(site_metadata):
 def default_observation(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        interval_value_type='mean', uncertainty=1., interval_length='1h',
+        interval_value_type='interval_mean', uncertainty=1., interval_length='1h',
         interval_label='beginning'):
     """
     Helpful when you want to test a couple of parameters and don't
@@ -603,7 +603,7 @@ def default_observation(
 def default_forecast(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        interval_value_type='mean', issue_time_of_day=dt.time(hour=5),
+        interval_value_type='interval_mean', issue_time_of_day=dt.time(hour=5),
         lead_time_to_start='1h', interval_length='1h', run_length='12h',
         interval_label='beginning'):
     """
@@ -633,7 +633,7 @@ def ac_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='ac_power',
         site=site_metadata
     )
@@ -649,7 +649,7 @@ def dc_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='dc_power',
         site=site_metadata
     )
@@ -665,7 +665,7 @@ def wind_speed_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='wind_speed',
         site=site_metadata
     )
@@ -681,7 +681,7 @@ def ac_power_forecast_metadata_label(request, site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label=request.param,
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='ac_power',
         site=site_metadata
     )
@@ -1841,7 +1841,7 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
     obs = datamodel.Observation(
         name="Albuquerque New Mexico ghi",
         variable="ghi",
-        interval_value_type="interval mean",
+        interval_value_type="interval_mean",
         interval_length=pd.Timedelta("1min"),
         interval_label="ending",
         site=site,
@@ -2068,7 +2068,7 @@ def cdf_and_cv_report_objects_xy(aggregate, ref_forecast_id):
     obs = datamodel.Observation(
         name="Albuquerque New Mexico ghi",
         variable="ghi",
-        interval_value_type="interval mean",
+        interval_value_type="interval_mean",
         interval_length=pd.Timedelta("1min"),
         interval_label="ending",
         site=site,
