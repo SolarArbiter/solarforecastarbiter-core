@@ -678,6 +678,7 @@ class Aggregate(BaseModel):
             self.interval_length,
             *observations)
         __generic_oneof__(self, 'aggregate_type', ALLOWED_AGGREGATE_TYPES)
+        __generic_oneof__(self, 'interval_label', ('beginning', 'ending'))
         object.__setattr__(self, 'interval_value_type', 'interval_mean')
 
 
