@@ -844,6 +844,7 @@ class EventForecast(Forecast):
 
 def __set_constant_value_units__(cls):
     if cls.axis == 'x':
+        # e.g. Prob(o < 10 MW). Forecast is in %, constant value is 10 MW
         object.__setattr__(cls, 'constant_value_units', cls.units)
         object.__setattr__(cls, 'units', '%')
     else:
