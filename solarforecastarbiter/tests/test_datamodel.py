@@ -1083,3 +1083,49 @@ def test_aggregate_type(il, at, aggregate, aggregate_observations):
     params['observations'] = aggregate_observations
     with pytest.raises(ValueError, match='must be one of'):
         datamodel.Aggregate(**params)
+
+
+def test_probabilistic_units(prob_forecasts):
+    params = prob_forecasts.to_dict()
+    assert 'constant_value_units' not in params
+    params['variable'] = 'ghi'
+    params['axis'] = 'x'
+    params['constant_values'] = [0, 1]
+
+    pfx = datamodel.ProbabilisticForecast(**params)
+    assert pfx.units == '%'
+    assert pfx.constant_value_units == 'W/m^2'
+
+    params['axis'] = 'y'
+
+    pfx = datamodel.ProbabilisticForecast(**params)
+    assert pfx.units == 'W/m^2'
+    assert pfx.constant_value_units == '%'
+
+
+def test_probabilistic_single_units(prob_forecast_constant_value):
+    params = prob_forecast_constant_value.to_dict()
+    assert 'constant_value_units' not in params
+    params['variable'] = 'ghi'
+    params['axis'] = 'x'
+
+    pfx = datamodel.ProbabilisticForecastConstantValue(**params)
+    assert pfx.units == '%'
+    assert pfx.constant_value_units == 'W/m^2'
+
+    params['axis'] = 'y'
+
+    pfx = datamodel.ProbabilisticForecastConstantValue(**params)
+    assert pfx.units == 'W/m^2'
+    assert pfx.constant_value_units == '%'
+
+
+def test_probabilistic_units_data_object_matching(
+        prob_forecasts, single_observation):
+    params = prob_forecasts.to_dict()
+    assert 'constant_value_units' not in params
+    params['variable'] = 'ghi'
+    params['axis'] = 'x'
+
+    pfx = datamodel.ProbabilisticForecast.from_dict(params)
+    datamodel.ForecastObservation(pfx, single_observation)
