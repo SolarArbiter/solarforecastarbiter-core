@@ -1259,7 +1259,7 @@ def __check_units__(*args):
             unique_units.add(arg.constant_value_units)
         else:
             unique_units.add(arg.units)
-    if not len(unique_units) == 1:
+    if len(unique_units) > 1:
         raise ValueError('All units must be identical.')
 
 
