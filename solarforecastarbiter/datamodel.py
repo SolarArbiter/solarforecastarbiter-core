@@ -848,7 +848,7 @@ def __set_constant_value_units__(cls):
         object.__setattr__(cls, 'constant_value_units', cls.units)
         object.__setattr__(cls, 'units', '%')
     else:
-        # e.g. Prob(o < f) = 90%. Forecast is in units of obs, constant value is %
+        # e.g. Prob(o < f) = 90%. Forecast in units of obs, constant value is %
         object.__setattr__(cls, 'constant_value_units', '%')
 
 
