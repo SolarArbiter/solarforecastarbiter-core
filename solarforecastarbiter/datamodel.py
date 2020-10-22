@@ -68,6 +68,11 @@ CLOSED_MAPPING = {
     'beginning': 'left',
     'ending': 'right'
 }
+ALLOWED_INTERVAL_LABELS = tuple(CLOSED_MAPPING.keys())
+ALLOWED_INTERVAL_VALUE_TYPES = (
+    'interval_mean', 'interval_max', 'interval_min', 'interval_median',
+    'instantaneous')
+ALLOWED_AGGREGATE_TYPES = ('sum', 'mean', 'median', 'max', 'min', 'std')
 
 
 # Keys are the categories passed to pandas groupby, values are the human
@@ -117,11 +122,6 @@ ALLOWED_QUALITY_FLAGS = tuple([
     if not k.startswith('VERSION IDENTIFIER') and
     not k.startswith("RESERVED")
 ]) + tuple(DERIVED_MASKS.keys())
-ALLOWED_INTERVAL_LABELS = ('beginning', 'ending', 'instant', 'event')
-ALLOWED_INTERVAL_VALUE_TYPES = (
-    'interval_mean', 'interval_max', 'interval_min', 'interval_median',
-    'instantaneous')
-ALLOWED_AGGREGATE_TYPES = ('sum', 'mean', 'median', 'max', 'min', 'std')
 
 
 def _time_conv(inp):
