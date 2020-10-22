@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
+import sentry_sdk
 
 
 from solarforecastarbiter import utils
@@ -499,6 +500,30 @@ def test_hijack_loggers(mocker):
     with utils.hijack_loggers(['testhijack']):
         assert logger.handlers[0] == new_handler
     assert logger.handlers[0] == old_handler
+
+
+def test_hijack_loggers_sentry(mocker):
+    events = set()
+
+    def before_send(event, hint):
+        events.add(event['logger'])
+        return
+
+    sentry_sdk.init(
+        "https://examplePublicKey@o0.ingest.sentry.io/0",
+        before_send=before_send)
+    logger = logging.getLogger('testlog')
+    with utils.hijack_loggers(['testlog']):
+        logging.getLogger('root').error('will show up')
+        logger.error('AHHH')
+    assert 'root' in events
+    assert 'testlog' not in events
+
+    events = set()
+    logging.getLogger('root').error('will show up')
+    logger.error('AHHH')
+    assert 'root' in events
+    assert 'testlog' in events
 
 
 @pytest.mark.parametrize('data,freq,expected', [

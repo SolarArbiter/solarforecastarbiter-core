@@ -79,6 +79,8 @@ Bug fixes
 * Fixed bug in process management when fetching NWP files which caused the
   script to hang indefinitely if a process were killed by the OS
   (:issue:`343`) (:pull:`594`)
+* Stop errors generated in the report process from being sent to
+  sentry (:issue:`329`) (:pull:`597`)
 
 
 Contributors

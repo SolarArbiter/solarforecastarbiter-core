@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from sentry_sdk.integrations import logging as sentry_logging
 
 
 from solarforecastarbiter import datamodel
@@ -268,10 +269,15 @@ def hijack_loggers(loggers, level=logging.INFO):
         logger = logging.getLogger(name)
         old_handlers[name] = logger.handlers
         logger.handlers = [handler]
+        sentry_logging.ignore_logger(name)
     yield handler
     for name in loggers:
         logger = logging.getLogger(name)
         logger.handlers = old_handlers[name]
+        try:
+            sentry_logging._IGNORED_LOGGERS.remove(name)
+        except Exception:
+            pass
     del handler
 
 
