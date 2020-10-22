@@ -90,7 +90,7 @@ def run_nwp(forecast, model, run_time, issue_time):
     ...     site=power_plant,
     ...     variable='ac_power',
     ...     interval_label='ending',
-    ...     interval_value_type='mean',
+    ...     interval_value_type='interval_mean',
     ...     interval_length='1h',
     ...     issue_time_of_day=datetime.time(hour=0),
     ...     run_length=pd.Timedelta('24h'),

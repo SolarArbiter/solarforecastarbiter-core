@@ -346,7 +346,7 @@ def test_invalid_variable(single_site):
     with pytest.raises(ValueError):
         datamodel.Observation(
             name='test', variable='noway',
-            interval_value_type='mean',
+            interval_value_type='interval_mean',
             interval_length=pd.Timedelta('1min'),
             interval_label='beginning',
             site=single_site,
@@ -1041,3 +1041,45 @@ def test_forecastobservation_null_uncertainty(
     assert datamodel.ForecastObservation.from_dict({
         'forecast': single_forecast.to_dict(), 'observation': obs.to_dict(),
         'uncertainty': 'observation_uncertainty'}).uncertainty is None
+
+
+@pytest.mark.parametrize('il,ivt', (
+    ('fail', 'fail'),
+    ('instantaneous', 'interval_mean'),
+    ('beginning', 'mean'),
+    pytest.param('instant', 'instantaneous',
+                 marks=pytest.mark.xfail(strict=True))
+))
+@pytest.mark.parametrize('obj', ('fx', 'obs', 'cdf'))
+def test_interval_validation(il, ivt, obj, ac_power_forecast_metadata,
+                             single_observation, prob_forecasts):
+    if obj == 'fx':
+        params = ac_power_forecast_metadata.to_dict()
+        obj = datamodel.Forecast
+    elif obj == 'obs':
+        params = single_observation.to_dict()
+        obj = datamodel.Observation
+    else:
+        params = prob_forecasts.to_dict()
+        obj = datamodel.ProbabilisticForecast
+    params['interval_label'] = il
+    params['interval_value_type'] = ivt
+    with pytest.raises(ValueError, match='must be one of'):
+        obj(**params)
+
+
+@pytest.mark.parametrize('il,at', (
+    ('fail', 'mean'),
+    ('beginning', 'notna'),
+    ('instant', 'mean'),
+    pytest.param('ending', 'sum',
+                 marks=pytest.mark.xfail(strict=True))
+))
+def test_aggregate_type(il, at, aggregate, aggregate_observations):
+    params = aggregate.to_dict()
+    params['interval_label'] = il
+    params['interval_length'] = pd.Timedelta('60m')
+    params['aggregate_type'] = at
+    params['observations'] = aggregate_observations
+    with pytest.raises(ValueError, match='must be one of'):
+        datamodel.Aggregate(**params)

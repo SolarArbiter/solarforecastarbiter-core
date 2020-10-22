@@ -68,6 +68,11 @@ CLOSED_MAPPING = {
     'beginning': 'left',
     'ending': 'right'
 }
+ALLOWED_INTERVAL_LABELS = tuple(CLOSED_MAPPING.keys())
+ALLOWED_INTERVAL_VALUE_TYPES = (
+    'interval_mean', 'interval_max', 'interval_min', 'interval_median',
+    'instantaneous')
+ALLOWED_AGGREGATE_TYPES = ('sum', 'mean', 'median', 'max', 'min', 'std')
 
 
 # Keys are the categories passed to pandas groupby, values are the human
@@ -481,6 +486,18 @@ def __set_units__(cls):
     object.__setattr__(cls, 'units', ALLOWED_VARIABLES[cls.variable])
 
 
+def __generic_oneof__(cls, field, allowed):
+    if getattr(cls, field) not in allowed:
+        raise ValueError(f'{field} must be one of {allowed}')
+
+
+def __check_interval_params__(cls):
+    __generic_oneof__(
+        cls, 'interval_label', ALLOWED_INTERVAL_LABELS)
+    __generic_oneof__(
+        cls, 'interval_value_type', ALLOWED_INTERVAL_VALUE_TYPES)
+
+
 @dataclass(frozen=True)
 class Observation(BaseModel):
     """
@@ -532,7 +549,10 @@ class Observation(BaseModel):
     provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
-    __post_init__ = __set_units__
+
+    def __post_init__(self):
+        __set_units__(self)
+        __check_interval_params__(self)
 
 
 @dataclass(frozen=True)
@@ -657,6 +677,8 @@ class Aggregate(BaseModel):
         __check_aggregate_interval_compatibility__(
             self.interval_length,
             *observations)
+        __generic_oneof__(self, 'aggregate_type', ALLOWED_AGGREGATE_TYPES)
+        __generic_oneof__(self, 'interval_label', ('beginning', 'ending'))
         object.__setattr__(self, 'interval_value_type', 'interval_mean')
 
 
@@ -746,6 +768,7 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
+        __check_interval_params__(self)
 
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
@@ -810,12 +833,11 @@ class EventForecast(Forecast):
     __blurb__: ClassVar[str] = 'Event Forecast'
 
     def __post_init__(self):
-        super().__post_init__()
-
         if self.interval_label != "event":
             raise ValueError("Interval label must be 'event'")
         elif self.variable != "event":
             raise ValueError("Variable must be 'event'")
+        super().__post_init__()
 
 
 @dataclass(frozen=True)
