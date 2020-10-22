@@ -1253,8 +1253,13 @@ def __check_axis_consistency__(axis, constant_values):
 def __check_units__(*args):
     if len(args) == 0:
         return
-    ref_unit = args[0].units
-    if not all(arg.units == ref_unit for arg in args):
+    unique_units = set()
+    for arg in args:
+        if getattr(arg, 'axis', None) == 'x':
+            unique_units.add(arg.constant_value_units)
+        else:
+            unique_units.add(arg.units)
+    if not len(unique_units) == 1:
         raise ValueError('All units must be identical.')
 
 
