@@ -147,6 +147,8 @@ def _dict_factory(inp):
             dict_[k] = _time_conv(v)
     if 'units' in dict_:
         del dict_['units']
+    if 'constant_value_units' in dict_:
+        del dict_['constant_value_units']
     if 'data_object' in dict_:
         del dict_['data_object']
     return dict_
@@ -840,10 +842,19 @@ class EventForecast(Forecast):
         super().__post_init__()
 
 
+def __set_constant_value_units__(cls):
+    if cls.axis == 'x':
+        object.__setattr__(cls, 'constant_value_units', cls.units)
+        object.__setattr__(cls, 'units', '%')
+    else:
+        object.__setattr__(cls, 'constant_value_units', '%')
+
+
 @dataclass(frozen=True)
 class _ProbabilisticForecastConstantValueBase:
     axis: str
     constant_value: float
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -908,12 +919,14 @@ class ProbabilisticForecastConstantValue(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
 
 
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
     constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float, int], ...]  # NOQA
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -981,6 +994,7 @@ class ProbabilisticForecast(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
         __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
 
