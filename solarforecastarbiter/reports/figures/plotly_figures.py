@@ -835,23 +835,22 @@ def bar(df, metric):
     data = df[(df['category'] == 'total') & (df['metric'] == metric)]
     y_range = None
     x_axis_kwargs = {}
-    x_values = data['abbrev']
+    x_values = data['abbrev'].str.cat(['\0' * i for i in data.index])
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
     metric_name = datamodel.ALLOWED_METRICS[metric]
 
     # remove height limit when long abbreviations are used or there are more
-    # than 5 pairs to problems with labels being cutt off.
+    # than 5 pairs to problems with labels being cut off.
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
-    longest_x_label = x_values.map(len).max()
+    longest_x_label = x_values.map(lambda x: len(x.rstrip('\0'))).max()
     if longest_x_label > 15 or x_values.size > 6:
         # Set explicit height and set automargin on x axis to allow for dynamic
         # sizing to accomodate long x axis labels. Height is set based on
         # length of longest x axis label, due to a failure that can occur when
         # plotly determines there is not enough space for automargins to work.
-        max_name_length = x_values.map(len).max()
         plot_height = plot_layout_args['height'] + (
-            max_name_length * X_LABEL_HEIGHT_FACTOR)
+            longest_x_label * X_LABEL_HEIGHT_FACTOR)
         plot_layout_args['height'] = plot_height
         x_axis_kwargs = {'automargin': True}
         if longest_x_label > 60:
@@ -861,7 +860,9 @@ def bar(df, metric):
 
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
-                         marker=go.bar.Marker(color=palette)))
+                         text=data['name'],
+                         marker=go.bar.Marker(color=palette),
+                         hovertemplate='(%{text}, %{y})<extra></extra>'))
     fig.update_layout(
         title=f'<b>{metric_name}</b>',
         xaxis_title=metric_name,
