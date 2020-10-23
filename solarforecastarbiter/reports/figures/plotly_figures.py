@@ -835,7 +835,10 @@ def bar(df, metric):
     data = df[(df['category'] == 'total') & (df['metric'] == metric)]
     y_range = None
     x_axis_kwargs = {}
-    x_values = data['abbrev'].str.cat(['\0' * i for i in data.index])
+    x_values = []
+    for val, ser in data[['abbrev']].groupby('abbrev'):
+        x_values += [val + ('\0' * i) for i in range(len(ser))]
+    x_values = pd.Series(x_values, name='abbrev')
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
     metric_name = datamodel.ALLOWED_METRICS[metric]
