@@ -27,6 +27,10 @@ from solarforecastarbiter.io.utils import (
 BASE_URL = 'https://api.solarforecastarbiter.org'
 logger = logging.getLogger(__name__)
 
+# Limit used to limit the amount of retrieved with a single request. Used
+# to break up large requests into smaller requests to avoid timeout.
+GET_VALUES_LIMIT = '365D'
+
 
 def request_cli_access_token(user, password, **kwargs):
     """Request an API access token from Auth0.
@@ -635,9 +639,12 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/observations/{observation_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_observation_df(req.json())
+        out = self._get_values(
+            f'/observations/{observation_id}/values',
+            start,
+            end,
+            parse_fn=json_payload_to_observation_df
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -1321,3 +1328,44 @@ class APISession(requests.Session):
             return self.get_probabilistic_forecast_constant_value
         else:
             raise ValueError('Invalid forecast type.')
+
+    @ensure_timestamps('start', 'end')
+    def _get_values(self, api_path, start, end, parse_fn, params={}):
+        """Breaks up a get requests for values into multiple requests limited
+        by the GET_VALUES_LIMIT value.
+
+        Parameters
+        ----------
+        api_path : str
+        start : pandas.Timestamp
+        end : pandas.Timestamp
+        parse_fn : function
+            A function used to parse the values into a panadas dataframe.
+        params : dict
+            Any additional parameters to be passed with the get function.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        dfs = []
+        request_start = end
+        if end - start > pd.Timedelta(GET_VALUES_LIMIT):
+            # Recurse toward the beginning of the requested period to avoid
+            # needing to sort the result
+            request_start = end - pd.Timedelta(GET_VALUES_LIMIT)
+            dfs.append(
+                self._get_values(
+                    api_path,
+                    start,
+                    request_start,
+                    parse_fn=parse_fn,
+                    params=params,
+                )
+            )
+        # request the last chunk of data < GET_VALUES_LIMIT
+        parameters = {'start': request_start, 'end': end}
+        parameters.update(params)
+        req = self.get(api_path, params=parameters)
+        dfs.append(parse_fn(req.json()))
+        return pd.concat(dfs)

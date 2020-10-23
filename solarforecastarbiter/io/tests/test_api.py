@@ -1620,3 +1620,17 @@ def test_api_session_forecast_get_by_type_invalid_type():
     test_session = api.APISession('token')
     with pytest.raises(ValueError):
         test_session._forecast_get_by_type('bad_type')
+
+
+def test_apisession__get_values(requests_mock, empty_df):
+    session = api.APISession('')
+    matcher = re.compile(
+        f'{session.base_url}/observations/.*/values')
+    requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
+    out = session._get_values(
+        '/observations/obsid/values',
+        pd.Timestamp('2017-01-01T12:00:00-0700'),
+        pd.Timestamp('2020-01-01T12:25:00-0700'),
+        utils.json_payload_to_observation_df,
+    )
+    pdt.assert_frame_equal(out, empty_df)
