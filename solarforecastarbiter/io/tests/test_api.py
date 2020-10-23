@@ -1640,7 +1640,7 @@ def value_callback(include_qf=False, freq='1H'):
     return fn
 
 
-def test_apisession_chunk_value_requests(requests_mock):
+def test_apisession_chunk_value_requests_obs_df(requests_mock):
     session = api.APISession('')
     callback = value_callback(True)
     start = pd.Timestamp('2017-01-01T12:00:00-0700')
@@ -1661,7 +1661,7 @@ def test_apisession_chunk_value_requests(requests_mock):
     pdt.assert_frame_equal(out, expected.tz_convert('UTC'))
 
 
-def test_apisession_chunk_value_requests(requests_mock):
+def test_apisession_chunk_value_requests_fx_series(requests_mock):
     session = api.APISession('')
     callback = value_callback(True)
     start = pd.Timestamp('2017-01-01T12:00:00-0700')
