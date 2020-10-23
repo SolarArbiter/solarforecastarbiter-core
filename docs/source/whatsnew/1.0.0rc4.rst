@@ -84,6 +84,8 @@ Bug fixes
   (:issue:`343`) (:pull:`594`)
 * Stop errors generated in the report process from being sent to
   sentry (:issue:`329`) (:pull:`597`)
+* Avoid stacking of forecasts errors in the Total plots in reports
+  and show the full forecast name on hover (:issue:`463`) (:pull:`599`)
 
 
 Contributors
