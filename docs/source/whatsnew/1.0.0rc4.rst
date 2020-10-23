@@ -53,6 +53,8 @@ Enhancements
 * Add the automatically generated `constant_value_units` attribute to
   :py:class:`datamodel.ProbabilisticForecast` and :py:class:`datamodel.ProbabilisticForecastConstantValue`
   (:issue:`470`) (:pull:`598`)
+* Enable downloading the forecast/observation metadata and the resampled
+  timeseries from a HTML report (:issue:`354`) (:pull:`601`)
 
 
 Bug fixes
