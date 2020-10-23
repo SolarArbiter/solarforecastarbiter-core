@@ -125,21 +125,26 @@
 </p>
 
 {% if timeseries_spec is defined %}
-<p>The plots below show the realigned and resampled time series of
-observation and forecast data as well as the distribution of forecast vs
-observation data.</p>
+<p>
+  The plots below show the realigned and resampled time series of observation
+  and forecast data as well as the distribution of forecast vs observation data.
+  This resampled and realigned timeseries data may also be downloaded in
+  <a href="javascript:download_timeseries_data_as_csv('{{ report_name }}')">CSV format</a>.
+</p>
 
 <p>Controls to pan, zoom, and save the plot are shown on the
 right. Clicking on an item in the legend will hide/show it.</p>
 
 <div id="timeseries-div"></div>
 {% if includes_distribution %}
-<p>For forecasts parameterized symmetrically around the 50th percentile,
-brighter colors indicate percentiles farther from the 50th percentile and
-darker colors indicate percentiles closer to the 50th percentile. For forecasts
-parameterized asymmetrically around the 50th percentile, brighter colors
-indicate smaller percentiles and darker colors indicate larger percentiles.
-Use the hover tool to determine the percentile.</p>
+<p>
+  For forecasts parameterized symmetrically around the 50th percentile,
+  brighter colors indicate percentiles farther from the 50th percentile and
+  darker colors indicate percentiles closer to the 50th percentile. For forecasts
+  parameterized asymmetrically around the 50th percentile, brighter colors
+  indicate smaller percentiles and darker colors indicate larger percentiles.
+  Use the hover tool to determine the percentile.
+</p>
 {% endif %}
 
 <script>
@@ -147,6 +152,7 @@ ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
 Object.assign(ts_plot,{config: {responsive: true}});
 Plotly.newPlot("timeseries-div", ts_plot);
 </script>
+{{ macros.download_timeseries_script () | safe }}
 {% endif %}
 
 <div id="scatter-div"></div>

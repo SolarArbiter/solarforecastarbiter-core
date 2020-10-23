@@ -204,6 +204,20 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
+{% set getblob = "
+        //addresses IE
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename)
+        } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.target = '_blank'
+            link.style.visibility = 'hidden'
+            link.dispatchEvent(new MouseEvent('click'))
+        }
+" %}
+
 {% macro download_metrics_script() %}
 <script>
     function json_to_csv(source) {
@@ -287,6 +301,48 @@ forecasts/single/{{ forecast.forecast_id }}
             link.style.visibility = 'hidden'
             link.dispatchEvent(new MouseEvent('click'))
         }
+    }
+</script>
+{% endmacro %}
+
+
+{% macro download_timeseries_script() %}
+<script>
+    function extract_plotly_data(plot) {
+      if (typeof plot === 'undefined') { return ''}
+      const data = plot.data;
+      const ncolumns = data.length;
+      const nrows = data[0].x.length;
+      const colnames = [''];
+      const lines = [];
+
+      for (let j = 0; j < ncolumns; j++) {
+        colnames.push(data[j].legendgroup)
+      }
+      lines.push(colnames.join(','))
+
+      for (let i = 0; i < nrows; i++) {
+        let row = [];
+        row.push(data[0].x[i])
+        for (let j = 0; j < ncolumns; j++) {
+          let val = data[j].y[i]
+          if(val == null){
+            val = 'nan';
+          }else{
+            val = val.toString()
+          }
+          row.push(val)
+        }  
+        lines.push(row.join(','))
+      }
+      return lines.join('\n').concat('\n')
+    }
+      
+    function download_timeseries_data_as_csv(report_name) {
+        const filename = report_name.replace(/ /g, '_') + '_timeseries.csv'
+        const csvdata = extract_plotly_data(ts_plot)
+        const blob = new Blob([csvdata], { type: 'text/csv;charset=utf-8;' })
+        {{ getblob }}
     }
 </script>
 {% endmacro %}
