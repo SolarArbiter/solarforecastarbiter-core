@@ -836,7 +836,7 @@ def bar(df, metric):
     y_range = None
     x_axis_kwargs = {}
     x_values = []
-    # to avoid stacking, add null characters to fx with 
+    # to avoid stacking, add null characters to fx with
     # same abbreviated name. GH463
     for val, ser in data[['abbrev']].groupby('abbrev'):
         x_values += [val + ('\0' * i) for i in range(len(ser))]
