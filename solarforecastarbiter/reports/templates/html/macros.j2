@@ -204,7 +204,7 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
-{% macro download_csv_script() %}
+{% macro download_metrics_script() %}
 <script>
     function json_to_csv(source) {
         const columns = Object.getOwnPropertyNames(source[0])
@@ -234,8 +234,47 @@ forecasts/single/{{ forecast.forecast_id }}
 
     function download_metrics_as_csv(report_name) {
         const filename = report_name.replace(/ /g, '_') + '_metrics.csv'
-        filetext = json_to_csv(metrics_json)
+        const filetext = json_to_csv(metrics_json)
         const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
+
+        //addresses IE
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename)
+        } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.target = '_blank'
+            link.style.visibility = 'hidden'
+            link.dispatchEvent(new MouseEvent('click'))
+        }
+    }
+
+    function download_metrics_as_json(report_name) {
+        const filename = report_name.replace(/ /g, '_') + '_metrics.json'
+        const blob = new Blob([JSON.stringify(metrics_json)], { type: 'application/json;charset=utf-8;' })
+
+        //addresses IE
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename)
+        } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = filename
+            link.target = '_blank'
+            link.style.visibility = 'hidden'
+            link.dispatchEvent(new MouseEvent('click'))
+        }
+    }
+</script>
+{% endmacro %}
+
+
+{% macro download_metadata_script() %}
+<script>
+    function download_metadata_as_json(report_name) {
+        const filename = report_name.replace(/ /g, '_') + '_metadata.json'
+        const blob = new Blob([JSON.stringify(metadata_json)], { type: 'application/json;charset=utf-8;' })
 
         //addresses IE
         if (navigator.msSaveBlob) {

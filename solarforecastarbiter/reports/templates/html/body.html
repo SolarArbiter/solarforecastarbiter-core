@@ -119,6 +119,11 @@
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
 {% include "obsfx_table.html" %}
 
+<p>
+  More metadata for the objects in this report may be downloaded in
+  <a href="javascript:download_metadata_as_json('{{ report_name }}')">JSON format</a>.
+</p>
+
 {% if timeseries_spec is defined %}
 <p>The plots below show the realigned and resampled time series of
 observation and forecast data as well as the distribution of forecast vs
@@ -165,6 +170,8 @@ Plotly.newPlot("scatter-div", scat_plot);
   Plotly.newPlot("timeseries-prob-div", ts_prob_plot);
 </script>
 {% endif %}
+{% include "load_metadata.html" %}
+{{ macros.download_metadata_script () | safe }}
 {% endblock %}
 
 {% block datavalidation %}
@@ -199,8 +206,9 @@ Plotly.newPlot("scatter-div", scat_plot);
 <p>
   A table of metrics over the entire study period and figures for the selected
   categories are shown below.
-  Metrics may be downloaded in CSV format by clicking
-  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
+  Metrics may be downloaded in
+  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">CSV format</a>
+  or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
 </p>
 
 {{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
@@ -227,7 +235,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endfor %}
 </div>
 {% include "load_metrics.html" %}
-{{ macros.download_csv_script () | safe }}
+{{ macros.download_metrics_script () | safe }}
 {% endblock %}
 
 
