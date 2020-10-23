@@ -171,14 +171,12 @@ Plotly.newPlot("scatter-div", scat_plot);
 <h3 id="data-validation">Data Validation</h3>
 {% include "data_validation_pre_text" %}
 
-{% for filter in report.report_parameters.filters %}
-  {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
-    {% set valtable = True %}
-    {{ macros.validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags) }}
+{% if report.report_parameters.filters %}
+  {{ macros.validation_metadata_table(report.report_parameters.filters) }}
   <br>
-  {% endif %}
-{% endfor %}
-{% if valtable | default(False) %}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations) }}
+  <br>
+{% else %}
   <div class="alert alert-info">No filters applied</div>
 {% endif %}
 
