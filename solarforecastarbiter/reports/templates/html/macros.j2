@@ -250,35 +250,13 @@ forecasts/single/{{ forecast.forecast_id }}
         const filename = report_name.replace(/ /g, '_') + '_metrics.csv'
         const filetext = json_to_csv(metrics_json)
         const blob = new Blob([filetext], { type: 'text/csv;charset=utf-8;' })
-
-        //addresses IE
-        if (navigator.msSaveBlob) {
-            navigator.msSaveBlob(blob, filename)
-        } else {
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = filename
-            link.target = '_blank'
-            link.style.visibility = 'hidden'
-            link.dispatchEvent(new MouseEvent('click'))
-        }
+        {{ getblob }}
     }
 
     function download_metrics_as_json(report_name) {
         const filename = report_name.replace(/ /g, '_') + '_metrics.json'
         const blob = new Blob([JSON.stringify(metrics_json)], { type: 'application/json;charset=utf-8;' })
-
-        //addresses IE
-        if (navigator.msSaveBlob) {
-            navigator.msSaveBlob(blob, filename)
-        } else {
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = filename
-            link.target = '_blank'
-            link.style.visibility = 'hidden'
-            link.dispatchEvent(new MouseEvent('click'))
-        }
+        {{ getblob }}
     }
 </script>
 {% endmacro %}
@@ -289,18 +267,7 @@ forecasts/single/{{ forecast.forecast_id }}
     function download_metadata_as_json(report_name) {
         const filename = report_name.replace(/ /g, '_') + '_metadata.json'
         const blob = new Blob([JSON.stringify(metadata_json)], { type: 'application/json;charset=utf-8;' })
-
-        //addresses IE
-        if (navigator.msSaveBlob) {
-            navigator.msSaveBlob(blob, filename)
-        } else {
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = filename
-            link.target = '_blank'
-            link.style.visibility = 'hidden'
-            link.dispatchEvent(new MouseEvent('click'))
-        }
+        {{ getblob }}
     }
 </script>
 {% endmacro %}
