@@ -1640,7 +1640,7 @@ def value_callback(include_qf=False, freq='1H'):
     return fn
 
 
-def test_apisession__get_values_obs_data(requests_mock):
+def test_apisession_chunk_value_requests(requests_mock):
     session = api.APISession('')
     callback = value_callback(True)
     start = pd.Timestamp('2017-01-01T12:00:00-0700')
@@ -1652,7 +1652,7 @@ def test_apisession__get_values_obs_data(requests_mock):
     matcher = re.compile(
         f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=callback)
-    out = session._get_values(
+    out = session.chunk_value_requests(
         '/observations/obsid/values',
         start,
         end,
@@ -1661,7 +1661,7 @@ def test_apisession__get_values_obs_data(requests_mock):
     pdt.assert_frame_equal(out, expected.tz_convert('UTC'))
 
 
-def test_apisession__get_values_fx_data(requests_mock):
+def test_apisession_chunk_value_requests(requests_mock):
     session = api.APISession('')
     callback = value_callback(True)
     start = pd.Timestamp('2017-01-01T12:00:00-0700')
@@ -1674,7 +1674,7 @@ def test_apisession__get_values_fx_data(requests_mock):
     matcher = re.compile(
         f'{session.base_url}/forecasts/.*/values')
     requests_mock.register_uri('GET', matcher, content=callback)
-    out = session._get_values(
+    out = session.chunk_value_requests(
         '/forecasts/single/fxid/values',
         start,
         end,
@@ -1687,12 +1687,13 @@ def test_apisession__get_values_fx_data(requests_mock):
     '180D',
     '90D',
 ])
-def test_apisession__get_values_recursion(mocker, requests_mock, limit):
+def test_apisession_chunk_value_requests_recursion(
+        mocker, requests_mock, limit):
     session = api.APISession('')
     mocked_get = mocker.patch.object(
         session,
-        '_get_values',
-        side_effect=session._get_values
+        'chunk_value_requests',
+        side_effect=session.chunk_value_requests
     )
     callback = value_callback(True)
     start = pd.Timestamp('2017-01-01T12:00:00-0700')
@@ -1700,7 +1701,7 @@ def test_apisession__get_values_recursion(mocker, requests_mock, limit):
     matcher = re.compile(
         f'{session.base_url}/forecasts/.*/values')
     requests_mock.register_uri('GET', matcher, content=callback)
-    session._get_values(
+    session.chunk_value_requests(
         '/forecasts/single/fxid/values',
         start,
         end,

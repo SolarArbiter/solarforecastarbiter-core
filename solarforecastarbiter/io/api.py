@@ -639,7 +639,7 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        out = self._get_values(
+        out = self.chunk_value_requests(
             f'/observations/{observation_id}/values',
             start,
             end,
@@ -703,7 +703,7 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        out = self._get_values(
+        out = self.chunk_value_requests(
             f'/forecasts/single/{forecast_id}/values',
             start,
             end,
@@ -770,7 +770,7 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        out = self._get_values(
+        out = self.chunk_value_requests(
             f'/forecasts/cdf/single/{forecast_id}/values',
             start,
             end,
@@ -1248,7 +1248,7 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        out = self._get_values(
+        out = self.chunk_value_requests(
             f'/aggregates/{aggregate_id}/values',
             start,
             end,
@@ -1338,7 +1338,7 @@ class APISession(requests.Session):
         else:
             raise ValueError('Invalid forecast type.')
 
-    def _get_values(
+    def chunk_value_requests(
             self, api_path, start, end, parse_fn, params={},
             request_limit=GET_VALUES_LIMIT):
         """Breaks up a get requests for values into multiple requests limited
@@ -1369,7 +1369,7 @@ class APISession(requests.Session):
             # needing to sort the result.
             request_start = end - pd.Timedelta(request_limit)
             data_objects.append(
-                self._get_values(
+                self.chunk_value_requests(
                     api_path,
                     start,
                     request_start,
