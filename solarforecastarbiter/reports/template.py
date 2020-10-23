@@ -63,7 +63,7 @@ def build_metadata_json(report):
         return "[]"
 
     drop_keys = {
-        '__blurb__', 'extra_parameters', 'site', 'aggregate',
+        '__blurb__', 'site', 'aggregate',
     }
 
     def _process_forecast(fx):
