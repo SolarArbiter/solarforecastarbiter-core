@@ -145,7 +145,7 @@ forecasts/single/{{ forecast.forecast_id }}
     <tr class="header">
       <th style="text-align: left;">Aligned Pair</th>
       {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {{ proc_fxobs.name }}
       </th>
       {% endfor %}
@@ -153,7 +153,7 @@ forecasts/single/{{ forecast.forecast_id }}
     <tr class="header">
       <th style="text-align: left;">Observation</th>
       {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {{ proc_fxobs.original.data_object.name }}
       </th>
       {% endfor %}
