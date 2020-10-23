@@ -703,9 +703,12 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/forecasts/single/{forecast_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_forecast_series(req.json())
+        out = self._get_values(
+            f'/forecasts/single/{forecast_id}/values',
+            start,
+            end,
+            json_payload_to_forecast_series,
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -767,9 +770,12 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/forecasts/cdf/single/{forecast_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_forecast_series(req.json())
+        out = self._get_values(
+            f'/forecasts/cdf/single/{forecast_id}/values',
+            start,
+            end,
+            json_payload_to_forecast_series
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -1242,9 +1248,12 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/aggregates/{aggregate_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_observation_df(req.json())
+        out = self._get_values(
+            f'/aggregates/{aggregate_id}/values',
+            start,
+            end,
+            json_payload_to_observation_df
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -1329,10 +1338,11 @@ class APISession(requests.Session):
         else:
             raise ValueError('Invalid forecast type.')
 
-    @ensure_timestamps('start', 'end')
-    def _get_values(self, api_path, start, end, parse_fn, params={}):
+    def _get_values(
+            self, api_path, start, end, parse_fn, params={},
+            request_limit=GET_VALUES_LIMIT):
         """Breaks up a get requests for values into multiple requests limited
-        by the GET_VALUES_LIMIT value.
+        by the request_limit argument.
 
         Parameters
         ----------
@@ -1340,32 +1350,41 @@ class APISession(requests.Session):
         start : pandas.Timestamp
         end : pandas.Timestamp
         parse_fn : function
-            A function used to parse the values into a panadas dataframe.
+            A function used to parse json api response into a pandas Series
+            or DataFrame.
         params : dict
             Any additional parameters to be passed with the get function.
+        request_limit : string
+            Timedelta string describing maximum request length.
 
         Returns
         -------
-        pandas.DataFrame
+        all_data: pandas.DataFrame or pandas.Series
+            The concatenated results of each request when parsed by parse_fn.
         """
-        dfs = []
-        request_start = end
-        if end - start > pd.Timedelta(GET_VALUES_LIMIT):
+        data_objects = []
+        request_start = start
+        if end - start.tz_convert(end.tz) > pd.Timedelta(request_limit):
             # Recurse toward the beginning of the requested period to avoid
-            # needing to sort the result
-            request_start = end - pd.Timedelta(GET_VALUES_LIMIT)
-            dfs.append(
+            # needing to sort the result.
+            request_start = end - pd.Timedelta(request_limit)
+            data_objects.append(
                 self._get_values(
                     api_path,
                     start,
                     request_start,
                     parse_fn=parse_fn,
                     params=params,
+                    request_limit=request_limit,
                 )
             )
-        # request the last chunk of data < GET_VALUES_LIMIT
+        # Request the remaining data, period < = request_limit
         parameters = {'start': request_start, 'end': end}
         parameters.update(params)
         req = self.get(api_path, params=parameters)
-        dfs.append(parse_fn(req.json()))
-        return pd.concat(dfs)
+        data_objects.append(parse_fn(req.json()))
+        all_data = pd.concat(data_objects)
+
+        # drop duplicate indices
+        all_data = all_data[~all_data.index.duplicated(keep='first')]
+        return all_data

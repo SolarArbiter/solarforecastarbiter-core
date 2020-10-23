@@ -2,6 +2,7 @@ import json
 from random import randint
 import re
 import copy
+from urllib.parse import parse_qs
 
 
 import numpy as np
@@ -1622,15 +1623,91 @@ def test_api_session_forecast_get_by_type_invalid_type():
         test_session._forecast_get_by_type('bad_type')
 
 
-def test_apisession__get_values(requests_mock, empty_df):
+def value_callback(include_qf=False, freq='1H'):
+    def fn(request, context):
+        query_params = parse_qs(request.query)
+        start = pd.Timestamp(query_params['start'][0]).floor(freq)
+        end = pd.Timestamp(query_params['end'][0]).floor(freq)
+        idx = pd.date_range(start, end, freq=freq)
+        data = {'value': 1.0}
+        if include_qf:
+            data.update({'quality_flag': 0})
+        df = pd.DataFrame(index=idx, data=data)
+        df['timestamp'] = df.index
+        resp_json = df.to_json(orient="records", date_format='iso')
+        out = bytes('{"values": ' + resp_json + '}', 'utf8')
+        return out
+    return fn
+
+
+def test_apisession__get_values_obs_data(requests_mock):
     session = api.APISession('')
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    expected = pd.DataFrame(
+        index=pd.date_range(start, end, freq='1H', name='timestamp'),
+        data={'value': 1.0, 'quality_flag': 0},
+    )
     matcher = re.compile(
         f'{session.base_url}/observations/.*/values')
-    requests_mock.register_uri('GET', matcher, content=b'{"values":[]}')
+    requests_mock.register_uri('GET', matcher, content=callback)
     out = session._get_values(
         '/observations/obsid/values',
-        pd.Timestamp('2017-01-01T12:00:00-0700'),
-        pd.Timestamp('2020-01-01T12:25:00-0700'),
+        start,
+        end,
         utils.json_payload_to_observation_df,
     )
-    pdt.assert_frame_equal(out, empty_df)
+    pdt.assert_frame_equal(out, expected.tz_convert('UTC'))
+
+
+def test_apisession__get_values_fx_data(requests_mock):
+    session = api.APISession('')
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    expected = pd.Series(
+        1.,
+        index=pd.date_range(start, end, freq='1H', name='timestamp'),
+        name='value',
+    )
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/.*/values')
+    requests_mock.register_uri('GET', matcher, content=callback)
+    out = session._get_values(
+        '/forecasts/single/fxid/values',
+        start,
+        end,
+        utils.json_payload_to_forecast_series,
+    )
+    pdt.assert_series_equal(out, expected.tz_convert('UTC'))
+
+
+@pytest.mark.parametrize('limit', [
+    '180D',
+    '90D',
+])
+def test_apisession__get_values_recursion(mocker, requests_mock, limit):
+    session = api.APISession('')
+    mocked_get = mocker.patch.object(
+        session,
+        '_get_values',
+        side_effect=session._get_values
+    )
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/.*/values')
+    requests_mock.register_uri('GET', matcher, content=callback)
+    session._get_values(
+        '/forecasts/single/fxid/values',
+        start,
+        end,
+        utils.json_payload_to_forecast_series,
+        request_limit=limit,
+    )
+    # assert number of recursive calls is the period / limit plus the
+    # original call
+    expected_n_calls = int((end - start) / pd.Timedelta(limit)) + 1
+    assert mocked_get.call_count == expected_n_calls
