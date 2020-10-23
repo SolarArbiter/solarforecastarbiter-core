@@ -836,6 +836,8 @@ def bar(df, metric):
     y_range = None
     x_axis_kwargs = {}
     x_values = []
+    # to avoid stacking, add null characters to fx with 
+    # same abbreviated name. GH463
     for val, ser in data[['abbrev']].groupby('abbrev'):
         x_values += [val + ('\0' * i) for i in range(len(ser))]
     x_values = pd.Series(x_values, name='abbrev')
@@ -846,6 +848,7 @@ def bar(df, metric):
     # remove height limit when long abbreviations are used or there are more
     # than 5 pairs to problems with labels being cut off.
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
+    # ok to cut off null characters at the end of the labels
     longest_x_label = x_values.map(lambda x: len(x.rstrip('\0'))).max()
     if longest_x_label > 15 or x_values.size > 6:
         # Set explicit height and set automargin on x axis to allow for dynamic
