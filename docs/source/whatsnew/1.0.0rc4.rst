@@ -55,6 +55,8 @@ Enhancements
   (:issue:`470`) (:pull:`598`)
 * Enable downloading the forecast/observation metadata and the resampled
   timeseries from a HTML report (:issue:`354`) (:pull:`601`)
+* Add :py:meth:`io.api.APISession.chunk_value_requests` for requesting large
+  amounts of data. (:issue:`573`)(:pull:`600`)
 
 
 Bug fixes

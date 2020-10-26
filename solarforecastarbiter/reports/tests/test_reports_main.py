@@ -45,7 +45,7 @@ def _test_data(report_objects, ref_forecast_id, remove_orca):
 
 @pytest.fixture()
 def mock_data(mocker, _test_data):
-    def get_data(id_, start, end, interval_label=None):
+    def get_data(id_, start, end, interval_label=None, **kwargs):
         return _test_data[id_].loc[start:end]
 
     get_forecast_values = mocker.patch(
@@ -110,7 +110,7 @@ def _test_event_data(event_report_objects, remove_orca):
 
 @pytest.fixture()
 def mock_event_data(mocker, _test_event_data):
-    def get_data(id_, start, end, interval_label=None):
+    def get_data(id_, start, end, interval_label=None, **kwargs):
         return _test_event_data[id_].loc[start:end]
 
     get_forecast_values = mocker.patch(
