@@ -610,8 +610,9 @@ class APISession(requests.Session):
                         dtype='datetime64[D]')
 
     @ensure_timestamps('start', 'end')
-    def get_observation_values(self, observation_id, start, end,
-                               interval_label=None):
+    def get_observation_values(
+            self, observation_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get observation values from start to end for observation_id from the
         API
@@ -628,6 +629,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -643,7 +647,8 @@ class APISession(requests.Session):
             f'/observations/{observation_id}/values',
             start,
             end,
-            parse_fn=json_payload_to_observation_df
+            parse_fn=json_payload_to_observation_df,
+            request_limit=request_limit,
         )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
@@ -675,8 +680,8 @@ class APISession(requests.Session):
         return mint, maxt
 
     @ensure_timestamps('start', 'end')
-    def get_forecast_values(self, forecast_id, start, end,
-                            interval_label=None):
+    def get_forecast_values(self, forecast_id, start, end, interval_label=None,
+                            request_limit=GET_VALUES_LIMIT):
         """
         Get forecast values from start to end for forecast_id
 
@@ -692,6 +697,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -708,6 +716,7 @@ class APISession(requests.Session):
             start,
             end,
             json_payload_to_forecast_series,
+            request_limit=request_limit
         )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
@@ -741,7 +750,8 @@ class APISession(requests.Session):
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_constant_value_values(
-            self, forecast_id, start, end, interval_label=None):
+            self, forecast_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get forecast values from start to end for forecast_id
 
@@ -759,6 +769,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -774,14 +787,16 @@ class APISession(requests.Session):
             f'/forecasts/cdf/single/{forecast_id}/values',
             start,
             end,
-            json_payload_to_forecast_series
+            json_payload_to_forecast_series,
+            request_limit=request_limit,
         )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_values(
-            self, forecast_id, start, end, interval_label=None):
+            self, forecast_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get all probabilistic forecast values for each from start to end for
         forecast_id
@@ -798,6 +813,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -816,7 +834,7 @@ class APISession(requests.Session):
             df_dict[str(cv.constant_value)] = \
                 self.get_probabilistic_forecast_constant_value_values(
                     forecast_id=cv.forecast_id, start=start, end=end,
-                    interval_label=interval_label)
+                    interval_label=interval_label, request_limit=request_limit)
         return pd.DataFrame(df_dict)
 
     def post_observation_values(self, observation_id, observation_df,
@@ -1219,8 +1237,9 @@ class APISession(requests.Session):
         return self.get_aggregate(new_id)
 
     @ensure_timestamps('start', 'end')
-    def get_aggregate_values(self, aggregate_id, start, end,
-                             interval_label=None):
+    def get_aggregate_values(
+            self, aggregate_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get aggregate values from start to end for aggregate_id from the
         API
@@ -1237,6 +1256,9 @@ class APISession(requests.Session):
             If beginning or ending, return only data that is
             valid between start and end. If None, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -1252,13 +1274,15 @@ class APISession(requests.Session):
             f'/aggregates/{aggregate_id}/values',
             start,
             end,
-            json_payload_to_observation_df
+            json_payload_to_observation_df,
+            request_limit=request_limit,
         )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
     @ensure_timestamps('start', 'end')
-    def get_values(self, obj, start, end, interval_label=None):
+    def get_values(self, obj, start, end, interval_label=None,
+                   request_limit=GET_VALUES_LIMIT):
         """
         Get time series values from start to end for object from the API
 
@@ -1274,6 +1298,9 @@ class APISession(requests.Session):
             If beginning or ending, return only data that is
             valid between start and end. If None, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -1302,7 +1329,8 @@ class APISession(requests.Session):
         elif isinstance(obj, datamodel.Observation):
             f = self.get_observation_values
             obj_id = obj.observation_id
-        return f(obj_id, start, end, interval_label=interval_label)
+        return f(obj_id, start, end, interval_label=interval_label,
+                 request_limit=request_limit)
 
     def get_user_info(self):
         """
@@ -1355,7 +1383,8 @@ class APISession(requests.Session):
         params : dict
             Any additional parameters to be passed with the get function.
         request_limit : string
-            Timedelta string describing maximum request length.
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
