@@ -14,8 +14,8 @@ from solarforecastarbiter.validation import quality_mapping
 logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
-FILL_RESULT_TOTAL_STRING = "Total {0}Forecast Values {1}"
-DISCARD_DATA_STRING = "Values Discarded by Alignment"
+FILL_RESULT_TOTAL_STRING = "Total Missing {0}Forecast Values {1}"
+DISCARD_DATA_STRING = "{0} Values Discarded by Alignment to {1}"
 UNDEFINED_DATA_STRING = "Undefined Values"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
 FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
@@ -536,10 +536,12 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
 
     # Return dict summarizing results
     results = {
-        fx.__blurb__ + " " + DISCARD_DATA_STRING:
-            len(fx_data.dropna(how="any")) - len(fx_aligned),
-        obs.__blurb__ + " " + DISCARD_DATA_STRING:
-            len(obs_data) - len(observation_values),
+        DISCARD_DATA_STRING.format(
+            fx.__blurb__, "Validated, Resampled " + obs.__blurb__):
+                len(fx_data.dropna(how="any")) - len(fx_aligned),
+        DISCARD_DATA_STRING.format(
+            "Validated, Resampled " + obs.__blurb__, fx.__blurb__):
+                len(obs_data) - len(observation_values),
         fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
             int(undefined_fx),
         obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
@@ -748,7 +750,7 @@ def process_forecast_observations(forecast_observations, filters,
             name='Observation Values Discarded Before Resampling',
             count=counts['TOTAL DISCARD BEFORE RESAMPLE']))
         preproc_results.append(datamodel.PreprocessingResult(
-            name='Resampled Observation Intervals Discarded',
+            name='Resampled Observation Values Discarded',
             count=counts['TOTAL DISCARD AFTER RESAMPLE']))
 
         # Align and create processed pair
