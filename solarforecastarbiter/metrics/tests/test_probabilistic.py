@@ -287,3 +287,19 @@ def test_sharpness(fx_lower, fx_upper, value):
 def test_crps(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
     assert crps == value
+
+
+@pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
+    # 2 samples, 3 CDF intervals
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),   # fx
+        np.array([[0, 100, 100], [0, 100, 100]]), # fx_prob
+        np.array([[10, 20, 30], [10, 20, 30]]),   # ref
+        np.array([[0, 0, 100], [0, 0, 100]]),     # ref_prob
+        np.array([8, 8]),                         # obs
+        1 - 10 / 20,
+    ),
+])
+def test_crps_skill_score(obs, fx, fx_prob, ref, ref_prob, value):
+    crpss = prob.crps_skill_score(obs, fx, fx_prob, ref, ref_prob)
+    assert crpss == value
