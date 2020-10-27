@@ -347,6 +347,7 @@ files with site and observation metadata.
    io.reference_observations.arm
    io.reference_observations.pvdaq
    io.reference_observations.eia
+   io.reference_observations.bsrn
 
 SFA API
 =======

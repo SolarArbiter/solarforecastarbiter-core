@@ -47,12 +47,12 @@ Data Files
 Modules
 -------
 * :py:mod:`solarforecastarbiter.io.reference_observations.reference_data`
-   This module coordinates the initialization and update process. It also 
+   This module coordinates the initialization and update process. It also
    contains the `NETWORKHANDLER_MAP` dictionary, which maps network names to
    the correct `Network Handlers`_. The functions in the module are utilized by
    the CLI `referencedata` command.
 
-* :py:mod:`solarforecastarbiter.io.reference_observations.common` 
+* :py:mod:`solarforecastarbiter.io.reference_observations.common`
    The `common` module contains utility functions for use throughout the
    `reference_data` subpackage. It has useful functions for converting
    external data into Solar Forecast Arbiter Datamodel objects and
@@ -72,7 +72,7 @@ The required network handler functions are:
 * `initialize_site_observations(api, site)`
    Create an observation at the site for each variable available from the
    network.
-      
+
       * api: :py:class:`solarforecastarbiter.io.api.APISession`
       * site: :py:class:`solarforecastarbiter.datamodel.Site`
 
@@ -146,9 +146,15 @@ Available Network Handlers
    :py:mod:`solarforecastarbiter.io.reference_observations.pvdaq`
 
 * EIA: U.S. Energy Information Adminstration Open Data\*
-  https://www.eia.gov/opendata/
+   https://www.eia.gov/opendata/
 
-  :py:mod:`solarforecastarbiter.io.reference_observations.eia`
+   :py:mod:`solarforecastarbiter.io.reference_observations.eia`
 
-\* Requesting data from these networks requires a valid api key for their
-associated api.
+* WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network\*
+   https://bsrn.awi.de
+
+   :py:mod:`solarforecastarbiter.io.reference_observations.bsrn`
+
+
+\* Requesting data from these networks requires a valid api key or other
+credentials for the associated API.
