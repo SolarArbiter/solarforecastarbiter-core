@@ -1,6 +1,7 @@
 import asyncio
 from functools import partial, wraps
 import logging
+import os
 import signal
 import threading
 
@@ -34,9 +35,14 @@ async def run_in_executor(func, *args, **kwargs):
 
 def make_session():
     """Make an aiohttp session"""
-    conn = aiohttp.TCPConnector(limit_per_host=20)
+    conn = aiohttp.TCPConnector(limit_per_host=int(
+        os.getenv('AIO_CONN_LIMIT', 10)))
     timeout = aiohttp.ClientTimeout(
-        total=60, connect=10, sock_read=30, sock_connect=10)
+        total=int(os.getenv('AIO_TOTAL_TIMEOUT', 80)),
+        connect=int(os.getenv('AIO_CONN_TIMEOUT', 15)),
+        sock_read=int(os.getenv('AOI_READ_TIMEOUT', 30)),
+        sock_connect=int(os.getenv('AIO_CONN_TIMEOUT', 15)),
+    )
     s = aiohttp.ClientSession(connector=conn, timeout=timeout)
     return s
 
