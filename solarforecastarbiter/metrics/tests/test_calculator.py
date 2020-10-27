@@ -306,7 +306,7 @@ def test_calculate_metrics_with_probablistic(single_observation,
     verify_metric_result(result[0],
                          proc_prfx_obs,
                          LIST_OF_CATEGORIES,
-                         probabilistic._REQ_DIST)
+                         set(probabilistic._REQ_DIST) - set(probabilistic._REQ_REF_FX))
 
     # With reference
     ref_fx_values = fx_values + .5
@@ -336,11 +336,11 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
     expected = {
         0: ('total', 'crps', '0', 17.247),
-        1: ('year', 'crps', '2019', 17.247),
-        2: ('season', 'crps', 'JJA', 17.247),
-        3: ('month', 'crps', 'Aug', 17.247),
-        4: ('hour', 'crps', '0', 19.801000000000002),
-        5: ('hour', 'crps', '1', 19.405)
+        2: ('year', 'crps', '2019', 17.247),
+        4: ('season', 'crps', 'JJA', 17.247),
+        6: ('month', 'crps', 'Aug', 17.247),
+        8: ('hour', 'crps', '0', 19.801000000000002),
+        9: ('hour', 'crps', '1', 19.405)
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
