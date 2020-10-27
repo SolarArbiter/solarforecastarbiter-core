@@ -10,7 +10,8 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel
-from solarforecastarbiter.metrics import deterministic, probabilistic, event
+from solarforecastarbiter.metrics import (
+    deterministic, probabilistic, event, summary)
 
 
 logger = logging.getLogger(__name__)
@@ -602,3 +603,96 @@ def _season_from_months(months):
     seasons = np.array(["DJF", "MAM", "JJA", "SON"])
     months = np.asarray(months)
     return seasons[(months // 3) % 4]
+
+
+def _is_deterministic_forecast(proc_fxobs):
+    return not (
+        isinstance(proc_fxobs.original.forecast,
+                   (datamodel.ProbabilisticForecast,
+                    datamodel.ProbabilisticForecastConstantValue))
+        or isinstance(proc_fxobs.original.forecast, datamodel.EventForecast)
+    )
+
+
+def _calculate_summary_for_frame(df):
+    return df.agg(list(summary._MAP.keys()))
+
+
+def calculate_summary_statistics(processed_fx_obs, categories):
+    out = {'name': processed_fx_obs.name,
+           'forecast_id': processed_fx_obs.original.forecast.forecast_id,
+           'is_summary': True}
+    try:
+        out['observation_id'] = \
+            processed_fx_obs.original.observation.observation_id
+        obskey = 'observation'
+    except AttributeError:
+        out['aggregate_id'] = \
+            processed_fx_obs.original.aggregate.aggregate_id
+        obskey = 'aggregate'
+
+    dfd = {obskey: processed_fx_obs.observation_values}
+    if _is_deterministic_forecast(processed_fx_obs):
+        dfd['forecast'] = processed_fx_obs.forecast_values
+        ref_fx = processed_fx_obs.reference_forecast_values
+        if ref_fx is not None:
+            dfd['reference_forecast'] = ref_fx
+
+    df = pd.DataFrame(dfd)
+    if df.empty:
+        out['values'] = ()
+        return datamodel.MetricResult.from_dict(out)
+
+    # Force `groupby` to be consistent with `interval_label`, i.e., if
+    # `interval_label == ending`, then the last interval should be in the bin
+    if processed_fx_obs.interval_label == "ending":
+        df.index -= pd.Timedelta("1ns")
+
+    metric_vals = []
+    # Calculate metrics
+    for category in set(categories):
+        index_category = _index_category(category, df)
+
+        # Group by category
+        for cat, group in df.groupby(index_category):
+            all_metrics = _calculate_summary_for_frame(group)
+
+            # Change category label of the group from numbers
+            # to e.g. January or Monday
+            if category == 'month':
+                cat = calendar.month_abbr[cat]
+            elif category == 'weekday':
+                cat = calendar.day_abbr[cat]
+
+            metric_vals.extend([
+                datamodel.MetricValue(category, f'{obj}_{row}', str(cat), val)
+                for obj, ser in all_metrics.items() for row, val in ser.items()
+            ])
+    out['values'] = _sort_metrics_vals(
+        metric_vals, datamodel.ALLOWED_SUMMARY_STATISTICS)
+    calc_stats = datamodel.MetricResult.from_dict(out)
+    return calc_stats
+
+
+def calculate_all_summary_statistics(processed_pairs, categories):
+    """
+    Loop through the forecast-observation pairs and calculate summary
+    statistics.
+
+    Parameters
+    ----------
+    processed_pairs :
+        List of datamodel.ProcessedForecastObservation
+    categories : list of str
+        List of categories to compute metrics over.
+
+    Returns
+    -------
+    list
+        List of datamodel.MetricResult for each
+        datamodel.ProcessedForecastObservation
+    """
+    stats = []
+    for proc_fxobs in processed_pairs:
+        stats.append(calculate_summary_statistics(proc_fxobs, categories))
+    return stats

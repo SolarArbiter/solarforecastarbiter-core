@@ -39,7 +39,32 @@ def build_metrics_json(report):
     """
     if getattr(report, 'raw_report') is not None:
         df = plotly_figures.construct_metrics_dataframe(
-            report.raw_report.metrics,
+            list(filter(lambda x: not getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
+            rename=plotly_figures.abbreviate)
+        return df.to_json(orient="records")
+    else:
+        return "[]"
+
+
+def build_summary_stats_json(report):
+    """Creates a dict from the summary statistics in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The json representing the summary statistics. Will be a string
+        representing an empty json array if the report does not have a
+        computed raw_report.
+    """
+    if getattr(report, 'raw_report') is not None:
+        df = plotly_figures.construct_metrics_dataframe(
+            list(filter(lambda x: getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
             rename=plotly_figures.abbreviate)
         return df.to_json(orient="records")
     else:

@@ -190,12 +190,14 @@ def create_raw_report_from_data(report, data):
             processed_fxobs,
             list(report_params.categories),
             list(report_params.metrics))
+        summary_stats = calculator.calculate_all_summary_statistics(
+            processed_fxobs, list(report_params.categories))
 
         report_plots = plotly_figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(
         generated_at=generated_at, timezone=timezone, versions=versions,
-        plots=report_plots, metrics=tuple(metrics_list),
+        plots=report_plots, metrics=tuple(metrics_list + summary_stats),
         processed_forecasts_observations=tuple(processed_fxobs),
         messages=messages)
     return raw_report

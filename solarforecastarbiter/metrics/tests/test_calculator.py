@@ -11,7 +11,8 @@ import pytest
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic,
-                                          probabilistic, event)
+                                          probabilistic, event,
+                                          summary)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
@@ -1371,3 +1372,51 @@ def test_calculate_metrics_with_event_empty(single_event_forecast_observation,
     failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
     assert (f"Failed to calculate event metrics for {proc_fx_obs[0].name}: "
             "No Forecast timeseries data.\n") == failure_log_text
+
+
+def test_calculate_summary_statistics(single_forecast_data_obj,
+                                      create_processed_fxobs):
+    ref_values = _random_ref_values_if_not_None(single_forecast_data_obj)
+    inp = create_processed_fxobs(single_forecast_data_obj,
+                                 np.random.randn(10)+10,
+                                 np.random.randn(10)+10,
+                                 ref_values=ref_values)
+    result = calculator.calculate_summary_statistics(inp, LIST_OF_CATEGORIES)
+    assert isinstance(result, datamodel.MetricResult)
+
+
+def test_calculate_summary_statistics_exact(single_forecast_observation,
+                                            create_processed_fxobs):
+    index = pd.DatetimeIndex(
+        # sunday, monday, tuesday
+        ['20200531 1900Z', '20200601 2000Z', '20200602 2100Z'])
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series([2, 1, 0], index=index),
+        pd.Series([1, 1, 1], index=index))
+    categories = ('hour', 'total', 'date', 'month', 'weekday')
+    result = calculator.calculate_summary_statistics(inp, categories)
+    expected = {
+        0: ('total', 'forecast_mean', '0', 1.),
+        1: ('total', 'observation_mean', '0', 1.),
+        12: ('month', 'forecast_mean', 'May', 2.),
+        15: ('month', 'observation_mean', 'Jun', 1.),
+        42: ('hour', 'forecast_min', '19', 2.),
+        52: ('hour', 'observation_max', '20', 1.),
+        -8: ('weekday', 'observation_median', 'Tue', 1.0)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
+def test_calculate_summary_statistics_no_data(single_forecast_observation,
+                                              create_processed_fxobs):
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series(dtype=float), pd.Series(dtype=float),)
+    categories = ('hour', 'total', 'date', 'month', 'weekday')
+    result = calculator.calculate_summary_statistics(inp, categories)
+    assert isinstance(result, datamodel.MetricResult)
+    assert len(result.values) == 0
