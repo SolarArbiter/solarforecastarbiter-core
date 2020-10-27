@@ -615,10 +615,28 @@ def _is_deterministic_forecast(proc_fxobs):
 
 
 def _calculate_summary_for_frame(df):
+    # !!! Does not acutally use the functions defined in summary
+    # probably could, but they should also probably be the nan* equivalents
     return df.agg(list(summary._MAP.keys()))
 
 
 def calculate_summary_statistics(processed_fx_obs, categories):
+    """
+    Calculate summary statistics for the processed data using the provided
+    categories and all metrics defined in :py:mod:`.summary`.
+
+    Parameters
+    ----------
+    proc_fx_obs : datamodel.ProcessedForecastObservation
+    categories : list of str
+        List of categories to compute metrics over.
+
+    Returns
+    -------
+    solarforecastarbiter.datamodel.MetricResult
+        Contains all the computed statistics by category.
+
+    """
     out = {'name': processed_fx_obs.name,
            'forecast_id': processed_fx_obs.original.forecast.forecast_id,
            'is_summary': True}
@@ -632,6 +650,8 @@ def calculate_summary_statistics(processed_fx_obs, categories):
         obskey = 'aggregate'
 
     dfd = {obskey: processed_fx_obs.observation_values}
+    # only calculate stats for deterministic forecasts
+    # but always for observations
     if _is_deterministic_forecast(processed_fx_obs):
         dfd['forecast'] = processed_fx_obs.forecast_values
         ref_fx = processed_fx_obs.reference_forecast_values
@@ -640,6 +660,7 @@ def calculate_summary_statistics(processed_fx_obs, categories):
 
     df = pd.DataFrame(dfd)
     if df.empty:
+        # !!! maybe raise runtimeerror like others
         out['values'] = ()
         return datamodel.MetricResult.from_dict(out)
 
