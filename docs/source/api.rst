@@ -580,6 +580,7 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.uncertainty
     metrics.probabilistic.sharpness
     metrics.probabilistic.continuous_ranked_probability_score
+    metrics.probabilistic.crps_skill_score
 
 Event
 -----
