@@ -14,7 +14,7 @@ from solarforecastarbiter.validation import quality_mapping
 logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
-FILL_RESULT_TOTAL_STRING = "Total Missing {0}Forecast Values {1}"
+FILL_RESULT_TOTAL_STRING = "Missing {0}Forecast Values {1}"
 DISCARD_DATA_STRING = "{0} Values Discarded by Alignment to {1}"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
 FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
