@@ -150,11 +150,11 @@ Available Network Handlers
 
    :py:mod:`solarforecastarbiter.io.reference_observations.eia`
 
-* WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network
+* WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network\*
    https://bsrn.awi.de
 
    :py:mod:`solarforecastarbiter.io.reference_observations.bsrn`
 
 
-\* Requesting data from these networks requires a valid api key for their
-associated api.
+\* Requesting data from these networks requires a valid api key or other
+credentials for the associated API.

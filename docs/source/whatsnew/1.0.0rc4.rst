@@ -32,7 +32,8 @@ API Changes
   (:issue:`556`, :pull:`580`)
 * Added `new_index` argument to :py:func:`utils.compute_aggregate` to define
   an index for the computed aggregate. (:issue:`587`)(:pull:`590`)
-
+* Added :py:mod:`io.reference_observations.bsrn` to initialize reference data
+  from the BSRN network (:issue:`541`) (:pull:`604`)
 
 
 Enhancements
