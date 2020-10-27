@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 # Titles to refer to counts of preprocessing results
 FILL_RESULT_TOTAL_STRING = "Total Missing {0}Forecast Values {1}"
 DISCARD_DATA_STRING = "{0} Values Discarded by Alignment to {1}"
-UNDEFINED_DATA_STRING = "Undefined Values"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
 FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
                             'forward': "Forward Filled"}
@@ -505,7 +504,6 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and forecasts, and missing periods
-    undefined_obs = obs_data.isna().sum()
     obs_data = obs_data.dropna(how="any")
     obs_aligned, fx_aligned = obs_data.align(
         fx_data.dropna(how="any"), 'inner')
@@ -528,12 +526,6 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
 
-    # prob fx DataFrame needs to be summed across both dimensions
-    if isinstance(fx_data, pd.DataFrame):
-        undefined_fx = fx_data.isna().sum().sum()
-    else:
-        undefined_fx = fx_data.isna().sum()
-
     # Return dict summarizing results
     results = {
         DISCARD_DATA_STRING.format(
@@ -542,14 +534,12 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
         DISCARD_DATA_STRING.format(
             "Validated, Resampled " + obs.__blurb__, fx.__blurb__):
                 len(obs_data) - len(observation_values),
-        fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
-            int(undefined_fx),
-        obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
-            int(undefined_obs)
     }
 
     if ref_data is not None:
-        k = type(ref_fx).__name__ + " " + UNDEFINED_DATA_STRING
+        k = DISCARD_DATA_STRING.format(
+            "Reference " + ref_fx.__blurb__,
+            "Validated, Resampled " + obs.__blurb__)
         results[k] = len(ref_data.dropna(how='any')) - len(ref_fx_aligned)
 
     return forecast_values, observation_values, ref_values, results
