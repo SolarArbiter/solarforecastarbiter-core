@@ -14,7 +14,6 @@ from solarforecastarbiter.validation import quality_mapping
 logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
-VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
 FILL_RESULT_TOTAL_STRING = "Total {0}Forecast Values {1}"
 DISCARD_DATA_STRING = "Values Discarded by Alignment"
 UNDEFINED_DATA_STRING = "Undefined Values"
@@ -298,6 +297,7 @@ def _calc_discard_before_resample(
     discard_before_resample = obs_flags[discard_before_resample_flags]
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
+    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
 
     # TODO: add filters for time of day and value, OR with
     # to_discard_before_resample, add discarded number to counts
@@ -379,6 +379,8 @@ def _calc_discard_after_resample(
         filter_name, flagged = apply_flag(quality_flag)
         to_discard_after_resample |= flagged
         counts[filter_name] = flagged.sum()
+
+    counts['TOTAL DISCARD AFTER RESAMPLE'] = to_discard_after_resample.sum()
 
     return to_discard_after_resample, counts
 
@@ -738,14 +740,16 @@ def process_forecast_observations(forecast_observations, filters,
         val_results = tuple(datamodel.ValidationResult(flag=k, count=int(v))
                             for k, v in counts.items())
 
-        # this count value no longer makes sense because the first object
-        # is at a different interval than the second.
-        # might need to add a 'total' to counts, exclude from the
-        # ValidationResult comprehension above, and use it here.
-        preproc_obs_results = datamodel.PreprocessingResult(
-            name=VALIDATION_RESULT_TOTAL_STRING,
-            count=(len(data[fxobs.data_object]) - len(observation_values)))
-        preproc_results.append(preproc_obs_results)
+        # not sure if we really need to repeat this information. could
+        # pop the key from the counts dict or delete this. the count
+        # ultimately shows up in both the validation results table and the
+        # preprocessing summary table
+        preproc_results.append(datamodel.PreprocessingResult(
+            name='Observation Values Discarded Before Resampling',
+            count=counts['TOTAL DISCARD BEFORE RESAMPLE']))
+        preproc_results.append(datamodel.PreprocessingResult(
+            name='Resampled Observation Intervals Discarded',
+            count=counts['TOTAL DISCARD AFTER RESAMPLE']))
 
         # Align and create processed pair
         try:
