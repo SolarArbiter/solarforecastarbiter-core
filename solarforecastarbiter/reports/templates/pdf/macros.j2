@@ -194,7 +194,7 @@
   \small
   \renewcommand{\arraystretch}{1.7}
   \begin{longtabu} to \linewidth {
-      X[2] | X[2] | *{\VAR{unique_flags | length}}{ | X[l]}
+      X[2] | X[2] | *{\VAR{unique_flags | length}}{ | X[-1]}
     }
     \caption{Table of data validation results.} \\
     \toprule
@@ -203,7 +203,7 @@
     \cline{3-\VAR{(unique_flags | length) + 2 }}
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
     %- for qfilter in unique_flags
-    & \rot{\parbox{6cm}{\raggedright{\VAR{qfilter}}}}
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
@@ -211,7 +211,7 @@
     \caption{Table of data validation results (cont.)} \\
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
     %- for qfilter in unique_flags
-    & \rot{\parbox{6cm}{\raggedright{\VAR{qfilter}}}}
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
