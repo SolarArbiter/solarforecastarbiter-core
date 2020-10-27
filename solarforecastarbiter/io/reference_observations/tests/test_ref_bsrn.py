@@ -2,7 +2,7 @@ import pytest
 import re
 import pandas as pd
 
-from solarforecastarbiter.datamodel import Site, Observation, Forecast
+from solarforecastarbiter.datamodel import Site
 from solarforecastarbiter.io import api
 from solarforecastarbiter.io.reference_observations import bsrn
 
@@ -24,27 +24,6 @@ def site():
         provider='',
         extra_parameters='{"network_api_id": "LRC", "attribution": "Driemel, A., Augustine, J., Behrens, K., Colle, S., Cox, C., Cuevas-Agull\\u00f3, E., Denn, F. M., Duprat, T., Fukuda, M., Grobe, H., Haeffelin, M., Hodges, G., Hyett, N., Ijima, O., Kallis, A., Knap, W., Kustov, V., Long, C. N., Longenecker, D., Lupi, A., Maturilli, M., Mimouni, M., Ntsangwane, L., Ogihara, H., Olano, X., Olefs, M., Omori, M., Passamani, L., Pereira, E. B., Schmith\\u00fcsen, H., Schumacher, S., Sieger, R., Tamlyn, J., Vogt, R., Vuilleumier, L., Xia, X., Ohmura, A., and K\\u00f6nig-Langlo, G.: Baseline Surface Radiation Network (BSRN): structure and data description (1992\\u20132017), Earth Syst. Sci. Data, 10, 1491-1501, doi:10.5194/essd-10-1491-2018, 2018.", "network": "WRMC BSRN", "network_api_abbreviation": "", "observation_interval_length": 1}',  # noqa: E501
     )
-
-
-@pytest.fixture
-def site_no_extra():
-    return Site(
-        name='WRMC BSRN NASA Langley Research Center',
-        latitude=37.1048,
-        longitude=-76.3872,
-        elevation=3.0,
-        timezone='Etc/GMT+5',
-        site_id='',
-        provider='',
-        extra_parameters='',
-    )
-
-
-@pytest.fixture
-def log(mocker):
-    log = mocker.patch('solarforecastarbiter.io.reference_observations.'
-                       'bsrn.logger')
-    return log
 
 
 @pytest.fixture()
