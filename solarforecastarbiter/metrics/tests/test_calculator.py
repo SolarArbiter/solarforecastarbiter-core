@@ -11,8 +11,7 @@ import pytest
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import (calculator, deterministic,
-                                          probabilistic, event,
-                                          summary)
+                                          probabilistic, event)
 
 
 DETERMINISTIC_METRICS = list(deterministic._MAP.keys())
@@ -1420,3 +1419,125 @@ def test_calculate_summary_statistics_no_data(single_forecast_observation,
     result = calculator.calculate_summary_statistics(inp, categories)
     assert isinstance(result, datamodel.MetricResult)
     assert len(result.values) == 0
+
+
+@pytest.mark.parametrize('ts,tz,interval_label,category,fxresult,obsresult', [
+    # category: hour
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
+        'ending',
+        'hour',
+        {('12', 0.), ('13', 1.5)},
+        {('12', 1.), ('13', 1.)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
+        'beginning',
+        'hour',
+        {('13', 0.5), ('14', 2.0)},
+        {('13', 1.0), ('14', 1.0)},
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'ending',
+        'hour',
+        {('4', 0.), ('5', 1.5)},
+        {('4', 1.), ('5', 1.0)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'beginning',
+        'hour',
+        {('5', 0.5), ('6', 2.0)},
+        {('5', 1.0), ('6', 1.0)},
+    ),
+
+    # category: month
+    (
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
+        'ending',
+        'month',
+        {('Nov', 0.5), ('Dec', 2.0)},
+        {('Nov', 1.0), ('Dec', 1.0)},
+    ),
+    (
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
+        'beginning',
+        'month',
+        {('Nov', 0.), ('Dec', 1.5)},
+        {('Nov', 1.), ('Dec', 1.0)},
+    ),
+
+    # category: year
+    (
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
+        'ending',
+        'year',
+        {('2019', 0.5), ('2020', 2.0)},
+        {('2019', 1.0), ('2020', 1.0)},
+    ),
+    (
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
+        'beginning',
+        'year',
+        {('2019', 0.), ('2020', 1.5)},
+        {('2019', 1.), ('2020', 1.0)},
+    ),
+])
+def test_calculate_summary_statistics_interval_label(
+        ts, tz, interval_label, category, fxresult,
+        obsresult,
+        create_processed_fxobs):
+
+    index = pd.DatetimeIndex(ts, tz="UTC")
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+
+    fx_series = pd.Series([0, 1, 2], index=index)
+    obs_series = pd.Series([1, 1, 1], index=index)
+
+    # convert to local timezone
+    fx_series = fx_series.tz_convert(tz)
+    obs_series = obs_series.tz_convert(tz)
+
+    fxobs = datamodel.ForecastObservation(
+        observation=datamodel.Observation(
+            site=site, name='dummy obs', variable='ghi',
+            interval_value_type='instantaneous', uncertainty=1,
+            interval_length=pd.Timedelta(obs_series.index.freq),
+            interval_label=interval_label
+        ),
+        forecast=datamodel.Forecast(
+            site=site, name='dummy fx', variable='ghi',
+            interval_value_type='instantaneous',
+            interval_length=pd.Timedelta(fx_series.index.freq),
+            interval_label=interval_label,
+            issue_time_of_day=datetime.time(hour=5),
+            lead_time_to_start=pd.Timedelta('1h'),
+            run_length=pd.Timedelta('1h')
+        )
+    )
+
+    proc_fx_obs = create_processed_fxobs(fxobs, fx_series, obs_series)
+
+    res = calculator.calculate_summary_statistics(proc_fx_obs, [category])
+    assert {(v.index, v.value) for v in res.values
+            if v.metric == 'forecast_mean'} == fxresult
+    assert {(v.index, v.value) for v in res.values
+            if v.metric == 'observation_mean'} == obsresult
