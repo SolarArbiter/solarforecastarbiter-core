@@ -6,8 +6,8 @@ separate filter. Within each filter, multiple <em>quality flags</em> may be
 specified. If <em>discard before resample</em> is true, the quality flags are
 applied to the data before it is resampled. During resampling, intervals are
 discarded if <em>resample threshold percentage</em> is exceeded. These results
-are reported with DISCARD BEFORE RESAMPLE prepended to the flag name in the <a
-href="#data-validation-results">table of data validation results</a>. If
+are reported with DISCARD BEFORE RESAMPLE prepended to the flag name in the
+<a href="#data-validation-results">table of data validation results</a>. If
 discard before resample is false, the quality flags are only considered during
 the resampling operation. The quality flags of the raw observations are combined
 with OR, the total number of flagged points within a resample period is

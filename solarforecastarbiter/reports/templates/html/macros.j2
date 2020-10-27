@@ -160,17 +160,20 @@ forecasts/single/{{ forecast.forecast_id }}
     </tr>
   </thead>
   <tbody>
-    {% for res0 in proc_fxobs_list[0].validation_results %}
+    {% for flag in (proc_fxobs_list | unique_flags_filter) %}
       <tr>
-      <td style="test-align: left">{{ res0.flag }}</td>
+      <td style="test-align: left">{{ flag }}</td>
         {% for proc_fxobs in proc_fxobs_list %}
           {% set ns = namespace(found=false) %}
             {% for res in proc_fxobs.validation_results %}
-              {% if res.flag == res0.flag %}
+              {% if res.flag == flag %}
                 {% set ns.found = true %}
                 <td style="text-align: center">{{ res.count }}</td>
               {% endif %}
             {% endfor %}
+          {% if not ns.found %}
+            <td></td>
+          {% endif %}
         {% endfor %}
       </tr>
     {% endfor %}
