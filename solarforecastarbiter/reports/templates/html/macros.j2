@@ -50,6 +50,59 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
+{% macro summary_stats_table_vert(summary_stats, category) %}
+{% set span = (human_statistics.values() | length) %}
+<div class="report-table-wrapper">
+<table class="table table-striped summary-stats-table-vert" style="width:100%;">
+  <caption style="caption-side:top; text-align: left">
+    Table of {{ category }} data summary statistics
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Aligned Pair</th>
+      <th colspan="{{ span }}" style="text-align: left;">Observation</th>
+      <th colspan="{{ span }}" style="text-align: left;">Forecast</th>
+      <th colspan="{{ span }}" style="text-align: left;">Reference Forecast</th>
+    </tr>
+    <tr>
+      <th></th>
+      {% for i in range(3) %}
+      {% for title in human_statistics.values() %}
+      <th style="text-align: left;">{{ title }}</th>
+      {% endfor %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for stat_result in summary_stats %}
+      <tr>
+        <td>{{ stat_result.name }}</td>
+        {% for thing in ['forecast', 'observation', 'reference_forecast'] %}
+          {% for metric in human_statistics.keys() %}
+            {% set ns = namespace(found=false) %}
+            {% for mval in stat_result.values %}
+              {% if mval.category == category  and mval.metric == thing + '_' + metric %}
+                {% set ns.found = true %}
+                {% if -0.01 < mval.value < 0.01 %}
+        <td>{{ '%.2e' | format(mval.value) }}</td>
+                {% else %}
+        <td>{{ '%0.3g' | format(mval.value) }}</td>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {% if not ns.found %}
+        <td></td>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endmacro %}
+
+
 {% macro metric_table_fx_horz(report_metrics, category, metric_ordering) %}
 {% set metric_indexes = [] %}
 {% for mresult in report_metrics %}
