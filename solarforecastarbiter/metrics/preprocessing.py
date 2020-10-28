@@ -729,16 +729,31 @@ def process_forecast_observations(forecast_observations, filters,
         val_results = tuple(datamodel.ValidationResult(flag=k, count=int(v))
                             for k, v in counts.items())
 
-        # not sure if we really need to repeat this information. could
-        # pop the key from the counts dict or delete this. the count
-        # ultimately shows up in both the validation results table and the
-        # preprocessing summary table
-        preproc_results.append(datamodel.PreprocessingResult(
-            name='Observation Values Discarded Before Resampling',
-            count=counts['TOTAL DISCARD BEFORE RESAMPLE']))
-        preproc_results.append(datamodel.PreprocessingResult(
-            name='Resampled Observation Values Discarded',
-            count=counts['TOTAL DISCARD AFTER RESAMPLE']))
+        # the total count ultimately shows up in both the validation
+        # results table and the preprocessing summary table.
+        # use get for compatibility with older reports
+        try:
+            total_discard_before_resample = counts[
+                'TOTAL DISCARD BEFORE RESAMPLE']
+        except KeyError:
+            logging.warning(
+                'TOTAL DISCARD BEFORE RESAMPLE not available for pair '
+                '(%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
+                name='Observation Values Discarded Before Resampling',
+                count=int(total_discard_before_resample)))
+        try:
+            total_discard_after_resample = counts[
+                'TOTAL DISCARD AFTER RESAMPLE']
+        except KeyError:
+            logging.warning(
+                'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
+                fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
+                name='Resampled Observation Values Discarded',
+                count=int(total_discard_after_resample)))
 
         # Align and create processed pair
         try:

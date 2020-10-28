@@ -76,10 +76,9 @@ SIXTEEN_15MIN_DF = pd.DataFrame(
 def create_preprocessing_result(counts):
     """Create preprocessing results in order that matches align function."""
     return {
-        "Forecast " + preprocessing.DISCARD_DATA_STRING: counts[0],
-        "Observation " + preprocessing.DISCARD_DATA_STRING: counts[1],
-        "Forecast " + preprocessing.UNDEFINED_DATA_STRING: counts[2],
-        "Observation " + preprocessing.UNDEFINED_DATA_STRING: counts[3],
+        preprocessing.DISCARD_DATA_STRING.format('Forecast'): counts[0],
+        preprocessing.DISCARD_DATA_STRING.format(
+            'Validated, Resampled Observation'): counts[1]
     }
 
 
@@ -88,16 +87,16 @@ def create_preprocessing_result(counts):
 @pytest.mark.parametrize('fx_interval_label',
                          ['beginning', 'ending'])
 @pytest.mark.parametrize('fx_series,obs_series,expected_dt,expected_res', [
-    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*4),
+    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*2),
     # document behavior in undesireable case with higher frequency obs data.
-    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0, 10, 0, 0]),
-    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*4),
-    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0, 0, 1]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [0, 1, 1, 0]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 0, 1, 1]),  # NOQA
-    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),  # NOQA
-    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),  # NOQA
-    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),
+    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0, 10]),
+    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*2),
+    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [0, 1]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 0]),
+    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [3, 0]),
+    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 3]),
+    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [3, 0]),
 ])
 def test_align(
         site_metadata, obs_interval_label, fx_interval_label, fx_series,
