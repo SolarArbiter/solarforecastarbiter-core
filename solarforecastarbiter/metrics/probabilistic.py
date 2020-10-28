@@ -494,6 +494,14 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     crps : float
         The Continuous Ranked Probability Score [unitless].
 
+    Raises
+    ------
+    ValueError
+        If the forecasts have incorrect dimensions; either a) the forecasts are
+        for a single sample (n=1) with d CDF intervals but are given as a 1D
+        array with d values or b) the forecasts are given as 2D arrays (n,d)
+        but do not contain at least 2 CDF intervals (i.e. d < 2).
+
     Examples
     --------
 
@@ -514,7 +522,16 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     """
 
     # match observations to fx shape: (n,) => (n, d)
-    obs = np.tile(obs, (fx.shape[1], 1)).T
+    try:
+        n, d = np.shape(fx)   # throws ValueError if 1D array
+        if d < 2:
+            raise ValueError("forecasts must have d >= 2 CDF intervals "
+                             f"(expected >= 2, got {d})")
+        else:
+            obs = np.tile(obs, (fx.shape[1], 1)).T
+    except ValueError:
+        raise ValueError("forecasts must be 2D arrays (expected (n,d), got"
+                         f"{np.shape(fx)})")
 
     # event: 0=did not happen, 1=did happen
     o = np.where(obs <= fx, 1.0, 0.0)

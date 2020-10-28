@@ -218,10 +218,10 @@ def test_sharpness(fx_lower, fx_upper, value):
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    # 1 sample, 1 CDF interval
+    # 1 sample, 2 CDF intervals
     (
-        np.array([[10]]),
-        np.array([[100]]),
+        np.array([[10, 20]]),
+        np.array([[100, 100]]),
         np.array([8]),
         0.0,
     ),
@@ -282,6 +282,24 @@ def test_sharpness(fx_lower, fx_upper, value):
         np.array([[0, 50, 100], [0, 50, 100]]),
         np.array([8, 8]),
         (1.0 ** 2) * 10 + (0.5 ** 2) * 10,
+    ),
+
+    # fail: only 1 CDF interval
+    pytest.param(
+        np.array([[10], [20]]),
+        np.array([[100], [100]]),
+        np.array([8, 8]),
+        0.0,
+        marks=pytest.mark.xfail(strict=True, type=ValueError),
+    ),
+
+    # fail: forecast as 1D array (instead of 2D)
+    pytest.param(
+        np.array([10, 20]),
+        np.array([100, 100]),
+        np.array([8, 8]),
+        0.0,
+        marks=pytest.mark.xfail(strict=True, type=ValueError),
     ),
 ])
 def test_crps(fx, fx_prob, obs, value):
