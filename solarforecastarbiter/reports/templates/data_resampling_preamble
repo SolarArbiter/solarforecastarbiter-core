@@ -4,11 +4,11 @@ operations to the data:
 </p>
 <ol>
   <li>Drop or fill missing forecast and reference forecast data points according to the report's forecast fill method selection.</li>
-  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> specified with <em>discard before resample</em> True and discard
-    the matched data. This procedure is typically used to exclude erroneous data.
+  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> specified with <em>discard before resample</em> == True to the observation data and discard
+    the matched data. This procedure is typically used to exclude erroneous observation data.
     </li>
-  <li>Resample the observations to the forecast interval length using the mean.</li>
-  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> specified with <em>discard before resample</em> False and discard
+  <li>Resample the observation data to the forecast interval length using the mean.</li>
+  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> specified with <em>discard before resample</em> == False to the observation data and discard
     the resampled intervals where the percentage of matched points exceeds <em>resample threshold percentage</em>.
     This procedure is typically used to exclude intervals that contain valid but undesirable data, such as the hours of sunrise/sunset or hours that are mostly clear.
     This step also discards intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold percentage</em>.
