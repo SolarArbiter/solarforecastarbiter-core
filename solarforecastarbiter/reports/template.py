@@ -403,10 +403,9 @@ def render_pdf(report, dash_url, max_runs=5):
     env.filters['pretty_json'] = _pretty_json
     env.filters['unique_flags_filter'] = _unique_flags_filter
     kwargs = _get_render_kwargs(report, dash_url, False)
-    with tempfile.TemporaryDirectory(dir='/Users/holmgren/git_repos/solarforecastarbiter-core') as _tmpdir:
+    with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)
         logfile, auxfile = _prepare_latex_support_files(tmpdir, env, kwargs)
-        breakpoint()
         _save_figures_to_pdf(tmpdir, report)
         _compile_files_into_pdf(tmpdir, logfile, auxfile, max_runs)
         return (tmpdir / 'out.pdf').read_bytes()
