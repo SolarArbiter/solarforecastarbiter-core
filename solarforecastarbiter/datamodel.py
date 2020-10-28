@@ -116,8 +116,7 @@ ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
 ALLOWED_SUMMARY_STATISTICS = {
     f'{prefix}_{k}': v[1] for k, v in summary_mapping.items()
-    for prefix in ('forecast', 'observation', 'aggregate',
-                   'reference_forecast')}
+    for prefix in ('forecast', 'observation', 'reference_forecast')}
 
 
 ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())

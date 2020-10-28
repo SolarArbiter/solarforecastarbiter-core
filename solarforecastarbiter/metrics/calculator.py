@@ -646,13 +646,11 @@ def calculate_summary_statistics(processed_fx_obs, categories):
     try:
         out['observation_id'] = \
             processed_fx_obs.original.observation.observation_id
-        obskey = 'observation'
     except AttributeError:
         out['aggregate_id'] = \
             processed_fx_obs.original.aggregate.aggregate_id
-        obskey = 'aggregate'
 
-    dfd = {obskey: processed_fx_obs.observation_values}
+    dfd = {'observation': processed_fx_obs.observation_values}
     # only calculate stats for deterministic forecasts
     # but always for observations
     if _is_deterministic_forecast(processed_fx_obs):
