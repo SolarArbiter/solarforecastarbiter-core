@@ -46,6 +46,71 @@ def build_metrics_json(report):
         return "[]"
 
 
+def build_metadata_json(report):
+    """Creates a JSON array of ProcessedForecastObservations parameters
+    in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The JSON representing the report forecast-observation metadata.
+    """
+    if getattr(report, 'raw_report') is None:
+        return "[]"
+
+    drop_keys = {
+        '__blurb__', 'site', 'aggregate',
+    }
+
+    def _process_forecast(fx):
+        if fx is None:
+            return None
+        out = {k: v for k, v in fx.to_dict().items()
+               if k not in drop_keys}
+        if isinstance(fx, datamodel.ProbabilisticForecast):
+            out['constant_values'] = [
+                cdf.constant_value for cdf in fx.constant_values]
+        return out
+
+    out = []
+    for pfxobs in report.raw_report.processed_forecasts_observations:
+        minp = pfxobs.replace(original=None)
+        thisout = {k: v for k, v in minp.to_dict().items()
+                   if k in (
+                           'name', 'interval_value_type', 'interval_length',
+                           'interval_label', 'normalization_factor',
+                           'uncertainty', 'cost')}
+
+        thisout['forecast'] = _process_forecast(pfxobs.original.forecast)
+        thisout['reference_forecast'] = _process_forecast(
+            pfxobs.original.reference_forecast)
+        thisout['observation'] = None
+        thisout['aggregate'] = None
+        if hasattr(pfxobs.original, 'observation'):
+            thisout['observation'] = {
+                k: v for k, v in pfxobs.original.observation.to_dict().items()
+                if k not in drop_keys
+            }
+        elif hasattr(pfxobs.original, 'aggregate'):
+            thisout['aggregate'] = {
+                k: v for k, v in pfxobs.original.aggregate.to_dict().items()
+                if k not in drop_keys or k == 'observations'
+            }
+            obs = []
+            for aggobs in pfxobs.original.aggregate.observations:
+                obsd = aggobs.to_dict()
+                obsd['observation_id'] = obsd.pop('observation')[
+                    'observation_id']
+                obs.append(obsd)
+            thisout['aggregate']['observations'] = obs
+        out.append(thisout)
+    return json.dumps(out).replace('NaN', 'null')
+
+
 def _get_render_kwargs(report, dash_url, with_timeseries):
     """Creates a dictionary of key word template arguments for a jinja2
     report template.
@@ -74,6 +139,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
         metrics_json=build_metrics_json(report),
+        metadata_json=build_metadata_json(report)
     )
     report_plots = getattr(report.raw_report, 'plots', None)
     # get plotting library versions used when plots were generated.

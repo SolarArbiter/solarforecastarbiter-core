@@ -347,6 +347,7 @@ files with site and observation metadata.
    io.reference_observations.arm
    io.reference_observations.pvdaq
    io.reference_observations.eia
+   io.reference_observations.bsrn
 
 SFA API
 =======
@@ -465,6 +466,7 @@ for observations, forecasts, aggregates, and probabilistic forecasts:
    :toctree: generated/
 
    io.api.APISession.get_values
+   io.api.APISession.chunk_value_request
 
 Utils
 -----

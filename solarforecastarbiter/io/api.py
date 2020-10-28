@@ -27,6 +27,10 @@ from solarforecastarbiter.io.utils import (
 BASE_URL = 'https://api.solarforecastarbiter.org'
 logger = logging.getLogger(__name__)
 
+# Limit used to limit the amount of retrieved with a single request. Used
+# to break up large requests into smaller requests to avoid timeout.
+GET_VALUES_LIMIT = '365D'
+
 
 def request_cli_access_token(user, password, **kwargs):
     """Request an API access token from Auth0.
@@ -606,8 +610,9 @@ class APISession(requests.Session):
                         dtype='datetime64[D]')
 
     @ensure_timestamps('start', 'end')
-    def get_observation_values(self, observation_id, start, end,
-                               interval_label=None):
+    def get_observation_values(
+            self, observation_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get observation values from start to end for observation_id from the
         API
@@ -624,6 +629,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -635,9 +643,13 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/observations/{observation_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_observation_df(req.json())
+        out = self.chunk_value_requests(
+            f'/observations/{observation_id}/values',
+            start,
+            end,
+            parse_fn=json_payload_to_observation_df,
+            request_limit=request_limit,
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -668,8 +680,8 @@ class APISession(requests.Session):
         return mint, maxt
 
     @ensure_timestamps('start', 'end')
-    def get_forecast_values(self, forecast_id, start, end,
-                            interval_label=None):
+    def get_forecast_values(self, forecast_id, start, end, interval_label=None,
+                            request_limit=GET_VALUES_LIMIT):
         """
         Get forecast values from start to end for forecast_id
 
@@ -685,6 +697,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -696,9 +711,13 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/forecasts/single/{forecast_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_forecast_series(req.json())
+        out = self.chunk_value_requests(
+            f'/forecasts/single/{forecast_id}/values',
+            start,
+            end,
+            json_payload_to_forecast_series,
+            request_limit=request_limit
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
@@ -731,7 +750,8 @@ class APISession(requests.Session):
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_constant_value_values(
-            self, forecast_id, start, end, interval_label=None):
+            self, forecast_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get forecast values from start to end for forecast_id
 
@@ -749,6 +769,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -760,15 +783,20 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/forecasts/cdf/single/{forecast_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_forecast_series(req.json())
+        out = self.chunk_value_requests(
+            f'/forecasts/cdf/single/{forecast_id}/values',
+            start,
+            end,
+            json_payload_to_forecast_series,
+            request_limit=request_limit,
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_values(
-            self, forecast_id, start, end, interval_label=None):
+            self, forecast_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get all probabilistic forecast values for each from start to end for
         forecast_id
@@ -785,6 +813,9 @@ class APISession(requests.Session):
             If beginning, ending, adjust the data to return only data that is
             valid between start and end. If None or instant, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -803,7 +834,7 @@ class APISession(requests.Session):
             df_dict[str(cv.constant_value)] = \
                 self.get_probabilistic_forecast_constant_value_values(
                     forecast_id=cv.forecast_id, start=start, end=end,
-                    interval_label=interval_label)
+                    interval_label=interval_label, request_limit=request_limit)
         return pd.DataFrame(df_dict)
 
     def post_observation_values(self, observation_id, observation_df,
@@ -1206,8 +1237,9 @@ class APISession(requests.Session):
         return self.get_aggregate(new_id)
 
     @ensure_timestamps('start', 'end')
-    def get_aggregate_values(self, aggregate_id, start, end,
-                             interval_label=None):
+    def get_aggregate_values(
+            self, aggregate_id, start, end, interval_label=None,
+            request_limit=GET_VALUES_LIMIT):
         """
         Get aggregate values from start to end for aggregate_id from the
         API
@@ -1224,6 +1256,9 @@ class APISession(requests.Session):
             If beginning or ending, return only data that is
             valid between start and end. If None, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -1235,14 +1270,19 @@ class APISession(requests.Session):
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
         """
-        req = self.get(f'/aggregates/{aggregate_id}/values',
-                       params={'start': start, 'end': end})
-        out = json_payload_to_observation_df(req.json())
+        out = self.chunk_value_requests(
+            f'/aggregates/{aggregate_id}/values',
+            start,
+            end,
+            json_payload_to_observation_df,
+            request_limit=request_limit,
+        )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
 
     @ensure_timestamps('start', 'end')
-    def get_values(self, obj, start, end, interval_label=None):
+    def get_values(self, obj, start, end, interval_label=None,
+                   request_limit=GET_VALUES_LIMIT):
         """
         Get time series values from start to end for object from the API
 
@@ -1258,6 +1298,9 @@ class APISession(requests.Session):
             If beginning or ending, return only data that is
             valid between start and end. If None, return any data
             between start and end inclusive of the endpoints.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
 
         Returns
         -------
@@ -1286,7 +1329,8 @@ class APISession(requests.Session):
         elif isinstance(obj, datamodel.Observation):
             f = self.get_observation_values
             obj_id = obj.observation_id
-        return f(obj_id, start, end, interval_label=interval_label)
+        return f(obj_id, start, end, interval_label=interval_label,
+                 request_limit=request_limit)
 
     def get_user_info(self):
         """
@@ -1321,3 +1365,55 @@ class APISession(requests.Session):
             return self.get_probabilistic_forecast_constant_value
         else:
             raise ValueError('Invalid forecast type.')
+
+    def chunk_value_requests(
+            self, api_path, start, end, parse_fn, params={},
+            request_limit=GET_VALUES_LIMIT):
+        """Breaks up a get requests for values into multiple requests limited
+        by the request_limit argument.
+
+        Parameters
+        ----------
+        api_path : str
+        start : pandas.Timestamp
+        end : pandas.Timestamp
+        parse_fn : function
+            A function used to parse json api response into a pandas Series
+            or DataFrame.
+        params : dict
+            Any additional parameters to be passed with the get function.
+        request_limit : string
+            Timedelta string describing maximum request length. Defaults to 365
+            days.
+
+        Returns
+        -------
+        all_data: pandas.DataFrame or pandas.Series
+            The concatenated results of each request when parsed by parse_fn.
+        """
+        data_objects = []
+        request_start = start
+        if end - start.tz_convert(end.tz) > pd.Timedelta(request_limit):
+            # Recurse toward the beginning of the requested period to avoid
+            # needing to sort the result.
+            request_start = end - pd.Timedelta(request_limit)
+            data_objects.append(
+                self.chunk_value_requests(
+                    api_path,
+                    start,
+                    request_start,
+                    parse_fn=parse_fn,
+                    params=params,
+                    request_limit=request_limit,
+                )
+            )
+        # Request the remaining data, period < = request_limit
+        parameters = {'start': request_start, 'end': end}
+        parameters.update(params)
+        req = self.get(api_path, params=parameters)
+        data_objects.append(parse_fn(req.json()))
+        all_data = pd.concat(data_objects)
+
+        # drop duplicate indices
+        all_data = all_data[~all_data.index.duplicated(keep='first')]
+        return all_data

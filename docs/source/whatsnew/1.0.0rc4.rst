@@ -32,7 +32,8 @@ API Changes
   (:issue:`556`, :pull:`580`)
 * Added `new_index` argument to :py:func:`utils.compute_aggregate` to define
   an index for the computed aggregate. (:issue:`587`)(:pull:`590`)
-
+* Added :py:mod:`io.reference_observations.bsrn` to initialize reference data
+  from the BSRN network (:issue:`541`) (:pull:`604`)
 
 
 Enhancements
@@ -50,6 +51,13 @@ Enhancements
   for missing arguments to the underlying function (:issue:`498`)(:pull:`595`)
 * Interval label, interval value type, and aggregate type are now validated
   when creating datamodel objects (:issue:`213`) (:pull:`596`)
+* Add the automatically generated `constant_value_units` attribute to
+  :py:class:`datamodel.ProbabilisticForecast` and :py:class:`datamodel.ProbabilisticForecastConstantValue`
+  (:issue:`470`) (:pull:`598`)
+* Enable downloading the forecast/observation metadata and the resampled
+  timeseries from a HTML report (:issue:`354`) (:pull:`601`)
+* Add :py:meth:`io.api.APISession.chunk_value_requests` for requesting large
+  amounts of data. (:issue:`573`)(:pull:`600`)
 
 
 Bug fixes
@@ -81,6 +89,8 @@ Bug fixes
   (:issue:`343`) (:pull:`594`)
 * Stop errors generated in the report process from being sent to
   sentry (:issue:`329`) (:pull:`597`)
+* Avoid stacking of forecasts errors in the Total plots in reports
+  and show the full forecast name on hover (:issue:`463`) (:pull:`599`)
 
 
 Contributors

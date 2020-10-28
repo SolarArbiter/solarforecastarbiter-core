@@ -147,6 +147,8 @@ def _dict_factory(inp):
             dict_[k] = _time_conv(v)
     if 'units' in dict_:
         del dict_['units']
+    if 'constant_value_units' in dict_:
+        del dict_['constant_value_units']
     if 'data_object' in dict_:
         del dict_['data_object']
     return dict_
@@ -840,10 +842,21 @@ class EventForecast(Forecast):
         super().__post_init__()
 
 
+def __set_constant_value_units__(cls):
+    if cls.axis == 'x':
+        # e.g. Prob(o < 10 MW). Forecast is in %, constant value is 10 MW
+        object.__setattr__(cls, 'constant_value_units', cls.units)
+        object.__setattr__(cls, 'units', '%')
+    else:
+        # e.g. Prob(o < f) = 90%. Forecast in units of obs, constant value is %
+        object.__setattr__(cls, 'constant_value_units', '%')
+
+
 @dataclass(frozen=True)
 class _ProbabilisticForecastConstantValueBase:
     axis: str
     constant_value: float
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -908,12 +921,14 @@ class ProbabilisticForecastConstantValue(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
 
 
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
     constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float, int], ...]  # NOQA
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -981,6 +996,7 @@ class ProbabilisticForecast(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
         __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
 
@@ -1239,8 +1255,13 @@ def __check_axis_consistency__(axis, constant_values):
 def __check_units__(*args):
     if len(args) == 0:
         return
-    ref_unit = args[0].units
-    if not all(arg.units == ref_unit for arg in args):
+    unique_units = set()
+    for arg in args:
+        if getattr(arg, 'axis', None) == 'x':
+            unique_units.add(arg.constant_value_units)
+        else:
+            unique_units.add(arg.units)
+    if len(unique_units) > 1:
         raise ValueError('All units must be identical.')
 
 
