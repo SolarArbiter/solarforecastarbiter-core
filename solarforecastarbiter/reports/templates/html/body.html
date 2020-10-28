@@ -201,7 +201,8 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% if report.report_parameters.filters %}
   {{ macros.validation_metadata_table(report.report_parameters.filters) }}
   <br>
-  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations) }}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, true) }}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, false) }}
   <br>
 {% else %}
   <div class="alert alert-info">No filters applied</div>

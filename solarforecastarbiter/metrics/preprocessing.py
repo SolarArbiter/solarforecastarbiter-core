@@ -228,7 +228,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     obs_flags['ISNAN'] = obs_data['value'].isna()
 
     # determine the points that should be discarded before resampling.
-    to_discard_before_resample, counts = _calc_discard_before_resample(
+    to_discard_before_resample, val_results = _calc_discard_before_resample(
         obs_flags, quality_flags, fx.interval_length, closed)
 
     # resample using all of the data except for what was flagged by the
@@ -238,7 +238,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             fx.interval_length, closed=closed, label=closed).mean()
 
     # determine the intervals that have too many flagged points
-    to_discard_after_resample, after_resample_counts = \
+    to_discard_after_resample, after_resample_val_results = \
         _calc_discard_after_resample(
             obs_flags,
             quality_flags,
@@ -256,10 +256,10 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     obs_resampled = resampled_values.loc[
         resampled_values.index.intersection(good_labels)]
 
-    # merge the counts dictionaries
-    counts.update(after_resample_counts)
+    # merge the val_results lists
+    val_results += after_resample_val_results
 
-    return obs_resampled, counts
+    return obs_resampled, val_results
 
 
 def _calc_discard_before_resample(
@@ -294,14 +294,18 @@ def _calc_discard_before_resample(
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
-    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
+
+    # construct validation results
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
+
+    validation_results = _counts_to_validation_results(counts, True)
 
     # TODO: add filters for time of day and value, OR with
     # to_discard_before_resample, add discarded number to counts
 
-    return to_discard_before_resample, counts
+    return to_discard_before_resample, validation_results
 
 
 def _calc_discard_after_resample(
@@ -355,8 +359,6 @@ def _calc_discard_after_resample(
         # use list to ensure column selection works
         quality_flags_to_exclude = list(quality_flag.quality_flags) + ['ISNAN']
         filter_name = ' OR '.join(quality_flags_to_exclude)
-        if quality_flag.discard_before_resample:
-            filter_name = 'DISCARD BEFORE RESAMPLE: ' + filter_name
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))
@@ -380,8 +382,25 @@ def _calc_discard_after_resample(
         counts[filter_name] = flagged.sum()
 
     counts['TOTAL DISCARD AFTER RESAMPLE'] = to_discard_after_resample.sum()
+    validation_results = _counts_to_validation_results(counts, False)
 
-    return to_discard_after_resample, counts
+    return to_discard_after_resample, validation_results
+
+
+def _counts_to_validation_results(counts, before_resample):
+    return [
+        datamodel.ValidationResult(
+            flag=k,
+            count=int(v),
+            before_resample=before_resample)
+        for k, v in counts.items()
+    ]
+
+
+def _search_validation_results(val_results, key):
+    for res in val_results:
+        if res.flag == key:
+            return res.count
 
 
 def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
@@ -405,10 +424,9 @@ def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
         Same as input data except may be coerced to a safer dtype.
     observation_values : pandas.Series
         Observation values filtered and resampled.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : tuple
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
     Notes
     -----
@@ -453,12 +471,13 @@ def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
     if isinstance(fx, datamodel.EventForecast):
         fx_data = _validate_event_dtype(fx_data)
         obs_data['value'] = _validate_event_dtype(obs_data['value'])
-        obs_resampled, counts = _resample_event_obs(
+        obs_resampled, validation_results = _resample_event_obs(
             obs, fx, obs_data, quality_flags)
     else:
-        obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flags)
+        obs_resampled, validation_results = _resample_obs(
+            obs, fx, obs_data, quality_flags)
 
-    return fx_data, obs_resampled, counts
+    return fx_data, obs_resampled, validation_results
 
 
 def align(fx_obs, fx_data, obs_data, ref_data, tz):
@@ -716,7 +735,7 @@ def process_forecast_observations(forecast_observations, filters,
 
         # filter and resample observation/aggregate data
         try:
-            forecast_values, observation_values, counts = filter_resample(
+            forecast_values, observation_values, val_results = filter_resample(
                 fxobs, fx_data, obs_data, filters)
         except Exception as e:
             # should figure out the specific exception types to catch
@@ -725,17 +744,12 @@ def process_forecast_observations(forecast_observations, filters,
                 fxobs.forecast.name, fxobs.data_object.name, e)
             continue
 
-        # store validated data in validated_observations
-        val_results = tuple(datamodel.ValidationResult(flag=k, count=int(v))
-                            for k, v in counts.items())
-
         # the total count ultimately shows up in both the validation
         # results table and the preprocessing summary table.
         # use get for compatibility with older reports
-        try:
-            total_discard_before_resample = counts[
-                'TOTAL DISCARD BEFORE RESAMPLE']
-        except KeyError:
+        total_discard_before_resample = _search_validation_results(
+            val_results, 'TOTAL DISCARD BEFORE RESAMPLE')
+        if total_discard_before_resample is None:
             logging.warning(
                 'TOTAL DISCARD BEFORE RESAMPLE not available for pair '
                 '(%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
@@ -743,10 +757,10 @@ def process_forecast_observations(forecast_observations, filters,
             preproc_results.append(datamodel.PreprocessingResult(
                 name='Observation Values Discarded Before Resampling',
                 count=int(total_discard_before_resample)))
-        try:
-            total_discard_after_resample = counts[
-                'TOTAL DISCARD AFTER RESAMPLE']
-        except KeyError:
+
+        total_discard_after_resample = _search_validation_results(
+            val_results, 'TOTAL DISCARD AFTER RESAMPLE')
+        if total_discard_after_resample is None:
             logging.warning(
                 'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
                 fxobs.forecast.name, fxobs.data_object.name)
