@@ -240,16 +240,16 @@ def test_preprocessing_table(report_with_raw, macro_test_template,
 
 
 summary_stats_table_vert_format = """<div class="report-table-wrapper">
-<table class="table table-striped summary-stats-table-vert" style="width:100%;">
+<table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
   <caption style="caption-side:top; text-align: left">
     Table of {stat} data summary statistics
   </caption>
   <thead>
     <tr class="header">
-      <th style="text-align: left;">Aligned Pair</th>
-      <th colspan="5" style="text-align: left;">Observation</th>
-      <th colspan="5" style="text-align: left;">Forecast</th>
-      <th colspan="5" style="text-align: left;">Reference Forecast</th>
+      <th scope="col" style="text-align: left;">Aligned Pair</th>
+      <th scope="col" colspan="5" style="text-align: left;">Observation</th>
+      <th scope="col" colspan="5" style="text-align: left;">Forecast</th>
+      <th scope="col" colspan="5" style="text-align: left;">Reference Forecast</th>
     </tr>
     <tr>
       <th></th>

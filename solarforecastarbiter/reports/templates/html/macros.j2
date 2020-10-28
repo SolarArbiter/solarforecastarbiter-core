@@ -53,16 +53,16 @@ forecasts/single/{{ forecast.forecast_id }}
 {% macro summary_stats_table_vert(summary_stats, category) %}
 {% set span = (human_statistics.values() | length) %}
 <div class="report-table-wrapper">
-<table class="table table-striped summary-stats-table-vert" style="width:100%;">
+<table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
   <caption style="caption-side:top; text-align: left">
     Table of {{ category }} data summary statistics
   </caption>
   <thead>
     <tr class="header">
-      <th style="text-align: left;">Aligned Pair</th>
-      <th colspan="{{ span }}" style="text-align: left;">Observation</th>
-      <th colspan="{{ span }}" style="text-align: left;">Forecast</th>
-      <th colspan="{{ span }}" style="text-align: left;">Reference Forecast</th>
+      <th scope="col" style="text-align: left;">Aligned Pair</th>
+      <th scope="col" colspan="{{ span }}" style="text-align: left;">Observation</th>
+      <th scope="col" colspan="{{ span }}" style="text-align: left;">Forecast</th>
+      <th scope="col" colspan="{{ span }}" style="text-align: left;">Reference Forecast</th>
     </tr>
     <tr>
       <th></th>
