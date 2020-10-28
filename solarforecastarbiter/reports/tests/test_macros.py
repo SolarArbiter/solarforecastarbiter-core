@@ -229,7 +229,7 @@ preprocessing_table_format = """<div class="report-table-wrapper">
   </tbody>
 </table>
 </div>
-"""
+"""  # noqa: E501
 
 
 def test_preprocessing_table(report_with_raw, macro_test_template,

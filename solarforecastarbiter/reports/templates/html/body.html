@@ -185,8 +185,8 @@ Plotly.newPlot("scatter-div", scat_plot);
 {{ macros.download_metadata_script () | safe }}
 {% endblock %}
 
-{% block dataresampleandalign %}
 <h3 id="data-preprocessing">Data Preprocessing</h3>
+{% block dataresampleandalign %}
 <h4 id="data-preprocessing-summary">Summary</h4>
 {% include "data_resampling_preamble" %}
 {{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
