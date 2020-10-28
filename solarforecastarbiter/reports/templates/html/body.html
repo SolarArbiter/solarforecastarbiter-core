@@ -217,7 +217,7 @@ Plotly.newPlot("scatter-div", scat_plot);
   or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
 </p>
 
-{{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
+{{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
 
 <script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">

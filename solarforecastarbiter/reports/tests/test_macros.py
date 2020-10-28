@@ -53,7 +53,8 @@ metric_table_fx_vert_format = """<div class="report-table-wrapper">
 
 def test_metric_table_fx_vert(report_with_raw, macro_test_template):
     metric_table_template = macro_test_template('metric_table_fx_vert(report_metrics,category,metric_ordering)')  # noqa
-    metrics = report_with_raw.raw_report.metrics
+    metrics = [m for m in report_with_raw.raw_report.metrics
+               if not m.is_summary]
     category = 'total'
     for i in range(3):
         expected_metric = (metrics[i],)
@@ -100,7 +101,8 @@ metric_table_fx_horz_format = """<table class="table table-striped" style="width
 
 def test_metric_table_fx_horz(report_with_raw, macro_test_template):
     metric_table_template = macro_test_template('metric_table_fx_horz(report_metrics,category,metric_ordering)')  # noqa
-    metrics = report_with_raw.raw_report.metrics
+    metrics = [m for m in report_with_raw.raw_report.metrics
+               if not m.is_summary]
     category = 'hour'
     for i in range(3):
         expected_metric = (metrics[i],)
