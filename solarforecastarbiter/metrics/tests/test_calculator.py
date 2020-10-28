@@ -1416,9 +1416,8 @@ def test_calculate_summary_statistics_no_data(single_forecast_observation,
         single_forecast_observation,
         pd.Series(dtype=float), pd.Series(dtype=float),)
     categories = ('hour', 'total', 'date', 'month', 'weekday')
-    result = calculator.calculate_summary_statistics(inp, categories)
-    assert isinstance(result, datamodel.MetricResult)
-    assert len(result.values) == 0
+    with pytest.raises(RuntimeError):
+        calculator.calculate_summary_statistics(inp, categories)
 
 
 @pytest.mark.parametrize('ts,tz,interval_label,category,fxresult,obsresult', [
@@ -1541,3 +1540,67 @@ def test_calculate_summary_statistics_interval_label(
             if v.metric == 'forecast_mean'} == fxresult
     assert {(v.index, v.value) for v in res.values
             if v.metric == 'observation_mean'} == obsresult
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (
+        pd.DataFrame({'forecast': [0, 1, 2], 'observation': [1, 1, 1]},
+                     index=pd.date_range(start='20200101T0000Z', freq='1h',
+                                         periods=3), dtype=float),
+        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
+                      'std': [1, 0], 'median': [1, 1], 'var': [1, 0]},
+                     index=['forecast', 'observation'], dtype=float).T
+     ),
+    (
+        pd.DataFrame({'reference_forecast': [0, 1, 2], 'observation':
+                      [1, 1, np.nan]},
+                     index=pd.date_range(start='20200101T0000Z', freq='1h',
+                                         periods=3), dtype=float),
+        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
+                      'std': [1, 0], 'median': [1, 1], 'var': [1, 0]},
+                     index=['reference_forecast', 'observation'],
+                     dtype=float).T
+     )
+])
+def test_calculate_summary_for_frame(inp, expected):
+    out = calculator._calculate_summary_for_frame(inp)
+    pd.testing.assert_frame_equal(out, expected)
+
+
+def test_is_deterministic_forecast(single_forecast, single_event_forecast,
+                                   prob_forecast_constant_value,
+                                   prob_forecasts, single_observation):
+    def make(obj):
+        class Fx:
+            forecast = obj
+
+        class Obj:
+            original = Fx()
+
+        return Obj()
+
+    assert calculator._is_deterministic_forecast(make(single_forecast))
+    assert not calculator._is_deterministic_forecast(
+        make(single_event_forecast))
+    assert not calculator._is_deterministic_forecast(make(prob_forecasts))
+    assert not calculator._is_deterministic_forecast(
+        make(prob_forecast_constant_value))
+    assert not calculator._is_deterministic_forecast(make(single_observation))
+
+
+def test_calculate_all_summary_statistics(
+        mocker, single_forecast_data_obj, create_processed_fxobs):
+    log = mocker.spy(calculator, 'logger')
+    ref_values = _random_ref_values_if_not_None(single_forecast_data_obj)
+    inp = [create_processed_fxobs(single_forecast_data_obj,
+                                  np.random.randn(10)+10,
+                                  np.random.randn(10)+10,
+                                  ref_values=ref_values),
+           create_processed_fxobs(single_forecast_data_obj,
+                                  np.array([]), np.array([]))
+           ]
+    result = calculator.calculate_all_summary_statistics(
+        inp, LIST_OF_CATEGORIES)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
+    log.error.assert_called_once()

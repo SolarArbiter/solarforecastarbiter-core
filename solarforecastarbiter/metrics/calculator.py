@@ -606,17 +606,16 @@ def _season_from_months(months):
 
 
 def _is_deterministic_forecast(proc_fxobs):
-    return not (
-        isinstance(proc_fxobs.original.forecast,
-                   (datamodel.ProbabilisticForecast,
-                    datamodel.ProbabilisticForecastConstantValue))
-        or isinstance(proc_fxobs.original.forecast, datamodel.EventForecast)
-    )
+    return (
+        isinstance(proc_fxobs.original.forecast, datamodel.Forecast) and
+        not isinstance(
+            proc_fxobs.original.forecast,
+            (datamodel.ProbabilisticForecast,
+             datamodel.ProbabilisticForecastConstantValue,
+             datamodel.EventForecast)))
 
 
 def _calculate_summary_for_frame(df):
-    # !!! Does not acutally use the functions defined in summary
-    # probably could, but they should also probably be the nan* equivalents
     return df.agg(list(summary._MAP.keys()))
 
 
@@ -636,6 +635,10 @@ def calculate_summary_statistics(processed_fx_obs, categories):
     solarforecastarbiter.datamodel.MetricResult
         Contains all the computed statistics by category.
 
+    Raises
+    ------
+    RuntimeError
+        If there is no data to summarize
     """
     out = {'name': processed_fx_obs.name,
            'forecast_id': processed_fx_obs.original.forecast.forecast_id,
@@ -660,9 +663,7 @@ def calculate_summary_statistics(processed_fx_obs, categories):
 
     df = pd.DataFrame(dfd)
     if df.empty:
-        # !!! maybe raise runtimeerror like others
-        out['values'] = ()
-        return datamodel.MetricResult.from_dict(out)
+        raise RuntimeError('No data to calculate summary statistics for.')
 
     # Force `groupby` to be consistent with `interval_label`, i.e., if
     # `interval_label == ending`, then the last interval should be in the bin
@@ -686,8 +687,8 @@ def calculate_summary_statistics(processed_fx_obs, categories):
                 cat = calendar.day_abbr[cat]
 
             metric_vals.extend([
-                datamodel.MetricValue(category, f'{obj}_{row}', str(cat), val)
-                for obj, ser in all_metrics.items() for row, val in ser.items()
+                datamodel.MetricValue(category, f'{obj}_{met}', str(cat), val)
+                for obj, ser in all_metrics.items() for met, val in ser.items()
             ])
     out['values'] = _sort_metrics_vals(
         metric_vals, datamodel.ALLOWED_SUMMARY_STATISTICS)
@@ -715,5 +716,9 @@ def calculate_all_summary_statistics(processed_pairs, categories):
     """
     stats = []
     for proc_fxobs in processed_pairs:
-        stats.append(calculate_summary_statistics(proc_fxobs, categories))
+        try:
+            stats.append(calculate_summary_statistics(proc_fxobs, categories))
+        except RuntimeError as e:
+            logger.error('Failed to calculate summary statistics'
+                         ' for %s: %s', proc_fxobs.name, e)
     return stats
