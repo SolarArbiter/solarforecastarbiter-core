@@ -170,6 +170,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     kwargs = dict(
         human_categories=datamodel.ALLOWED_CATEGORIES,
         human_metrics=datamodel.ALLOWED_METRICS,
+        human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS,
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
