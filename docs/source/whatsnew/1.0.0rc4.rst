@@ -34,6 +34,8 @@ API Changes
   an index for the computed aggregate. (:issue:`587`)(:pull:`590`)
 * Added :py:mod:`io.reference_observations.bsrn` to initialize reference data
   from the BSRN network (:issue:`541`) (:pull:`604`)
+* Removed ``preprocessing.VALIDATION_RESULT_TOTAL_STRING`` and
+  ``preprocessing.UNDEFINED_DATA_STRING``.
 
 
 Enhancements
@@ -58,6 +60,10 @@ Enhancements
   timeseries from a HTML report (:issue:`354`) (:pull:`601`)
 * Add :py:meth:`io.api.APISession.chunk_value_requests` for requesting large
   amounts of data. (:issue:`573`)(:pull:`600`)
+* Restructured and rewrote report data preprocessing text to account for
+  new filter/resample pattern and clarify the processes. Added a table that
+  summarizes the filter combinations applied in the report.
+  (:issue`589`, :pull:`602`)
 
 
 Bug fixes
