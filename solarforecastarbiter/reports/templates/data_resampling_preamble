@@ -1,21 +1,19 @@
-<p>The Solar Forecast Arbiter's preprocessing applies the following
+<p>
+The Solar Forecast Arbiter's preprocessing algorithms apply the following
 operations to the data:
-
+</p>
 <ol>
-  <li>Apply the <a href="#data-validation">data validation tests</a> and exclude
-    the matched data.</li>
-  <li>For deterministic forecasts with interval lengths that are longer than
-    the observations interval lengths,
-    <ol>
-      <li>Resample the observations to the forecast using the mean.</li>
-      <li>Remove resampled observation data if more than 10% of the
-        points in the resampled interval are missing. For example, if 1-minute
-        observations are resampled to 60-minute means, then a 60 minute period must
-        have no more than 6 minutes of missing data.</li>
-    </ol>
+  <li>Drop or fill missing forecast and reference forecast data points according to the report's forecast fill method selection.</li>
+  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> with <em>discard before resample</em> True and exclude
+    the matched data. This is typically used to exclude erroneous data.</li>
+  <li>Resample the observations to the forecast interval length using the mean.</li>
+  <li>Apply the <a href="#data-validation-resampling">data validation tests</a> with <em>discard before resample</em> False and exclude
+    the resampled intervals where the percentage of matched points exceeds <em>resample threshold percentage</em>.
+    Also exclude intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold percentage</em>.
+    This is typically used to exclude intervals that contain valid but undesirable data, such as the hours of sunrise/sunset or hours that are mostly clear.</li>
   <li>Remove times that do not exist in both the resampled observations,
-    the forecasts, and, if selected, the reference forecasts.
-  </li>
+    the forecasts, and, if selected, the reference forecasts.</li>
 </ol>
+<p>
 The table below summarizes the data preprocessing results.
 </p>

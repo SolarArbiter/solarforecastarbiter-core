@@ -57,7 +57,11 @@
   <li><a href="#data">Data</a></li>
   <ul>
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
-    <li><a href="#data-validation">Data Validation, Resampling, and Alignment</a></li>
+    <li><a href="#data-preprocessing">Data Preprocessing</a></li>
+    <ul>
+      <li><a href="#data-preprocessing-summary">Summary</a></li>
+      <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
+    </ul>
   </ul>
   <li><a href="#metrics">Metrics</a></li>
   {% if include_metrics_toc | default(True) %}
@@ -120,7 +124,7 @@
 {% include "obsfx_table.html" %}
 
 {% if timeseries_spec is defined %}
-<p>The plots below show the realigned and resampled time series of
+<p>The plots below show the filtered, resampled, and aligned time series of
 observation and forecast data as well as the distribution of forecast vs
 observation data.</p>
 
@@ -167,8 +171,17 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endif %}
 {% endblock %}
 
+{% block dataresampleandalign %}
+<h3 id="data-preprocessing">Data Preprocessing</h3>
+<h4 id="data-preprocessing-summary">Summary</h4>
+{% include "data_resampling_preamble" %}
+{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+<br>
+{% include "data_resampling_postamble" %}
+{% endblock %}
+
 {% block datavalidation %}
-<h3 id="data-validation">Data Validation</h3>
+<h4 id="data-validation-resampling">Validation and Resampling</h4>
 {% include "data_validation_pre_text" %}
 
 {% if report.report_parameters.filters %}
@@ -181,14 +194,6 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endif %}
 
 {% include "data_validation_post_text" %}
-{% endblock %}
-
-{% block dataresampleandalign %}
-<h3 id="data-alignment">Data Resampling and Alignment</h3>
-{% include "data_resampling_preamble" %}
-{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
-<br>
-{% include "data_resampling_postamble" %}
 {% endblock %}
 
 {% block metrics %}
