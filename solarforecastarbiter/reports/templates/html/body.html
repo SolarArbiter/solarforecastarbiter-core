@@ -72,10 +72,11 @@
 {% endblock %}
 
 {% block errors %}
-{% if report.raw_report.messages| length > 0 %}
+{% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
+{% if messages | length > 0 %}
 <div class="alert alert-warning">
-  {% for mesg in report.raw_report.messages %}
-  <h5>{{ mesg.message }}</h5>
+  {% for mesg in messages %}
+  <h5>{{ mesg }}</h5>
   {% endfor %}
 </div>
 {% endif %}

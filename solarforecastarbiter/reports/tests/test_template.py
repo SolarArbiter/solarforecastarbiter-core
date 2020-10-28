@@ -48,6 +48,11 @@ def with_series(request):
     return request.param
 
 
+@pytest.fixture(params=[True, False])
+def with_body(request):
+    return request.param
+
+
 @pytest.fixture
 def expected_kwargs(dash_url):
     def fn(report, with_series, with_report=True):
@@ -57,6 +62,7 @@ def expected_kwargs(dash_url):
         kwargs['category_blurbs'] = datamodel.CATEGORY_BLURBS
         if with_report:
             kwargs['report'] = report
+        kwargs['templating_messages'] = []
         if report.status == 'complete':
             kwargs['metrics_json'] = expected_metrics_json
             kwargs['metadata_json'] = expected_metadata_json
@@ -65,6 +71,10 @@ def expected_kwargs(dash_url):
             kwargs['metrics_json'] = '[]'
             kwargs['metadata_json'] = '[]'
             kwargs['summary_stats'] = '[]'
+        if report.status == 'failed' and hasattr(report, 'raw_report'):
+            kwargs['templating_messages'] = [
+                'No data summary statistics were calculated '
+                'with this report.']
         kwargs['dash_url'] = dash_url
         kwargs['bokeh_version'] = bokeh_version
         kwargs['plotly_version'] = plotly_version
@@ -125,7 +135,6 @@ def good_or_bad_report(request, report_with_raw, failed_report,
     return out
 
 
-@pytest.mark.parametrize('with_body', [True, False])
 def test_get_template_and_kwargs(
         good_or_bad_report, dash_url, with_series, expected_kwargs,
         mocked_timeseries_plots, with_body):
@@ -141,6 +150,27 @@ def test_get_template_and_kwargs(
     assert type(html_template) == jinja2.environment.Template
     assert kwargs == expected_kwargs(good_or_bad_report,
                                      with_series, False)
+
+
+def test_get_template_and_kwargs_no_stats(
+        no_stats_report, dash_url, with_series, with_body,
+        expected_kwargs, mocked_timeseries_plots):
+    html_template, kwargs = template.get_template_and_kwargs(
+        no_stats_report,
+        dash_url,
+        with_series,
+        with_body
+    )
+    base = kwargs.pop('base_template')
+    kwargs.pop('report')
+    assert type(base) == jinja2.environment.Template
+    assert type(html_template) == jinja2.environment.Template
+    ek = expected_kwargs(no_stats_report,
+                         with_series, False)
+    ek['templating_messages'] = [
+        'No data summary statistics were calculated with this report.']
+    ek['summary_stats'] = '[]'
+    assert kwargs == ek
 
 
 def test_get_template_and_kwargs_bad_status(
@@ -179,15 +209,9 @@ def test_build_summary_stats_json(report_with_raw):
         report_with_raw) == expected_summary_stats_json
 
 
-def test_build_summary_stats_json_no_stats(report_with_raw):
-    report = deepcopy(report_with_raw)
-    new_raw = report.raw_report.replace(
-        metrics=[m for m in report.raw_report.metrics if
-                 not m.is_summary])
-    report = report.replace(raw_report=new_raw)
+def test_build_summary_stats_json_no_stats(no_stats_report):
     with pytest.raises(ValueError):
-        template.build_summary_stats_json(
-            report)
+        template.build_summary_stats_json(no_stats_report)
 
 
 def test_build_summary_stats_json_empty(pending_report):

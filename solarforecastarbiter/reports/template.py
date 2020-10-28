@@ -175,6 +175,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         dash_url=dash_url,
         metrics_json=build_metrics_json(report),
         metadata_json=build_metadata_json(report),
+        templating_messages=[]
     )
     report_plots = getattr(report.raw_report, 'plots', None)
     # get plotting library versions used when plots were generated.
@@ -188,6 +189,8 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     try:
         kwargs['summary_stats'] = build_summary_stats_json(report)
     except ValueError:
+        kwargs['templating_messages'].append(
+            'No data summary statistics were calculated with this report.')
         kwargs['summary_stats'] = '[]'
 
     if with_timeseries:

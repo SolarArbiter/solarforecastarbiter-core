@@ -2725,6 +2725,17 @@ def report_with_raw(report_dict, raw_report):
     return report
 
 
+@pytest.fixture
+def no_stats_report(report_dict, raw_report):
+    raw = raw_report(True)
+    report_dict['raw_report'] = raw.replace(
+        metrics=tuple(filter(lambda x: not x.is_summary, raw.metrics))
+    )
+    report_dict['status'] = 'complete'
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
 @pytest.fixture()
 def failed_report(report_dict):
     report_dict['raw_report'] = datamodel.RawReport(
