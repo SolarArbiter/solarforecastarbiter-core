@@ -110,7 +110,7 @@ forecasts/single/{{ forecast.forecast_id }}
 
 {% macro validation_metadata_table(quality_filters) %}
 <div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-filters">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-filters-table">
   <caption style="caption-side:top; text-align: left">
     Table of data validation filters
   </caption>
@@ -137,7 +137,7 @@ forecasts/single/{{ forecast.forecast_id }}
 
 {% macro validation_results_table(proc_fxobs_list) %}
 <div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data validation results
   </caption>
@@ -193,7 +193,7 @@ forecasts/single/{{ forecast.forecast_id }}
   {% endfor %}
 {% endfor %}
 <div class="report-table-wrapper">
-<table class="table table-striped preprocessing-table" style="width:100%;">
+<table class="table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data preprocessing results
   </caption>

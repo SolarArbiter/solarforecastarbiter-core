@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
 FILL_RESULT_TOTAL_STRING = "Missing {0}Forecast Values {1}"
-DISCARD_DATA_STRING = "{0} Values Discarded by Alignment to {1}"
+DISCARD_DATA_STRING = "{0} Values Discarded by Alignment"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
-FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
+FORECAST_FILL_STRING_MAP = {'drop': "Discarded",
                             'forward': "Forward Filled"}
 
 
@@ -527,19 +527,16 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     observation_values = obs_aligned.tz_convert(tz)
 
     # Return dict summarizing results
+    discarded_fx_intervals = len(fx_data.dropna(how="any")) - len(fx_aligned)
+    discarded_obs_intervals = len(obs_data) - len(observation_values)
+    obs_blurb = "Validated, Resampled " + obs.__blurb__
     results = {
-        DISCARD_DATA_STRING.format(
-            fx.__blurb__, "Validated, Resampled " + obs.__blurb__):
-                len(fx_data.dropna(how="any")) - len(fx_aligned),
-        DISCARD_DATA_STRING.format(
-            "Validated, Resampled " + obs.__blurb__, fx.__blurb__):
-                len(obs_data) - len(observation_values),
+        DISCARD_DATA_STRING.format(fx.__blurb__): discarded_fx_intervals,
+        DISCARD_DATA_STRING.format(obs_blurb): discarded_obs_intervals
     }
 
     if ref_data is not None:
-        k = DISCARD_DATA_STRING.format(
-            "Reference " + ref_fx.__blurb__,
-            "Validated, Resampled " + obs.__blurb__)
+        k = DISCARD_DATA_STRING.format("Reference " + ref_fx.__blurb__)
         results[k] = len(ref_data.dropna(how='any')) - len(ref_fx_aligned)
 
     return forecast_values, observation_values, ref_values, results

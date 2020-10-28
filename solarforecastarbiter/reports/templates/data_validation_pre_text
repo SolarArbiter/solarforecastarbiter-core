@@ -1,7 +1,7 @@
 <p>
 The Solar Forecast Arbiter applied its data validation toolkit to the
 observation data. The
-<a href="#data-validation-filters">table of data validation filters</a>
+<a href="#data-validation-filters-table">table of data validation filters</a>
 shows the filter configuration used in this report, where each row is a
 separate filter. Within each filter, multiple <em>quality flags</em> may be
 specified.
@@ -13,7 +13,7 @@ Furthermore, resampled intervals
 are discarded if the percentage of discarded points in the interval exceeds
 <em>resample threshold percentage</em>. The total number of discarded resampled
 intervals is reported with DISCARD BEFORE RESAMPLE prepended to the flag name in the
-<a href="#data-validation-results">table of data validation results</a>.
+<a href="#data-validation-results-table">table of data validation results</a>.
 </p>
 <p>
 If <em>discard before resample</em> is false, data values from flagged points are
