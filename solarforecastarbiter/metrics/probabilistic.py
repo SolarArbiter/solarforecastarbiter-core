@@ -522,16 +522,14 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     """
 
     # match observations to fx shape: (n,) => (n, d)
-    try:
-        n, d = np.shape(fx)   # throws ValueError if 1D array
-        if d < 2:
-            raise ValueError("forecasts must have d >= 2 CDF intervals "
-                             f"(expected >= 2, got {d})")
-        else:
-            obs = np.tile(obs, (fx.shape[1], 1)).T
-    except ValueError:
+    if np.ndim(fx) < 2:
         raise ValueError("forecasts must be 2D arrays (expected (n,d), got"
                          f"{np.shape(fx)})")
+    elif np.shape(fx)[1] < 2:
+        raise ValueError("forecasts must have d >= 2 CDF intervals "
+                         f"(expected >= 2, got {np.shape(fx)[1]})")
+    else:
+        obs = np.tile(obs, (fx.shape[1], 1)).T
 
     # event: 0=did not happen, 1=did happen
     o = np.where(obs <= fx, 1.0, 0.0)
@@ -582,9 +580,13 @@ def crps_skill_score(obs, fx, fx_prob, ref, ref_prob):
 
     """
 
-    crps_fx = continuous_ranked_probability_score(obs, fx, fx_prob)
-    crps_ref = continuous_ranked_probability_score(obs, ref, ref_prob)
-    return 1 - crps_fx / crps_ref
+    if np.isscalar(ref):
+        return np.nan
+    else:
+        print("Valid ref:", ref, type(ref))
+        crps_fx = continuous_ranked_probability_score(obs, fx, fx_prob)
+        crps_ref = continuous_ranked_probability_score(obs, ref, ref_prob)
+        return 1 - crps_fx / crps_ref
 
 
 # Add new metrics to this map to map shorthand to function
