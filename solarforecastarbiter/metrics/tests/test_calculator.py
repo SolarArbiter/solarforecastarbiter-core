@@ -303,10 +303,9 @@ def test_calculate_metrics_with_probablistic(single_observation,
                                           PROB_NO_REF)
     assert len(result) == 1
     assert isinstance(result[0], datamodel.MetricResult)
-    verify_metric_result(result[0],
-                         proc_prfx_obs,
-                         LIST_OF_CATEGORIES,
-                         set(probabilistic._REQ_DIST) - set(probabilistic._REQ_REF_FX))
+    verify_metric_result(
+        result[0], proc_prfx_obs, LIST_OF_CATEGORIES,
+        set(probabilistic._REQ_DIST) - set(probabilistic._REQ_REF_FX))
 
     # With reference
     ref_fx_values = fx_values + .5
@@ -384,9 +383,10 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
     # Distribution and constant values
     all_results = calculator.calculate_metrics(
-        [proc_prfx_obs] + cv_proc_ref_prfx_obs, LIST_OF_CATEGORIES,
+        [proc_ref_prfx_obs] + cv_proc_ref_prfx_obs, LIST_OF_CATEGORIES,
         # reverse to ensure order output is independent
         PROBABILISTIC_METRICS[::-1])
+
     assert all_results[0] == dist_results[0]
     assert len(all_results[1:]) == len(cv_results)
     for a, b in zip(all_results[1:], cv_results):
@@ -589,7 +589,8 @@ def test_calculate_probabilistic_metrics_missing_ref(
         pd.DataFrame(np.random.randn(10, 3), index=create_dt_index(10)),
         pd.Series(np.random.randn(10), index=create_dt_index(10)))
     result = calculator.calculate_probabilistic_metrics(
-            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+            proc_fxobs, LIST_OF_CATEGORIES,
+            set(probabilistic._REQ_REF_FX) - set(probabilistic._REQ_DIST)
         )
     assert isinstance(result, datamodel.MetricResult)
     assert result.values == ()
@@ -606,7 +607,8 @@ def test_calculate_probabilistic_metrics_no_reference_data(
         pd.Series(np.random.randn(10), index=create_dt_index(10)),
         ref_values=None)
     result = calculator.calculate_probabilistic_metrics(
-            proc_fxobs, LIST_OF_CATEGORIES, probabilistic._REQ_REF_FX
+            proc_fxobs, LIST_OF_CATEGORIES,
+            set(probabilistic._REQ_REF_FX) - set(probabilistic._REQ_DIST)
         )
     assert isinstance(result, datamodel.MetricResult)
     assert result.values == ()
@@ -955,7 +957,7 @@ def test_apply_deterministic_bad_metric_func():
     ('unc', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
 
     # CRPS single forecast
-    ('crps', [[1]], [[100]], [[0]], None, None, 0.),
+    ('crps', [[1, 1]], [[100, 100]], [[0, 0]], None, None, 0.),
     # CRPS mulitple forecasts
     ('crps', [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
              [[100, 100, 100], [100, 100, 100], [100, 100, 100]],
