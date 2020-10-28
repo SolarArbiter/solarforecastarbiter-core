@@ -2538,8 +2538,10 @@ def report_metrics(metric_index):
             values = []
             if hasattr(fxobs, 'observation'):
                 obsid = fxobs.observation.observation_id
+                obskey = 'observation'
             else:
                 obsid = fxobs.aggregate.aggregate_id
+                obskey = 'aggregate'
             metrics_dict = {
                 'name': f'{fxobs.forecast.name}',
                 'forecast_id': fxobs.forecast.forecast_id,
@@ -2558,6 +2560,28 @@ def report_metrics(metric_index):
                     }
                 ))
             metrics_dict['values'] = values
+            metrics = metrics + (
+                datamodel.MetricResult.from_dict(metrics_dict),)
+
+            stats = []
+            keys = ('forecast', obskey)
+            if fxobs.reference_forecast is not None:
+                keys += ('reference_forecast',)
+            for metric, category in itertools.product(
+                ('mean', 'min', 'max', 'std', 'median', 'var'),
+                report.report_parameters.categories
+            ):
+                for key in keys:
+                    stats.append(datamodel.MetricValue.from_dict(
+                        {
+                            'category': category,
+                            'metric': f'{key}_{metric}',
+                            'value': 2,
+                            'index': metric_index(category),
+                        }
+                    ))
+            metrics_dict['values'] = stats
+            metrics_dict['is_summary'] = True
             metrics = metrics + (
                 datamodel.MetricResult.from_dict(metrics_dict),)
         return metrics
