@@ -411,7 +411,6 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                              next_params['dir'], next_params['file'])
                 yield next_params
                 break
-            asyncio.sleep(os.getenv('AIO_CHECK_SLEEP', 5))
 
             # if the current time is after 'avg_max_run_length' after the
             # first forecast was available, check if forecasts from the
