@@ -8,9 +8,8 @@ _MAP = {
     'mean': (np.nanmean, 'Mean'),
     'min': (np.nanmin, 'Min'),
     'max': (np.nanmax, 'Max'),
-    'std': (np.nanstd, 'Std'),
     'median': (np.nanmedian, 'Median'),
-    'var': (np.nanvar, 'Variance'),
+    'std': (np.nanstd, 'Std.'),
 }
 
 __all__ = [m[0].__name__ for m in _MAP.values()]
