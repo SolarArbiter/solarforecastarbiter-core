@@ -1398,10 +1398,10 @@ def test_calculate_summary_statistics_exact(single_forecast_observation,
     expected = {
         0: ('total', 'forecast_mean', '0', 1.),
         1: ('total', 'observation_mean', '0', 1.),
-        12: ('month', 'forecast_mean', 'May', 2.),
-        15: ('month', 'observation_mean', 'Jun', 1.),
-        42: ('hour', 'forecast_min', '19', 2.),
-        52: ('hour', 'observation_max', '20', 1.),
+        10: ('month', 'forecast_mean', 'May', 2.),
+        13: ('month', 'observation_mean', 'Jun', 1.),
+        36: ('hour', 'forecast_min', '19', 2.),
+        46: ('hour', 'observation_max', '20', 1.),
         -8: ('weekday', 'observation_median', 'Tue', 1.0)
     }
     attr_order = ('category', 'metric', 'index', 'value')
@@ -1548,7 +1548,7 @@ def test_calculate_summary_statistics_interval_label(
                      index=pd.date_range(start='20200101T0000Z', freq='1h',
                                          periods=3), dtype=float),
         pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
-                      'std': [1, 0], 'median': [1, 1], 'var': [1, 0]},
+                      'median': [1, 1], 'std': [1, 0] },
                      index=['forecast', 'observation'], dtype=float).T
      ),
     (
@@ -1557,7 +1557,7 @@ def test_calculate_summary_statistics_interval_label(
                      index=pd.date_range(start='20200101T0000Z', freq='1h',
                                          periods=3), dtype=float),
         pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
-                      'std': [1, 0], 'median': [1, 1], 'var': [1, 0]},
+                      'median': [1, 1], 'std': [1, 0]},
                      index=['reference_forecast', 'observation'],
                      dtype=float).T
      )

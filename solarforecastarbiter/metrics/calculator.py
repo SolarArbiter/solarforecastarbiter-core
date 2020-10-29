@@ -688,7 +688,11 @@ def calculate_summary_statistics(processed_fx_obs, categories):
                 datamodel.MetricValue(category, f'{obj}_{met}', str(cat), val)
                 for obj, ser in all_metrics.items() for met, val in ser.items()
             ])
-    out['values'] = metric_vals
+    out['values'] = _sort_metrics_vals(
+        metric_vals,
+        {f'{type_}_{k}': v
+         for k, v in datamodel.ALLOWED_SUMMARY_STATISTICS.items()
+         for type_ in ('forecast', 'observation', 'reference_forecast')})
     calc_stats = datamodel.MetricResult.from_dict(out)
     return calc_stats
 
