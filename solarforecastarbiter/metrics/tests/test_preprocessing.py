@@ -76,10 +76,9 @@ SIXTEEN_15MIN_DF = pd.DataFrame(
 def create_preprocessing_result(counts):
     """Create preprocessing results in order that matches align function."""
     return {
-        "Forecast " + preprocessing.DISCARD_DATA_STRING: counts[0],
-        "Observation " + preprocessing.DISCARD_DATA_STRING: counts[1],
-        "Forecast " + preprocessing.UNDEFINED_DATA_STRING: counts[2],
-        "Observation " + preprocessing.UNDEFINED_DATA_STRING: counts[3],
+        preprocessing.DISCARD_DATA_STRING.format('Forecast'): counts[0],
+        preprocessing.DISCARD_DATA_STRING.format(
+            'Validated, Resampled Observation'): counts[1]
     }
 
 
@@ -88,16 +87,16 @@ def create_preprocessing_result(counts):
 @pytest.mark.parametrize('fx_interval_label',
                          ['beginning', 'ending'])
 @pytest.mark.parametrize('fx_series,obs_series,expected_dt,expected_res', [
-    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*4),
+    (THREE_HOUR_SERIES, THREE_HOUR_SERIES, THREE_HOURS, [0]*2),
     # document behavior in undesireable case with higher frequency obs data.
-    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0, 10, 0, 0]),
-    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*4),
-    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0, 0, 1]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [0, 1, 1, 0]),
-    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 0, 1, 1]),  # NOQA
-    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),  # NOQA
-    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 3, 0, 0]),  # NOQA
-    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [3, 0, 0, 0]),
+    (THREE_HOUR_SERIES, THIRTEEN_10MIN_SERIES, THREE_HOURS, [0, 10]),
+    (THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN_SERIES, THIRTEEN_10MIN, [0]*2),
+    (THREE_HOUR_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [1, 0]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_SERIES, THREE_HOURS_NAN, [0, 1]),
+    (THREE_HOUR_NAN_SERIES, THREE_HOUR_NAN_SERIES, THREE_HOURS_NAN, [0, 0]),
+    (THREE_HOUR_SERIES, THREE_HOUR_EMPTY_SERIES, THREE_HOURS_EMPTY, [3, 0]),
+    (THREE_HOUR_EMPTY_SERIES, THREE_HOUR_SERIES, THREE_HOURS_EMPTY, [0, 3]),
+    (THREE_HOUR_SERIES, EMPTY_OBJ_SERIES, THREE_HOURS_EMPTY, [3, 0]),
 ])
 def test_align(
         site_metadata, obs_interval_label, fx_interval_label, fx_series,
@@ -393,7 +392,9 @@ def test_align_prob_constant_value(
             60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
             pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
             {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
-             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 3,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
         (
             (datamodel.QualityFlagFilter(('NIGHTTIME', )),
@@ -402,7 +403,9 @@ def test_align_prob_constant_value(
             pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
             {'NIGHTTIME': 2, 'ISNAN': 1, 'USER FLAGGED': 2,
              'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 2,
-             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 3,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
         (
             [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
@@ -411,7 +414,9 @@ def test_align_prob_constant_value(
             # resample_threshold_percentage exceeded
             pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
             {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
-             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 8,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
         (
             [datamodel.QualityFlagFilter(
@@ -421,7 +426,9 @@ def test_align_prob_constant_value(
             # only first all-nan interval is discarded
             pd.Series([7.5, 11.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
             {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
-             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 1}
+             'DISCARD BEFORE RESAMPLE: NIGHTTIME OR USER FLAGGED OR ISNAN': 1,
+             'TOTAL DISCARD BEFORE RESAMPLE': 8,
+             'TOTAL DISCARD AFTER RESAMPLE': 1}
         ),
         (
             (datamodel.QualityFlagFilter(('NIGHTTIME', )),
@@ -430,7 +437,9 @@ def test_align_prob_constant_value(
             pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
             {'NIGHTTIME': 3, 'ISNAN': 5, 'USER FLAGGED': 3,
              'DISCARD BEFORE RESAMPLE: NIGHTTIME OR ISNAN': 3,
-             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3}
+             'DISCARD BEFORE RESAMPLE: USER FLAGGED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 8,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
         (
             [datamodel.QualityFlagFilter(
@@ -439,7 +448,9 @@ def test_align_prob_constant_value(
                 resample_threshold_percentage=30)],
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
-            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 3}
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 5,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
         (
             (datamodel.QualityFlagFilter(
@@ -452,7 +463,9 @@ def test_align_prob_constant_value(
                 resample_threshold_percentage=30)),
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             pd.Series([10.5, 14.5], index=FOUR_HOUR_SERIES.index[2:]),
-            {'ISNAN': 5, 'NIGHTTIME OR ISNAN': 2, 'USER FLAGGED OR ISNAN': 2}
+            {'ISNAN': 5, 'NIGHTTIME OR ISNAN': 2, 'USER FLAGGED OR ISNAN': 2,
+             'TOTAL DISCARD BEFORE RESAMPLE': 5,
+             'TOTAL DISCARD AFTER RESAMPLE': 2}
         ),
         (
             [datamodel.QualityFlagFilter(
@@ -462,7 +475,9 @@ def test_align_prob_constant_value(
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             # only first all-nan interval is discarded
             pd.Series([7.0, 10.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
-            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 0}
+            {'ISNAN': 5, 'NIGHTTIME OR USER FLAGGED OR ISNAN': 0,
+             'TOTAL DISCARD BEFORE RESAMPLE': 5,
+             'TOTAL DISCARD AFTER RESAMPLE': 0}
         ),
         (
             [datamodel.QualityFlagFilter(
@@ -479,7 +494,9 @@ def test_align_prob_constant_value(
             pd.Series([10.5], index=[FOUR_HOUR_SERIES.index[2]]),
             {'ISNAN': 5, 'CLEARSKY EXCEEDED': 1,
              'NIGHTTIME OR USER FLAGGED OR ISNAN': 0,
-             'DISCARD BEFORE RESAMPLE: CLEARSKY EXCEEDED OR ISNAN': 3}
+             'DISCARD BEFORE RESAMPLE: CLEARSKY EXCEEDED OR ISNAN': 3,
+             'TOTAL DISCARD BEFORE RESAMPLE': 6,
+             'TOTAL DISCARD AFTER RESAMPLE': 3}
         ),
     ]
 )

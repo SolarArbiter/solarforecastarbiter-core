@@ -108,9 +108,36 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
-{% macro validation_table(proc_fxobs_list, quality_filters) %}
+{% macro validation_metadata_table(quality_filters) %}
 <div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-filters-table">
+  <caption style="caption-side:top; text-align: left">
+    Table of data validation filters
+  </caption>
+  <thead>
+    <tr class="header">
+      <th style="text-align: left;">Quality flags</th>
+      <th style="text-align: left;">Discard before resample</th>
+      <th style="text-align: left;">Resample threshold (%)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for qfilter in quality_filters %}
+      <tr>
+        <td style="text-align: left">{{ qfilter.quality_flags | join(', ') }}</td>
+        <td style="text-align: left">{{ qfilter.discard_before_resample }}</td>
+        <td style="text-align: left">{{ qfilter.resample_threshold_percentage }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endmacro %}
+
+
+{% macro validation_results_table(proc_fxobs_list) %}
+<div class="report-table-wrapper">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data validation results
   </caption>
@@ -118,7 +145,7 @@ forecasts/single/{{ forecast.forecast_id }}
     <tr class="header">
       <th style="text-align: left;">Aligned Pair</th>
       {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {{ proc_fxobs.name }}
       </th>
       {% endfor %}
@@ -126,28 +153,28 @@ forecasts/single/{{ forecast.forecast_id }}
     <tr class="header">
       <th style="text-align: left;">Observation</th>
       {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {{ proc_fxobs.original.data_object.name }}
       </th>
       {% endfor %}
     </tr>
   </thead>
   <tbody>
-    {% for qfilter in quality_filters %}
+    {% for flag in (proc_fxobs_list | unique_flags_filter) %}
       <tr>
-      <td style="test-align: left">{{ qfilter }}</td>
-      {% for proc_fxobs in proc_fxobs_list %}
-        {% set ns = namespace(found=false) %}
-        {% for res in proc_fxobs.validation_results %}
-          {% if res.flag == qfilter %}
-            {% set ns.found = true %}
-            <td style="text-align: center">{{ res.count }}</td>
+        <td style="text-align: left">{{ flag }}</td>
+        {% for proc_fxobs in proc_fxobs_list %}
+          {% set ns = namespace(found=false) %}
+            {% for res in proc_fxobs.validation_results %}
+              {% if res.flag == flag %}
+                {% set ns.found = true %}
+        <td style="text-align: center">{{ res.count }}</td>
+              {% endif %}
+            {% endfor %}
+          {% if not ns.found %}
+        <td></td>
           {% endif %}
         {% endfor %}
-        {% if not ns.found %}
-          <td></td>
-        {% endif %}
-      {% endfor %}
       </tr>
     {% endfor %}
   </tbody>
@@ -166,7 +193,7 @@ forecasts/single/{{ forecast.forecast_id }}
   {% endfor %}
 {% endfor %}
 <div class="report-table-wrapper">
-<table class="table table-striped preprocessing-table" style="width:100%;">
+<table class="table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data preprocessing results
   </caption>

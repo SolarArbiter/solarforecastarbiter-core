@@ -161,41 +161,57 @@
 %- endmacro
 
 
-%- macro data_validation_table()
+%- macro data_validation_section()
 \VAR{data_validation_pre_text() | html_to_tex}
 \VAR{data_validation_post_text() | html_to_tex}
-%- for filter in report.report_parameters.filters
-%- if filter.__class__.__name__ == 'QualityFlagFilter'
-\VAR{validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags)}
+%- if report.report_parameters.filters
+\VAR{validation_metadata_table(report.report_parameters.filters)}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter)}
 %- endif
-%- endfor
 %- endmacro
 
 
-%- macro validation_table(proc_fxobs_list, quality_filters)
+%- macro validation_metadata_table(quality_filters)
+\begin{table}[h]
+  \caption{Table of data validation filters.}
+  \small
+  \begin{tabu} to \linewidth {
+      X[l] | l l
+    }
+    Quality flags & Discard before resample & Resample threshold (\%)\\
+    \midrule
+    %- for qfilter in quality_filters
+    \VAR{qfilter.quality_flags | join(', ')} & \VAR{qfilter.discard_before_resample} & \VAR{qfilter.resample_threshold_percentage} \\
+    %- endfor
+  \end{tabu}
+\end{table}
+%- endmacro
+
+
+%- macro validation_results_table(proc_fxobs_list, unique_flags)
 \begin{landscape}
   \pagestyle{empty}
   \small
   \renewcommand{\arraystretch}{1.7}
   \begin{longtabu} to \linewidth {
-      X[2] | X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
+      X[2] | X[2] | *{\VAR{unique_flags | length}}{ | l}
     }
     \caption{Table of data validation results.} \\
     \toprule
     \multicolumn{1}{l}{} &  \multicolumn{1}{l ||}{} &
-    \multicolumn{\VAR{quality_filters | length}}{c}{Quality Flag} \\
-    \cline{3-\VAR{(quality_filters | length) + 2 }}
+    \multicolumn{\VAR{unique_flags | length}}{c}{Quality Flag} \\
+    \cline{3-\VAR{(unique_flags | length) + 2 }}
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
-    %- for qfilter in quality_filters
-    & \ccbr{\VAR{qfilter}}
+    %- for qfilter in unique_flags
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
     \endfirsthead
     \caption{Table of data validation results (cont.)} \\
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
-    %- for qfilter in quality_filters
-    & \ccbr{\VAR{qfilter}}
+    %- for qfilter in unique_flags
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
@@ -205,7 +221,7 @@
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
-    %- for qfilter in quality_filters
+    %- for qfilter in unique_flags
     %- set ns  = namespace(found=false)
     %- for res in pfxobs.validation_results
     %- if res.flag == qfilter

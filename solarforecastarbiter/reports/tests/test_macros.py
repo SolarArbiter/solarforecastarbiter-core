@@ -3,6 +3,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.reports import template
 
 
 @pytest.fixture
@@ -16,6 +17,7 @@ def macro_test_template():
             lstrip_blocks=True,
             trim_blocks=True
         )
+        env.filters['unique_flags_filter'] = template._unique_flags_filter
         html_template = env.from_string(macro_template)
         return html_template
     return fn
@@ -114,71 +116,86 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
 
 
 validation_table_format = """<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data validation results
   </caption>
   <thead>
     <tr class="header">
       <th style="text-align: left;">Aligned Pair</th>
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {}
       </th>
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {}
       </th>
     </tr>
     <tr class="header">
       <th style="text-align: left;">Observation</th>
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {}
       </th>
-      <th style="text-align: center;">
+      <th style="text-align: center; vertical-align: middle">
         {}
       </th>
     </tr>
   </thead>
   <tbody>
       <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
       </tr>
       <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
       </tr>
       <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
+      </tr>
+      <tr>
+        <td style="text-align: left">{}</td>
+        <td style="text-align: center">0</td>
+        <td style="text-align: center">0</td>
       </tr>
   </tbody>
 </table>
 </div>
-"""
+"""  # noqa: E501
 
 
-def test_validation_table(report_with_raw, macro_test_template):
-    validation_table_template = macro_test_template('validation_table(proc_fxobs_list,quality_filters)')  # noqa
+def test_validation_results_table(report_with_raw, macro_test_template):
+    validation_table_template = macro_test_template('validation_results_table(proc_fxobs_list)')  # noqa
     proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
     qfilters = list(
         f.quality_flags for f in report_with_raw.report_parameters.filters
-        if isinstance(f, datamodel.QualityFlagFilter))[0][0:3]
+        if isinstance(f, datamodel.QualityFlagFilter))[0]
     rendered_validation_table = validation_table_template.render(
-        proc_fxobs_list=proc_fxobs_list,
-        quality_filters=qfilters)
-    assert rendered_validation_table == validation_table_format.format(
+        proc_fxobs_list=proc_fxobs_list)
+    expected = validation_table_format.format(
         proc_fxobs_list[0].name,
         proc_fxobs_list[1].name,
         proc_fxobs_list[0].original.observation.name,
         proc_fxobs_list[1].original.observation.name,
         *qfilters)
+    assert rendered_validation_table == expected
 
 
 preprocessing_table_format = """<div class="report-table-wrapper">
-<table class="table table-striped preprocessing-table" style="width:100%;">
+<table class="table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
   <caption style="caption-side:top; text-align: left">
     Table of data preprocessing results
   </caption>
@@ -209,20 +226,10 @@ preprocessing_table_format = """<div class="report-table-wrapper">
             <td style="text-align: center">0</td>
             <td style="text-align: center">0</td>
       </tr>
-      <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
-      </tr>
-      <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
-      </tr>
   </tbody>
 </table>
 </div>
-"""
+"""  # noqa: E501
 
 
 def test_preprocessing_table(report_with_raw, macro_test_template,

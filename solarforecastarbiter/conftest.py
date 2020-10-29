@@ -2522,11 +2522,11 @@ def metric_index():
 
 @pytest.fixture
 def preprocessing_result_types():
-    return (preprocessing.VALIDATION_RESULT_TOTAL_STRING,
-            'Forecast ' + preprocessing.DISCARD_DATA_STRING,
-            'Forecast ' + preprocessing.UNDEFINED_DATA_STRING,
-            'Observation ' + preprocessing.DISCARD_DATA_STRING,
-            'Observation ' + preprocessing.UNDEFINED_DATA_STRING)
+    return (
+        preprocessing.FILL_RESULT_TOTAL_STRING.format('', 'Discarded'),
+        preprocessing.DISCARD_DATA_STRING.format('Forecast'),
+        preprocessing.DISCARD_DATA_STRING.format('Observation')
+    )
 
 
 @pytest.fixture

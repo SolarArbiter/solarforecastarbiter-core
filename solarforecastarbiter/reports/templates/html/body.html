@@ -57,7 +57,11 @@
   <li><a href="#data">Data</a></li>
   <ul>
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
-    <li><a href="#data-validation">Data Validation</a></li>
+    <li><a href="#data-preprocessing">Data Preprocessing</a></li>
+    <ul>
+      <li><a href="#data-preprocessing-summary">Summary</a></li>
+      <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
+    </ul>
   </ul>
   <li><a href="#metrics">Metrics</a></li>
   {% if include_metrics_toc | default(True) %}
@@ -126,8 +130,9 @@
 
 {% if timeseries_spec is defined %}
 <p>
-  The plots below show the realigned and resampled time series of observation
-  and forecast data as well as the distribution of forecast vs observation data.
+  The plots below show the filtered, resampled, and aligned time series of
+  observation and forecast data as well as the distribution of forecast vs.
+  observation data.
   This resampled and realigned timeseries data may also be downloaded in
   <a href="javascript:download_timeseries_data_as_csv('{{ report_name }}')">CSV format</a>.
 </p>
@@ -180,30 +185,29 @@ Plotly.newPlot("scatter-div", scat_plot);
 {{ macros.download_metadata_script () | safe }}
 {% endblock %}
 
-{% block datavalidation %}
-<h3 id="data-validation">Data Validation</h3>
-{% include "data_validation_pre_text" %}
-
-{% for filter in report.report_parameters.filters %}
-  {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
-    {% set valtable = True %}
-    {{ macros.validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags) }}
-  <br>
-  {% endif %}
-{% endfor %}
-{% if valtable | default(False) %}
-  <div class="alert alert-info">No filters applied</div>
-{% endif %}
-
-{% include "data_validation_post_text" %}
-{% endblock %}
-
+<h3 id="data-preprocessing">Data Preprocessing</h3>
 {% block dataresampleandalign %}
-<h3 id="data-alignment">Data Resampling and Alignment</h3>
+<h4 id="data-preprocessing-summary">Summary</h4>
 {% include "data_resampling_preamble" %}
 {{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
 <br>
 {% include "data_resampling_postamble" %}
+{% endblock %}
+
+{% block datavalidation %}
+<h4 id="data-validation-resampling">Validation and Resampling</h4>
+{% include "data_validation_pre_text" %}
+
+{% if report.report_parameters.filters %}
+  {{ macros.validation_metadata_table(report.report_parameters.filters) }}
+  <br>
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations) }}
+  <br>
+{% else %}
+  <div class="alert alert-info">No filters applied</div>
+{% endif %}
+
+{% include "data_validation_post_text" %}
 {% endblock %}
 
 {% block metrics %}
