@@ -394,6 +394,41 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_calculate_metrics_probablistic_one_interval(single_observation,
+                                                     prob_forecasts,
+                                                     create_processed_fxobs,
+                                                     create_dt_index,
+                                                     copy_prob_forecast_with_axis,
+                                                     caplog):
+    const_values = [10]
+    fx_values = pd.DataFrame(np.array((
+        np.linspace(2, 11., 10))).T,
+        columns=const_values,
+        index=create_dt_index(10))
+    obs_values = pd.Series(
+        np.linspace(1.5, 10.5, 10),
+        index=create_dt_index(10))
+    ref_fx_values = fx_values + .5
+    conv_ref_prob_fx = copy_prob_forecast_with_axis(
+        prob_forecasts, prob_forecasts.axis, constant_values=const_values)
+    ref_prfxobs = datamodel.ForecastObservation(
+        conv_ref_prob_fx,
+        single_observation,
+        reference_forecast=conv_ref_prob_fx)
+    proc_ref_prfx_obs = create_processed_fxobs(ref_prfxobs,
+                                               fx_values,
+                                               obs_values,
+                                               ref_values=ref_fx_values)
+    dist_results = calculator.calculate_metrics(
+        [proc_ref_prfx_obs], LIST_OF_CATEGORIES,
+        # reverse to ensure order output is independent
+        PROBABILISTIC_METRICS[::-1])
+
+    assert len(dist_results) == 0
+    assert 'Failed' in caplog.text
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_calculate_metrics_with_probablistic_dist_missing_ref(
         single_observation, prob_forecasts, create_processed_fxobs,
         create_dt_index, copy_prob_forecast_with_axis, caplog):
