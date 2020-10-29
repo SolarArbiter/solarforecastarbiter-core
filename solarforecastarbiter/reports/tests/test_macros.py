@@ -178,15 +178,15 @@ validation_table_format = """<div class="report-table-wrapper">
 
 
 def test_validation_results_table(report_with_raw, macro_test_template):
-    validation_table_template = macro_test_template('validation_results_table(proc_fxobs_list)')  # noqa
+    validation_table_template = macro_test_template('validation_results_table(proc_fxobs_list, true)')  # noqa
     proc_fxobs_list = report_with_raw.raw_report.processed_forecasts_observations[0:2]  # noqa
     qfilters = list(
         f.quality_flags for f in report_with_raw.report_parameters.filters
         if isinstance(f, datamodel.QualityFlagFilter))[0]
     rendered_validation_table = validation_table_template.render(
-        proc_fxobs_list=proc_fxobs_list)
+        proc_fxobs_list=proc_fxobs_list, before_resample=True)
     expected = validation_table_format.format(
-        'after', 'after',
+        'before', 'before',
         proc_fxobs_list[0].name,
         proc_fxobs_list[1].name,
         proc_fxobs_list[0].original.observation.name,
