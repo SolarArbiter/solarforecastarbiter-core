@@ -2566,7 +2566,7 @@ def report_metrics(metric_index):
             if fxobs.reference_forecast is not None:
                 keys += ('reference_forecast',)
             for metric, category in itertools.product(
-                ('mean', 'min', 'max', 'std', 'median', 'var'),
+                ('mean', 'min', 'max', 'std', 'median'),
                 report.report_parameters.categories
             ):
                 for key in keys:
@@ -2574,7 +2574,7 @@ def report_metrics(metric_index):
                         {
                             'category': category,
                             'metric': f'{key}_{metric}',
-                            'value': 2,
+                            'value': 2 if key == 'observation' else 1,
                             'index': metric_index(category),
                         }
                     ))

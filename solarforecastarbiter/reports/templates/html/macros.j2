@@ -77,7 +77,7 @@ forecasts/single/{{ forecast.forecast_id }}
     {% for stat_result in summary_stats %}
       <tr>
         <td>{{ stat_result.name }}</td>
-        {% for thing in ['forecast', 'observation', 'reference_forecast'] %}
+        {% for thing in ['observation', 'forecast', 'reference_forecast'] %}
           {% for metric in human_statistics.keys() %}
             {% set ns = namespace(found=false) %}
             {% for mval in stat_result.values %}
