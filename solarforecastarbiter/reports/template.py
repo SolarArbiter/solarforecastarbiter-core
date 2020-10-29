@@ -61,7 +61,6 @@ def build_summary_stats_json(report):
         representing an empty json array if the report does not have a
         computed raw_report.
 
-
     Raises
     ------
     ValueError

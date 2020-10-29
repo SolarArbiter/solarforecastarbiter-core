@@ -1679,7 +1679,7 @@ class MetricResult(BaseModel):
     aggregate_id: str or None
         UUID of the aggregate being analyzed.
     is_summary: bool
-        If this metric result is just summary statistics of the
+        If this metric result represents summary statistics of the
         observation and forecasts timeseries.
 
     Notes
