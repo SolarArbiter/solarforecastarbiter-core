@@ -1,1 +1,4 @@
-<script>var metrics_json = JSON.parse('{{ metrics_json |safe }}');</script>
+<script>
+  var metrics_json = JSON.parse('{{ metrics_json |safe }}');
+  var summary_stats = JSON.parse('{{ summary_stats |safe }}');
+</script>

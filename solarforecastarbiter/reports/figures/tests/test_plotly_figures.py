@@ -55,8 +55,8 @@ def set_report_pfxobs_values(report_dict, raw_report_pfxobs_values):
     return set_pfxobs_values
 
 
-def test_construct_metrics_dataframe(report_with_raw):
-    report = report_with_raw
+def test_construct_metrics_dataframe(no_stats_report):
+    report = no_stats_report
     metrics = report.raw_report.metrics
     df = figures.construct_metrics_dataframe(metrics)
     names = df['name']
@@ -98,11 +98,12 @@ def test_construct_metrics_dataframe(report_with_raw):
     assert (values == 2).all()
 
 
-def test_construct_metrics_dataframe_with_rename(report_with_raw):
-    metrics = report_with_raw.raw_report.metrics
+def test_construct_metrics_dataframe_with_rename(no_stats_report):
+    report = no_stats_report
+    metrics = report.raw_report.metrics
     df = figures.construct_metrics_dataframe(metrics,
                                              rename=figures.abbreviate)
-    report_params = report_with_raw.report_parameters
+    report_params = report.report_parameters
     original_names = [fxobs.forecast.name
                       for fxobs in report_params.object_pairs]
     abbreviated = list(map(figures.abbreviate, original_names))
@@ -187,9 +188,9 @@ def test_abbreviate(arg, expected):
     assert out == expected
 
 
-def test_raw_report_plots(report_with_raw):
-    metrics = report_with_raw.raw_report.metrics
-    plots = figures.raw_report_plots(report_with_raw, metrics)
+def test_raw_report_plots(no_stats_report):
+    metrics = no_stats_report.raw_report.metrics
+    plots = figures.raw_report_plots(no_stats_report, metrics)
     assert plots is not None
 
 

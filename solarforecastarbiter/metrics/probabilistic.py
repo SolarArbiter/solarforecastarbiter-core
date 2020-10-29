@@ -494,6 +494,14 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     crps : float
         The Continuous Ranked Probability Score [unitless].
 
+    Raises
+    ------
+    ValueError
+        If the forecasts have incorrect dimensions; either a) the forecasts are
+        for a single sample (n=1) with d CDF intervals but are given as a 1D
+        array with d values or b) the forecasts are given as 2D arrays (n,d)
+        but do not contain at least 2 CDF intervals (i.e. d < 2).
+
     Examples
     --------
 
@@ -514,7 +522,14 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     """
 
     # match observations to fx shape: (n,) => (n, d)
-    obs = np.tile(obs, (fx.shape[1], 1)).T
+    if np.ndim(fx) < 2:
+        raise ValueError("forecasts must be 2D arrays (expected (n,d), got"
+                         f"{np.shape(fx)})")
+    elif np.shape(fx)[1] < 2:
+        raise ValueError("forecasts must have d >= 2 CDF intervals "
+                         f"(expected >= 2, got {np.shape(fx)[1]})")
+    else:
+        obs = np.tile(obs, (fx.shape[1], 1)).T
 
     # event: 0=did not happen, 1=did happen
     o = np.where(obs <= fx, 1.0, 0.0)
@@ -529,6 +544,57 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     return crps
 
 
+def crps_skill_score(obs, fx, fx_prob, ref, ref_prob):
+    """CRPS skill score.
+
+        CRPSS = 1 - CRPS_fx / CRPS_ref
+
+    where CRPS_fx is the CPRS of the evaluated forecast and CRPS_ref is the
+    CRPS of a reference forecast.
+
+    Parameters
+    ----------
+    obs : (n,) array_like
+        Observations (physical unit).
+    fx : (n, d) array_like
+        Forecasts (physical units) of the right-hand-side of a CDF with d
+        intervals (d >= 2), e.g., fx = [10 MW, 20 MW, 30 MW] is interpreted as
+        <= 10 MW, <= 20 MW, <= 30 MW.
+    fx_prob : (n,) array_like
+        Probability [%] associated with the forecasts.
+    ref : (n, d) array_like
+        Reference forecasts (physical units) of the right-hand-side of a CDF
+        with d intervals (d >= 2), e.g., fx = [10 MW, 20 MW, 30 MW] is
+        interpreted as <= 10 MW, <= 20 MW, <= 30 MW.
+    ref_prob : (n,) array_like
+        Probability [%] associated with the reference forecast.
+
+    Returns
+    -------
+    skill : float
+        The CRPS skill score [unitless].
+
+    See Also
+    --------
+    :py:func:`solarforecastarbiter.metrics.probabilistic.continuous_ranked_probability_score`
+
+    """
+
+    if np.isscalar(ref):
+        return np.nan
+    else:
+        crps_fx = continuous_ranked_probability_score(obs, fx, fx_prob)
+        crps_ref = continuous_ranked_probability_score(obs, ref, ref_prob)
+
+        if crps_fx == crps_ref:
+            return 0.0
+        elif crps_ref == 0.0:
+            # avoid divide by zero
+            return np.NINF
+        else:
+            return 1 - crps_fx / crps_ref
+
+
 # Add new metrics to this map to map shorthand to function
 _MAP = {
     'bs': (brier_score, 'BS'),
@@ -540,18 +606,19 @@ _MAP = {
     'qss': (quantile_skill_score, 'QSS'),
     # 'sh': (sharpness, 'SH'),  # TODO
     'crps': (continuous_ranked_probability_score, 'CRPS'),
+    'crpss': (crps_skill_score, 'CRPSS'),
 }
 
 __all__ = [m[0].__name__ for m in _MAP.values()]
 
 # Functions that require a reference forecast
-_REQ_REF_FX = ['bss', 'qss']
+_REQ_REF_FX = ['bss', 'qss', 'crpss']
 
 # Functions that require normalized factor
 _REQ_NORM = []
 
 # Functions that require full distribution forecasts (as 2dim)
-_REQ_DIST = ['crps']
+_REQ_DIST = ['crps', 'crpss']
 
 # TODO: Functions that require two forecasts (e.g., sharpness)
 # _REQ_FX_FX = ['sh']

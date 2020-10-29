@@ -39,8 +39,43 @@ def build_metrics_json(report):
     """
     if getattr(report, 'raw_report') is not None:
         df = plotly_figures.construct_metrics_dataframe(
-            report.raw_report.metrics,
+            list(filter(lambda x: not getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
             rename=plotly_figures.abbreviate)
+        return df.to_json(orient="records")
+    else:
+        return "[]"
+
+
+def build_summary_stats_json(report):
+    """Creates a dict from the summary statistics in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The json representing the summary statistics. Will be a string
+        representing an empty json array if the report does not have a
+        computed raw_report.
+
+    Raises
+    ------
+    ValueError
+        If report.raw_report is populated but no
+        report.raw_report.metrics have `is_summary == True`
+        indicating that the report was made without
+        summary statistics.
+    """
+    if getattr(report, 'raw_report') is not None:
+        df = plotly_figures.construct_metrics_dataframe(
+            list(filter(lambda x: getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
+            rename=plotly_figures.abbreviate)
+        if df.empty:
+            raise ValueError('No summary statistics in report.')
         return df.to_json(orient="records")
     else:
         return "[]"
@@ -135,11 +170,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     kwargs = dict(
         human_categories=datamodel.ALLOWED_CATEGORIES,
         human_metrics=datamodel.ALLOWED_METRICS,
+        human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS,
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
         metrics_json=build_metrics_json(report),
-        metadata_json=build_metadata_json(report)
+        metadata_json=build_metadata_json(report),
+        templating_messages=[]
     )
     report_plots = getattr(report.raw_report, 'plots', None)
     # get plotting library versions used when plots were generated.
@@ -149,6 +186,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
 
     plot_plotly = getattr(report_plots, 'plotly_version', None)
     kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
+
+    try:
+        kwargs['summary_stats'] = build_summary_stats_json(report)
+    except ValueError:
+        kwargs['templating_messages'].append(
+            'No data summary statistics were calculated with this report.')
+        kwargs['summary_stats'] = '[]'
 
     if with_timeseries:
         try:

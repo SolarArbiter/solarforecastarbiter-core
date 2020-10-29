@@ -23,6 +23,8 @@ from solarforecastarbiter.metrics.deterministic import \
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
+from solarforecastarbiter.metrics.summary import \
+    _MAP as summary_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
@@ -112,6 +114,9 @@ ALLOWED_PROBABILISTIC_METRICS = {
 ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
+ALLOWED_SUMMARY_STATISTICS = {
+    k: v[1] for k, v in summary_mapping.items()}
+
 
 ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())
 ALLOWED_COST_AGG_OPTIONS = tuple(_AGG_OPTIONS.keys())
@@ -1675,6 +1680,9 @@ class MetricResult(BaseModel):
         UUID of the observation being analyzed.
     aggregate_id: str or None
         UUID of the aggregate being analyzed.
+    is_summary: bool
+        If this metric result represents summary statistics of the
+        observation and forecasts timeseries.
 
     Notes
     -----
@@ -1691,6 +1699,7 @@ class MetricResult(BaseModel):
     values: Tuple[MetricValue, ...]
     observation_id: Union[str, None] = None
     aggregate_id: Union[str, None] = None
+    is_summary: bool = False
 
     def __post_init__(self):
         if (

@@ -2560,6 +2560,28 @@ def report_metrics(metric_index):
             metrics_dict['values'] = values
             metrics = metrics + (
                 datamodel.MetricResult.from_dict(metrics_dict),)
+
+            stats = []
+            keys = ('forecast', 'observation')
+            if fxobs.reference_forecast is not None:
+                keys += ('reference_forecast',)
+            for metric, category in itertools.product(
+                ('mean', 'min', 'max', 'std', 'median', 'var'),
+                report.report_parameters.categories
+            ):
+                for key in keys:
+                    stats.append(datamodel.MetricValue.from_dict(
+                        {
+                            'category': category,
+                            'metric': f'{key}_{metric}',
+                            'value': 2,
+                            'index': metric_index(category),
+                        }
+                    ))
+            metrics_dict['values'] = stats
+            metrics_dict['is_summary'] = True
+            metrics = metrics + (
+                datamodel.MetricResult.from_dict(metrics_dict),)
         return metrics
     return gen
 
@@ -2696,6 +2718,17 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
 @pytest.fixture
 def report_with_raw(report_dict, raw_report):
     report_dict['raw_report'] = raw_report(True)
+    report_dict['status'] = 'complete'
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture
+def no_stats_report(report_dict, raw_report):
+    raw = raw_report(True)
+    report_dict['raw_report'] = raw.replace(
+        metrics=tuple(filter(lambda x: not x.is_summary, raw.metrics))
+    )
     report_dict['status'] = 'complete'
     report = datamodel.Report.from_dict(report_dict)
     return report
