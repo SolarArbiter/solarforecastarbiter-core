@@ -351,6 +351,26 @@ def test_crps(fx, fx_prob, obs, value):
         np.array([8, 8]),                    # obs
         np.NINF,
     ),
+
+    # 2 CDF intervals but not the same intervals between fx and ref
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[0, 100], [0, 100]]),
+        np.array([[10, 20], [10, 20]]),
+        np.array([[50, 100], [30, 100]]),
+        np.array([8, 8]),
+        1 - 10 / (((0.5 ** 2) * 10 + (0.7 ** 2) * 10) / 2),
+    ),
+
+    # ref and fx have different number of CDF intervals
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[0, 100], [0, 100]]),
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 0, 100], [0, 0, 100]]),
+        np.array([8, 8]),
+        1 - 10 / 20,
+    ),
 ])
 def test_crps_skill_score(obs, fx, fx_prob, ref, ref_prob, value):
     crpss = prob.crps_skill_score(obs, fx, fx_prob, ref, ref_prob)
