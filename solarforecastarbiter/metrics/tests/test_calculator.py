@@ -394,12 +394,10 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-def test_calculate_metrics_probablistic_one_interval(single_observation,
-                                                     prob_forecasts,
-                                                     create_processed_fxobs,
-                                                     create_dt_index,
-                                                     copy_prob_forecast_with_axis,
-                                                     caplog):
+def test_calculate_metrics_probablistic_one_interval(
+        single_observation, prob_forecasts,
+        create_processed_fxobs, create_dt_index,
+        copy_prob_forecast_with_axis, caplog):
     const_values = [10]
     fx_values = pd.DataFrame(np.array((
         np.linspace(2, 11., 10))).T,
