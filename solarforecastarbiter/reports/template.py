@@ -64,7 +64,8 @@ def build_summary_stats_json(report):
     Raises
     ------
     ValueError
-        If no MetricResults the 'is_summary == True'
+        If report.raw_report is populated but no
+        report.raw_report.metrics have `is_summary == True`
         indicating that the report was made without
         summary statistics.
     """

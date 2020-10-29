@@ -606,13 +606,7 @@ def _season_from_months(months):
 
 
 def _is_deterministic_forecast(proc_fxobs):
-    return (
-        isinstance(proc_fxobs.original.forecast, datamodel.Forecast) and
-        not isinstance(
-            proc_fxobs.original.forecast,
-            (datamodel.ProbabilisticForecast,
-             datamodel.ProbabilisticForecastConstantValue,
-             datamodel.EventForecast)))
+    return type(proc_fxobs.original.forecast) is datamodel.Forecast
 
 
 def _calculate_summary_for_frame(df):
