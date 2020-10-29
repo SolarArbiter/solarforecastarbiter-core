@@ -135,33 +135,6 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
-{% macro validation_results_table(proc_fxobs_list) %}
-<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data validation filters
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Quality flags</th>
-      <th style="text-align: left;">Discard before resample</th>
-      <th style="text-align: left;">Resample threshold (%)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for qfilter in quality_filters %}
-      <tr>
-        <td style="text-align: left">{{ qfilter.quality_flags | join(', ') }}</td>
-        <td style="text-align: left">{{ qfilter.discard_before_resample }}</td>
-        <td style="text-align: left">{{ qfilter.resample_threshold_percentage }}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
-{% endmacro %}
-
-
 {% macro validation_results_table(proc_fxobs_list, before_resample) %}
 <div class="report-table-wrapper">
 <table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{{'before' if before_resample else 'after'}}-table">

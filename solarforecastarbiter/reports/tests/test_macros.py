@@ -116,9 +116,9 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
 
 
 validation_table_format = """<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{}-table">
   <caption style="caption-side:top; text-align: left">
-    Table of data validation results
+    Table of data validation results {} resampling
   </caption>
   <thead>
     <tr class="header">
@@ -186,6 +186,7 @@ def test_validation_results_table(report_with_raw, macro_test_template):
     rendered_validation_table = validation_table_template.render(
         proc_fxobs_list=proc_fxobs_list)
     expected = validation_table_format.format(
+        'after', 'after',
         proc_fxobs_list[0].name,
         proc_fxobs_list[1].name,
         proc_fxobs_list[0].original.observation.name,
