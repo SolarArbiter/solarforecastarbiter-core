@@ -3184,12 +3184,15 @@ def metric_result(metric_result_dict):
     return datamodel.MetricResult.from_dict(metric_result_dict)
 
 
-@pytest.fixture
-def validation_result_dict():
-    return {
+@pytest.fixture(params=[True, False])
+def validation_result_dict(request):
+    d = {
         'flag': 2,
         'count': 1,
     }
+    if request.param:
+        d['before_resample'] = True
+    return d
 
 
 @pytest.fixture

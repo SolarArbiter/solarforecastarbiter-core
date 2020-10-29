@@ -242,12 +242,13 @@ def _figure_name_filter(value):
     return out
 
 
-def _unique_flags_filter(proc_fxobs_list):
-    # use a dict to preserve order
+def _unique_flags_filter(proc_fxobs_list, before_resample):
+    # use a dict to preserve order and guarantee uniqueness of keys
     names = {}
     for proc_fxobs in proc_fxobs_list:
         for val_result in proc_fxobs.validation_results:
-            names[val_result.flag] = None
+            if val_result.before_resample == before_resample:
+                names[val_result.flag] = None
     unique_names = list(names.keys())
     return unique_names
 

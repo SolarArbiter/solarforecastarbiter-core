@@ -203,7 +203,13 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% if report.report_parameters.filters %}
   {{ macros.validation_metadata_table(report.report_parameters.filters) }}
   <br>
-  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations) }}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, true) }}
+  {% if report.raw_report.processed_forecasts_observations | unique_flags_filter(false) | length %}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, false) }}
+  {% else %}
+  No filters with discard after resample were available because this report was created with Solar Forecast Arbiter version 1.0rc3 or earlier (find the <a href="#versions">version information</a> at the end of the report).
+  Recompute the report to apply the revised data filtering and resampling procedures.<br>
+  {% endif %}
   <br>
 {% else %}
   <div class="alert alert-info">No filters applied</div>

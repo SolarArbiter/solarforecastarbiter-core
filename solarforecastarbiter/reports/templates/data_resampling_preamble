@@ -9,9 +9,9 @@ operations to the data:
     </li>
   <li>Resample the observation data to the forecast interval length using the mean.</li>
   <li>Apply the <a href="#data-validation-resampling">data validation tests</a> specified with <em>discard before resample</em> == False to the observation data and discard
-    the resampled intervals where the percentage of matched points exceeds <em>resample threshold percentage</em>.
+    the resampled intervals where the percentage of matched points exceeds <em>resample threshold</em>.
     This procedure is typically used to exclude intervals that contain valid but undesirable data, such as the hours of sunrise/sunset or hours that are mostly clear.
-    This step also discards intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold percentage</em>.
+    This step also discards intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold</em>.
     </li>
   <li>Align the time series of the resampled, filtered observations, the forecast, and, if selected, the reference forecast.
     Discard intervals that do not exist in all time series.</li>

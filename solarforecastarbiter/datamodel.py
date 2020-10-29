@@ -1556,19 +1556,21 @@ def __check_categories__(categories):
 
 @dataclass(frozen=True)
 class ValidationResult(BaseModel):
-    """Stores the validation result for a single flag for a forecast and
-    observation pair.
+    """Store the validation result for a flag or combination of flags.
 
     Parameters
     ----------
     flag: str
-        The quality flag being recorded. See
+        The quality flag(s) being recorded. See
         :py:mod:`solarforecastarbiter.validation.quality_mapping`.
     count: int
         The number of timestamps that were flagged.
+    before_resample: bool
+        If the flag was applied before resampling.
     """
     flag: str
     count: int
+    before_resample: bool = True
 
 
 @dataclass(frozen=True)

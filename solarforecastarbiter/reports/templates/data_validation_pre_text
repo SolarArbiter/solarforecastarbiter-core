@@ -7,19 +7,19 @@ separate filter. Within each filter, multiple <em>quality flags</em> may be
 specified.
 </p>
 <p>
-If <em>discard before resample</em> is true, data values from flagged points
+For filters with <em>discard before resample</em> == True, data values from flagged points
 are ignored when calculating the value of the resampled interval.
-Furthermore, resampled intervals
-are discarded if the percentage of discarded points in the interval exceeds
-<em>resample threshold percentage</em>. The total number of discarded resampled
-intervals is reported with DISCARD BEFORE RESAMPLE prepended to the flag name in the
-<a href="#data-validation-results-table">table of data validation results</a>.
+The number of these flagged points is reported in the
+<a href="#data-validation-results-before-table">table of data validation results before resampling</a>.
 </p>
 <p>
-If <em>discard before resample</em> is false, data values from flagged points are
-included in resampled interval. However, resampled intervals
+For filters with <em>discard before resample</em> == False, data values from flagged points are
+included in the resampled interval. However, resampled intervals
 are discarded if the percentage of flagged points in the interval exceeds
-<em>resample threshold percentage</em>.
+the <em>resample threshold</em>.
+The number of these flagged points is reported in the
+<a href="#data-validation-results-after-table">table of data validation results before resampling</a>.
+This step also discards intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold</em>.
 </p>
 <p>
 Finally, the results of each filter are combined with an OR operation

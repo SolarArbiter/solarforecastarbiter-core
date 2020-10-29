@@ -188,11 +188,11 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 
-{% macro validation_results_table(proc_fxobs_list) %}
+{% macro validation_results_table(proc_fxobs_list, before_resample) %}
 <div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-table">
+<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{{'before' if before_resample else 'after'}}-table">
   <caption style="caption-side:top; text-align: left">
-    Table of data validation results
+    Table of data validation results {{'before' if before_resample else 'after'}} resampling
   </caption>
   <thead>
     <tr class="header">
@@ -213,7 +213,7 @@ forecasts/single/{{ forecast.forecast_id }}
     </tr>
   </thead>
   <tbody>
-    {% for flag in (proc_fxobs_list | unique_flags_filter) %}
+    {% for flag in (proc_fxobs_list | unique_flags_filter(before_resample)) %}
       <tr>
         <td style="text-align: left">{{ flag }}</td>
         {% for proc_fxobs in proc_fxobs_list %}
@@ -392,12 +392,12 @@ forecasts/single/{{ forecast.forecast_id }}
             val = val.toString()
           }
           row.push(val)
-        }  
+        }
         lines.push(row.join(','))
       }
       return lines.join('\n').concat('\n')
     }
-      
+
     function download_timeseries_data_as_csv(report_name) {
         const filename = report_name.replace(/ /g, '_') + '_timeseries.csv'
         const csvdata = extract_plotly_data(ts_plot)
