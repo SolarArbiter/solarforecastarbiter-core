@@ -166,8 +166,8 @@
 \VAR{data_validation_post_text() | html_to_tex}
 %- if report.report_parameters.filters
 \VAR{validation_metadata_table(report.report_parameters.filters)}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), true)}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), false)}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), 'before')}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), 'after')}
 %- endif
 %- endmacro
 
@@ -197,7 +197,7 @@
   \begin{longtabu} to \linewidth {
       X[2] | X[2] | *{\VAR{unique_flags | length}}{ | l}
     }
-    \caption{Table of data validation results \VAR{'before' if before_resample else 'after'} resampling.} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling.} \\
     \toprule
     \multicolumn{1}{l}{} &  \multicolumn{1}{l ||}{} &
     \multicolumn{\VAR{unique_flags | length}}{c}{Quality Flag} \\
@@ -209,7 +209,7 @@
     \\
     \midrule
     \endfirsthead
-    \caption{Table of data validation results \VAR{'before' if before_resample else 'after'} resampling (cont.)} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling (cont.)} \\
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
     %- for qfilter in unique_flags
     & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
