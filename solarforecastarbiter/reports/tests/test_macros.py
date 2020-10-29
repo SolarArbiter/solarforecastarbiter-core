@@ -254,27 +254,27 @@ summary_stats_table_vert_format = """<div class="report-table-wrapper">
   <thead>
     <tr class="header">
       <th scope="col" style="text-align: left;">Aligned Pair</th>
-      <th scope="col" colspan="5" style="text-align: left;">Observation</th>
-      <th scope="col" colspan="5" style="text-align: left;">Forecast</th>
-      <th scope="col" colspan="5" style="text-align: left;">Reference Forecast</th>
+      <th scope="col" colspan="5" style="text-align: center;">Observation</th>
+      <th scope="col" colspan="5" style="text-align: center;">Forecast</th>
+      <th scope="col" colspan="5" style="text-align: center;">Reference Forecast</th>
     </tr>
     <tr>
       <th></th>
-      <th style="text-align: left;">Mean</th>
-      <th style="text-align: left;">Min</th>
-      <th style="text-align: left;">Max</th>
-      <th style="text-align: left;">Median</th>
-      <th style="text-align: left;">Std.</th>
-      <th style="text-align: left;">Mean</th>
-      <th style="text-align: left;">Min</th>
-      <th style="text-align: left;">Max</th>
-      <th style="text-align: left;">Median</th>
-      <th style="text-align: left;">Std.</th>
-      <th style="text-align: left;">Mean</th>
-      <th style="text-align: left;">Min</th>
-      <th style="text-align: left;">Max</th>
-      <th style="text-align: left;">Median</th>
-      <th style="text-align: left;">Std.</th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
     </tr>
   </thead>
   <tbody>
