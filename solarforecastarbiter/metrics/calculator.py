@@ -54,7 +54,7 @@ def calculate_metrics(processed_pairs, categories, metrics):
                     proc_fxobs,
                     categories,
                     metrics))
-            except RuntimeError as e:
+            except (RuntimeError, ValueError) as e:
                 logger.error('Failed to calculate probabilistic metrics'
                              ' for %s: %s', proc_fxobs.name, e)
         elif isinstance(proc_fxobs.original.forecast, datamodel.EventForecast):
