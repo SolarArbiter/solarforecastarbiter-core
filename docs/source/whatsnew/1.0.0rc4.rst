@@ -63,7 +63,7 @@ Enhancements
 * Restructured and rewrote report data preprocessing text to account for
   new filter/resample pattern and clarify the processes. Added a table that
   summarizes the filter combinations applied in the report.
-  (:issue`589`, :pull:`602`)
+  (:issue`589`, :pull:`602`, :pull:`607`)
 
 
 Bug fixes
