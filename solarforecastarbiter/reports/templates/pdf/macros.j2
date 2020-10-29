@@ -236,8 +236,8 @@
 \VAR{data_validation_post_text() | html_to_tex}
 %- if report.report_parameters.filters
 \VAR{validation_metadata_table(report.report_parameters.filters)}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), 'before')}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), 'after')}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true))}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false))}
 %- endif
 %- endmacro
 
@@ -259,7 +259,7 @@
 %- endmacro
 
 
-%- macro validation_results_table(proc_fxobs_list, unique_flags, before_resample)
+%- macro validation_results_table(proc_fxobs_list, unique_flags)
 \begin{landscape}
   \pagestyle{empty}
   \small
