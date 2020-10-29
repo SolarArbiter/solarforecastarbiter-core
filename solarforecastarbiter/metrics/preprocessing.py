@@ -295,6 +295,7 @@ def _calc_discard_before_resample(
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
     to_discard_before_resample = discard_before_resample.any(axis=1)
+    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
 
     # construct validation results
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
@@ -764,24 +765,10 @@ def process_forecast_observations(forecast_observations, filters,
             logging.warning(
                 'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
                 fxobs.forecast.name, fxobs.data_object.name)
-        else:
-            preproc_results.append(datamodel.PreprocessingResult(
                 name='Resampled Observation Values Discarded',
                 count=int(total_discard_after_resample)))
 
-        # Align and create processed pair
-        try:
-            forecast_values, observation_values, ref_fx_values, results = \
-                align(fxobs, forecast_values, observation_values, ref_data,
-                      timezone)
-            preproc_results.extend(
                 [datamodel.PreprocessingResult(name=k, count=int(v))
-                 for k, v in results.items()])
-        except Exception as e:
-            logger.error(
-                'Failed to align data for pair (%s, %s): %s',
-                fxobs.forecast.name, fxobs.data_object.name, e)
-            continue
 
         logger.info('Processed data successfully for pair (%s, %s)',
                     fxobs.forecast.name, fxobs.data_object.name)
