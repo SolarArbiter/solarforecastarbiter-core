@@ -2,8 +2,8 @@
 
 .. py:currentmodule:: solarforecastarbiter
 
-1.0.0rc4 (Estimated October, 2020)
-----------------------------------
+1.0.0rc4 (October 29, 2020)
+---------------------------
 
 This is the fourth 1.0 release candidate.
 
