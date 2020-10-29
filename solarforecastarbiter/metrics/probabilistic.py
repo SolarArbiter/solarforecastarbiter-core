@@ -583,10 +583,16 @@ def crps_skill_score(obs, fx, fx_prob, ref, ref_prob):
     if np.isscalar(ref):
         return np.nan
     else:
-        print("Valid ref:", ref, type(ref))
         crps_fx = continuous_ranked_probability_score(obs, fx, fx_prob)
         crps_ref = continuous_ranked_probability_score(obs, ref, ref_prob)
-        return 1 - crps_fx / crps_ref
+
+        if crps_fx == crps_ref:
+            return 0.0
+        elif crps_ref == 0.0:
+            # avoid divide by zero
+            return np.NINF
+        else:
+            return 1 - crps_fx / crps_ref
 
 
 # Add new metrics to this map to map shorthand to function
