@@ -236,8 +236,13 @@
 \VAR{data_validation_post_text() | html_to_tex}
 %- if report.report_parameters.filters
 \VAR{validation_metadata_table(report.report_parameters.filters)}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true))}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false))}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), 'before')}
+  %- if report.raw_report.processed_forecasts_observations | unique_flags_filter(false) | length
+    \VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), 'after')}
+  %- else
+    No filters with discard after resample were available because this report was created with Solar Forecast Arbiter version 1.0rc3 or earlier (find the version information at the end of the report).
+    Visit the \href{\VAR{report_url}}{web version of this report} to recompute it and apply the revised data filtering and resampling procedures.
+  %- endif
 %- endif
 %- endmacro
 
@@ -259,7 +264,7 @@
 %- endmacro
 
 
-%- macro validation_results_table(proc_fxobs_list, unique_flags)
+%- macro validation_results_table(proc_fxobs_list, unique_flags, before_resample)
 \begin{landscape}
   \pagestyle{empty}
   \small
@@ -267,7 +272,7 @@
   \begin{longtabu} to \linewidth {
       X[2] | X[2] | *{\VAR{unique_flags | length}}{ | l}
     }
-    \caption{Table of data validation results resampling.} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling.} \\
     \toprule
     \multicolumn{1}{l}{} &  \multicolumn{1}{l ||}{} &
     \multicolumn{\VAR{unique_flags | length}}{c}{Quality Flag} \\
@@ -279,7 +284,7 @@
     \\
     \midrule
     \endfirsthead
-    \caption{Table of data validation results resampling (cont.)} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling (cont.)} \\
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
     %- for qfilter in unique_flags
     & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
