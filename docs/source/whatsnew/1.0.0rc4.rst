@@ -36,6 +36,8 @@ API Changes
   from the BSRN network (:issue:`541`) (:pull:`604`)
 * Removed ``preprocessing.VALIDATION_RESULT_TOTAL_STRING`` and
   ``preprocessing.UNDEFINED_DATA_STRING``.
+* Added CRPS skill score metric :py:func:`metrics.probabilistic.crps_skill_score`
+  (:issue:`494`) (:pull:`605`)
 * Added :py:func:`reports.template.build_summary_stats_json`,
   :py:func:`metrics.calculator.calculate_summary_statistics`, and
   :py:func:`metrics.calculator.calculate_all_summary_statistics` to
