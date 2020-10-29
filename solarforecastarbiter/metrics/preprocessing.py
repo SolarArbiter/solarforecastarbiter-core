@@ -217,7 +217,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             'fx.interval_length < obs.interval_length.')
 
     if obs_data.empty:
-        return obs_data['value'], {}
+        return obs_data['value'], []
 
     # label convention when resampling
     closed = datamodel.CLOSED_MAPPING[obs.interval_label]
@@ -290,9 +290,12 @@ def _calc_discard_before_resample(
     """
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
-    discard_before_resample_flags = set(['ISNAN'])
+    # list(dict.fromkeys()) is good enough for Raymond Hettinger
+    # https://stackoverflow.com/a/39835527/2802993
+    flags = ['ISNAN']
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
-        discard_before_resample_flags |= set(f.quality_flags)
+        flags.extend(f.quality_flags)
+    discard_before_resample_flags = list(dict.fromkeys(flags))
     discard_before_resample = obs_flags[discard_before_resample_flags]
     to_discard_before_resample = discard_before_resample.any(axis=1)
 
@@ -424,7 +427,7 @@ def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
         Same as input data except may be coerced to a safer dtype.
     observation_values : pandas.Series
         Observation values filtered and resampled.
-    validation_results : tuple
+    validation_results : list
         Elements are
         :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
