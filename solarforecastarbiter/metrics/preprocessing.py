@@ -765,10 +765,24 @@ def process_forecast_observations(forecast_observations, filters,
             logging.warning(
                 'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
                 fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
                 name='Resampled Observation Values Discarded',
                 count=int(total_discard_after_resample)))
 
+        # Align and create processed pair
+        try:
+            forecast_values, observation_values, ref_fx_values, results = \
+                align(fxobs, forecast_values, observation_values, ref_data,
+                      timezone)
+            preproc_results.extend(
                 [datamodel.PreprocessingResult(name=k, count=int(v))
+                 for k, v in results.items()])
+        except Exception as e:
+            logger.error(
+                'Failed to align data for pair (%s, %s): %s',
+                fxobs.forecast.name, fxobs.data_object.name, e)
+            continue
 
         logger.info('Processed data successfully for pair (%s, %s)',
                     fxobs.forecast.name, fxobs.data_object.name)
