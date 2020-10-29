@@ -95,6 +95,14 @@ data are available on the web version of this report available
 
 \VAR{macros.data_validation_section()}
 
+\subsection{Summary Statistics}
+
+A table of summary statistics for the resampled data over the entire study
+period is shown below. Downloads of summary statistics for other categories
+are available on the \href{\VAR{report_url}}{web version of this report}.
+
+\VAR{macros.summary_statistics_table(report.raw_report.metrics | selectattr('is_summary'), 'total')}
+
 \section{Metrics}
 \FloatBarrier
 
@@ -104,7 +112,7 @@ A table of metrics over the entire study period and metric figures are shown bel
 Metrics may be downloaded in CSV format through the HTML version of this report
 available \href{\VAR{report_url}}{here}.
 
-\VAR{macros.metric_table(report.raw_report.metrics, 'total', report.report_parameters.metrics)}
+\VAR{macros.metric_table(report.raw_report.metrics | rejectattr('is_summary'), 'total', report.report_parameters.metrics)}
 
 \FloatBarrier
 %- for category in report.report_parameters.categories

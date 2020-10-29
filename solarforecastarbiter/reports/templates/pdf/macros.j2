@@ -26,6 +26,76 @@
 %- include 'data_resampling_postamble'
 %- endmacro
 
+%- macro summary_statistics_table(summary_stats, category)
+%- set span = human_statistics.values() | length
+%- set human_category = human_categories[category]
+\FloatBarrier
+\clearpage
+\begin{landscape}
+  \pagestyle{empty}
+  \small
+  \begin{longtabu} to \linewidth {
+      X[2] *{\VAR{span * 3}}{| l}
+    }
+    \caption{Table of \VAR{human_category} data summary statistics.} \\
+    \toprule
+    Aligned Pair &
+    \multicolumn{\VAR{span}}{c}{Observation} &
+    \multicolumn{\VAR{span}}{|c}{Forecast} &
+    \multicolumn{\VAR{span}}{|c}{Reference Forecast} \\
+    \BLOCK{for i in range(3)}
+    \BLOCK{for m in human_statistics.values()}
+    & \VAR{m}
+    \BLOCK{endfor}
+    \BLOCK{endfor}
+    \\
+    \midrule
+    \endfirsthead
+    \caption{Table of \VAR{human_category} data summary statistics. (cont.)} \\
+    \toprule
+    Aligned Pair &
+    \multicolumn{\VAR{span}}{c}{Observation} &
+    \multicolumn{\VAR{span}}{|c}{Forecast} &
+    \multicolumn{\VAR{span}}{|c}{Reference Forecast} \\
+    \BLOCK{for i in range(3)}
+    \BLOCK{for m in human_statistics.values()}
+    & \VAR{m}
+    \BLOCK{endfor}
+    \BLOCK{endfor}
+    \\
+    \midrule
+    \endhead
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    %- for stat_result in summary_stats
+    \VAR{stat_result.name | html_to_tex }
+    %- for thing in ['forecast', 'observation', 'reference_forecast']
+    %- for metric in human_statistics.keys()
+    %- set ns = namespace(found=false)
+    %- for mval in stat_result.values
+    %- if mval.category == category and mval.metric == thing + '_' + metric
+    %- set ns.found = true
+    %- if -0.01 < mval.value < 0.01
+    & \VAR{'%.2e' | format(mval.value)}
+    %- else
+    & \VAR{'%0.3g' | format(mval.value)}
+    %- endif
+    %- endif
+    %- endfor
+    %- if not ns.found
+    &
+    %- endif
+    %- endfor
+    %- endfor
+    \\
+    %- endfor
+  \end{longtabu}
+\end{landscape}
+\clearpage
+\FloatBarrier
+%- endmacro
+
 %- macro metrics_meta_table()
 \VAR{metrics_meta_table_text() | link_filter | html_to_tex}
 \begin{table}[h]
