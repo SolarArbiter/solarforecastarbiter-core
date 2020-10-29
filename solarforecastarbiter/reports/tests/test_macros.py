@@ -307,13 +307,15 @@ def test_summary_stats_table_vert(report_with_raw, macro_test_template):
     metrics = [m for m in report_with_raw.raw_report.metrics
                if m.is_summary]
     category = 'total'
+    human_categories = datamodel.ALLOWED_CATEGORIES
     for i in range(3):
         expected_metric = (metrics[i],)
         rendered_stats_table = stats_table_template.render(
             report_metrics=expected_metric,
             category=category,
+            human_categories=human_categories,
             human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS)
         exp = summary_stats_table_vert_format.format(
-            stat=category, name=expected_metric[0].name,
+            stat=human_categories[category], name=expected_metric[0].name,
             ref='2' if i == 1 else '')
         assert rendered_stats_table == exp
