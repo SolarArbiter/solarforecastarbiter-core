@@ -38,6 +38,10 @@ API Changes
   ``preprocessing.UNDEFINED_DATA_STRING``.
 * Added CRPS skill score metric :py:func:`metrics.probabilistic.crps_skill_score`
   (:issue:`494`) (:pull:`605`)
+* Added :py:func:`reports.template.build_summary_stats_json`,
+  :py:func:`metrics.calculator.calculate_summary_statistics`, and
+  :py:func:`metrics.calculator.calculate_all_summary_statistics` to
+  support adding summary statistics to reports (:issue:`355`, :pull:`606`)
 
 
 Enhancements
@@ -65,7 +69,9 @@ Enhancements
 * Restructured and rewrote report data preprocessing text to account for
   new filter/resample pattern and clarify the processes. Added a table that
   summarizes the filter combinations applied in the report.
-  (:issue`589`, :pull:`602`)
+  (:issue:`589`, :pull:`602`)
+* Added summary statistics for resample and aligned observations,
+  forecasts, and reference forecasts to reports (:issue:`355`, :pull:`606`)
 
 
 Bug fixes

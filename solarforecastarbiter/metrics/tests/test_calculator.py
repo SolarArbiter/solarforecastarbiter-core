@@ -394,6 +394,39 @@ def test_calculate_metrics_with_probablistic(single_observation,
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_calculate_metrics_probablistic_one_interval(
+        single_observation, prob_forecasts,
+        create_processed_fxobs, create_dt_index,
+        copy_prob_forecast_with_axis, caplog):
+    const_values = [10]
+    fx_values = pd.DataFrame(np.array((
+        np.linspace(2, 11., 10))).T,
+        columns=const_values,
+        index=create_dt_index(10))
+    obs_values = pd.Series(
+        np.linspace(1.5, 10.5, 10),
+        index=create_dt_index(10))
+    ref_fx_values = fx_values + .5
+    conv_ref_prob_fx = copy_prob_forecast_with_axis(
+        prob_forecasts, prob_forecasts.axis, constant_values=const_values)
+    ref_prfxobs = datamodel.ForecastObservation(
+        conv_ref_prob_fx,
+        single_observation,
+        reference_forecast=conv_ref_prob_fx)
+    proc_ref_prfx_obs = create_processed_fxobs(ref_prfxobs,
+                                               fx_values,
+                                               obs_values,
+                                               ref_values=ref_fx_values)
+    dist_results = calculator.calculate_metrics(
+        [proc_ref_prfx_obs], LIST_OF_CATEGORIES,
+        # reverse to ensure order output is independent
+        PROBABILISTIC_METRICS[::-1])
+
+    assert len(dist_results) == 0
+    assert 'Failed' in caplog.text
+
+
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_calculate_metrics_with_probablistic_dist_missing_ref(
         single_observation, prob_forecasts, create_processed_fxobs,
         create_dt_index, copy_prob_forecast_with_axis, caplog):
@@ -1373,3 +1406,236 @@ def test_calculate_metrics_with_event_empty(single_event_forecast_observation,
     failure_log_text = caplog.text[re.search(r'.py:\d+ ', caplog.text).end():]
     assert (f"Failed to calculate event metrics for {proc_fx_obs[0].name}: "
             "No Forecast timeseries data.\n") == failure_log_text
+
+
+def test_calculate_summary_statistics(single_forecast_data_obj,
+                                      create_processed_fxobs):
+    ref_values = _random_ref_values_if_not_None(single_forecast_data_obj)
+    inp = create_processed_fxobs(single_forecast_data_obj,
+                                 np.random.randn(10)+10,
+                                 np.random.randn(10)+10,
+                                 ref_values=ref_values)
+    result = calculator.calculate_summary_statistics(inp, LIST_OF_CATEGORIES)
+    assert isinstance(result, datamodel.MetricResult)
+
+
+def test_calculate_summary_statistics_exact(single_forecast_observation,
+                                            create_processed_fxobs):
+    index = pd.DatetimeIndex(
+        # sunday, monday, tuesday
+        ['20200531 1900Z', '20200601 2000Z', '20200602 2100Z'])
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series([2, 1, 0], index=index),
+        pd.Series([1, 1, 1], index=index))
+    categories = ('hour', 'total', 'date', 'month', 'weekday')
+    result = calculator.calculate_summary_statistics(inp, categories)
+    expected = {
+        0: ('total', 'forecast_mean', '0', 1.),
+        1: ('total', 'observation_mean', '0', 1.),
+        10: ('month', 'forecast_mean', 'May', 2.),
+        13: ('month', 'observation_mean', 'Jun', 1.),
+        36: ('hour', 'forecast_min', '19', 2.),
+        46: ('hour', 'observation_max', '20', 1.),
+        -8: ('weekday', 'observation_median', 'Tue', 1.0)
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
+def test_calculate_summary_statistics_no_data(single_forecast_observation,
+                                              create_processed_fxobs):
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series(dtype=float), pd.Series(dtype=float),)
+    categories = ('hour', 'total', 'date', 'month', 'weekday')
+    with pytest.raises(RuntimeError):
+        calculator.calculate_summary_statistics(inp, categories)
+
+
+@pytest.mark.parametrize('ts,tz,interval_label,category,fxresult,obsresult', [
+    # category: hour
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
+        'ending',
+        'hour',
+        {('12', 0.), ('13', 1.5)},
+        {('12', 1.), ('13', 1.)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "UTC",
+        'beginning',
+        'hour',
+        {('13', 0.5), ('14', 2.0)},
+        {('13', 1.0), ('14', 1.0)},
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'ending',
+        'hour',
+        {('4', 0.), ('5', 1.5)},
+        {('4', 1.), ('5', 1.0)}
+    ),
+    (
+        ['20191210T1300', '20191210T1330', '20191210T1400'],
+        "US/Pacific",
+        'beginning',
+        'hour',
+        {('5', 0.5), ('6', 2.0)},
+        {('5', 1.0), ('6', 1.0)},
+    ),
+
+    # category: month
+    (
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
+        'ending',
+        'month',
+        {('Nov', 0.5), ('Dec', 2.0)},
+        {('Nov', 1.0), ('Dec', 1.0)},
+    ),
+    (
+        ['20191130T2330', '20191201T0000', '20191201T0030'],
+        "UTC",
+        'beginning',
+        'month',
+        {('Nov', 0.), ('Dec', 1.5)},
+        {('Nov', 1.), ('Dec', 1.0)},
+    ),
+
+    # category: year
+    (
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
+        'ending',
+        'year',
+        {('2019', 0.5), ('2020', 2.0)},
+        {('2019', 1.0), ('2020', 1.0)},
+    ),
+    (
+        ['20191231T2330', '20200101T0000', '20200101T0030'],
+        "UTC",
+        'beginning',
+        'year',
+        {('2019', 0.), ('2020', 1.5)},
+        {('2019', 1.), ('2020', 1.0)},
+    ),
+])
+def test_calculate_summary_statistics_interval_label(
+        ts, tz, interval_label, category, fxresult,
+        obsresult,
+        create_processed_fxobs):
+
+    index = pd.DatetimeIndex(ts, tz="UTC")
+
+    # Custom metadata to keep all timestamps in UTC for tests
+    site = datamodel.Site(
+        name='Albuquerque Baseline',
+        latitude=35.05,
+        longitude=-106.54,
+        elevation=1657.0,
+        timezone="UTC",
+        provider='Sandia'
+    )
+
+    fx_series = pd.Series([0, 1, 2], index=index)
+    obs_series = pd.Series([1, 1, 1], index=index)
+
+    # convert to local timezone
+    fx_series = fx_series.tz_convert(tz)
+    obs_series = obs_series.tz_convert(tz)
+
+    fxobs = datamodel.ForecastObservation(
+        observation=datamodel.Observation(
+            site=site, name='dummy obs', variable='ghi',
+            interval_value_type='instantaneous', uncertainty=1,
+            interval_length=pd.Timedelta(obs_series.index.freq),
+            interval_label=interval_label
+        ),
+        forecast=datamodel.Forecast(
+            site=site, name='dummy fx', variable='ghi',
+            interval_value_type='instantaneous',
+            interval_length=pd.Timedelta(fx_series.index.freq),
+            interval_label=interval_label,
+            issue_time_of_day=datetime.time(hour=5),
+            lead_time_to_start=pd.Timedelta('1h'),
+            run_length=pd.Timedelta('1h')
+        )
+    )
+
+    proc_fx_obs = create_processed_fxobs(fxobs, fx_series, obs_series)
+
+    res = calculator.calculate_summary_statistics(proc_fx_obs, [category])
+    assert {(v.index, v.value) for v in res.values
+            if v.metric == 'forecast_mean'} == fxresult
+    assert {(v.index, v.value) for v in res.values
+            if v.metric == 'observation_mean'} == obsresult
+
+
+@pytest.mark.parametrize('inp,expected', [
+    (
+        pd.DataFrame({'forecast': [0, 1, 2], 'observation': [1, 1, 1]},
+                     index=pd.date_range(start='20200101T0000Z', freq='1h',
+                                         periods=3), dtype=float),
+        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
+                      'median': [1, 1], 'std': [1, 0]},
+                     index=['forecast', 'observation'], dtype=float).T
+     ),
+    (
+        pd.DataFrame({'reference_forecast': [0, 1, 2], 'observation':
+                      [1, 1, np.nan]},
+                     index=pd.date_range(start='20200101T0000Z', freq='1h',
+                                         periods=3), dtype=float),
+        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
+                      'median': [1, 1], 'std': [1, 0]},
+                     index=['reference_forecast', 'observation'],
+                     dtype=float).T
+     )
+])
+def test_calculate_summary_for_frame(inp, expected):
+    out = calculator._calculate_summary_for_frame(inp)
+    pd.testing.assert_frame_equal(out, expected)
+
+
+def test_is_deterministic_forecast(single_forecast, single_event_forecast,
+                                   prob_forecast_constant_value,
+                                   prob_forecasts, single_observation):
+    def make(obj):
+        class Fx:
+            forecast = obj
+
+        class Obj:
+            original = Fx()
+
+        return Obj()
+
+    assert calculator._is_deterministic_forecast(make(single_forecast))
+    assert not calculator._is_deterministic_forecast(
+        make(single_event_forecast))
+    assert not calculator._is_deterministic_forecast(make(prob_forecasts))
+    assert not calculator._is_deterministic_forecast(
+        make(prob_forecast_constant_value))
+    assert not calculator._is_deterministic_forecast(make(single_observation))
+
+
+def test_calculate_all_summary_statistics(
+        mocker, single_forecast_data_obj, create_processed_fxobs):
+    log = mocker.spy(calculator, 'logger')
+    ref_values = _random_ref_values_if_not_None(single_forecast_data_obj)
+    inp = [create_processed_fxobs(single_forecast_data_obj,
+                                  np.random.randn(10)+10,
+                                  np.random.randn(10)+10,
+                                  ref_values=ref_values),
+           create_processed_fxobs(single_forecast_data_obj,
+                                  np.array([]), np.array([]))
+           ]
+    result = calculator.calculate_all_summary_statistics(
+        inp, LIST_OF_CATEGORIES)
+    assert isinstance(result[0], datamodel.MetricResult)
+    assert len(result) == 1
+    log.error.assert_called_once()

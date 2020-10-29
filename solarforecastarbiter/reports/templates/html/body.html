@@ -62,6 +62,7 @@
       <li><a href="#data-preprocessing-summary">Summary</a></li>
       <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
     </ul>
+    <li><a href="#summarystats">Summary Statistics</a></li>
   </ul>
   <li><a href="#metrics">Metrics</a></li>
   {% if include_metrics_toc | default(True) %}
@@ -76,10 +77,11 @@
 {% endblock %}
 
 {% block errors %}
-{% if report.raw_report.messages| length > 0 %}
+{% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
+{% if messages | length > 0 %}
 <div class="alert alert-warning">
-  {% for mesg in report.raw_report.messages %}
-  <h5>{{ mesg.message }}</h5>
+  {% for mesg in messages %}
+  <h5>{{ mesg }}</h5>
   {% endfor %}
 </div>
 {% endif %}
@@ -210,6 +212,18 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% include "data_validation_post_text" %}
 {% endblock %}
 
+{% block summarystat %}
+<h3 id="summarystats">Summary Statistics</h2>
+<p>
+  A table of summary statistics for the resampled data over the entire study
+  period is shown below. Statistics for other categories may be downloaded in
+  <a href="javascript:download_stats_as_csv('{{ report_name }}')">CSV format</a>
+  or <a href="javascript:download_stats_as_json('{{ report_name }}')">JSON format</a>.
+</p>
+{{ macros.summary_stats_table_vert(report.raw_report.metrics | selectattr("is_summary"), "total") }}
+<br>
+{% endblock %}
+
 {% block metrics %}
 <h2 id="metrics">Metrics</h2>
 {% include "metrics_meta_table.html" %}
@@ -221,7 +235,7 @@ Plotly.newPlot("scatter-div", scat_plot);
   or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
 </p>
 
-{{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
+{{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
 
 <script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">

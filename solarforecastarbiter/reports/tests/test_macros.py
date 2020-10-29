@@ -55,7 +55,8 @@ metric_table_fx_vert_format = """<div class="report-table-wrapper">
 
 def test_metric_table_fx_vert(report_with_raw, macro_test_template):
     metric_table_template = macro_test_template('metric_table_fx_vert(report_metrics,category,metric_ordering)')  # noqa
-    metrics = report_with_raw.raw_report.metrics
+    metrics = [m for m in report_with_raw.raw_report.metrics
+               if not m.is_summary]
     category = 'total'
     for i in range(3):
         expected_metric = (metrics[i],)
@@ -102,7 +103,8 @@ metric_table_fx_horz_format = """<table class="table table-striped" style="width
 
 def test_metric_table_fx_horz(report_with_raw, macro_test_template):
     metric_table_template = macro_test_template('metric_table_fx_horz(report_metrics,category,metric_ordering)')  # noqa
-    metrics = report_with_raw.raw_report.metrics
+    metrics = [m for m in report_with_raw.raw_report.metrics
+               if not m.is_summary]
     category = 'hour'
     for i in range(3):
         expected_metric = (metrics[i],)
@@ -242,3 +244,78 @@ def test_preprocessing_table(report_with_raw, macro_test_template,
         proc_fxobs_list[0].name,
         proc_fxobs_list[1].name,
         *preprocessing_result_types)
+
+
+summary_stats_table_vert_format = """<div class="report-table-wrapper">
+<table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
+  <caption style="caption-side:top; text-align: left">
+    Table of {stat} data summary statistics
+  </caption>
+  <thead>
+    <tr class="header">
+      <th scope="col" style="text-align: left;">Aligned Pair</th>
+      <th scope="col" colspan="5" style="text-align: center;">Observation</th>
+      <th scope="col" colspan="5" style="text-align: center;">Forecast</th>
+      <th scope="col" colspan="5" style="text-align: center;">Reference Forecast</th>
+    </tr>
+    <tr>
+      <th></th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
+      <th style="text-align: center;">Mean</th>
+      <th style="text-align: center;">Min</th>
+      <th style="text-align: center;">Max</th>
+      <th style="text-align: center;">Median</th>
+      <th style="text-align: center;">Std.</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td>{name}</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>2</td>
+        <td>{ref}</td>
+        <td>{ref}</td>
+        <td>{ref}</td>
+        <td>{ref}</td>
+        <td>{ref}</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+"""  # NOQA
+
+
+def test_summary_stats_table_vert(report_with_raw, macro_test_template):
+    stats_table_template = macro_test_template('summary_stats_table_vert(report_metrics,category)')  # noqa
+    metrics = [m for m in report_with_raw.raw_report.metrics
+               if m.is_summary]
+    category = 'total'
+    human_categories = datamodel.ALLOWED_CATEGORIES
+    for i in range(3):
+        expected_metric = (metrics[i],)
+        rendered_stats_table = stats_table_template.render(
+            report_metrics=expected_metric,
+            category=category,
+            human_categories=human_categories,
+            human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS)
+        exp = summary_stats_table_vert_format.format(
+            stat=human_categories[category], name=expected_metric[0].name,
+            ref='2' if i == 1 else '')
+        assert rendered_stats_table == exp

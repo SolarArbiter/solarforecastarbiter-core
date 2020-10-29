@@ -503,6 +503,8 @@ Entry points for calculating metrics for
    metrics.calculator.calculate_deterministic_metrics
    metrics.calculator.calculate_probabilistic_metrics
    metrics.calculator.calculate_event_metrics
+   metrics.calculator.calculate_all_summary_statistics
+   metrics.calculator.calculate_summary_statistics
 
 Preprocessing
 -------------
