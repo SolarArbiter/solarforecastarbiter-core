@@ -47,12 +47,13 @@ with the reports or to create a new issue.
   \item Generated at: \VAR{report.raw_report.generated_at}
 \end{itemize}
 
-%- if report.raw_report.messages | length > 0
+%- set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))
+%- if messages | length > 0
 \subsection{Errors}
 
 \begin{itemize}
-  %- for mesg in report.raw_report.messages
-  \item \VAR{mesg.message | html_to_tex}
+  %- for mesg in messages
+  \item \VAR{mesg | html_to_tex}
   %- endfor
 \end{itemize}
 %- endif
