@@ -19,6 +19,7 @@
 \captionsetup[table]{skip=10pt}
 
 \newcommand{\ccbr}{\allowbreak\hspace{0pt}}
+\newcommand*\rot{\rotatebox{90}}
 
 \begin{document}
 \title{\VAR{report_name}}
@@ -27,7 +28,7 @@
 This report of solar forecast accuracy was automatically generated using the
 \href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
 our GitHub repository for
-\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports}{known issues}
+\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is\%3Aissue+is\%3Aopen+label\%3Areports}{known issues}
 with the reports or to create a new issue.
 
 \tableofcontents
@@ -84,13 +85,15 @@ data are available on the web version of this report available
 
 \VAR{macros.data_parameters_table()}
 
-\subsection{Data Validation}
+\subsection{Data Preprocessing}
 
-\VAR{macros.data_validation_table()}
-
-\subsection{Data Resampling and Alignment}
+\subsubsection{Summary}
 
 \VAR{macros.data_resampling_section()}
+
+\subsubsection{Validation and Resampling}
+
+\VAR{macros.data_validation_section()}
 
 \section{Metrics}
 \FloatBarrier

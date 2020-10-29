@@ -242,6 +242,16 @@ def _figure_name_filter(value):
     return out
 
 
+def _unique_flags_filter(proc_fxobs_list):
+    # use a dict to preserve order
+    names = {}
+    for proc_fxobs in proc_fxobs_list:
+        for val_result in proc_fxobs.validation_results:
+            names[val_result.flag] = None
+    unique_names = list(names.keys())
+    return unique_names
+
+
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
     the report. If the report failed to compute, the template and kwargs will
@@ -277,6 +287,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     )
     env.filters['pretty_json'] = _pretty_json
     env.filters['figure_name_filter'] = _figure_name_filter
+    env.filters['unique_flags_filter'] = _unique_flags_filter
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     if report.status == 'complete':
         template = env.get_template('body.html')
@@ -434,6 +445,7 @@ def render_pdf(report, dash_url, max_runs=5):
     env.filters['html_to_tex'] = _html_to_tex
     env.filters['link_filter'] = _link_filter
     env.filters['pretty_json'] = _pretty_json
+    env.filters['unique_flags_filter'] = _unique_flags_filter
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)
