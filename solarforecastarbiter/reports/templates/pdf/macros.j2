@@ -166,8 +166,8 @@
 \VAR{data_validation_post_text() | html_to_tex}
 %- if report.report_parameters.filters
 \VAR{validation_metadata_table(report.report_parameters.filters)}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true))}
-\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false))}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), true)}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), false)}
 %- endif
 %- endmacro
 
