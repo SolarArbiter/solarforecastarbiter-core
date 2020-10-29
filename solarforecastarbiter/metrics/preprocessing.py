@@ -295,7 +295,6 @@ def _calc_discard_before_resample(
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
     to_discard_before_resample = discard_before_resample.any(axis=1)
-    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
 
     # construct validation results
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
@@ -747,7 +746,6 @@ def process_forecast_observations(forecast_observations, filters,
 
         # the total count ultimately shows up in both the validation
         # results table and the preprocessing summary table.
-        # use get for compatibility with older reports
         total_discard_before_resample = _search_validation_results(
             val_results, 'TOTAL DISCARD BEFORE RESAMPLE')
         if total_discard_before_resample is None:
