@@ -237,6 +237,11 @@ class ListHandler(logging.Handler):
         return tuple(out)
 
 
+def _get_children(name):
+    return {k for k in logging.getLogger(name).manager.loggerDict.keys()
+            if k.startswith(name)}
+
+
 @contextmanager
 def hijack_loggers(loggers, level=logging.INFO):
     """
@@ -245,7 +250,7 @@ def hijack_loggers(loggers, level=logging.INFO):
 
     Parameters
     ----------
-    loggers: list of str or logging.Logger
+    loggers: list of str
         Loggers to change
     level: logging LEVEL int
         Level to set the temporary handler to
@@ -264,16 +269,24 @@ def hijack_loggers(loggers, level=logging.INFO):
     handler = ListHandler()
     handler.setLevel(level)
 
-    old_handlers = {}
+    all_loggers = set()
     for name in loggers:
+        all_loggers.add(name)
+        all_loggers |= _get_children(name)
+
+    logger_info = {}
+    for name in all_loggers:
         logger = logging.getLogger(name)
-        old_handlers[name] = logger.handlers
+        logger_info[name] = (logger.handlers, logger.propagate)
         logger.handlers = [handler]
         sentry_logging.ignore_logger(name)
+        logger.propagate = False
     yield handler
-    for name in loggers:
+    for name in all_loggers:
         logger = logging.getLogger(name)
-        logger.handlers = old_handlers[name]
+        hnd, prop = logger_info[name]
+        logger.handlers = hnd
+        logger.propagate = prop
         try:
             sentry_logging._IGNORED_LOGGERS.remove(name)
         except Exception:

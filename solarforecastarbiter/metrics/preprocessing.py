@@ -752,7 +752,7 @@ def process_forecast_observations(forecast_observations, filters,
         total_discard_before_resample = _search_validation_results(
             val_results, 'TOTAL DISCARD BEFORE RESAMPLE')
         if total_discard_before_resample is None:
-            logging.warning(
+            logger.warning(
                 'TOTAL DISCARD BEFORE RESAMPLE not available for pair '
                 '(%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
         else:
@@ -763,7 +763,7 @@ def process_forecast_observations(forecast_observations, filters,
         total_discard_after_resample = _search_validation_results(
             val_results, 'TOTAL DISCARD AFTER RESAMPLE')
         if total_discard_after_resample is None:
-            logging.warning(
+            logger.warning(
                 'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
                 fxobs.forecast.name, fxobs.data_object.name)
         else:
