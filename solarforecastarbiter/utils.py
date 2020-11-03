@@ -239,7 +239,7 @@ class ListHandler(logging.Handler):
 
 def _get_children(name):
     return {k for k in logging.getLogger(name).manager.loggerDict.keys()
-            if k.startswith(name)}
+            if k.startswith(name + '.')}
 
 
 @contextmanager
