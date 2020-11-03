@@ -172,7 +172,8 @@ def test_create_raw_report_from_data(mocker, report_objects, _test_data):
     assert len(raw.plots.figures) > 0
 
 
-def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
+def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data,
+                                           caplog):
     report = report_objects[0]
     data = {}
     for fxobs in report.report_parameters.object_pairs:
@@ -189,10 +190,11 @@ def test_create_raw_report_from_data_no_fx(mocker, report_objects, _test_data):
     raw = main.create_raw_report_from_data(report, data)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0
+    assert len(caplog.records) == 0
 
 
 def test_create_raw_report_from_data_no_obs(mocker, report_objects,
-                                            _test_data):
+                                            _test_data, caplog):
     report = report_objects[0]
     data = {}
     for fxobs in report.report_parameters.object_pairs:
@@ -205,9 +207,10 @@ def test_create_raw_report_from_data_no_obs(mocker, report_objects,
     raw = main.create_raw_report_from_data(report, data)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0
+    assert len(caplog.records) == 0
 
 
-def test_create_raw_report_from_data_no_data(mocker, report_objects):
+def test_create_raw_report_from_data_no_data(mocker, report_objects, caplog):
     report = report_objects[0]
     data = {}
     for fxobs in report.report_parameters.object_pairs:
@@ -218,6 +221,7 @@ def test_create_raw_report_from_data_no_data(mocker, report_objects):
     raw = main.create_raw_report_from_data(report, data)
     assert isinstance(raw, datamodel.RawReport)
     assert len(raw.plots.figures) > 0
+    assert len(caplog.records) == 0
 
 
 def test_create_raw_report_from_data_event(mocker, event_report_objects,

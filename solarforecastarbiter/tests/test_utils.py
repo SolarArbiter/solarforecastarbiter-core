@@ -513,17 +513,27 @@ def test_hijack_loggers_sentry(mocker):
         "https://examplePublicKey@o0.ingest.sentry.io/0",
         before_send=before_send)
     logger = logging.getLogger('testlog')
+    child = logging.getLogger('testlog.child')
+    notchild = logging.getLogger('testloggggger')
     with utils.hijack_loggers(['testlog']):
         logging.getLogger('root').error('will show up')
         logger.error('AHHH')
+        child.error('Im a baby gotta love me')
+        notchild.error('pfft')
     assert 'root' in events
     assert 'testlog' not in events
+    assert 'testlog.child' not in events
+    assert 'testloggggger' in events
 
     events = set()
     logging.getLogger('root').error('will show up')
     logger.error('AHHH')
+    child.error('c')
     assert 'root' in events
     assert 'testlog' in events
+    assert 'testlog.child' in events
+    assert logger.propagate
+    assert child.propagate
 
 
 @pytest.mark.parametrize('data,freq,expected', [
