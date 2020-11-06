@@ -821,8 +821,9 @@ def _name_pfxobs(current_names, forecast, i=1):
         forecast_name = forecast.name
         if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
             if forecast.axis == 'x':
-                forecast_name += \
-                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+                forecast_name += (
+                    f' Prob(x <= {forecast.constant_value} '
+                    f'{forecast.constant_value_units})')
             else:
                 forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
     if i > 99:
