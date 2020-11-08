@@ -1110,6 +1110,24 @@ def test_name_pfxobs_recursion_limit():
     assert preprocessing._name_pfxobs(cn, name) == f'{name}-99'
 
 
+def test_name_pfxobs(
+        single_forecast, single_event_forecast, prob_forecasts,
+        prob_forecasts_y, prob_forecast_constant_value,
+        prob_forecast_constant_value_y):
+
+    name = 'whoami'
+    fxs = (
+        single_forecast, single_event_forecast, prob_forecasts,
+        prob_forecasts_y, prob_forecast_constant_value,
+        prob_forecast_constant_value_y)
+    expected = [name]*4 + [name + ' Prob(x <= 0 W/m^2)',
+                           name + ' Prob(f <= x) = 50.0%']
+    current_names = []
+    for fx, exp in zip(fxs, expected):
+        fx = fx.replace(name=name)
+        assert preprocessing._name_pfxobs(current_names, fx) == exp
+
+
 @pytest.mark.parametrize('dtype', ['int', 'bool', 'float'])
 @pytest.mark.parametrize("obs_index,fx_index,expected_dt", [
     (THREE_HOURS, THREE_HOURS, THREE_HOURS),
