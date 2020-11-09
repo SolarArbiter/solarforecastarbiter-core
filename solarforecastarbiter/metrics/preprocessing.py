@@ -815,14 +815,34 @@ def process_forecast_observations(forecast_observations, filters,
 
 
 def _name_pfxobs(current_names, forecast, i=1):
+    """Create unique, descriptive name for forecast.
+
+    Users should call this function with a ``Forecast`` object. This
+    will augment the ``Forecast.name`` attribute with probabilistic
+    descriptors (if needed). The function will then inspect the list of
+    names in ``current_names``. If the name is not unique, a recursive
+    call, using a string, will allow up to 99 variants of the name.
+
+    Parameters
+    ----------
+    current_names : list of str
+    forecast : datamodel.Forecast or str
+
+    Returns
+    -------
+    str
+    """
     if isinstance(forecast, str):
+        # handle input when called recursively
         forecast_name = forecast
     else:
+        # handle initial augmentation of forecast.name
         forecast_name = forecast.name
         if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
             if forecast.axis == 'x':
-                forecast_name += \
-                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+                forecast_name += (
+                    f' Prob(x <= {forecast.constant_value} '
+                    f'{forecast.constant_value_units})')
             else:
                 forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
     if i > 99:
