@@ -1,4 +1,4 @@
-.. _whatsnew_100rc4:
+.. _whatsnew_100:
 
 .. py:currentmodule:: solarforecastarbiter
 
