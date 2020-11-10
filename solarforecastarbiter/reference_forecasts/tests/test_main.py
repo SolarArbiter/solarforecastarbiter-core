@@ -568,7 +568,7 @@ def test_run_persistence_incompatible_instant_fx(session, site_metadata,
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
-        interval_label='instantaneous')
+        interval_label='instant')
     issue_time = pd.Timestamp('20190423T2300Z')
     run_time = pd.Timestamp('20190422T1945Z')
     with pytest.raises(ValueError) as excinfo:
@@ -585,8 +585,8 @@ def test_run_persistence_incompatible_instant_interval(session, site_metadata,
         lead_time_to_start=pd.Timedelta('1h'),
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
-        interval_label='instantaneous')
-    obs = obs_5min_begin.replace(interval_label='instantaneous',
+        interval_label='instant')
+    obs = obs_5min_begin.replace(interval_label='instant',
                                  interval_length=pd.Timedelta('10min'))
     issue_time = pd.Timestamp('20190423T2300Z')
     run_time = pd.Timestamp('20190422T1945Z')

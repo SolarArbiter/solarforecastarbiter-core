@@ -19,6 +19,7 @@
 \captionsetup[table]{skip=10pt}
 
 \newcommand{\ccbr}{\allowbreak\hspace{0pt}}
+\newcommand*\rot{\rotatebox{90}}
 
 \begin{document}
 \title{\VAR{report_name}}
@@ -27,7 +28,7 @@
 This report of solar forecast accuracy was automatically generated using the
 \href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
 our GitHub repository for
-\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports}{known issues}
+\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is\%3Aissue+is\%3Aopen+label\%3Areports}{known issues}
 with the reports or to create a new issue.
 
 \tableofcontents
@@ -46,12 +47,13 @@ with the reports or to create a new issue.
   \item Generated at: \VAR{report.raw_report.generated_at}
 \end{itemize}
 
-%- if report.raw_report.messages | length > 0
+%- set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))
+%- if messages | length > 0
 \subsection{Errors}
 
 \begin{itemize}
-  %- for mesg in report.raw_report.messages
-  \item \VAR{mesg.message | html_to_tex}
+  %- for mesg in messages
+  \item \VAR{mesg | html_to_tex}
   %- endfor
 \end{itemize}
 %- endif
@@ -84,13 +86,23 @@ data are available on the web version of this report available
 
 \VAR{macros.data_parameters_table()}
 
-\subsection{Data Validation}
+\subsection{Data Preprocessing}
 
-\VAR{macros.data_validation_table()}
-
-\subsection{Data Resampling and Alignment}
+\subsubsection{Summary}
 
 \VAR{macros.data_resampling_section()}
+
+\subsubsection{Validation and Resampling}
+
+\VAR{macros.data_validation_section()}
+
+\subsection{Summary Statistics}
+
+A table of summary statistics for the resampled data over the entire study
+period is shown below. Downloads of summary statistics for other categories
+are available on the \href{\VAR{report_url}}{web version of this report}.
+
+\VAR{macros.summary_statistics_table(report.raw_report.metrics | selectattr('is_summary'), 'total')}
 
 \section{Metrics}
 \FloatBarrier
@@ -101,7 +113,7 @@ A table of metrics over the entire study period and metric figures are shown bel
 Metrics may be downloaded in CSV format through the HTML version of this report
 available \href{\VAR{report_url}}{here}.
 
-\VAR{macros.metric_table(report.raw_report.metrics, 'total', report.report_parameters.metrics)}
+\VAR{macros.metric_table(report.raw_report.metrics | rejectattr('is_summary'), 'total', report.report_parameters.metrics)}
 
 \FloatBarrier
 %- for category in report.report_parameters.categories

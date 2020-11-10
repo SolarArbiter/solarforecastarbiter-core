@@ -39,11 +39,111 @@ def build_metrics_json(report):
     """
     if getattr(report, 'raw_report') is not None:
         df = plotly_figures.construct_metrics_dataframe(
-            report.raw_report.metrics,
+            list(filter(lambda x: not getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
             rename=plotly_figures.abbreviate)
         return df.to_json(orient="records")
     else:
         return "[]"
+
+
+def build_summary_stats_json(report):
+    """Creates a dict from the summary statistics in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The json representing the summary statistics. Will be a string
+        representing an empty json array if the report does not have a
+        computed raw_report.
+
+    Raises
+    ------
+    ValueError
+        If report.raw_report is populated but no
+        report.raw_report.metrics have `is_summary == True`
+        indicating that the report was made without
+        summary statistics.
+    """
+    if getattr(report, 'raw_report') is not None:
+        df = plotly_figures.construct_metrics_dataframe(
+            list(filter(lambda x: getattr(x, 'is_summary', False),
+                 report.raw_report.metrics)),
+            rename=plotly_figures.abbreviate)
+        if df.empty:
+            raise ValueError('No summary statistics in report.')
+        return df.to_json(orient="records")
+    else:
+        return "[]"
+
+
+def build_metadata_json(report):
+    """Creates a JSON array of ProcessedForecastObservations parameters
+    in the report.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    str
+        The JSON representing the report forecast-observation metadata.
+    """
+    if getattr(report, 'raw_report') is None:
+        return "[]"
+
+    drop_keys = {
+        '__blurb__', 'site', 'aggregate',
+    }
+
+    def _process_forecast(fx):
+        if fx is None:
+            return None
+        out = {k: v for k, v in fx.to_dict().items()
+               if k not in drop_keys}
+        if isinstance(fx, datamodel.ProbabilisticForecast):
+            out['constant_values'] = [
+                cdf.constant_value for cdf in fx.constant_values]
+        return out
+
+    out = []
+    for pfxobs in report.raw_report.processed_forecasts_observations:
+        minp = pfxobs.replace(original=None)
+        thisout = {k: v for k, v in minp.to_dict().items()
+                   if k in (
+                           'name', 'interval_value_type', 'interval_length',
+                           'interval_label', 'normalization_factor',
+                           'uncertainty', 'cost')}
+
+        thisout['forecast'] = _process_forecast(pfxobs.original.forecast)
+        thisout['reference_forecast'] = _process_forecast(
+            pfxobs.original.reference_forecast)
+        thisout['observation'] = None
+        thisout['aggregate'] = None
+        if hasattr(pfxobs.original, 'observation'):
+            thisout['observation'] = {
+                k: v for k, v in pfxobs.original.observation.to_dict().items()
+                if k not in drop_keys
+            }
+        elif hasattr(pfxobs.original, 'aggregate'):
+            thisout['aggregate'] = {
+                k: v for k, v in pfxobs.original.aggregate.to_dict().items()
+                if k not in drop_keys or k == 'observations'
+            }
+            obs = []
+            for aggobs in pfxobs.original.aggregate.observations:
+                obsd = aggobs.to_dict()
+                obsd['observation_id'] = obsd.pop('observation')[
+                    'observation_id']
+                obs.append(obsd)
+            thisout['aggregate']['observations'] = obs
+        out.append(thisout)
+    return json.dumps(out).replace('NaN', 'null')
 
 
 def _get_render_kwargs(report, dash_url, with_timeseries):
@@ -70,10 +170,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     kwargs = dict(
         human_categories=datamodel.ALLOWED_CATEGORIES,
         human_metrics=datamodel.ALLOWED_METRICS,
+        human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS,
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,
         metrics_json=build_metrics_json(report),
+        metadata_json=build_metadata_json(report),
+        templating_messages=[]
     )
     report_plots = getattr(report.raw_report, 'plots', None)
     # get plotting library versions used when plots were generated.
@@ -83,6 +186,13 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
 
     plot_plotly = getattr(report_plots, 'plotly_version', None)
     kwargs['plotly_version'] = plot_plotly if plot_plotly else plotly_version
+
+    try:
+        kwargs['summary_stats'] = build_summary_stats_json(report)
+    except ValueError:
+        kwargs['templating_messages'].append(
+            'No data summary statistics were calculated with this report.')
+        kwargs['summary_stats'] = '[]'
 
     if with_timeseries:
         try:
@@ -132,6 +242,17 @@ def _figure_name_filter(value):
     return out
 
 
+def _unique_flags_filter(proc_fxobs_list, before_resample):
+    # use a dict to preserve order and guarantee uniqueness of keys
+    names = {}
+    for proc_fxobs in proc_fxobs_list:
+        for val_result in proc_fxobs.validation_results:
+            if val_result.before_resample == before_resample:
+                names[val_result.flag] = None
+    unique_names = list(names.keys())
+    return unique_names
+
+
 def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     """Returns the jinja2 Template object and a dict of template variables for
     the report. If the report failed to compute, the template and kwargs will
@@ -167,6 +288,7 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
     )
     env.filters['pretty_json'] = _pretty_json
     env.filters['figure_name_filter'] = _figure_name_filter
+    env.filters['unique_flags_filter'] = _unique_flags_filter
     kwargs = _get_render_kwargs(report, dash_url, with_timeseries)
     if report.status == 'complete':
         template = env.get_template('body.html')
@@ -324,6 +446,7 @@ def render_pdf(report, dash_url, max_runs=5):
     env.filters['html_to_tex'] = _html_to_tex
     env.filters['link_filter'] = _link_filter
     env.filters['pretty_json'] = _pretty_json
+    env.filters['unique_flags_filter'] = _unique_flags_filter
     kwargs = _get_render_kwargs(report, dash_url, False)
     with tempfile.TemporaryDirectory() as _tmpdir:
         tmpdir = Path(_tmpdir)

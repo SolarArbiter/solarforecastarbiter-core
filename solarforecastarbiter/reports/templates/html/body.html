@@ -57,7 +57,12 @@
   <li><a href="#data">Data</a></li>
   <ul>
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
-    <li><a href="#data-validation">Data Validation</a></li>
+    <li><a href="#data-preprocessing">Data Preprocessing</a></li>
+    <ul>
+      <li><a href="#data-preprocessing-summary">Summary</a></li>
+      <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
+    </ul>
+    <li><a href="#summarystats">Summary Statistics</a></li>
   </ul>
   <li><a href="#metrics">Metrics</a></li>
   {% if include_metrics_toc | default(True) %}
@@ -72,10 +77,11 @@
 {% endblock %}
 
 {% block errors %}
-{% if report.raw_report.messages| length > 0 %}
+{% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
+{% if messages | length > 0 %}
 <div class="alert alert-warning">
-  {% for mesg in report.raw_report.messages %}
-  <h5>{{ mesg.message }}</h5>
+  {% for mesg in messages %}
+  <h5>{{ mesg }}</h5>
   {% endfor %}
 </div>
 {% endif %}
@@ -119,22 +125,33 @@
 <h3 id="observations-and-forecasts">Observations and Forecasts</h3>
 {% include "obsfx_table.html" %}
 
+<p>
+  More metadata for the objects in this report may be downloaded in
+  <a href="javascript:download_metadata_as_json('{{ report_name }}')">JSON format</a>.
+</p>
+
 {% if timeseries_spec is defined %}
-<p>The plots below show the realigned and resampled time series of
-observation and forecast data as well as the distribution of forecast vs
-observation data.</p>
+<p>
+  The plots below show the filtered, resampled, and aligned time series of
+  observation and forecast data as well as the distribution of forecast vs.
+  observation data.
+  This resampled and realigned timeseries data may also be downloaded in
+  <a href="javascript:download_timeseries_data_as_csv('{{ report_name }}')">CSV format</a>.
+</p>
 
 <p>Controls to pan, zoom, and save the plot are shown on the
 right. Clicking on an item in the legend will hide/show it.</p>
 
 <div id="timeseries-div"></div>
 {% if includes_distribution %}
-<p>For forecasts parameterized symmetrically around the 50th percentile,
-brighter colors indicate percentiles farther from the 50th percentile and
-darker colors indicate percentiles closer to the 50th percentile. For forecasts
-parameterized asymmetrically around the 50th percentile, brighter colors
-indicate smaller percentiles and darker colors indicate larger percentiles.
-Use the hover tool to determine the percentile.</p>
+<p>
+  For forecasts parameterized symmetrically around the 50th percentile,
+  brighter colors indicate percentiles farther from the 50th percentile and
+  darker colors indicate percentiles closer to the 50th percentile. For forecasts
+  parameterized asymmetrically around the 50th percentile, brighter colors
+  indicate smaller percentiles and darker colors indicate larger percentiles.
+  Use the hover tool to determine the percentile.
+</p>
 {% endif %}
 
 <script>
@@ -142,6 +159,7 @@ ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
 Object.assign(ts_plot,{config: {responsive: true}});
 Plotly.newPlot("timeseries-div", ts_plot);
 </script>
+{{ macros.download_timeseries_script () | safe }}
 {% endif %}
 
 <div id="scatter-div"></div>
@@ -165,32 +183,51 @@ Plotly.newPlot("scatter-div", scat_plot);
   Plotly.newPlot("timeseries-prob-div", ts_prob_plot);
 </script>
 {% endif %}
+{% include "load_metadata.html" %}
+{{ macros.download_metadata_script () | safe }}
+{% endblock %}
+
+<h3 id="data-preprocessing">Data Preprocessing</h3>
+{% block dataresampleandalign %}
+<h4 id="data-preprocessing-summary">Summary</h4>
+{% include "data_resampling_preamble" %}
+{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+<br>
+{% include "data_resampling_postamble" %}
 {% endblock %}
 
 {% block datavalidation %}
-<h3 id="data-validation">Data Validation</h3>
+<h4 id="data-validation-resampling">Validation and Resampling</h4>
 {% include "data_validation_pre_text" %}
 
-{% for filter in report.report_parameters.filters %}
-  {% if filter.__class__.__name__ == 'QualityFlagFilter' %}
-    {% set valtable = True %}
-    {{ macros.validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags) }}
+{% if report.report_parameters.filters %}
+  {{ macros.validation_metadata_table(report.report_parameters.filters) }}
   <br>
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, true) }}
+  {% if report.raw_report.processed_forecasts_observations | unique_flags_filter(false) | length %}
+  {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, false) }}
+  {% else %}
+  No filters with discard after resample were available because this report was created with Solar Forecast Arbiter version 1.0rc3 or earlier (find the <a href="#versions">version information</a> at the end of the report).
+  Recompute the report to apply the revised data filtering and resampling procedures.<br>
   {% endif %}
-{% endfor %}
-{% if valtable | default(False) %}
+  <br>
+{% else %}
   <div class="alert alert-info">No filters applied</div>
 {% endif %}
 
 {% include "data_validation_post_text" %}
 {% endblock %}
 
-{% block dataresampleandalign %}
-<h3 id="data-alignment">Data Resampling and Alignment</h3>
-{% include "data_resampling_preamble" %}
-{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+{% block summarystat %}
+<h3 id="summarystats">Summary Statistics</h2>
+<p>
+  A table of summary statistics for the resampled data over the entire study
+  period is shown below. Statistics for other categories may be downloaded in
+  <a href="javascript:download_stats_as_csv('{{ report_name }}')">CSV format</a>
+  or <a href="javascript:download_stats_as_json('{{ report_name }}')">JSON format</a>.
+</p>
+{{ macros.summary_stats_table_vert(report.raw_report.metrics | selectattr("is_summary"), "total") }}
 <br>
-{% include "data_resampling_postamble" %}
 {% endblock %}
 
 {% block metrics %}
@@ -199,11 +236,12 @@ Plotly.newPlot("scatter-div", scat_plot);
 <p>
   A table of metrics over the entire study period and figures for the selected
   categories are shown below.
-  Metrics may be downloaded in CSV format by clicking
-  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">here</a>.
+  Metrics may be downloaded in
+  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">CSV format</a>
+  or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
 </p>
 
-{{ macros.metric_table_fx_vert(report.raw_report.metrics, "total", report.report_parameters.metrics) }}
+{{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
 
 <script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">
@@ -227,7 +265,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endfor %}
 </div>
 {% include "load_metrics.html" %}
-{{ macros.download_csv_script () | safe }}
+{{ macros.download_metrics_script () | safe }}
 {% endblock %}
 
 

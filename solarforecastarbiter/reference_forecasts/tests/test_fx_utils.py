@@ -674,7 +674,7 @@ def test_get_forecast_start_end_time_instant(
     (dict(issue_time_of_day=dt.time(hour=6),
           lead_time_to_start=pd.Timedelta('24h'),
           run_length='8h',
-          interval_label='instantaneous'),
+          interval_label='instant'),
      pd.Timestamp('2020-05-20T04:00Z'),
      pd.Timestamp('2020-05-18T22:00Z')),
 ])
@@ -703,14 +703,14 @@ def test_find_next_issue_time_from_last_forecast(fxargs, last_time, expected,
     pytest.param(dict(), dict(run_length=pd.Timedelta('24h')), False,
                  marks=pytest.mark.xfail(strict=True)),
     # non-instant obs
-    (dict(), dict(interval_label='instantaneous'), True),
-    (dict(), dict(interval_label='instantaneous'), False),
+    (dict(), dict(interval_label='instant'), True),
+    (dict(), dict(interval_label='instant'), False),
     # instant, but mismatch length
-    (dict(interval_label='instantaneous'),
-     dict(interval_label='instantaneous'),
+    (dict(interval_label='instant'),
+     dict(interval_label='instant'),
      True),
-    (dict(interval_label='instantaneous'),
-     dict(interval_label='instantaneous'),
+    (dict(interval_label='instant'),
+     dict(interval_label='instant'),
      False),
 ])
 def test_check_persistence_compatibility(obs_kw, fx_kw, index, site_metadata):

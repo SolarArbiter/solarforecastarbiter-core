@@ -567,7 +567,8 @@ def wind_speed_observation_metadata(powerplant_metadata):
 def ac_power_observation_metadata_label(request, powerplant_metadata):
     ac_power_meta = datamodel.Observation(
         name='Albuquerque Baseline AC Power', variable='ac_power',
-        interval_value_type='mean', interval_length=pd.Timedelta('5min'),
+        interval_value_type='interval_mean',
+        interval_length=pd.Timedelta('5min'),
         interval_label=request.param, site=powerplant_metadata, uncertainty=1.)
     return ac_power_meta
 
@@ -585,7 +586,8 @@ def ghi_observation_metadata(site_metadata):
 def default_observation(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        interval_value_type='mean', uncertainty=1., interval_length='1h',
+        interval_value_type='interval_mean', uncertainty=1.,
+        interval_length='1h',
         interval_label='beginning'):
     """
     Helpful when you want to test a couple of parameters and don't
@@ -603,7 +605,7 @@ def default_observation(
 def default_forecast(
         site_metadata,
         name='Albuquerque Baseline', variable='ghi',
-        interval_value_type='mean', issue_time_of_day=dt.time(hour=5),
+        interval_value_type='interval_mean', issue_time_of_day=dt.time(hour=5),
         lead_time_to_start='1h', interval_length='1h', run_length='12h',
         interval_label='beginning'):
     """
@@ -633,7 +635,7 @@ def ac_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='ac_power',
         site=site_metadata
     )
@@ -649,7 +651,7 @@ def dc_power_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='dc_power',
         site=site_metadata
     )
@@ -665,7 +667,7 @@ def wind_speed_forecast_metadata(site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('12h'),
         interval_label='beginning',
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='wind_speed',
         site=site_metadata
     )
@@ -681,7 +683,7 @@ def ac_power_forecast_metadata_label(request, site_metadata):
         interval_length=pd.Timedelta('1h'),
         run_length=pd.Timedelta('1h'),
         interval_label=request.param,
-        interval_value_type='mean',
+        interval_value_type='interval_mean',
         variable='ac_power',
         site=site_metadata
     )
@@ -1841,7 +1843,7 @@ def cdf_and_cv_report_objects(aggregate, ref_forecast_id):
     obs = datamodel.Observation(
         name="Albuquerque New Mexico ghi",
         variable="ghi",
-        interval_value_type="interval mean",
+        interval_value_type="interval_mean",
         interval_length=pd.Timedelta("1min"),
         interval_label="ending",
         site=site,
@@ -2068,7 +2070,7 @@ def cdf_and_cv_report_objects_xy(aggregate, ref_forecast_id):
     obs = datamodel.Observation(
         name="Albuquerque New Mexico ghi",
         variable="ghi",
-        interval_value_type="interval mean",
+        interval_value_type="interval_mean",
         interval_length=pd.Timedelta("1min"),
         interval_label="ending",
         site=site,
@@ -2520,11 +2522,11 @@ def metric_index():
 
 @pytest.fixture
 def preprocessing_result_types():
-    return (preprocessing.VALIDATION_RESULT_TOTAL_STRING,
-            'Forecast ' + preprocessing.DISCARD_DATA_STRING,
-            'Forecast ' + preprocessing.UNDEFINED_DATA_STRING,
-            'Observation ' + preprocessing.DISCARD_DATA_STRING,
-            'Observation ' + preprocessing.UNDEFINED_DATA_STRING)
+    return (
+        preprocessing.FILL_RESULT_TOTAL_STRING.format('', 'Discarded'),
+        preprocessing.DISCARD_DATA_STRING.format('Forecast'),
+        preprocessing.DISCARD_DATA_STRING.format('Observation')
+    )
 
 
 @pytest.fixture
@@ -2556,6 +2558,28 @@ def report_metrics(metric_index):
                     }
                 ))
             metrics_dict['values'] = values
+            metrics = metrics + (
+                datamodel.MetricResult.from_dict(metrics_dict),)
+
+            stats = []
+            keys = ('forecast', 'observation')
+            if fxobs.reference_forecast is not None:
+                keys += ('reference_forecast',)
+            for metric, category in itertools.product(
+                ('mean', 'min', 'max', 'std', 'median'),
+                report.report_parameters.categories
+            ):
+                for key in keys:
+                    stats.append(datamodel.MetricValue.from_dict(
+                        {
+                            'category': category,
+                            'metric': f'{key}_{metric}',
+                            'value': 2 if key == 'observation' else 1,
+                            'index': metric_index(category),
+                        }
+                    ))
+            metrics_dict['values'] = stats
+            metrics_dict['is_summary'] = True
             metrics = metrics + (
                 datamodel.MetricResult.from_dict(metrics_dict),)
         return metrics
@@ -2694,6 +2718,17 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
 @pytest.fixture
 def report_with_raw(report_dict, raw_report):
     report_dict['raw_report'] = raw_report(True)
+    report_dict['status'] = 'complete'
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture
+def no_stats_report(report_dict, raw_report):
+    raw = raw_report(True)
+    report_dict['raw_report'] = raw.replace(
+        metrics=tuple(filter(lambda x: not x.is_summary, raw.metrics))
+    )
     report_dict['status'] = 'complete'
     report = datamodel.Report.from_dict(report_dict)
     return report
@@ -3149,12 +3184,15 @@ def metric_result(metric_result_dict):
     return datamodel.MetricResult.from_dict(metric_result_dict)
 
 
-@pytest.fixture
-def validation_result_dict():
-    return {
+@pytest.fixture(params=[True, False])
+def validation_result_dict(request):
+    d = {
         'flag': 2,
         'count': 1,
     }
+    if request.param:
+        d['before_resample'] = True
+    return d
 
 
 @pytest.fixture

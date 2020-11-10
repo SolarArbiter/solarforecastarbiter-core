@@ -316,7 +316,8 @@ def test_persistence_scalar_index_invalid_times_invalid_label(site_metadata):
 
     interval_label = 'invalid'
     observation = default_observation(
-        site_metadata, interval_length='5min', interval_label=interval_label)
+        site_metadata, interval_length='5min')
+    object.__setattr__(observation, 'interval_label', interval_label)
     data_start = pd.Timestamp('20190404 1200', tz=tz)
     data_end = pd.Timestamp('20190404 1300', tz=tz)
     forecast_start = pd.Timestamp('20190404 1300', tz=tz)

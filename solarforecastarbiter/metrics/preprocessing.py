@@ -14,12 +14,10 @@ from solarforecastarbiter.validation import quality_mapping
 logger = logging.getLogger(__name__)
 
 # Titles to refer to counts of preprocessing results
-VALIDATION_RESULT_TOTAL_STRING = "TOTAL FLAGGED VALUES DISCARDED"
-FILL_RESULT_TOTAL_STRING = "Total {0}Forecast Values {1}"
-DISCARD_DATA_STRING = "Values Discarded by Alignment"
-UNDEFINED_DATA_STRING = "Undefined Values"
+FILL_RESULT_TOTAL_STRING = "Missing {0}Forecast Values {1}"
+DISCARD_DATA_STRING = "{0} Values Discarded by Alignment"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
-FORECAST_FILL_STRING_MAP = {'drop': "Dropped",
+FORECAST_FILL_STRING_MAP = {'drop': "Discarded",
                             'forward': "Forward Filled"}
 
 
@@ -219,7 +217,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             'fx.interval_length < obs.interval_length.')
 
     if obs_data.empty:
-        return obs_data['value'], {}
+        return obs_data['value'], []
 
     # label convention when resampling
     closed = datamodel.CLOSED_MAPPING[obs.interval_label]
@@ -230,7 +228,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     obs_flags['ISNAN'] = obs_data['value'].isna()
 
     # determine the points that should be discarded before resampling.
-    to_discard_before_resample, counts = _calc_discard_before_resample(
+    to_discard_before_resample, val_results = _calc_discard_before_resample(
         obs_flags, quality_flags, fx.interval_length, closed)
 
     # resample using all of the data except for what was flagged by the
@@ -240,7 +238,7 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
             fx.interval_length, closed=closed, label=closed).mean()
 
     # determine the intervals that have too many flagged points
-    to_discard_after_resample, after_resample_counts = \
+    to_discard_after_resample, after_resample_val_results = \
         _calc_discard_after_resample(
             obs_flags,
             quality_flags,
@@ -258,10 +256,10 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
     obs_resampled = resampled_values.loc[
         resampled_values.index.intersection(good_labels)]
 
-    # merge the counts dictionaries
-    counts.update(after_resample_counts)
+    # merge the val_results lists
+    val_results += after_resample_val_results
 
-    return obs_resampled, counts
+    return obs_resampled, val_results
 
 
 def _calc_discard_before_resample(
@@ -292,17 +290,25 @@ def _calc_discard_before_resample(
     """
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
-    discard_before_resample_flags = set(['ISNAN'])
+    # list(dict.fromkeys()) is good enough for Raymond Hettinger
+    # https://stackoverflow.com/a/39835527/2802993
+    flags = ['ISNAN']
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
-        discard_before_resample_flags |= set(f.quality_flags)
+        flags.extend(f.quality_flags)
+    discard_before_resample_flags = list(dict.fromkeys(flags))
     discard_before_resample = obs_flags[discard_before_resample_flags]
-    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
+
+    # construct validation results
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
+
+    validation_results = _counts_to_validation_results(counts, True)
 
     # TODO: add filters for time of day and value, OR with
     # to_discard_before_resample, add discarded number to counts
 
-    return to_discard_before_resample, counts
+    return to_discard_before_resample, validation_results
 
 
 def _calc_discard_after_resample(
@@ -356,8 +362,6 @@ def _calc_discard_after_resample(
         # use list to ensure column selection works
         quality_flags_to_exclude = list(quality_flag.quality_flags) + ['ISNAN']
         filter_name = ' OR '.join(quality_flags_to_exclude)
-        if quality_flag.discard_before_resample:
-            filter_name = 'DISCARD BEFORE RESAMPLE: ' + filter_name
         # Reduce DataFrame with relevant flags to bool series.
         # could add a QualityFlagFilter.logic key to control
         # OR (.any(axis=1)) vs. AND (.all(axis=1))
@@ -380,7 +384,26 @@ def _calc_discard_after_resample(
         to_discard_after_resample |= flagged
         counts[filter_name] = flagged.sum()
 
-    return to_discard_after_resample, counts
+    counts['TOTAL DISCARD AFTER RESAMPLE'] = to_discard_after_resample.sum()
+    validation_results = _counts_to_validation_results(counts, False)
+
+    return to_discard_after_resample, validation_results
+
+
+def _counts_to_validation_results(counts, before_resample):
+    return [
+        datamodel.ValidationResult(
+            flag=k,
+            count=int(v),
+            before_resample=before_resample)
+        for k, v in counts.items()
+    ]
+
+
+def _search_validation_results(val_results, key):
+    for res in val_results:
+        if res.flag == key:
+            return res.count
 
 
 def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
@@ -404,10 +427,9 @@ def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
         Same as input data except may be coerced to a safer dtype.
     observation_values : pandas.Series
         Observation values filtered and resampled.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
     Notes
     -----
@@ -452,12 +474,13 @@ def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
     if isinstance(fx, datamodel.EventForecast):
         fx_data = _validate_event_dtype(fx_data)
         obs_data['value'] = _validate_event_dtype(obs_data['value'])
-        obs_resampled, counts = _resample_event_obs(
+        obs_resampled, validation_results = _resample_event_obs(
             obs, fx, obs_data, quality_flags)
     else:
-        obs_resampled, counts = _resample_obs(obs, fx, obs_data, quality_flags)
+        obs_resampled, validation_results = _resample_obs(
+            obs, fx, obs_data, quality_flags)
 
-    return fx_data, obs_resampled, counts
+    return fx_data, obs_resampled, validation_results
 
 
 def align(fx_obs, fx_data, obs_data, ref_data, tz):
@@ -503,7 +526,6 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
 
     # Align (forecast is unchanged)
     # Remove non-corresponding observations and forecasts, and missing periods
-    undefined_obs = obs_data.isna().sum()
     obs_data = obs_data.dropna(how="any")
     obs_aligned, fx_aligned = obs_data.align(
         fx_data.dropna(how="any"), 'inner')
@@ -526,26 +548,17 @@ def align(fx_obs, fx_data, obs_data, ref_data, tz):
     forecast_values = fx_aligned.tz_convert(tz)
     observation_values = obs_aligned.tz_convert(tz)
 
-    # prob fx DataFrame needs to be summed across both dimensions
-    if isinstance(fx_data, pd.DataFrame):
-        undefined_fx = fx_data.isna().sum().sum()
-    else:
-        undefined_fx = fx_data.isna().sum()
-
     # Return dict summarizing results
+    discarded_fx_intervals = len(fx_data.dropna(how="any")) - len(fx_aligned)
+    discarded_obs_intervals = len(obs_data) - len(observation_values)
+    obs_blurb = "Validated, Resampled " + obs.__blurb__
     results = {
-        fx.__blurb__ + " " + DISCARD_DATA_STRING:
-            len(fx_data.dropna(how="any")) - len(fx_aligned),
-        obs.__blurb__ + " " + DISCARD_DATA_STRING:
-            len(obs_data) - len(observation_values),
-        fx.__blurb__ + " " + UNDEFINED_DATA_STRING:
-            int(undefined_fx),
-        obs.__blurb__ + " " + UNDEFINED_DATA_STRING:
-            int(undefined_obs)
+        DISCARD_DATA_STRING.format(fx.__blurb__): discarded_fx_intervals,
+        DISCARD_DATA_STRING.format(obs_blurb): discarded_obs_intervals
     }
 
     if ref_data is not None:
-        k = type(ref_fx).__name__ + " " + UNDEFINED_DATA_STRING
+        k = DISCARD_DATA_STRING.format("Reference " + ref_fx.__blurb__)
         results[k] = len(ref_data.dropna(how='any')) - len(ref_fx_aligned)
 
     return forecast_values, observation_values, ref_values, results
@@ -725,7 +738,7 @@ def process_forecast_observations(forecast_observations, filters,
 
         # filter and resample observation/aggregate data
         try:
-            forecast_values, observation_values, counts = filter_resample(
+            forecast_values, observation_values, val_results = filter_resample(
                 fxobs, fx_data, obs_data, filters)
         except Exception as e:
             # should figure out the specific exception types to catch
@@ -734,18 +747,29 @@ def process_forecast_observations(forecast_observations, filters,
                 fxobs.forecast.name, fxobs.data_object.name, e)
             continue
 
-        # store validated data in validated_observations
-        val_results = tuple(datamodel.ValidationResult(flag=k, count=int(v))
-                            for k, v in counts.items())
+        # the total count ultimately shows up in both the validation
+        # results table and the preprocessing summary table.
+        total_discard_before_resample = _search_validation_results(
+            val_results, 'TOTAL DISCARD BEFORE RESAMPLE')
+        if total_discard_before_resample is None:
+            logger.warning(
+                'TOTAL DISCARD BEFORE RESAMPLE not available for pair '
+                '(%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
+                name='Observation Values Discarded Before Resampling',
+                count=int(total_discard_before_resample)))
 
-        # this count value no longer makes sense because the first object
-        # is at a different interval than the second.
-        # might need to add a 'total' to counts, exclude from the
-        # ValidationResult comprehension above, and use it here.
-        preproc_obs_results = datamodel.PreprocessingResult(
-            name=VALIDATION_RESULT_TOTAL_STRING,
-            count=(len(data[fxobs.data_object]) - len(observation_values)))
-        preproc_results.append(preproc_obs_results)
+        total_discard_after_resample = _search_validation_results(
+            val_results, 'TOTAL DISCARD AFTER RESAMPLE')
+        if total_discard_after_resample is None:
+            logger.warning(
+                'TOTAL DISCARD AFTER RESAMPLE not available for pair (%s, %s)',
+                fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
+                name='Resampled Observation Values Discarded',
+                count=int(total_discard_after_resample)))
 
         # Align and create processed pair
         try:
@@ -791,14 +815,34 @@ def process_forecast_observations(forecast_observations, filters,
 
 
 def _name_pfxobs(current_names, forecast, i=1):
+    """Create unique, descriptive name for forecast.
+
+    Users should call this function with a ``Forecast`` object. This
+    will augment the ``Forecast.name`` attribute with probabilistic
+    descriptors (if needed). The function will then inspect the list of
+    names in ``current_names``. If the name is not unique, a recursive
+    call, using a string, will allow up to 99 variants of the name.
+
+    Parameters
+    ----------
+    current_names : list of str
+    forecast : datamodel.Forecast or str
+
+    Returns
+    -------
+    str
+    """
     if isinstance(forecast, str):
+        # handle input when called recursively
         forecast_name = forecast
     else:
+        # handle initial augmentation of forecast.name
         forecast_name = forecast.name
         if isinstance(forecast, datamodel.ProbabilisticForecastConstantValue):
             if forecast.axis == 'x':
-                forecast_name += \
-                    f' Prob(x <= {forecast.constant_value} {forecast.units})'
+                forecast_name += (
+                    f' Prob(x <= {forecast.constant_value} '
+                    f'{forecast.constant_value_units})')
             else:
                 forecast_name += f' Prob(f <= x) = {forecast.constant_value}%'
     if i > 99:

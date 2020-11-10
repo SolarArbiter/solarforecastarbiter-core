@@ -1,0 +1,25 @@
+.. _whatsnew_100:
+
+.. py:currentmodule:: solarforecastarbiter
+
+1.0.0 (November ??, 2020)
+-------------------------
+
+
+Bug fixes
+~~~~~~~~~
+* Fix labeling of probabilistic forecasts of thresholds (``axis='x'``).
+  (:issue:`611`, :pull:`612`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)

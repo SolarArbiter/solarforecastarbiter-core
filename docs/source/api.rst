@@ -347,6 +347,7 @@ files with site and observation metadata.
    io.reference_observations.arm
    io.reference_observations.pvdaq
    io.reference_observations.eia
+   io.reference_observations.bsrn
 
 SFA API
 =======
@@ -465,6 +466,7 @@ for observations, forecasts, aggregates, and probabilistic forecasts:
    :toctree: generated/
 
    io.api.APISession.get_values
+   io.api.APISession.chunk_value_request
 
 Utils
 -----
@@ -501,6 +503,8 @@ Entry points for calculating metrics for
    metrics.calculator.calculate_deterministic_metrics
    metrics.calculator.calculate_probabilistic_metrics
    metrics.calculator.calculate_event_metrics
+   metrics.calculator.calculate_all_summary_statistics
+   metrics.calculator.calculate_summary_statistics
 
 Preprocessing
 -------------
@@ -578,6 +582,7 @@ Functions to compute forecast probabilistic performance metrics:
     metrics.probabilistic.uncertainty
     metrics.probabilistic.sharpness
     metrics.probabilistic.continuous_ranked_probability_score
+    metrics.probabilistic.crps_skill_score
 
 Event
 -----

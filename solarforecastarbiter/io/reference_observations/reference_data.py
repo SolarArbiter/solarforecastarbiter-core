@@ -39,7 +39,8 @@ from solarforecastarbiter.io.reference_observations import (
     common,
     arm,
     pvdaq,
-    eia
+    eia,
+    bsrn
 )
 
 
@@ -54,11 +55,13 @@ NETWORKHANDLER_MAP = {
     'DOE ARM': arm,
     'NREL PVDAQ': pvdaq,
     'EIA': eia,
+    'WRMC BSRN': bsrn,
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
-                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ', 'EIA']
+                   'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ', 'EIA',
+                   'WRMC BSRN']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -99,6 +102,9 @@ https://developer.nrel.gov/docs/solar/pvdaq-v3/
 
 EIA: U.S. Energy Information Administration Open Data
 https://www.eia.gov/opendata/
+
+WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network
+https://bsrn.awi.de
 """  # noqa: E501
 
 

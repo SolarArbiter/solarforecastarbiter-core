@@ -16,7 +16,8 @@ from solarforecastarbiter.validation.quality_mapping import (
 def make_observation(single_site, request):
     def f(variable):
         return Observation(
-            name='test', variable=variable, interval_value_type='mean',
+            name='test', variable=variable,
+            interval_value_type='interval_mean',
             interval_length=pd.Timedelta('1hr'), interval_label=request.param,
             site=single_site, uncertainty=0.1, observation_id='OBSID',
             provider='Organization 1', extra_parameters='')

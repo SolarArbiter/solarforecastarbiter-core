@@ -23,6 +23,8 @@ from solarforecastarbiter.metrics.deterministic import \
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
+from solarforecastarbiter.metrics.summary import \
+    _MAP as summary_mapping
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
@@ -68,6 +70,11 @@ CLOSED_MAPPING = {
     'beginning': 'left',
     'ending': 'right'
 }
+ALLOWED_INTERVAL_LABELS = tuple(CLOSED_MAPPING.keys())
+ALLOWED_INTERVAL_VALUE_TYPES = (
+    'interval_mean', 'interval_max', 'interval_min', 'interval_median',
+    'instantaneous')
+ALLOWED_AGGREGATE_TYPES = ('sum', 'mean', 'median', 'max', 'min', 'std')
 
 
 # Keys are the categories passed to pandas groupby, values are the human
@@ -107,6 +114,9 @@ ALLOWED_PROBABILISTIC_METRICS = {
 ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
+ALLOWED_SUMMARY_STATISTICS = {
+    k: v[1] for k, v in summary_mapping.items()}
+
 
 ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())
 ALLOWED_COST_AGG_OPTIONS = tuple(_AGG_OPTIONS.keys())
@@ -142,6 +152,8 @@ def _dict_factory(inp):
             dict_[k] = _time_conv(v)
     if 'units' in dict_:
         del dict_['units']
+    if 'constant_value_units' in dict_:
+        del dict_['constant_value_units']
     if 'data_object' in dict_:
         del dict_['data_object']
     return dict_
@@ -481,6 +493,18 @@ def __set_units__(cls):
     object.__setattr__(cls, 'units', ALLOWED_VARIABLES[cls.variable])
 
 
+def __generic_oneof__(cls, field, allowed):
+    if getattr(cls, field) not in allowed:
+        raise ValueError(f'{field} must be one of {allowed}')
+
+
+def __check_interval_params__(cls):
+    __generic_oneof__(
+        cls, 'interval_label', ALLOWED_INTERVAL_LABELS)
+    __generic_oneof__(
+        cls, 'interval_value_type', ALLOWED_INTERVAL_VALUE_TYPES)
+
+
 @dataclass(frozen=True)
 class Observation(BaseModel):
     """
@@ -532,7 +556,10 @@ class Observation(BaseModel):
     provider: str = ''
     extra_parameters: str = ''
     units: str = field(init=False)
-    __post_init__ = __set_units__
+
+    def __post_init__(self):
+        __set_units__(self)
+        __check_interval_params__(self)
 
 
 @dataclass(frozen=True)
@@ -657,6 +684,8 @@ class Aggregate(BaseModel):
         __check_aggregate_interval_compatibility__(
             self.interval_length,
             *observations)
+        __generic_oneof__(self, 'aggregate_type', ALLOWED_AGGREGATE_TYPES)
+        __generic_oneof__(self, 'interval_label', ('beginning', 'ending'))
         object.__setattr__(self, 'interval_value_type', 'interval_mean')
 
 
@@ -746,6 +775,7 @@ class Forecast(BaseModel, _ForecastDefaultsBase, _ForecastBase):
     def __post_init__(self):
         __set_units__(self)
         __site_or_agg__(self)
+        __check_interval_params__(self)
 
     @classmethod
     def from_dict(model, input_dict, raise_on_extra=False):
@@ -810,18 +840,28 @@ class EventForecast(Forecast):
     __blurb__: ClassVar[str] = 'Event Forecast'
 
     def __post_init__(self):
-        super().__post_init__()
-
         if self.interval_label != "event":
             raise ValueError("Interval label must be 'event'")
         elif self.variable != "event":
             raise ValueError("Variable must be 'event'")
+        super().__post_init__()
+
+
+def __set_constant_value_units__(cls):
+    if cls.axis == 'x':
+        # e.g. Prob(o < 10 MW). Forecast is in %, constant value is 10 MW
+        object.__setattr__(cls, 'constant_value_units', cls.units)
+        object.__setattr__(cls, 'units', '%')
+    else:
+        # e.g. Prob(o < f) = 90%. Forecast in units of obs, constant value is %
+        object.__setattr__(cls, 'constant_value_units', '%')
 
 
 @dataclass(frozen=True)
 class _ProbabilisticForecastConstantValueBase:
     axis: str
     constant_value: float
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -886,12 +926,14 @@ class ProbabilisticForecastConstantValue(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
 
 
 @dataclass(frozen=True)
 class _ProbabilisticForecastBase:
     axis: str
     constant_values: Tuple[Union[ProbabilisticForecastConstantValue, float, int], ...]  # NOQA
+    constant_value_units: str = field(init=False)
 
 
 @dataclass(frozen=True)
@@ -959,6 +1001,7 @@ class ProbabilisticForecast(
     def __post_init__(self):
         super().__post_init__()
         __check_axis__(self.axis)
+        __set_constant_value_units__(self)
         __set_constant_values__(self)
         __check_axis_consistency__(self.axis, self.constant_values)
 
@@ -1217,8 +1260,13 @@ def __check_axis_consistency__(axis, constant_values):
 def __check_units__(*args):
     if len(args) == 0:
         return
-    ref_unit = args[0].units
-    if not all(arg.units == ref_unit for arg in args):
+    unique_units = set()
+    for arg in args:
+        if getattr(arg, 'axis', None) == 'x':
+            unique_units.add(arg.constant_value_units)
+        else:
+            unique_units.add(arg.units)
+    if len(unique_units) > 1:
         raise ValueError('All units must be identical.')
 
 
@@ -1508,19 +1556,21 @@ def __check_categories__(categories):
 
 @dataclass(frozen=True)
 class ValidationResult(BaseModel):
-    """Stores the validation result for a single flag for a forecast and
-    observation pair.
+    """Store the validation result for a flag or combination of flags.
 
     Parameters
     ----------
     flag: str
-        The quality flag being recorded. See
+        The quality flag(s) being recorded. See
         :py:mod:`solarforecastarbiter.validation.quality_mapping`.
     count: int
         The number of timestamps that were flagged.
+    before_resample: bool
+        If the flag was applied before resampling.
     """
     flag: str
     count: int
+    before_resample: bool = True
 
 
 @dataclass(frozen=True)
@@ -1630,6 +1680,9 @@ class MetricResult(BaseModel):
         UUID of the observation being analyzed.
     aggregate_id: str or None
         UUID of the aggregate being analyzed.
+    is_summary: bool
+        If this metric result represents summary statistics of the
+        observation and forecasts timeseries.
 
     Notes
     -----
@@ -1646,6 +1699,7 @@ class MetricResult(BaseModel):
     values: Tuple[MetricValue, ...]
     observation_id: Union[str, None] = None
     aggregate_id: Union[str, None] = None
+    is_summary: bool = False
 
     def __post_init__(self):
         if (

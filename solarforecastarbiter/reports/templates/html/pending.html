@@ -5,6 +5,7 @@
 {% endblock %}
 <div class="alert alert-info">
   Report generation is pending. We will try and fetch the report again in 30 seconds, or you can try reloading this page.
+  If no report is available after 30 minutes, try recomputing the report.
 </div>
 <script>setInterval(function () {  window.location.reload(); }, 30000);</script>
 {% endblock %}

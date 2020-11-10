@@ -218,10 +218,10 @@ def test_sharpness(fx_lower, fx_upper, value):
 
 
 @pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    # 1 sample, 1 CDF interval
+    # 1 sample, 2 CDF intervals
     (
-        np.array([[10]]),
-        np.array([[100]]),
+        np.array([[10, 20]]),
+        np.array([[100, 100]]),
         np.array([8]),
         0.0,
     ),
@@ -283,7 +283,95 @@ def test_sharpness(fx_lower, fx_upper, value):
         np.array([8, 8]),
         (1.0 ** 2) * 10 + (0.5 ** 2) * 10,
     ),
+
+    # fail: only 1 CDF interval
+    pytest.param(
+        np.array([[10], [20]]),
+        np.array([[100], [100]]),
+        np.array([8, 8]),
+        0.0,
+        marks=pytest.mark.xfail(strict=True, type=ValueError),
+    ),
+
+    # fail: forecast as 1D array (instead of 2D)
+    pytest.param(
+        np.array([10, 20]),
+        np.array([100, 100]),
+        np.array([8, 8]),
+        0.0,
+        marks=pytest.mark.xfail(strict=True, type=ValueError),
+    ),
 ])
 def test_crps(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
     assert crps == value
+
+
+@pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
+    # 2 samples, 3 CDF intervals
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
+        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
+        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
+        np.array([[0, 0, 100], [0, 0, 100]]),      # ref_prob
+        np.array([8, 8]),                          # obs
+        1 - 10 / 20,
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
+        np.array([[0, 0, 100], [0, 0, 100]]),      # fx_prob
+        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
+        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
+        np.array([8, 8]),                          # obs
+        1 - 20 / 10,
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
+        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
+        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
+        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
+        np.array([8, 8]),                          # obs
+        0.0
+    ),
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
+        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
+        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
+        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
+        np.array([8, 8]),                          # obs
+        0.0
+    ),
+
+    # 2 samples, 2 CDF intervals
+    (
+        np.array([[10, 20], [10, 20]]),      # fx
+        np.array([[0, 100], [0, 100]]),      # fx_prob
+        np.array([[10, 20], [10, 20]]),      # ref
+        np.array([[100, 100], [100, 100]]),  # ref_prob
+        np.array([8, 8]),                    # obs
+        np.NINF,
+    ),
+
+    # 2 CDF intervals but not the same intervals between fx and ref
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[0, 100], [0, 100]]),
+        np.array([[10, 20], [10, 20]]),
+        np.array([[50, 100], [30, 100]]),
+        np.array([8, 8]),
+        1 - 10 / (((0.5 ** 2) * 10 + (0.7 ** 2) * 10) / 2),
+    ),
+
+    # ref and fx have different number of CDF intervals
+    (
+        np.array([[10, 20], [10, 20]]),
+        np.array([[0, 100], [0, 100]]),
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 0, 100], [0, 0, 100]]),
+        np.array([8, 8]),
+        1 - 10 / 20,
+    ),
+])
+def test_crps_skill_score(obs, fx, fx_prob, ref, ref_prob, value):
+    crpss = prob.crps_skill_score(obs, fx, fx_prob, ref, ref_prob)
+    assert crpss == value

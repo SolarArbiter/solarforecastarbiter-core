@@ -2,8 +2,8 @@
 
 .. py:currentmodule:: solarforecastarbiter
 
-1.0.0rc4 (Estimated October, 2020)
-----------------------------------
+1.0.0rc4 (October 29, 2020)
+---------------------------
 
 This is the fourth 1.0 release candidate.
 
@@ -32,7 +32,16 @@ API Changes
   (:issue:`556`, :pull:`580`)
 * Added `new_index` argument to :py:func:`utils.compute_aggregate` to define
   an index for the computed aggregate. (:issue:`587`)(:pull:`590`)
-
+* Added :py:mod:`solarforecastarbiter.io.reference_observations.bsrn`
+  to initialize reference data from the BSRN network (:issue:`541`) (:pull:`604`)
+* Removed ``preprocessing.VALIDATION_RESULT_TOTAL_STRING`` and
+  ``preprocessing.UNDEFINED_DATA_STRING``.
+* Added CRPS skill score metric :py:func:`metrics.probabilistic.crps_skill_score`
+  (:issue:`494`) (:pull:`605`)
+* Added :py:func:`reports.template.build_summary_stats_json`,
+  :py:func:`metrics.calculator.calculate_summary_statistics`, and
+  :py:func:`metrics.calculator.calculate_all_summary_statistics` to
+  support adding summary statistics to reports (:issue:`355`, :pull:`606`)
 
 
 Enhancements
@@ -46,6 +55,23 @@ Enhancements
 * Add seasons to metrics category options. (:issue:`552`, :pull:`592`)
 * Allow setting ``uncertainty=None`` on :py:class:`datamodel.Observation` to
   indicate an unknown uncertainty (:pull:`591`)
+* Update :py:func:`io.utils.ensure_timestamps` to raise a descriptive TypeError
+  for missing arguments to the underlying function (:issue:`498`)(:pull:`595`)
+* Interval label, interval value type, and aggregate type are now validated
+  when creating datamodel objects (:issue:`213`) (:pull:`596`)
+* Add the automatically generated `constant_value_units` attribute to
+  :py:class:`datamodel.ProbabilisticForecast` and :py:class:`datamodel.ProbabilisticForecastConstantValue`
+  (:issue:`470`) (:pull:`598`)
+* Enable downloading the forecast/observation metadata and the resampled
+  timeseries from a HTML report (:issue:`354`) (:pull:`601`)
+* Add :py:meth:`io.api.APISession.chunk_value_requests` for requesting large
+  amounts of data. (:issue:`573`)(:pull:`600`)
+* Restructured and rewrote report data preprocessing text to account for
+  new filter/resample pattern and clarify the processes. Added a table that
+  summarizes the filter combinations applied in the report.
+  (:issue:`589`, :pull:`602`, :pull:`607`)
+* Added summary statistics for resample and aligned observations,
+  forecasts, and reference forecasts to reports (:issue:`355`, :pull:`606`)
 
 
 Bug fixes
@@ -75,6 +101,10 @@ Bug fixes
 * Fixed bug in process management when fetching NWP files which caused the
   script to hang indefinitely if a process were killed by the OS
   (:issue:`343`) (:pull:`594`)
+* Stop errors generated in the report process from being sent to
+  sentry (:issue:`329`) (:pull:`597`)
+* Avoid stacking of forecasts errors in the Total plots in reports
+  and show the full forecast name on hover (:issue:`463`) (:pull:`599`)
 
 
 Contributors

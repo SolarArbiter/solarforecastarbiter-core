@@ -26,6 +26,76 @@
 %- include 'data_resampling_postamble'
 %- endmacro
 
+%- macro summary_statistics_table(summary_stats, category)
+%- set span = human_statistics.values() | length
+%- set human_category = human_categories[category]
+\FloatBarrier
+\clearpage
+\begin{landscape}
+  \pagestyle{empty}
+  \small
+  \begin{longtabu} to \linewidth {
+      X[2] *{\VAR{span * 3}}{| l}
+    }
+    \caption{Table of \VAR{human_category} data summary statistics.} \\
+    \toprule
+    Aligned Pair &
+    \multicolumn{\VAR{span}}{c}{Observation} &
+    \multicolumn{\VAR{span}}{|c}{Forecast} &
+    \multicolumn{\VAR{span}}{|c}{Reference Forecast} \\
+    \BLOCK{for i in range(3)}
+    \BLOCK{for m in human_statistics.values()}
+    & \VAR{m}
+    \BLOCK{endfor}
+    \BLOCK{endfor}
+    \\
+    \midrule
+    \endfirsthead
+    \caption{Table of \VAR{human_category} data summary statistics. (cont.)} \\
+    \toprule
+    Aligned Pair &
+    \multicolumn{\VAR{span}}{c}{Observation} &
+    \multicolumn{\VAR{span}}{|c}{Forecast} &
+    \multicolumn{\VAR{span}}{|c}{Reference Forecast} \\
+    \BLOCK{for i in range(3)}
+    \BLOCK{for m in human_statistics.values()}
+    & \VAR{m}
+    \BLOCK{endfor}
+    \BLOCK{endfor}
+    \\
+    \midrule
+    \endhead
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    %- for stat_result in summary_stats
+    \VAR{stat_result.name | html_to_tex }
+    %- for thing in ['observation', 'forecast', 'reference_forecast']
+    %- for metric in human_statistics.keys()
+    %- set ns = namespace(found=false)
+    %- for mval in stat_result.values
+    %- if mval.category == category and mval.metric == thing + '_' + metric
+    %- set ns.found = true
+    %- if -0.01 < mval.value < 0.01
+    & \VAR{'%.2e' | format(mval.value)}
+    %- else
+    & \VAR{'%0.3g' | format(mval.value)}
+    %- endif
+    %- endif
+    %- endfor
+    %- if not ns.found
+    &
+    %- endif
+    %- endfor
+    %- endfor
+    \\
+    %- endfor
+  \end{longtabu}
+\end{landscape}
+\clearpage
+\FloatBarrier
+%- endmacro
+
 %- macro metrics_meta_table()
 \VAR{metrics_meta_table_text() | link_filter | html_to_tex}
 \begin{table}[h]
@@ -161,41 +231,63 @@
 %- endmacro
 
 
-%- macro data_validation_table()
+%- macro data_validation_section()
 \VAR{data_validation_pre_text() | html_to_tex}
 \VAR{data_validation_post_text() | html_to_tex}
-%- for filter in report.report_parameters.filters
-%- if filter.__class__.__name__ == 'QualityFlagFilter'
-\VAR{validation_table(report.raw_report.processed_forecasts_observations, filter.quality_flags)}
+%- if report.report_parameters.filters
+\VAR{validation_metadata_table(report.report_parameters.filters)}
+\VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), 'before')}
+  %- if report.raw_report.processed_forecasts_observations | unique_flags_filter(false) | length
+    \VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(false), 'after')}
+  %- else
+    No filters with discard after resample were available because this report was created with Solar Forecast Arbiter version 1.0rc3 or earlier (find the version information at the end of the report).
+    Visit the \href{\VAR{report_url}}{web version of this report} to recompute it and apply the revised data filtering and resampling procedures.
+  %- endif
 %- endif
-%- endfor
 %- endmacro
 
 
-%- macro validation_table(proc_fxobs_list, quality_filters)
+%- macro validation_metadata_table(quality_filters)
+\begin{table}[h]
+  \caption{Table of data validation filters.}
+  \small
+  \begin{tabu} to \linewidth {
+      X[l] | l l
+    }
+    Quality flags & Discard before resample & Resample threshold (\%)\\
+    \midrule
+    %- for qfilter in quality_filters
+    \VAR{qfilter.quality_flags | join(', ')} & \VAR{qfilter.discard_before_resample} & \VAR{qfilter.resample_threshold_percentage} \\
+    %- endfor
+  \end{tabu}
+\end{table}
+%- endmacro
+
+
+%- macro validation_results_table(proc_fxobs_list, unique_flags, before_resample)
 \begin{landscape}
   \pagestyle{empty}
   \small
   \renewcommand{\arraystretch}{1.7}
   \begin{longtabu} to \linewidth {
-      X[2] | X[2] | *{\VAR{quality_filters | length}}{ | X[l]}
+      X[2] | X[2] | *{\VAR{unique_flags | length}}{ | l}
     }
-    \caption{Table of data validation results.} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling.} \\
     \toprule
     \multicolumn{1}{l}{} &  \multicolumn{1}{l ||}{} &
-    \multicolumn{\VAR{quality_filters | length}}{c}{Quality Flag} \\
-    \cline{3-\VAR{(quality_filters | length) + 2 }}
+    \multicolumn{\VAR{unique_flags | length}}{c}{Quality Flag} \\
+    \cline{3-\VAR{(unique_flags | length) + 2 }}
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
-    %- for qfilter in quality_filters
-    & \ccbr{\VAR{qfilter}}
+    %- for qfilter in unique_flags
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
     \endfirsthead
-    \caption{Table of data validation results (cont.)} \\
+    \caption{Table of data validation results \VAR{before_resample} resampling (cont.)} \\
     \multirow{1}{*}{Aligned Pair} &  \multirow{1}{*}{Observation}
-    %- for qfilter in quality_filters
-    & \ccbr{\VAR{qfilter}}
+    %- for qfilter in unique_flags
+    & \rot{\parbox{6.2cm}{\raggedright{\VAR{qfilter}}}}
     %- endfor
     \\
     \midrule
@@ -205,7 +297,7 @@
     \endlastfoot
     %- for pfxobs in proc_fxobs_list
     \VAR{pfxobs.name | html_to_tex} & \VAR{pfxobs.original.data_object.name}
-    %- for qfilter in quality_filters
+    %- for qfilter in unique_flags
     %- set ns  = namespace(found=false)
     %- for res in pfxobs.validation_results
     %- if res.flag == qfilter

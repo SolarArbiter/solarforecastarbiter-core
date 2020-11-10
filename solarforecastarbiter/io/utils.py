@@ -446,7 +446,11 @@ def ensure_timestamps(*time_args):
                 if k in kwargs:
                     kwargs[k] = pd.Timestamp(kwargs[k])
                 elif ind is not None:
-                    nargs[ind] = pd.Timestamp(args[ind])
+                    try:
+                        nargs[ind] = pd.Timestamp(args[ind])
+                    except IndexError:
+                        pass
+            sig.bind(*nargs, **kwargs)
             return f(*nargs, **kwargs)
         return wrapper
     return decorator

@@ -48,8 +48,8 @@ def set_report_pfxobs_values(report_dict, raw_report_pfxobs_values):
     return set_pfxobs_values
 
 
-def test_construct_metrics_cds(report_with_raw):
-    report = report_with_raw
+def test_construct_metrics_cds(no_stats_report):
+    report = no_stats_report
     metrics = report.raw_report.metrics
     cds = figures.construct_metrics_cds(metrics)
     names = cds.data['name']
@@ -91,11 +91,12 @@ def test_construct_metrics_cds(report_with_raw):
     assert (values == 2).all()
 
 
-def test_construct_metrics_cds_with_rename(report_with_raw):
-    metrics = report_with_raw.raw_report.metrics
+def test_construct_metrics_cds_with_rename(no_stats_report):
+    report = no_stats_report
+    metrics = report.raw_report.metrics
     cds = figures.construct_metrics_cds(metrics,
                                         rename=figures.abbreviate)
-    report_params = report_with_raw.report_parameters
+    report_params = report.report_parameters
     original_names = [fxobs.forecast.name
                       for fxobs in report_params.object_pairs]
     abbreviated = list(map(figures.abbreviate, original_names))

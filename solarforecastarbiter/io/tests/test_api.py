@@ -2,6 +2,7 @@ import json
 from random import randint
 import re
 import copy
+from urllib.parse import parse_qs
 
 
 import numpy as np
@@ -1366,8 +1367,8 @@ def test_real_apisession_create_forecast_invalid(
     forecastd = json.loads(single_forecast_text)
     forecastd['name'] = f'Test create forecast {randint(0, 100)}'
     forecastd['site'] = single_forecast.site
-    forecastd['interval_label'] = 'mean'
     forecast = datamodel.Forecast.from_dict(forecastd)
+    object.__setattr__(forecast, 'interval_label', 'mean')
     with pytest.raises(requests.exceptions.HTTPError) as e:
         real_session.create_forecast(forecast)
     assert 'Must be one of' in str(e.value)
@@ -1620,3 +1621,94 @@ def test_api_session_forecast_get_by_type_invalid_type():
     test_session = api.APISession('token')
     with pytest.raises(ValueError):
         test_session._forecast_get_by_type('bad_type')
+
+
+def value_callback(include_qf=False, freq='1H'):
+    def fn(request, context):
+        query_params = parse_qs(request.query)
+        start = pd.Timestamp(query_params['start'][0]).floor(freq)
+        end = pd.Timestamp(query_params['end'][0]).floor(freq)
+        idx = pd.date_range(start, end, freq=freq)
+        data = {'value': 1.0}
+        if include_qf:
+            data.update({'quality_flag': 0})
+        df = pd.DataFrame(index=idx, data=data)
+        df['timestamp'] = df.index
+        resp_json = df.to_json(orient="records", date_format='iso')
+        out = bytes('{"values": ' + resp_json + '}', 'utf8')
+        return out
+    return fn
+
+
+def test_apisession_chunk_value_requests_obs_df(requests_mock):
+    session = api.APISession('')
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    expected = pd.DataFrame(
+        index=pd.date_range(start, end, freq='1H', name='timestamp'),
+        data={'value': 1.0, 'quality_flag': 0},
+    )
+    matcher = re.compile(
+        f'{session.base_url}/observations/.*/values')
+    requests_mock.register_uri('GET', matcher, content=callback)
+    out = session.chunk_value_requests(
+        '/observations/obsid/values',
+        start,
+        end,
+        utils.json_payload_to_observation_df,
+    )
+    pdt.assert_frame_equal(out, expected.tz_convert('UTC'))
+
+
+def test_apisession_chunk_value_requests_fx_series(requests_mock):
+    session = api.APISession('')
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    expected = pd.Series(
+        1.,
+        index=pd.date_range(start, end, freq='1H', name='timestamp'),
+        name='value',
+    )
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/.*/values')
+    requests_mock.register_uri('GET', matcher, content=callback)
+    out = session.chunk_value_requests(
+        '/forecasts/single/fxid/values',
+        start,
+        end,
+        utils.json_payload_to_forecast_series,
+    )
+    pdt.assert_series_equal(out, expected.tz_convert('UTC'))
+
+
+@pytest.mark.parametrize('limit', [
+    '180D',
+    '90D',
+])
+def test_apisession_chunk_value_requests_recursion(
+        mocker, requests_mock, limit):
+    session = api.APISession('')
+    mocked_get = mocker.patch.object(
+        session,
+        'chunk_value_requests',
+        side_effect=session.chunk_value_requests
+    )
+    callback = value_callback(True)
+    start = pd.Timestamp('2017-01-01T12:00:00-0700')
+    end = pd.Timestamp('2020-01-01T12:25:00-0700')
+    matcher = re.compile(
+        f'{session.base_url}/forecasts/.*/values')
+    requests_mock.register_uri('GET', matcher, content=callback)
+    session.chunk_value_requests(
+        '/forecasts/single/fxid/values',
+        start,
+        end,
+        utils.json_payload_to_forecast_series,
+        request_limit=limit,
+    )
+    # assert number of recursive calls is the period / limit plus the
+    # original call
+    expected_n_calls = int((end - start) / pd.Timedelta(limit)) + 1
+    assert mocked_get.call_count == expected_n_calls
