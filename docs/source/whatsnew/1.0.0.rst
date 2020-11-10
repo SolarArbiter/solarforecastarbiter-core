@@ -5,6 +5,11 @@
 1.0.0 (November ??, 2020)
 -------------------------
 
+Enhancements
+~~~~~~~~~~~~
+* Add reference aggregates of mean SURFRAD GHI and DNI, and
+  sum of PV plants in Portland, OR (:issue:`473`, :pull:`614`)
+
 
 Bug fixes
 ~~~~~~~~~
