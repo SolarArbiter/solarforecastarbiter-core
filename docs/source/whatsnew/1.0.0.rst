@@ -10,6 +10,8 @@ Bug fixes
 ~~~~~~~~~
 * Fix labeling of probabilistic forecasts of thresholds (``axis='x'``).
   (:issue:`611`, :pull:`612`)
+* Added configurable timeouts when fetching NWP forecast grids to avoid
+  timeout exceptions (:issue:`130`, :pull:`613`)
 
 
 Contributors
