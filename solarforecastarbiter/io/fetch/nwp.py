@@ -402,6 +402,10 @@ async def files_to_retrieve(session, model, modelpath, init_time):
             except aiohttp.ClientError as e:
                 logger.warning('Error in checking for next file %s %s',
                                model.get('member', ''), str(e))
+            except Exception:
+                logger.exception(
+                    'Uncaught exception when checking for next file %s',
+                    model.get('member', ''))
             else:
                 logger.debug('%s/%s is ready for download',
                              next_params['dir'], next_params['file'])
