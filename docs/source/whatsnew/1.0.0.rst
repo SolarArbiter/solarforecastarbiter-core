@@ -5,13 +5,18 @@
 1.0.0 (November ??, 2020)
 -------------------------
 
+Enhancements
+~~~~~~~~~~~~
+* Add reference aggregates of mean SURFRAD GHI and DNI, and
+  sum of PV plants in Portland, OR (:issue:`473`, :pull:`615`)
+
 
 Bug fixes
 ~~~~~~~~~
 * Fix labeling of probabilistic forecasts of thresholds (``axis='x'``).
-  (:issue:`611`, :pull:`612`)
+  (:issue:`611`, :pull:`613`)
 * Added configurable timeouts when fetching NWP forecast grids to avoid
-  timeout exceptions (:issue:`130`, :pull:`613`)
+  timeout exceptions (:issue:`130`, :pull:`614`)
 
 
 Contributors

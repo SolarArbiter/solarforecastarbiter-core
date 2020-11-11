@@ -349,6 +349,22 @@ files with site and observation metadata.
    io.reference_observations.eia
    io.reference_observations.bsrn
 
+
+Reference aggregates
+====================
+
+The following modules contain code for initializing the reference
+aggregates using Reference Observations that have already been created.
+Examples include average GHI and DNI at SURFRAD sites, and the total
+PV power in the Portland, OR area of UO SRML sites.
+
+.. autosummary::
+   :toctree: generated/
+
+   io.reference_aggregates.generate_aggregate
+   io.reference_aggregates.make_reference_aggregates
+
+
 SFA API
 =======
 

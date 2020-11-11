@@ -184,6 +184,18 @@ def test_referencedata_update(cli_token, mocker):
     assert mocked.call_args[0][-1] == 'https://api.solarforecastarbiter.org'
 
 
+def test_referenceaggregates(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_aggregates.make_reference_aggregates')  # NOQA
+    runner = CliRunner()
+    res = runner.invoke(cli.referenceaggregates,
+                        ['-u user', '-p pass'])
+    assert res.exit_code == 0
+    assert mocked.called
+    assert mocked.call_args[0] == ('TOKEN', 'Reference',
+                                   'https://api.solarforecastarbiter.org')
+
+
 def test_fetchnwp(mocker):
     mocker.patch('solarforecastarbiter.io.fetch.nwp.check_wgrib2')
     mocked = mocker.patch('solarforecastarbiter.io.fetch.nwp.run',

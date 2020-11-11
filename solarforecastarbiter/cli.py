@@ -14,7 +14,7 @@ import sentry_sdk
 
 
 from solarforecastarbiter import __version__
-from solarforecastarbiter.io import nwp
+from solarforecastarbiter.io import nwp, reference_aggregates
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
 from solarforecastarbiter.io.fetch import update_num_workers
 from solarforecastarbiter.io.reference_observations import reference_data
@@ -211,6 +211,19 @@ def referencedata_update(verbose, user, password, base_url, network, start,
     token = cli_access_token(user, password)
     reference_data.update_reference_observations(token, start, end, network,
                                                  base_url)
+
+
+@cli.command()
+@common_options
+@click.option('--provider', default='Reference',
+              help='Provider that all observations should belong to')
+def referenceaggregates(verbose, user, password, base_url, provider):
+    """
+    Updates reference data for the given period.
+    """
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    reference_aggregates.make_reference_aggregates(token, provider, base_url)
 
 
 @cli.command()
