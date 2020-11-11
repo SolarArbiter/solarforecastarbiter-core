@@ -122,7 +122,8 @@ def fetch(api, site, start, end, *, doe_rtc_api_key):
     return obs_df
 
 
-def update_observation_data(api, sites, observations, start, end):
+def update_observation_data(api, sites, observations, start, end, *,
+                            gaps_only=False):
     """Post new observation data to a list of DOE RTC Observations
     from start to end.
 
@@ -138,6 +139,9 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
     """
     doe_rtc_api_key = os.getenv('DOE_RTC_API_KEY')
     if doe_rtc_api_key is None:
@@ -147,4 +151,4 @@ def update_observation_data(api, sites, observations, start, end):
     for site in doe_rtc_sites:
         common.update_site_observations(
             api, partial(fetch, doe_rtc_api_key=doe_rtc_api_key), site,
-            observations, start, end)
+            observations, start, end, gaps_only=gaps_only)

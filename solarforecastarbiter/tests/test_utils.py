@@ -656,7 +656,7 @@ def test_generate_continuous_chunks_errs(data, freq, err):
     ([[0, 1]], [[0, 1]]),
     ([[1, 1], [2, 2]], [[1, 1], [2, 2]]),
     ([], []),
-
+    (((0, 1), (0, 9)), [(0, 9)])
 ])
 def test_merge_ranges(inp, exp):
     assert list(utils.merge_ranges(inp)) == exp

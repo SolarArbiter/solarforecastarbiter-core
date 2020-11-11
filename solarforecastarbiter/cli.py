@@ -202,15 +202,17 @@ def referencedata_init(verbose, user, password, base_url, network, site_file):
 @click.option('--start', type=UTCTIMESTAMP,
               help=('Start time (ISO8601) to fetch data for. Default is'
                     ' max of last timestamp in API and end - 7 days'))
+@click.option('--gaps-only', is_flag=True,
+              help='Only fetch and upload gaps in the observation values')
 def referencedata_update(verbose, user, password, base_url, network, start,
-                         end):
+                         end, gaps_only):
     """
     Updates reference data for the given period.
     """
     set_log_level(verbose)
     token = cli_access_token(user, password)
     reference_data.update_reference_observations(token, start, end, network,
-                                                 base_url)
+                                                 base_url, gaps_only=gaps_only)
 
 
 @cli.command()

@@ -423,6 +423,7 @@ def merge_ranges(ranges):
     ranges = sorted(ranges)
     last = list(ranges[0])
     for rset in ranges:
+        rset = list(rset)
         if rset[1] < rset[0]:
             raise ValueError(
                 'All ranges must be properly sorted like (min, max)')

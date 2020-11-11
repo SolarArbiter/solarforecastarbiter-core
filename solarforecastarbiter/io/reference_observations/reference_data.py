@@ -194,7 +194,8 @@ def initialize_reference_metadata_objects(token, sites, base_url=None):
                 f'{failures} failures.')
 
 
-def update_reference_observations(token, start, end, networks, base_url=None):
+def update_reference_observations(token, start, end, networks, base_url=None,
+                                  *, gaps_only=False):
     """Coordinate updating all existing reference observations.
 
     Parameters
@@ -207,6 +208,9 @@ def update_reference_observations(token, start, end, networks, base_url=None):
         List of network names to update.
     base_url : str
         The alternate base url of the SFA API
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
     """
     api = get_apisession(token, base_url)
     observations = api.list_observations()
@@ -216,8 +220,8 @@ def update_reference_observations(token, start, end, networks, base_url=None):
         if network_handler is None:
             logger.info(f'{network} observation updates not configured.')
         else:
-            network_handler.update_observation_data(api, sites, observations,
-                                                    start, end)
+            network_handler.update_observation_data(
+                api, sites, observations, start, end, gaps_only=gaps_only)
 
 
 def site_df_to_dicts(site_df):

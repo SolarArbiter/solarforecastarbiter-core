@@ -105,7 +105,8 @@ def fetch(api, site, start, end, *, eia_api_key):
     return obs_df
 
 
-def update_observation_data(api, sites, observations, start, end):
+def update_observation_data(api, sites, observations, start, end, *,
+                            gaps_only=False):
     """Retrieve data from the network, and then format and post it to each
     observation at the site.
 
@@ -121,6 +122,9 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
 
     Raises
     ------
@@ -138,4 +142,4 @@ def update_observation_data(api, sites, observations, start, end):
     for site in eia_sites:
         common.update_site_observations(
             api, partial(fetch, eia_api_key=eia_api_key),
-            site, observations, start, end)
+            site, observations, start, end, gaps_only=gaps_only)
