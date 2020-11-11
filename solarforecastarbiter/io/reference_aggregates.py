@@ -165,7 +165,7 @@ REF_AGGREGATES = [
 
 def generate_aggregate(observations, agg_def):
     """Generate an aggregate object.
-    
+
     Parameters
     ----------
     observations: list of datamodel.Observation
@@ -173,14 +173,23 @@ def generate_aggregate(observations, agg_def):
         Text metadata to create a datamodel.Aggregate.
         'observation' field names will be matched against names
         of datamodel.Observation in ``observations``.
-    
+
     Returns
     -------
     datamodel.Aggregate
+
+    Raises
+    ------
+    ValueError
+        If an observation does not exist in the API for an aggregate
+        or multiple observations match the given name and site name.
     """
     agg_obs = []
     limited_obs = list(filter(lambda x: x.variable == agg_def['variable'],
                               observations))
+    # go through each agg_dev.observations[*] and find the Observation
+    # from the API corresponding to the site name and observation name
+    # to make AggregateObservations and Aggregate
     for obs in agg_def['observations']:
         candidates = list(filter(
             lambda x: x.name == obs['observation'] and
@@ -217,11 +226,33 @@ def generate_aggregate(observations, agg_def):
 
 
 def make_reference_aggregates(token, provider, base_url,
-                              aggregates=REF_AGGREGATES):
+                              aggregates=None):
+    """Create the reference aggregates in the API.
+
+    Parameters
+    ----------
+    token: str
+        Access token for the API
+    provider: str
+        Provider name to filter all API observations on
+    base_url: str
+        URL of the API to list objects and create aggregate at
+    aggregates: list or None
+        List of dicts that describes each aggregate. Defaults to
+        REF_AGGREGATES if None.
+
+    Raises
+    ------
+    ValueError
+        If an observation does not exist in the API for an aggregate
+        or multiple observations match the given name and site name.
+    """
     session = api.APISession(token, base_url=base_url)
     observations = list(filter(lambda x: x.provider == provider,
                                session.list_observations()))
     existing_aggregates = {ag.name for ag in session.list_aggregates()}
+    if aggregates is None:
+        aggregates = REF_AGGREGATES
     for agg_def in aggregates:
         if agg_def['name'] in existing_aggregates:
             logger.warning('Aggregate %s already exists', agg_def['name'])
