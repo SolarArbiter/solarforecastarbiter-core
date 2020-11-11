@@ -8,6 +8,7 @@ import pandas as pd
 from requests.exceptions import HTTPError
 
 
+from solarforecastarbiter.utils import merge_ranges
 from solarforecastarbiter.datamodel import Observation, ProbabilisticForecast
 from solarforecastarbiter.io.reference_observations.default_forecasts import (
     CURRENT_NWP_VARIABLES, is_in_nwp_domain)
@@ -259,7 +260,7 @@ def get_last_site_timestamp(api, observations, end):
 
 
 def update_site_observations(api, fetch_func, site, observations,
-                             start, end):
+                             start, end, *, gaps_only=False):
     """Updates data for all reference observations at a given site
     for the period between start and end.
 
@@ -281,12 +282,32 @@ def update_site_observations(api, fetch_func, site, observations,
         to end). If None and no values in the API, use end - 7 day.
     end : pandas.Timestamp or None
         End time to get data for. If None, use now.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
     """
     site_observations = [obs for obs in observations if obs.site == site]
     if end is None:
         end = _utcnow()
     if start is None:
         start = get_last_site_timestamp(api, site_observations, end)
+    if gaps_only:
+        for gstart, gend in _find_data_gaps(
+                api, site_observations, start, end):
+            _post_data(api, fetch_func, site, site_observations, gstart, gend)
+    else:
+        _post_data(api, fetch_func, site, site_observations, start, end)
+
+
+def _find_data_gaps(api, site_observations, start, end):
+    ranges = []
+    for obs in site_observations:
+        ranges += api.get_observation_value_gaps(
+            obs.observation_id, start, end)
+    return merge_ranges(ranges)
+
+
+def _post_data(api, fetch_func, site, site_observations, start, end):
     logger.debug('Fetching data for %s from %s to %s', site.name, start, end)
     obs_df = fetch_func(api, site, start, end)
     # must be sorted for proper inexact start:end slicing
