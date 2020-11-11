@@ -27,43 +27,43 @@ REF_AGGREGATES = [
             {
                 'site': 'NOAA SURFRAD Bondville IL',
                 'observation': 'Bondville IL ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Table Mountain Boulder CO',
                 'observation': 'Table Mountain Boulder CO ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Desert Rock NV',
                 'observation': 'Desert Rock NV ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Fort Peck MT',
                 'observation': 'Fort Peck MT ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Goodwin Creek MS',
                 'observation': 'Goodwin Creek MS ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Penn State Univ PA',
                 'observation': 'Penn State Univ PA ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
             {
                 'site': 'NOAA SURFRAD Sioux Falls SD',
                 'observation': 'Sioux Falls SD ghi',
-                'from': '2017-12-31T16:00Z',
+                'from': '2017-01-01T00:00Z',
                 'until': None
             },
         ]
