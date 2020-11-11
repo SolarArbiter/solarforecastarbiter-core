@@ -164,6 +164,20 @@ REF_AGGREGATES = [
 
 
 def generate_aggregate(observations, agg_def):
+    """Generate an aggregate object.
+    
+    Parameters
+    ----------
+    observations: list of datamodel.Observation
+    agg_def: dict
+        Text metadata to create a datamodel.Aggregate.
+        'observation' field names will be matched against names
+        of datamodel.Observation in ``observations``.
+    
+    Returns
+    -------
+    datamodel.Aggregate
+    """
     agg_obs = []
     limited_obs = list(filter(lambda x: x.variable == agg_def['variable'],
                               observations))
