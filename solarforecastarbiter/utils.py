@@ -384,8 +384,9 @@ def generate_continuous_chunks(data, freq):
 
 def merge_ranges(ranges):
     """Generator to merge the ranges like (min_val, max_val) removing any overlap.
-    Results will be sorted in ascending order. Behaviour when passing in
-    NaN/None values like pandas.NaT is undefined.
+    Results will be sorted in ascending order. The type of values in each range
+    set should have well defined behaviour with the comparison operators, namely
+    >, >=, <, <=.
 
     Parameters
     ----------
@@ -427,6 +428,9 @@ def merge_ranges(ranges):
         if rset[1] < rset[0]:
             raise ValueError(
                 'All ranges must be properly sorted like (min, max)')
+        if not (rset[0] < rset[1] or rset[0] > rset[1] or rset[0] == rset[1]):
+            raise TypeError(
+                f'Cannot properly compare ({rset[0]}, {rset[1]})')
         if rset[0] <= last[1]:
             last[1] = max(rset[1], last[1])
         else:

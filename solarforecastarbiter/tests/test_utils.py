@@ -668,7 +668,13 @@ def test_merge_ranges_fail():
         list(utils.merge_ranges(inp))
 
 
-def test_merge_ranges_comparison_fail():
-    inp = [[0, 1], ['a', 'b']]
+@pytest.mark.parametrize('inp', [
+    [[0, 1], ['a', 'b']],
+    [[pd.Timestamp(None), pd.Timestamp(None)]],
+    [[pd.Timestamp.now(), pd.Timestamp(None)]],
+    [[pd.Timestamp(None), pd.Timestamp.now()]],
+    [[np.nan, 1]]
+])
+def test_merge_ranges_comparison_fail(inp):
     with pytest.raises(TypeError):
         list(utils.merge_ranges(inp))

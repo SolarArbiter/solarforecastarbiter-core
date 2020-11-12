@@ -292,8 +292,8 @@ def update_site_observations(api, fetch_func, site, observations,
     if start is None:
         start = get_last_site_timestamp(api, site_observations, end)
     if gaps_only:
-        for gstart, gend in _find_data_gaps(
-                api, site_observations, start, end):
+        gaps = _find_data_gaps(api, site_observations, start, end)
+        for gstart, gend in gaps:
             _post_data(api, fetch_func, site, site_observations, gstart, gend)
     else:
         _post_data(api, fetch_func, site, site_observations, start, end)

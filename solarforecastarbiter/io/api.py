@@ -616,10 +616,11 @@ class APISession(requests.Session):
 
     @ensure_timestamps('start', 'end')
     def get_observation_value_gaps(self, observation_id, start, end):
-        """Get any gaps in observation data from start to end. In addition
-        to querying the /observations/{observation_id}/values/gaps endpoint,
-        this function also queries the observation timerange to return all
-        gaps from start to end.
+        """Get any gaps in observation data from start to end.
+
+        In addition to querying the /observations/{observation_id}/values/gaps
+        endpoint, this function also queries the observation timerange to
+        return all gaps from start to end.
 
         Parameters
         ----------
@@ -633,7 +634,9 @@ class APISession(requests.Session):
         Returns
         -------
         list of (pd.Timestamp, pd.Timestamp)
-           Of (start, end) gaps in the observations
+           Of (start, end) gaps in the observations from the last timestamp
+           of a valid observation to the next valid observation timestamp.
+           Interval label is not accounted for.
         """
         gaps = self._get_obs_gaps(observation_id, start, end)
         trange = self.get_observation_time_range(observation_id)
