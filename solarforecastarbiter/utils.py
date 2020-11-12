@@ -380,3 +380,60 @@ def generate_continuous_chunks(data, freq):
 
     for _, group in data.groupby(group_key):
         yield group[keys]
+
+
+def merge_ranges(ranges):
+    """Generator to merge the ranges like (min_val, max_val) removing any overlap.
+    Results will be sorted in ascending order. The type of values in each range
+    set should have well defined behaviour with the comparison operators, namely
+    >, >=, <, <=.
+
+    Parameters
+    ----------
+    ranges: iterable
+
+    Yields
+    ------
+    next_value: same type as ranges[0]
+
+    Raises
+    ------
+    ValueError
+        If any range is not properly sorted
+    TypeError
+        If any range values cannot be compared
+
+    Examples
+    --------
+    .. testsetup::
+        import pandas as pd
+        from solarforecastarbiter.utils import merge_ranges
+
+    >>> list(merge_ranges([[0, 1], [9, 15], [-1, 3]]))
+    [[-1, 3], [9, 15]]
+
+    >>> list(merge_ranges([
+    ...         (pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-01-05T12:00Z')),
+    ...         (pd.Timestamp('2020-01-02T00:00Z'), pd.Timestamp('2020-01-03T12:00Z')),
+    ... ]))
+    [(pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-01-05T12:00Z'))]
+    """  # NOQA
+    if len(ranges) == 0:
+        return ranges
+    type_ = type(ranges[0])
+    ranges = sorted(ranges)
+    last = list(ranges[0])
+    for rset in ranges:
+        rset = list(rset)
+        if rset[1] < rset[0]:
+            raise ValueError(
+                'All ranges must be properly sorted like (min, max)')
+        if not (rset[0] < rset[1] or rset[0] > rset[1] or rset[0] == rset[1]):
+            raise TypeError(
+                f'Cannot properly compare ({rset[0]}, {rset[1]})')
+        if rset[0] <= last[1]:
+            last[1] = max(rset[1], last[1])
+        else:
+            yield type_(last)
+            last = rset
+    yield type_(last)

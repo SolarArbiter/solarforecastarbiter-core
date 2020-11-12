@@ -639,3 +639,42 @@ def test_generate_continuous_chunks(data, freq, expected):
 def test_generate_continuous_chunks_errs(data, freq, err):
     with pytest.raises(err):
         list(utils.generate_continuous_chunks(data, freq))
+
+
+@pytest.mark.parametrize('inp,exp', [
+    ([[0, 1], [-1, 9], [8, 8], [9, 11], [20, 30], [19, 33]],
+     [[-1, 11], [19, 33]]),
+    ([(pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-01-03T00:00Z')),
+      (pd.Timestamp('2020-01-03T00:00Z'), pd.Timestamp('2020-01-09T00:00Z')),
+      (pd.Timestamp('2020-01-02T01:00Z'), pd.Timestamp('2020-01-08T00:00Z'))
+      ], [
+          (pd.Timestamp('2020-01-01T00:00Z'),
+           pd.Timestamp('2020-01-09T00:00Z'))
+      ]),
+    ([[pd.Timestamp('2020-01-01T12:00Z'), pd.Timestamp('2020-01-01T13:00Z')]],
+     [[pd.Timestamp('2020-01-01T12:00Z'), pd.Timestamp('2020-01-01T13:00Z')]]),
+    ([[0, 1]], [[0, 1]]),
+    ([[1, 1], [2, 2]], [[1, 1], [2, 2]]),
+    ([], []),
+    (((0, 1), (0, 9)), [(0, 9)])
+])
+def test_merge_ranges(inp, exp):
+    assert list(utils.merge_ranges(inp)) == exp
+
+
+def test_merge_ranges_fail():
+    inp = [[0, -1], [1, 1]]
+    with pytest.raises(ValueError):
+        list(utils.merge_ranges(inp))
+
+
+@pytest.mark.parametrize('inp', [
+    [[0, 1], ['a', 'b']],
+    [[pd.Timestamp(None), pd.Timestamp(None)]],
+    [[pd.Timestamp.now(), pd.Timestamp(None)]],
+    [[pd.Timestamp(None), pd.Timestamp.now()]],
+    [[np.nan, 1]]
+])
+def test_merge_ranges_comparison_fail(inp):
+    with pytest.raises(TypeError):
+        list(utils.merge_ranges(inp))

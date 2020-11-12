@@ -9,6 +9,9 @@ Enhancements
 ~~~~~~~~~~~~
 * Add reference aggregates of mean SURFRAD GHI and DNI, and
   sum of PV plants in Portland, OR (:issue:`473`, :pull:`615`)
+* Added a CLI option of `--gaps-only` when updating reference
+  observation data to only update periods where there are data
+  gaps (:issue:`459`, :pull:`616`)
 
 
 Bug fixes

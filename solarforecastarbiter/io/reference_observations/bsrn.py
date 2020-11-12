@@ -58,7 +58,8 @@ def fetch(api, site, start, end):
     raise NotImplementedError('Fetching BSRN data not yet implemented')
 
 
-def update_observation_data(api, sites, observations, start, end):
+def update_observation_data(api, sites, observations, start, end, *,
+                            gaps_only=False):
     """Post new observation data to all BSRN observations from
     start to end.
 
@@ -74,8 +75,11 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
     """
     bsrn_sites = common.filter_by_networks(sites, ['WRMC BSRN'])
     for site in bsrn_sites:
         common.update_site_observations(
-            api, fetch, site, observations, start, end)
+            api, fetch, site, observations, start, end, gaps_only=gaps_only)

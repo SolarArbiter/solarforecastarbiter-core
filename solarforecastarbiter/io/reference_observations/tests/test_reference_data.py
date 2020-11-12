@@ -75,6 +75,22 @@ def test_update_reference_observations(
     assert log.info.call_count == 1
 
 
+def test_update_reference_observations_gaps(mocker, mock_api, log, start, end,
+                                            networks):
+    api = mocker.patch('solarforecastarbiter.io.reference_observations.'
+                       'reference_data.get_apisession')
+    mocker.patch.dict('os.environ', {
+        'DOE_ARM_API_KEY': 'key', 'DOE_ARM_USER_ID': 'id'})
+    api.return_value = mock_api
+    common_update = mocker.patch(
+        'solarforecastarbiter.io.reference_observations.common'
+        '.update_site_observations')
+    reference_data.update_reference_observations(
+        'TOKEN', start, end, networks, gaps_only=True)
+    assert common_update.call_count == 3
+    assert common_update.call_args[1]['gaps_only'] is True
+
+
 site_csv = """interval_length,name,latitude,longitude,elevation,network_api_id,network_api_abbreviation,timezone,attribution,network
 1,Seattle UW WA,47.653999999999996,-122.309,70,94291.0,ST,Etc/GMT+8,,UO SRML
 1,UO Solar Awning Eugene OR,44.05,-123.07,150,94255.0,AW,Etc/GMT+8,,UO SRML"""

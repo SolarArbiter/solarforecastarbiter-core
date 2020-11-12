@@ -13,6 +13,7 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.utils import merge_ranges
 from solarforecastarbiter.io.utils import (
     json_payload_to_observation_df,
     json_payload_to_forecast_series,
@@ -547,7 +548,7 @@ class APISession(requests.Session):
 
     def get_observation_time_range(self, observation_id):
         """
-        Get the miniumum and maximum timestamps for observation values.
+        Get the minimum and maximum timestamps for observation values.
 
         Parameters
         ----------
@@ -570,6 +571,76 @@ class APISession(requests.Session):
         if maxt.tzinfo is None and pd.notna(maxt):
             maxt = maxt.tz_localize('UTC')
         return mint, maxt
+
+    def _get_obs_gaps(self, observation_id, start, end):
+        req = self.get(f'/observations/{observation_id}/values/gaps',
+                       params={'start': start,
+                               'end': end})
+        gaps = req.json()
+        out = []
+        for g in gaps['gaps']:
+            tstamp = pd.Timestamp(g['timestamp'])
+            nextstamp = pd.Timestamp(g['next_timestamp'])
+            # results should never be null, but skip anyway
+            if pd.isna(tstamp) or pd.isna(nextstamp):
+                continue  # pragma: no cover
+            if tstamp.tzinfo is None:
+                tstamp = tstamp.tz_localize('UTC')
+            if nextstamp.tzinfo is None:
+                nextstamp = nextstamp.tz_localize('UTC')
+            out.append((tstamp, nextstamp))
+        return out
+
+    def _fixup_gaps(self, timerange, gaps, start, end):
+        out = []
+        if pd.isna(timerange[0]) or pd.isna(timerange[1]):
+            return [(start, end)]
+        else:
+            if timerange[0] > start:
+                if end < timerange[0]:
+                    return [(start, end)]
+                else:
+                    out.append((start, timerange[0]))
+            if timerange[1] < end:
+                if start > timerange[1]:
+                    return [(start, end)]
+                else:
+                    out.append((timerange[1], end))
+        if len(gaps) != 0:
+            if gaps[0][0] < start:
+                gaps[0] = (start, gaps[0][1])
+            if gaps[-1][1] > end:
+                gaps[-1] = (gaps[-1][0], end)
+            out.extend(gaps)
+        return merge_ranges(out)
+
+    @ensure_timestamps('start', 'end')
+    def get_observation_value_gaps(self, observation_id, start, end):
+        """Get any gaps in observation data from start to end.
+
+        In addition to querying the /observations/{observation_id}/values/gaps
+        endpoint, this function also queries the observation timerange to
+        return all gaps from start to end.
+
+        Parameters
+        ----------
+        observation_id : string
+            UUID of the observation object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+
+        Returns
+        -------
+        list of (pd.Timestamp, pd.Timestamp)
+           Of (start, end) gaps in the observations from the last timestamp
+           of a valid observation to the next valid observation timestamp.
+           Interval label is not accounted for.
+        """
+        gaps = self._get_obs_gaps(observation_id, start, end)
+        trange = self.get_observation_time_range(observation_id)
+        return self._fixup_gaps(trange, gaps, start, end)
 
     @ensure_timestamps('start', 'end')
     def get_observation_values_not_flagged(

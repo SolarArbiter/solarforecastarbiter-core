@@ -608,6 +608,37 @@ def test_update_site_observations_out_of_order(
                 args[1].index.freq).first())
 
 
+def test_update_site_observations_gaps(
+        mock_api, mock_fetch, observation_objects_param, fake_ghi_data,
+        mocker):
+    mocker.patch.object(
+        mock_api, 'get_observation_value_gaps', return_value=[
+            (pd.Timestamp('2019-01-01T12:10Z'),
+             pd.Timestamp('2019-01-01T12:13Z')),
+            (pd.Timestamp('2019-01-01T12:19Z'),
+             pd.Timestamp('2019-01-01T12:20Z')),
+        ])
+    start = pd.Timestamp('20190101T1205Z')
+    end = pd.Timestamp('20190101T1225Z')
+    site = site_objects[0]
+    common.update_site_observations(
+        mock_api, mock_fetch, site, observation_objects_param, start, end,
+        gaps_only=True)
+    assert mock_api.post_observation_values.call_count == 2
+    kargs = mock_api.post_observation_values.call_args_list
+    assert kargs[0][0][0] == ''
+    pd.testing.assert_frame_equal(
+        kargs[0][0][1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[
+                '2019-01-01T12:10Z':'2019-01-01T12:13Z'].resample(
+                    kargs[0][0][1].index.freq).first())
+    pd.testing.assert_frame_equal(
+        kargs[1][0][1], fake_ghi_data.rename(
+            columns={'ghi': 'value'})[
+                '2019-01-01T12:19Z':'2019-01-01T12:20Z'].resample(
+                    kargs[1][0][1].index.freq).first())
+
+
 @pytest.fixture()
 def template_fx(mock_api, mocker):
     mock_api.create_forecast = mocker.MagicMock(side_effect=lambda x: x)

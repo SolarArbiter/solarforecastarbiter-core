@@ -1712,3 +1712,159 @@ def test_apisession_chunk_value_requests_recursion(
     # original call
     expected_n_calls = int((end - start) / pd.Timedelta(limit)) + 1
     assert mocked_get.call_count == expected_n_calls
+
+
+@pytest.mark.parametrize('trange,gaps,exp', [
+    # simple case of gap in [start,end] and timerange
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z'))],
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z'))]),
+    # simple case of multiple gaps
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T15:00Z'))],
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T15:00Z'))]),
+    # no gaps at all
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [], []),
+    # gap extends past end
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-15T15:00Z'))],
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # gap extends past start
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-09T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T15:00Z'))],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T15:00Z'))]),
+    # gap extends past start and end
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-09T12:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-19T15:00Z'))],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T13:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # range before start
+    ((pd.Timestamp('2018-01-01T00:00Z'), pd.Timestamp('2019-01-01T00:00Z')),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # range after end
+    ((pd.Timestamp('2020-04-01T00:00Z'), pd.Timestamp('2020-05-01T00:00Z')),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # a nan
+    ((pd.Timestamp('2020-04-01T00:00Z'), pd.Timestamp(None)),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # two nans
+    ((pd.Timestamp(None), pd.Timestamp(None)),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # timerange after start, no gap
+    ((pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T12:00Z'))]),
+    # timerange after start, gap
+    ((pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2021-01-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z'))],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T12:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z'))]),
+    # timerange before end, no gap
+    ((pd.Timestamp('2019-01-10T12:00Z'), pd.Timestamp('2020-01-10T19:00Z')),
+     [],
+     [(pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # timerange before end, gap
+    ((pd.Timestamp('2019-01-10T12:00Z'), pd.Timestamp('2020-01-10T19:00Z')),
+     [(pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z'))],
+     [(pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z')),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # timerange within, no gap
+    ((pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T19:00Z')),
+     [],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T12:00Z')),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+    # timerange within, gap
+    ((pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T19:00Z')),
+     [(pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z'))],
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T12:00Z')),
+      (pd.Timestamp('2020-01-10T14:00Z'), pd.Timestamp('2020-01-10T16:00Z')),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+])
+def test__fixup_gaps(trange, gaps, exp):
+    session = api.APISession('')
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    assert list(session._fixup_gaps(trange, gaps, start, end)) == exp
+
+
+@pytest.mark.parametrize('first,second,exp', [
+    ('2020-01-10T12:00:00+00:00', '2020-01-10T14:00:00+00:00',
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z'))]),
+    ('2020-01-10T12:00:00', '2020-01-10T14:00:00',
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z'))])
+])
+def test__get_obs_gaps(requests_mock, first, second, exp):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        content=(
+            '{"observation_id": "obsid", "gaps": [{"timestamp": "' + first +
+            '", "next_timestamp": "' + second + '"}]}').encode())
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    out = session._get_obs_gaps('obsid', start, end)
+    assert out == exp
+
+
+def test__get_obs_gaps_null(requests_mock):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        content=(
+            '{"observation_id": "obsid", "gaps": [{"timestamp": null, '
+            '"next_timestamp": "2020-01-01T00:00+00:00"}]}').encode())
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    out = session._get_obs_gaps('obsid', start, end)
+    assert out == []
+
+
+def test__get_obs_gaps_no_gaps(requests_mock):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        content=('{"observation_id": "obsid", "gaps": []}').encode())
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    out = session._get_obs_gaps('obsid', start, end)
+    assert out == []
+
+
+@pytest.mark.parametrize('trange,exp', [
+    ((pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-02-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z')),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-10T22:00Z'))]),
+    ((pd.Timestamp('2020-01-11T00:00Z'), pd.Timestamp('2020-02-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+])
+def test_get_observation_value_gaps(requests_mock, mocker, trange, exp):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        content=(
+            '{"observation_id": "obsid", "gaps": ['
+            '{"timestamp": "2020-01-10T12:00Z", '
+            '"next_timestamp": "2020-01-10T14:00Z"},'
+            '{"timestamp": "2020-01-10T19:00Z", '
+            '"next_timestamp": "2020-01-10T22:00Z"}'
+            ']}').encode())
+    mocker.patch.object(
+        session,
+        'get_observation_time_range',
+        return_value=trange
+    )
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    assert list(session.get_observation_value_gaps('obsid', start, end)) == exp

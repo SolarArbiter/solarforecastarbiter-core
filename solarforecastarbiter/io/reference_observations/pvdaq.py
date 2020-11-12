@@ -156,7 +156,8 @@ def _watts_to_mw(obs_df):
     return obs_df
 
 
-def update_observation_data(api, sites, observations, start, end):
+def update_observation_data(api, sites, observations, start, end, *,
+                            gaps_only=False):
     """Post new observation data to all PVDAQ observations from
     start to end.
 
@@ -172,6 +173,9 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
 
     Raises
     ------
@@ -188,4 +192,4 @@ def update_observation_data(api, sites, observations, start, end):
     for site in pvdaq_sites:
         common.update_site_observations(
             api, partial(fetch, nrel_pvdaq_api_key=nrel_pvdaq_api_key),
-            site, observations, start, end)
+            site, observations, start, end, gaps_only=gaps_only)

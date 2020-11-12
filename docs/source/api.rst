@@ -802,3 +802,4 @@ Generic utility functions.
    utils.compute_aggregate
    utils.sha256_pandas_object_hash
    utils.generate_continuous_chunks
+   utils.merge_ranges

@@ -201,7 +201,8 @@ def fetch(api, site, start, end, *, doe_arm_user_id, doe_arm_api_key):
         return pd.DataFrame()
 
 
-def update_observation_data(api, sites, observations, start, end):
+def update_observation_data(api, sites, observations, start, end, *,
+                            gaps_only=False):
     """Post new observation data to a list of DOE ARM Observations
     from start to end.
 
@@ -215,6 +216,9 @@ def update_observation_data(api, sites, observations, start, end):
         The beginning of the period to request data for.
     end : datetime
         The end of the period to request data for.
+    gaps_only : bool, default False
+        If True, only update periods between start and end where there
+        are data gaps.
     """
     doe_arm_api_key = os.getenv('DOE_ARM_API_KEY')
     if doe_arm_api_key is None:
@@ -230,7 +234,7 @@ def update_observation_data(api, sites, observations, start, end):
         common.update_site_observations(
             api, partial(fetch, doe_arm_user_id=doe_arm_user_id,
                          doe_arm_api_key=doe_arm_api_key),
-            site, observations, start, end)
+            site, observations, start, end, gaps_only=gaps_only)
 
 
 def adjust_site_parameters(site):
