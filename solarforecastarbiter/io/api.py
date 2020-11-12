@@ -583,7 +583,7 @@ class APISession(requests.Session):
             nextstamp = pd.Timestamp(g['next_timestamp'])
             # results should never be null, but skip anyway
             if pd.isna(tstamp) or pd.isna(nextstamp):
-                continue
+                continue  # pragma: no cover
             if tstamp.tzinfo is None:
                 tstamp = tstamp.tz_localize('UTC')
             if nextstamp.tzinfo is None:
