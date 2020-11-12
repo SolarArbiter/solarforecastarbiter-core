@@ -572,8 +572,8 @@ class APISession(requests.Session):
             maxt = maxt.tz_localize('UTC')
         return mint, maxt
 
-    def _get_obs_gaps(self, observation_id, start, end):
-        req = self.get(f'/observations/{observation_id}/values/gaps',
+    def _process_gaps(self, url, start, end):
+        req = self.get(url,
                        params={'start': start,
                                'end': end})
         gaps = req.json()
@@ -612,7 +612,7 @@ class APISession(requests.Session):
             if gaps[-1][1] > end:
                 gaps[-1] = (gaps[-1][0], end)
             out.extend(gaps)
-        return merge_ranges(out)
+        return list(merge_ranges(out))
 
     @ensure_timestamps('start', 'end')
     def get_observation_value_gaps(self, observation_id, start, end):
@@ -638,7 +638,8 @@ class APISession(requests.Session):
            of a valid observation to the next valid observation timestamp.
            Interval label is not accounted for.
         """
-        gaps = self._get_obs_gaps(observation_id, start, end)
+        gaps = self._process_gaps(
+            f'/observations/{observation_id}/values/gaps', start, end)
         trange = self.get_observation_time_range(observation_id)
         return self._fixup_gaps(trange, gaps, start, end)
 
@@ -751,6 +752,33 @@ class APISession(requests.Session):
         return mint, maxt
 
     @ensure_timestamps('start', 'end')
+    def get_forecast_value_gaps(self, forecast_id, start, end):
+        """Get any gaps in forecast data from start to end. In addition
+        to querying the /forecasts/single/{forecast_id}/values/gaps endpoint,
+        this function also queries the forecast timerange to return all
+        gaps from start to end.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+
+        Returns
+        -------
+        list of (pd.Timestamp, pd.Timestamp)
+           Of (start, end) gaps in the forecasts
+        """
+        gaps = self._process_gaps(
+            f'/forecasts/single/{forecast_id}/values/gaps',
+            start, end)
+        trange = self.get_forecast_time_range(forecast_id)
+        return self._fixup_gaps(trange, gaps, start, end)
+
+    @ensure_timestamps('start', 'end')
     def get_forecast_values(self, forecast_id, start, end, interval_label=None,
                             request_limit=GET_VALUES_LIMIT):
         """
@@ -820,6 +848,35 @@ class APISession(requests.Session):
         return mint, maxt
 
     @ensure_timestamps('start', 'end')
+    def get_probabilistic_forecast_constant_value_value_gaps(
+            self, forecast_id, start, end):
+        """Get any gaps in forecast data from start to end. In addition
+        to querying the /forecasts/cdf/single/{forecast_id}/values/gaps
+        endpoint, this function also queries the forecast timerange to
+        return all gaps from start to end.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+
+        Returns
+        -------
+        list of (pd.Timestamp, pd.Timestamp)
+           Of (start, end) gaps in the forecasts
+        """
+        gaps = self._process_gaps(
+            f'/forecasts/cdf/single/{forecast_id}/values/gaps',
+            start, end)
+        trange = self.get_probabilistic_forecast_constant_value_time_range(
+            forecast_id)
+        return self._fixup_gaps(trange, gaps, start, end)
+
+    @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_constant_value_values(
             self, forecast_id, start, end, interval_label=None,
             request_limit=GET_VALUES_LIMIT):
@@ -863,6 +920,47 @@ class APISession(requests.Session):
         )
         return adjust_timeseries_for_interval_label(
             out, interval_label, start, end)
+
+    @ensure_timestamps('start', 'end')
+    def get_probabilistic_forecast_value_gaps(
+            self, forecast_id, start, end):
+        """Get any gaps in forecast data from start to end. In addition
+        to querying the /forecasts/cdf/{forecast_id}/values/gaps
+        endpoint, this function also queries the forecast timerange to
+        return all gaps from start to end.
+
+        Parameters
+        ----------
+        forecast_id : string
+            UUID of the forecast object.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+
+        Returns
+        -------
+        list of (pd.Timestamp, pd.Timestamp)
+           Of (start, end) gaps in the forecasts
+        """
+        gaps = self._process_gaps(
+            f'/forecasts/cdf/{forecast_id}/values/gaps',
+            start, end)
+        mint = pd.Timestamp(0, tz='UTC')
+        maxt = pd.Timestamp('2100', tz='UTC')
+        prob_fx = self.get_probabilistic_forecast(forecast_id)
+        for cv in prob_fx.constant_values:
+            crange = self.get_probabilistic_forecast_constant_value_time_range(
+                cv.forecast_id)
+            if crange[0] > mint:
+                mint = crange[0]
+            if crange[1] < maxt:
+                maxt = crange[1]
+        if mint > maxt:
+            trange = (pd.Timestamp(None), pd.Timestamp(None))
+        else:
+            trange = (mint, maxt)
+        return self._fixup_gaps(trange, gaps, start, end)
 
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_values(
@@ -1402,6 +1500,48 @@ class APISession(requests.Session):
             obj_id = obj.observation_id
         return f(obj_id, start, end, interval_label=interval_label,
                  request_limit=request_limit)
+
+    @ensure_timestamps('start', 'end')
+    def get_value_gaps(self, obj, start, end):
+        """
+        Getgaps in the time series values from start to end for object from the API
+
+        Parameters
+        ----------
+        obj : datamodel.Observation, datamodel.Forecast, datamodel.ProbabilisticForecastConstantValues, datamodel.ProbabilisticForecast
+            Data model object for which to obtain time series data.
+        start : timelike object
+            Start time in interval to retrieve values for
+        end : timelike object
+            End time of the interval
+
+
+        Returns
+        -------
+        list of (pd.Timestamp, pd.Timestamp)
+           Of (start, end) gaps in the values from the last timestamp
+           of a valid value to the next valid timestamp.
+           Interval label is not accounted for.
+
+        Raises
+        ------
+        ValueError
+            If start or end cannot be converted into a Pandas Timestamp
+        """  # noqa: E501
+        # order avoids possible issues with inheritance
+        if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
+            f = self.get_probabilistic_forecast_constant_value_value_gaps
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.ProbabilisticForecast):
+            f = self.get_probabilistic_forecast_value_gaps
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.Forecast):
+            f = self.get_forecast_value_gaps
+            obj_id = obj.forecast_id
+        elif isinstance(obj, datamodel.Observation):
+            f = self.get_observation_value_gaps
+            obj_id = obj.observation_id
+        return f(obj_id, start, end)
 
     def get_user_info(self):
         """
