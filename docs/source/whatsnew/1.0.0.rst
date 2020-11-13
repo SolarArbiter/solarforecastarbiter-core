@@ -20,6 +20,8 @@ Bug fixes
   (:issue:`611`, :pull:`613`)
 * Added configurable timeouts when fetching NWP forecast grids to avoid
   timeout exceptions (:issue:`130`, :pull:`614`)
+* Fixed bug causing report observation and forecast metadata download to fail.
+  (:pull:`618`)
 
 
 Contributors
