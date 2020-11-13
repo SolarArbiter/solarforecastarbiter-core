@@ -836,6 +836,11 @@ def bar(df, metric):
     y_range = None
     x_axis_kwargs = {}
     x_values = []
+
+    # Ensure data aligns with the x labels by pre-sorting. x_labels are sorted
+    # by the groupby process below.
+    data = data.sort_values('abbrev')
+
     # to avoid stacking, add null characters to fx with
     # same abbreviated name. GH463
     for val, ser in data[['abbrev']].groupby('abbrev'):
