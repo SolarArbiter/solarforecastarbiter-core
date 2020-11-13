@@ -1568,3 +1568,79 @@ def test_data_loading(session, obs_5min_begin, start, end, intervallabel):
             obs, start, end)
     default_load = main._default_load_data(session)(obs, start, end)
     assert_series_equal(preload_data, default_load)
+
+
+@pytest.mark.parametrize('runlength,leadtime,il,itd,nextt,exp', [
+    ('1h', '1h', 'ending', '00:00', '2020-01-10T16:00Z',
+     [pd.Timestamp('2020-01-10T11:00Z'), pd.Timestamp('2020-01-10T12:00Z'),
+      pd.Timestamp('2020-01-10T13:00Z')]),
+    ('1h', '1h', 'beginning', '00:00', '2020-01-10T16:00Z',
+     [pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z'),
+      pd.Timestamp('2020-01-10T14:00Z')]),
+    ('24h', '6h', 'ending', '06:00', '2020-01-13T13:00Z',
+     [pd.Timestamp('2020-01-10T06:00Z'), pd.Timestamp('2020-01-11T06:00Z'),
+      pd.Timestamp('2020-01-12T06:00Z')]),
+])
+def test__nwp_issue_time_generator(
+        single_forecast, runlength, leadtime, il, itd, nextt, exp):
+    last = pd.Timestamp('2020-01-10T12:00Z')
+    fx = single_forecast.replace(
+        run_length=pd.Timedelta(runlength), interval_label=il,
+        lead_time_to_start=pd.Timedelta(leadtime),
+        interval_length=pd.Timedelta('1h'),
+        issue_time_of_day=dt.datetime.strptime(itd, '%H:%M').time())
+    out = list(main._nwp_issue_time_generator(fx, last, pd.Timestamp(nextt)))
+    assert out == exp
+
+
+def test_fill_nwp_forecast_gaps(forecast_list, mocker):
+    session = mocker.patch('solarforecastarbiter.io.api.APISession')
+    session.return_value.get_user_info.return_value = {'organization': ''}
+    session.return_value.list_forecasts.return_value = forecast_list[:-3]
+    session.return_value.list_probabilistic_forecasts.return_value = []
+    # last fx has different org
+    run_nwp = mocker.patch.object(
+        main, 'run_nwp',
+        side_effect=FileNotFoundError)
+    session.return_value.get_value_gaps.return_value = [
+        (pd.Timestamp('2020-01-10T18:00Z'), pd.Timestamp('2020-01-12T06:00Z'))
+    ]
+    main.fill_nwp_forecast_gaps('token', pd.Timestamp('2020-01-01T00:00Z'),
+                                pd.Timestamp('2020-01-19T00:00Z'))
+    # run_nwp should be called for 3 issue times and 3 forecasts
+    assert run_nwp.call_count == 9
+    # forecast 2 piggy bakcs on 0
+    for fx in [forecast_list[0], forecast_list[1], forecast_list[3]]:
+        for i in range(3):
+            rt = pd.Timestamp('2020-01-10T17:00Z') + pd.Timedelta(hours=i * 12)
+            run_nwp.assert_any_call(fx, mocker.ANY, rt, rt)
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
+    assert param_list[0].data_end == pd.Timestamp('2020-05-20T13:59:59Z')
+    assert param_list[0].issue_times == (
+        pd.Timestamp('2020-05-20T14:00Z'),
+    )
