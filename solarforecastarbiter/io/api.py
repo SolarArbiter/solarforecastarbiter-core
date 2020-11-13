@@ -926,8 +926,8 @@ class APISession(requests.Session):
             self, forecast_id, start, end):
         """Get any gaps in forecast data from start to end. In addition
         to querying the /forecasts/cdf/{forecast_id}/values/gaps
-        endpoint, this function also queries the forecast timerange to
-        return all gaps from start to end.
+        endpoint, this function also queries the forecast timerange of the
+        first constant value only to return all gaps from start to end.
 
         Parameters
         ----------
@@ -946,20 +946,9 @@ class APISession(requests.Session):
         gaps = self._process_gaps(
             f'/forecasts/cdf/{forecast_id}/values/gaps',
             start, end)
-        mint = pd.Timestamp(0, tz='UTC')
-        maxt = pd.Timestamp('2100', tz='UTC')
         prob_fx = self.get_probabilistic_forecast(forecast_id)
-        for cv in prob_fx.constant_values:
-            crange = self.get_probabilistic_forecast_constant_value_time_range(
-                cv.forecast_id)
-            if crange[0] > mint:
-                mint = crange[0]
-            if crange[1] < maxt:
-                maxt = crange[1]
-        if mint > maxt:
-            trange = (pd.Timestamp(None), pd.Timestamp(None))
-        else:
-            trange = (mint, maxt)
+        trange = self.get_probabilistic_forecast_constant_value_time_range(
+            prob_fx.constant_values[0].forecast_id)
         return self._fixup_gaps(trange, gaps, start, end)
 
     @ensure_timestamps('start', 'end')
@@ -1527,6 +1516,8 @@ class APISession(requests.Session):
         ------
         ValueError
             If start or end cannot be converted into a Pandas Timestamp
+        TypeError
+            If an invalid type of obj is supplied
         """  # noqa: E501
         # order avoids possible issues with inheritance
         if isinstance(obj, datamodel.ProbabilisticForecastConstantValue):
@@ -1541,6 +1532,10 @@ class APISession(requests.Session):
         elif isinstance(obj, datamodel.Observation):
             f = self.get_observation_value_gaps
             obj_id = obj.observation_id
+        else:
+            raise TypeError(
+                'Supplied object needs to be an Observation, Forecast, '
+                'ProbabilisticForecast, or ProbabilisticForecastConstantValue')
         return f(obj_id, start, end)
 
     def get_user_info(self):
