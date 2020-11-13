@@ -1805,40 +1805,43 @@ def test__fixup_gaps(trange, gaps, exp):
     ('2020-01-10T12:00:00', '2020-01-10T14:00:00',
      [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z'))])
 ])
-def test__get_obs_gaps(requests_mock, first, second, exp):
+def test__process_gaps(requests_mock, first, second, exp):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=(
             '{"observation_id": "obsid", "gaps": [{"timestamp": "' + first +
             '", "next_timestamp": "' + second + '"}]}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == exp
 
 
 def test__get_obs_gaps_null(requests_mock):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=(
             '{"observation_id": "obsid", "gaps": [{"timestamp": null, '
             '"next_timestamp": "2020-01-01T00:00+00:00"}]}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == []
 
 
 def test__get_obs_gaps_no_gaps(requests_mock):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=('{"observation_id": "obsid", "gaps": []}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == []
 
 
