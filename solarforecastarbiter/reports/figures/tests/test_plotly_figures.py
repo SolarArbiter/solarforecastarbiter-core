@@ -664,3 +664,34 @@ def test_timeseries_plots_event_data_no_obs(
     assert scatter_spec is None
     assert ts_prob_spec is None
     assert not inc_dist
+
+
+def test_bar_x_label_ordering():
+    def make_row(name, abbrev, value):
+        return {
+            "name": name,
+            "abbrev": abbrev,
+            "category": "total",
+            "metric": "mae",
+            "value": value,
+            "index": 0
+        }
+    data = [make_row(n, a, v)
+            for n, a, v in [("EA GHI", "EA GHI", 5),
+                            ("DA GHi01", "DA GHi.", 3),
+                            ("DA GHi02", "DA GHi.", 4),
+                            ("DA GHi03", "DA GHi.", 7),
+                            ("CA GHI", "CA GHI", 1)]]
+    df = pd.DataFrame(data)
+
+    figure = figures.bar(df, "mae")
+
+    # Ensure x labels are in expected order
+    assert (figure.data[0]['x'] == np.array([
+        "CA GHI", "DA GHi.", "DA GHi.\x00",
+        "DA GHi.\x00\x00", "EA GHI"], dtype=object)).all()
+    # ensure y values are in the same order as x labels
+    assert (figure.data[0]['y'] == np.array([1, 3, 4, 7, 5])).all()
+    # assert hover text (original name) matches x label order
+    assert (figure.data[0]['text'] == np.array([
+        'CA GHI', "DA GHi01", "DA GHi02", "DA GHi03", "EA GHI"])).all()
