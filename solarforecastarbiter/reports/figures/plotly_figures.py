@@ -841,10 +841,10 @@ def bar(df, metric):
     # by the groupby process below.
     data = data.sort_values('abbrev')
 
-    # to avoid stacking, add null characters to fx with
+    # to avoid stacking, add BOM characters to fx with
     # same abbreviated name. GH463
     for val, ser in data[['abbrev']].groupby('abbrev'):
-        x_values += [val + ('\0' * i) for i in range(len(ser))]
+        x_values += [val + ('\ufeff' * i) for i in range(len(ser))]
     x_values = pd.Series(x_values, name='abbrev')
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
@@ -853,8 +853,8 @@ def bar(df, metric):
     # remove height limit when long abbreviations are used or there are more
     # than 5 pairs to problems with labels being cut off.
     plot_layout_args = deepcopy(PLOT_LAYOUT_DEFAULTS)
-    # ok to cut off null characters at the end of the labels
-    longest_x_label = x_values.map(lambda x: len(x.rstrip('\0'))).max()
+    # ok to cut off BOM characters at the end of the labels
+    longest_x_label = x_values.map(lambda x: len(x.rstrip('\ufeff'))).max()
     if longest_x_label > 15 or x_values.size > 6:
         # Set explicit height and set automargin on x axis to allow for dynamic
         # sizing to accomodate long x axis labels. Height is set based on

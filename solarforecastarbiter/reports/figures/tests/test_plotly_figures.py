@@ -688,8 +688,8 @@ def test_bar_x_label_ordering():
 
     # Ensure x labels are in expected order
     assert (figure.data[0]['x'] == np.array([
-        "CA GHI", "DA GHi.", "DA GHi.\x00",
-        "DA GHi.\x00\x00", "EA GHI"], dtype=object)).all()
+        "CA GHI", "DA GHi.", "DA GHi.\ufeff",
+        "DA GHi.\ufeff\ufeff", "EA GHI"], dtype=object)).all()
     # ensure y values are in the same order as x labels
     assert (figure.data[0]['y'] == np.array([1, 3, 4, 7, 5])).all()
     # assert hover text (original name) matches x label order
