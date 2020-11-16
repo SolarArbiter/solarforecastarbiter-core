@@ -195,8 +195,11 @@ High-level functions for NWP and persistence forecasts.
    reference_forecasts.main.find_reference_nwp_forecasts
    reference_forecasts.main.process_nwp_forecast_groups
    reference_forecasts.main.make_latest_nwp_forecasts
+   reference_forecasts.main.fill_nwp_forecast_gaps
    reference_forecasts.main.make_latest_persistence_forecasts
    reference_forecasts.main.make_latest_probabilistic_persistence_forecasts
+   reference_forecasts.main.fill_persistence_forecasts_gaps
+   reference_forecasts.main.fill_probabilistic_persistence_forecasts_gaps
 
 NWP models
 ----------
@@ -416,6 +419,7 @@ Observations
    io.api.APISession.post_observation_values
    io.api.APISession.get_observation_time_range
    io.api.APISession.get_observation_values_not_flagged
+   io.api.APISession.get_observation_value_gaps
 
 Forecasts
 
@@ -428,6 +432,7 @@ Forecasts
    io.api.APISession.get_forecast_values
    io.api.APISession.post_forecast_values
    io.api.APISession.get_forecast_time_range
+   io.api.APISession.get_forecast_value_gaps
 
 Probabilistic Forecasts
 
@@ -438,10 +443,12 @@ Probabilistic Forecasts
    io.api.APISession.list_probabilistic_forecasts
    io.api.APISession.create_probabilistic_forecast
    io.api.APISession.get_probabilistic_forecast_values
+   io.api.APISession.get_probabilistic_forecast_value_gaps
    io.api.APISession.get_probabilistic_forecast_constant_value
    io.api.APISession.get_probabilistic_forecast_constant_value_values
    io.api.APISession.post_probabilistic_forecast_constant_value_values
    io.api.APISession.get_probabilistic_forecast_constant_value_time_range
+   io.api.APISession.get_probabilistic_forecast_constant_value_value_gaps
 
 Aggregates
 
@@ -483,6 +490,7 @@ for observations, forecasts, aggregates, and probabilistic forecasts:
 
    io.api.APISession.get_values
    io.api.APISession.chunk_value_request
+   io.api.APISession.get_value_gaps
 
 Utils
 -----
