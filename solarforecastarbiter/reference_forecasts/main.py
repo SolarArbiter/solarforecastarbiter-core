@@ -830,12 +830,11 @@ def generate_reference_persistence_forecast_gaps_parameters(
                 observation, fx, obs_mint, obs_maxt, gap[0],
                 gap[1] - pd.Timedelta('1ns')))
         issue_times = tuple(sorted(times))
-        data_start, data_end = utils.get_data_start_end(
-            observation, fx, issue_times[0], issue_times[-1])
-
         if len(issue_times) == 0:
             continue
 
+        data_start, data_end = utils.get_data_start_end(
+            observation, fx, issue_times[0], issue_times[-1])
         out = namedtuple(
             'PersistenceGapParameters',
             ['forecast', 'observation', 'index', 'data_start', 'data_end',
@@ -843,25 +842,53 @@ def generate_reference_persistence_forecast_gaps_parameters(
         yield out(fx, observation, index, data_start, data_end, issue_times)
 
 
-def fill_persistence_forecasts_gaps(
-        token, start, end, base_url=None):
-    """Make all reference probabilistic persistence forecasts that need to
-    be made up to *max_run_time*.
-
-    Parameters
-    ----------
-    token : str
-        Access token for the API
-    max_run_time : pandas.Timestamp
-        Last possible run time of the forecast generation
-    base_url : str or None, default None
-        Alternate base_url of the API
-    """
+def _fill_persistence_gaps(token, start, end, base_url, forecast_fnc):
     session = api.APISession(token, base_url=base_url)
-    forecasts = session.list_probabilistic_forecasts()
+    forecasts = getattr(session, forecast_fnc)()
     observations = session.list_observations()
     params = generate_reference_persistence_forecast_gaps_parameters(
         session, forecasts, observations, start, end)
     for fx, obs, index, data_start, data_end, issue_times in params:
         _pers_loop(session, fx, obs, index, data_start, data_end,
                    issue_times)
+
+
+def fill_persistence_forecasts_gaps(
+        token, start, end, base_url=None):
+    """Make all reference persistence forecasts that need to be made
+    between start and end.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    start : pandas.Timestamp
+        The start of the period to search for missing forecast values.
+    end : pandas.Timestamp
+        The end of the period to search for missing forecast values.
+    base_url : str or None, default None
+        Alternate base_url of the API
+
+    """
+    _fill_persistence_gaps(token, start, end, base_url, 'list_forecasts')
+
+
+def fill_probabilistic_persistence_forecasts_gaps(
+        token, start, end, base_url=None):
+    """Make all reference probabilistic persistence forecasts that need to
+    be made between start and end.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    start : pandas.Timestamp
+        The start of the period to search for missing forecast values.
+    end : pandas.Timestamp
+        The end of the period to search for missing forecast values.
+    base_url : str or None, default None
+        Alternate base_url of the API
+
+    """
+    _fill_persistence_gaps(token, start, end, base_url,
+                           'list_probabilistic_forecasts')
