@@ -22,6 +22,8 @@ Bug fixes
   timeout exceptions (:issue:`130`, :pull:`614`)
 * Fixed bug causing report observation and forecast metadata download to fail.
   (:pull:`618`)
+* Fixed bug causing incorrect x axis labelling of report metric plots.
+  (:pull:`619`)
 
 
 Contributors
