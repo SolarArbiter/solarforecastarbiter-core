@@ -331,11 +331,11 @@ def refnwp_latest(verbose, user, password, base_url, run_time,
 fxstart = click.option('--start', show_default='00:00:00 Yesterday (UTC)',
                        type=UTCTIMESTAMP,
                        default=lambda: midnight - pd.Timedelta(days=1),
-                       help='datetime to start filling forecasts at')
+                       help='Datetime to start filling forecasts at')
 fxend = click.option('--end', default=lambda: midnight,
                      type=UTCTIMESTAMP,
                      show_default='00:00:00 Today (UTC)',
-                     help='datetime to end filling forecasts at')
+                     help='Datetime to end filling forecasts at')
 
 
 @ref_nwp.command(name='fill')

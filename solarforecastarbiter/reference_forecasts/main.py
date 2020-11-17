@@ -431,7 +431,7 @@ def _process_single_group(session, run_for, group, run_time):
     try:
         key_fx = group.loc[run_for].forecast
     except KeyError:
-        logger.error('Forecast, %s,  that others are piggybacking on not '
+        logger.error('Forecast, %s, that others are piggybacking on not '
                      'found', run_for)
         return
     model_str = group.loc[run_for].model
@@ -497,13 +497,15 @@ def _get_nwp_forecast_df(token, run_time, base_url):
     return session, forecast_df
 
 
-def _nwp_issue_time_generator(fx, last_timestamp, next_timestamp):
-    # time that will produce forecast value at next_timestamp
+def _nwp_issue_time_generator(fx, gap_start, gap_end):
+    # max_run_time is the forecast issue time that will generate forecast
+    # that end before gap_end
     max_run_time = utils.find_next_issue_time_from_last_forecast(
-        fx, next_timestamp - pd.Timedelta('1ns'))
-    # time that will make forecast for after last_timestamp
+        fx, gap_end - pd.Timedelta('1ns'))
+    # next_issue_time is the forecast issue time that will generate forecast
+    # values at gap_start
     next_issue_time = utils.find_next_issue_time_from_last_forecast(
-            fx, last_timestamp)
+            fx, gap_start)
     while next_issue_time < max_run_time:
         yield next_issue_time
         next_issue_time = utils.get_next_issue_time(
@@ -629,6 +631,11 @@ def generate_reference_persistence_forecast_parameters(
     """
     user_info = session.get_user_info()
     observation_dict = {obs.observation_id: obs for obs in observations}
+    out = namedtuple(
+        'PersistenceParameters',
+        ['forecast', 'observation', 'index', 'data_start',
+         'issue_times'])
+
     for fx in forecasts:
         obs_ind_mint_maxt = _ref_persistence_check(
             fx, observation_dict, user_info, session)
@@ -664,11 +671,6 @@ def generate_reference_persistence_forecast_parameters(
 
         if len(issue_times) == 0:
             continue
-
-        out = namedtuple(
-            'PersistenceParameters',
-            ['forecast', 'observation', 'index', 'data_start',
-             'issue_times'])
 
         yield out(fx, observation, index, data_start, issue_times)
 
@@ -751,12 +753,11 @@ def _pers_loop(session, fx, obs, index, data_start, data_end, issue_times):
     for id_, serlist in out.items():
         if len(serlist) > 0:
             ser = pd.concat(serlist)
-            for cser in generate_continuous_chunks(
-                    ser, fx.interval_length):
+            for cser in generate_continuous_chunks(ser, fx.interval_length):
                 if type(fx) == datamodel.Forecast:
                     session.post_forecast_values(id_, cser)
                 else:
-                    session.post_probabilistic_forecast_constant_value_values(  # NOQA
+                    session.post_probabilistic_forecast_constant_value_values(
                         id_, cser)
 
 
@@ -813,9 +814,13 @@ def generate_reference_persistence_forecast_gaps_parameters(
     -------
     generator of (Forecast, Observation, index, data_start, data_end, issue_times)
 
-    """  # NOQA
+    """  # NOQA: E501
     user_info = session.get_user_info()
     observation_dict = {obs.observation_id: obs for obs in observations}
+    out = namedtuple(
+        'PersistenceGapParameters',
+        ['forecast', 'observation', 'index', 'data_start', 'data_end',
+         'issue_times'])
     for fx in forecasts:
         obs_ind_mint_maxt = _ref_persistence_check(
             fx, observation_dict, user_info, session)
@@ -835,10 +840,6 @@ def generate_reference_persistence_forecast_gaps_parameters(
 
         data_start, data_end = utils.get_data_start_end(
             observation, fx, issue_times[0], issue_times[-1])
-        out = namedtuple(
-            'PersistenceGapParameters',
-            ['forecast', 'observation', 'index', 'data_start', 'data_end',
-             'issue_times'])
         yield out(fx, observation, index, data_start, data_end, issue_times)
 
 
@@ -853,8 +854,7 @@ def _fill_persistence_gaps(token, start, end, base_url, forecast_fnc):
                    issue_times)
 
 
-def fill_persistence_forecasts_gaps(
-        token, start, end, base_url=None):
+def fill_persistence_forecasts_gaps(token, start, end, base_url=None):
     """Make all reference persistence forecasts that need to be made
     between start and end.
 

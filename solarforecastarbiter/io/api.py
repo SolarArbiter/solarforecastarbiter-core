@@ -753,9 +753,11 @@ class APISession(requests.Session):
 
     @ensure_timestamps('start', 'end')
     def get_forecast_value_gaps(self, forecast_id, start, end):
-        """Get any gaps in forecast data from start to end. In addition
-        to querying the /forecasts/single/{forecast_id}/values/gaps endpoint,
-        this function also queries the forecast timerange to return all
+        """Get any gaps in forecast data from start to end.
+
+        In addition to querying the
+        /forecasts/single/{forecast_id}/values/gaps endpoint, this
+        function also queries the forecast timerange to return all
         gaps from start to end.
 
         Parameters
@@ -850,10 +852,12 @@ class APISession(requests.Session):
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_constant_value_value_gaps(
             self, forecast_id, start, end):
-        """Get any gaps in forecast data from start to end. In addition
-        to querying the /forecasts/cdf/single/{forecast_id}/values/gaps
-        endpoint, this function also queries the forecast timerange to
-        return all gaps from start to end.
+        """Get any gaps in forecast data from start to end.
+
+        In addition to querying the
+        /forecasts/cdf/single/{forecast_id}/values/gaps endpoint, this
+        function also queries the forecast timerange to return all
+        gaps from start to end.
 
         Parameters
         ----------
@@ -924,10 +928,12 @@ class APISession(requests.Session):
     @ensure_timestamps('start', 'end')
     def get_probabilistic_forecast_value_gaps(
             self, forecast_id, start, end):
-        """Get any gaps in forecast data from start to end. In addition
-        to querying the /forecasts/cdf/{forecast_id}/values/gaps
-        endpoint, this function also queries the forecast timerange of the
-        first constant value only to return all gaps from start to end.
+        """Get any gaps in forecast data from start to end.
+
+        In addition to querying the
+        /forecasts/cdf/{forecast_id}/values/gaps endpoint, this
+        function also queries the forecast timerange of the first
+        constant value only to return all gaps from start to end.
 
         Parameters
         ----------
@@ -1493,7 +1499,7 @@ class APISession(requests.Session):
     @ensure_timestamps('start', 'end')
     def get_value_gaps(self, obj, start, end):
         """
-        Getgaps in the time series values from start to end for object from the API
+        Get gaps in the time series values from start to end for object from the API.
 
         Parameters
         ----------
