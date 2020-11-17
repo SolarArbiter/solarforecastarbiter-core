@@ -838,8 +838,13 @@ def generate_reference_persistence_forecast_gaps_parameters(
         if len(issue_times) == 0:
             continue
 
-        data_start, data_end = utils.get_data_start_end(
-            observation, fx, issue_times[0], issue_times[-1])
+        # get_data_start_end only looks for start/end of a single
+        # forecast run, so need to do for first and last issue times
+        # to get full range of data possibly needed
+        data_start, _ = utils.get_data_start_end(
+            observation, fx, issue_times[0], issue_times[0])
+        _, data_end = utils.get_data_start_end(
+            observation, fx, issue_times[-1], issue_times[-1])
         yield out(fx, observation, index, data_start, data_end, issue_times)
 
 

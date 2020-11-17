@@ -1672,7 +1672,7 @@ def test_generate_reference_persistence_forecast_gaps_parameters_multiple_gaps( 
     assert param_list[0].observation == observations[0]
     assert param_list[0].index is False
     assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
-    assert param_list[0].data_end == pd.Timestamp('2020-05-20T13:59:59Z')
+    assert param_list[0].data_end == pd.Timestamp('2020-05-20T15:59:59Z')
     assert param_list[0].issue_times == (
         pd.Timestamp('2020-05-20T14:00Z'),
         pd.Timestamp('2020-05-20T16:00Z'),
