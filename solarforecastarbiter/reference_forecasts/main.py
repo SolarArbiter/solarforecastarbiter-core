@@ -417,38 +417,42 @@ def process_nwp_forecast_groups(session, run_time, forecast_df):
         :py:func:`solarforecastarbiter.reference_forecasts.main.find_reference_nwp_forecasts`.
     """  # NOQA
     for run_for, group in forecast_df.groupby('piggyback_on'):
-        logger.info('Computing forecasts for group %s', run_for)
-        errors = _verify_nwp_forecasts_compatible(group)
-        if errors:
-            logger.error(
-                'Not all forecasts compatible in group with %s. '
-                'The following parameters may differ: %s', run_for, errors)
+        _process_single_group(session, run_for, group, run_time)
+
+
+def _process_single_group(session, run_for, group, run_time):
+    logger.info('Computing forecasts for group %s at %s', run_for, run_time)
+    errors = _verify_nwp_forecasts_compatible(group)
+    if errors:
+        logger.error(
+            'Not all forecasts compatible in group with %s. '
+            'The following parameters may differ: %s', run_for, errors)
+        return
+    try:
+        key_fx = group.loc[run_for].forecast
+    except KeyError:
+        logger.error('Forecast, %s, that others are piggybacking on not '
+                     'found', run_for)
+        return
+    model_str = group.loc[run_for].model
+    model = getattr(models, model_str)
+    issue_time = group.loc[run_for].next_issue_time
+    if issue_time is None:
+        issue_time = utils.get_next_issue_time(key_fx, run_time)
+    try:
+        nwp_result = run_nwp(key_fx, model, run_time, issue_time)
+    except FileNotFoundError as e:
+        logger.error('Could not process group of %s, %s', run_for, str(e))
+        return
+    for fx_id, fx in group['forecast'].iteritems():
+        fx_vals = getattr(nwp_result, fx.variable)
+        if fx_vals is None:
+            logger.warning('No forecast produced for %s in group with %s',
+                           fx_id, run_for)
             continue
-        try:
-            key_fx = group.loc[run_for].forecast
-        except KeyError:
-            logger.error('Forecast, %s,  that others are piggybacking on not '
-                         'found', run_for)
-            continue
-        model_str = group.loc[run_for].model
-        model = getattr(models, model_str)
-        issue_time = group.loc[run_for].next_issue_time
-        if issue_time is None:
-            issue_time = utils.get_next_issue_time(key_fx, run_time)
-        try:
-            nwp_result = run_nwp(key_fx, model, run_time, issue_time)
-        except FileNotFoundError as e:
-            logger.error('Could not process group of %s, %s', run_for, str(e))
-            continue
-        for fx_id, fx in group['forecast'].iteritems():
-            fx_vals = getattr(nwp_result, fx.variable)
-            if fx_vals is None:
-                logger.warning('No forecast produced for %s in group with %s',
-                               fx_id, run_for)
-                continue
-            logger.info('Posting values %s for %s:%s issued at %s',
-                        len(fx_vals), fx.name, fx_id, issue_time)
-            _post_forecast_values(session, fx, fx_vals, model_str)
+        logger.info('Posting values %s for %s:%s issued at %s',
+                    len(fx_vals), fx.name, fx_id, issue_time)
+        _post_forecast_values(session, fx, fx_vals, model_str)
 
 
 def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
@@ -473,13 +477,7 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     base_url : str or None, default None
         Alternate base_url of the API
     """
-    session = api.APISession(token, base_url=base_url)
-    user_info = session.get_user_info()
-    forecasts = session.list_forecasts()
-    forecasts += session.list_probabilistic_forecasts()
-    forecasts = [fx for fx in forecasts
-                 if fx.provider == user_info['organization']]
-    forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
+    session, forecast_df = _get_nwp_forecast_df(token, run_time, base_url)
     execute_for = forecast_df[
         forecast_df.next_issue_time <= run_time + issue_buffer]
     if execute_for.empty:
@@ -488,10 +486,121 @@ def make_latest_nwp_forecasts(token, run_time, issue_buffer, base_url=None):
     process_nwp_forecast_groups(session, run_time, execute_for)
 
 
+def _get_nwp_forecast_df(token, run_time, base_url):
+    session = api.APISession(token, base_url=base_url)
+    user_info = session.get_user_info()
+    forecasts = session.list_forecasts()
+    forecasts += session.list_probabilistic_forecasts()
+    forecasts = [fx for fx in forecasts
+                 if fx.provider == user_info['organization']]
+    forecast_df = find_reference_nwp_forecasts(forecasts, run_time)
+    return session, forecast_df
+
+
+def _nwp_issue_time_generator(fx, gap_start, gap_end):
+    # max_run_time is the forecast issue time that will generate forecast
+    # that end before gap_end
+    max_run_time = utils.find_next_issue_time_from_last_forecast(
+        fx, gap_end - pd.Timedelta('1ns'))
+    # next_issue_time is the forecast issue time that will generate forecast
+    # values at gap_start
+    next_issue_time = utils.find_next_issue_time_from_last_forecast(
+            fx, gap_start)
+    while next_issue_time < max_run_time:
+        yield next_issue_time
+        next_issue_time = utils.get_next_issue_time(
+            fx, next_issue_time + pd.Timedelta('1ns'))
+
+
+def _find_group_gaps(session, forecasts, start, end):
+    times = set()
+    for forecast in forecasts:
+        gaps = session.get_value_gaps(forecast, start, end)
+        for gap in gaps:
+            times |= set(_nwp_issue_time_generator(
+                forecast, gap[0], gap[1]))
+    return sorted(times)
+
+
+def fill_nwp_forecast_gaps(token, start, end, base_url=None):
+    """
+    Make all reference NWP forecasts that are missing from *start* to *end*.
+    Only forecasts that belong to the same provider/organization
+    of the token user will be updated.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    start : pandas.Timestamp
+        Start of the period to check and fill forecast gaps
+    end : pandas.Timestamp
+        End of the period to check and fill forecast gaps
+    base_url : str or None, default None
+        Alternate base_url of the API
+    """
+    session, forecast_df = _get_nwp_forecast_df(token, None, base_url)
+    # go through each group separately
+    for run_for, group in forecast_df.groupby('piggyback_on'):
+        issue_times = _find_group_gaps(session, group.forecast.to_list(),
+                                       start, end)
+        group = group.copy()
+        for issue_time in issue_times:
+            group.loc[:, 'next_issue_time'] = issue_time
+            _process_single_group(session, run_for, group, issue_time)
+
+
 def _is_reference_persistence_forecast(extra_params_string):
     match = re.search(r'is_reference_persistence_forecast(["\s\:]*)true',
                       extra_params_string, re.I)
     return match is not None
+
+
+def _ref_persistence_check(fx, observation_dict, user_info, session):
+    if not _is_reference_persistence_forecast(fx.extra_parameters):
+        logger.debug(
+            'Forecast %s is not labeled as a reference '
+            'persistence forecast',  fx.forecast_id)
+        return
+
+    if not fx.provider == user_info['organization']:
+        logger.debug(
+            "Forecast %s is not in user's organization",
+            fx.forecast_id)
+        return
+
+    try:
+        extra_parameters = json.loads(fx.extra_parameters)
+    except json.JSONDecodeError:
+        logger.warning(
+            'Failed to decode extra_parameters for %s: %s as JSON',
+            fx.name, fx.forecast_id)
+        return
+
+    try:
+        observation_id = extra_parameters['observation_id']
+    except KeyError:
+        logger.error(
+            'Forecast, %s: %s, has no observation_id to base forecasts'
+            ' off of. Cannot make persistence forecast.',
+            fx.name, fx.forecast_id)
+        return
+    if observation_id not in observation_dict:
+        logger.error(
+            'Observation %s not in set of given observations.'
+            ' Cannot generate persistence forecast for %s: %s.',
+            observation_id, fx.name, fx.forecast_id)
+        return
+    observation = observation_dict[observation_id]
+
+    index = extra_parameters.get('index_persistence', False)
+    obs_mint, obs_maxt = session.get_observation_time_range(observation_id)
+    if pd.isna(obs_maxt):  # no observations to use anyway
+        logger.info(
+            'No observation values to use for %s: %s from observation %s',
+            fx.name, fx.forecast_id, observation_id)
+        return
+    return observation, index, obs_mint, obs_maxt
 
 
 def generate_reference_persistence_forecast_parameters(
@@ -522,51 +631,19 @@ def generate_reference_persistence_forecast_parameters(
     """
     user_info = session.get_user_info()
     observation_dict = {obs.observation_id: obs for obs in observations}
+    out = namedtuple(
+        'PersistenceParameters',
+        ['forecast', 'observation', 'index', 'data_start',
+         'issue_times'])
+
     for fx in forecasts:
-        if not _is_reference_persistence_forecast(fx.extra_parameters):
-            logger.debug(
-                'Forecast %s is not labeled as a reference '
-                'persistence forecast',  fx.forecast_id)
+        obs_ind_mint_maxt = _ref_persistence_check(
+            fx, observation_dict, user_info, session)
+        if obs_ind_mint_maxt is None:
             continue
-
-        if not fx.provider == user_info['organization']:
-            logger.debug(
-                "Forecast %s is not in user's organization",
-                fx.forecast_id)
-            continue
-
-        try:
-            extra_parameters = json.loads(fx.extra_parameters)
-        except json.JSONDecodeError:
-            logger.warning(
-                'Failed to decode extra_parameters for %s: %s as JSON',
-                fx.name, fx.forecast_id)
-            continue
-
-        try:
-            observation_id = extra_parameters['observation_id']
-        except KeyError:
-            logger.error(
-                'Forecast, %s: %s, has no observation_id to base forecasts'
-                ' off of. Cannot make persistence forecast.',
-                fx.name, fx.forecast_id)
-            continue
-        if observation_id not in observation_dict:
-            logger.error(
-                'Observation %s not in set of given observations.'
-                ' Cannot generate persistence forecast for %s: %s.',
-                observation_id, fx.name, fx.forecast_id)
-            continue
-        observation = observation_dict[observation_id]
-
-        index = extra_parameters.get('index_persistence', False)
-        obs_mint, obs_maxt = session.get_observation_time_range(observation_id)
-        if pd.isna(obs_maxt):  # no observations to use anyway
-            logger.info(
-                'No observation values to use for %s: %s from observation %s',
-                fx.name, fx.forecast_id, observation_id)
-            continue
-
+        observation, index, obs_mint, obs_maxt = obs_ind_mint_maxt
+        # probably split this out to generate issues times for only gaps vs
+        # latest
         if isinstance(fx, datamodel.ProbabilisticForecast):
             fx_mint, fx_maxt = \
                 session.get_probabilistic_forecast_constant_value_time_range(
@@ -594,11 +671,6 @@ def generate_reference_persistence_forecast_parameters(
 
         if len(issue_times) == 0:
             continue
-
-        out = namedtuple(
-            'PersistenceParameters',
-            ['forecast', 'observation', 'index', 'data_start',
-             'issue_times'])
 
         yield out(fx, observation, index, data_start, issue_times)
 
@@ -654,24 +726,39 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
     for fx, obs, index, data_start, issue_times in params:
-        load_data = _preload_load_data(session, obs, data_start, max_run_time)
-        serlist = []
-        logger.info('Making persistence forecast for %s:%s from %s to %s',
-                    fx.name, fx.forecast_id, issue_times[0], issue_times[-1])
-        for issue_time in issue_times:
-            run_time = issue_time
-            try:
-                fx_ser = run_persistence(
-                    session, obs, fx, run_time, issue_time,
-                    index=index, load_data=load_data)
-            except ValueError as e:
-                logger.error('Unable to generate persistence forecast: %s', e)
+        _pers_loop(session, fx, obs, index, data_start, max_run_time,
+                   issue_times)
+
+
+def _pers_loop(session, fx, obs, index, data_start, data_end, issue_times):
+    load_data = _preload_load_data(session, obs, data_start, data_end)
+    out = defaultdict(list)
+    logger.info('Making persistence forecast for %s:%s from %s to %s',
+                fx.name, fx.forecast_id, issue_times[0], issue_times[-1])
+    for issue_time in issue_times:
+        run_time = issue_time
+        try:
+            fx_out = run_persistence(
+                session, obs, fx, run_time, issue_time,
+                index=index, load_data=load_data)
+        except ValueError as e:
+            logger.error('Unable to generate persistence forecast: %s', e)
+        else:
+            if hasattr(fx, 'constant_values'):
+                cv_ids = [f.forecast_id for f in fx.constant_values]
+                for id_, fx_ser in zip(cv_ids, fx_out):
+                    out[id_].append(fx_ser)
             else:
-                serlist.append(fx_ser)
+                out[fx.forecast_id].append(fx_out)
+    for id_, serlist in out.items():
         if len(serlist) > 0:
             ser = pd.concat(serlist)
             for cser in generate_continuous_chunks(ser, fx.interval_length):
-                session.post_forecast_values(fx.forecast_id, cser)
+                if type(fx) == datamodel.Forecast:
+                    session.post_forecast_values(id_, cser)
+                else:
+                    session.post_probabilistic_forecast_constant_value_values(
+                        id_, cser)
 
 
 def make_latest_probabilistic_persistence_forecasts(
@@ -694,28 +781,119 @@ def make_latest_probabilistic_persistence_forecasts(
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
     for fx, obs, index, data_start, issue_times in params:
-        load_data = _preload_load_data(session, obs, data_start, max_run_time)
-        out = defaultdict(list)
-        logger.info('Making persistence forecast for %s:%s from %s to %s',
-                    fx.name, fx.forecast_id, issue_times[0], issue_times[-1])
-        for issue_time in issue_times:
-            run_time = issue_time
-            try:
-                fx_list = run_persistence(
-                    session, obs, fx, run_time, issue_time,
-                    index=index, load_data=load_data)
-            except ValueError as e:
-                logger.error('Unable to generate persistence forecast: %s', e)
-            else:
-                # api requires a post per constant value
-                cv_ids = [f.forecast_id for f in fx.constant_values]
-                for id_, fx_ser in zip(cv_ids, fx_list):
-                    out[id_].append(fx_ser)
+        _pers_loop(session, fx, obs, index, data_start, max_run_time,
+                   issue_times)
 
-        for id_, serlist in out.items():
-            if len(serlist) > 0:
-                ser = pd.concat(serlist)
-                for cser in generate_continuous_chunks(
-                        ser, fx.interval_length):
-                    session.post_probabilistic_forecast_constant_value_values(
-                        id_, cser)
+
+def generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end):
+    """Sort through all *forecasts* to find those with gaps in the data
+    that should be generated by the Arbiter from persisting
+    Observation values. The forecast must have
+    ``'is_reference_persistence_forecast': true`` and an
+    observation_id in Forecast.extra_parameters (formatted as a JSON
+    string). A boolean value for "index_persistence" in
+    Forecast.extra_parameters controls whether the persistence
+    forecast should be made adjusting for clear-sky/AC power index or
+    not.
+
+    Parameters
+    ----------
+    session : solarforecastarbiter.io.api.APISession
+    forecasts : list of datamodel.Forecasts
+        The forecasts that should be filtered to find references.
+    observations : list of datamodel.Observations
+        Observations that will are available to use to fetch values
+        and make persistence forecasts.
+    start : pandas.Timestamp
+        The start of the period to search for missing forecast values.
+    end : pandas.Timestamp
+        The end of the period to search for missing forecast values.
+
+    Returns
+    -------
+    generator of (Forecast, Observation, index, data_start, data_end, issue_times)
+
+    """  # NOQA: E501
+    user_info = session.get_user_info()
+    observation_dict = {obs.observation_id: obs for obs in observations}
+    out = namedtuple(
+        'PersistenceGapParameters',
+        ['forecast', 'observation', 'index', 'data_start', 'data_end',
+         'issue_times'])
+    for fx in forecasts:
+        obs_ind_mint_maxt = _ref_persistence_check(
+            fx, observation_dict, user_info, session)
+        if obs_ind_mint_maxt is None:
+            continue
+        observation, index, obs_mint, obs_maxt = obs_ind_mint_maxt
+
+        times = set()
+        gaps = session.get_value_gaps(fx, start, end)
+        for gap in gaps:
+            times |= set(_issue_time_generator(
+                observation, fx, obs_mint, obs_maxt, gap[0],
+                gap[1] - pd.Timedelta('1ns')))
+        issue_times = tuple(sorted(times))
+        if len(issue_times) == 0:
+            continue
+
+        # get_data_start_end only looks for start/end of a single
+        # forecast run, so need to do for first and last issue times
+        # to get full range of data possibly needed
+        data_start, _ = utils.get_data_start_end(
+            observation, fx, issue_times[0], issue_times[0])
+        _, data_end = utils.get_data_start_end(
+            observation, fx, issue_times[-1], issue_times[-1])
+        yield out(fx, observation, index, data_start, data_end, issue_times)
+
+
+def _fill_persistence_gaps(token, start, end, base_url, forecast_fnc):
+    session = api.APISession(token, base_url=base_url)
+    forecasts = getattr(session, forecast_fnc)()
+    observations = session.list_observations()
+    params = generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end)
+    for fx, obs, index, data_start, data_end, issue_times in params:
+        _pers_loop(session, fx, obs, index, data_start, data_end,
+                   issue_times)
+
+
+def fill_persistence_forecasts_gaps(token, start, end, base_url=None):
+    """Make all reference persistence forecasts that need to be made
+    between start and end.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    start : pandas.Timestamp
+        The start of the period to search for missing forecast values.
+    end : pandas.Timestamp
+        The end of the period to search for missing forecast values.
+    base_url : str or None, default None
+        Alternate base_url of the API
+
+    """
+    _fill_persistence_gaps(token, start, end, base_url, 'list_forecasts')
+
+
+def fill_probabilistic_persistence_forecasts_gaps(
+        token, start, end, base_url=None):
+    """Make all reference probabilistic persistence forecasts that need to
+    be made between start and end.
+
+    Parameters
+    ----------
+    token : str
+        Access token for the API
+    start : pandas.Timestamp
+        The start of the period to search for missing forecast values.
+    end : pandas.Timestamp
+        The end of the period to search for missing forecast values.
+    base_url : str or None, default None
+        Alternate base_url of the API
+
+    """
+    _fill_persistence_gaps(token, start, end, base_url,
+                           'list_probabilistic_forecasts')

@@ -1568,3 +1568,534 @@ def test_data_loading(session, obs_5min_begin, start, end, intervallabel):
             obs, start, end)
     default_load = main._default_load_data(session)(obs, start, end)
     assert_series_equal(preload_data, default_load)
+
+
+@pytest.mark.parametrize('runlength,leadtime,il,itd,nextt,exp', [
+    ('1h', '1h', 'ending', '00:00', '2020-01-10T16:00Z',
+     [pd.Timestamp('2020-01-10T11:00Z'), pd.Timestamp('2020-01-10T12:00Z'),
+      pd.Timestamp('2020-01-10T13:00Z')]),
+    ('1h', '1h', 'beginning', '00:00', '2020-01-10T16:00Z',
+     [pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T13:00Z'),
+      pd.Timestamp('2020-01-10T14:00Z')]),
+    ('24h', '6h', 'ending', '06:00', '2020-01-13T13:00Z',
+     [pd.Timestamp('2020-01-10T06:00Z'), pd.Timestamp('2020-01-11T06:00Z'),
+      pd.Timestamp('2020-01-12T06:00Z')]),
+])
+def test__nwp_issue_time_generator(
+        single_forecast, runlength, leadtime, il, itd, nextt, exp):
+    last = pd.Timestamp('2020-01-10T12:00Z')
+    fx = single_forecast.replace(
+        run_length=pd.Timedelta(runlength), interval_label=il,
+        lead_time_to_start=pd.Timedelta(leadtime),
+        interval_length=pd.Timedelta('1h'),
+        issue_time_of_day=dt.datetime.strptime(itd, '%H:%M').time())
+    out = list(main._nwp_issue_time_generator(fx, last, pd.Timestamp(nextt)))
+    assert out == exp
+
+
+def test_fill_nwp_forecast_gaps(forecast_list, mocker):
+    session = mocker.patch('solarforecastarbiter.io.api.APISession')
+    session.return_value.get_user_info.return_value = {'organization': ''}
+    session.return_value.list_forecasts.return_value = forecast_list[:-3]
+    session.return_value.list_probabilistic_forecasts.return_value = []
+    # last fx has different org
+    run_nwp = mocker.patch.object(
+        main, 'run_nwp',
+        side_effect=FileNotFoundError)
+    session.return_value.get_value_gaps.return_value = [
+        (pd.Timestamp('2020-01-10T18:00Z'), pd.Timestamp('2020-01-12T06:00Z'))
+    ]
+    main.fill_nwp_forecast_gaps('token', pd.Timestamp('2020-01-01T00:00Z'),
+                                pd.Timestamp('2020-01-19T00:00Z'))
+    # run_nwp should be called for 3 issue times and 3 forecasts
+    assert run_nwp.call_count == 9
+    # forecast 2 piggy bakcs on 0
+    for fx in [forecast_list[0], forecast_list[1], forecast_list[3]]:
+        for i in range(3):
+            rt = pd.Timestamp('2020-01-10T17:00Z') + pd.Timedelta(hours=i * 12)
+            run_nwp.assert_any_call(fx, mocker.ANY, rt, rt)
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
+    assert param_list[0].data_end == pd.Timestamp('2020-05-20T13:59:59Z')
+    assert param_list[0].issue_times == (
+        pd.Timestamp('2020-05-20T14:00Z'),
+    )
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_multiple_gaps(  # NOQA
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z')),
+        # need forecast with data from 15
+        (pd.Timestamp('2020-05-20T16:00Z'), pd.Timestamp('2020-05-20T17:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
+    assert param_list[0].data_end == pd.Timestamp('2020-05-20T15:59:59Z')
+    assert param_list[0].issue_times == (
+        pd.Timestamp('2020-05-20T14:00Z'),
+        pd.Timestamp('2020-05-20T16:00Z'),
+    )
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_up_to_date(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = []
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 0
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_no_data(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        (pd.Timestamp('2020-05-20T20:00Z'), pd.Timestamp('2020-05-20T22:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp(None), pd.Timestamp(None))
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 0
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_diff_org(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': 'notright'}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 0
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_not_reference(  # NOQA
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts = [fx.replace(extra_parameters='') for fx in forecasts]
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 0
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_no_obs(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts[0] = forecasts[0].replace(
+        extra_parameters='{"is_reference_persistence_forecast": true}')
+    forecasts[1] = forecasts[1].replace(
+        extra_parameters='{"is_reference_persistence_forecast": true, "observation_id": "idnotinobs"}')  # NOQA
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 0
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_ending(
+       mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts = [fx.replace(
+        interval_label='ending', lead_time_to_start=pd.Timedelta('0h'))
+                 for fx in forecasts]
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, forecasts, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 1
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is False
+    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00:01Z')
+    assert param_list[0].data_end == pd.Timestamp('2020-05-20T14:00:00Z')
+    assert param_list[0].issue_times == (
+        pd.Timestamp('2020-05-20T14:00Z'),
+    )
+
+
+def test_generate_reference_persistence_forecast_gaps_parameters_multiple(
+        mocker, perst_fx_obs, perst_prob_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts[0] = forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}')
+    )
+    forecasts[1] = forecasts[1].replace(
+        extra_parameters=(
+            '{"is_reference_persistence_forecast": true, "observation_id": "' +
+            observations[1].observation_id + '"}'))
+    probfx = perst_prob_fx_obs[0][0].replace(
+        extra_parameters=(
+            '{"is_reference_persistence_forecast": true, "observation_id": "' +
+            observations[1].observation_id + '"}'))
+    fxs = [forecasts[0], forecasts[1], probfx]
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-20T14:33Z'))
+    param_gen = main.generate_reference_persistence_forecast_gaps_parameters(
+        session, fxs, observations, start, end
+    )
+    assert isinstance(param_gen, types.GeneratorType)
+    param_list = list(param_gen)
+    assert len(param_list) == 3
+    assert param_list[0].forecast == forecasts[0]
+    assert param_list[0].observation == observations[0]
+    assert param_list[0].index is True
+    assert param_list[0].issue_times == (pd.Timestamp('2020-05-20T14:00Z'),)
+    assert param_list[1].forecast == forecasts[1]
+    assert param_list[1].observation == observations[1]
+    assert param_list[1].index is False
+    assert param_list[1].issue_times == (pd.Timestamp('2020-05-20T14:00Z'),)
+    assert param_list[2].forecast == probfx
+    assert param_list[2].observation == observations[1]
+    assert param_list[2].index is False
+    assert param_list[2].issue_times == (pd.Timestamp('2020-05-20T14:00Z'),)
+
+
+def test_fill_persistence_forecasts_gaps(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z')),
+        # need forecast with data from 15
+        (pd.Timestamp('2020-05-20T16:00Z'), pd.Timestamp('2020-05-20T17:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    i = []
+
+    def yield_ser(*args, **kwargs):
+        if not len(i):
+            i.append(0)
+            return pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T14:00Z')]))
+        else:
+            return pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T16:00Z')]))
+
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        new=yield_ser)
+    main.fill_persistence_forecasts_gaps('', start, end)
+    assert i == [0]
+    assert session.get_observation_values.call_count == 1
+    assert session.post_forecast_values.call_count == 2
+    # gap from 15 to 16, means post must be called twice
+    assert session.post_forecast_values.call_args_list[0][0][1].index == \
+        pd.DatetimeIndex([pd.Timestamp('2020-05-20T14:00Z')])
+    assert session.post_forecast_values.call_args_list[1][0][1].index == \
+        pd.DatetimeIndex([pd.Timestamp('2020-05-20T16:00Z')])
+
+
+def test_fill_persistence_forecasts_continuous(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z')),
+        # need forecast with data from 14
+        (pd.Timestamp('2020-05-20T15:00Z'), pd.Timestamp('2020-05-20T17:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    i = []
+
+    def get_ser(*args, **kwargs):
+        if len(i) == 0:
+            i.append(0)
+            return pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T14:00Z')]))
+        elif len(i) == 1:
+            i.append(0)
+            return pd.Series([2.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T15:00Z')]))
+        else:
+            return pd.Series([-1.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T16:00Z')]))
+
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        new=get_ser)
+    main.fill_persistence_forecasts_gaps('', start, end)
+    assert i == [0, 0]
+    assert session.get_observation_values.call_count == 1
+    assert session.post_forecast_values.call_count == 1
+    assert_series_equal(
+        session.post_forecast_values.call_args[0][1],
+        pd.Series([0., 2.0, -1.0], dtype=float, index=pd.DatetimeIndex([
+            pd.Timestamp('2020-05-20T14:00Z'),
+            pd.Timestamp('2020-05-20T15:00Z'),
+            pd.Timestamp('2020-05-20T16:00Z')])))
+
+
+def test_fill_persistence_forecasts_no_gaps(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = []
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+    )
+    main.fill_persistence_forecasts_gaps('', start, end)
+    assert run_pers.call_count == 0
+    assert session.get_observation_values.call_count == 0
+    assert session.post_forecast_values.call_count == 0
+
+
+def test_fill_persistence_forecasts_some_errs(
+        mocker, perst_fx_obs):
+    forecasts, observations = perst_fx_obs
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
+    forecasts += [forecasts[0].replace(
+        extra_parameters=(forecasts[0].extra_parameters[:-1] +
+                          ', "index_persistence": true}'))]
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z')),
+        # need forecast with data from 15
+        (pd.Timestamp('2020-05-20T16:00Z'), pd.Timestamp('2020-05-20T17:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+    session.list_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    i = []
+
+    def sometimes_fail(*args, **kwargs):
+        i.append(1)
+        if len(i) == 1:
+            return pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T14:00Z')]))
+        elif len(i) == 2:
+            return pd.Series([1.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T16:00Z')]))
+        elif len(i) == 3:
+            return pd.Series([2.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T14:00Z')]))
+        else:
+            raise ValueError('Failed')
+
+    logger = mocker.spy(main, 'logger')
+    run_pers = mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        side_effect=sometimes_fail, autospec=True)
+    main.fill_persistence_forecasts_gaps('', start, end)
+    assert run_pers.call_count == 6
+    assert logger.error.call_count == 3
+    assert session.get_observation_values.call_count == 3
+    assert session.post_forecast_values.call_count == 3
+    assert_series_equal(
+        session.post_forecast_values.call_args_list[0][0][1],
+        pd.Series([0.], index=pd.DatetimeIndex([
+            pd.Timestamp('2020-05-20T14:00Z')]))
+    )
+    assert_series_equal(
+        session.post_forecast_values.call_args_list[1][0][1],
+        pd.Series([1.], index=pd.DatetimeIndex([
+            pd.Timestamp('2020-05-20T16:00Z')]))
+    )
+    assert_series_equal(
+        session.post_forecast_values.call_args_list[2][0][1],
+        pd.Series([2.], index=pd.DatetimeIndex([
+            pd.Timestamp('2020-05-20T14:00Z')]))
+    )
+
+
+def test_fill_probabilistic_persistence_forecasts_gaps(
+        mocker, perst_prob_fx_obs):
+    forecasts, observations = perst_prob_fx_obs
+    session = mocker.MagicMock()
+    start = pd.Timestamp('2020-05-20T00:00Z')
+    end = pd.Timestamp('2020-05-20T22:00Z')
+    session.get_value_gaps.return_value = [
+        # need forecast with data from 13
+        (pd.Timestamp('2020-05-20T14:00Z'), pd.Timestamp('2020-05-20T15:00Z')),
+        # need forecast with data from 15
+        (pd.Timestamp('2020-05-20T16:00Z'), pd.Timestamp('2020-05-20T17:00Z'))
+    ]
+    session.get_user_info.return_value = {'organization': ''}
+    session.get_observation_time_range.return_value = (
+        pd.Timestamp('2019-01-01T12:00Z'), pd.Timestamp('2020-05-21T00:00Z'))
+    session.list_probabilistic_forecasts.return_value = forecasts
+    session.list_observations.return_value = observations
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.api.APISession',
+        return_value=session)
+
+    i = []
+    cvs = len(forecasts[-1].constant_values)
+
+    def yield_ser(*args, **kwargs):
+        if not len(i):
+            i.append(0)
+            return [pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T14:00Z')]))] * cvs
+        else:
+            return [pd.Series([0.], dtype=float, index=pd.DatetimeIndex([
+                pd.Timestamp('2020-05-20T16:00Z')]))] * cvs
+
+    mocker.patch(
+        'solarforecastarbiter.reference_forecasts.main.run_persistence',
+        new=yield_ser)
+    main.fill_probabilistic_persistence_forecasts_gaps('', start, end)
+    assert i == [0]
+    assert session.get_observation_values.call_count == 1
+    assert session.post_probabilistic_forecast_constant_value_values.call_count == 2 * cvs # NOQA

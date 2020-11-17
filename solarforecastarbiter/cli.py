@@ -285,20 +285,127 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
     loop.run_until_complete(fut)
 
 
-@cli.command()
+@cli.group(help="Make reference forecasts")
+def referencefx():
+    pass  # pragma: no cover
+
+
+@referencefx.group(name='nwp', help='Make NWP based forecasts.')
+def ref_nwp():
+    pass  # pragma: no cover
+
+
+run_time = click.option('--run-time', type=UTCTIMESTAMP,
+                        help='Run time for the forecasts',
+                        show_default='now',
+                        default=pd.Timestamp.utcnow())
+itbuffer = click.option('--issue-time-buffer', type=str,
+                        help=('Max time-delta between the run time and next '
+                              'initialization time'),
+                        show_default=True,
+                        default='10min')
+nwpdir = click.argument('nwp_directory', type=click.Path(
+    exists=True, resolve_path=True, file_okay=False),
+                        required=False)
+
+
+@ref_nwp.command(name='latest')
 @common_options
-@click.option('--run-time', type=UTCTIMESTAMP,
-              help='Run time for the forecasts',
+@run_time
+@itbuffer
+@nwpdir
+def refnwp_latest(verbose, user, password, base_url, run_time,
+                  issue_time_buffer, nwp_directory):
+
+    """
+    Make the reference NWP forecasts that should be issued around run_time
+    """
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    issue_buffer = pd.Timedelta(issue_time_buffer)
+    nwp.set_base_path(nwp_directory)
+    reference_forecasts.make_latest_nwp_forecasts(
+        token, run_time, issue_buffer, base_url)
+
+
+fxstart = click.option('--start', show_default='00:00:00 Yesterday (UTC)',
+                       type=UTCTIMESTAMP,
+                       default=lambda: midnight - pd.Timedelta(days=1),
+                       help='Datetime to start filling forecasts at')
+fxend = click.option('--end', default=lambda: midnight,
+                     type=UTCTIMESTAMP,
+                     show_default='00:00:00 Today (UTC)',
+                     help='Datetime to end filling forecasts at')
+
+
+@ref_nwp.command(name='fill')
+@common_options
+@fxstart
+@fxend
+@nwpdir
+def refnwp_fill(verbose, user, password, base_url, start, end,
+                nwp_directory):
+    """Fill in any missing NWP forecasts from start to end"""
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    nwp.set_base_path(nwp_directory)
+    reference_forecasts.fill_nwp_forecast_gaps(token, start, end, base_url)
+
+
+@referencefx.group(name='persistence', help='Make persistence forecasts')
+def ref_persistence():
+    pass  # pragma: no cover
+
+
+prob_option = click.option('--probabilistic/--not-probabilistic', is_flag=True,
+                           help='Make probabilistic persistence forecasts')
+
+
+@ref_persistence.command(name='latest')
+@common_options
+@click.option('--max-run-time', type=UTCTIMESTAMP,
+              help='Make forecasts up to this time',
               show_default='now',
               default=pd.Timestamp.utcnow())
-@click.option('--issue-time-buffer', type=str,
-              help=('Max time-delta between the run time and next '
-                    'initialization time'),
-              show_default=True,
-              default='10min')
-@click.argument('nwp_directory', type=click.Path(
-    exists=True, resolve_path=True, file_okay=False),
-                required=False)
+@prob_option
+def refpers_latest(verbose, user, password, base_url, max_run_time,
+                   probabilistic):
+    """Make all reference persistence forecasts that need to be made
+    up to max_run_time"""
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    if not probabilistic:
+        reference_forecasts.make_latest_persistence_forecasts(
+            token, max_run_time, base_url)
+    else:
+        reference_forecasts.make_latest_probabilistic_persistence_forecasts(
+            token, max_run_time, base_url)
+
+
+@ref_persistence.command(name='fill')
+@common_options
+@fxstart
+@fxend
+@prob_option
+def refpers_fill(verbose, user, password, base_url, start, end,
+                 probabilistic):
+    """Fill in any gaps in the reference persistence forecasts from
+    start to end"""
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    if not probabilistic:
+        reference_forecasts.fill_persistence_forecasts_gaps(
+            token, start, end, base_url)
+    else:
+        reference_forecasts.fill_probabilistic_persistence_forecasts_gaps(
+            token, start, end, base_url)
+
+
+@cli.command()
+@common_options
+@run_time
+@itbuffer
+@nwpdir
 def referencenwp(verbose, user, password, base_url, run_time,
                  issue_time_buffer, nwp_directory):
     """

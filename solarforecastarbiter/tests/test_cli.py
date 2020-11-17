@@ -403,3 +403,81 @@ def test_report_format(cli_token, mocker, format_, res_code, suffix, called):
         assert res.exit_code == res_code
         if called:
             mocks[called].assert_called()
+
+
+def test_refnwp_latest(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.make_latest_nwp_forecasts')  # NOQA
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = runner.invoke(cli.refnwp_latest,
+                            ['-u user', '-p pass', '--run-time=20190501T1200Z',
+                             '--issue-time-buffer=2h',
+                             tmpdir])
+        assert cli.nwp.BASE_PATH == str(Path(tmpdir).resolve())
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
+                              pd.Timedelta('2h'), mocker.ANY)
+
+
+def test_refnwp_fill(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.fill_nwp_forecast_gaps')  # NOQA
+    runner = CliRunner()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = runner.invoke(cli.refnwp_fill,
+                            ['-u user', '-p pass', '--start=2020-01-02T12:00Z',
+                             '--end=2020-04-01T23:23Z',
+                             tmpdir])
+        assert cli.nwp.BASE_PATH == str(Path(tmpdir).resolve())
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('2020-01-02T12:00Z'),
+                              pd.Timestamp('2020-04-01T23:23Z'), mocker.ANY)
+
+
+def test_refpers_latest(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.make_latest_persistence_forecasts')  # NOQA
+    runner = CliRunner()
+    res = runner.invoke(cli.refpers_latest,
+                        ['-u user', '-p pass',
+                         '--max-run-time=20190501T1200Z'])
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
+                              mocker.ANY)
+
+
+def test_refpers_latest_prob(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.make_latest_probabilistic_persistence_forecasts')  # NOQA
+    runner = CliRunner()
+    res = runner.invoke(cli.refpers_latest,
+                        ['-u user', '-p pass', '--probabilistic',
+                         '--max-run-time=20190501T1200Z'])
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('20190501T1200Z'),
+                              mocker.ANY)
+
+
+def test_refpers_fill(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.fill_persistence_forecasts_gaps')  # NOQA
+    runner = CliRunner()
+    res = runner.invoke(cli.refpers_fill,
+                        ['-u user', '-p pass', '--start=2020-01-02T12:00Z',
+                         '--end=2020-04-01T23:23Z'])
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('2020-01-02T12:00Z'),
+                              pd.Timestamp('2020-04-01T23:23Z'), mocker.ANY)
+
+
+def test_refpers_fill_prob(cli_token, mocker):
+    mocked = mocker.patch(
+        'solarforecastarbiter.cli.reference_forecasts.fill_probabilistic_persistence_forecasts_gaps')  # NOQA
+    runner = CliRunner()
+    res = runner.invoke(cli.refpers_fill,
+                        ['-u user', '-p pass', '--start=2020-01-02T12:00Z',
+                         '--end=2020-04-01T23:23Z', '--probabilistic'])
+    assert res.exit_code == 0
+    mocked.assert_called_with('TOKEN', pd.Timestamp('2020-01-02T12:00Z'),
+                              pd.Timestamp('2020-04-01T23:23Z'), mocker.ANY)

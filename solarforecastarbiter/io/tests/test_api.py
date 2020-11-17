@@ -86,7 +86,7 @@ def mock_get_site(requests_mock, site_text, many_sites_text):
                 if site['site_id'] == site_id:
                     return json.dumps(site).encode('utf-8')
 
-    matcher = re.compile(f'https://api.solarforecastarbiter.org/sites/.*')
+    matcher = re.compile('https://api.solarforecastarbiter.org/sites/.*')
     requests_mock.register_uri('GET', matcher, content=get_site_from_text)
 
 
@@ -111,7 +111,7 @@ def mock_get_observation(requests_mock, many_observations_text,
 
 @pytest.fixture()
 def mock_get_agg(requests_mock, aggregate_text, mock_get_observation):
-    matcher = re.compile(f'https://api.solarforecastarbiter.org/aggregates/.*')
+    matcher = re.compile('https://api.solarforecastarbiter.org/aggregates/.*')
     requests_mock.register_uri('GET', matcher, content=aggregate_text)
 
 
@@ -1805,61 +1805,86 @@ def test__fixup_gaps(trange, gaps, exp):
     ('2020-01-10T12:00:00', '2020-01-10T14:00:00',
      [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z'))])
 ])
-def test__get_obs_gaps(requests_mock, first, second, exp):
+def test__process_gaps(requests_mock, first, second, exp):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=(
             '{"observation_id": "obsid", "gaps": [{"timestamp": "' + first +
             '", "next_timestamp": "' + second + '"}]}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == exp
 
 
 def test__get_obs_gaps_null(requests_mock):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=(
             '{"observation_id": "obsid", "gaps": [{"timestamp": null, '
             '"next_timestamp": "2020-01-01T00:00+00:00"}]}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == []
 
 
 def test__get_obs_gaps_no_gaps(requests_mock):
     session = api.APISession('')
+    url = '/observations/obsid/values/gaps'
     requests_mock.register_uri(
-        'GET', f'{session.base_url}/observations/obsid/values/gaps',
+        'GET', session.base_url + url,
         content=('{"observation_id": "obsid", "gaps": []}').encode())
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    out = session._get_obs_gaps('obsid', start, end)
+    out = session._process_gaps(url, start, end)
     assert out == []
 
 
-@pytest.mark.parametrize('trange,exp', [
+gaps_parameters = pytest.mark.parametrize('trange,exp,gaps', [
     ((pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-02-01T00:00Z')),
      [(pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-01-10T14:00Z')),
-      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-10T22:00Z'))]),
-    ((pd.Timestamp('2020-01-11T00:00Z'), pd.Timestamp('2020-02-01T00:00Z')),
-     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))]),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-10T22:00Z'))],
+     ('[{"timestamp": "2020-01-10T12:00Z", '
+      '"next_timestamp": "2020-01-10T14:00Z"},'
+      '{"timestamp": "2020-01-10T19:00Z", '
+      '"next_timestamp": "2020-01-10T22:00Z"}]')
+     ),
+    ((pd.Timestamp('2020-01-10T12:00Z'), pd.Timestamp('2020-02-01T00:00Z')),
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T14:00Z')),
+      (pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-10T22:00Z'))
+      ],
+     ('[{"timestamp": "2020-01-10T12:00Z", '
+      '"next_timestamp": "2020-01-10T14:00Z"},'
+      '{"timestamp": "2020-01-10T19:00Z", '
+      '"next_timestamp": "2020-01-10T22:00Z"}]')
+     ),
+    ((pd.Timestamp(None), pd.Timestamp(None)),
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-11T00:00Z'))],
+     '[]'
+     ),
+    ((pd.Timestamp('2020-01-01T00:00Z'), pd.Timestamp('2020-01-10T19:00Z')),
+     [(pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-11T00:00Z'))],
+     '[]'
+     ),
+    ((pd.Timestamp('2020-01-10T19:00Z'), pd.Timestamp('2020-01-20T19:00Z')),
+     [(pd.Timestamp('2020-01-10T00:00Z'), pd.Timestamp('2020-01-10T19:00Z'))],
+     '[]'
+     ),
 ])
-def test_get_observation_value_gaps(requests_mock, mocker, trange, exp):
+
+
+@gaps_parameters
+def test_get_observation_value_gaps(requests_mock, mocker, trange, exp, gaps):
     session = api.APISession('')
     requests_mock.register_uri(
         'GET', f'{session.base_url}/observations/obsid/values/gaps',
         content=(
-            '{"observation_id": "obsid", "gaps": ['
-            '{"timestamp": "2020-01-10T12:00Z", '
-            '"next_timestamp": "2020-01-10T14:00Z"},'
-            '{"timestamp": "2020-01-10T19:00Z", '
-            '"next_timestamp": "2020-01-10T22:00Z"}'
-            ']}').encode())
+            '{"observation_id": "obsid", "gaps": ' + gaps + '}').encode())
     mocker.patch.object(
         session,
         'get_observation_time_range',
@@ -1867,4 +1892,95 @@ def test_get_observation_value_gaps(requests_mock, mocker, trange, exp):
     )
     start = pd.Timestamp('2020-01-10T00:00Z')
     end = pd.Timestamp('2020-01-11T00:00Z')
-    assert list(session.get_observation_value_gaps('obsid', start, end)) == exp
+    out = list(session.get_observation_value_gaps('obsid', start, end))
+    assert out == exp
+
+
+@gaps_parameters
+def test_get_forecast_value_gaps(requests_mock, mocker, trange, exp, gaps):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/forecasts/single/fxid/values/gaps',
+        content=(
+            '{"forecast_id": "obsid", "gaps": ' + gaps + '}').encode())
+    mocker.patch.object(
+        session,
+        'get_forecast_time_range',
+        return_value=trange
+    )
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    assert list(session.get_forecast_value_gaps('fxid', start, end)) == exp
+
+
+@gaps_parameters
+def test_get_probabilistic_forecast_constant_value_value_gaps(
+        requests_mock, mocker, trange, exp, gaps):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/forecasts/cdf/single/fxid/values/gaps',
+        content=(
+            '{"forecast_id": "obsid", "gaps": ' + gaps + '}').encode())
+    mocker.patch.object(
+        session,
+        'get_probabilistic_forecast_constant_value_time_range',
+        return_value=trange
+    )
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    assert list(session.get_probabilistic_forecast_constant_value_value_gaps(
+        'fxid', start, end)) == exp
+
+
+@gaps_parameters
+def test_get_probabilistic_forecast_value_gaps(
+        requests_mock, mocker, trange, exp, gaps, prob_forecasts):
+    session = api.APISession('')
+    requests_mock.register_uri(
+        'GET', f'{session.base_url}/forecasts/cdf/fxid/values/gaps',
+        content=(
+            '{"forecast_id": "obsid", "gaps": ' + gaps + '}').encode())
+    mocker.patch.object(
+        session,
+        'get_probabilistic_forecast_constant_value_time_range',
+        return_value=trange
+    )
+    mocker.patch.object(
+        session,
+        'get_probabilistic_forecast',
+        return_value=prob_forecasts
+    )
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    out = list(session.get_probabilistic_forecast_value_gaps('fxid', start,
+                                                             end))
+    assert out == exp
+
+
+@pytest.mark.parametrize('objt,fnc', [
+    ('observation', 'get_observation_value_gaps'),
+    ('forecast', 'get_forecast_value_gaps'),
+    ('prob_forecast', 'get_probabilistic_forecast_value_gaps'),
+    ('prob_forecast_cv', 'get_probabilistic_forecast_constant_value_value_gaps'),  # NOQA
+    pytest.param('aggregate', 'get_aggregate',
+                 marks=pytest.mark.xfail(strict=True, raises=TypeError))
+])
+def test_get_value_gaps(objt, fnc, prob_forecasts, single_forecast,
+                        single_observation, aggregate, mocker):
+    start = pd.Timestamp('2020-01-10T00:00Z')
+    end = pd.Timestamp('2020-01-11T00:00Z')
+    if objt == 'observation':
+        obj = single_observation
+    elif objt == 'forecast':
+        obj = single_forecast
+    elif objt == 'aggregate':
+        obj = aggregate
+    elif objt == 'prob_forecast':
+        obj = prob_forecasts
+    elif objt == 'prob_forecast_cv':
+        obj = prob_forecasts.constant_values[0]
+
+    session = api.APISession('')
+    fncpatch = mocker.patch.object(session, fnc)
+    session.get_value_gaps(obj, start, end)
+    fncpatch.assert_called_once()
