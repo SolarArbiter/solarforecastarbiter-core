@@ -6,13 +6,13 @@
 -------------------------
 
 API Changes
------------
+~~~~~~~~~~~
 * Added :py:func:`solarforecastarbiter.io.api.APISession.get_value_gaps`
   and similar methods to get any gaps in observation, forecast, and
   probabilistic forecast data. (:pull:`617`)
 * Added :py:func:`solarforecastarbiter.reference_forecasts.main.fill_nwp_forecast_gaps`,
-  :py:func:`solarforecastarbiter.reference_forecasts.main.fill_persistence_forecast_gaps`,
-  and :py:func:`solarforecastarbiter.reference_forecasts.main.fill_probabilistic_persistence_forecast_gaps`
+  :py:func:`solarforecastarbiter.reference_forecasts.main.fill_persistence_forecasts_gaps`,
+  and :py:func:`solarforecastarbiter.reference_forecasts.main.fill_probabilistic_persistence_forecasts_gaps`
   to support filling of gaps in NWP and persistence forecasts
   (:issue:`459`, :pull:`617`)
 
@@ -21,7 +21,7 @@ Enhancements
 ~~~~~~~~~~~~
 * Add reference aggregates of mean SURFRAD GHI and DNI, and
   sum of PV plants in Portland, OR (:issue:`473`, :pull:`615`)
-* Added a CLI option of `--gaps-only` when updating reference
+* Added a CLI option of ``--gaps-only`` when updating reference
   observation data to only update periods where there are data
   gaps (:issue:`459`, :pull:`616`)
 * Added CLI commands to update or fill in missing reference
