@@ -26,10 +26,7 @@
 \date{\VAR{report_date_str}}
 \maketitle
 This report of solar forecast accuracy was automatically generated using the
-\href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}. Please see
-our GitHub repository for
-\href{https://github.com/solararbiter/solarforecastarbiter-core/issues?q=is\%3Aissue+is\%3Aopen+label\%3Areports}{known issues}
-with the reports or to create a new issue.
+\href{https://solarforecastarbiter.org}{Solar Forecast Arbiter}.
 
 \tableofcontents
 \cleardoublepage
@@ -98,9 +95,10 @@ data are available on the web version of this report available
 
 \subsection{Summary Statistics}
 
-A table of summary statistics for the resampled data over the entire study
-period is shown below. Downloads of summary statistics for other categories
-are available on the \href{\VAR{report_url}}{web version of this report}.
+A table of summary statistics for the resampled observations and deterministic
+forecasts over the entire study period is shown below. Downloads of summary
+statistics for other categories are available on the
+\href{\VAR{report_url}}{web version of this report}.
 
 \VAR{macros.summary_statistics_table(report.raw_report.metrics | selectattr('is_summary'), 'total')}
 

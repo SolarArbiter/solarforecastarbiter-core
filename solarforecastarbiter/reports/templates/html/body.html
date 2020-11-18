@@ -39,9 +39,6 @@
 <p>
   This report of solar forecast accuracy was automatically generated using the
   <a href="https://solarforecastarbiter.org">Solar Forecast Arbiter</a>.
-  Please see our GitHub repository for
-  <a href="//github.com/SolarArbiter/solarforecastarbiter-core/issues?q=is%3Aissue+is%3Aopen+label%3Areports">known issues</a>
-  with the reports or to create a new issue.
 </p>
 {% endblock %}
 {% block download %}{% endblock %}
@@ -221,8 +218,9 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% block summarystat %}
 <h3 id="summarystats">Summary Statistics</h2>
 <p>
-  A table of summary statistics for the resampled data over the entire study
-  period is shown below. Statistics for other categories may be downloaded in
+  A table of summary statistics for the resampled observations and deterministic
+  forecasts over the entire study period is shown below. Statistics for other
+  categories may be downloaded in
   <a href="javascript:download_stats_as_csv('{{ report_name }}')">CSV format</a>
   or <a href="javascript:download_stats_as_json('{{ report_name }}')">JSON format</a>.
 </p>
