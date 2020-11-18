@@ -1,0 +1,27 @@
+.. _whatsnew_101:
+
+.. py:currentmodule:: solarforecastarbiter
+
+1.0.1 (November 18, 2020)
+-------------------------
+
+
+Bug fixes
+~~~~~~~~~
+* Removed report intro sentence about reporting issues on GitHub.
+  (:issue:`621`, :pull:`622`)
+* Clarified that summary statistics are only available for
+  observations and deterministic forecasts. (:pull:`622`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
