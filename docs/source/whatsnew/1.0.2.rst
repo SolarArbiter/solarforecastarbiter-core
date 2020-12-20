@@ -1,0 +1,26 @@
+.. _whatsnew_102:
+
+.. py:currentmodule:: solarforecastarbiter
+
+1.0.2 (January ??, 2020)
+-------------------------
+
+
+Bug fixes
+~~~~~~~~~
+* SRML and PVDAQ contained PV sites with positive temperature coefficients.
+  These temperature coefficients were multiplied by -1.
+  (:issue:`625`, :pull:`634`)
+
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
