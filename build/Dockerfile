@@ -1,4 +1,10 @@
-FROM  docker.io/library/python:3.7-buster
+# debian buster python3-gpg requires py 3.7 (as of Dec 2020)
+# https://packages.debian.org/buster/python3-gpg
+ARG PY_MAJOR_MINOR_VERSION=3.7
+
+FROM  docker.io/library/python:${PY_MAJOR_MINOR_VERSION}-buster
+
+ARG PY_MAJOR_MINOR_VERSION
 
 WORKDIR /opt/app-root/
 ENV PATH=/opt/app-root/bin:/usr/local/texlive/bin/x86_64-linux:$PATH \
@@ -10,6 +16,9 @@ LABEL summary="$SUMMARY" \
     maintainer="atlorenzo@email.arizona.edu"
 
 USER root
+
+RUN pwd \
+    && ls
 
 COPY build/grib2 /tmp/grib2
 
@@ -39,8 +48,10 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/* \
     && /usr/local/bin/python -m venv /opt/app-root/ \
     && /opt/app-root/bin/pip install -U pip \
-    && ln -s "/usr/lib/python3/dist-packages/gpg" "/opt/app-root/lib/python3.7/site-packages/" \
-    && ln -s "/usr/lib/python3/dist-packages/gpg-*.egg-info" "/opt/app-root/lib/python3.7/site-packages/" \
+    # apt-get installed python3-gpg to system python, but we want it in /opt/app-root python
+    && ln -s "/usr/lib/python3/dist-packages/gpg" "/opt/app-root/lib/python${PY_MAJOR_MINOR_VERSION}/site-packages/" \
+    && ln -s "/usr/lib/python3/dist-packages/gpg-*.egg-info" "/opt/app-root/lib/python${PY_MAJOR_MINOR_VERSION}/site-packages/" \
+    # ensure python gpg is correctly "installed"
     && /opt/app-root/bin/python -c "import gpg" \
     && groupadd wheel \
     && useradd -M -N -u 1001 -s /bin/bash -g 0 -G wheel user \
@@ -64,10 +75,13 @@ RUN set -ex \
 
 COPY . /tmp/build
 RUN set -ex \
+    # install more tex packages
     && tlmgr --usermode install $(cat /tmp/build/packages.tex) --repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
+    # install python packages, finishing with solarforecastarbiter-core[all]
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir '/tmp/build/.[all]' \
+    # clean up build directory
     && rm -rf /tmp/build \
     && chown -R 1001:0 /opt/app-root
 
