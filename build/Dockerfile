@@ -17,9 +17,6 @@ LABEL summary="$SUMMARY" \
 
 USER root
 
-RUN pwd \
-    && ls
-
 COPY build/grib2 /tmp/grib2
 
 RUN set -ex \
