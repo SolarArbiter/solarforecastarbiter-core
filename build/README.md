@@ -9,7 +9,7 @@ Docker images are available at [quay.io](https://quay.io/repository/solararbiter
 Run the image
 
 ```
-> docker run --rm quay.io/solararbiter/solarforecastarbiter-core:latest                                                                                        127 ↵
+> docker run --rm quay.io/solararbiter/solarforecastarbiter-core:latest
 Usage: solararbiter [OPTIONS] COMMAND [ARGS]...
 
   The SolarForecastArbiter core command line tool
