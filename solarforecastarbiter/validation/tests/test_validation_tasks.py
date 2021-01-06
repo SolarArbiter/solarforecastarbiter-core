@@ -1384,6 +1384,8 @@ def test__group_continuous_week_post(mocker, make_observation):
                 tz='UTC',
                 freq='1h')),
     ]
+    for df in split_dfs:
+        df.index.freq = None
     ov = pd.concat(split_dfs, axis=0)
     obs = make_observation('ghi')
     session = mocker.MagicMock()

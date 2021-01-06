@@ -1649,6 +1649,7 @@ def test_apisession_chunk_value_requests_obs_df(requests_mock):
         index=pd.date_range(start, end, freq='1H', name='timestamp'),
         data={'value': 1.0, 'quality_flag': 0},
     )
+    expected.index.freq = None
     matcher = re.compile(
         f'{session.base_url}/observations/.*/values')
     requests_mock.register_uri('GET', matcher, content=callback)
@@ -1671,6 +1672,7 @@ def test_apisession_chunk_value_requests_fx_series(requests_mock):
         index=pd.date_range(start, end, freq='1H', name='timestamp'),
         name='value',
     )
+    expected.index.freq = None
     matcher = re.compile(
         f'{session.base_url}/forecasts/.*/values')
     requests_mock.register_uri('GET', matcher, content=callback)

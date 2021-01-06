@@ -238,16 +238,16 @@ def test_check_day_night():
 @pytest.mark.parametrize('closed,solar_zenith,expected', (
     ('left', [89]*11 + [80]*13,
      pd.Series([False, True], index=pd.DatetimeIndex(
-            ['20200917 0000', '20200917 0100']))),
+            ['20200917 0000', '20200917 0100'], freq='1h'))),
     ('right', [89]*11 + [80]*13,
      pd.Series([False, True], index=pd.DatetimeIndex(
-        ['20200917 0100', '20200917 0200']))),
+        ['20200917 0100', '20200917 0200'], freq='1h'))),
     ('left', [89]*10 + [80]*14,
      pd.Series([True, True], index=pd.DatetimeIndex(
-            ['20200917 0000', '20200917 0100']))),
+            ['20200917 0000', '20200917 0100'], freq='1h'))),
     ('right', [89]*10 + [80]*14,
      pd.Series([True, True], index=pd.DatetimeIndex(
-        ['20200917 0100', '20200917 0200'])))
+        ['20200917 0100', '20200917 0200'], freq='1h')))
 ))
 def test_check_day_night_interval(closed, solar_zenith, expected):
     interval_length = pd.Timedelta('1h')

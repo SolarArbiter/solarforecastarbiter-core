@@ -166,7 +166,7 @@ def test_compute_aggregate_no_overlap(ids):
          'quality_flag': [2, 10, 9, 338 | 880, 10]},
         index=pd.DatetimeIndex([
             '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
-            '20191002T0230Z', '20191002T0300Z']))
+            '20191002T0230Z', '20191002T0300Z'], freq='30min'))
     pdt.assert_frame_equal(agg, expected)
 
 
@@ -189,7 +189,7 @@ def test_compute_aggregate_missing_before_effective(ids):
          'quality_flag': [2, 10, 338, 880, 10]},
         index=pd.DatetimeIndex([
             '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
-            '20191002T0230Z', '20191002T0300Z']))
+            '20191002T0230Z', '20191002T0300Z'], freq='30min'))
     pdt.assert_frame_equal(agg, expected)
 
 
