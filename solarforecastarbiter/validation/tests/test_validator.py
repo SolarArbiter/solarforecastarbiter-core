@@ -238,16 +238,16 @@ def test_check_day_night():
 @pytest.mark.parametrize('closed,solar_zenith,expected', (
     ('left', [89]*11 + [80]*13,
      pd.Series([False, True], index=pd.DatetimeIndex(
-            ['20200917 0000', '20200917 0100']))),
+            ['20200917 0000', '20200917 0100'], freq='1h'))),
     ('right', [89]*11 + [80]*13,
      pd.Series([False, True], index=pd.DatetimeIndex(
-        ['20200917 0100', '20200917 0200']))),
+        ['20200917 0100', '20200917 0200'], freq='1h'))),
     ('left', [89]*10 + [80]*14,
      pd.Series([True, True], index=pd.DatetimeIndex(
-            ['20200917 0000', '20200917 0100']))),
+            ['20200917 0000', '20200917 0100'], freq='1h'))),
     ('right', [89]*10 + [80]*14,
      pd.Series([True, True], index=pd.DatetimeIndex(
-        ['20200917 0100', '20200917 0200'])))
+        ['20200917 0100', '20200917 0200'], freq='1h')))
 ))
 def test_check_day_night_interval(closed, solar_zenith, expected):
     interval_length = pd.Timedelta('1h')
@@ -290,7 +290,7 @@ def test_check_day_night_interval_irregular():
         solar_zenith_interval_length=solar_zenith_interval_length
     )
     expected = pd.Series([False, False, True], index=pd.DatetimeIndex(
-        ['20200917 0000', '20200917 0100', '20200917 0200']))
+        ['20200917 0000', '20200917 0100', '20200917 0200'], freq='1h'))
     assert_series_equal(result, expected)
 
 
@@ -405,10 +405,10 @@ def ghi_clearsky():
 def ghi_clipped(ghi_clearsky):
     ghi_clipped = ghi_clearsky.copy()
     ghi_clipped = np.minimum(ghi_clearsky, 800)
-    ghi_clipped.iloc[12:17] = np.minimum(ghi_clearsky, 300)
-    ghi_clipped.iloc[18:20] = np.minimum(ghi_clearsky, 300)
+    ghi_clipped.iloc[12:17] = np.minimum(ghi_clearsky.iloc[12:17], 300)
+    ghi_clipped.iloc[18:20] = np.minimum(ghi_clearsky.iloc[18:20], 300)
     ghi_clipped.iloc[26:28] *= 0.5
-    ghi_clipped.iloc[36:] = np.minimum(ghi_clearsky, 400)
+    ghi_clipped.iloc[36:] = np.minimum(ghi_clearsky.iloc[36:], 400)
     return ghi_clipped
 
 

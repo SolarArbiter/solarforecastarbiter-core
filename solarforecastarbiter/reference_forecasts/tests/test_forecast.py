@@ -47,7 +47,7 @@ def rfs_series():
 )
 def test_reindex_fill_slice(rfs_series, start, end, start_slice, end_slice,
                             fill_method, exp_val, exp_idx):
-    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx))
+    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx, freq='30min'))
     out = forecast.reindex_fill_slice(
         rfs_series, freq='30min', start=start, end=end,
         start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
@@ -64,7 +64,7 @@ def test_reindex_fill_slice_some_nan():
     exp_idx = [
         '20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
         '20190101 03', '20190101 0330', '20190101 04']
-    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx))
+    exp = pd.Series(exp_val, index=pd.DatetimeIndex(exp_idx, freq='30min'))
     out = forecast.reindex_fill_slice(
         rfs_series, freq='30min', start=start, end=end,
         start_slice=start_slice, end_slice=end_slice, fill_method=fill_method)
@@ -77,7 +77,7 @@ def test_reindex_fill_slice_all_nan():
     out = forecast.reindex_fill_slice(arg, freq='30min')
     exp = pd.Series([None]*5, index=pd.DatetimeIndex(
         ['20190101 01', '20190101 0130', '20190101 02', '20190101 0230',
-         '20190101 03']))
+         '20190101 03'], freq='30min'))
     assert_series_equal(out, exp)
 
 

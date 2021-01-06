@@ -15,6 +15,7 @@ DF_INDEX = pd.date_range(start=pd.Timestamp('2019-01-24T00:00'),
                          freq='1min',
                          periods=5,
                          tz='UTC', name='timestamp')
+DF_INDEX.freq = None
 TEST_DATA = pd.DataFrame(TEST_DICT, index=DF_INDEX)
 EMPTY_SERIES = pd.Series(dtype=float)
 EMPTY_TIMESERIES = pd.Series([], name='value', index=pd.DatetimeIndex(
@@ -435,6 +436,7 @@ def test_load_report_values(raw_report, report_objects):
                     name='value', index=pd.date_range(
                         start='20200101', freq='5min', periods=10,
                         tz='UTC', name='timestamp'))
+    ser.index.freq = None
     val = utils.serialize_timeseries(ser)
     vals = [{'id': id_, 'processed_values': val} for id_ in
             (fx0.forecast_id, fx1.forecast_id, obs.observation_id,
