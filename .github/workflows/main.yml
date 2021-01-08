@@ -78,10 +78,12 @@ jobs:
           python -m pip install --upgrade pip setuptools
 
       - name: Install solarforecastarbiter with extras
-        run: pip install '.[all]' -c .github/{{ matrix.dep-versions }}
+        run: |
+          python -m pip install '.[all]' -c .github/{{ matrix.dep-versions }}
 
       - name: Pytest
-        run: pytest solarforecastarbiter --cov --cov-report=xml
+        run: |
+          python -m pytest solarforecastarbiter --cov --cov-report=xml
 
       - name: coverage
         uses: codecov/codecov-action@v1
@@ -94,6 +96,6 @@ jobs:
 
       - name: make docs
         run: |
-          pip install -r docs/requirements.txt
+          python -m pip install -r docs/requirements.txt
           make -C docs html
         if: ${{ always() }}
