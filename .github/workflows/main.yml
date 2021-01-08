@@ -79,7 +79,7 @@ jobs:
 
       - name: Install solarforecastarbiter with extras
         run: |
-          python -m pip install '.[all]' -c .github/{{ matrix.dep-versions }}
+          python -m pip install '.[all]' -c .github/${{ matrix.dep-versions }}
 
       - name: Pytest
         run: |
