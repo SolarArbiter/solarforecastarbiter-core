@@ -81,6 +81,9 @@ jobs:
         run: |
           python -m pip install '.[all]' -c .github/${{ matrix.dep-versions }}
 
+      - name: List installed packages
+        run: python -m pip list
+
       - name: Pytest
         run: |
           python -m pytest solarforecastarbiter --cov --cov-report=xml
@@ -92,10 +95,4 @@ jobs:
           flags: adder,subtractor,pypi
           fail_ci_if_error: true
           name: pypi-${{ matrix.python-version }}-${{ matrix.dep-versions }}
-        if: ${{ always() }}
-
-      - name: make docs
-        run: |
-          python -m pip install -r docs/requirements.txt
-          make -C docs html
         if: ${{ always() }}
