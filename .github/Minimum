@@ -1,5 +1,5 @@
 bokeh==1.4.0
-numpy==1.15.0
+numpy==1.18.2
 pandas==1.0.3
 plotly==4.5.0
 pvlib==0.8.0
