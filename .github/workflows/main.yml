@@ -60,8 +60,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8]
         dep-versions: [Minimum, Unconstrained]
+        include:
+          # the minimum versions are not currently compatible with python 3.9
+          - python-version: 3.9
+            dep-versions: Unconstrained
 
     steps:
       - name: Checkout source
