@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 from pkg_resources import resource_filename, Requirement
+import plotly
 import pytest
 
 
@@ -2711,7 +2712,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), plotly.__version__,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -2907,7 +2908,7 @@ def raw_report_xy(
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), plotly.__version__,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -3312,7 +3313,7 @@ def raw_report_dict_with_event(fail_pdf):
                 'name': 'all',
                 'spec': "{}",
                 'pdf': fail_pdf}],
-            'plotly_version': '4.5.3',
+            'plotly_version': plotly.__version__,
             'script': None},
         'processed_forecasts_observations': [{
             'cost_per_unit_error': 0.0,
@@ -3458,7 +3459,7 @@ def raw_report_dict_with_prob(fail_pdf):
         'plots': {
             'bokeh_version': None,
             'figures': [],
-            'plotly_version': '4.5.3',
+            'plotly_version': plotly.__version__,
             'script': None
             },
         'processed_forecasts_observations': (
