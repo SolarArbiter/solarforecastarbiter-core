@@ -50,7 +50,7 @@ setup(
         'requests',
         'xarray',
         'tables',
-        'pvlib>=0.7.0',
+        'pvlib>=0.8.0',
         'scipy',
         'bokeh>=1.4.0, <2',
         'statsmodels',
