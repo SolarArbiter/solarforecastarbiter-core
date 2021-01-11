@@ -52,7 +52,7 @@ jobs:
   # Run all tests on Linux using standard PyPI packages, including min and pre-releases
   # inspired by MetPy and XArray
   # https://github.com/Unidata/MetPy/blob/master/.github/workflows/tests-pypi.yml
-  # https://github.com/pydata/xarray/pull/4730/files
+  # https://github.com/pydata/xarray/blob/master/.github/workflows/ci.yaml
   #
   PyPITests:
     name: ${{ matrix.python-version }} ${{ matrix.dep-versions }}

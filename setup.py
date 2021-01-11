@@ -45,7 +45,7 @@ setup(
     python_requires='>=3.7, <4',
     install_requires=[
         'netCDF4',
-        'numpy',
+        'numpy>=1.15',
         'pandas>=1.0.3',
         'requests',
         'xarray',
