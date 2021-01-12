@@ -250,7 +250,7 @@ def test_report(cli_token, mocker, report_objects):
     obs = pd.DataFrame({'value': data, 'quality_flag': 2})
     ref_fx = \
         report_objects[0].report_parameters.object_pairs[1].reference_forecast
-    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
                                ref_fx: data,
@@ -281,7 +281,7 @@ def test_report_roundtrip(cli_token, mocker, various_report_objects_data,
         return_value=fail_pdf)
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report_objects[0].replace(status='complete'))
-    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
                  return_value=report_data)
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -307,7 +307,7 @@ def test_report_pdf(cli_token, mocker, report_objects, remove_orca):
     obs = pd.DataFrame({'value': data, 'quality_flag': 2})
     ref_fx = \
         report_objects[0].report_parameters.object_pairs[1].reference_forecast
-    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
                  return_value={report_objects[2]: data,
                                report_objects[3]: data,
                                ref_fx: data,
@@ -338,7 +338,7 @@ def test_report_probabilistic(
 
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report.replace(status=''))
-    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
                  return_value=cdf_and_cv_report_data)
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -362,7 +362,7 @@ def test_report_probabilistic_xy(
 
     mocker.patch('solarforecastarbiter.cli.APISession.process_report_dict',
                  return_value=report.replace(status=''))
-    mocker.patch('solarforecastarbiter.cli.reports.get_data_for_report',
+    mocker.patch('solarforecastarbiter.reports.main.get_data_for_report',
                  return_value=cdf_and_cv_report_data_xy)
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -386,9 +386,9 @@ def test_report_probabilistic_xy(
 ])
 def test_report_format(cli_token, mocker, format_, res_code, suffix, called):
     mocker.patch('solarforecastarbiter.cli.APISession')
-    html = mocker.patch('solarforecastarbiter.cli.template.render_html',
+    html = mocker.patch('solarforecastarbiter.reports.template.render_html',
                         return_value='html')
-    pdf = mocker.patch('solarforecastarbiter.cli.template.render_pdf',
+    pdf = mocker.patch('solarforecastarbiter.reports.template.render_pdf',
                        return_value=b'%PDF')
     mocks = {'html': html, 'pdf': pdf}
     runner = CliRunner()
