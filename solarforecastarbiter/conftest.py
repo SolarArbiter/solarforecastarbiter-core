@@ -13,7 +13,7 @@ import shutil
 import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
-from pkg_resources import resource_filename, Requirement
+from pkg_resources import parse_version, resource_filename, Requirement
 import pytest
 
 
@@ -27,7 +27,8 @@ OK = int(0b10)  # OK version 0 (2)
 # plotly is an optional dependency, but we use the version in the report
 # text and thus the report fixtures defined here
 try:
-    import plotly.__version__ as PLOTLY_VERSION
+    import plotly
+    PLOTLY_VERSION = str(parse_version(plotly.__version__))
 except ImportError:
     PLOTLY_VERSION = 'None'
 
