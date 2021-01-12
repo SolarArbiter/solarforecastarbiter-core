@@ -2,7 +2,7 @@ import pandas as pd
 from pandas.testing import assert_index_equal
 import pytest
 
-pytest.importorskip("matplotlib", reason="requires [plotting] packages")
+pytest.importorskip("matplotlib", reason="requires [plotting] packages")  # noqa: E401,E501
 
 from matplotlib import cm
 from matplotlib.colors import Normalize

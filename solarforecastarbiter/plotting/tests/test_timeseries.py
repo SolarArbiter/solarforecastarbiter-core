@@ -3,9 +3,8 @@ import json
 
 import pytest
 
-pytest.importorskip("bokeh", reason="requires [plotting] packages")
+bokeh = pytest.importorskip("bokeh", reason="requires [plotting] packages")  # noqa: E401,E501
 
-import bokeh
 import numpy as np
 import pandas as pd
 

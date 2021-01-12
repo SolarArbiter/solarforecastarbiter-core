@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-pytest.importorskip("plotly", reason="requires [plotting] packages")
+pytest.importorskip("plotly", reason="requires [plotting] packages")  # noqa: E401,E501
 
 from plotly import graph_objects
 import numpy as np
