@@ -1,7 +1,10 @@
 import json
-from jinja2 import Environment, PackageLoader, select_autoescape
+
 import pytest
 
+pytest.importorskip("jinja2", reason="requires [all] packages")
+
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 from solarforecastarbiter.reports import template
 

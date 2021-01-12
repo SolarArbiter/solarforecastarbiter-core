@@ -55,17 +55,20 @@ jobs:
   # https://github.com/pydata/xarray/blob/master/.github/workflows/ci.yaml
   #
   PyPITests:
-    name: ${{ matrix.python-version }} ${{ matrix.dep-versions }}
+    name: ${{ matrix.python-version }} ${{ matrix.dep-versions }} ${{ matrix.extras }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8]
         dep-versions: [Minimum, Unconstrained]
+        extras: all
         include:
           # the minimum versions are not currently compatible with python 3.9
           - python-version: 3.9
             dep-versions: Unconstrained
+          - python-version: 3.7
+            extras: test
 
     steps:
       - name: Checkout source
@@ -83,7 +86,7 @@ jobs:
 
       - name: Install solarforecastarbiter with extras
         run: |
-          python -m pip install '.[all]' -c .github/${{ matrix.dep-versions }}
+          python -m pip install '.[${{ matrix.extras }}]' -c .github/${{ matrix.dep-versions }}
 
       - name: List installed packages
         run: python -m pip list

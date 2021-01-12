@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+pytest.importorskip("plotly", reason="requires [all] packages")
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.io import api

@@ -1,12 +1,13 @@
 import datetime as dt
 import json
 
+import pytest
+
+pytest.importorskip("bokeh", reason="requires [plotting] packages")
 
 import bokeh
 import numpy as np
 import pandas as pd
-import pytest
-
 
 from solarforecastarbiter.plotting import timeseries
 
