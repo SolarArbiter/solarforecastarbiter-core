@@ -5,6 +5,10 @@
 1.0.2 (January ??, 2021)
 -------------------------
 
+Fixed
+~~~~~
+
+*
 
 Testing
 ~~~~~~~
@@ -12,6 +16,8 @@ Testing
 * Clarified expectations for ``pandas.DatetimeIndex.freq`` attribute
   throughout test suite. Improves compatibility with pandas >= 1.1.
   (:issue:`641`)
+* Add test configurations for Python 3.8, Python 3.9, and latest
+  versions of dependencies. (:pull:`643`)
 
 
 Contributors

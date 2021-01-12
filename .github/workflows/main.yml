@@ -10,7 +10,7 @@ on:
 
 jobs:
   docker-pinned-req:
-    name: Docker image plus pinned requirements
+    name: Docker image, requirements.txt
     runs-on: ubuntu-latest
     container:
       image: quay.io/solararbiter/solarforecastarbiter-core:latest

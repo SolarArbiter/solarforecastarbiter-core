@@ -14,8 +14,12 @@ EXTRAS_REQUIRE = {
              'asynctest', 'requests-mock', 'pytest-timeout'],
     'fetch': ['aiohttp', 'loky', 'psutil'],
     'log': ['sentry-sdk'],
-    'cli': ['click'],
-    'plotting': ['bokeh', 'selenium']
+    'plotting': [
+        'bokeh>=1.4.0, <2',
+        'matplotlib',
+        'plotly>=4.5.0, <5',
+        'selenium'
+    ]
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -44,6 +48,7 @@ setup(
     include_package_data=True,
     python_requires='>=3.7, <4',
     install_requires=[
+        'click',
         'netCDF4',
         'numpy>=1.18.2',
         'pandas>=1.0.3',
@@ -52,12 +57,8 @@ setup(
         'tables',
         'pvlib==0.8.0',
         'scipy',
-        'bokeh>=1.4.0, <2',
         'statsmodels',
         'jsonschema',
-        'plotly>=4.5.0, <5',
-        'psutil',
-        'matplotlib',
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
