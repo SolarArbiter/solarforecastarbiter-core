@@ -38,7 +38,7 @@ def longrunning():  # pragma: no cover
 @pytest.mark.asyncio
 @pytest.mark.timeout(5, method='thread')
 async def test_cluster_external_kill():
-    pytest.importerskip("loky", reason="requires [fetch] packages")
+    pytest.importorskip("loky", reason="requires [fetch] packages")
     from loky.process_executor import TerminatedWorkerError
     pid = await fetch.run_in_executor(getpid)
     long = fetch.run_in_executor(longrunning)
