@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-pytest.importorskip("bokeh", reason="requires [plotting] packages")
+pytest.importorskip("bokeh", reason="requires [plotting] packages")  # noqa:E402,E501
 
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource

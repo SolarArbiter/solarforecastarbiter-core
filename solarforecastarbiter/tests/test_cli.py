@@ -5,11 +5,12 @@ from pathlib import Path
 import re
 import tempfile
 
+import pytest
+pytest.importorskip("plotly", reason="requires [all] packages")  # noqa: E401
 
 import click
 from click.testing import CliRunner
 import pandas as pd
-import pytest
 import requests
 
 

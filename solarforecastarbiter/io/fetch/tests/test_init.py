@@ -23,6 +23,7 @@ def bad_subprocess():
     (bad_subprocess, subprocess.CalledProcessError)
 ])
 async def test_cluster_error(bad, err):
+    pytest.importorskip("loky", reason="requires [fetch] packages")
     with pytest.raises(err):
         await fetch.run_in_executor(bad)
 

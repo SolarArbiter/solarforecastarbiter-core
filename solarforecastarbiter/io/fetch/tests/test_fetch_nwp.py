@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-pytest.importorskip("aoihttp", reason="requires [fetch] packages")
+pytest.importorskip("aoihttp", reason="requires [fetch] packages")  # noqa:E402
 
 import aiohttp
 from asynctest import CoroutineMock, MagicMock

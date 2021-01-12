@@ -40,6 +40,7 @@ def test_run_nwp(model, site_powerplant_site_type, mocker):
     mocker.patch.object(inspect.unwrap(model), '__defaults__',
         (partial(load),))
     """
+    pytest.importorskip("aoihttp", reason="requires [fetch] packages")
     mocker.patch.object(inspect.unwrap(model), '__defaults__',
                         (partial(nwp.load_forecast, base_path=BASE_PATH),))
     mocker.patch(
