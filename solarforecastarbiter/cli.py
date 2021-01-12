@@ -10,7 +10,6 @@ import sys
 import click
 import pandas as pd
 import requests
-import sentry_sdk
 
 
 from solarforecastarbiter import __version__
@@ -29,9 +28,16 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                     level=logging.WARNING)
-sentry_sdk.init(send_default_pii=False,
-                release=f'solarforecastarbiter-core@{__version__}')
 midnight = pd.Timestamp.utcnow().floor('1d')
+
+
+try:
+    import sentry_sdk
+except ImportError:
+    logger.warning('sentry_sdk not found, remote logging disabled')
+else:
+    sentry_sdk.init(send_default_pii=False,
+                    release=f'solarforecastarbiter-core@{__version__}')
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):  # pragma: no cover
