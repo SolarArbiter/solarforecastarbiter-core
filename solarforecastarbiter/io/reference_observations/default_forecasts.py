@@ -8,7 +8,7 @@ import pandas as pd
 
 from solarforecastarbiter.datamodel import (
     Forecast, Site, ProbabilisticForecast)
-from solarforecastarbiter.io.fetch.nwp import DOMAIN
+from solarforecastarbiter.io.nwp import DOMAIN
 
 
 def is_in_nwp_domain(site):

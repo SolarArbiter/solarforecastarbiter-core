@@ -11,11 +11,15 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 
 EXTRAS_REQUIRE = {
     'test': ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-asyncio',
-             'asynctest', 'requests-mock'],
+             'asynctest', 'requests-mock', 'pytest-timeout'],
     'fetch': ['aiohttp', 'loky', 'psutil'],
     'log': ['sentry-sdk'],
-    'cli': ['click'],
-    'plotting': ['bokeh', 'selenium']
+    'plotting': [
+        'bokeh>=1.4.0, <2',
+        'matplotlib',
+        'plotly>=4.5.0, <5',
+        'selenium'
+    ]
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
@@ -32,33 +36,35 @@ setup(
     author='Solar Forecast Arbiter Team',
     author_email='info@solarforecastarbiter.org',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     packages=find_packages(),
     include_package_data=True,
+    python_requires='>=3.7, <4',
     install_requires=[
+        'click',
         'netCDF4',
-        'numpy',
-        'pandas>=0.25.1',
+        'numpy>=1.18.2',
+        'pandas>=1.0.3',
         'requests',
         'xarray',
         'tables',
-        'pvlib>=0.7.0',
+        'pvlib==0.8.0',
         'scipy',
-        'bokeh',
         'statsmodels',
         'jsonschema',
-        'plotly',
-        'psutil',
-        'matplotlib',
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
         'Bug Reports': 'https://github.com/solararbiter/solarforecastarbiter-core/issues',  # NOQA,
-        'Source': 'https://github.com/solararbiter/solarforecastarbiter-core'
+        'Source': 'https://github.com/solararbiter/solarforecastarbiter-core',
+        'Documentation': 'https://solarforecastarbiter-core.readthedocs.io'
     },
     entry_points={
         'console_scripts': [

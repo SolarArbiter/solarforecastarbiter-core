@@ -24,6 +24,13 @@ from solarforecastarbiter.metrics import preprocessing
 OK = int(0b10)  # OK version 0 (2)
 
 
+# plotly is an optional dependency, but we use the version in the report
+# text and thus the report fixtures defined here
+try:
+    from plotly import __version__ as PLOTLY_VERSION
+except ImportError:
+    PLOTLY_VERSION = 'None'
+
 mark_skip_pdflatex = pytest.mark.skipif(
     shutil.which('pdflatex') is None,
     reason='PDF reports require pdflatex')
@@ -2711,7 +2718,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), PLOTLY_VERSION,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -2907,7 +2914,7 @@ def raw_report_xy(
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), PLOTLY_VERSION,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -3312,7 +3319,7 @@ def raw_report_dict_with_event(fail_pdf):
                 'name': 'all',
                 'spec': "{}",
                 'pdf': fail_pdf}],
-            'plotly_version': '4.5.3',
+            'plotly_version': PLOTLY_VERSION,
             'script': None},
         'processed_forecasts_observations': [{
             'cost_per_unit_error': 0.0,
@@ -3458,7 +3465,7 @@ def raw_report_dict_with_prob(fail_pdf):
         'plots': {
             'bokeh_version': None,
             'figures': [],
-            'plotly_version': '4.5.3',
+            'plotly_version': PLOTLY_VERSION,
             'script': None
             },
         'processed_forecasts_observations': (

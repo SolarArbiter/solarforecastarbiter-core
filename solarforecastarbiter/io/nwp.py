@@ -23,6 +23,12 @@ CF_MAPPING = {
     'tcdc': 'cloud_cover'
 }
 
+DOMAIN = {'subregion': '',
+          'leftlon': -126,
+          'rightlon': -66,
+          'toplat': 50,
+          'bottomlat': 24}
+
 
 def _load_pnt(ds, latitude, longitude, limit):
     lats = ds.latitude.values

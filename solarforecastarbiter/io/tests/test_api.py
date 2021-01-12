@@ -1481,45 +1481,57 @@ def test_real_apisession_get_prob_forecast_values_tz(real_session):
 
 
 def test_real_apisession_post_observation_values(real_session):
+    # using a random hour reduces collisions between parallel CI
+    # processes
+    random_val = np.random.random()
+    random_hour = np.random.randint(low=0, high=23)
+    start_time = pd.Timestamp(f'2019-04-14T{random_hour:02}:00:00Z')
+    end_time = start_time + pd.Timedelta('1min')
     test_df = pd.DataFrame(
-        {'value': [np.random.random()], 'quality_flag': [0]},
-        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
-                               name='timestamp'))
+        {'value': [random_val], 'quality_flag': [0]},
+        index=pd.DatetimeIndex([start_time], name='timestamp'))
     real_session.post_observation_values(
         '123e4567-e89b-12d3-a456-426655440000', test_df)
     obs = real_session.get_observation_values(
         '123e4567-e89b-12d3-a456-426655440000',
-        pd.Timestamp('2019-04-14T00:00:00Z'),
-        pd.Timestamp('2019-04-14T00:01:00Z'))
+        start_time, end_time)
     # quality flag may be altered by validation routine
     pdt.assert_series_equal(obs['value'], test_df['value'])
 
 
 def test_real_apisession_post_forecast_values(real_session):
+    # using a random hour reduces collisions between parallel CI
+    # processes
+    random_val = np.random.random()
+    random_hour = np.random.randint(low=0, high=23)
+    start_time = pd.Timestamp(f'2019-04-14T{random_hour:02}:00:00Z')
+    end_time = start_time + pd.Timedelta('1s')
     test_ser = pd.Series(
-        [np.random.random()], name='value',
-        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
-                               name='timestamp'))
+        random_val, name='value',
+        index=pd.DatetimeIndex([start_time], name='timestamp'))
     real_session.post_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276', test_ser)
     fx = real_session.get_forecast_values(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276',
-        pd.Timestamp('2019-04-14T00:00:00Z'),
-        pd.Timestamp('2019-04-14T00:01:00Z'))
+        start_time, end_time)
     pdt.assert_series_equal(fx, test_ser)
 
 
 def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
+    # using a random hour reduces collisions between parallel CI
+    # processes
+    random_val = np.random.random()
+    random_hour = np.random.randint(low=0, high=23)
+    start_time = pd.Timestamp(f'2019-04-14T{random_hour:02}:00:00Z')
+    end_time = start_time + pd.Timedelta('1s')
     test_ser = pd.Series(
-        [np.random.random()], name='value',
-        index=pd.DatetimeIndex([pd.Timestamp('2019-04-14T00:00:00Z')],
-                               name='timestamp'))
+        random_val, name='value',
+        index=pd.DatetimeIndex([start_time], name='timestamp'))
     real_session.post_probabilistic_forecast_constant_value_values(
         '633f9b2a-50bb-11e9-8647-d663bd873d93', test_ser)
     fx = real_session.get_probabilistic_forecast_constant_value_values(
         '633f9b2a-50bb-11e9-8647-d663bd873d93',
-        pd.Timestamp('2019-04-14T00:00:00Z'),
-        pd.Timestamp('2019-04-14T00:01:00Z'))
+        start_time, end_time)
     pdt.assert_series_equal(fx, test_ser)
 
 

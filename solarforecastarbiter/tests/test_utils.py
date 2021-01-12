@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
-import sentry_sdk
 
 
 from solarforecastarbiter import utils
@@ -490,6 +489,7 @@ def test_listhandler_recreate():
 
 
 def test_hijack_loggers(mocker):
+    pytest.importorskip("sentry_sdk")
     old_handler = mocker.MagicMock()
     new_handler = mocker.MagicMock()
     mocker.patch('solarforecastarbiter.utils.ListHandler',
@@ -503,6 +503,8 @@ def test_hijack_loggers(mocker):
 
 
 def test_hijack_loggers_sentry(mocker):
+    sentry_sdk = pytest.importorskip("sentry_sdk")
+
     events = set()
 
     def before_send(event, hint):

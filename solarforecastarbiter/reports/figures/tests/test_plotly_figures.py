@@ -2,12 +2,13 @@ import base64
 import json
 import shutil
 
+import pytest
+
+pytest.importorskip("plotly", reason="requires [plotting] packages")  # noqa: E401,E501
 
 from plotly import graph_objects
 import numpy as np
 import pandas as pd
-import pytest
-
 
 import solarforecastarbiter.reports.figures.plotly_figures as figures
 from solarforecastarbiter import datamodel

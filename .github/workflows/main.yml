@@ -9,7 +9,8 @@ on:
       - master
 
 jobs:
-  ci:
+  docker-pinned-req:
+    name: Docker image, requirements.txt
     runs-on: ubuntu-latest
     container:
       image: quay.io/solararbiter/solarforecastarbiter-core:latest
@@ -45,4 +46,62 @@ jobs:
         run: |
           pip install -r docs/requirements.txt
           make -C docs html
+        if: ${{ always() }}
+
+  #
+  # Run all tests on Linux using standard PyPI packages, including min and pre-releases
+  # inspired by MetPy and XArray
+  # https://github.com/Unidata/MetPy/blob/master/.github/workflows/tests-pypi.yml
+  # https://github.com/pydata/xarray/blob/master/.github/workflows/ci.yaml
+  #
+  PyPITests:
+    name: ${{ matrix.python-version }} ${{ matrix.dep-versions }} ${{ matrix.extras }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7, 3.8]
+        dep-versions: [Minimum, Unconstrained]
+        extras: [all]
+        include:
+          # the minimum versions are not currently compatible with python 3.9
+          - python-version: 3.9
+            dep-versions: Unconstrained
+            extras: all
+          - python-version: 3.7
+            dep-versions: Minimum
+            extras: test
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # if needed, add sudo apt-get install to first line of run
+      - name: Install base dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+
+      - name: Install solarforecastarbiter with extras
+        run: |
+          python -m pip install '.[${{ matrix.extras }}]' -c .github/${{ matrix.dep-versions }}
+
+      - name: List installed packages
+        run: python -m pip list
+
+      - name: Pytest
+        run: |
+          python -m pytest solarforecastarbiter --cov --cov-report=xml
+
+      - name: coverage
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+          flags: adder,subtractor,pypi
+          fail_ci_if_error: true
+          name: pypi-${{ matrix.python-version }}-${{ matrix.dep-versions }}
         if: ${{ always() }}

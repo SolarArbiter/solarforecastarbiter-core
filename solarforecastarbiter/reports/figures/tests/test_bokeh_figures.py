@@ -2,12 +2,13 @@ import os
 import platform
 import shutil
 
+import pytest
+
+pytest.importorskip("bokeh", reason="requires [plotting] packages")  # noqa:E402,E501
 
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource
 import numpy as np
-import pytest
-
 
 import solarforecastarbiter.reports.figures.bokeh_figures as figures
 from solarforecastarbiter import datamodel

@@ -5,6 +5,12 @@
 1.0.2 (January ??, 2021)
 -------------------------
 
+Fixed
+~~~~~
+
+* Added/removed requirements to make base, test, and fetch install options
+  work as expected. (:issue:`637`, :pull:`643`)
+* Updated PyPI classifiers. (:issue:`637`, :pull:`643`)
 
 Testing
 ~~~~~~~
@@ -12,6 +18,11 @@ Testing
 * Clarified expectations for ``pandas.DatetimeIndex.freq`` attribute
   throughout test suite. Improves compatibility with pandas >= 1.1.
   (:issue:`641`)
+* Test configuration additions (:issue:`637`, :pull:`643`):
+
+    * Python 3.7, 3.8, 3.9 using the latest versions of the ``[all]`` dependencies
+    * Python 3.7 and 3.8 using the minimum version of the ``[all]`` dependencies. These are typically the values from the requirements file that the docker image uses.
+    * Python 3.7 using only the ``[test]`` dependencies
 
 
 Contributors
