@@ -27,11 +27,9 @@ OK = int(0b10)  # OK version 0 (2)
 # plotly is an optional dependency, but we use the version in the report
 # text and thus the report fixtures defined here
 try:
-    import plotly
+    from plotly import __version__ as PLOTLY_VERSION
 except ImportError:
     PLOTLY_VERSION = 'None'
-else:
-    PLOTLY_VERSION = plotly.__version__
 
 mark_skip_pdflatex = pytest.mark.skipif(
     shutil.which('pdflatex') is None,
