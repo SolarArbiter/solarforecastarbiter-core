@@ -3,6 +3,7 @@ import pandas as pd
 import pytz
 
 
+from solarforecastarbiter.datamodel import ProbabilisticForecast
 from solarforecastarbiter.io import utils as io_utils
 
 
@@ -218,6 +219,26 @@ def _weekahead_start_end(issue_time, forecast):
     return data_start, data_end
 
 
+def _20days_start_end(issue_time, forecast):
+    """
+    Time range of data to be used for probabilistic time of day persistence.
+
+    Parameters
+    ----------
+    issue_time : pd.Timestamp
+    lead_time : pd.Timedelta
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+
+    """
+    data_start = issue_time + forecast.lead_time_to_start - pd.Timedelta('20d')
+    data_end = data_start + forecast.run_length
+    return data_start, data_end
+
+
 def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     # instantaneous observations require care.
     # persistence models return forecasts with same closure as obs
@@ -257,8 +278,9 @@ def get_data_start_end(observation, forecast, run_time, issue_time):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
-        data_start, data_end = _weekahead_start_end(
-            issue_time, forecast)
+        data_start, data_end = _weekahead_start_end(issue_time, forecast)
+    elif isinstance(forecast, ProbabilisticForecast):
+        data_start, data_end = _20days_start_end(issue_time, forecast)
     else:
         data_start, data_end = _dayahead_start_end(issue_time, forecast)
 

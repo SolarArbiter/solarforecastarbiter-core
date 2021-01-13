@@ -268,7 +268,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
 
     if isinstance(forecast, datamodel.ProbabilisticForecast):
         cvs = [f.constant_value for f in forecast.constant_values]
-        fx = persistence.persistence_probabilistic(
+        fx = persistence.persistence_probabilistic_timeofday(
             observation, data_start, data_end, forecast_start, forecast_end,
             forecast.interval_length, forecast.interval_label, load_data,
             forecast.axis, cvs)
