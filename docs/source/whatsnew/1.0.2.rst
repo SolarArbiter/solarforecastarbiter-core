@@ -11,6 +11,8 @@ Fixed
 * Added/removed requirements to make base, test, and fetch install options
   work as expected. (:issue:`637`, :pull:`643`)
 * Updated PyPI classifiers. (:issue:`637`, :pull:`643`)
+* Updated :ref:`installation` page with instructions for PyPI, conda-forge,
+  and docker. (:issue:`635`, :pull:`649`)
 
 Testing
 ~~~~~~~
