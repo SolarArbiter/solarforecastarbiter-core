@@ -489,7 +489,7 @@ for observations, forecasts, aggregates, and probabilistic forecasts:
    :toctree: generated/
 
    io.api.APISession.get_values
-   io.api.APISession.chunk_value_request
+   io.api.APISession.chunk_value_requests
    io.api.APISession.get_value_gaps
 
 Utils
