@@ -23,16 +23,6 @@ We welcome your contributions. Please see our [contributing guide](https://solar
 
 # Architecture
 
-The diagram below depicts data flow between components of the Solar
-Forecast Arbiter framework. Users of the framework typically interact
-with the ``solarforecastarbiter-core`` code through a queue/worker
-system maintained by the API. Users may access the API directly or
-through the Dashboard. The API queues analyses to be processed by
-workers using core code. The workers then send their results to the API
-for storage in the database.
-
-Alternatively, users may choose to install the core package on their own
-systems and perform their analyses independently of the Dashboard, API,
-or database.
-
-![system sketch](system_sketch.png)
+The Solar Forecast Arbiter consists of the Dashboard, API, and this Core package.
+See [solarforecastarbiter.org/documentation](https://solarforecastarbiter.org/documentation/)
+for descriptions of each project and how they work together.
