@@ -13,6 +13,8 @@ Fixed
 * Updated PyPI classifiers. (:issue:`637`, :pull:`643`)
 * Updated :ref:`installation` page with instructions for PyPI, conda-forge,
   and docker. (:issue:`635`, :pull:`649`)
+* If total metrics category was not selected, the report now displays warnings
+  instead of confusing blank tables. (:issue:`629`, :pull:`652`)
 
 Testing
 ~~~~~~~
