@@ -37,7 +37,7 @@
 {% endblock %}
 {% block report_description %}
 <p>
-  This report of solar forecast accuracy was automatically generated using the
+  This report of forecast accuracy was automatically generated using the
   <a href="https://solarforecastarbiter.org">Solar Forecast Arbiter</a>.
 </p>
 {% endblock %}
@@ -224,7 +224,13 @@ Plotly.newPlot("scatter-div", scat_plot);
   <a href="javascript:download_stats_as_csv('{{ report_name }}')">CSV format</a>
   or <a href="javascript:download_stats_as_json('{{ report_name }}')">JSON format</a>.
 </p>
-{{ macros.summary_stats_table_vert(report.raw_report.metrics | selectattr("is_summary"), "total") }}
+{% if "total" in report.report_parameters.categories %}
+  {{ macros.summary_stats_table_vert(report.raw_report.metrics | selectattr("is_summary"), "total") }}
+{% else %}
+  <div class="alert alert-warning">
+    <h5>Total metrics not selected in report configuration. Summary total statistics table not available. See CSV/JSON files for other summary statistics.</h5>
+  </div>
+{% endif %}
 <br>
 {% endblock %}
 
@@ -238,8 +244,13 @@ Plotly.newPlot("scatter-div", scat_plot);
   <a href="javascript:download_metrics_as_csv('{{ report_name }}')">CSV format</a>
   or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
 </p>
-
-{{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
+{% if "total" in report.report_parameters.categories %}
+  {{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
+{% else %}
+  <div class="alert alert-warning">
+    <h5>Total metrics not selected in report configuration. Total metrics table not available. See CSV/JSON files for other metrics.</h5>
+  </div>
+{% endif %}
 
 <script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">
