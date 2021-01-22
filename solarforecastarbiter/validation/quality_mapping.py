@@ -56,7 +56,13 @@ DERIVED_MASKS = {
 # flags that should typically be discarded before resampling because they
 # represent truly bad data
 DISCARD_BEFORE_RESAMPLE = [
-    'USER FLAGGED', 'LIMITS EXCEEDED', 'INCONSISTENT IRRADIANCE COMPONENTS'
+    'USER FLAGGED',
+    'LIMITS EXCEEDED',
+    'INCONSISTENT IRRADIANCE COMPONENTS',
+    'STALE VALUES',
+    'INTERPOLATED VALUES',
+    'DAYTIME STALE VALUES',
+    'DAYTIME INTERPOLATED VALUES'
 ]
 
 # should never change unless another VERSION IDENTIFIER is required

@@ -13,6 +13,9 @@ Fixed
 * Updated PyPI classifiers. (:issue:`637`, :pull:`643`)
 * Updated :ref:`installation` page with instructions for PyPI, conda-forge,
   and docker. (:issue:`635`, :pull:`649`)
+* Added the following flags to ``DISCARD_BEFORE_RESAMPLE``:
+  ``'STALE VALUES'``, ``'INTERPOLATED VALUES'``, ``'DAYTIME STALE VALUES'``,
+  ``'DAYTIME INTERPOLATED VALUES'``. (:issue:`626`, :pull:`653`)
 * If total metrics category was not selected, the report now displays warnings
   instead of confusing blank tables. (:issue:`629`, :pull:`652`)
 * Removed the word "solar" from the report intro line for consistency with
