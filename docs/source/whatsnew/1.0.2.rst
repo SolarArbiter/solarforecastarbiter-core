@@ -13,6 +13,9 @@ Fixed
 * Updated PyPI classifiers. (:issue:`637`, :pull:`643`)
 * Updated :ref:`installation` page with instructions for PyPI, conda-forge,
   and docker. (:issue:`635`, :pull:`649`)
+* Added the following flags to ``DISCARD_BEFORE_RESAMPLE``:
+  ``'STALE VALUES'``, ``'INTERPOLATED VALUES'``, ``'DAYTIME STALE VALUES'``,
+  ``'DAYTIME INTERPOLATED VALUES'``. (:issue:`626`, :pull:`653`)
 
 Testing
 ~~~~~~~
