@@ -100,18 +100,25 @@ forecasts over the entire study period is shown below. Downloads of summary
 statistics for other categories are available on the
 \href{\VAR{report_url}}{web version of this report}.
 
-\VAR{macros.summary_statistics_table(report.raw_report.metrics | selectattr('is_summary'), 'total')}
-
+%- if "total" in report.report_parameters.categories
+  \VAR{macros.summary_statistics_table(report.raw_report.metrics | selectattr('is_summary'), 'total')}
+%- else
+  Total metrics not selected in report configuration. Summary total statistics table not available. See CSV/JSON files for other summary statistics.
+%- endif
 \section{Metrics}
 \FloatBarrier
 
 \VAR{macros.metrics_meta_table()}
 
 A table of metrics over the entire study period and metric figures are shown below.
-Metrics may be downloaded in CSV format through the HTML version of this report
+Metrics may be downloaded in CSV and JSON formats through the HTML version of this report
 available \href{\VAR{report_url}}{here}.
 
-\VAR{macros.metric_table(report.raw_report.metrics | rejectattr('is_summary'), 'total', report.report_parameters.metrics)}
+%- if "total" in report.report_parameters.categories
+  \VAR{macros.metric_table(report.raw_report.metrics | rejectattr('is_summary'), 'total', report.report_parameters.metrics)}
+%- else
+  Total metrics not selected in report configuration. Total metrics table not available. See CSV/JSON files for other metrics.
+%- endif
 
 \FloatBarrier
 %- for category in report.report_parameters.categories
