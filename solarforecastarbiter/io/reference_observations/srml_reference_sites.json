@@ -82,7 +82,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -113,7 +113,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -144,7 +144,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -175,7 +175,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -206,7 +206,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -237,7 +237,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -268,7 +268,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -299,7 +299,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Portland OR PV 30 deg tilt",
@@ -330,7 +330,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 15.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Ashland OR PV",
@@ -361,7 +361,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 15.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Ashland OR PV",
@@ -392,7 +392,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Kalapuya High School OR PV",
@@ -423,7 +423,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Kalapuya High School OR PV",
@@ -454,7 +454,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Bend OR PV",
@@ -485,7 +485,7 @@
                     "dc_loss_factor": 0.0,
                     "surface_azimuth": 180.0,
                     "surface_tilt": 30.0,
-                    "temperature_coefficient": 0.3,
+                    "temperature_coefficient": -0.3,
                     "tracking_type": "fixed"
                 },
                 "name": "Bend OR PV",
@@ -510,7 +510,7 @@
                 "dc_loss_factor": 0.0,
                 "surface_azimuth": 180.0,
                 "surface_tilt": 15.0,
-                "temperature_coefficient": 0.3,
+                "temperature_coefficient": -0.3,
                 "tracking_type": "fixed"
             },
             "name": "Ashland OR PV",
@@ -529,7 +529,7 @@
                 "dc_loss_factor": 0.0,
                 "surface_azimuth": 180.0,
                 "surface_tilt": 30.0,
-                "temperature_coefficient": 0.3,
+                "temperature_coefficient": -0.3,
                 "tracking_type": "fixed"
             },
             "name": "Kalapuya High School OR PV",
@@ -548,7 +548,7 @@
                 "dc_loss_factor": 0.0,
                 "surface_azimuth": 180.0,
                 "surface_tilt": 30.0,
-                "temperature_coefficient": 0.3,
+                "temperature_coefficient": -0.3,
                 "tracking_type": "fixed"
             },
             "name": "Portland OR PV",
@@ -567,7 +567,7 @@
                 "dc_loss_factor": 0.0,
                 "surface_azimuth": 180.0,
                 "surface_tilt": 30.0,
-                "temperature_coefficient": 0.3,
+                "temperature_coefficient": -0.3,
                 "tracking_type": "fixed"
             },
             "name": "Portland OR PV",
@@ -586,7 +586,7 @@
                 "dc_loss_factor": 0.0,
                 "surface_azimuth": 180.0,
                 "surface_tilt": 30.0,
-                "temperature_coefficient": 0.3,
+                "temperature_coefficient": -0.3,
                 "tracking_type": "fixed"
             },
             "name": "Bend OR PV",
