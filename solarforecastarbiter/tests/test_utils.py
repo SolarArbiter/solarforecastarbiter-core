@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
-import sentry_sdk
 
 
 from solarforecastarbiter import utils
@@ -166,7 +165,7 @@ def test_compute_aggregate_no_overlap(ids):
          'quality_flag': [2, 10, 9, 338 | 880, 10]},
         index=pd.DatetimeIndex([
             '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
-            '20191002T0230Z', '20191002T0300Z']))
+            '20191002T0230Z', '20191002T0300Z'], freq='30min'))
     pdt.assert_frame_equal(agg, expected)
 
 
@@ -189,7 +188,7 @@ def test_compute_aggregate_missing_before_effective(ids):
          'quality_flag': [2, 10, 338, 880, 10]},
         index=pd.DatetimeIndex([
             '20191002T0100Z', '20191002T0130Z', '20191002T0200Z',
-            '20191002T0230Z', '20191002T0300Z']))
+            '20191002T0230Z', '20191002T0300Z'], freq='30min'))
     pdt.assert_frame_equal(agg, expected)
 
 
@@ -490,6 +489,7 @@ def test_listhandler_recreate():
 
 
 def test_hijack_loggers(mocker):
+    pytest.importorskip("sentry_sdk")
     old_handler = mocker.MagicMock()
     new_handler = mocker.MagicMock()
     mocker.patch('solarforecastarbiter.utils.ListHandler',
@@ -503,6 +503,8 @@ def test_hijack_loggers(mocker):
 
 
 def test_hijack_loggers_sentry(mocker):
+    sentry_sdk = pytest.importorskip("sentry_sdk")
+
     events = set()
 
     def before_send(event, hint):

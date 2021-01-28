@@ -48,17 +48,14 @@ import xarray as xr
 from solarforecastarbiter.io.fetch import (
     make_session, run_in_executor, abort_all_on_exception)
 
+from solarforecastarbiter.io.nwp import DOMAIN
+
 
 logger = logging.getLogger(__name__)
 
 
 CHECK_URL = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/{}/prod'
 BASE_URL = 'https://nomads.ncep.noaa.gov/cgi-bin/'
-DOMAIN = {'subregion': '',
-          'leftlon': -126,
-          'rightlon': -66,
-          'toplat': 50,
-          'bottomlat': 24}
 
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',

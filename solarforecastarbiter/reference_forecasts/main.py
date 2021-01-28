@@ -17,7 +17,6 @@ import pandas as pd
 from solarforecastarbiter import datamodel, pvmodel
 from solarforecastarbiter.utils import generate_continuous_chunks
 from solarforecastarbiter.io import api
-from solarforecastarbiter.io.fetch import nwp as fetch_nwp
 from solarforecastarbiter.io.utils import adjust_timeseries_for_interval_label
 from solarforecastarbiter.reference_forecasts import persistence, models, utils
 
@@ -99,6 +98,10 @@ def run_nwp(forecast, model, run_time, issue_time):
     ...     forecast, models.hrrr_subhourly_to_hourly_mean,
     ...     run_time, issue_time)
     """
+    # bury import in the function so that io.fetch.nwp libraries (aoihttp, etc)
+    # are restricted to this function. might be better to extract the relevant
+    # model metadata into io.nwp, but that would be more invasive.
+    from solarforecastarbiter.io.fetch import nwp as fetch_nwp
     fetch_metadata = fetch_nwp.model_map[models.get_nwp_model(model)]
     # absolute date and time for model run most recently available
     # as of run_time

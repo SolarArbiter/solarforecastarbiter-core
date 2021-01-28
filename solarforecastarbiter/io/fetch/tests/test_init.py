@@ -5,8 +5,6 @@ import time
 
 
 import pytest
-from loky.process_executor import TerminatedWorkerError
-
 
 from solarforecastarbiter.io import fetch
 
@@ -25,6 +23,7 @@ def bad_subprocess():
     (bad_subprocess, subprocess.CalledProcessError)
 ])
 async def test_cluster_error(bad, err):
+    pytest.importorskip("loky", reason="requires [fetch] packages")
     with pytest.raises(err):
         await fetch.run_in_executor(bad)
 
@@ -40,6 +39,8 @@ def longrunning():  # pragma: no cover
 @pytest.mark.asyncio
 @pytest.mark.timeout(5, method='thread')
 async def test_cluster_external_kill():
+    pytest.importorskip("loky", reason="requires [fetch] packages")
+    from loky.process_executor import TerminatedWorkerError
     pid = await fetch.run_in_executor(getpid)
     long = fetch.run_in_executor(longrunning)
     os.kill(pid, 9)

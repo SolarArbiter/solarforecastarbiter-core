@@ -10,28 +10,31 @@ import sys
 import click
 import pandas as pd
 import requests
-import sentry_sdk
 
 
 from solarforecastarbiter import __version__
 from solarforecastarbiter.io import nwp, reference_aggregates
 from solarforecastarbiter.io.api import request_cli_access_token, APISession
-from solarforecastarbiter.io.fetch import update_num_workers
 from solarforecastarbiter.io.reference_observations import reference_data
 from solarforecastarbiter.io.utils import mock_raw_report_endpoints
 import solarforecastarbiter.reference_forecasts.main as reference_forecasts
 from solarforecastarbiter.validation import tasks as validation_tasks
-import solarforecastarbiter.reports.main as reports
-from solarforecastarbiter.reports import template
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                     level=logging.WARNING)
-sentry_sdk.init(send_default_pii=False,
-                release=f'solarforecastarbiter-core@{__version__}')
 midnight = pd.Timestamp.utcnow().floor('1d')
+
+
+try:
+    import sentry_sdk
+except ImportError:
+    logger.info('sentry_sdk not found, remote logging disabled')
+else:
+    sentry_sdk.init(send_default_pii=False,
+                    release=f'solarforecastarbiter-core@{__version__}')
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):  # pragma: no cover
@@ -253,7 +256,7 @@ def fetchnwp(verbose, chunksize, once, use_tmp, netcdf_only, workers,
     required to convert these forecasts into netCDF format.
     """
     set_log_level(verbose)
-    from solarforecastarbiter.io.fetch import nwp
+    from solarforecastarbiter.io.fetch import nwp, update_num_workers
     nwp.check_wgrib2()
     update_num_workers(workers)
     basepath = Path(save_directory)
@@ -446,6 +449,8 @@ def report(verbose, user, password, base_url, report_file, output_file,
     Make a report. See API documentation's POST reports section for
     REPORT_FILE requirements.
     """
+    import solarforecastarbiter.reports.main as reports
+    from solarforecastarbiter.reports import template
     set_log_level(verbose)
     token = cli_access_token(user, password)
     with open(report_file) as f:

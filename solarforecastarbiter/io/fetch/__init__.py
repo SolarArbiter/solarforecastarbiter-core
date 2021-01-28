@@ -5,11 +5,6 @@ import os
 import signal
 import threading
 
-
-import aiohttp
-from loky import get_reusable_executor
-
-
 WORKERS = 1
 
 
@@ -23,6 +18,7 @@ def update_num_workers(max_workers):
 
 
 async def run_in_executor(func, *args, **kwargs):
+    from loky import get_reusable_executor
     exc = get_reusable_executor(max_workers=WORKERS)
     # uses the asyncio default thread pool executor to then
     # apply the function on the pool of processes
@@ -35,6 +31,7 @@ async def run_in_executor(func, *args, **kwargs):
 
 def make_session():
     """Make an aiohttp session"""
+    import aiohttp
     conn = aiohttp.TCPConnector(limit_per_host=int(
         os.getenv('AIO_CONN_LIMIT', 10)))
     timeout = aiohttp.ClientTimeout(

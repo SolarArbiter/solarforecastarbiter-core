@@ -24,6 +24,13 @@ from solarforecastarbiter.metrics import preprocessing
 OK = int(0b10)  # OK version 0 (2)
 
 
+# plotly is an optional dependency, but we use the version in the report
+# text and thus the report fixtures defined here
+try:
+    from plotly import __version__ as PLOTLY_VERSION
+except ImportError:
+    PLOTLY_VERSION = 'None'
+
 mark_skip_pdflatex = pytest.mark.skipif(
     shutil.which('pdflatex') is None,
     reason='PDF reports require pdflatex')
@@ -75,7 +82,7 @@ def observation_values_text():
 
 @pytest.fixture()
 def observation_values():
-    return pd.DataFrame.from_records(
+    df = pd.DataFrame.from_records(
         [(0, 0),
          (1.0, 0),
          (1.5, 0),
@@ -88,11 +95,13 @@ def observation_values():
                             tz='America/Denver',
                             name='timestamp'),
         columns=['value', 'quality_flag']).tz_convert('UTC')
+    df.index.freq = None
+    return df
 
 
 @pytest.fixture()
 def validated_observation_values():
-    return pd.DataFrame.from_records(
+    df = pd.DataFrame.from_records(
         [(0, 2),
          (1.0, 3),
          (1.5, 2),
@@ -105,6 +114,8 @@ def validated_observation_values():
                             tz='America/Denver',
                             name='timestamp'),
         columns=['value', 'quality_flag']).tz_convert('UTC')
+    df.index.freq = None
+    return df
 
 
 @pytest.fixture()
@@ -147,13 +158,16 @@ def forecast_values_text():
 
 @pytest.fixture()
 def forecast_values():
-    return pd.Series([0.0, 1, 2, 3, 4, 5],
-                     name='value',
-                     index=pd.date_range(start='20190101T0600',
-                                         end='20190101T1100',
-                                         freq='1h',
-                                         tz='America/Denver',
-                                         name='timestamp')).tz_convert('UTC')
+    s = pd.Series(
+        [0.0, 1, 2, 3, 4, 5],
+        name='value',
+        index=pd.date_range(start='20190101T0600',
+                            end='20190101T1100',
+                            freq='1h',
+                            tz='America/Denver',
+                            name='timestamp')).tz_convert('UTC')
+    s.index.freq = None
+    return s
 
 
 @pytest.fixture()
@@ -265,7 +279,7 @@ b"""
 
 @pytest.fixture()
 def prob_forecast_values():
-    return pd.DataFrame(
+    df = pd.DataFrame(
         {'25.0': [0.0, 1, 2, 3, 4, 5],
          '50.0': [1.0, 2, 3, 4, 5, 6],
          '75.0': [2.0, 3, 4, 5, 6, 7]},
@@ -274,6 +288,8 @@ def prob_forecast_values():
                             freq='1h',
                             tz='America/Denver',
                             name='timestamp')).tz_convert('UTC')
+    df.index.freq = None
+    return df
 
 
 @pytest.fixture(scope='module')
@@ -2702,7 +2718,7 @@ def raw_report(report_objects, report_metrics, preprocessing_result_types,
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), PLOTLY_VERSION,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -2898,7 +2914,7 @@ def raw_report_xy(
                         'metric': 'mae',
                         'figure_class': 'plotly',
                     }
-                ),), '4.5.3',
+                ),), PLOTLY_VERSION,
         )
         raw = datamodel.RawReport(
             generated_at=report.report_parameters.end,
@@ -3303,7 +3319,7 @@ def raw_report_dict_with_event(fail_pdf):
                 'name': 'all',
                 'spec': "{}",
                 'pdf': fail_pdf}],
-            'plotly_version': '4.5.3',
+            'plotly_version': PLOTLY_VERSION,
             'script': None},
         'processed_forecasts_observations': [{
             'cost_per_unit_error': 0.0,
@@ -3449,7 +3465,7 @@ def raw_report_dict_with_prob(fail_pdf):
         'plots': {
             'bokeh_version': None,
             'figures': [],
-            'plotly_version': '4.5.3',
+            'plotly_version': PLOTLY_VERSION,
             'script': None
             },
         'processed_forecasts_observations': (

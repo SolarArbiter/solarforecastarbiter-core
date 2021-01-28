@@ -1,5 +1,7 @@
 .. currentmodule:: solarforecastarbiter.cli
 
+.. _cli:
+
 ######################
 Command Line Interface
 ######################

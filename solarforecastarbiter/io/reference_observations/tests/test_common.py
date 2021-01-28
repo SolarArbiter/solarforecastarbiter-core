@@ -299,12 +299,12 @@ def test_create_observation_with_kwargs(
 
     # nans not extended to start end
     (pd.DataFrame({'ghi': [0, 1]}, dtype='float',
-                  index=pd.DatetimeIndex(
-                      ['2019-10-04T1201Z', '2019-10-04T1202Z'])),
+                  index=pd.date_range('2019-10-04T1201Z',
+                                      freq='1min', periods=2)),
      pd.DataFrame({'value': [0.0, 1.0],
                    'quality_flag': [0, 0]},
-                  index=pd.DatetimeIndex(
-                      ['2019-10-04T1201Z', '2019-10-04T1202Z']))),
+                  index=pd.date_range('2019-10-04T1201Z',
+                                      freq='1min', periods=2))),
 ])
 def test_prepare_data_to_post(inp, expected, observation, resample_how):
     start = pd.Timestamp('2019-10-04T1200Z')

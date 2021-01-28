@@ -1,13 +1,14 @@
 from pathlib import Path
 import shutil
 
+import pytest
+
+pytest.importorskip("aoihttp", reason="requires [fetch] packages")  # noqa:E402
 
 import aiohttp
 from asynctest import CoroutineMock, MagicMock
 import pandas as pd
 from pkg_resources import resource_filename, Requirement
-import pytest
-
 
 from solarforecastarbiter.io.fetch import nwp
 

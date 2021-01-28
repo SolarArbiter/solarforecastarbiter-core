@@ -7,7 +7,9 @@ import numpy as np
 import pandas as pd
 from pandas.tseries.frequencies import to_offset
 import pytest
-import jinja2
+
+jinja2 = pytest.importorskip("jinja2", reason="requires [all] packages")  # noqa:E402,E501
+
 from bokeh import __version__ as bokeh_version
 from plotly import __version__ as plotly_version
 

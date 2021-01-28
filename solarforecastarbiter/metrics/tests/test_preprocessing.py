@@ -16,6 +16,7 @@ THREE_HOURS = pd.date_range(start='2019-04-01T06:00:00',
                             freq='60min',
                             tz='MST',
                             name='timestamp')
+THREE_HOURS.freq = None
 
 THREE_HOUR_SERIES = pd.Series(np.arange(1., 4., 1.), index=THREE_HOURS,
                               name='value')
@@ -25,8 +26,7 @@ THREE_HOUR_NAN_SERIES = pd.Series([1.0, np.nan, 4.0], index=THREE_HOURS,
 
 THREE_HOURS_NAN = THREE_HOURS[[True, False, True]]
 
-THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", freq="60min",
-                                     tz="MST")
+THREE_HOURS_EMPTY = pd.DatetimeIndex([], name="timestamp", tz="MST")
 
 THREE_HOUR_EMPTY_SERIES = pd.Series([], index=THREE_HOURS_EMPTY, name="value",
                                     dtype='float64')
@@ -40,7 +40,7 @@ EMPTY_OBJ_SERIES = pd.Series(
     [],
     dtype=object,
     name="value",
-    index=pd.DatetimeIndex([], freq="10min", tz="MST", name="timestamp")
+    index=pd.DatetimeIndex([], tz="MST", name="timestamp")
 )
 
 THIRTEEN_10MIN = pd.date_range(start='2019-04-01T06:00:00',
@@ -48,6 +48,7 @@ THIRTEEN_10MIN = pd.date_range(start='2019-04-01T06:00:00',
                                freq='10min',
                                tz='MST',
                                name='timestamp')
+THIRTEEN_10MIN.freq = None
 
 THIRTEEN_10MIN_SERIES = pd.Series((np.arange(0., 13., 1.)/6)+1,
                                   index=THIRTEEN_10MIN)
@@ -66,6 +67,7 @@ FOUR_HOUR_DF = pd.DataFrame(
 
 FOUR_HOUR_SERIES = pd.Series(
     [1.]*4, index=pd.date_range(start="20200301T00Z", periods=4, freq='H'))
+FOUR_HOUR_SERIES.freq = None
 
 SIXTEEN_15MIN_DF = pd.DataFrame(
     {'value': [np.nan]*5 + list(range(6, 17)),
@@ -390,7 +392,8 @@ def test_align_prob_constant_value(
         (
             [datamodel.QualityFlagFilter(('NIGHTTIME', 'USER FLAGGED'))],
             60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
-            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            pd.Series(
+                [1.], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 1), ('NIGHTTIME', 2), ('USER FLAGGED', 2),
              ('TOTAL DISCARD BEFORE RESAMPLE', 3),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
@@ -400,7 +403,8 @@ def test_align_prob_constant_value(
             (datamodel.QualityFlagFilter(('NIGHTTIME', )),
              datamodel.QualityFlagFilter(('USER FLAGGED', ))),
             60, 60, FOUR_HOUR_DF, FOUR_HOUR_SERIES,
-            pd.Series([1.], index=pd.DatetimeIndex(["20200301T03Z"])),
+            pd.Series(
+                [1.], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 1), ('NIGHTTIME', 2), ('USER FLAGGED', 2),
              ('TOTAL DISCARD BEFORE RESAMPLE', 3),
              ('NIGHTTIME OR ISNAN', 2, False),
@@ -412,7 +416,8 @@ def test_align_prob_constant_value(
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             # all but last interval are discarded because
             # resample_threshold_percentage exceeded
-            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            pd.Series(
+                [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5), ('NIGHTTIME', 3), ('USER FLAGGED', 3),
              ('TOTAL DISCARD BEFORE RESAMPLE', 8),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
@@ -434,7 +439,8 @@ def test_align_prob_constant_value(
             (datamodel.QualityFlagFilter(('NIGHTTIME', )),
              datamodel.QualityFlagFilter(('USER FLAGGED', ))),
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
-            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            pd.Series(
+                [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5), ('NIGHTTIME', 3), ('USER FLAGGED', 3),
              ('TOTAL DISCARD BEFORE RESAMPLE', 8),
              ('NIGHTTIME OR ISNAN', 3, False),
@@ -447,7 +453,8 @@ def test_align_prob_constant_value(
                 discard_before_resample=False,
                 resample_threshold_percentage=30)],
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
-            pd.Series([14.5], index=pd.DatetimeIndex(["20200301T03Z"])),
+            pd.Series(
+                [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5),
              ('TOTAL DISCARD BEFORE RESAMPLE', 5),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
@@ -494,7 +501,10 @@ def test_align_prob_constant_value(
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             # discard first all-nan interval, 2nd interval with 1 nan,
             # last interval with 1 cs exceeded.
-            pd.Series([10.5], index=[FOUR_HOUR_SERIES.index[2]]),
+            pd.Series(
+                [10.5],
+                index=pd.DatetimeIndex([FOUR_HOUR_SERIES.index[2]], freq='1h')
+                ),
             (('ISNAN', 5), ('CLEARSKY EXCEEDED', 1),
              ('TOTAL DISCARD BEFORE RESAMPLE', 6),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 0, False),
@@ -1383,6 +1393,7 @@ def test_apply_fill_drop(input, exp, n_pre, n_post, single_forecast):
                              freq='30min',
                              closed=datamodel.CLOSED_MAPPING[label],
                              name='timestamp')
+    dt_range.freq = None
     data = pd.Series(input, index=dt_range[n_pre:n-n_post], dtype=float)
     expected = data.loc[data.isin(exp)]
 
@@ -1534,6 +1545,7 @@ def test_apply_fill_constant(input, exp, fvalue, n_pre, n_post,
 ])
 def test_apply_fill_unstratified_dataframe(data, method, exp, exp_count,
                                            single_forecast):
+    data.index.freq = None
     freq = pd.Timedelta('1h')
     label = 'instant'
     forecast = single_forecast.replace(interval_length=freq,

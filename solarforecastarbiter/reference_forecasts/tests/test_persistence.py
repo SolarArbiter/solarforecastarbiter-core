@@ -198,7 +198,8 @@ def test_persistence_scalar_index(
     fx = persistence.persistence_scalar_index(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
-    expected_index = pd.DatetimeIndex(expected_index, tz=tz)
+    expected_index = pd.DatetimeIndex(
+        expected_index, tz=tz, freq=interval_length)
     expected = pd.Series(expected_ghi, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
 
@@ -230,7 +231,7 @@ def test_persistence_scalar_index_instant_obs_fx(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
     expected_index = pd.DatetimeIndex(
-        ['20190404 1300', '20190404 1330'], tz=tz)
+        ['20190404 1300', '20190404 1330'], tz=tz, freq=interval_length)
     expected_values = [96.59022431746838, 91.99405501672328]
     expected = pd.Series(expected_values, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
@@ -251,7 +252,7 @@ def test_persistence_scalar_index_instant_obs_fx(
         observation, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
     expected_index = pd.DatetimeIndex(
-        ['20190404 1300', '20190404 1330'], tz=tz)
+        ['20190404 1300', '20190404 1330'], tz=tz, freq=interval_length)
     expected_values = [96.55340033645147, 91.89662922267517]
     expected = pd.Series(expected_values, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)

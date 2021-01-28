@@ -6,7 +6,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sentry_sdk.integrations import logging as sentry_logging
 
 
 from solarforecastarbiter import datamodel
@@ -266,6 +265,8 @@ def hijack_loggers(loggers, level=logging.INFO):
     This may not capture all records when used in a
     distributed or multiprocessing workflow
     """
+    from sentry_sdk.integrations import logging as sentry_logging
+
     handler = ListHandler()
     handler.setLevel(level)
 
