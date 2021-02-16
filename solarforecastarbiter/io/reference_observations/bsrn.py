@@ -1,6 +1,6 @@
 import logging
 
-
+from solarforecastarbiter.io.fetch import bsrn
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
 
@@ -55,7 +55,11 @@ def fetch(api, site, start, end):
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
     """
-    raise NotImplementedError('Fetching BSRN data not yet implemented')
+    if site.name != 'WRMC BSRN NASA Langley Research Center':
+        raise NotImplementedError('Fetching BSRN data is currently only '
+                                  'supported for NASA Langley site')
+    data = bsrn.read_bsrn_from_nasa_larc(start, end)
+    return data
 
 
 def update_observation_data(api, sites, observations, start, end, *,

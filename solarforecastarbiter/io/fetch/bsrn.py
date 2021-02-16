@@ -1,12 +1,16 @@
 """Functions to read data from the Baseline Surface Radiation Network (BSRN).
 .. codeauthor:: Adam R. Jensen<adam-r-j@hotmail.com>
 
-Copied from pvlib python pvlib/iotools/bsrn.py.
+Modified from pvlib python pvlib/iotools/bsrn.py.
 See LICENSES/PVLIB-PYTHON_LICENSE
 """
+from io import StringIO
+import logging
 
 import pandas as pd
-import gzip
+import requests
+
+logger = logging.getLogger('bsrn')
 
 COL_SPECS = [(0, 3), (4, 9), (10, 16), (16, 22), (22, 27), (27, 32), (32, 39),
              (39, 45), (45, 50), (50, 55), (55, 64), (64, 70), (70, 75)]
@@ -20,9 +24,9 @@ BSRN_COLUMNS = ['day', 'minute',
                 'temp_air', 'relative_humidity', 'pressure']
 
 
-def read_bsrn(filename):
+def parse_bsrn(fbuf):
     """
-    Read a BSRN station-to-archive file into a DataFrame.
+    Parse a buffered BSRN station-to-archive file into a DataFrame.
 
     The BSRN (Baseline Surface Radiation Network) is a world wide network
     of high-quality solar radiation monitoring stations as described in [1]_.
@@ -35,12 +39,10 @@ def read_bsrn(filename):
     username and password are easily obtainable as described in the BSRN's
     Data Release Guidelines [4]_.
 
-
-
     Parameters
     ----------
-    filename: str
-        A relative or absolute file path.
+    fbuf: io.StringIO
+        A buffer containing the data to be parsed.
 
     Returns
     -------
@@ -94,20 +96,18 @@ def read_bsrn(filename):
 
     # Read file and store the starting line number for each logical record (LR)
     line_no_dict = {}
-    if str(filename).endswith('.gz'):  # check if file is a gzipped (.gz) file
-        open_func, mode = gzip.open, 'rt'
-    else:
-        open_func, mode = open, 'r'
-    with open_func(filename, mode) as f:
-        f.readline()  # first line should be *U0001, so read it and discard
-        line_no_dict['0001'] = 0
-        date_line = f.readline()  # second line contains the year and month
-        start_date = pd.Timestamp(year=int(date_line[7:11]),
-                                  month=int(date_line[3:6]), day=1,
-                                  tz='UTC')  # BSRN timestamps are UTC
-        for num, line in enumerate(f, start=2):
-            if line.startswith('*'):  # Find start of all logical records
-                line_no_dict[line[2:6]] = num  # key is 4 digit LR number
+
+    fbuf.readline()  # first line should be *U0001, so read it and discard
+    line_no_dict['0001'] = 0
+    date_line = fbuf.readline()  # second line contains the year and month
+    start_date = pd.Timestamp(year=int(date_line[7:11]),
+                              month=int(date_line[3:6]), day=1,
+                              tz='UTC')  # BSRN timestamps are UTC
+    for num, line in enumerate(fbuf, start=2):
+        if line.startswith('*'):  # Find start of all logical records
+            line_no_dict[line[2:6]] = num  # key is 4 digit LR number
+
+    fbuf.seek(0)  # reset buffer to start of data
 
     # Determine start and end line of logical record LR0100 to be parsed
     start_row = line_no_dict['0100'] + 1  # Start line number
@@ -119,7 +119,7 @@ def read_bsrn(filename):
     nrows = end_row-start_row+1
 
     # Read file as a fixed width file (fwf)
-    data = pd.read_fwf(filename, skiprows=start_row, nrows=nrows, header=None,
+    data = pd.read_fwf(fbuf, skiprows=start_row, nrows=nrows, header=None,
                        colspecs=COL_SPECS, na_values=[-999.0, -99.9],
                        compression='infer')
 
@@ -143,3 +143,68 @@ def read_bsrn(filename):
                   + pd.to_timedelta(data['minute'], unit='T'))
 
     return data
+
+
+def read_bsrn_from_nasa_larc(start, end):
+    """Read a range of BRSN monthly data from the NASA LARC.
+
+    Parameters
+    ----------
+    start: pandas.Timestamp
+    end: pandas.Timestamp
+
+    Returns
+    -------
+    bsrn_data: pd.DataFrame
+    """
+    end_of_last_month = (
+        pd.Timestamp.now().normalize() - pd.offsets.MonthBegin()
+        - pd.Timedelta('1s'))
+    range_end = min(end, end_of_last_month)
+    months = pd.date_range(start=start, end=range_end, freq='M')
+    month_data = []
+    for month in months:
+        try:
+            d = read_bsrn_month_from_nasa_larc(month.year, month.month)
+        except Exception as e:
+            logger.warning('could not get bsrn from nasa larc for '
+                           f'{month.year}, {month.month}. {e}')
+        else:
+            month_data.append(d)
+    if len(month_data):
+        return pd.concat(month_data)
+    else:
+        return pd.DataFrame()
+
+
+def read_bsrn_month_from_nasa_larc(year, month):
+    """Read one month of BSRN data from the NASA LARC.
+
+    Parameters
+    ----------
+    year: int, str
+        The year of the data.
+    month: int, str
+        The month of the data (1 - 12).
+
+    Returns
+    -------
+    bsrn_data: pd.DataFrame
+
+    Notes
+    -----
+    Data starts in December, 2014.
+    """
+    base_url = 'https://cove.larc.nasa.gov/BSRN/LRC49/'
+    year = str(year)
+    url = f'{base_url}{year}/lrc{int(month):02}{year[2:]}.dat'
+    r = requests.get(url)
+    with StringIO(r.text) as buf:
+        return parse_bsrn(buf)
+
+
+if __name__ == '__main__':
+    start = pd.Timestamp('20210101')
+    end = pd.Timestamp('20210201')
+    out = read_bsrn_from_nasa_larc(start, end)
+    print(out)
