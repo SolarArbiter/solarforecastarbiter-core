@@ -167,12 +167,13 @@ def read_bsrn_from_nasa_larc(start, end):
         try:
             d = read_bsrn_month_from_nasa_larc(month.year, month.month)
         except Exception as e:
-            logger.warning('could not get bsrn from nasa larc for '
+            logger.warning('could not get bsrn data from nasa larc for '
                            f'{month.year}, {month.month}. {e}')
         else:
             month_data.append(d)
     if len(month_data):
-        return pd.concat(month_data)
+        bsrn_data = pd.concat(month_data)
+        return bsrn_data[start:end]
     else:
         return pd.DataFrame()
 
