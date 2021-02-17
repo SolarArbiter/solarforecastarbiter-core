@@ -6,6 +6,14 @@
 1.0.2 (January ??, 2021)
 -------------------------
 
+Enhancements
+~~~~~~~~~~~~
+
+* Added function to parse BSRN station-to-archive formatted data
+  (modified version of a pvlib python function). (:issue:`541`, :pull:`656`)
+* Added functions to fetch data from the NASA Langley BSRN site.
+  (:issue:`541`, :pull:`656`)
+
 Fixed
 ~~~~~
 

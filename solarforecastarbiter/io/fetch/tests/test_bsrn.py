@@ -1,5 +1,5 @@
 """
-Copied from pvlib python pvlib/tests/test_bsrn.py.
+Modified from pvlib python pvlib/tests/test_bsrn.py.
 See LICENSES/PVLIB-PYTHON_LICENSE
 """
 

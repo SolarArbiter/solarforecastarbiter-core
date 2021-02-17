@@ -1,5 +1,4 @@
-"""Functions to read data from the Baseline Surface Radiation Network (BSRN).
-.. codeauthor:: Adam R. Jensen<adam-r-j@hotmail.com>
+"""Parse data from the BSRN, fetch data from NASA LARC.
 
 Modified from pvlib python pvlib/iotools/bsrn.py.
 See LICENSES/PVLIB-PYTHON_LICENSE
