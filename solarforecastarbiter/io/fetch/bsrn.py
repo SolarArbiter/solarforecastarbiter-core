@@ -157,11 +157,20 @@ def read_bsrn_from_nasa_larc(start, end):
     -------
     bsrn_data: pd.DataFrame
     """
+    # data not available until month is complete, so avoid requesting file
+    # that does not exist. assumes file is available as soon as month is
+    # complete.
     end_of_last_month = (
-        pd.Timestamp.now().normalize() - pd.offsets.MonthBegin()
+        pd.Timestamp.utcnow().normalize() - pd.offsets.MonthBegin()
         - pd.Timedelta('1s'))
     range_end = min(end, end_of_last_month)
-    months = pd.date_range(start=start, end=range_end, freq='M')
+    # use period_range to avoid this funky date_range behavior:
+    # > pd.date_range(start='2020-01-01', end='2020-01-30 23:59:59', freq='M')
+    # DatetimeIndex([], dtype='datetime64[ns]', freq='M')
+    # > pd.date_range(start='2020-01-01', end='2020-01-31 00:00:00', freq='M')
+    # DatetimeIndex(['2020-01-31'], dtype='datetime64[ns]', freq='M')
+    months = pd.period_range(start=start, end=range_end, freq='M')
+    # a better programmer would use asyncio
     month_data = []
     for month in months:
         try:
@@ -171,11 +180,13 @@ def read_bsrn_from_nasa_larc(start, end):
                            f'{month.year}, {month.month}. {e}')
         else:
             month_data.append(d)
+    # concat raises exception on empty list. maybe better to let that bubble up
     if len(month_data):
         bsrn_data = pd.concat(month_data)
         return bsrn_data[start:end]
     else:
-        return pd.DataFrame()
+        # not sure how we get here in practice
+        return pd.DataFrame()  # pragma: no cover
 
 
 def read_bsrn_month_from_nasa_larc(year, month):
@@ -200,12 +211,6 @@ def read_bsrn_month_from_nasa_larc(year, month):
     year = str(year)
     url = f'{base_url}{year}/lrc{int(month):02}{year[2:]}.dat'
     r = requests.get(url)
+    r.raise_for_status()
     with StringIO(r.text) as buf:
         return parse_bsrn(buf)
-
-
-if __name__ == '__main__':
-    start = pd.Timestamp('20210101')
-    end = pd.Timestamp('20210201')
-    out = read_bsrn_from_nasa_larc(start, end)
-    print(out)
