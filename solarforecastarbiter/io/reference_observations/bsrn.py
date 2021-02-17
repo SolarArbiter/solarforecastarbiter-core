@@ -59,6 +59,10 @@ def fetch(api, site, start, end):
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
     """
+    if site.name == 'WRMC BSRN Granite Island MI':
+        logger.warning('Data fetch for WRMC BSRN Granite Island MI not '
+                       'supported. Returning empty DataFrame.')
+        return pd.DataFrame()
     if site.name != 'WRMC BSRN NASA Langley Research Center':
         raise NotImplementedError('Fetching BSRN data is currently only '
                                   'supported for NASA Langley site')
