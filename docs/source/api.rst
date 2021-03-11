@@ -324,6 +324,16 @@ EIA
 
    io.fetch.eia.get_eia_data
 
+BSRN
+----
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.bsrn.parse_bsrn
+   io.fetch.bsrn.read_bsrn_from_nasa_larc
+   io.fetch.bsrn.read_bsrn_month_from_nasa_larc
+
 
 Reference observations
 ======================

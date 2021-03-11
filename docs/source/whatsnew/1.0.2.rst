@@ -6,6 +6,14 @@
 1.0.2 (January ??, 2021)
 -------------------------
 
+Enhancements
+~~~~~~~~~~~~
+
+* Added function to parse BSRN station-to-archive formatted data
+  (modified version of a pvlib python function). (:issue:`541`, :pull:`656`)
+* Added functions to fetch data from the NASA Langley BSRN site.
+  (:issue:`541`, :pull:`656`)
+
 Fixed
 ~~~~~
 
@@ -25,6 +33,9 @@ Fixed
 * Removed the word "solar" from the report intro line for consistency with
   other forecast analyses such as net load and wind power.
   (:issue:`624`, :pull:`650`)
+* Removed the BSRN Granite Island MI site from reference database. This site
+  was added without realizing 2020 and newer data is not readily available
+  from the NASA web pages. (:issue:`541`, :pull:`656`)
 
 Testing
 ~~~~~~~

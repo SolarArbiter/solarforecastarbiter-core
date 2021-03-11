@@ -57,6 +57,19 @@ def test_initialize_site_obs(mock_api, mocker, site):
 def test_fetch(mocker, session, site):
     start = pd.Timestamp('2020-01-01T0000Z')
     end = pd.Timestamp('2020-01-02T0000Z')
+    expected = pd.DataFrame(
+        1, columns=['ghi', 'dni', 'dhi', 'relative_humidity', 'temp_air'],
+        index=pd.date_range(start=start, end=end, freq='1min'))
+    m = mocker.patch(
+        'solarforecastarbiter.io.fetch.bsrn.read_bsrn_month_from_nasa_larc')
+    m.return_value = expected
+    bsrn.fetch(session, site, start, end)
+
+
+def test_fetch_other_site(session, site):
+    site = site.replace(name='not NASA, not going to work')
+    start = pd.Timestamp('2020-01-01T0000Z')
+    end = pd.Timestamp('2020-01-02T0000Z')
     with pytest.raises(NotImplementedError):
         bsrn.fetch(session, site, start, end)
 

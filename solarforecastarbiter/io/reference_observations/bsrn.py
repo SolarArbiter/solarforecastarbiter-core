@@ -1,6 +1,10 @@
+"""Initialize site obs/forecasts and fetch/update obs for BSRN sites."""
+
 import logging
 
+import pandas as pd
 
+from solarforecastarbiter.io.fetch import bsrn
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
 
@@ -55,7 +59,18 @@ def fetch(api, site, start, end):
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
     """
-    raise NotImplementedError('Fetching BSRN data not yet implemented')
+    if site.name != 'WRMC BSRN NASA Langley Research Center':
+        raise NotImplementedError('Fetching BSRN data is currently only '
+                                  'supported for NASA Langley site')
+    try:
+        data = bsrn.read_bsrn_from_nasa_larc(start, end)
+    except Exception:
+        # Not yet sure what kind of errors we might hit in production
+        logger.warning(f'Could not retrieve data for site {site.name}'
+                       f' between {start} and {end}.')
+        return pd.DataFrame()
+    data = data.rename(columns={'temp_air': 'air_temperature'})
+    return data
 
 
 def update_observation_data(api, sites, observations, start, end, *,
