@@ -1166,7 +1166,7 @@ def test_filter_resample_event(single_event_forecast_observation,
 
     quality_flags = (datamodel.QualityFlagFilter(('USER FLAGGED', )), )
 
-    fx_vals, obs_vals, results = preprocessing.filter_resample(
+    fx_vals, obs_vals, val_res = preprocessing.filter_resample(
         fxobs, fx_series, obs_data, quality_flags
     )
 
@@ -1176,7 +1176,8 @@ def test_filter_resample_event(single_event_forecast_observation,
     assert_frame_equal(obs_vals, expected_obs)
     assert_series_equal(fx_vals, expected_fx)
 
-    assert isinstance(results, dict)
+    val_res_exp = []
+    assert val_res == val_res_exp
 
     assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
     assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
