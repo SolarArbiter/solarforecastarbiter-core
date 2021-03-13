@@ -1178,7 +1178,9 @@ def test_filter_resample_event(single_event_forecast_observation,
 
     val_res_exp = (('USER FLAGGED', 0, True), ('ISNAN', 0, True))
     val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
-    assert val_res == val_res_exp
+    for exp in val_res_exp:
+        assert exp in val_res
+    assert len(val_res) == len(val_res_exp)
 
     assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
     assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
@@ -1220,14 +1222,17 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     obs_flags.iloc[2] = 3
     obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
-    obs_resampled, counts = preprocessing._resample_event_obs(
+    obs_resampled, val_res = preprocessing._resample_event_obs(
         fx, obs, obs_data, quality_flags)
     pd.testing.assert_index_equal(index[3:], obs_resampled.index,
                                   check_categorical=False)
-    assert counts['NIGHTTIME'] == 1
-    assert counts['ISNAN'] == 1
-    assert counts['USER FLAGGED'] == 1
-    assert len(counts) == 3
+    val_res_exp = (
+        ('USER FLAGGED', 1, True), ('NIGHTTIME', 1, True), ('ISNAN', 1, True)
+    )
+    val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
+    for exp in val_res_exp:
+        assert exp in val_res
+    assert len(val_res) == len(val_res_exp)
 
 
 @pytest.mark.parametrize("data", [

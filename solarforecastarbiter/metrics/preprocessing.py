@@ -118,10 +118,9 @@ def _resample_event_obs(
     -------
     obs_resampled : pandas.Series
         Timeseries data of the Observation resampled to match the Forecast.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
     Raises
     ------
@@ -299,10 +298,9 @@ def _calc_discard_before_resample(
     to_discard_before_resample : pd.Series
         Indicates if a point should be discarded (True) or kept (False)
         before the resample.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
     """
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
@@ -358,10 +356,9 @@ def _calc_discard_after_resample(
     to_discard_after_resample : pd.Series
         Indicates if a point should be discarded (True) or kept (False)
         before the resample.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
     """
     # number of points discarded before resampling in each interval
     to_discard_before_resample_count = to_discard_before_resample.resample(
