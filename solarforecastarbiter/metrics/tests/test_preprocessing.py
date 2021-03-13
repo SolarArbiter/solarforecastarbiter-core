@@ -1176,7 +1176,8 @@ def test_filter_resample_event(single_event_forecast_observation,
     assert_frame_equal(obs_vals, expected_obs)
     assert_series_equal(fx_vals, expected_fx)
 
-    val_res_exp = []
+    val_res_exp = (('USER FLAGGED', 0, True), ('ISNAN', 0, True))
+    val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
     assert val_res == val_res_exp
 
     assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)

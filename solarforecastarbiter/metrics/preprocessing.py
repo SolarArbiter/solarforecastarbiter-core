@@ -99,7 +99,7 @@ def _resample_event_obs(
     fx: datamodel.EventForecast,
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
-) -> Tuple[pd.Series, dict]:
+) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample the event observation.
 
     Parameters
@@ -145,12 +145,14 @@ def _resample_event_obs(
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
-    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
-
     obs_resampled = obs_data[~to_discard_before_resample]
 
-    return obs_resampled, counts
+    # construct validation results
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    validation_results = _counts_to_validation_results(counts, True)
+
+    return obs_resampled, validation_results
 
 
 def _validate_event_dtype(ser):
