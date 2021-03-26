@@ -36,6 +36,8 @@ Fixed
 * Removed the BSRN Granite Island MI site from reference database. This site
   was added without realizing 2020 and newer data is not readily available
   from the NASA web pages. (:issue:`541`, :pull:`656`)
+* Changed GFS fetch directory for compatibility with March 22, 2021, 12Z
+  model upgrade. (:issue:`662`, :pull:`663`)
 
 Testing
 ~~~~~~~
