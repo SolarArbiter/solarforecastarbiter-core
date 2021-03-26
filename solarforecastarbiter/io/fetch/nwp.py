@@ -60,7 +60,8 @@ BASE_URL = 'https://nomads.ncep.noaa.gov/cgi-bin/'
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'file': 'gfs.t{init_hr:02d}z.pgrb2.0p25.f{valid_hr:03d}',
-                'dir': '/gfs.{init_date}/{init_hr}',
+                # /atmos added to dir with March 22, 2021, 1200Z GFS upgrade
+                'dir': '/gfs.{init_date}/{init_hr}/atmos',
                 'lev_2_m_above_ground': 'on',
                 'lev_10_m_above_ground': 'on',
                 'lev_entire_atmosphere': 'on',
