@@ -1171,12 +1171,16 @@ def test_filter_resample_event(single_event_forecast_observation,
     )
 
     expected_obs = obs_vals.copy()
-    expected_obs['value'] = obs_vals.astype(bool)
     expected_fx = fx_vals.astype(bool)
-    assert_frame_equal(obs_vals, expected_obs)
+    assert_series_equal(obs_vals, expected_obs)
     assert_series_equal(fx_vals, expected_fx)
 
-    val_res_exp = (('USER FLAGGED', 0, True), ('ISNAN', 0, True))
+    val_res_exp = (
+        ('USER FLAGGED', 0, True),
+        ('ISNAN', 0, True),
+        ('TOTAL DISCARD BEFORE RESAMPLE', 0, True),
+        ('TOTAL DISCARD AFTER RESAMPLE', 0, False),
+    )
     val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
     for exp in val_res_exp:
         assert exp in val_res
@@ -1217,9 +1221,9 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
     obs_series = pd.Series(1, dtype=bool, index=index)
     obs_flags = pd.Series(2, index=index)
-    obs_flags.iloc[0] = 18
-    obs_series.iloc[1] = np.nan
-    obs_flags.iloc[2] = 3
+    obs_flags.iloc[0] = 18  # NIGHTTIME
+    obs_series.iloc[1] = np.nan  # ISNAN
+    obs_flags.iloc[2] = 3  # USER FLAGGED
     obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
     obs_resampled, val_res = preprocessing._resample_event_obs(
@@ -1227,7 +1231,11 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     pd.testing.assert_index_equal(index[3:], obs_resampled.index,
                                   check_categorical=False)
     val_res_exp = (
-        ('USER FLAGGED', 1, True), ('NIGHTTIME', 1, True), ('ISNAN', 1, True)
+        ('USER FLAGGED', 1, True),
+        ('NIGHTTIME', 1, True),
+        ('ISNAN', 1, True),
+        ('TOTAL DISCARD BEFORE RESAMPLE', 3, True),
+        ('TOTAL DISCARD AFTER RESAMPLE', 0, False),
     )
     val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
     for exp in val_res_exp:

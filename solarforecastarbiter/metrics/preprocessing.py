@@ -145,11 +145,18 @@ def _resample_event_obs(
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
     to_discard_before_resample = discard_before_resample.any(axis=1)
-    obs_resampled = obs_data[~to_discard_before_resample]
+    obs_resampled = obs_data.loc[~to_discard_before_resample, 'value']
 
     # construct validation results
     counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
     validation_results = _counts_to_validation_results(counts, True)
+
+    # resampling not allowed, so fill in 0 for discard after resample
+    validation_results += _counts_to_validation_results(
+        {'TOTAL DISCARD AFTER RESAMPLE': 0},
+        False
+    )
 
     return obs_resampled, validation_results
 
@@ -709,8 +716,8 @@ def process_forecast_observations(forecast_observations, filters,
         logger.warning(
             'Only filtering on Quality Flag is currently implemented. '
             'Other filters will be discarded.')
-        filters = [
-            f for f in filters if isinstance(f, datamodel.QualityFlagFilter)]
+        filters = tuple(
+            f for f in filters if isinstance(f, datamodel.QualityFlagFilter))
     # create string for tracking forecast fill results.
     # this approach supports known methods or filling with contant values.
     forecast_fill_str = FORECAST_FILL_STRING_MAP.get(
