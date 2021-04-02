@@ -38,6 +38,8 @@ Fixed
   from the NASA web pages. (:issue:`541`, :pull:`656`)
 * Reports could not be created for event forecasts due to an issue with
   validating event forecast data. (:issue:`660`, :pull:`661`)
+* Changed GFS fetch directory for compatibility with March 22, 2021, 12Z
+  model upgrade. (:issue:`662`, :pull:`663`)
 
 Testing
 ~~~~~~~
