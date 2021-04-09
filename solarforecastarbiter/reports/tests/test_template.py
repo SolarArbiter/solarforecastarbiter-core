@@ -60,7 +60,8 @@ def expected_kwargs(dash_url):
         kwargs = {}
         kwargs['human_categories'] = datamodel.ALLOWED_CATEGORIES
         kwargs['human_metrics'] = datamodel.ALLOWED_METRICS
-        kwargs['human_statistics'] = datamodel.ALLOWED_SUMMARY_STATISTICS
+        kwargs['human_statistics'] = \
+            datamodel.ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS
         kwargs['category_blurbs'] = datamodel.CATEGORY_BLURBS
         if with_report:
             kwargs['report'] = report
