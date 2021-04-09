@@ -167,10 +167,22 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         Dictionary of template variables to unpack as key word arguments when
         rendering.
     """
+    # macros render columns for every allowed summary statistic, so be
+    # specific to avoid unnecessary blanks
+    if all(
+        type(x.original.forecast) is datamodel.EventForecast for x in
+        report.raw_report.processed_forecasts_observations
+    ):
+        human_statistics = datamodel.ALLOWED_EVENT_SUMMARY_STATISTICS
+    else:
+        human_statistics = datamodel.ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS
+
+    # macros only render columns/plots for metrics that actually exist,
+    # so no need to be specific to avoid unnecessary blanks
     kwargs = dict(
         human_categories=datamodel.ALLOWED_CATEGORIES,
         human_metrics=datamodel.ALLOWED_METRICS,
-        human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS,
+        human_statistics=human_statistics,
         report=report,
         category_blurbs=datamodel.CATEGORY_BLURBS,
         dash_url=dash_url,

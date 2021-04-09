@@ -318,7 +318,8 @@ def test_summary_stats_table_vert(report_with_raw, macro_test_template):
             report_metrics=expected_metric,
             category=category,
             human_categories=human_categories,
-            human_statistics=datamodel.ALLOWED_SUMMARY_STATISTICS)
+            human_statistics=datamodel.ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS
+            )
         exp = summary_stats_table_vert_format.format(
             stat=human_categories[category], name=expected_metric[0].name,
             ref='1' if i == 1 else '')
