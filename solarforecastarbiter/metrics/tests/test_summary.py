@@ -1,8 +1,6 @@
-from pandas.core.series import Series
 import pytest
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal
 from solarforecastarbiter.metrics import summary
 
 
