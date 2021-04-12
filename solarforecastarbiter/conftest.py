@@ -8,7 +8,6 @@ import itertools
 import datetime as dt
 import json
 import shutil
-from solarforecastarbiter.metrics.tests.test_calculator import proc_fx_obs
 
 
 import numpy as np
@@ -2792,7 +2791,6 @@ def pending_report(report_dict):
     report_dict['status'] = 'pending'
     report_dict['raw_report'] = None
     return datamodel.Report.from_dict(report_dict)
-
 
 
 @pytest.fixture()
