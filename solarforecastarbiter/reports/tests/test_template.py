@@ -40,6 +40,7 @@ REPORT_TYPE_MAPPING = {
     )
 }
 
+
 @pytest.fixture
 def mocked_timeseries_plots(mocker):
     mocked = mocker.patch(
