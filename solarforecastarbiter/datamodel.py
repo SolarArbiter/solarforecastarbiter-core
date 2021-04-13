@@ -23,8 +23,10 @@ from solarforecastarbiter.metrics.deterministic import \
 from solarforecastarbiter.metrics.event import _MAP as event_mapping
 from solarforecastarbiter.metrics.probabilistic import \
     _MAP as probabilistic_mapping
-from solarforecastarbiter.metrics.summary import \
-    _MAP as summary_mapping
+from solarforecastarbiter.metrics.summary import (
+    _DETERMINISTIC_MAP as summary_deterministic_mapping,
+    _EVENT_MAP as summary_event_mapping,
+)
 from solarforecastarbiter.validation.quality_mapping import \
     DESCRIPTION_MASK_MAPPING, DERIVED_MASKS
 
@@ -114,8 +116,15 @@ ALLOWED_PROBABILISTIC_METRICS = {
 ALLOWED_METRICS = ALLOWED_DETERMINISTIC_METRICS.copy()
 ALLOWED_METRICS.update(ALLOWED_PROBABILISTIC_METRICS)
 ALLOWED_METRICS.update(ALLOWED_EVENT_METRICS)
-ALLOWED_SUMMARY_STATISTICS = {
-    k: v[1] for k, v in summary_mapping.items()}
+
+ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS = {
+    k: v[1] for k, v in summary_deterministic_mapping.items()
+}
+ALLOWED_EVENT_SUMMARY_STATISTICS = {
+    k: v[1] for k, v in summary_event_mapping.items()
+}
+ALLOWED_SUMMARY_STATISTICS = ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS.copy()
+ALLOWED_SUMMARY_STATISTICS.update(ALLOWED_EVENT_SUMMARY_STATISTICS)
 
 
 ALLOWED_COST_FUNCTIONS = tuple(_COST_FUNCTION_MAP.keys())

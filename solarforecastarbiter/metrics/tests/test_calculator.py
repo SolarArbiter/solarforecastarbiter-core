@@ -1577,31 +1577,6 @@ def test_calculate_summary_statistics_interval_label(
             if v.metric == 'observation_mean'} == obsresult
 
 
-@pytest.mark.parametrize('inp,expected', [
-    (
-        pd.DataFrame({'forecast': [0, 1, 2], 'observation': [1, 1, 1]},
-                     index=pd.date_range(start='20200101T0000Z', freq='1h',
-                                         periods=3), dtype=float),
-        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
-                      'median': [1, 1], 'std': [1, 0]},
-                     index=['forecast', 'observation'], dtype=float).T
-     ),
-    (
-        pd.DataFrame({'reference_forecast': [0, 1, 2], 'observation':
-                      [1, 1, np.nan]},
-                     index=pd.date_range(start='20200101T0000Z', freq='1h',
-                                         periods=3), dtype=float),
-        pd.DataFrame({'mean': [1, 1], 'min': [0, 1], 'max': [2, 1],
-                      'median': [1, 1], 'std': [1, 0]},
-                     index=['reference_forecast', 'observation'],
-                     dtype=float).T
-     )
-])
-def test_calculate_summary_for_frame(inp, expected):
-    out = calculator._calculate_summary_for_frame(inp)
-    pd.testing.assert_frame_equal(out, expected)
-
-
 def test_is_deterministic_forecast(single_forecast, single_event_forecast,
                                    prob_forecast_constant_value,
                                    prob_forecasts, single_observation):
