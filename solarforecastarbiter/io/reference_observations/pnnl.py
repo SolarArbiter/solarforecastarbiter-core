@@ -87,7 +87,7 @@ def fetch(api, site, start, end):
     """Retrieve observation data for PNNL site for 1 year.
 
     Assumes that data is available in a directory structure
-    ``pnnl_data/rldradC1.00.{year}/*.sky``
+    ``pnnl_data/rldradC1.00.{%Y}/rldradC1.00.%Y%m%d.%H%M%S.raw.%Y%m%D%Hpnl.sky``
 
     Parameters
     ----------
@@ -96,19 +96,24 @@ def fetch(api, site, start, end):
     site : datamodel.Site
         Site object with the appropriate metadata.
     start : datetime
-        The beginning of the period to request data for. Only the year is
-        used.
+        The beginning of the period to request data for.
     end : datetime
-        Ignored.
+        If end.year > start.year, data will only be pulled through start.year.
 
     Returns
     -------
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
-    """
+    """  # noqa: E501
     year = start.strftime('%Y')
     path = Path('pnnl_data') / f'rldradC1.00.{year}'
-    files = sorted([f for f in path.iterdir() if f.suffix == '.sky'])
+    files = []
+    fmt = 'rldradC1.00.%Y%m%d.%H%M%S'
+    for f in path.iterdir():
+        fdate = pd.to_datetime(f.name.split('.raw')[0], format=fmt, utc=True)
+        if fdate >= start and fdate <= end:
+            files.append(f)
+    files = sorted(files)
     data = pd.concat([_read_data_file(f) for f in files])
     # handful of duplicates exist due to apparently bad data reads. The
     # first read appears to be the correct one. Also starting on 2018-08-14
