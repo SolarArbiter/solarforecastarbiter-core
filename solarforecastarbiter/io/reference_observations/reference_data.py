@@ -40,7 +40,8 @@ from solarforecastarbiter.io.reference_observations import (
     arm,
     pvdaq,
     eia,
-    bsrn
+    bsrn,
+    pnnl
 )
 
 
@@ -56,12 +57,13 @@ NETWORKHANDLER_MAP = {
     'NREL PVDAQ': pvdaq,
     'EIA': eia,
     'WRMC BSRN': bsrn,
+    'PNNL': pnnl
 }
 
 # list of options for the 'network' argument
 NETWORK_OPTIONS = ['NOAA SURFRAD', 'NOAA SOLRAD', 'NOAA USCRN', 'NREL MIDC',
                    'UO SRML', 'DOE RTC', 'DOE ARM', 'NREL PVDAQ', 'EIA',
-                   'WRMC BSRN']
+                   'WRMC BSRN', 'PNNL']
 
 DEFAULT_SITEFILE = resource_filename(
     Requirement.parse('solarforecastarbiter'),
@@ -105,6 +107,8 @@ https://www.eia.gov/opendata/
 
 WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network
 https://bsrn.awi.de
+
+PNNL: Pacific Northwest National Laboratory
 """  # noqa: E501
 
 
@@ -139,7 +143,11 @@ def create_site(api, site):
                        'automatically generated.')
         return
     site.update({'extra_parameters': json.dumps(site['extra_parameters'])})
-    site_name = f"{network} {common.clean_name(site['name'])}"
+    clean_name = common.clean_name(site['name'])
+    if network == clean_name:
+        site_name = network  # don't make sites with names like PNNL PNNL
+    else:
+        site_name = f"{network} {clean_name}"
     existing = common.existing_sites(api)
     if site_name in existing:
         logger.info('Site, %s, already exists', site_name)
