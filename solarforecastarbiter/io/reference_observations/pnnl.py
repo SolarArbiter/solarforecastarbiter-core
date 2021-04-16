@@ -115,6 +115,7 @@ def fetch(api, site, start, end):
     # there is a duplicate entry for the last time of the UTC day. That line
     # contains daily summary data in additional columns
     data = data[~data.index.duplicated()]
+    data = data.tz_localize('UTC').tz_convert('Etc/GMT+8')
     return data
 
 
