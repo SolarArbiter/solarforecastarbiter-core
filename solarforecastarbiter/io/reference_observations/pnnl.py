@@ -88,7 +88,7 @@ def fetch(api, site, start, end):
     """Retrieve observation data for PNNL site for 1 year.
 
     Assumes that data is available in a directory structure
-    ``pnnl_data/rldradC1.00.{%Y}/rldradC1.00.%Y%m%d.%H%M%S.raw.%Y%m%D%Hpnl.sky``
+    ``DATA_PATH/rldradC1.00.{%Y}/rldradC1.00.%Y%m%d.%H%M%S.raw.%Y%m%D%Hpnl.sky``
 
     Parameters
     ----------
