@@ -52,9 +52,13 @@ def cli_access_token(user, password):
     try:
         token = request_cli_access_token(user, password)
     except requests.HTTPError as e:
-        print(e.response)
-        click.echo(click.style(
-            e.response.json()['error_description'], fg='red'))
+        try:
+            message = e.response.json()['error_description']
+        except json.decoder.JSONDecodeError:
+            message = e.response.text
+            if not message and e.response.status_code == 500:
+                message = 'Internal Server Error'
+        click.echo(click.style(message, fg='red'))
         sys.exit(1)
     else:
         return token
