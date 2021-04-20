@@ -98,6 +98,19 @@ def test_fetch(mocker, session, site):
     assert (out.columns == pnnl.COLUMNS).all()
 
 
+def test_fetch_over_year(mocker, session, site):
+    mocker.patch(
+        'solarforecastarbiter.io.reference_observations.pnnl.DATA_PATH',
+        TEST_DATA_PATH
+    )
+    start = pd.Timestamp('2017-12-31T2300Z')
+    end = pd.Timestamp('2018-01-01T0100Z')
+    out = pnnl.fetch(session, site, start, end)
+    assert out.index[0] == pd.Timestamp('20171231T150000', tz='Etc/GMT+8')
+    assert out.index[-1] == pd.Timestamp('20171231T165900', tz='Etc/GMT+8')
+    assert (out.columns == pnnl.COLUMNS).all()
+
+
 def test_update_observation_data(mocker, session, site):
     obs_update = mocker.patch(
         'solarforecastarbiter.io.reference_observations.common.'

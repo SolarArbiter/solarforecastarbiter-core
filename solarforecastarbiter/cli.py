@@ -52,6 +52,7 @@ def cli_access_token(user, password):
     try:
         token = request_cli_access_token(user, password)
     except requests.HTTPError as e:
+        print(e.response)
         click.echo(click.style(
             e.response.json()['error_description'], fg='red'))
         sys.exit(1)

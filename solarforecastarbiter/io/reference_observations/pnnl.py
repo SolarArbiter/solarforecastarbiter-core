@@ -99,26 +99,30 @@ def fetch(api, site, start, end):
     start : datetime
         The beginning of the period to request data for.
     end : datetime
-        The end of the period to request data for. If ``end.year >
-        start.year``, data will only be pulled through ``start.year``.
+        The end of the period to request data for.
 
     Returns
     -------
     data : pandas.DataFrame
         All of the requested data concatenated into a single DataFrame.
     """  # noqa: E501
-    year = start.strftime('%Y')
-    path = DATA_PATH / f'rldradC1.00.{year}'
+    start = start.tz_convert('UTC')
+    end = end.tz_convert('UTC')
+    dirs = (
+        DATA_PATH / f'rldradC1.00.{year}' for year in
+        range(start.year, end.year + 1)
+    )
     files = []
     # format of 1st half of file name (before .raw). 2nd half is repeated info
     file_name_fmt = 'rldradC1.00.%Y%m%d.%H%M%S'
-    for f in path.iterdir():
-        # pull the date from the file name, compare to start, end
-        fdate = pd.to_datetime(
-            f.name.split('.raw')[0], format=file_name_fmt, utc=True
-        )
-        if fdate >= start and fdate <= end:
-            files.append(f)
+    for path in dirs:
+        for f in path.iterdir():
+            # pull the date from the file name, compare to start, end
+            fdate = pd.to_datetime(
+                f.name.split('.raw')[0], format=file_name_fmt, utc=True
+            )
+            if fdate >= start and fdate <= end:
+                files.append(f)
     files = sorted(files)
     data = pd.concat([_read_data_file(f) for f in files])
     # handful of duplicates exist due to apparently bad data reads. The
