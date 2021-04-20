@@ -1,6 +1,7 @@
 """Initialize site obs/forecasts and fetch/update obs for PNNL site."""
 
 import logging
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -10,7 +11,7 @@ from solarforecastarbiter.io.reference_observations import (
 
 logger = logging.getLogger('reference_data')
 
-DATA_PATH = Path('pnnl_data')
+DATA_PATH = Path(os.getenv('PNNL_DATA_DIR', 'pnnl_data'))
 
 # These columns are just the minute data. They do not include the daily
 # summary columns.

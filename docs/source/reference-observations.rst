@@ -166,4 +166,5 @@ Available Network Handlers
 .. [#broken] These APIs are not available as of the build date of this
    documentation.
 .. [#pnnl] PNNL data must be located in a ``pnnl_data`` directory in your local
-   copy of ``solarforecastarbiter-core``.
+   copy of ``solarforecastarbiter-core`` or specified using the
+   ``PNNL_DATA_DIR`` environment variable.
