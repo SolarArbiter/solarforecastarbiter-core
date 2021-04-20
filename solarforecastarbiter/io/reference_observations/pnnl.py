@@ -8,8 +8,9 @@ import pandas as pd
 from solarforecastarbiter.io.reference_observations import (
     common, default_forecasts)
 
-
 logger = logging.getLogger('reference_data')
+
+DATA_PATH = Path('pnnl_data')
 
 # These columns are just the minute data. They do not include the daily
 # summary columns.
@@ -56,7 +57,7 @@ def initialize_site_observations(api, site):
     try:
         extra_params = common.decode_extra_parameters(site)
     except ValueError:
-        logger.warning('Cannot create reference observations at MIDC site '
+        logger.warning('Cannot create reference observations at PNNL site '
                        f'{site.name}, missing required parameters.')
         return
     for pnnl_var, sfa_var in VARIABLE_MAP.items():
@@ -94,11 +95,12 @@ def fetch(api, site, start, end):
     api : io.APISession
         Unused but conforms to common.update_site_observations call
     site : datamodel.Site
-        Site object with the appropriate metadata.
+        Unused but conforms to common.update_site_observations call
     start : datetime
         The beginning of the period to request data for.
     end : datetime
-        If end.year > start.year, data will only be pulled through start.year.
+        The end of the period to request data for. If ``end.year >
+        start.year``, data will only be pulled through ``start.year``.
 
     Returns
     -------
@@ -106,11 +108,15 @@ def fetch(api, site, start, end):
         All of the requested data concatenated into a single DataFrame.
     """  # noqa: E501
     year = start.strftime('%Y')
-    path = Path('pnnl_data') / f'rldradC1.00.{year}'
+    path = DATA_PATH / f'rldradC1.00.{year}'
     files = []
-    fmt = 'rldradC1.00.%Y%m%d.%H%M%S'
+    # format of 1st half of file name (before .raw). 2nd half is repeated info
+    file_name_fmt = 'rldradC1.00.%Y%m%d.%H%M%S'
     for f in path.iterdir():
-        fdate = pd.to_datetime(f.name.split('.raw')[0], format=fmt, utc=True)
+        # pull the date from the file name, compare to start, end
+        fdate = pd.to_datetime(
+            f.name.split('.raw')[0], format=file_name_fmt, utc=True
+        )
         if fdate >= start and fdate <= end:
             files.append(f)
     files = sorted(files)
