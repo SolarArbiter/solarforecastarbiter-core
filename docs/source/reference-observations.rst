@@ -130,7 +130,7 @@ Available Network Handlers
 
    :py:mod:`solarforecastarbiter.io.reference_observations.srml`
 
-* DOE RTC: DOE Regional Test Centers for Solar Technologies\*
+* DOE RTC: DOE Regional Test Centers for Solar Technologies [#api]_ [#broken]_
    https://pv-dashboard.sandia.gov/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.rtc`
@@ -140,21 +140,30 @@ Available Network Handlers
 
    :py:mod:`solarforecastarbiter.io.reference_observations.arm`
 
-* NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition\*
+* NREL PVDAQ: National Renewable Energy Laboratory PV Data Acquisition [#api]_ [#broken]_
    https://developer.nrel.gov/docs/solar/pvdaq-v3/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.pvdaq`
 
-* EIA: U.S. Energy Information Adminstration Open Data\*
+* EIA: U.S. Energy Information Adminstration Open Data [#api]_
    https://www.eia.gov/opendata/
 
    :py:mod:`solarforecastarbiter.io.reference_observations.eia`
 
-* WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network\*
+* WRMC BSRN: World Radiation Monitoring Center - Baseline Surface Radiation Network
    https://bsrn.awi.de
 
    :py:mod:`solarforecastarbiter.io.reference_observations.bsrn`
 
+* PNNL: Pacific Northwest National Laboratory [#pnnl]_
 
-\* Requesting data from these networks requires a valid api key or other
-credentials for the associated API.
+   :py:mod:`solarforecastarbiter.io.reference_observations.pnnl`
+
+.. rubric:: Footnotes
+
+.. [#api] Requesting data from these networks requires a valid api key or other
+   credentials for the associated API.
+.. [#broken] These APIs are not available as of the build date of this
+   documentation.
+.. [#pnnl] PNNL data must be located in a ``pnnl_data`` directory in your local
+   copy of ``solarforecastarbiter-core``.

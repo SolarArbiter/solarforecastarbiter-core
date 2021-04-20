@@ -361,6 +361,7 @@ files with site and observation metadata.
    io.reference_observations.pvdaq
    io.reference_observations.eia
    io.reference_observations.bsrn
+   io.reference_observations.pnnl
 
 
 Reference aggregates
