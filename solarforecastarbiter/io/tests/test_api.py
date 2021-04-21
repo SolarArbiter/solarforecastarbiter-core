@@ -24,8 +24,13 @@ def test_request_cli_access_token_mocked(requests_mock):
 
 
 def test_request_cli_access_token_real():
+    # test the skip test line by adding requests_mock and uncommenting below
+    # requests_mock.register_uri(
+    #     ['GET'], 'https://solarforecastarbiter.auth0.com',
+    #     status_code=500)
     try:
-        requests.get('https://solarforecastarbiter.auth0.com')
+        r = requests.get('https://solarforecastarbiter.auth0.com')
+        r.raise_for_status()
     except Exception:  # pragma: no cover
         return pytest.skip('Cannot connect to Auth0')
     else:
@@ -1256,6 +1261,7 @@ def auth_token():
                   '"password": "Thepassword123!", '
                   '"audience": "https://api.solarforecastarbiter.org", '
                   '"client_id": "c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7"}'))
+        token_req.raise_for_status()
     except Exception:
         return pytest.skip('Cannot retrieve valid Auth0 token')
     else:

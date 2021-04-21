@@ -13,6 +13,8 @@ Enhancements
   (modified version of a pvlib python function). (:issue:`541`, :pull:`656`)
 * Added functions to fetch data from the NASA Langley BSRN site.
   (:issue:`541`, :pull:`656`)
+* Added functions to parse data for the PNNL reference data site.
+  (:issue:`563`, :pull:`669`)
 
 Fixed
 ~~~~~

@@ -420,12 +420,16 @@ def clean_name(string):
 
 def site_name_no_network(site):
     """Removes the prefixed network from a site name for prepending
-    to an observation.
+    to an observation, unless the network name and the site name are the
+    same.
     """
     extra_params = decode_extra_parameters(site)
     network = extra_params['network']
-    # only select the site name after the network name and a space.
-    if site.name.startswith(network):
+    if site.name == network:
+        # return the site/network name
+        return site.name
+    elif site.name.startswith(network):
+        # only select the site name after the network name and a space.
         return site.name[len(network) + 1:]
     else:
         return site.name
