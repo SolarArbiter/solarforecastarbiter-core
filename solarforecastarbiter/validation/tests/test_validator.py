@@ -472,7 +472,20 @@ def test_detect_clearsky_ghi_warn_regular_interval(ghi_clearsky):
     with pytest.warns(RuntimeWarning):
         ser = ghi_clearsky[:-2].append(ghi_clearsky[-1:])
         flags = validator.detect_clearsky_ghi(ser, ser)
-    assert (flags == 0).all()
+    assert (flags[:7] == 0).all()
+    assert (flags[-5:] == 0).all()
+    assert (flags[7:-5]).all()
+
+
+def test_detect_clearsky_ghi_nans(ghi_clearsky):
+    ser = ghi_clearsky.copy()
+    ser.iloc[[10, 21, 22]] = np.nan
+    flags = validator.detect_clearsky_ghi(ser, ghi_clearsky)
+    assert (flags.iloc[[10, 21, 22]] == 0).all()
+    assert (flags[:11] == 0).all()
+    assert (flags[11:21] == 1).all()
+    assert (flags[23:-6] == 1).all()
+    assert (flags[-6:] == 0).all()
 
 
 def test_detect_clearsky_ghi_one_val(ghi_clearsky):
