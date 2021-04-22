@@ -43,7 +43,7 @@ Fixed
 * Changed GFS fetch directory for compatibility with March 22, 2021, 12Z
   model upgrade. (:issue:`662`, :pull:`663`)
 * Fixed ``CLEARSKY`` GHI validation to work around NaNs in the data
-  instead of not calculating the fla(:pull:`673`)
+  instead of not calculating the flag at all (:pull:`673`)
 
 Testing
 ~~~~~~~
