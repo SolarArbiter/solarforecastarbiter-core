@@ -42,6 +42,8 @@ Fixed
   validating event forecast data. (:issue:`660`, :pull:`661`)
 * Changed GFS fetch directory for compatibility with March 22, 2021, 12Z
   model upgrade. (:issue:`662`, :pull:`663`)
+* Fixed ``CLEARSKY`` GHI validation to work around NaNs in the data
+  instead of not calculating the fla(:pull:`673`)
 
 Testing
 ~~~~~~~
