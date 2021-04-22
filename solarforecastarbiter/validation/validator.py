@@ -13,7 +13,6 @@ from pvlib.irradiance import clearsky_index
 from pvlib.clearsky import detect_clearsky as _detect_clearsky
 
 
-from solarforecastarbiter import utils
 from solarforecastarbiter.validation.quality_mapping import mask_flags
 
 
@@ -898,23 +897,21 @@ def detect_clearsky_ghi(ghi, ghi_clearsky):
     if delta_minutes <= 15:
         window_length = np.minimum(10*delta_minutes, 60.0)
         scale_factor = window_length / 10
-        flags = []
-        for cont_ghi in utils.generate_continuous_chunks(
-                ghi.dropna(), delta[1]):
-            if len(cont_ghi) < 2:
-                flags.append(pd.Series(0, index=cont_ghi.index))
-                continue
-            cont_clr = ghi_clearsky.reindex(cont_ghi.index)
-            flags.append(
-                _detect_clearsky(
-                    cont_ghi, cont_clr, cont_ghi.index, window_length,
-                    lower_line_length=-5*scale_factor,
-                    upper_line_length=10*scale_factor,
-                    slope_dev=8*scale_factor
-                )
+        index = pd.date_range(
+            start=ghi.index[0], end=ghi.index[-1], freq=delta[1])
+        adj_ghi = ghi.reindex(index)
+        adj_ghi_clearsky = ghi_clearsky.reindex(index)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            flags = _detect_clearsky(
+                adj_ghi, adj_ghi_clearsky, adj_ghi.index, window_length,
+                lower_line_length=-5*scale_factor,
+                upper_line_length=10*scale_factor,
+                slope_dev=8*scale_factor
+            ).reindex(
+                ghi.index
             )
-        out = pd.concat(flags, axis=0)
-        return out.reindex(ghi.index).fillna(0).astype(int)
+        return flags
     else:
         warnings.warn(
             'detect_clearsky requires regular time intervals of 15m or less',
