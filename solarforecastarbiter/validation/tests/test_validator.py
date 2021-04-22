@@ -479,12 +479,13 @@ def test_detect_clearsky_ghi_warn_regular_interval(ghi_clearsky):
 
 def test_detect_clearsky_ghi_nans(ghi_clearsky):
     ser = ghi_clearsky.copy()
-    ser.iloc[[10, 21, 22]] = np.nan
+    ser.iloc[[10, 21, 22, 24]] = np.nan
     flags = validator.detect_clearsky_ghi(ser, ghi_clearsky)
-    assert (flags.iloc[[10, 21, 22]] == 0).all()
+    assert (flags.iloc[[10, 21, 22, 23, 24]] == 0).all()
+    # 23 0 because can't detect_clearsky on single point
     assert (flags[:11] == 0).all()
     assert (flags[11:21] == 1).all()
-    assert (flags[23:-6] == 1).all()
+    assert (flags[25:-6] == 1).all()
     assert (flags[-6:] == 0).all()
 
 
