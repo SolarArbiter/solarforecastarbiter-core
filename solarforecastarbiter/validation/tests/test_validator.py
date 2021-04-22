@@ -468,7 +468,7 @@ def test_detect_clearsky_ghi_warn_interval_length(ghi_clearsky):
     assert (flags == 0).all()
 
 
-def test_detect_clearsky_ghi_warn_regular_interval(ghi_clearsky):
+def test_detect_clearsky_ghi_with_data_gap(ghi_clearsky):
     ser = ghi_clearsky[:-2].append(ghi_clearsky[-1:])
     flags = validator.detect_clearsky_ghi(ser, ser)
     assert (flags[:7] == 0).all()
