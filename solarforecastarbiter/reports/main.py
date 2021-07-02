@@ -170,7 +170,10 @@ def create_raw_report_from_data(report, data):
     """
     generated_at = pd.Timestamp.now(tz='UTC')
     report_params = report.report_parameters
-    timezone = infer_timezone(report_params)
+    if report_params.timezone:
+        timezone = report_params.timezone
+    else:
+        timezone = infer_timezone(report_params)
     versions = get_versions()
     with hijack_loggers([
         'solarforecastarbiter.metrics',
