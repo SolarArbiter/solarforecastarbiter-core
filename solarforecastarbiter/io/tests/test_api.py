@@ -813,9 +813,15 @@ def test_apisession_list_reports_empty(requests_mock):
     assert out == []
 
 
-def test_apisession_create_report(requests_mock, report_objects, mocker):
+@pytest.mark.parametrize('timezone', [None, 'Etc/GMT+5'])
+def test_apisession_create_report(
+        requests_mock, report_objects, mocker, timezone
+):
     session = api.APISession('')
     report = report_objects[0]
+    if timezone:
+        params = report.report_parameters.replace(timezone=timezone)
+        report = report.replace(report_parameters=params)
     mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
     mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
                  return_value=report)
@@ -867,7 +873,8 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                         "net": True
                     }
                 }
-            ]
+            ],
+            "timezone": timezone
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
@@ -953,7 +960,8 @@ def test_apisession_create_report_mult_costs(requests_mock, report_objects,
                         "net": True
                     }
                 }
-            ]
+            ],
+            "timezone": None
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
@@ -1008,7 +1016,8 @@ def test_apisession_create_report_no_costs(
                  "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
                  "uncertainty": "5.0"}
             ],
-            "costs": []
+            "costs": [],
+            "timezone": None
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
