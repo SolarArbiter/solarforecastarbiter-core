@@ -9,7 +9,7 @@ import itertools
 import json
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-from typing import Tuple, Union, ClassVar
+from typing import Optional, Tuple, Union, ClassVar
 
 
 import numpy as np
@@ -1939,6 +1939,9 @@ class ReportParameters(BaseModel):
         to compute cost metrics for that pair. Each object pair must have
         the 'cost' parameter set to None (no cost calculation will be
         performed) or one of the names of these costs.
+    timezone : str or None
+        The timezone in which to compute daily, hourly, etc. statistics.
+        If None, inferred from data in object_pairs.
     """
     name: str
     start: pd.Timestamp
@@ -1950,6 +1953,7 @@ class ReportParameters(BaseModel):
     filters: Tuple[BaseFilter, ...] = field(
         default_factory=lambda: (QualityFlagFilter(), ))
     costs: Tuple[Cost, ...] = tuple()
+    timezone: Optional[str] = None
 
     def __post_init__(self):
         # ensure that all forecast and observation units are the same

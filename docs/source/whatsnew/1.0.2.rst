@@ -3,7 +3,7 @@
 .. py:currentmodule:: solarforecastarbiter
 
 
-1.0.2 (January ??, 2021)
+1.0.2 (July ??, 2021)
 -------------------------
 
 Enhancements
@@ -15,6 +15,9 @@ Enhancements
   (:issue:`541`, :pull:`656`)
 * Added functions to parse data for the PNNL reference data site.
   (:issue:`563`, :pull:`669`)
+* Report timezone may now be set by passing the ``timezone`` keyword
+  argument to :py:class:`~datamodel.ReportParameters`.
+  (:issue:`317`, :pull:`681`)
 
 Fixed
 ~~~~~

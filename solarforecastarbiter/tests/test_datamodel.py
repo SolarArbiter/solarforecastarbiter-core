@@ -1129,3 +1129,10 @@ def test_probabilistic_units_data_object_matching(
 
     pfx = datamodel.ProbabilisticForecast.from_dict(params)
     datamodel.ForecastObservation(pfx, single_observation)
+
+
+def test_report_parameters_timezone(report_params_dict, report_params):
+    report_params_dict['timezone'] = 'Etc/GMT+7'
+    rpd = datamodel.ReportParameters.from_dict(report_params_dict)
+    rp = report_params.replace(timezone='Etc/GMT+7')
+    assert rpd == rp
