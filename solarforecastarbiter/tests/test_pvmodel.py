@@ -36,7 +36,8 @@ def test_calculate_solar_position(expected_solpos, golden_mst):
                                                       times)
     expected_solpos.index = times
     assert_frame_equal(expected_solpos,
-                       solar_position[expected_solpos.columns])
+                       solar_position[expected_solpos.columns],
+                       check_less_precise=3)
 
 
 # modified from pvlib
