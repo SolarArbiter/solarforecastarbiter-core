@@ -976,10 +976,10 @@ def test_process_forecast_observations_empty_fx(
     # as series
     data_ser = {
         observation: obs_df,
-        forecast_0: pd.Series([], name='value', dtype=np.object),
-        forecast_1: pd.Series([], name='value', dtype=np.object),
-        forecast_ref: pd.Series([], name='value', dtype=np.object),
-        forecast_agg: pd.Series([], name='value', dtype=np.object),
+        forecast_0: pd.Series([], name='value', dtype=object),
+        forecast_1: pd.Series([], name='value', dtype=object),
+        forecast_ref: pd.Series([], name='value', dtype=object),
+        forecast_agg: pd.Series([], name='value', dtype=object),
         aggregate: agg_df
     }
     filters = [quality_filter]
@@ -1009,10 +1009,10 @@ def test_process_forecast_observations_empty_fx(
     # as dataframe
     data_df = {
         observation: obs_df,
-        forecast_0: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_1: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_ref: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_agg: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        forecast_0: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_1: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_ref: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_agg: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
         aggregate: agg_df
     }
     filters = [quality_filter]
