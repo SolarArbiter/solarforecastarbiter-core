@@ -252,6 +252,9 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     week-to-week than day-to-day. For example, the net load on a Monday tends
     to look more similar to the previous Monday that it does to the previous
     day (Sunday).
+
+    For probabilistic forecasts, this function will always use the
+    persistence ensemble time of day method.
     """
     utils.check_persistence_compatibility(observation, forecast, index)
     forecast_start, forecast_end = utils.get_forecast_start_end(

@@ -78,8 +78,9 @@ def obs_5min_begin(site_metadata):
 def observation_values_text():
     """JSON text representation of test data"""
     tz = 'UTC'
+    # long enough date range to create data for prob pers time of day
     data_index = pd.date_range(
-        start='20190101', end='20190112', freq='5min', tz=tz, closed='left')
+        start='20181212', end='20190112', freq='5min', tz=tz, closed='left')
     # each element of data is equal to the hour value of its label
     data = pd.DataFrame({'value': data_index.hour, 'quality_flag': 0},
                         index=data_index)
@@ -1476,7 +1477,7 @@ def test_generate_reference_persistence_forecast_parameters_prob_fx(
     assert param_list[0].forecast == forecasts[0]
     assert param_list[0].observation == observations[1]
     assert param_list[0].index is False
-    assert param_list[0].data_start == pd.Timestamp('2020-05-20T13:00Z')
+    assert param_list[0].data_start == pd.Timestamp('2020-04-30T14:00Z')
     assert param_list[0].issue_times == (
         pd.Timestamp('2020-05-20T14:00Z'),
         pd.Timestamp('2020-05-20T15:00Z')
@@ -1535,6 +1536,10 @@ def test_make_latest_probabilistic_persistence_forecasts_err(
     assert session.post_probabilistic_forecast_constant_value_values.call_count == 0  # NOQA
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason='persistence_probabilistic not accessible via run_persistence'
+)
 @pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
 def test_run_persistence_probabilistic(
         session, perst_prob_fx_obs, obs_5min_begin,
@@ -1544,6 +1549,23 @@ def test_run_persistence_probabilistic(
     forecast = perst_prob_fx_obs[0][0]
     issue_time = pd.Timestamp('20190101T2300Z')
     prob = mocker.spy(main.persistence, 'persistence_probabilistic')
+    out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
+                               issue_time)
+    assert isinstance(out, list)
+    assert len(out) == 3
+    assert isinstance(out[0], pd.Series)
+    assert prob.call_count == 1
+
+
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
+def test_run_persistence_probabilistic_timeofday(
+        session, perst_prob_fx_obs, obs_5min_begin,
+        interval_label, mocker):
+    run_time = pd.Timestamp('20190101T1945Z')
+    # intraday, index=False
+    forecast = perst_prob_fx_obs[0][0]
+    issue_time = pd.Timestamp('20190101T2300Z')
+    prob = mocker.spy(main.persistence, 'persistence_probabilistic_timeofday')
     out = main.run_persistence(session, obs_5min_begin, forecast, run_time,
                                issue_time)
     assert isinstance(out, list)

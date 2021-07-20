@@ -219,14 +219,13 @@ def _weekahead_start_end(issue_time, forecast):
     return data_start, data_end
 
 
-def _20days_start_end(issue_time, forecast):
+def _20days_start_end(run_time):
     """
     Time range of data to be used for probabilistic time of day persistence.
 
     Parameters
     ----------
-    issue_time : pd.Timestamp
-    lead_time : pd.Timedelta
+    run_time : pd.Timestamp
 
     Returns
     -------
@@ -234,8 +233,8 @@ def _20days_start_end(issue_time, forecast):
     data_end : pd.Timestamp
 
     """
-    data_start = issue_time + forecast.lead_time_to_start - pd.Timedelta('20d')
-    data_end = data_start + forecast.run_length
+    data_start = run_time - pd.Timedelta('20d')
+    data_end = run_time
     return data_start, data_end
 
 
@@ -273,14 +272,13 @@ def get_data_start_end(observation, forecast, run_time, issue_time):
     data_start : pd.Timestamp
     data_end : pd.Timestamp
     """
-
-    if _is_intraday(forecast):
+    if isinstance(forecast, ProbabilisticForecast):
+        data_start, data_end = _20days_start_end(run_time)
+    elif _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
         data_start, data_end = _weekahead_start_end(issue_time, forecast)
-    elif isinstance(forecast, ProbabilisticForecast):
-        data_start, data_end = _20days_start_end(issue_time, forecast)
     else:
         data_start, data_end = _dayahead_start_end(issue_time, forecast)
 
