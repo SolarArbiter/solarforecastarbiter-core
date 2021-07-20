@@ -254,7 +254,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     day (Sunday).
 
     For probabilistic forecasts, this function will always use the
-    persistence ensemble time of day method.
+    persistence ensemble time of day method. 30 days of data is pulled.
     """
     utils.check_persistence_compatibility(observation, forecast, index)
     forecast_start, forecast_end = utils.get_forecast_start_end(

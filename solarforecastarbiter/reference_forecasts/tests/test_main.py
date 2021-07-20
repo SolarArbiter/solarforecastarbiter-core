@@ -80,7 +80,7 @@ def observation_values_text():
     tz = 'UTC'
     # long enough date range to create data for prob pers time of day
     data_index = pd.date_range(
-        start='20181212', end='20190112', freq='5min', tz=tz, closed='left')
+        start='20181202', end='20190112', freq='5min', tz=tz, closed='left')
     # each element of data is equal to the hour value of its label
     data = pd.DataFrame({'value': data_index.hour, 'quality_flag': 0},
                         index=data_index)
@@ -1477,7 +1477,7 @@ def test_generate_reference_persistence_forecast_parameters_prob_fx(
     assert param_list[0].forecast == forecasts[0]
     assert param_list[0].observation == observations[1]
     assert param_list[0].index is False
-    assert param_list[0].data_start == pd.Timestamp('2020-04-30T14:00Z')
+    assert param_list[0].data_start == pd.Timestamp('2020-04-20T14:00Z')
     assert param_list[0].issue_times == (
         pd.Timestamp('2020-05-20T14:00Z'),
         pd.Timestamp('2020-05-20T15:00Z')
