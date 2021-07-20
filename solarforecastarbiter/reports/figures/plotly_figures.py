@@ -1208,6 +1208,7 @@ def timeseries_plots(report):
         plot_bgcolor=PLOT_BGCOLOR,
         font=dict(size=14),
         margin=PLOT_MARGINS,
+        height=450
     )
     if ts_fig.data:
         ts_fig_json = ts_fig.to_json()
@@ -1231,6 +1232,7 @@ def timeseries_plots(report):
             plot_bgcolor=PLOT_BGCOLOR,
             font=dict(size=14),
             margin=PLOT_MARGINS,
+            height=450
         )
         if ts_prob_fig.data:
             ts_prob_fig_json = ts_prob_fig.to_json()
