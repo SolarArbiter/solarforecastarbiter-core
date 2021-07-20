@@ -2,6 +2,7 @@
 Provides preprocessing steps to be performed on the timeseries data.
 """
 import logging
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -93,7 +94,12 @@ def apply_fill(fx_data, forecast, forecast_fill_method, start, end):
     return filled, count
 
 
-def _resample_event_obs(obs, fx, obs_data, quality_flags):
+def _resample_event_obs(
+    obs: Union[datamodel.Observation, datamodel.Aggregate],
+    fx: datamodel.EventForecast,
+    obs_data: pd.DataFrame,
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
+) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample the event observation.
 
     Parameters
@@ -102,8 +108,9 @@ def _resample_event_obs(obs, fx, obs_data, quality_flags):
         The Observation being resampled.
     fx : datamodel.EventForecast
         The corresponding Forecast.
-    obs_data : pd.Series
-        Timeseries data of the event observation.
+    obs_data : pandas.DataFrame
+        Timeseries of values and quality flags of the
+        observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
 
@@ -111,10 +118,9 @@ def _resample_event_obs(obs, fx, obs_data, quality_flags):
     -------
     obs_resampled : pandas.Series
         Timeseries data of the Observation resampled to match the Forecast.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
     Raises
     ------
@@ -138,12 +144,21 @@ def _resample_event_obs(obs, fx, obs_data, quality_flags):
     for f in filter(lambda x: x.discard_before_resample, quality_flags):
         discard_before_resample_flags |= set(f.quality_flags)
     discard_before_resample = obs_flags[discard_before_resample_flags]
-    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
     to_discard_before_resample = discard_before_resample.any(axis=1)
+    obs_resampled = obs_data.loc[~to_discard_before_resample, 'value']
 
-    obs_resampled = obs_data[~to_discard_before_resample]
+    # construct validation results
+    counts = discard_before_resample.astype(int).sum(axis=0).to_dict()
+    counts['TOTAL DISCARD BEFORE RESAMPLE'] = to_discard_before_resample.sum()
+    validation_results = _counts_to_validation_results(counts, True)
 
-    return obs_resampled, counts
+    # resampling not allowed, so fill in 0 for discard after resample
+    validation_results += _counts_to_validation_results(
+        {'TOTAL DISCARD AFTER RESAMPLE': 0},
+        False
+    )
+
+    return obs_resampled, validation_results
 
 
 def _validate_event_dtype(ser):
@@ -178,7 +193,12 @@ def _validate_event_dtype(ser):
                         "convert {} to boolean.".format(ser.dtype))
 
 
-def _resample_obs(obs, fx, obs_data, quality_flags):
+def _resample_obs(
+    obs: Union[datamodel.Observation, datamodel.Aggregate],
+    fx: datamodel.Forecast,
+    obs_data: pd.DataFrame,
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
+) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample observations.
 
     Parameters
@@ -199,10 +219,9 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
         The observation time series resampled to match the forecast
         interval_length. Time series will have missing labels where
         values failed validation.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
 
     Raises
     ------
@@ -263,8 +282,11 @@ def _resample_obs(obs, fx, obs_data, quality_flags):
 
 
 def _calc_discard_before_resample(
-        obs_flags, quality_flags, fx_interval_length, closed
-        ):
+    obs_flags: pd.DataFrame,
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
+    fx_interval_length: pd.Timedelta,
+    closed: Optional[str]
+) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Determine intervals to discard before resampling.
 
     Parameters
@@ -283,10 +305,9 @@ def _calc_discard_before_resample(
     to_discard_before_resample : pd.Series
         Indicates if a point should be discarded (True) or kept (False)
         before the resample.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
     """
     # determine the points that should never contribute
     # combine unique elements of tuple of tuples
@@ -312,9 +333,13 @@ def _calc_discard_before_resample(
 
 
 def _calc_discard_after_resample(
-        obs_flags, quality_flags, to_discard_before_resample,
-        fx_interval_length, obs_interval_length, closed
-        ):
+    obs_flags: pd.DataFrame,
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
+    to_discard_before_resample: pd.Series,
+    fx_interval_length: pd.Timedelta,
+    obs_interval_length: pd.Timedelta,
+    closed: Optional[str]
+) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Determine intervals to discard after resampling.
 
     Parameters
@@ -338,10 +363,9 @@ def _calc_discard_after_resample(
     to_discard_after_resample : pd.Series
         Indicates if a point should be discarded (True) or kept (False)
         before the resample.
-    counts : dict
-        Dict where keys are quality_flag.quality_flags and values
-        are integers indicating the number of points filtered
-        for the given flag.
+    validation_results : list
+        Elements are
+        :py:class:`solarforecastarbiter.datamodel.ValidationResult`.
     """
     # number of points discarded before resampling in each interval
     to_discard_before_resample_count = to_discard_before_resample.resample(
@@ -390,7 +414,9 @@ def _calc_discard_after_resample(
     return to_discard_after_resample, validation_results
 
 
-def _counts_to_validation_results(counts, before_resample):
+def _counts_to_validation_results(
+    counts: Dict[str, int], before_resample: bool
+) -> List[datamodel.ValidationResult]:
     return [
         datamodel.ValidationResult(
             flag=k,
@@ -406,7 +432,16 @@ def _search_validation_results(val_results, key):
             return res.count
 
 
-def filter_resample(fx_obs, fx_data, obs_data, quality_flags):
+def filter_resample(
+    fx_obs: Union[datamodel.ForecastObservation, datamodel.ForecastAggregate],
+    fx_data: Union[pd.Series, pd.DataFrame],
+    obs_data: pd.DataFrame,
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
+) -> Tuple[
+    Union[pd.Series, pd.DataFrame],
+    pd.Series,
+    List[datamodel.ValidationResult]
+]:
     """Filter and resample the observation to the forecast interval length.
 
     Parameters
@@ -681,8 +716,8 @@ def process_forecast_observations(forecast_observations, filters,
         logger.warning(
             'Only filtering on Quality Flag is currently implemented. '
             'Other filters will be discarded.')
-        filters = [
-            f for f in filters if isinstance(f, datamodel.QualityFlagFilter)]
+        filters = tuple(
+            f for f in filters if isinstance(f, datamodel.QualityFlagFilter))
     # create string for tracking forecast fill results.
     # this approach supports known methods or filling with contant values.
     forecast_fill_str = FORECAST_FILL_STRING_MAP.get(

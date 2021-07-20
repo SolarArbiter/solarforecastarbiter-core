@@ -138,7 +138,7 @@ def test_adjust_parameters(api_id, has_power):
         assert modeling_params['dc_loss_factor'] == 0.0
         assert modeling_params['surface_azimuth'] == 180.0
         assert modeling_params['surface_tilt'] == 15.0
-        assert modeling_params['temperature_coefficient'] == 0.3
+        assert modeling_params['temperature_coefficient'] == -0.3
         assert modeling_params['tracking_type'] == 'fixed'
     else:
         assert 'modeling_parameters' not in site

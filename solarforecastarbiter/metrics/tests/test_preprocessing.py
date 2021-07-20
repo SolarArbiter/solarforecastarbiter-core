@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pandas.testing import (
-    assert_frame_equal, assert_index_equal, assert_series_equal)
+from pandas.testing import assert_index_equal, assert_series_equal
 
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics import preprocessing
@@ -977,10 +976,10 @@ def test_process_forecast_observations_empty_fx(
     # as series
     data_ser = {
         observation: obs_df,
-        forecast_0: pd.Series([], name='value', dtype=np.object),
-        forecast_1: pd.Series([], name='value', dtype=np.object),
-        forecast_ref: pd.Series([], name='value', dtype=np.object),
-        forecast_agg: pd.Series([], name='value', dtype=np.object),
+        forecast_0: pd.Series([], name='value', dtype=object),
+        forecast_1: pd.Series([], name='value', dtype=object),
+        forecast_ref: pd.Series([], name='value', dtype=object),
+        forecast_agg: pd.Series([], name='value', dtype=object),
         aggregate: agg_df
     }
     filters = [quality_filter]
@@ -1010,10 +1009,10 @@ def test_process_forecast_observations_empty_fx(
     # as dataframe
     data_df = {
         observation: obs_df,
-        forecast_0: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_1: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_ref: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
-        forecast_agg: pd.DataFrame(columns=['1', '2', '3'], dtype=np.object),
+        forecast_0: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_1: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_ref: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
+        forecast_agg: pd.DataFrame(columns=['1', '2', '3'], dtype=object),
         aggregate: agg_df
     }
     filters = [quality_filter]
@@ -1166,17 +1165,25 @@ def test_filter_resample_event(single_event_forecast_observation,
 
     quality_flags = (datamodel.QualityFlagFilter(('USER FLAGGED', )), )
 
-    fx_vals, obs_vals, results = preprocessing.filter_resample(
+    fx_vals, obs_vals, val_res = preprocessing.filter_resample(
         fxobs, fx_series, obs_data, quality_flags
     )
 
     expected_obs = obs_vals.copy()
-    expected_obs['value'] = obs_vals.astype(bool)
     expected_fx = fx_vals.astype(bool)
-    assert_frame_equal(obs_vals, expected_obs)
+    assert_series_equal(obs_vals, expected_obs)
     assert_series_equal(fx_vals, expected_fx)
 
-    assert isinstance(results, dict)
+    val_res_exp = (
+        ('USER FLAGGED', 0, True),
+        ('ISNAN', 0, True),
+        ('TOTAL DISCARD BEFORE RESAMPLE', 0, True),
+        ('TOTAL DISCARD AFTER RESAMPLE', 0, False),
+    )
+    val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
+    for exp in val_res_exp:
+        assert exp in val_res
+    assert len(val_res) == len(val_res_exp)
 
     assert_index_equal(fx_vals.index, obs_vals.index, check_categorical=False)
     assert_index_equal(obs_vals.index, expected_dt, check_categorical=False)
@@ -1213,19 +1220,26 @@ def test__resample_event_obs(single_site, single_event_forecast_text,
     index = pd.date_range(start="20200301T00Z", end="20200304T00Z", freq=freq)
     obs_series = pd.Series(1, dtype=bool, index=index)
     obs_flags = pd.Series(2, index=index)
-    obs_flags.iloc[0] = 18
-    obs_series.iloc[1] = np.nan
-    obs_flags.iloc[2] = 3
+    obs_flags.iloc[0] = 18  # NIGHTTIME
+    obs_series.iloc[1] = np.nan  # ISNAN
+    obs_flags.iloc[2] = 3  # USER FLAGGED
     obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': obs_flags})
 
-    obs_resampled, counts = preprocessing._resample_event_obs(
+    obs_resampled, val_res = preprocessing._resample_event_obs(
         fx, obs, obs_data, quality_flags)
     pd.testing.assert_index_equal(index[3:], obs_resampled.index,
                                   check_categorical=False)
-    assert counts['NIGHTTIME'] == 1
-    assert counts['ISNAN'] == 1
-    assert counts['USER FLAGGED'] == 1
-    assert len(counts) == 3
+    val_res_exp = (
+        ('USER FLAGGED', 1, True),
+        ('NIGHTTIME', 1, True),
+        ('ISNAN', 1, True),
+        ('TOTAL DISCARD BEFORE RESAMPLE', 3, True),
+        ('TOTAL DISCARD AFTER RESAMPLE', 0, False),
+    )
+    val_res_exp = [datamodel.ValidationResult(*r) for r in val_res_exp]
+    for exp in val_res_exp:
+        assert exp in val_res
+    assert len(val_res) == len(val_res_exp)
 
 
 @pytest.mark.parametrize("data", [

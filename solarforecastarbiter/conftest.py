@@ -1772,28 +1772,28 @@ def event_report_objects():
     start = pd.Timestamp('20190401T0000', tz=tz)
     end = pd.Timestamp('20190404T2359', tz=tz)
     site = datamodel.Site(
-        name="NREL MIDC University of Arizona OASIS",
-        latitude=32.22969,
-        longitude=-110.95534,
-        elevation=786.0,
-        timezone="Etc/GMT+7",
-        site_id="9f61b880-7e49-11e9-9624-0a580a8003e9",
-        provider="Reference",
+        name="Weather Station",
+        latitude=42.19,
+        longitude=-122.7,
+        elevation=595.0,
+        timezone="Etc/GMT+8",
+        site_id="123e4567-e89b-12d3-a456-426655440001",
+        provider="Organization 1",
         extra_parameters=''
     )
     obs = datamodel.Observation(
-        name="Example Event Observation",
+        name="Weather Station Event Observation",
         variable="event",
         interval_value_type="instantaneous",
-        interval_length=pd.Timedelta("15min"),
+        interval_length=pd.Timedelta("60min"),
         interval_label="event",
         site=site,
         uncertainty=1.0,
-        observation_id="9f657636-7e49-11e9-b77f-0a580a8003e9",
+        observation_id="991d15ce-7f66-11ea-96ae-0242ac150002",
         extra_parameters='',
     )
     fx0 = datamodel.EventForecast(
-        name="Example Event Forecast",
+        name="Weather Station Event Forecast",
         issue_time_of_day=dt.time(7, 0),
         lead_time_to_start=pd.Timedelta("0 days 00:00:00"),
         interval_length=pd.Timedelta("0 days 01:00:00"),
@@ -1838,6 +1838,21 @@ def event_report_objects():
     )
 
     return report, obs, fx0, fx1
+
+
+@pytest.fixture
+def event_report_data(event_report_objects):
+    index = pd.date_range(
+        start="2019-04-01T00:00:00Z", end="2019-04-04T23:59:00Z",
+        freq='1h')
+    data = pd.Series(1, index=index)
+    obs = pd.DataFrame({'value': data, 'quality_flag': 2})
+    data = {
+        event_report_objects[1]: obs,
+        event_report_objects[2]: data,
+        event_report_objects[3]: data
+    }
+    return data
 
 
 @pytest.fixture()
@@ -2310,15 +2325,43 @@ def cdf_and_cv_report_data_xy(cdf_and_cv_report_objects_xy):
     return data
 
 
-@pytest.fixture(params=['deterministic', 'prob_xy'])
+@pytest.fixture(params=['deterministic', 'event', 'prob_xy', 'prob'])
 def various_report_objects_data(
         report_objects, report_data,
         cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy,
+        event_report_objects, event_report_data,
+        cdf_and_cv_report_objects, cdf_and_cv_report_data,
         request):
     if request.param == 'deterministic':
         return report_objects, report_data
+    elif request.param == 'event':
+        return event_report_objects, event_report_data
     elif request.param == 'prob_xy':
         return cdf_and_cv_report_objects_xy, cdf_and_cv_report_data_xy
+    elif request.param == 'prob':
+        return cdf_and_cv_report_objects, cdf_and_cv_report_data
+
+
+@pytest.fixture(params=['deterministic', 'event'])
+def various_report_with_raw(
+        report_with_raw, report_with_raw_event,
+        request):
+    if request.param == 'deterministic':
+        r = report_with_raw
+    elif request.param == 'event':
+        r = report_with_raw_event
+    return r, request.param
+
+
+@pytest.fixture(params=['deterministic', 'event'])
+def various_pending_report(
+        pending_report, pending_report_event,
+        request):
+    if request.param == 'deterministic':
+        r = pending_report
+    elif request.param == 'event':
+        r = pending_report_event
+    return r, request.param
 
 
 @pytest.fixture()
@@ -2770,6 +2813,110 @@ def pending_report(report_dict):
     report_dict['status'] = 'pending'
     report_dict['raw_report'] = None
     return datamodel.Report.from_dict(report_dict)
+
+
+@pytest.fixture()
+def raw_report_event(
+    event_report_objects, report_metrics, preprocessing_result_types,
+    fail_pdf, constant_cost
+):
+    report, obs, fx0, fx1 = event_report_objects
+
+    def gen(with_series):
+        def ser(interval_length):
+            ser_index = pd.date_range(
+                report.report_parameters.start,
+                report.report_parameters.end,
+                freq=to_offset(interval_length),
+                name='timestamp')
+            ser_value = pd.Series(
+                np.repeat(1, len(ser_index)), name='value',
+                index=ser_index)
+            return ser_value
+        il0 = fx0.interval_length
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
+        qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
+        fxobs0 = datamodel.ProcessedForecastObservation(
+            fx0.name,
+            datamodel.ForecastObservation(
+                fx0,
+                obs,
+                uncertainty=obs.uncertainty),
+            fx0.interval_value_type,
+            il0,
+            fx0.interval_label,
+            valid_point_count=len(ser(il0)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=ser(il0) if with_series else fx0.forecast_id,
+            observation_values=ser(il0) if with_series else obs.observation_id,
+            uncertainty=1.,
+            cost=cost
+        )
+        il1 = fx1.interval_length
+        fxobs1 = datamodel.ProcessedForecastObservation(
+            fx1.name,
+            datamodel.ForecastObservation(
+                fx1,
+                obs,
+                normalization=np.nan,
+                uncertainty=obs.uncertainty),
+            fx1.interval_value_type,
+            il1,
+            fx1.interval_label,
+            valid_point_count=len(ser(il1)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in preprocessing_result_types),
+            forecast_values=ser(il1) if with_series else fx1.forecast_id,
+            observation_values=ser(il1) if with_series else obs.observation_id,
+            reference_forecast_values=None,
+            normalization_factor=np.nan,
+            uncertainty=1.,
+            cost=cost
+        )
+        figs = datamodel.RawReportPlots(
+            (
+                datamodel.PlotlyReportFigure.from_dict(
+                    {
+                        'name': 'mae tucson ghi',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
+                        'pdf': fail_pdf,
+                        'figure_type': 'bar',
+                        'category': 'total',
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
+                    }
+                ),), PLOTLY_VERSION,
+        )
+        raw = datamodel.RawReport(
+            generated_at=report.report_parameters.end,
+            versions=(),
+            timezone=obs.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(fxobs0, fxobs1))
+        return raw
+    return gen
+
+
+@pytest.fixture
+def report_with_raw_xy(raw_report_dict_with_prob, raw_report_xy):
+    raw_report_dict_with_prob['raw_report'] = raw_report_xy(True)
+    raw_report_dict_with_prob['status'] = 'complete'
+    report = datamodel.Report.from_dict(raw_report_dict_with_prob)
+    return report
 
 
 @pytest.fixture()
@@ -3294,6 +3441,86 @@ def report_message(report_message_dict):
 
 @pytest.fixture
 def raw_report_dict_with_event(fail_pdf):
+    site = {
+        'elevation': 595.0,
+        'extra_parameters': "",
+        'latitude': 42.19,
+        'longitude': -122.7,
+        'name': 'Weather Station',
+        'provider': 'Organization 1',
+        'site_id': '123e4567-e89b-12d3-a456-426655440001',
+        'timezone': 'Etc/GMT+8'
+    }
+    obs = {
+        'extra_parameters': '',
+        'interval_label': 'event',
+        'interval_length': 60,
+        'interval_value_type': 'instantaneous',
+        'name': 'Weather Station Event Observation',
+        'observation_id': '991d15ce-7f66-11ea-96ae-0242ac150002',
+        'provider': 'Organization 1',
+        'site': site,
+        'uncertainty': 1.0,
+        'variable': 'event'
+    }
+    fx0 = {
+        'aggregate': None,
+        'extra_parameters': '',
+        'forecast_id': '24cbae4e-7ea6-11ea-86b1-0242ac150002',
+        'interval_label': 'event',
+        'interval_length': 60,
+        'interval_value_type': 'instantaneous',
+        'issue_time_of_day': '05:00',
+        'lead_time_to_start': 60.0,
+        'name': 'Weather Station Event Forecast',
+        'provider': 'Organization 1',
+        'run_length': 60.0,
+        'site': site,
+        'variable': 'event'
+    }
+    fx1_diff = {
+        'name': "Alternative Example Event Forecast",
+        'forecast_id': "68a1c22c-87b5-11e9-bf88-0a580a8200ae"
+    }
+    fx1 = fx0.copy()
+    fx1.update(fx1_diff)
+    proc_fx_obs = {
+        'cost_per_unit_error': 0.0,
+        'forecast_values': '3907ab36-84d4-11ea-8bc4-54bf64606445',
+        'interval_label': 'event',
+        'interval_length': 60,
+        'interval_value_type': 'instantaneous',
+        'name': 'Weather Station Event Forecast',
+        'normalization_factor': np.nan,
+        'observation_values': '391820f6-84d4-11ea-8b57-54bf64606445',
+        'original': {
+            'cost_per_unit_error': 0.0,
+            'forecast': None,
+            'normalization': np.nan,
+            'observation': obs,
+            'reference_forecast': None,
+            'uncertainty': None
+            },
+        'preprocessing_results': [
+            {'count': 0,
+                'name': 'TOTAL FLAGGED VALUES DISCARDED'},
+            {'count': 0,
+                'name': 'EventForecast Values Discarded by Alignment'},
+            {'count': 0,
+                'name': 'Observation Values Discarded by Alignment'},
+            {'count': 0,
+                'name': 'EventForecast Undefined Values'},
+            {'count': 0,
+                'name': 'Observation Undefined Values'}],
+        'reference_forecast_values': None,
+        'uncertainty': None,
+        'valid_point_count': 7,
+        'validation_results': []
+    }
+    proc_fx_obs0 = proc_fx_obs.copy()
+    proc_fx_obs0['original']['forecast'] = fx0
+    proc_fx_obs1 = proc_fx_obs.copy()
+    proc_fx_obs1['original']['forecast'] = fx1
     return {
         'data_checksum': None,
         'generated_at': '2020-04-22T20:02:40+00:00',
@@ -3321,76 +3548,7 @@ def raw_report_dict_with_event(fail_pdf):
                 'pdf': fail_pdf}],
             'plotly_version': PLOTLY_VERSION,
             'script': None},
-        'processed_forecasts_observations': [{
-            'cost_per_unit_error': 0.0,
-            'forecast_values': '3907ab36-84d4-11ea-8bc4-54bf64606445',
-            'interval_label': 'event',
-            'interval_length': 5.0,
-            'interval_value_type': 'instantaneous',
-            'name': 'Weather Station Event Forecast',
-            'normalization_factor': np.nan,
-            'observation_values': '391820f6-84d4-11ea-8b57-54bf64606445',
-            'original': {
-                'cost_per_unit_error': 0.0,
-                'forecast': {
-                    'aggregate': None,
-                    'extra_parameters': '',
-                    'forecast_id': '24cbae4e-7ea6-11ea-86b1-0242ac150002',
-                    'interval_label': 'event',
-                    'interval_length': 5.0,
-                    'interval_value_type': 'instantaneous',
-                    'issue_time_of_day': '05:00',
-                    'lead_time_to_start': 60.0,
-                    'name': 'Weather Station Event Forecast',
-                    'provider': 'Organization 1',
-                    'run_length': 60.0,
-                    'site': {
-                        'elevation': 595.0,
-                        'extra_parameters': "",
-                        'latitude': 42.19,
-                        'longitude': -122.7,
-                        'name': 'Weather Station',
-                        'provider': 'Organization 1',
-                        'site_id': '123e4567-e89b-12d3-a456-426655440001',
-                        'timezone': 'Etc/GMT+8'},
-                    'variable': 'event'},
-                'normalization': np.nan,
-                'observation': {
-                    'extra_parameters': '',
-                    'interval_label': 'event',
-                    'interval_length': 5.0,
-                    'interval_value_type': 'instantaneous',
-                    'name': 'Weather Station Event Observation',
-                    'observation_id': '991d15ce-7f66-11ea-96ae-0242ac150002',
-                    'provider': 'Organization 1',
-                    'site': {
-                        'elevation': 595.0,
-                        'extra_parameters': "",
-                        'latitude': 42.19,
-                        'longitude': -122.7,
-                        'name': 'Weather Station',
-                        'provider': 'Organization 1',
-                        'site_id': '123e4567-e89b-12d3-a456-426655440001',
-                        'timezone': 'Etc/GMT+8'},
-                    'uncertainty': 1.0,
-                    'variable': 'event'},
-                'reference_forecast': None,
-                'uncertainty': None},
-            'preprocessing_results': [
-                {'count': 0,
-                 'name': 'TOTAL FLAGGED VALUES DISCARDED'},
-                {'count': 0,
-                 'name': 'EventForecast Values Discarded by Alignment'},
-                {'count': 0,
-                 'name': 'Observation Values Discarded by Alignment'},
-                {'count': 0,
-                 'name': 'EventForecast Undefined Values'},
-                {'count': 0,
-                 'name': 'Observation Undefined Values'}],
-            'reference_forecast_values': None,
-            'uncertainty': None,
-            'valid_point_count': 7,
-            'validation_results': []}],
+        'processed_forecasts_observations': [proc_fx_obs0, proc_fx_obs1],
         'timezone': 'Etc/GMT+8',
         'versions': [['solarforecastarbiter', '1.0b4+32.gc77b43d'],
                      ['pvlib', '0.7.1'],
@@ -3406,6 +3564,60 @@ def raw_report_dict_with_event(fail_pdf):
                      ['statsmodels', '0.11.0'],
                      ['python', '3.7.1'],
                      ['platform', 'A-Computer']]}
+
+
+@pytest.fixture
+def report_params_dict_with_event(event_report_objects):
+    report, obs, fx0, fx1 = event_report_objects
+    report_params = report.report_parameters
+    return {
+        'name': report_params.name,
+        'start': report_params.start,
+        'end': report_params.end,
+        'forecast_fill_method': report_params.forecast_fill_method,
+        'object_pairs': (
+            {
+                'forecast': fx0.to_dict(),
+                'observation': obs.to_dict(),
+                'uncertainty': obs.uncertainty
+            },
+            {
+                'forecast': fx1.to_dict(),
+                'observation': obs.to_dict(),
+                'uncertainty': obs.uncertainty
+            }
+        ),
+        'metrics': ("pod", "far", "pofd", "csi", "ebias", "ea"),
+        'categories': ("total", "date", "hour")
+    }
+
+
+@pytest.fixture
+def report_dict_event(report_params_dict_with_event, event_report_objects):
+    report = event_report_objects[0]
+    return {
+        'report_parameters': report_params_dict_with_event,
+        'status': report.status,
+        'report_id': report.report_id,
+        '__version__': report.__version__
+    }
+
+
+@pytest.fixture
+def report_with_raw_event(report_dict_event, raw_report_event):
+    report_dict = report_dict_event
+    report_dict['raw_report'] = raw_report_event(True)
+    report_dict['status'] = 'complete'
+    report = datamodel.Report.from_dict(report_dict)
+    return report
+
+
+@pytest.fixture()
+def pending_report_event(report_dict_event):
+    report_dict = report_dict_event
+    report_dict['status'] = 'pending'
+    report_dict['raw_report'] = None
+    return datamodel.Report.from_dict(report_dict)
 
 
 @pytest.fixture

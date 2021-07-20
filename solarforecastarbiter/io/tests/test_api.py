@@ -24,8 +24,13 @@ def test_request_cli_access_token_mocked(requests_mock):
 
 
 def test_request_cli_access_token_real():
+    # test the skip test line by adding requests_mock and uncommenting below
+    # requests_mock.register_uri(
+    #     ['GET'], 'https://solarforecastarbiter.auth0.com',
+    #     status_code=500)
     try:
-        requests.get('https://solarforecastarbiter.auth0.com')
+        r = requests.get('https://solarforecastarbiter.auth0.com')
+        r.raise_for_status()
     except Exception:  # pragma: no cover
         return pytest.skip('Cannot connect to Auth0')
     else:
@@ -808,9 +813,15 @@ def test_apisession_list_reports_empty(requests_mock):
     assert out == []
 
 
-def test_apisession_create_report(requests_mock, report_objects, mocker):
+@pytest.mark.parametrize('timezone', [None, 'Etc/GMT+5'])
+def test_apisession_create_report(
+        requests_mock, report_objects, mocker, timezone
+):
     session = api.APISession('')
     report = report_objects[0]
+    if timezone:
+        params = report.report_parameters.replace(timezone=timezone)
+        report = report.replace(report_parameters=params)
     mocked = requests_mock.register_uri('POST', f'{session.base_url}/reports/')
     mocker.patch('solarforecastarbiter.io.api.APISession.get_report',
                  return_value=report)
@@ -862,7 +873,8 @@ def test_apisession_create_report(requests_mock, report_objects, mocker):
                         "net": True
                     }
                 }
-            ]
+            ],
+            "timezone": timezone
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
@@ -948,7 +960,8 @@ def test_apisession_create_report_mult_costs(requests_mock, report_objects,
                         "net": True
                     }
                 }
-            ]
+            ],
+            "timezone": None
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
@@ -1003,7 +1016,8 @@ def test_apisession_create_report_no_costs(
                  "aggregate": "458ffc27-df0b-11e9-b622-62adb5fd6af0",
                  "uncertainty": "5.0"}
             ],
-            "costs": []
+            "costs": [],
+            "timezone": None
         }}
     session.create_report(report)
     posted = mocked.last_request.json()
@@ -1256,6 +1270,7 @@ def auth_token():
                   '"password": "Thepassword123!", '
                   '"audience": "https://api.solarforecastarbiter.org", '
                   '"client_id": "c16EJo48lbTCQEhqSztGGlmxxxmZ4zX7"}'))
+        token_req.raise_for_status()
     except Exception:
         return pytest.skip('Cannot retrieve valid Auth0 token')
     else:

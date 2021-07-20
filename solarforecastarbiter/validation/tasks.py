@@ -1,5 +1,5 @@
 import logging
-
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -703,7 +703,10 @@ def _group_continuous_week_post(session, observation, observation_values):
     # make series of week + year integers to further
     # split data to post at most one week at a time
     # ~10,000 pts of 1min data
-    week_int = (gid.index.week + gid.index.year).values
+    with warnings.catch_warnings():
+        # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/685
+        warnings.simplefilter("ignore", category=FutureWarning)
+        week_int = (gid.index.week + gid.index.year).values
     # combine the continuous groups with groups of weeks
     # gid is unique for each group since week_int and cumsum
     # increase monotonically and are positive

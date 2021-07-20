@@ -609,8 +609,33 @@ def _is_deterministic_forecast(proc_fxobs):
     return type(proc_fxobs.original.forecast) is datamodel.Forecast
 
 
-def _calculate_summary_for_frame(df):
-    return df.agg(list(summary._MAP.keys()))
+def _is_event_forecast(proc_fxobs):
+    return type(proc_fxobs.original.forecast) is datamodel.EventForecast
+
+
+def _assemble_summary_stats_df(processed_fx_obs):
+    # calculate stats for all obs, deterministic fx, and event fx
+    # do not calculate stats for prob fx
+
+    dfd = {'observation': processed_fx_obs.observation_values}
+
+    def add_forecasts_to_frame():
+        dfd['forecast'] = processed_fx_obs.forecast_values
+        ref_fx = processed_fx_obs.reference_forecast_values
+        if ref_fx is not None:
+            dfd['reference_forecast'] = ref_fx
+
+    if _is_event_forecast(processed_fx_obs):
+        mapping = summary._EVENT_MAP
+        add_forecasts_to_frame()
+    elif _is_deterministic_forecast(processed_fx_obs):
+        mapping = summary._DETERMINISTIC_MAP
+        add_forecasts_to_frame()
+    else:
+        mapping = summary._DETERMINISTIC_MAP
+
+    df = pd.DataFrame(dfd)
+    return df, mapping
 
 
 def calculate_summary_statistics(processed_fx_obs, categories):
@@ -644,16 +669,7 @@ def calculate_summary_statistics(processed_fx_obs, categories):
         out['aggregate_id'] = \
             processed_fx_obs.original.aggregate.aggregate_id
 
-    dfd = {'observation': processed_fx_obs.observation_values}
-    # only calculate stats for deterministic forecasts
-    # but always for observations
-    if _is_deterministic_forecast(processed_fx_obs):
-        dfd['forecast'] = processed_fx_obs.forecast_values
-        ref_fx = processed_fx_obs.reference_forecast_values
-        if ref_fx is not None:
-            dfd['reference_forecast'] = ref_fx
-
-    df = pd.DataFrame(dfd)
+    df, mapping = _assemble_summary_stats_df(processed_fx_obs)
     if df.empty:
         raise RuntimeError('No data to calculate summary statistics for.')
 
@@ -667,21 +683,25 @@ def calculate_summary_statistics(processed_fx_obs, categories):
     for category in set(categories):
         index_category = _index_category(category, df)
 
-        # Group by category
-        for cat, group in df.groupby(index_category):
-            all_metrics = _calculate_summary_for_frame(group)
+        # Calculate each summary statistic
+        for metric, (metric_func, _) in mapping.items():
 
-            # Change category label of the group from numbers
-            # to e.g. January or Monday
-            if category == 'month':
-                cat = calendar.month_abbr[cat]
-            elif category == 'weekday':
-                cat = calendar.day_abbr[cat]
+            # Group by category
+            for cat, group in df.groupby(index_category):
+                res = group.apply(metric_func)
 
-            metric_vals.extend([
-                datamodel.MetricValue(category, f'{obj}_{met}', str(cat), val)
-                for obj, ser in all_metrics.items() for met, val in ser.items()
-            ])
+                # Change category label of the group from numbers
+                # to e.g. January or Monday
+                if category == 'month':
+                    cat = calendar.month_abbr[cat]
+                elif category == 'weekday':
+                    cat = calendar.day_abbr[cat]
+
+                metric_vals.extend([
+                    datamodel.MetricValue(
+                        category, f'{obj}_{metric}', str(cat), val)
+                    for obj, val in res.items()
+                ])
     out['values'] = _sort_metrics_vals(
         metric_vals,
         {f'{type_}_{k}': v
@@ -698,7 +718,7 @@ def calculate_all_summary_statistics(processed_pairs, categories):
 
     Parameters
     ----------
-    processed_pairs :
+    processed_pairs : list
         List of datamodel.ProcessedForecastObservation
     categories : list of str
         List of categories to compute metrics over.

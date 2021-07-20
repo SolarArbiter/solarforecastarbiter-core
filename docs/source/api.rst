@@ -324,6 +324,16 @@ EIA
 
    io.fetch.eia.get_eia_data
 
+BSRN
+----
+
+.. autosummary::
+   :toctree: generated/
+
+   io.fetch.bsrn.parse_bsrn
+   io.fetch.bsrn.read_bsrn_from_nasa_larc
+   io.fetch.bsrn.read_bsrn_month_from_nasa_larc
+
 
 Reference observations
 ======================
@@ -351,6 +361,7 @@ files with site and observation metadata.
    io.reference_observations.pvdaq
    io.reference_observations.eia
    io.reference_observations.bsrn
+   io.reference_observations.pnnl
 
 
 Reference aggregates
@@ -489,7 +500,7 @@ for observations, forecasts, aggregates, and probabilistic forecasts:
    :toctree: generated/
 
    io.api.APISession.get_values
-   io.api.APISession.chunk_value_request
+   io.api.APISession.chunk_value_requests
    io.api.APISession.get_value_gaps
 
 Utils
