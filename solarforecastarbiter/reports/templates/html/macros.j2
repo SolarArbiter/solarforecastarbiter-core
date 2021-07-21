@@ -406,3 +406,9 @@ forecasts/single/{{ forecast.forecast_id }}
     }
 </script>
 {% endmacro %}
+
+{% macro start_end_query(report_parameters) %}
+{% if report_parameters is defined %}
+?start={{ report_parameters.start }}&end={{ report_parameters.end }}
+{% endif %}
+{% endmacro %}
