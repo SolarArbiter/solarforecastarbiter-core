@@ -378,8 +378,9 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
             marker=dict(color=metadata['observation_color']),
             connectgaps=False,
             **plot_kwargs)
-        # collect in list
-        gos.append((metadata['pair_index'], go_))
+        # collect in list. sorting can safely be done on the first index.
+        first_pair_index = metadata['pair_index'].values[0]
+        gos.append((first_pair_index, go_))
     # Add traces in order of pair index
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)
