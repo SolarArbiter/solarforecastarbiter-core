@@ -114,11 +114,11 @@ TEMPLATE_PROBABILISTIC_NWP_FORECASTS = [
 
 TEMPLATE_PROBABILISTIC_PERSISTENCE_FORECASTS = [
     ProbabilisticForecast(
-        name='Hour Ahead Prob Persistence',
+        name='Day Ahead Prob Persistence',
         issue_time_of_day=dt.time(0),
-        lead_time_to_start=pd.Timedelta('1h'),
+        lead_time_to_start=pd.Timedelta('1d'),
         interval_length=pd.Timedelta('1h'),
-        run_length=pd.Timedelta('1h'),
+        run_length=pd.Timedelta('24h'),
         interval_label='ending',
         interval_value_type='interval_mean',
         variable='ghi',
