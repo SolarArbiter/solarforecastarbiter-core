@@ -706,7 +706,8 @@ def process_forecast_observations(forecast_observations, filters,
          resampled observation is NaN.
       5. Drop NaN observation values.
       6. Align observations to match forecast times. Observation times
-         for which there is not a matching forecast time are dropped.
+         for which there is not a matching forecast time are dropped on
+         a forecast by forecast basis.
       7. Create
          :py:class:`~solarforecastarbiter.datamodel.ProcessedForecastObservation`
          with resampled, aligned data and metadata.
