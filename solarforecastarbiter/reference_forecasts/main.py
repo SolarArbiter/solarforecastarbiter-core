@@ -252,6 +252,9 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
     week-to-week than day-to-day. For example, the net load on a Monday tends
     to look more similar to the previous Monday that it does to the previous
     day (Sunday).
+
+    For probabilistic forecasts, this function will always use the
+    persistence ensemble time of day method. 30 days of data is pulled.
     """
     utils.check_persistence_compatibility(observation, forecast, index)
     forecast_start, forecast_end = utils.get_forecast_start_end(
@@ -268,7 +271,7 @@ def run_persistence(session, observation, forecast, run_time, issue_time,
 
     if isinstance(forecast, datamodel.ProbabilisticForecast):
         cvs = [f.constant_value for f in forecast.constant_values]
-        fx = persistence.persistence_probabilistic(
+        fx = persistence.persistence_probabilistic_timeofday(
             observation, data_start, data_end, forecast_start, forecast_end,
             forecast.interval_length, forecast.interval_label, load_data,
             forecast.axis, cvs)

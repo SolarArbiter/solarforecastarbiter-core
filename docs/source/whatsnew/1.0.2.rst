@@ -47,6 +47,13 @@ Fixed
   model upgrade. (:issue:`662`, :pull:`663`)
 * Worked around data gaps during ``CLEARSKY`` GHI validation that cause uneven
   frequencies which lead to skipping validation entirely (:pull:`673`)
+* Fixed probabilistic persistence ensemble forecasts to use the last 30
+  days of data and
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
+  rather than the last hour of data with
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic`.
+  Hour ahead reference forecasts are replaced with day ahead reference
+  forecasts. (:issue:`639`, :pull:`645`)
 
 Testing
 ~~~~~~~
