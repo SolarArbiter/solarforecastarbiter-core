@@ -106,6 +106,11 @@ forecasts.
 Automated Generation
 ====================
 
+The Solar Forecast Arbiter runs workers that automatically create reference
+forecasts. This feature is currently limited to reference forecasts defined
+by the Arbiter itself. In the future we hope to extend this to user-defined
+reference forecasts.
+
 Automated generation of reference NWP forecasts is achieved by adding
 a set of parameters to a Forecast's extra_parameters (formatted as JSON).
 These parameters are:
