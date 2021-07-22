@@ -18,6 +18,9 @@ Enhancements
 * Report timezone may now be set by passing the ``timezone`` keyword
   argument to :py:class:`~datamodel.ReportParameters`.
   (:issue:`317`, :pull:`681`)
+* Report tables of observations, forecasts and reference forecasts now link
+  users to the date range of the data used in the report. 
+  (:issue:`679`, :pull:`688`)
 
 Fixed
 ~~~~~
@@ -59,6 +62,7 @@ Fixed
   forecasts. (:issue:`639`, :pull:`645`)
 * Clarified that automated generation of reference forecasts is currently
   limited to privileged accounts. (:issue:`659`, :pull:`691`)
+* Fixed reference forecast links in report tables (:issue:`678`, :pull:`688`)
 
 Testing
 ~~~~~~~

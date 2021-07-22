@@ -43,11 +43,11 @@
       </td>
       <td>
         {% if pfxobs.original.observation is defined %}
-        <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}">
+        <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}{{ macros.start_end_query(report.report_parameters)}}">
           {{ pfxobs.original.observation.name }}
         </a>
         {% else %}
-        <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}">
+        <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}{{ macros.start_end_query(report.report_parameters)}}">
           {{ pfxobs.original.aggregate.name }}
         </a>
         {% endif %}
@@ -58,7 +58,7 @@
         {{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min
       </td>
       <td>
-        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.forecast) }}">
+        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
           {{ pfxobs.original.forecast.name }}
          </a>
       </td>
@@ -69,7 +69,7 @@
       </td>
       <td>
         {% if pfxobs.original.reference_forecast != none %}
-        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.reference_forecast.forecast_id) }}">
+        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.reference_forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
           {{ pfxobs.original.reference_forecast.name if pfxobs.original.reference_forecast != none else 'None' }}
         </a>
         {% else %}
