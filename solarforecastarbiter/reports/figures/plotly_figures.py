@@ -360,7 +360,9 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
             metadata['pair_index']
         )
         duplicated = ts_this_obs_hash.index.duplicated()
-        ts_to_plot = timeseries_value_df[~duplicated]
+        # rows are initially ordered by pair_index, then dt index.
+        # now we only want the dt index and no longer care about the pair_index
+        ts_to_plot = timeseries_value_df[~duplicated].sort_index()
         plot_kwargs = plot_utils.line_or_step_plotly(
             metadata['interval_label'])
         data = _fill_timeseries(
