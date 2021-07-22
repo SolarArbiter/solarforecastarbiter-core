@@ -3,8 +3,8 @@
 .. py:currentmodule:: solarforecastarbiter
 
 
-1.0.2 (July ??, 2021)
--------------------------
+1.0.2 (July 22, 2021)
+---------------------
 
 Enhancements
 ~~~~~~~~~~~~
