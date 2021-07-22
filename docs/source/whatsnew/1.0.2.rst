@@ -57,6 +57,8 @@ Fixed
   :py:func:`~reference_forecasts.persistence.persistence_probabilistic`.
   Hour ahead reference forecasts are replaced with day ahead reference
   forecasts. (:issue:`639`, :pull:`645`)
+* Clarified that automated generation of reference forecasts is currently
+  limited to privileged accounts. (:issue:`659`, :pull:`691`)
 
 Testing
 ~~~~~~~
