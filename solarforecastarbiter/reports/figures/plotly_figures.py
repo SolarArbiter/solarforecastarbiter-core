@@ -246,6 +246,10 @@ def _fill_timeseries(df, interval_length):
 
 def _obs_name(fx_obs):
     # TODO: add code to ensure obs names are unique
+    # should be unique if plotting by hash and name includes
+    # pfxobs.interval_length, pfxobs.interval_value_type, pfxobs.interval_label
+    # name doens't need them if they are the same as the fx_obs parameters
+    # since that would guarantee uniqueness
     name = fx_obs.data_object.name
     if fx_obs.forecast.name == fx_obs.data_object.name:
         if isinstance(fx_obs.data_object, datamodel.Observation):
@@ -286,13 +290,20 @@ def _none_or_values0(metadata, key):
     return value
 
 
-def _extract_metadata_from_df(metadata_df, hash_, hash_key):
+def _extract_metadata_from_df(metadata_df, hash_, hash_key, keep_pairs=False):
+    # dataframe that is subset of total metadata dataframe
     metadata = metadata_df[metadata_df[hash_key] == hash_]
+    if keep_pairs:
+        pair_index = metadata['pair_index']
+    else:
+        pair_index = metadata['pair_index'].values[0]
+    # unclear why we don't use metadata.iloc[0] for most
     meta = {
-        'pair_index': metadata['pair_index'].values[0],
+        'pair_index': pair_index,
         'observation_name': metadata['observation_name'].values[0],
         'forecast_name': metadata['forecast_name'].values[0],
         'interval_label': metadata['interval_label'].values[0],
+        # np.timedelta64. unclear why we'd want this
         'interval_length': metadata['interval_length'].values[0],
         'observation_color': metadata['observation_color'].values[0],
     }
@@ -341,13 +352,23 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
     gos = []
     # construct graph objects in random hash order
     for obs_hash in np.unique(timeseries_meta_df['observation_hash']):
+        # if observation is used multiple times, takes the plotting metadata
+        # from the first use of it but returns pair_index for all instances
         metadata = _extract_metadata_from_df(
-            timeseries_meta_df, obs_hash, 'observation_hash')
-        pair_idcs = timeseries_value_df['pair_index'] == metadata['pair_index']
+            timeseries_meta_df, obs_hash, 'observation_hash', keep_pairs=True)
+        ts_this_obs_hash = timeseries_value_df['pair_index'].isin(
+            metadata['pair_index']
+        )
+        duplicated = ts_this_obs_hash.index.duplicated()
+        # rows are initially ordered by pair_index, then dt index.
+        # now we only want the dt index and no longer care about the pair_index
+        # _fill_timeseries will use index[0] and index[-1] to determine time
+        # range to plot, so failing to sort can prevent data from being plotted
+        ts_to_plot = timeseries_value_df[~duplicated].sort_index()
         plot_kwargs = plot_utils.line_or_step_plotly(
             metadata['interval_label'])
         data = _fill_timeseries(
-            timeseries_value_df[pair_idcs],
+            ts_to_plot,
             metadata['interval_length'],
         )
         if data['observation_values'].isnull().all():
@@ -361,8 +382,9 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
             marker=dict(color=metadata['observation_color']),
             connectgaps=False,
             **plot_kwargs)
-        # collect in list
-        gos.append((metadata['pair_index'], go_))
+        # collect in list. sorting can safely be done on the first index.
+        first_pair_index = metadata['pair_index'].values[0]
+        gos.append((first_pair_index, go_))
     # Add traces in order of pair index
     for idx, go_ in sorted(gos, key=lambda x: x[0]):
         fig.add_trace(go_)

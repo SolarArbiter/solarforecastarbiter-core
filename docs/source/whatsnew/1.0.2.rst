@@ -47,6 +47,9 @@ Fixed
   model upgrade. (:issue:`662`, :pull:`663`)
 * Worked around data gaps during ``CLEARSKY`` GHI validation that cause uneven
   frequencies which lead to skipping validation entirely (:pull:`673`)
+* Fixed issue with processed observations failing to be plotted due to a
+  missing forecast. Processed observations are now plotted for all
+  points for which there is a forecast. (:pull:`689`)
 * Fixed probabilistic persistence ensemble forecasts to use the last 30
   days of data and
   :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
