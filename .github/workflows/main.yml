@@ -22,7 +22,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-test.txt
-          tlmgr --usermode install $(cat packages.tex) --repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet
+          tlmgr --usermode install $(cat packages.tex) --repository=http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/2020/tlnet-final
 
       - name: Install solarforecastarbiter with extras
         run: pip install '.[all]'
