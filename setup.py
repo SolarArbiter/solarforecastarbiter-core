@@ -52,7 +52,7 @@ setup(
         'netCDF4',
         'numpy>=1.18.2',
         'pandas>=1.0.3',
-        'requests',
+        'requests<=2.25.1',
         'xarray',
         'tables',
         'pvlib==0.8.0',
