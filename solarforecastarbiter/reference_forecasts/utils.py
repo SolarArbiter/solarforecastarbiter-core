@@ -3,6 +3,7 @@ import pandas as pd
 import pytz
 
 
+from solarforecastarbiter.datamodel import ProbabilisticForecast
 from solarforecastarbiter.io import utils as io_utils
 
 
@@ -218,6 +219,26 @@ def _weekahead_start_end(issue_time, forecast):
     return data_start, data_end
 
 
+def _run_time_delta_start_end(run_time, delta):
+    """
+    Time range of data from ``run_time - delta`` to ``run_time``.
+
+    Parameters
+    ----------
+    run_time : pd.Timestamp
+    delta : str
+
+    Returns
+    -------
+    data_start : pd.Timestamp
+    data_end : pd.Timestamp
+
+    """
+    data_start = run_time - pd.Timedelta(delta)
+    data_end = run_time
+    return data_start, data_end
+
+
 def _adjust_for_instant_obs(data_start, data_end, observation, forecast):
     # instantaneous observations require care.
     # persistence models return forecasts with same closure as obs
@@ -252,13 +273,13 @@ def get_data_start_end(observation, forecast, run_time, issue_time):
     data_start : pd.Timestamp
     data_end : pd.Timestamp
     """
-
-    if _is_intraday(forecast):
+    if isinstance(forecast, ProbabilisticForecast):
+        data_start, data_end = _run_time_delta_start_end(run_time, '30d')
+    elif _is_intraday(forecast):
         data_start, data_end = _intraday_start_end(observation, forecast,
                                                    run_time)
     elif forecast.variable == 'net_load':
-        data_start, data_end = _weekahead_start_end(
-            issue_time, forecast)
+        data_start, data_end = _weekahead_start_end(issue_time, forecast)
     else:
         data_start, data_end = _dayahead_start_end(issue_time, forecast)
 

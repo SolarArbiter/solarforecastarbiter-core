@@ -50,6 +50,13 @@ Fixed
 * Fixed issue with processed observations failing to be plotted due to a
   missing forecast. Processed observations are now plotted for all
   points for which there is a forecast. (:pull:`689`)
+* Fixed probabilistic persistence ensemble forecasts to use the last 30
+  days of data and
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
+  rather than the last hour of data with
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic`.
+  Hour ahead reference forecasts are replaced with day ahead reference
+  forecasts. (:issue:`639`, :pull:`645`)
 
 Testing
 ~~~~~~~

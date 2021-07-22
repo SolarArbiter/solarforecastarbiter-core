@@ -631,7 +631,8 @@ def create_persistence_forecasts(api, site, variables, templates):
                         template_fx.name, obs.name)
             use_index = (
                 template_fx.run_length < pd.Timedelta('1d') and
-                obs.variable in ('ghi', 'dni', 'dhi', 'ac_power')
+                obs.variable in ('ghi', 'dni', 'dhi', 'ac_power') and not
+                isinstance(template_fx, ProbabilisticForecast)
             )
             validation_func = partial(check_persistence_compatibility, obs,
                                       index=use_index)
