@@ -7,7 +7,7 @@ ENV PATH=/opt/app-root/bin:/usr/local/texlive/bin/x86_64-linux:$PATH \
     LC_ALL=C
 
 LABEL summary="$SUMMARY" \
-    maintainer="atlorenzo@email.arizona.edu"
+    maintainer="lboeman@arizona.edu"
 
 USER root
 
@@ -53,10 +53,10 @@ COPY build/tex /tmp/tex
 # install texlive basic
 RUN set -ex \
     && cd /tmp/tex \
-    && wget -q http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz \
+    && wget -q http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/2020/tlnet-final/install-tl-unx.tar.gz \
     && mkdir install-tl \
     && tar -xzf install-tl-unx.tar.gz -C install-tl --strip=1 \
-    && install-tl/install-tl -no-gui -profile /tmp/tex/texlive.profile -repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
+    && install-tl/install-tl -no-gui -profile /tmp/tex/texlive.profile -repository=http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/2020/tlnet-final \
     && mkdir -p /opt/app-root/texmf \
     && chown 1001:0 /opt/app-root/texmf \
     && su user -c "tlmgr init-usertree" \
@@ -64,7 +64,7 @@ RUN set -ex \
 
 COPY . /tmp/build
 RUN set -ex \
-    && tlmgr --usermode install $(cat /tmp/build/packages.tex) --repository=http://mirrors.ibiblio.org/pub/mirrors/CTAN/systems/texlive/tlnet\
+    && tlmgr --usermode install $(cat /tmp/build/packages.tex) --repository=http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/2020/tlnet-final \
     && /opt/app-root/bin/pip install --no-cache-dir wheel \
     && /opt/app-root/bin/pip install --no-cache-dir -r /tmp/build/requirements.txt -r /tmp/build/requirements-test.txt \
     && /opt/app-root/bin/pip install --no-cache-dir '/tmp/build/.[all]' \
