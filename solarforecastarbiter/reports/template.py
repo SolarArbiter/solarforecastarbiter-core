@@ -169,9 +169,9 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
     """
     # macros render columns for every allowed summary statistic, so be
     # specific to avoid unnecessary blanks
-    if all(
-        type(x.forecast) is datamodel.EventForecast for x in
-        report.report_parameters.object_pairs
+    if report.status == "complete" and all(
+        type(x.original.forecast) is datamodel.EventForecast for x in
+        report.raw_report.processed_forecasts_observations
     ):
         human_statistics = datamodel.ALLOWED_EVENT_SUMMARY_STATISTICS
     else:
