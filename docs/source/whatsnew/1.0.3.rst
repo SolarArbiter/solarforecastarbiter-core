@@ -15,7 +15,8 @@ Fixed
   (:issue:`694`, :pull:`701`)
 * Fixed inability of
   :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
-  to account for ``interval_label='ending'``. (:issue:`700`, :pull:`703`)
+  to account for ``interval_label='ending'`` and improper accounting for
+  observation interval label when resampling. (:issue:`700`, :pull:`703`)
 
 Testing
 ~~~~~~~

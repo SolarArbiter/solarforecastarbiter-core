@@ -584,6 +584,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
                            forecast_start, forecast_end,
                            observation.interval_length)
 
+    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
     closed = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed)
@@ -593,7 +594,7 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     # unlike other functions in this module, we do need label=closed
     # here because we will match the resampled obs time of day to
     # the desired forecast time of day.
-    obs = obs.resample(interval_length, closed=closed, label=closed).mean()
+    obs = obs.resample(interval_length, closed=closed_obs, label=closed).mean()
     if obs.empty:
         raise ValueError("Insufficient data to match by time of day")
 
