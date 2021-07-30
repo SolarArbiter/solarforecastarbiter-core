@@ -646,6 +646,7 @@ def test_persistence_probabilistic_resampling(
         )
 
 
+@pytest.mark.parametrize('interval_label', ['beginning', 'ending'])
 @pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
     # constant_values = variable values
     # forecasts = percentiles [%]
@@ -660,11 +661,11 @@ def test_persistence_probabilistic_timeofday_resample(
     obs_values,
     axis,
     constant_values,
-    expected_values
+    expected_values,
+    interval_label
 ):
 
     tz = 'UTC'
-    interval_label = "beginning"
     observation = default_observation(
         site_metadata,
         interval_length='30min',
