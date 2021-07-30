@@ -146,6 +146,28 @@ def test__get_render_kwargs_with_series_exception(
     assert 'timeseries_prob_spec' not in kwargs
 
 
+def test__get_render_kwargs_no_param_object_pairs(
+        mocked_timeseries_plots, various_report_with_raw, dash_url,
+        with_series, expected_kwargs):
+    # regression test for #694
+    report_with_raw, report_type = various_report_with_raw
+    report_dict = report_with_raw.to_dict()
+    report_dict['report_parameters']['object_pairs'] = []
+    no_pair_report = datamodel.Report.from_dict(report_dict)
+    kwargs = template._get_render_kwargs(
+        no_pair_report,
+        dash_url,
+        with_series
+    )
+    kwargs.pop('report')
+    exp = expected_kwargs(
+        report_with_raw, with_series, report_type=report_type)
+    exp.pop('report')
+    # reports will now be different, but everything else should stay
+    # the same
+    assert kwargs == exp
+
+
 @pytest.fixture(params=[0, 1, 2])
 def good_or_bad_report(request, report_with_raw, failed_report,
                        pending_report):

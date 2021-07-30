@@ -168,10 +168,17 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         rendering.
     """
     # macros render columns for every allowed summary statistic, so be
-    # specific to avoid unnecessary blanks
-    if all(
-        type(x.forecast) is datamodel.EventForecast for x in
-        report.report_parameters.object_pairs
+    # specific about which columns to include to avoid unnecessary blanks.
+
+    # Check that the report is complete, and if the processed forecasts are
+    # all event forecasts. Checking processed forecast pairs instead of
+    # report_parameters.object pairs allows us to skip the step of loading
+    # or shuffling around forecasts when working with a raw api response on
+    # the dashboard without the aid of solarforecastarbiter.io.api's
+    # process_report_dict. See issue 694 for context.
+    if report.status == "complete" and all(
+        type(x.original.forecast) is datamodel.EventForecast for x in
+        report.raw_report.processed_forecasts_observations
     ):
         human_statistics = datamodel.ALLOWED_EVENT_SUMMARY_STATISTICS
     else:

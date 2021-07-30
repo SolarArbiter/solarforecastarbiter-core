@@ -1,0 +1,30 @@
+.. _whatsnew_103:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.3 (August 2, 2021)
+----------------------
+
+Enhancements
+~~~~~~~~~~~~
+
+Fixed
+~~~~~
+* Fixed report summary statistics table always displaying event statistics.
+  (:issue:`694`)(:pull:`701`)
+
+Testing
+~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* Cliff Hansen (:ghuser:`cwhanse`)
+* Tony Lorenzo (:ghuser:`alorenzo175`)
+* Justin Sharp (:ghuser:`MrWindAndSolar`)
+* Aidan Tuohy
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
