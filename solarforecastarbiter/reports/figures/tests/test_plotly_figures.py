@@ -533,6 +533,16 @@ def test_timeseries_plots_missing_obs_data(
     assert scat_plot is None
 
 
+def format_obs(fxobs):
+    # helper for testing observation names exist
+    obs_name = fxobs.original.observation.name
+    interval = figures.formatted_interval(
+        fxobs.original.forecast.interval_length.to_numpy()
+    )
+    label = fxobs.original.forecast.interval_label
+    name = f'{obs_name} {interval} {label}'
+    return figures._legend_text(name)
+
 def test_timeseries_plots_missing_prob_fx_data(
         report_with_raw_xy, report_with_raw, replace_pfxobs_attrs):
     non_cdf = report_with_raw.raw_report.processed_forecasts_observations
@@ -559,7 +569,8 @@ def test_timeseries_plots_missing_prob_fx_data(
     plotted_names = [p['name'] for p in ts_spec_dict['data']]
     should_plot = [fxobs.original.forecast.name
                    for fxobs in non_cdf]
-    should_plot += [fxobs.original.observation.name
+
+    should_plot += [format_obs(fxobs)
                     if hasattr(fxobs.original, 'observation')
                     else fxobs.original.aggregate.name
                     for fxobs in non_cdf]
@@ -588,7 +599,7 @@ def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
         only_x)
     ts_spec_dict = json.loads(ts_spec)
     obs_names = sorted(list(set(
-        figures._legend_text(fxobs.original.observation.name)
+        format_obs(fxobs)
         if hasattr(fxobs.original, 'observation')
         else figures._legend_text(fxobs.original.aggregate.name)
         for fxobs in pfxobs)
