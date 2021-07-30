@@ -346,6 +346,27 @@ def _legend_text(name, max_length=20):
         return name
 
 
+def formatted_interval(minutes):
+    """Converts an interval_length timedelta into a string for display
+
+    Parameters
+    ----------
+    minutes: np.timedelta64
+
+    Returns
+    -------
+    str
+        The interval as a string, displayed in the largest units possible
+        without mixing units(up to days)
+    """
+    if (minutes % np.timedelta64(1, 'D') == 0):
+        return f'{np.timedelta64(minutes, "D").astype(int)}d'
+    elif (minutes % np.timedelta64(1, 'h') == 0):
+        return f'{np.timedelta64(minutes, "h").astype(int)}h'
+    else:
+        return f'{np.timedelta64(minutes, "m").astype(int)}m'
+
+
 def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
     # construct graph objects in random hash order. collect them in a list
     # along with the pair index. Then add traces in order of pair index.
@@ -373,11 +394,20 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         )
         if data['observation_values'].isnull().all():
             continue
+        # Append the interval length and labelling to each observation
+        # to ensure unique names
+        interval_text = formatted_interval(
+            np.timedelta64(metadata["interval_length"], 'm')
+        )
+        label_text = metadata['interval_label']
+        observation_legend_name = _legend_text(
+           f'{ metadata["observation_name"]} {interval_text} {label_text}'
+        )
         go_ = go.Scattergl(
             y=data['observation_values'],
-            x=data.index,
-            name=_legend_text(metadata['observation_name']),
-            legendgroup=metadata['observation_name'],
+            x=data.index,#HERE
+            name=observation_legend_name,
+            legendgroup=observation_legend_name,
             showlegend=True,
             marker=dict(color=metadata['observation_color']),
             connectgaps=False,
