@@ -397,7 +397,7 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         interval_text = formatted_interval(metadata["interval_length"])
         label_text = metadata['interval_label']
         observation_legend_name = _legend_text(
-           f'{ metadata["observation_name"]} {interval_text} {label_text}'
+           f'{metadata["observation_name"]} {interval_text} {label_text}'
         )
         go_ = go.Scattergl(
             y=data['observation_values'],
