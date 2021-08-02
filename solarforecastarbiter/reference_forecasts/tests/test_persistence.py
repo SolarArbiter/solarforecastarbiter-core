@@ -680,17 +680,17 @@ PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
     ('ending', PROB_PERS_TOD_OBS_INDEX)
 ])
 @pytest.mark.parametrize('fx_interval_label_index', [
-    ('beginning', pd.DatetimeIndex(['20190514T0900Z'])),
-    ('ending', pd.DatetimeIndex(['20190514T1000Z']))
+    ('beginning', pd.DatetimeIndex(['20190514T0900Z'], freq='1h')),
+    ('ending', pd.DatetimeIndex(['20190514T1000Z'], freq='1h'))
 ])
 @pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
     # constant_values = variable values
     # forecasts = percentiles [%]
-    ([0] * 22 + [20] * 22, 'x', [10, 20], [50, 100]),
+    ([0] * 22 + [20] * 22, 'x', [10, 20], [50., 100.]),
 
     # constant_values = percentiles [%]
     # forecasts = variable values
-    ([0] * 22 + [4] * 22, 'y', [50], [2]),
+    ([0] * 22 + [4] * 22, 'y', [50], [2.]),
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
@@ -730,13 +730,10 @@ def test_persistence_probabilistic_timeofday_resample(
         interval_length, fx_interval_label, load_data, axis, constant_values
     )
     assert isinstance(forecasts, list)
-    for i, fx in enumerate(forecasts):
-        pd.testing.assert_index_equal(fx.index, expected_index,
-                                      check_categorical=False)
-
+    for expected, fx in zip(expected_values, forecasts):
         pd.testing.assert_series_equal(
             fx,
-            pd.Series(expected_values[i], index=expected_index, dtype=float)
+            pd.Series(expected, index=expected_index)
         )
 
 
