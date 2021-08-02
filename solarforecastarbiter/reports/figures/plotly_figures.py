@@ -359,9 +359,7 @@ def formatted_interval(interval):
         The interval as a string, displayed in the largest units possible
         without mixing units(up to days)
     """
-    if (interval % np.timedelta64(1, 'D') == 0):
-        return f'{np.timedelta64(interval, "D").astype(int)}d'
-    elif (interval % np.timedelta64(1, 'h') == 0):
+    if (interval % np.timedelta64(1, 'h') == 0):
         return f'{np.timedelta64(interval, "h").astype(int)}h'
     else:
         return f'{np.timedelta64(interval, "m").astype(int)}m'
