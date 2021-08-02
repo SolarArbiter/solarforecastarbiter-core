@@ -13,6 +13,9 @@ Fixed
 ~~~~~
 * Fixed report summary statistics table always displaying event statistics.
   (:issue:`694`)(:pull:`701`)
+* Differentiated observations in report timeseries plot legend by adding
+  interval length and interval label of the resampled observation.
+  (:issue:`675`)(:pull:`703`)
 
 Testing
 ~~~~~~~
