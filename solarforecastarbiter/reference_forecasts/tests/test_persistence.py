@@ -686,11 +686,13 @@ PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
 @pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
     # constant_values = variable values
     # forecasts = percentiles [%]
-    ([0] * 22 + [20] * 22, 'x', [10, 20], [50., 100.]),
+    # intervals always average to 10 if done properly, but 0 or 20 if
+    # done improperly
+    ([0, 20] * 22, 'x', [10, 20], [100., 100.]),
 
     # constant_values = percentiles [%]
     # forecasts = variable values
-    ([0] * 22 + [4] * 22, 'y', [50], [2.]),
+    ([0, 4] * 22, 'y', [50], [2.]),
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
