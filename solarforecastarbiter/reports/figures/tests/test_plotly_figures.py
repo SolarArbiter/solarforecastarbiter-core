@@ -535,13 +535,17 @@ def test_timeseries_plots_missing_obs_data(
 
 def format_obs(fxobs):
     # helper for testing observation names exist
-    obs_name = fxobs.original.observation.name
+    if hasattr(fxobs.original, 'observation'):
+        obs_name = fxobs.original.observation.name
+    else:
+        obs_name = fxobs.original.aggregate.name
     interval = figures.formatted_interval(
         fxobs.original.forecast.interval_length.to_numpy()
     )
     label = fxobs.original.forecast.interval_label
     name = f'{obs_name} {interval} {label}'
     return figures._legend_text(name)
+
 
 def test_timeseries_plots_missing_prob_fx_data(
         report_with_raw_xy, report_with_raw, replace_pfxobs_attrs):
@@ -571,10 +575,7 @@ def test_timeseries_plots_missing_prob_fx_data(
                    for fxobs in non_cdf]
 
     should_plot += [format_obs(fxobs)
-                    if hasattr(fxobs.original, 'observation')
-                    else fxobs.original.aggregate.name
                     for fxobs in non_cdf]
-    should_plot = list(map(figures._legend_text, should_plot))
     for name in plotted_names:
         assert name in should_plot
 
@@ -600,8 +601,6 @@ def test_timeseries_plots_only_x_axis_data(report_with_raw_xy):
     ts_spec_dict = json.loads(ts_spec)
     obs_names = sorted(list(set(
         format_obs(fxobs)
-        if hasattr(fxobs.original, 'observation')
-        else figures._legend_text(fxobs.original.aggregate.name)
         for fxobs in pfxobs)
     ))
     # assert that only observations appear on the timeseries plot
