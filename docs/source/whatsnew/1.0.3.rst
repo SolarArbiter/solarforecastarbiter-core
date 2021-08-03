@@ -3,11 +3,8 @@
 .. py:currentmodule:: solarforecastarbiter
 
 
-1.0.3 (August 2, 2021)
+1.0.3 (August 3, 2021)
 ----------------------
-
-Enhancements
-~~~~~~~~~~~~
 
 Fixed
 ~~~~~
@@ -19,10 +16,7 @@ Fixed
   observation interval label when resampling. (:issue:`700`, :pull:`703`)
 * Differentiated observations in report timeseries plot legend by adding
   interval length and interval label of the resampled observation.
-  (:issue:`675`)(:pull:`703`)
-
-Testing
-~~~~~~~
+  (:issue:`675`, :pull:`703`)
 
 Contributors
 ~~~~~~~~~~~~
