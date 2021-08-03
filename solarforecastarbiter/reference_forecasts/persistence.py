@@ -171,6 +171,8 @@ def persistence_interval(observation, data_start, data_end, forecast_start,
     # put in nans if appropriate
     obs = obs.reindex(obs_index)
     # average data within bins of length interval_length
+    # label does not matter because we are going to strip the series
+    # down to its values
     persistence_quantity = obs.resample(interval_length,
                                         closed=closed_obs).mean()
 
@@ -476,6 +478,7 @@ def persistence_probabilistic(observation, data_start, data_end,
 
     # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
+    # don't need label=closed because of how we assign fx values below.
     obs = obs.resample(interval_length, closed=closed).mean()
 
     if obs.empty:
@@ -581,13 +584,19 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
                            forecast_start, forecast_end,
                            observation.interval_length)
 
-    closed = datamodel.CLOSED_MAPPING[interval_label]
+    closed_obs = datamodel.CLOSED_MAPPING[observation.interval_label]
+    closed_fx = datamodel.CLOSED_MAPPING[interval_label]
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
-                             freq=interval_length, closed=closed)
+                             freq=interval_length, closed=closed_fx)
 
     # observation data resampled to match forecast sampling
     obs = load_data(observation, data_start, data_end)
-    obs = obs.resample(interval_length, closed=closed).mean()
+    # unlike other functions in this module, we do need label=closed
+    # here because we will match the resampled obs time of day to
+    # the desired forecast time of day.
+    obs = obs.resample(
+        interval_length, closed=closed_obs, label=closed_fx
+    ).mean()
     if obs.empty:
         raise ValueError("Insufficient data to match by time of day")
 

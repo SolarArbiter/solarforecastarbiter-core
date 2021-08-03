@@ -646,63 +646,96 @@ def test_persistence_probabilistic_resampling(
         )
 
 
+# all observations 9-10 each day.
+# This index is for (09:00, 10:00] (interval_label=ending), but subtract
+# 30 minutes for [09:00, 10:00) (interval_label=beginning)
+PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
+    '2019-04-21 09:30:00+00:00', '2019-04-21 10:00:00+00:00',
+    '2019-04-22 09:30:00+00:00', '2019-04-22 10:00:00+00:00',
+    '2019-04-23 09:30:00+00:00', '2019-04-23 10:00:00+00:00',
+    '2019-04-24 09:30:00+00:00', '2019-04-24 10:00:00+00:00',
+    '2019-04-25 09:30:00+00:00', '2019-04-25 10:00:00+00:00',
+    '2019-04-26 09:30:00+00:00', '2019-04-26 10:00:00+00:00',
+    '2019-04-27 09:30:00+00:00', '2019-04-27 10:00:00+00:00',
+    '2019-04-28 09:30:00+00:00', '2019-04-28 10:00:00+00:00',
+    '2019-04-29 09:30:00+00:00', '2019-04-29 10:00:00+00:00',
+    '2019-04-30 09:30:00+00:00', '2019-04-30 10:00:00+00:00',
+    '2019-05-01 09:30:00+00:00', '2019-05-01 10:00:00+00:00',
+    '2019-05-02 09:30:00+00:00', '2019-05-02 10:00:00+00:00',
+    '2019-05-03 09:30:00+00:00', '2019-05-03 10:00:00+00:00',
+    '2019-05-04 09:30:00+00:00', '2019-05-04 10:00:00+00:00',
+    '2019-05-05 09:30:00+00:00', '2019-05-05 10:00:00+00:00',
+    '2019-05-06 09:30:00+00:00', '2019-05-06 10:00:00+00:00',
+    '2019-05-07 09:30:00+00:00', '2019-05-07 10:00:00+00:00',
+    '2019-05-08 09:30:00+00:00', '2019-05-08 10:00:00+00:00',
+    '2019-05-09 09:30:00+00:00', '2019-05-09 10:00:00+00:00',
+    '2019-05-10 09:30:00+00:00', '2019-05-10 10:00:00+00:00',
+    '2019-05-11 09:30:00+00:00', '2019-05-11 10:00:00+00:00',
+    '2019-05-12 09:30:00+00:00', '2019-05-12 10:00:00+00:00'],
+    dtype='datetime64[ns, UTC]', freq=None)
+
+
+@pytest.mark.parametrize('obs_interval_label_index', [
+    ('beginning', PROB_PERS_TOD_OBS_INDEX - pd.Timedelta('30min')),
+    ('ending', PROB_PERS_TOD_OBS_INDEX)
+])
+@pytest.mark.parametrize('fx_interval_label_index', [
+    ('beginning', pd.DatetimeIndex(['20190514T0900Z'], freq='1h')),
+    ('ending', pd.DatetimeIndex(['20190514T1000Z'], freq='1h'))
+])
 @pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
     # constant_values = variable values
     # forecasts = percentiles [%]
-    ([0] * 22 + [20] * 22, 'x', [10, 20], [50, 100]),
+    # intervals always average to 10 if done properly, but 0 or 20 if
+    # done improperly
+    ([0, 20] * 22, 'x', [10, 20], [100., 100.]),
 
     # constant_values = percentiles [%]
     # forecasts = variable values
-    ([0] * 22 + [4] * 22, 'y', [50], [2]),
+    ([0, 4] * 22, 'y', [50], [2.]),
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
     obs_values,
     axis,
     constant_values,
-    expected_values
+    expected_values,
+    obs_interval_label_index,
+    fx_interval_label_index
 ):
+    obs_interval_label, obs_index = obs_interval_label_index
+    fx_interval_label, fx_index = fx_interval_label_index
 
     tz = 'UTC'
-    interval_label = "beginning"
     observation = default_observation(
         site_metadata,
         interval_length='30min',
-        interval_label=interval_label
+        interval_label=obs_interval_label
     )
 
-    # all observations at 9am each day
-    data_end = pd.Timestamp('20190513T0900', tz=tz)
-    data_start = data_end - pd.Timedelta("{}D".format(len(obs_values) / 2))
-    closed = datamodel.CLOSED_MAPPING[interval_label]
-    index = pd.date_range(start=data_start, end=data_end, freq='30min',
-                          closed=closed)
-    index = index[index.hour == 9]
+    data_start = pd.Timestamp('20190421T0900', tz=tz)
+    data_end = pd.Timestamp('20190512T1000', tz=tz)
 
-    data = pd.Series(obs_values, index=index, dtype=float)
+    data = pd.Series(obs_values, index=obs_index, dtype=float)
 
-    # forecast 9am
+    # forecast 9am - 10am, but label will depend on inputs
     forecast_start = pd.Timestamp('20190514T0900', tz=tz)
     forecast_end = pd.Timestamp('20190514T1000', tz=tz)
     interval_length = pd.Timedelta('1h')
 
     load_data = partial(load_data_base, data)
 
-    expected_index = pd.date_range(start=forecast_start, end=forecast_end,
-                                   freq=interval_length, closed=closed)
+    expected_index = fx_index
 
     forecasts = persistence.persistence_probabilistic_timeofday(
         observation, data_start, data_end, forecast_start, forecast_end,
-        interval_length, interval_label, load_data, axis, constant_values
+        interval_length, fx_interval_label, load_data, axis, constant_values
     )
     assert isinstance(forecasts, list)
-    for i, fx in enumerate(forecasts):
-        pd.testing.assert_index_equal(fx.index, expected_index,
-                                      check_categorical=False)
-
+    for expected, fx in zip(expected_values, forecasts):
         pd.testing.assert_series_equal(
             fx,
-            pd.Series(expected_values[i], index=expected_index, dtype=float)
+            pd.Series(expected, index=expected_index)
         )
 
 

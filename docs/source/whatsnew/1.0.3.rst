@@ -12,7 +12,11 @@ Enhancements
 Fixed
 ~~~~~
 * Fixed report summary statistics table always displaying event statistics.
-  (:issue:`694`)(:pull:`701`)
+  (:issue:`694`, :pull:`701`)
+* Fixed inability of
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
+  to account for ``interval_label='ending'`` and improper accounting for
+  observation interval label when resampling. (:issue:`700`, :pull:`703`)
 * Differentiated observations in report timeseries plot legend by adding
   interval length and interval label of the resampled observation.
   (:issue:`675`)(:pull:`703`)
