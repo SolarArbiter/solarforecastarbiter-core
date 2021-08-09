@@ -149,14 +149,28 @@ def test_align_fx_aggregate(single_forecast_aggregate):
                                   check_categorical=False)
 
 
-@pytest.mark.parametrize("label_obs,label_fx,length_obs,length_fx,freq", [
-    ("beginning", "ending", "5min", "5min", "5min"),
-    ("beginning", "ending", "5min", "1h", "1h"),
-    ("ending", "beginning", "5min", "5min", "5min"),
-    ("ending", "beginning", "5min", "1h", "1h"),
+@pytest.mark.parametrize("label_obs,label_fx,length_obs,length_fx,obsidxexp", [
+    (
+        "beginning", "beginning", "30min", "30min",
+        ['20190331T1200Z', '20190331T1230Z']
+    ),
+    (
+        "ending", "ending", "30min", "30min",
+        ['20190331T1230Z', '20190331T1300Z']
+    ),
+    (
+        "beginning", "ending", "30min", "30min",
+        ['20190331T1230Z', '20190331T1300Z']
+    ),
+    ("beginning", "ending", "30min", "1h", ['20190331T1300Z']),
+    (
+        "ending", "beginning", "30min", "30min",
+        ['20190331T1200Z', '20190331T1230Z']
+    ),
+    ("ending", "beginning", "30min", "1h", ['20190331T1200Z'])
 ])
 def test_filter_resample_interval_label(site_metadata, label_obs, label_fx,
-                                        length_obs, length_fx, freq,
+                                        length_obs, length_fx, obsidxexp,
                                         quality_filter):
 
     observation = datamodel.Observation(
@@ -179,26 +193,33 @@ def test_filter_resample_interval_label(site_metadata, label_obs, label_fx,
 
     ts_obs = pd.date_range(
         start='2019-03-31T12:00:00',
-        end='2019-05-01T00:00:00',
+        end='2019-03-31T13:00:00',
         freq=length_obs,
-        tz='MST',
-        name='timestamp'
+        tz='UTC',
+        name='timestamp',
+        closed=datamodel.CLOSED_MAPPING[label_obs]
     )
     ts_fx = pd.date_range(
         start='2019-03-31T12:00:00',
-        end='2019-05-01T00:00:00',
+        end='2019-03-31T13:00:00',
         freq=length_fx,
-        tz='MST',
-        name='timestamp'
+        tz='UTC',
+        name='timestamp',
+        closed=datamodel.CLOSED_MAPPING[label_fx]
     )
-    obs_series = pd.Series(index=ts_obs, data=np.random.rand(len(ts_obs)) + 10)
+    obs_series = pd.Series(1., index=ts_obs)
     obs_data = pd.DataFrame({'value': obs_series, 'quality_flag': 2})
+    obs_idx_exp = pd.DatetimeIndex(obsidxexp, name='timestamp', freq=length_fx)
+    obs_expected = pd.Series(1., index=obs_idx_exp, name='value')
     fx_series = pd.Series(index=ts_fx, data=np.random.rand(len(ts_fx)) + 10)
 
     fx_out, obs_out, res_dict = preprocessing.filter_resample(
         fx_obs, fx_series, obs_data, [quality_filter])
 
-    assert obs_out.index.freq == freq
+    # pass through for deterministic fx
+    assert_series_equal(fx_out, fx_series)
+
+    assert_series_equal(obs_out, obs_expected)
 
 
 @pytest.mark.parametrize("interval_label", ["beginning", "instant", "ending"])
