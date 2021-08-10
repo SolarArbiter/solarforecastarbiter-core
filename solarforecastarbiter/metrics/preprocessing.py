@@ -467,9 +467,6 @@ def filter_resample(
 
     Notes
     -----
-    This function does not currently account for mismatches in the
-    `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
-
     The keep/exclude result of each element of the ``quality_flags``
     tuple is combined with the OR operation.
 
