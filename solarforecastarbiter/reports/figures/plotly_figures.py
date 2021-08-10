@@ -375,15 +375,19 @@ def _plot_obs_timeseries(fig, timeseries_value_df, timeseries_meta_df):
         # from the first use of it but returns pair_index for all instances
         metadata = _extract_metadata_from_df(
             timeseries_meta_df, obs_hash, 'observation_hash', keep_pairs=True)
+        # bool Series for every point in timeseries_value_df
         ts_this_obs_hash = timeseries_value_df['pair_index'].isin(
             metadata['pair_index']
         )
-        duplicated = ts_this_obs_hash.index.duplicated()
+        # DataFrame for only points with the right observation hash
+        ts_this_obs_hash_true_only = timeseries_value_df[ts_this_obs_hash]
+        # which of those remaining rows are duplicated?
+        duplicated = ts_this_obs_hash_true_only.index.duplicated()
         # rows are initially ordered by pair_index, then dt index.
         # now we only want the dt index and no longer care about the pair_index
         # _fill_timeseries will use index[0] and index[-1] to determine time
         # range to plot, so failing to sort can prevent data from being plotted
-        ts_to_plot = timeseries_value_df[~duplicated].sort_index()
+        ts_to_plot = ts_this_obs_hash_true_only[~duplicated].sort_index()
         plot_kwargs = plot_utils.line_or_step_plotly(
             metadata['interval_label'])
         data = _fill_timeseries(

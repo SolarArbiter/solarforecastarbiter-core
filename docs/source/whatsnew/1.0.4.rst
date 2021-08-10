@@ -1,0 +1,23 @@
+.. _whatsnew_104:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.4 (August ?, 2021)
+----------------------
+
+Fixed
+~~~~~
+* Fixed resampling of observations when observation interval label differs
+  from forecast interval label. **This can substantially alter metrics for
+  some forecasts.** (:issue:`705`, :pull:`709`)
+* Fixed plotting of observations when multiple values exist at the same
+  time index. Bug was introduced in 1.0.3 when addressing a failure to plot
+  observations when one of many forecasts was missing.
+  (:pull:`689`, :pull:`709`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)

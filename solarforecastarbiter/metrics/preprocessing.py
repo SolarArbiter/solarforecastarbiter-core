@@ -238,8 +238,11 @@ def _resample_obs(
     if obs_data.empty:
         return obs_data['value'], []
 
-    # label convention when resampling
-    closed = datamodel.CLOSED_MAPPING[obs.interval_label]
+    # fx label convention when resampling
+    closed_fx = datamodel.CLOSED_MAPPING[fx.interval_label]
+
+    # obs label convention when resampling
+    closed_obs = datamodel.CLOSED_MAPPING[obs.interval_label]
 
     # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
     obs_flags = quality_mapping.convert_mask_into_dataframe(
@@ -248,13 +251,13 @@ def _resample_obs(
 
     # determine the points that should be discarded before resampling.
     to_discard_before_resample, val_results = _calc_discard_before_resample(
-        obs_flags, quality_flags, fx.interval_length, closed)
+        obs_flags, quality_flags)
 
     # resample using all of the data except for what was flagged by the
     # discard before resample process.
     resampled_values = \
         obs_data.loc[~to_discard_before_resample, 'value'].resample(
-            fx.interval_length, closed=closed, label=closed).mean()
+            fx.interval_length, closed=closed_obs, label=closed_fx).mean()
 
     # determine the intervals that have too many flagged points
     to_discard_after_resample, after_resample_val_results = \
@@ -264,7 +267,8 @@ def _resample_obs(
             to_discard_before_resample,
             fx.interval_length,
             obs.interval_length,
-            closed
+            closed_obs,
+            closed_fx
         )
 
     # discard the intervals with too many flagged sub-interval points.
@@ -283,9 +287,7 @@ def _resample_obs(
 
 def _calc_discard_before_resample(
     obs_flags: pd.DataFrame,
-    quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    fx_interval_length: pd.Timedelta,
-    closed: Optional[str]
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Determine intervals to discard before resampling.
 
@@ -295,10 +297,6 @@ def _calc_discard_before_resample(
         Output of convert_mask_into_dataframe, plus ISNAN.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
-    fx_interval_length : pd.Timedelta
-        Forecast interval length to resample to.
-    closed : {'left', 'right', None}
-        Interval label convention.
 
     Returns
     -------
@@ -338,7 +336,8 @@ def _calc_discard_after_resample(
     to_discard_before_resample: pd.Series,
     fx_interval_length: pd.Timedelta,
     obs_interval_length: pd.Timedelta,
-    closed: Optional[str]
+    closed_obs: Optional[str],
+    closed_fx: Optional[str]
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Determine intervals to discard after resampling.
 
@@ -369,7 +368,7 @@ def _calc_discard_after_resample(
     """
     # number of points discarded before resampling in each interval
     to_discard_before_resample_count = to_discard_before_resample.resample(
-        fx_interval_length, closed=closed, label=closed).sum()
+        fx_interval_length, closed=closed_obs, label=closed_fx).sum()
 
     # Series to track if a given resampled interval should be discarded
     to_discard_after_resample = pd.Series(
@@ -394,7 +393,7 @@ def _calc_discard_after_resample(
         # then OR with obs_ser and adjust filter_name.
         # Series describing number of points in each interval that are flagged
         resampled_flags_count = obs_flag_ser.resample(
-            fx_interval_length, closed=closed, label=closed).sum()
+            fx_interval_length, closed=closed_obs, label=closed_fx).sum()
         threshold = (
             quality_flag.resample_threshold_percentage / 100. * interval_ratio)
         flagged = resampled_flags_count > threshold
@@ -468,9 +467,6 @@ def filter_resample(
 
     Notes
     -----
-    This function does not currently account for mismatches in the
-    `interval_label` of the `fx_obs.observation` and `fx_obs.forecast`.
-
     The keep/exclude result of each element of the ``quality_flags``
     tuple is combined with the OR operation.
 
