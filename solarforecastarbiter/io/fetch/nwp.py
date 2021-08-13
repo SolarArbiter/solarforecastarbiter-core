@@ -62,7 +62,7 @@ GEFS_BASE_URL = 'https://noaa-gefs-pds.s3.amazonaws.com'
 # When querying aws for directories, start-after is used to paginate.
 # 2020-09-23 is the date the expected folder structure with the atmos
 # dir appears.
-GEFS_STARTAFTER = 'gefs.20200923'
+GEFS_STARTAFTER = 'gefs.20210101'
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
                 'file': 'gfs.t{init_hr:02d}z.pgrb2.0p25.f{valid_hr:03d}',
@@ -321,6 +321,7 @@ async def get_available_gefs_dirs(session, start_after=GEFS_STARTAFTER):
     }
     if start_after is not None:
         params['start-after'] = start_after
+
     async def _get(session):
         async with session.get(
             GEFS_BASE_URL,
@@ -432,6 +433,7 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         'Next file not ready yet for %s at %s %s\n%s %s',
                         simple_model, init_time, model.get('member', ''),
                         e.status, e.message)
+                    logger.debug(next_model_url)
                 else:
                     logger.error(
                         'Error checking if next file is ready %s\n'
@@ -504,8 +506,10 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     aiohttp.ClientResponseError
         When the HTTP request fails/returns a status code >= 400
     """
+    slice_domain = False
     if _simple_model(params) == 'gefs':
         url = GEFS_BASE_URL + params['dir'] + '/' + params['file']
+        slice_domain = True
     else:
         endpoint = params.pop('endpoint')
         url = BASE_URL + endpoint
@@ -517,7 +521,22 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
     logger.info('Getting file %s', filename)
     tmpfile = filename.with_name('.tmp_' + filename.name)
     await get_with_retries(_get_file, session, url, params, tmpfile, chunksize)
-    tmpfile.rename(filename)
+    if slice_domain:
+        logging.debug('Truncating grib file %s', tmpfile)
+        try:
+            # S3 files are the full domain, slice down to domain of
+            # interest before saving
+            subprocess.run(
+                f'wgrib2 {tmpfile} -small_grib {domain_args()} {filename}',
+                shell=True, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            logger.error('Error applying domain to file %s\n%s',
+                         filename, e.stderr)
+            raise OSError
+        else:
+            logging.debug('Sucessfully truncated to: %s', filename)
+    else:
+        tmpfile.rename(filename)
     logging.debug('Successfully saved %s', filename)
     return filename
 
@@ -772,3 +791,11 @@ def check_wgrib2():
     if shutil.which('wgrib2') is None:
         logger.error('wgrib2 was not found in PATH and is required')
         sys.exit(1)
+
+
+def domain_args():
+    lonW = DOMAIN["leftlon"]
+    lonE = DOMAIN["rightlon"]
+    latS = DOMAIN["bottomlat"]
+    latN = DOMAIN["toplat"]
+    return f'{lonW}:{lonE} {latS}:{latN}'
