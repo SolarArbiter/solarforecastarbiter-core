@@ -60,8 +60,8 @@ BASE_URL = 'https://nomads.ncep.noaa.gov/cgi-bin/'
 GEFS_BASE_URL = 'https://noaa-gefs-pds.s3.amazonaws.com'
 
 # When querying aws for directories, start-after is used to paginate.
-# 2020-09-23 is the date the expected folder structure with the atmos
-# dir appears.
+# 2021-01-01 is the date the expected files and folder structure
+# appears.
 GEFS_STARTAFTER = 'gefs.20210101'
 
 GFS_0P25_1HR = {'endpoint': 'filter_gfs_0p25_1hr.pl',
@@ -433,7 +433,6 @@ async def files_to_retrieve(session, model, modelpath, init_time):
                         'Next file not ready yet for %s at %s %s\n%s %s',
                         simple_model, init_time, model.get('member', ''),
                         e.status, e.message)
-                    logger.debug(next_model_url)
                 else:
                     logger.error(
                         'Error checking if next file is ready %s\n'
