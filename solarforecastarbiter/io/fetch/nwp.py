@@ -365,15 +365,24 @@ async def check_next_inittime(session, init_time, model):
     """Check if data from the next model initializtion time is available"""
     next_inittime = init_time + pd.Timedelta(model['update_freq'])
     simple_model = _simple_model(model)
-    next_init_url = (CHECK_URL.format(model.get('check_url_name',
-                                                simple_model))
-                     + model['dir'].format(
-                         init_date=next_inittime.strftime('%Y%m%d'),
-                         init_dt=next_inittime.strftime('%Y%m%d%H'),
-                         init_hr=next_inittime.strftime('%H'))
-                     + '/' + model['file'].format(init_hr=next_inittime.hour,
-                                                  valid_hr=0))
-
+    if simple_model == 'gefs':
+        next_init_url = (
+            GEFS_BASE_URL
+            + model['dir'].format(
+                init_date=next_inittime.strftime('%Y%m%d'),
+                init_dt=next_inittime.strftime('%Y%m%d%H'),
+                init_hr=next_inittime.strftime('%H'))
+            + '/' + model['file'].format(init_hr=next_inittime.hour,
+                                         valid_hr=0))
+    else:
+        next_init_url = (CHECK_URL.format(model.get('check_url_name',
+                                                    simple_model))
+                         + model['dir'].format(
+                             init_date=next_inittime.strftime('%Y%m%d'),
+                             init_dt=next_inittime.strftime('%Y%m%d%H'),
+                             init_hr=next_inittime.strftime('%H'))
+                         + '/' + model['file'].format(init_hr=next_inittime.hour,
+                                                      valid_hr=0))
     try:
         async with session.head(next_init_url) as r:
             if r.status == 200:
@@ -526,7 +535,7 @@ async def fetch_grib_files(session, params, basepath, init_time, chunksize):
             # S3 files are the full domain, slice down to domain of
             # interest before saving
             subprocess.run(
-                f'wgrib2 {tmpfile} -small_grib {domain_args()} {filename}',
+                f'wgrib2 {tmpfile} -small_grib {_domain_args()} {filename}',
                 shell=True, check=True, capture_output=True)
         except subprocess.CalledProcessError as e:
             logger.error('Error applying domain to file %s\n%s',
@@ -792,7 +801,7 @@ def check_wgrib2():
         sys.exit(1)
 
 
-def domain_args():
+def _domain_args():
     lonW = DOMAIN["leftlon"]
     lonE = DOMAIN["rightlon"]
     latS = DOMAIN["bottomlat"]
