@@ -9,7 +9,9 @@
                 "use that datastream for in format <start>/<end> where ",
                 "the value 'now' can be used as the <end> value to indicate ",
                 "currently available data. When configuring multiple ",
-                "datastreams, their date ranges should *not* overlap."
+                "datastreams, their date ranges should *not* overlap.",
+                "Data is typically cycled from .c1 files into .c2 files on ",
+                "a yearly basis when instruments are replaced and calibrated."
     ],
     "sites": [
         {
