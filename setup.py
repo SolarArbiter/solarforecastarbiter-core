@@ -59,6 +59,8 @@ setup(
         'scipy',
         'statsmodels',
         'jsonschema',
+        'jinja2',
+        'pytz',
     ],
     extras_require=EXTRAS_REQUIRE,
     project_urls={
