@@ -1,0 +1,21 @@
+.. _whatsnew_105:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.5 (August ??, 2021)
+-----------------------
+
+Fixed
+~~~~~
+* Plane of array irradiance was not correctly calculated in
+  :py:func:`~.pvmodel.calculate_poa_effective_explicit`. Function
+  failed to project DNI into the plane of the array. Effected code
+  includes reference forecasts for PV power plants and persistence of
+  clear sky index for PV power plants. (:issue:`718`, :pull:`xx`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
