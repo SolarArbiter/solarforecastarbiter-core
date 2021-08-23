@@ -12,7 +12,7 @@ Fixed
   :py:func:`~.pvmodel.calculate_poa_effective_explicit`. Function
   failed to project DNI into the plane of the array. Effected code
   includes reference forecasts for PV power plants and persistence of
-  clear sky index for PV power plants. (:issue:`718`, :pull:`xx`)
+  clear sky index for PV power plants. (:issue:`718`, :pull:`719`)
 
 Contributors
 ~~~~~~~~~~~~
