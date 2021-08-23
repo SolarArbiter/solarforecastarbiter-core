@@ -10,7 +10,7 @@ Fixed
 ~~~~~
 * Plane of array irradiance was not correctly calculated in
   :py:func:`~.pvmodel.calculate_poa_effective_explicit`. Function
-  failed to project DNI into the plane of the array. Effected code
+  failed to project DNI into the plane of the array. Affected code
   includes reference forecasts for PV power plants and persistence of
   clear sky index for PV power plants. (:issue:`718`, :pull:`719`)
 
