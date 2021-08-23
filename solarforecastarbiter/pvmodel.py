@@ -15,6 +15,7 @@ Steps 3 and 4 are bundled in :py:func:`irradiance_to_power`
 
 from functools import partial
 
+import numpy as np
 import pvlib
 
 from solarforecastarbiter import datamodel
@@ -228,8 +229,8 @@ def calculate_poa_effective_explicit(surface_tilt, surface_azimuth, aoi,
         model='haydavies')
     poa_ground_diffuse = pvlib.irradiance.get_ground_diffuse(
         surface_tilt, ghi, albedo=0.25)
-    aoi_modifier = pvlib.iam.physical(aoi)
-    beam_effective = dni * aoi_modifier
+    aoi_loss = pvlib.iam.physical(aoi)
+    beam_effective = dni * np.cos(np.deg2rad(aoi)) * aoi_loss
     poa_effective = beam_effective + poa_sky_diffuse + poa_ground_diffuse
     # aoi, tilt, azi is not defined for tracking systems
     # when sun is below horizon. replace nan with 0

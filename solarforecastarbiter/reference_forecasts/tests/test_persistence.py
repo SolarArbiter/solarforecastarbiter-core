@@ -160,18 +160,18 @@ def uniform_data():
         ('beginning',
          ['20190404 1300', '20190404 1330'],
          [96.41150694741889, 91.6991546408236],
-         [99.28349914087346, 98.28165269708589],
+         [96.60171202566896, 92.074796727846],
          1),
         ('ending',
          ['20190404 1330', '20190404 1400'],
          [96.2818141290749, 91.5132934827808],
-         [99.25690632023922, 98.2405479197069],
+         [96.47816752344607, 91.89460837042301],
          1),
         # test clipped at 2x clearsky
         ('beginning',
          ['20190404 1300', '20190404 1330'],
          [1926.5828549018618, 1832.4163238767312],
-         [395.9216674046528, 391.9265149579709],
+         [383.1524464326973, 365.19729186262526],
          50)
     )
 )
@@ -239,7 +239,7 @@ def test_persistence_scalar_index_instant_obs_fx(
     fx = persistence.persistence_scalar_index(
         observation_ac, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)
-    expected_values = [99.32046515783028, 98.34762206379594]
+    expected_values = [96.77231379880752, 92.36198028963426]
     expected = pd.Series(expected_values, index=expected_index)
     assert_series_equal(fx, expected, check_names=False)
 
@@ -380,7 +380,7 @@ def test_persistence_scalar_index_low_solar_elevation(
         interval_length, interval_label, load_data)
     assert_series_equal(fx, expected, check_less_precise=1, check_names=False)
 
-    expected = pd.Series([0.2, 0.7, 1.2, 1.6, 2., 8.9], index=expected_index)
+    expected = pd.Series([0.2, 0.7, 1.2, 1.6, 2., 2.5], index=expected_index)
     fx = persistence.persistence_scalar_index(
         observation_ac, data_start, data_end, forecast_start, forecast_end,
         interval_length, interval_label, load_data)

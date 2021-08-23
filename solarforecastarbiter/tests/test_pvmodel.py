@@ -172,8 +172,10 @@ def test_calculate_poa_effective(aoi_func_system_type, apparent_zenith,
     out = pvmodel.calculate_poa_effective(
         aoi_func, apparent_zenith, azimuth, ghi, dni, dhi)
     index = apparent_zenith.index
-    expected_fixed = pd.Series([0., 1161.768016], index=index)
-    expected_tracking = pd.Series([0., 1030.2303106183322], index=index)
+    # 1st element is nighttime, 2nd is solar noon on jan 1
+    # fixed tilt, azimuth = 30, 180
+    expected_fixed = pd.Series([0., 1003.6568225722572], index=index)
+    expected_tracking = pd.Series([0., 526.9772698585414], index=index)
     fixed_or_tracking(system_type, expected_fixed, expected_tracking, out)
 
 
@@ -210,6 +212,7 @@ def test_irradiance_to_power(modeling_parameters_system_type, apparent_zenith,
         modeling_parameters, apparent_zenith, azimuth, ghi, dni, dhi,
         temp_air=temp_air, wind_speed=wind_speed)
     index = apparent_zenith.index
-    expected_fixed = pd.Series([0., 0.003], index=index)
-    expected_tracking = pd.Series([0., 0.00293178], index=index)
+    # fixed > tracking b/c considering jan 1 at solar noon
+    expected_fixed = pd.Series([0., 0.002863970519209213], index=index)
+    expected_tracking = pd.Series([0., 0.00157349672569639], index=index)
     fixed_or_tracking(system_type, expected_fixed, expected_tracking, out)
