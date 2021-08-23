@@ -18,7 +18,8 @@ EXTRAS_REQUIRE = {
         'bokeh>=1.4.0, <2',
         'matplotlib',
         'plotly>=4.5.0, <5',
-        'selenium'
+        'selenium',
+        'jinja2',
     ]
 }
 EXTRAS_REQUIRE['all'] = [
@@ -59,7 +60,6 @@ setup(
         'scipy',
         'statsmodels',
         'jsonschema',
-        'jinja2',
         'pytz',
     ],
     extras_require=EXTRAS_REQUIRE,
