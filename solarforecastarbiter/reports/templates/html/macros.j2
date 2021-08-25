@@ -377,7 +377,7 @@ forecasts/single/{{ forecast.forecast_id }}
       const lines = [];
 
       for (let j = 0; j < ncolumns; j++) {
-        colnames.push(data[j].legendgroup)
+        colnames.push(data[j].legendgroup.replace(/\<br\>/g, ' '))
       }
       lines.push(colnames.join(','))
 
