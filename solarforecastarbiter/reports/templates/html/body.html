@@ -152,7 +152,7 @@ right. Clicking on an item in the legend will hide/show it.</p>
 {% endif %}
 
 <script>
-ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
+var ts_plot = JSON.parse('{{ timeseries_spec | safe }}');
 Object.assign(ts_plot,{config: {responsive: true}});
 Plotly.newPlot("timeseries-div", ts_plot);
 </script>
