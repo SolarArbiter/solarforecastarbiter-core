@@ -426,10 +426,23 @@ forecasts/single/{{ forecast.forecast_id }}
         download_container.style.padding = ".5em";
 
         if (download_container) {
+            function update_file_count() {
+                let count = document.querySelectorAll('[name=download-flag]:checked').length;
+                let download_button = document.getElementById("download-timeseries-button");
+                let buttonText = `Download ${count} CSVs`;
+                if (count == 0) {
+                    buttonText = "Select CSVs to download";
+                    download_button.disabled = true;
+                } else {
+                    download_button.disabled = false;
+                }
+                download_button.textContent = buttonText;
+            }
             function select_all_downloads() {
                 Array.from(
                     document.querySelectorAll('[name=download-flag]')
                 ).map(checkbox => checkbox.checked = true);
+                update_file_count();
             }
 
             let columns = ts_plot.data.map(d => d.name.replace(/\<br\>/g, ' '));
@@ -461,6 +474,7 @@ forecasts/single/{{ forecast.forecast_id }}
 
                 const download_td = document.createElement("td");
                 const download_checkbox = document.createElement("input");
+                download_checkbox.onclick = update_file_count;
                 download_checkbox.setAttribute("name", "download-flag");
                 download_checkbox.setAttribute("value", col_name);
                 download_checkbox.setAttribute("type", "checkbox");
@@ -478,7 +492,9 @@ forecasts/single/{{ forecast.forecast_id }}
                 download_timeseries_data_as_csv(selected);
             }
             const download_button = document.createElement("button");
-            download_button.appendChild(document.createTextNode("Download CSVS"));
+            download_button.id = "download-timeseries-button";
+            download_button.disabled = true;
+            download_button.appendChild(document.createTextNode("Select CSVs to download"));
             download_button.classList.add("btn", "btn-sm", "btn-primary");
             download_button.onclick = download_selected;
             download_container.appendChild(download_button);
