@@ -504,7 +504,9 @@ forecasts/single/{{ forecast.forecast_id }}
     function download_timeseries_data_as_csv(ts_names) {
         const csvdata = extract_plotly_data(ts_plot, ts_names)
         for (const csvname in csvdata){
-          const filename = csvname.replace(/ /g, '_') + '_timeseries.csv'
+          // replace spaces with underscores and remove commonly forbidden
+          // filename characters
+          const filename = csvname.replace(/ /g, '_').replace(/[<>:"/\|?*]/g,'') + '_timeseries.csv'
           const blob = new Blob([csvdata[csvname]], { type: 'text/csv;charset=utf-8;' })
             {{ getblob }}
         }
