@@ -368,6 +368,41 @@ forecasts/single/{{ forecast.forecast_id }}
 
 {% macro download_timeseries_script() %}
 <script>
+    function strip_constant_value_from_hovertext(hovertext) {
+        const end = hovertext.indexOf('<br>');
+        const constant_value = hovertext.slice(3, end).trim();
+        return constant_value;
+    }
+
+    function extract_distribution_data(data, distribution_name) {
+        // Collect all of the constant values in a single csv
+        const dist_values = data.filter(column => column.name == distribution_name && !column.showlegend);
+        const dist_percentages = dist_values.map(
+          series => strip_constant_value_from_hovertext(series.hovertemplate)
+        );
+        const index = dist_values[0].x;
+        let lines = [];
+        // push header
+        lines.push("timestamp,"+ dist_percentages.join(','));
+        const nrows = index.length;
+
+        for (let j = 0; j < nrows; j++) {
+            let row = [];
+            row.push(index[j])
+            for (let i = 0; i < dist_percentages.length; i++) {
+              let val = dist_values[i].y[j];
+              if(val == null){
+                val = 'nan';
+              }else{
+                val = val.toString()
+              }
+              row.push(val)
+            }
+            lines.push(row.join(','))
+        }
+        return lines.join('\n').concat('\n')
+    }
+
     function extract_plotly_data(plot, ts_names=null) {
       if (typeof plot === 'undefined') { return ''}
       const data = plot.data;
@@ -396,11 +431,38 @@ forecasts/single/{{ forecast.forecast_id }}
         }
         return lines
       }
-      let col_idxs;
+      // col_idxs is an array of integer indexes we can parse from the plot data
+      // directly
+      let col_idxs = [];
+
+      // dist names is an array of string names that are shared by all
+      // series in a distribution. We will use it to parse out the series
+      // for each constant value in the distribution.
+      let dist_names = [];
+
+      function get_all_indices(to_search, value) {
+        let indices = [];
+        let i = to_search.indexOf(value);
+        while(i >= 0) {
+          indices.push(i);
+          i = to_search.indexOf(value, i+1);
+        }
+        return indices;
+      }
+
       if (ts_names != null) {
         // if a timeseries name was provided, only extract data
         // for that series
-        col_idxs = ts_names.map((ts_name) => colnames.indexOf(ts_name));
+        for (ts_name of ts_names) {
+          let indices = get_all_indices(colnames, ts_name);
+          if (indices.length) {
+            if (indices.length == 1) {
+              col_idxs.push(indices[0]);
+            } else {
+              dist_names.push(ts_name);
+            }
+          }
+        }
       } else {
         col_idxs = colnames;
       }
@@ -413,6 +475,9 @@ forecasts/single/{{ forecast.forecast_id }}
         const lines = get_column_lines(col_idx)
         csvs[colnames[col_idx]] = lines.join('\n').concat('\n');
       } 
+      for (const dist_name of dist_names) {
+        csvs[dist_name] = extract_distribution_data(data, dist_name);
+      }
       return csvs;
     }
 
@@ -444,8 +509,9 @@ forecasts/single/{{ forecast.forecast_id }}
                 ).map(checkbox => checkbox.checked = true);
                 update_file_count();
             }
-
-            let columns = ts_plot.data.map(d => d.name.replace(/\<br\>/g, ' '));
+            let series_names = ts_plot.data.map(d => d.name.replace(/\<br\>/g, ' '));
+            // remove duplicates
+            let columns = series_names.filter((val, idx, arr) => arr.indexOf(val) === idx);
             const table = document.createElement("table");
             table.classList.add("table");
             const thead = document.createElement("thead");
