@@ -17,6 +17,11 @@ Fixed
 * Added missing ``jinja2`` and ``pytz`` dependencies. We got away with
   it because other dependencies pulled in these packages.
   (:issue:`715`, :pull:`720`)
+* Fixed incorrect time indices in CSV downloads for report timeseries
+  for reports including multiple time intervals. Reports now provide
+  one file per observation or forecast. (:issue: `707`, :issue:`713`, :pull: `722`)
+* Removed html line break tags from report timeseries csv headers.
+  (:issue: `706`, :pull: `722`)
 
 Contributors
 ~~~~~~~~~~~~
