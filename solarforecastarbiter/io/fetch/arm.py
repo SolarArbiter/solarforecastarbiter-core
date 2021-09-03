@@ -19,11 +19,14 @@ ARM_FILES_DOWNLOAD_URL = 'https://adc.arm.gov/armlive/data/saveData'
 # These lists are the commonly available irradiance and meteorological
 # variables found in ARM data. Users can import and pass these to fetch_arm
 # to parse out these variables.
-# Arguably should use 'BestEstimate_down_short_hemisp' instead of
-# 'down_short_hemisp'. The best estimate has additional QA and is filled by
-# 'MFRSR_hemisp_broadband' when needed.
-IRRAD_VARIABLES = ['down_short_hemisp', 'down_short_diffuse_hemisp',
-                   'short_direct_normal']
+# We use 'BestEstimate_down_short_hemisp' instead of 'down_short_hemisp'. The
+# best estimate has additional QA and is filled by 'MFRSR_hemisp_broadband' when
+# needed.
+IRRAD_VARIABLES = [
+    'BestEstimate_down_short_hemisp',
+    'down_short_diffuse_hemisp',
+    'short_direct_normal',
+]
 MET_VARIABLES = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
 
 
