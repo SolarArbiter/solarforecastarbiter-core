@@ -8,6 +8,7 @@ import netCDF4
 import pandas as pd
 import requests
 import time
+from urllib3 import Retry
 
 
 logger = logging.getLogger(__name__)
@@ -120,11 +121,31 @@ def request_arm_file(user_id, api_key, filename, retries=5):
     request.exceptions.ChunkedEncodingError
         Reraises this error when all retries are exhausted.
     """
+    max_retries = Retry(
+        total=10,
+        connect=3,
+        read=3,
+        status=3,
+        status_forcelist=[
+            408, 423, 444, 500, 501, 502, 503, 504, 507, 508, 511, 599,
+        ],
+        backoff_factor=0.5,
+        raise_on_status=False,
+        remove_headers_on_redirect=[]
+    )
+    adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+    s = requests.Session()
+    s.mount('https://', adapter)
+
     params = {'user': f'{user_id}:{api_key}',
               'file': filename}
 
     try:
-        request = requests.get(ARM_FILES_DOWNLOAD_URL, params=params)
+        request = s.get(
+            ARM_FILES_DOWNLOAD_URL,
+            params=params,
+            timeout=(10, 60)
+        )
     except requests.exceptions.ChunkedEncodingError:
         if retries > 0:
             logger.debug(f'Retrying DOE ARM file {filename}: {retries}'
@@ -252,6 +273,10 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
             nc_file = retrieve_arm_dataset(user_id, api_key, filename)
         except requests.exceptions.ChunkedEncodingError:
             logger.error(f'Request failed for DOE ARM file {filename}')
+        except PermissionError:
+            # occurs when there's only one data point in a file
+            # https://github.com/Unidata/netcdf4-python/issues/1125
+            logger.error(f'PermissionError in reading {filename}')
         else:
             datastream_df = extract_arm_variables(nc_file, variables)
             datastream_dfs.append(datastream_df)
