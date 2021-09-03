@@ -25,7 +25,7 @@ DOE_ARM_SITE_VARIABLES = {
 }
 
 DOE_ARM_VARIABLE_MAP = {
-    'down_short_hemisp': 'ghi',
+    'BestEstimate_down_short_hemisp': 'ghi',
     'short_direct_normal': 'dni',
     'down_short_diffuse_hemisp': 'dhi',
     'temp_mean': 'air_temperature',
