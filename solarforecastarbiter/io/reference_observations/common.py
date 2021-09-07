@@ -324,6 +324,12 @@ def _prepare_data_to_post(data, variable, observation, start, end,
     to prepare for posting"""
     data = data[[variable]]
     data = data.rename(columns={variable: 'value'})
+
+    # In rare cases, times are repeated within or across files.
+    # We assume the last data is the most recent and thus the best data.
+    index = data.index.duplicated(keep='last')
+    data = data[~index]
+
     # ensure data is sorted before slicing and for optimal order in the
     # database
     data = data.sort_index()

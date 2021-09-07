@@ -383,6 +383,23 @@ def test_prepare_data_to_post_offset():
     pd.testing.assert_frame_equal(out, expected)
 
 
+def test_prepare_data_to_post_duplicated():
+    index = pd.DatetimeIndex([
+        '2019-01-01 00:00Z', '2019-01-01 00:00Z', '2019-01-01 00:01Z'
+    ])
+    inp = pd.DataFrame(
+        {'ghi': [0., 1., 2.]}, index=index)
+    start = pd.Timestamp('2019-01-01T0000Z')
+    end = pd.Timestamp('2019-01-01T0001Z')
+    variable = 'ghi'
+    expected = pd.DataFrame(
+        {'value': [1., 2.], 'quality_flag': [0, 0]},
+        index=pd.date_range(index[0], freq='1min', periods=2))
+    out = common._prepare_data_to_post(inp, variable, test_kwarg_observation,
+                                       start, end)
+    pd.testing.assert_frame_equal(out, expected)
+
+
 def test_prepare_data_to_post_empty():
     inp = pd.DataFrame(
         {'ghi': [0.0]}, index=pd.DatetimeIndex(['2019-01-01 00:00Z']))
