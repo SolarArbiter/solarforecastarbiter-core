@@ -282,6 +282,12 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
             datastream_dfs.append(datastream_df)
     if len(datastream_dfs) > 0:
         new_data = pd.concat(datastream_dfs)
-        return new_data
+        index = new_data.index.duplicated(keep='last')
+        if index.sum():
+            logger.warning(
+                'Duplicate index values in %s. Keeping last.', datastream
+            )
+        data = new_data[~index]
+        return data
     else:
         return pd.DataFrame()
