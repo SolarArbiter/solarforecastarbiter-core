@@ -640,7 +640,7 @@ def generate_reference_persistence_forecast_parameters(
     out = namedtuple(
         'PersistenceParameters',
         ['forecast', 'observation', 'index', 'data_start',
-         'issue_times'])
+         'issue_times', 'adjusted_max_run_time'])
 
     for fx in forecasts:
         obs_ind_mint_maxt = _ref_persistence_check(
@@ -671,14 +671,22 @@ def generate_reference_persistence_forecast_parameters(
 
         data_start, _ = utils.get_data_start_end(
             observation, fx, next_issue_time, next_issue_time)
+
+        adjusted_max_run_time = utils._limit_persistence_run_time(
+            data_start,
+            max_run_time,
+            fx
+        )
+
         issue_times = tuple(_issue_time_generator(
             observation, fx, obs_mint, obs_maxt,
-            next_issue_time, max_run_time))
+            next_issue_time, adjusted_max_run_time))
 
         if len(issue_times) == 0:
             continue
 
-        yield out(fx, observation, index, data_start, issue_times)
+        yield out(fx, observation, index, data_start, issue_times,
+                  adjusted_max_run_time)
 
 
 def _issue_time_generator(observation, fx, obs_mint, obs_maxt, next_issue_time,
@@ -731,8 +739,8 @@ def make_latest_persistence_forecasts(token, max_run_time, base_url=None):
     observations = session.list_observations()
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
-    for fx, obs, index, data_start, issue_times in params:
-        _pers_loop(session, fx, obs, index, data_start, max_run_time,
+    for fx, obs, index, data_start, issue_times, fx_max_run_time in params:
+        _pers_loop(session, fx, obs, index, data_start, fx_max_run_time,
                    issue_times)
 
 
@@ -786,9 +794,10 @@ def make_latest_probabilistic_persistence_forecasts(
     observations = session.list_observations()
     params = generate_reference_persistence_forecast_parameters(
         session, forecasts, observations, max_run_time)
-    for fx, obs, index, data_start, issue_times in params:
-        _pers_loop(session, fx, obs, index, data_start, max_run_time,
+    for fx, obs, index, data_start, issue_times, fx_max_run_time in params:
+        _pers_loop(session, fx, obs, index, data_start, fx_max_run_time,
                    issue_times)
+
 
 
 def generate_reference_persistence_forecast_gaps_parameters(
