@@ -366,8 +366,16 @@ def _limit_persistence_run_time(data_start, max_run_time, forecast):
 
     Parameters
     ----------
+    data_start: pandas.Timestamp
     max_run_time: pandas.Timestamp
     forecast: datamodel.Forecast
+
+    Returns
+    -------
+    pandas.Timestamp
+        Either max_run_time or a last run time that would limit the forecasts
+        generated to the the limit provided by the PERISTENCE_PT_LIMIT env var
+        or DEFAULT_PERS_PT_LIMIT.
     """
     fx_pt_limit = float(os.getenv('PERSISTENCE_PT_LIMIT', DEFAULT_PERS_PT_LIMIT))
 
