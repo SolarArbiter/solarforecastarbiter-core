@@ -369,7 +369,7 @@ def _limit_persistence_run_time(data_start, max_run_time, forecast):
     max_run_time: pandas.Timestamp
     forecast: datamodel.Forecast
     """
-    fx_pt_limit = float(os.getenv('PERS_PT_LIMIT', DEFAULT_PERS_PT_LIMIT))
+    fx_pt_limit = float(os.getenv('PERSISTENCE_PT_LIMIT', DEFAULT_PERS_PT_LIMIT))
 
     pts_per_run = forecast.run_length / forecast.interval_length
 
