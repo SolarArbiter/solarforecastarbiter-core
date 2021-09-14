@@ -739,7 +739,7 @@ def test__limit_persistence_run_time(
     forecast_hr_begin, start, limit, expected, monkeypatch
 ):
     max_run_time = pd.Timestamp('2021-01-10T00:00Z')
-    monkeypatch.setenv("PERS_PT_LIMIT", str(limit))
+    monkeypatch.setenv("SFA_PERSISTENCE_POINT_LIMIT", str(limit))
     out = utils._limit_persistence_run_time(
         start,
         max_run_time,
