@@ -361,7 +361,7 @@ def check_persistence_compatibility(observation, forecast, index):
 
 
 def _limit_persistence_run_time(data_start, max_run_time, forecast):
-    """Get a the last run time that would result in the
+    """Get the last run time that would result in the
     forecast producing points as limited by PERS_PT_LIMIT.
 
     Parameters
@@ -383,7 +383,7 @@ def _limit_persistence_run_time(data_start, max_run_time, forecast):
 
     max_runs = fx_pt_limit / pts_per_run
 
-    max_run_points = max_runs * forecast.run_length
+    max_total_run_length = max_runs * forecast.run_length
 
-    run_time_limit = data_start + forecast.lead_time_to_start + max_run_points
-    return min(max_run_time, run_time_limit)
+    max_run_time_by_points = data_start + forecast.lead_time_to_start + max_total_run_length
+    return min(max_run_time, max_run_time_by_points)
