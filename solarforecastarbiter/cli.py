@@ -379,7 +379,13 @@ prob_option = click.option('--probabilistic/--not-probabilistic', is_flag=True,
 def refpers_latest(verbose, user, password, base_url, max_run_time,
                    probabilistic):
     """Make all reference persistence forecasts that need to be made
-    up to max_run_time"""
+    up to max_run_time.
+
+    Each forecast is further limited to a maximum number of points.
+    The default limit is 136800 points, or approximately 3 months
+    of 1-minute data. This value can be overwritten using the
+    SFA_PERSISTENCE_POINT_LIMIT environment variable.
+    """
     set_log_level(verbose)
     token = cli_access_token(user, password)
     if not probabilistic:

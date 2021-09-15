@@ -6,6 +6,13 @@
 1.0.5 (August ??, 2021)
 -----------------------
 
+Enhancements
+~~~~~~~~~~~~
+* Added ability to limit persistence forecasts to maximum number of points
+  by environment varable. This was motivated by timeouts caused when an
+  observation was suddenly provided a large amount of data and we attempted
+  to create catch up forecasts. (:issue:`727`, :pull:`727`)
+
 Fixed
 ~~~~~
 * Plane of array irradiance was not correctly calculated in
