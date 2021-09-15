@@ -1,8 +1,9 @@
 import inspect
 import os
-
+from pathlib import Path
 
 from netCDF4 import Dataset
+import numpy as np
 import pandas as pd
 import pytest
 from requests.exceptions import ChunkedEncodingError
@@ -13,10 +14,9 @@ from solarforecastarbiter.io.fetch import arm
 
 TEST_DATA_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
-MET_FILE = os.path.join(TEST_DATA_DIR, 'data',
-                        'sgpmetE13.b1.20190122.000000.cdf')
-IRRAD_FILE = os.path.join(TEST_DATA_DIR, 'data',
-                          'sgpqcrad1longC1.c1.20190122.000000.cdf')
+TEST_DATA_DIR = Path(TEST_DATA_DIR) / 'data'
+MET_FILE = TEST_DATA_DIR / 'sgpmetE13.b1.20190122.000000.cdf'
+IRRAD_FILE = TEST_DATA_DIR / 'sgpqcrad1longC1.c1.20190122.000000.cdf'
 
 
 test_datastreams = ['ds_1', 'ds_2']
@@ -75,6 +75,31 @@ def test_fetch_arm(user_id, api_key, stream, variables, start, end, mocker):
                  side_effect=request_file)
     data = arm.fetch_arm(user_id, api_key, stream, variables, start, end)
     assert variables[0] in data.columns
+
+
+def test_fetch_arm_duplicates(user_id, api_key, mocker, caplog):
+    start = pd.Timestamp('20180130T0000Z')
+    end = pd.Timestamp('20180130T235900Z')
+    datastream = 'sgpmetE15.b1'
+
+    # wrap list in a function so that Mock.side_effect interprets as a single
+    # return value instead of multiple iterations
+    def request_filenames(*args):
+        return [
+            'gpmetE15.b1.20180130.000000.cdf',
+            'gpmetE15.b1.20180130.200000.cdf',
+        ]
+    datasets = [Dataset(TEST_DATA_DIR / Path(f)) for f in request_filenames()]
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 side_effect=request_filenames)
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=datasets)
+    variables = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
+    data = arm.fetch_arm(user_id, api_key, datastream, variables, start, end)
+    assert 'Duplicate index values' in caplog.text
+    assert not np.any(data.index.duplicated())
+    assert data.index[0] == start
+    assert data.index[-1] == end
 
 
 @pytest.mark.parametrize('stream,start,end', [
