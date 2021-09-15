@@ -361,8 +361,11 @@ def check_persistence_compatibility(observation, forecast, index):
 
 
 def _limit_persistence_run_time(data_start, max_run_time, forecast):
-    """Get the last run time that would result in the
-    forecast producing points as limited by PERS_PT_LIMIT.
+    """Get the last run time.
+
+    Last run time is either `max_run_time` or the time that limits
+    the forecast length to value set by `SFA_PERSISTENCE_POINT_LIMIT`
+    environment variable or `DEFAULT_PERSISTENCE_POINT_LIMIT`.
 
     Parameters
     ----------
