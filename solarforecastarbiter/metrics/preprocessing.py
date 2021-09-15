@@ -396,7 +396,12 @@ def _calc_discard_after_resample(
             fx_interval_length, closed=closed_obs, label=closed_fx).sum()
         threshold = (
             quality_flag.resample_threshold_percentage / 100. * interval_ratio)
-        flagged = resampled_flags_count >= threshold
+        # If threshold is 0, any points being flagged counts, but
+        # don't just throw away all data.
+        if threshold == 0:
+            flagged = resampled_flags_count > threshold
+        else:
+            flagged = resampled_flags_count >= threshold
         return filter_name, flagged
 
     # apply to all quality_flag objects, including those with
