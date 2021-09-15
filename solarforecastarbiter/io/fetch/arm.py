@@ -63,7 +63,6 @@ def request_arm_file_list(user_id, api_key, datastream, start, end):
               'end': format_date(end),
               'wt': 'json'}
     response = requests.get(ARM_FILES_LIST_URL, params=params)
-    # breakpoint()
     return json.loads(response.text)
 
 
@@ -247,6 +246,10 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     knowing their exact contents. If none of the requested variables are
     found, an empty DataFrame will be returned. Users should verify the
     contents of the return value before use.
+
+    Occassionally ARM API returns multiple files that contain the same
+    valid time. This function keeps only the last occurance of the data
+    at a given time.
 
     Example
     -------
