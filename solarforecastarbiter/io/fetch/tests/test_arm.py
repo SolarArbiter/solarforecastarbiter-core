@@ -121,14 +121,18 @@ def test_request_file_lists(user_id, api_key, stream, start, end, mocker):
 
 
 def test_request_arm_file(user_id, api_key, mocker):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     arm.request_arm_file(user_id, api_key, 'sgpqcrad1longC1.c1.cdf')
     mocked_get.assert_called_with(
         arm.ARM_FILES_DOWNLOAD_URL,
         params={
             'user': f'{user_id}:{api_key}',
             'file': 'sgpqcrad1longC1.c1.cdf',
-        })
+        },
+        timeout=(10, 60)
+        )
 
 
 def test_extract_arm_variables_exist(mocker):
@@ -159,7 +163,9 @@ def test_no_files(user_id, api_key, mocker):
 
 @pytest.mark.parametrize('num_failures', range(1, 5))
 def test_request_arm_file_retries(mocker, num_failures):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     return_values = (d for d in [0, num_failures])
 
     def get_response(*args, **kwargs):
@@ -177,7 +183,9 @@ def test_request_arm_file_retries(mocker, num_failures):
 
 
 def test_request_arm_file_failure_after_retries(mocker):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     mocked_get.side_effect = ChunkedEncodingError
     with pytest.raises(ChunkedEncodingError):
         arm.request_arm_file('user', 'ley', 'filename')
