@@ -727,3 +727,35 @@ def test_check_persistence_compatibility(obs_kw, fx_kw, index, site_metadata):
     fx = default_forecast(site_metadata, **fx_dict)
     with pytest.raises(ValueError):
         utils.check_persistence_compatibility(obs, fx, index)
+
+
+@pytest.mark.parametrize("start,limit,expected", [
+    (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     24,
+     pd.Timestamp('2021-01-02T01:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     14,
+     pd.Timestamp('2021-01-01T15:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     214,
+     pd.Timestamp('2021-01-09T23:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     240,
+     pd.Timestamp('2021-01-10T00:00Z')
+    ),
+])
+def test__limit_persistence_run_time(
+    forecast_hr_begin, start, limit, expected, monkeypatch
+):
+    max_run_time = pd.Timestamp('2021-01-10T00:00Z')
+    monkeypatch.setenv("SFA_PERSISTENCE_POINT_LIMIT", str(limit))
+    out = utils._limit_persistence_run_time(
+        start,
+        max_run_time,
+        forecast_hr_begin
+    )
+    assert out == expected

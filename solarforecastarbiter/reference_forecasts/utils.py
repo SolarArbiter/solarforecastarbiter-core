@@ -1,3 +1,6 @@
+import os
+
+
 import numpy as np
 import pandas as pd
 import pytz
@@ -5,6 +8,11 @@ import pytz
 
 from solarforecastarbiter.datamodel import ProbabilisticForecast
 from solarforecastarbiter.io import utils as io_utils
+
+
+# Maximum number of points to forecast per forecast, per run
+# Limit is approximately 3 months of 1-minute data.
+DEFAULT_PERSISTENCE_POINT_LIMIT = 136800
 
 
 def get_issue_times(forecast, start_from):
@@ -350,3 +358,40 @@ def check_persistence_compatibility(observation, forecast, index):
             raise ValueError('index=True not supported for forecasts'
                              ' with run_length >= 1day')
     _check_instant_compatibility(observation, forecast)
+
+
+def _limit_persistence_run_time(data_start, max_run_time, forecast):
+    """Get the last run time.
+
+    Last run time is either `max_run_time` or the time that limits
+    the forecast length to value set by `SFA_PERSISTENCE_POINT_LIMIT`
+    environment variable or `DEFAULT_PERSISTENCE_POINT_LIMIT`.
+
+    Parameters
+    ----------
+    data_start: pandas.Timestamp
+    max_run_time: pandas.Timestamp
+    forecast: datamodel.Forecast
+
+    Returns
+    -------
+    pandas.Timestamp
+    """
+    fx_pt_limit = int(os.getenv(
+        'SFA_PERSISTENCE_POINT_LIMIT',
+        DEFAULT_PERSISTENCE_POINT_LIMIT
+    ))
+
+    pts_per_run = forecast.run_length / forecast.interval_length
+
+    max_runs = np.floor(fx_pt_limit / pts_per_run)
+
+    max_total_run_length = max_runs * forecast.run_length
+
+    max_run_time_by_points = (
+        data_start
+        + forecast.lead_time_to_start
+        + max_total_run_length
+    )
+
+    return min(max_run_time, max_run_time_by_points)
