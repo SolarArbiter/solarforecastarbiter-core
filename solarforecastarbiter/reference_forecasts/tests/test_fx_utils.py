@@ -730,10 +730,23 @@ def test_check_persistence_compatibility(obs_kw, fx_kw, index, site_metadata):
 
 
 @pytest.mark.parametrize("start,limit,expected", [
-    (pd.Timestamp('2021-01-01T00:00Z'), 24, pd.Timestamp('2021-01-02T01:00Z')),
-    (pd.Timestamp('2021-01-01T00:00Z'), 14, pd.Timestamp('2021-01-01T15:00Z')),
-    (pd.Timestamp('2021-01-01T00:00Z'), 214, pd.Timestamp('2021-01-09T23:00Z')),
-    (pd.Timestamp('2021-01-01T00:00Z'), 240, pd.Timestamp('2021-01-10T00:00Z')),
+    (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     24,
+     pd.Timestamp('2021-01-02T01:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     14,
+     pd.Timestamp('2021-01-01T15:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     214,
+     pd.Timestamp('2021-01-09T23:00Z')
+    ), (
+     pd.Timestamp('2021-01-01T00:00Z'),
+     240,
+     pd.Timestamp('2021-01-10T00:00Z')
+    ),
 ])
 def test__limit_persistence_run_time(
     forecast_hr_begin, start, limit, expected, monkeypatch
