@@ -373,9 +373,6 @@ def _limit_persistence_run_time(data_start, max_run_time, forecast):
     Returns
     -------
     pandas.Timestamp
-        Either max_run_time or a last run time that would limit the forecasts
-        generated to the the limit provided by the SFA_PERISTENCE_POINT_LIMIT
-        env var or DEFAULT_PERSISTENCE_POINT_LIMIT.
     """
     fx_pt_limit = int(os.getenv(
         'SFA_PERSISTENCE_POINT_LIMIT',

@@ -799,7 +799,6 @@ def make_latest_probabilistic_persistence_forecasts(
                    issue_times)
 
 
-
 def generate_reference_persistence_forecast_gaps_parameters(
         session, forecasts, observations, start, end):
     """Sort through all *forecasts* to find those with gaps in the data
