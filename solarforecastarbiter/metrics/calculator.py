@@ -16,6 +16,8 @@ from solarforecastarbiter.metrics import (
 
 logger = logging.getLogger(__name__)
 
+SEASONS = ("DJF", "MAM", "JJA", "SON")
+
 
 def calculate_metrics(processed_pairs, categories, metrics):
     """
@@ -260,6 +262,8 @@ def _sort_metrics_vals(metrics_vals, mapping):
             index_order = calendar.month_abbr[0:13].index(metricval.index)
         elif metricval.category == 'weekday':
             index_order = calendar.day_abbr[0:7].index(metricval.index)
+        elif metricval.category == 'season':
+            index_order = SEASONS.index(metricval.index)
         else:
             index_order = metricval.index
 
@@ -600,7 +604,7 @@ def _index_category(category, df):
 def _season_from_months(months):
     """Compute season (DJF, MAM, JJA, SON) from month ordinal"""
     # Copied from xarray. see xarray license in LICENSES
-    seasons = np.array(["DJF", "MAM", "JJA", "SON"])
+    seasons = np.array(SEASONS)
     months = np.asarray(months)
     return seasons[(months // 3) % 4]
 

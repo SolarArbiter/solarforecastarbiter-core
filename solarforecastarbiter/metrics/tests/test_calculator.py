@@ -246,6 +246,33 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
             assert getattr(result.values[k], attr) == expected_val
 
 
+def test_calculate_deterministic_metrics_season_sorting(
+    single_forecast_observation, create_processed_fxobs,
+):
+    index = pd.DatetimeIndex([
+        # Winter, Spring, Summer, Fall
+        '20200131 1900Z', '20200401 2000Z', '20200602 2100Z', '20200902 2200Z'
+        ])
+    inp = create_processed_fxobs(
+        single_forecast_observation,
+        pd.Series([2, 1, 0, 0.], index=index),
+        pd.Series([1, 1, 1, 0.], index=index))
+    categories = ('season', )
+    metrics = ('rmse', )
+    result = calculator.calculate_deterministic_metrics(
+        inp, categories, metrics)
+    expected = {
+        0: ('season', 'rmse', 'DJF', 1.),
+        1: ('season', 'rmse', 'MAM', 0.),
+        2: ('season', 'rmse', 'JJA', 1.),
+        3: ('season', 'rmse', 'SON', 0.),
+    }
+    attr_order = ('category', 'metric', 'index', 'value')
+    for k, expected_attrs in expected.items():
+        for attr, expected_val in zip(attr_order, expected_attrs):
+            assert getattr(result.values[k], attr) == expected_val
+
+
 def test_calculate_event_metrics_sorting(single_event_forecast_observation,
                                          create_processed_fxobs,
                                          create_dt_index):
