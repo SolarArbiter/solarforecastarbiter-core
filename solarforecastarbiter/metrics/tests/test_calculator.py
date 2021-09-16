@@ -249,9 +249,10 @@ def test_calculate_deterministic_metrics_sorting(single_forecast_observation,
 def test_calculate_deterministic_metrics_season_sorting(
     single_forecast_observation, create_processed_fxobs,
 ):
-    index = pd.DatetimeIndex(
+    index = pd.DatetimeIndex([
         # Winter, Spring, Summer, Fall
-        ['20200131 1900Z', '20200401 2000Z', '20200602 2100Z', '20200902 2200Z'])
+        '20200131 1900Z', '20200401 2000Z', '20200602 2100Z', '20200902 2200Z'
+        ])
     inp = create_processed_fxobs(
         single_forecast_observation,
         pd.Series([2, 1, 0, 0.], index=index),
