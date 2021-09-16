@@ -444,7 +444,6 @@ def test_align_prob_constant_value(
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
         ),
         (
-            # HERE
             [datamodel.QualityFlagFilter(
                 ('NIGHTTIME', 'USER FLAGGED'),
                 resample_threshold_percentage=50)],
