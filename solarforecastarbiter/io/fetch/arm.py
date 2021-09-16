@@ -8,6 +8,7 @@ import netCDF4
 import pandas as pd
 import requests
 import time
+from urllib3 import Retry
 
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,14 @@ ARM_FILES_DOWNLOAD_URL = 'https://adc.arm.gov/armlive/data/saveData'
 # These lists are the commonly available irradiance and meteorological
 # variables found in ARM data. Users can import and pass these to fetch_arm
 # to parse out these variables.
-IRRAD_VARIABLES = ['down_short_hemisp', 'down_short_diffuse_hemisp',
-                   'short_direct_normal']
+# We use 'BestEstimate_down_short_hemisp' instead of 'down_short_hemisp'. The
+# best estimate has additional QA and is filled by 'MFRSR_hemisp_broadband'
+# when needed.
+IRRAD_VARIABLES = [
+    'BestEstimate_down_short_hemisp',
+    'down_short_diffuse_hemisp',
+    'short_direct_normal',
+]
 MET_VARIABLES = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
 
 
@@ -113,11 +120,31 @@ def request_arm_file(user_id, api_key, filename, retries=5):
     request.exceptions.ChunkedEncodingError
         Reraises this error when all retries are exhausted.
     """
+    max_retries = Retry(
+        total=10,
+        connect=3,
+        read=3,
+        status=3,
+        status_forcelist=[
+            408, 423, 444, 500, 501, 502, 503, 504, 507, 508, 511, 599,
+        ],
+        backoff_factor=0.5,
+        raise_on_status=False,
+        remove_headers_on_redirect=[]
+    )
+    adapter = requests.adapters.HTTPAdapter(max_retries=max_retries)
+    s = requests.Session()
+    s.mount('https://', adapter)
+
     params = {'user': f'{user_id}:{api_key}',
               'file': filename}
 
     try:
-        request = requests.get(ARM_FILES_DOWNLOAD_URL, params=params)
+        request = s.get(
+            ARM_FILES_DOWNLOAD_URL,
+            params=params,
+            timeout=(10, 60)
+        )
     except requests.exceptions.ChunkedEncodingError:
         if retries > 0:
             logger.debug(f'Retrying DOE ARM file {filename}: {retries}'
@@ -220,6 +247,10 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
     found, an empty DataFrame will be returned. Users should verify the
     contents of the return value before use.
 
+    Occassionally ARM API returns multiple files that contain the same
+    valid time. This function keeps only the last occurance of the data
+    at a given time.
+
     Example
     -------
     A user requesting data for the variables 'down_short_hemisp' and
@@ -245,11 +276,21 @@ def fetch_arm(user_id, api_key, datastream, variables, start, end):
             nc_file = retrieve_arm_dataset(user_id, api_key, filename)
         except requests.exceptions.ChunkedEncodingError:
             logger.error(f'Request failed for DOE ARM file {filename}')
+        except PermissionError:
+            # occurs when there's only one data point in a file
+            # https://github.com/Unidata/netcdf4-python/issues/1125
+            logger.error(f'PermissionError in reading {filename}')
         else:
             datastream_df = extract_arm_variables(nc_file, variables)
             datastream_dfs.append(datastream_df)
     if len(datastream_dfs) > 0:
         new_data = pd.concat(datastream_dfs)
-        return new_data
+        index = new_data.index.duplicated(keep='last')
+        if index.sum():
+            logger.warning(
+                'Duplicate index values in %s. Keeping last.', datastream
+            )
+        data = new_data[~index]
+        return data
     else:
         return pd.DataFrame()

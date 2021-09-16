@@ -12,6 +12,9 @@ Enhancements
   by environment varable. This was motivated by timeouts caused when an
   observation was suddenly provided a large amount of data and we attempted
   to create catch up forecasts. (:issue:`727`, :pull:`727`)
+* Replace ARM GHI observation with ARM Best Estimate GHI observation. The
+  best estimate is derived from DNI and DHI observations, GHI observations,
+  and a rotating shadow band observation. (:pull:`716`)
 
 Fixed
 ~~~~~
@@ -29,6 +32,13 @@ Fixed
   one file per observation or forecast. (:issue:`707`, :issue:`713`, :pull:`722`)
 * Removed html line break tags from report timeseries csv headers.
   (:issue:`706`, :pull:`722`)
+* Handle files with a single time from ARM that cause NetCDF to crash.
+  (:pull:`716`)
+* Handle duplicated times from ARM files by keeping only the last point.
+  (:pull:`716`)
+* Handle duplicated times when posting reference data to API by keeping
+  only the last point. This is known to occur in ARM and NREL MIDC data
+  feeds. (:pull:`716`)
 
 Contributors
 ~~~~~~~~~~~~
