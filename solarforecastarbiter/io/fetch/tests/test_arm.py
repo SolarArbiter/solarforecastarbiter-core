@@ -201,3 +201,15 @@ def test_fetch_arm_request_file_failure(mocker):
     mocked_log.error.assert_called_with(
             f'Request failed for DOE ARM file afilename')
     assert data.empty
+
+
+def test_fetch_arm_request_file_failure_permission(mocker):
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 return_value=['afilename'])
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=PermissionError)
+    mocked_log = mocker.patch('solarforecastarbiter.io.fetch.arm.logger')
+    data = arm.fetch_arm('user', 'key', 'stream', ['ghi'], 'start', 'end')
+    mocked_log.error.assert_called_with(
+            'PermissionError in reading afilename')
+    assert data.empty
