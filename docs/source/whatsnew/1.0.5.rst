@@ -39,6 +39,7 @@ Fixed
 * Handle duplicated times when posting reference data to API by keeping
   only the last point. This is known to occur in ARM and NREL MIDC data
   feeds. (:pull:`716`)
+* Fix season order in metrics plots. (:issue:`725`, :pull:`729`)
 
 Contributors
 ~~~~~~~~~~~~
