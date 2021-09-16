@@ -1,8 +1,9 @@
 import inspect
 import os
-
+from pathlib import Path
 
 from netCDF4 import Dataset
+import numpy as np
 import pandas as pd
 import pytest
 from requests.exceptions import ChunkedEncodingError
@@ -13,10 +14,9 @@ from solarforecastarbiter.io.fetch import arm
 
 TEST_DATA_DIR = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
-MET_FILE = os.path.join(TEST_DATA_DIR, 'data',
-                        'sgpmetE13.b1.20190122.000000.cdf')
-IRRAD_FILE = os.path.join(TEST_DATA_DIR, 'data',
-                          'sgpqcrad1longC1.c1.20190122.000000.cdf')
+TEST_DATA_DIR = Path(TEST_DATA_DIR) / 'data'
+MET_FILE = TEST_DATA_DIR / 'sgpmetE13.b1.20190122.000000.cdf'
+IRRAD_FILE = TEST_DATA_DIR / 'sgpqcrad1longC1.c1.20190122.000000.cdf'
 
 
 test_datastreams = ['ds_1', 'ds_2']
@@ -77,6 +77,31 @@ def test_fetch_arm(user_id, api_key, stream, variables, start, end, mocker):
     assert variables[0] in data.columns
 
 
+def test_fetch_arm_duplicates(user_id, api_key, mocker, caplog):
+    start = pd.Timestamp('20180130T0000Z')
+    end = pd.Timestamp('20180130T235900Z')
+    datastream = 'sgpmetE15.b1'
+
+    # wrap list in a function so that Mock.side_effect interprets as a single
+    # return value instead of multiple iterations
+    def request_filenames(*args):
+        return [
+            'gpmetE15.b1.20180130.000000.cdf',
+            'gpmetE15.b1.20180130.200000.cdf',
+        ]
+    datasets = [Dataset(TEST_DATA_DIR / Path(f)) for f in request_filenames()]
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 side_effect=request_filenames)
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=datasets)
+    variables = ['temp_mean', 'rh_mean', 'wspd_arith_mean']
+    data = arm.fetch_arm(user_id, api_key, datastream, variables, start, end)
+    assert 'Duplicate index values' in caplog.text
+    assert not np.any(data.index.duplicated())
+    assert data.index[0] == start
+    assert data.index[-1] == end
+
+
 @pytest.mark.parametrize('stream,start,end', [
     ('datastream', start_date, end_date)
 ])
@@ -96,14 +121,18 @@ def test_request_file_lists(user_id, api_key, stream, start, end, mocker):
 
 
 def test_request_arm_file(user_id, api_key, mocker):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     arm.request_arm_file(user_id, api_key, 'sgpqcrad1longC1.c1.cdf')
     mocked_get.assert_called_with(
         arm.ARM_FILES_DOWNLOAD_URL,
         params={
             'user': f'{user_id}:{api_key}',
             'file': 'sgpqcrad1longC1.c1.cdf',
-        })
+        },
+        timeout=(10, 60)
+        )
 
 
 def test_extract_arm_variables_exist(mocker):
@@ -134,7 +163,9 @@ def test_no_files(user_id, api_key, mocker):
 
 @pytest.mark.parametrize('num_failures', range(1, 5))
 def test_request_arm_file_retries(mocker, num_failures):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     return_values = (d for d in [0, num_failures])
 
     def get_response(*args, **kwargs):
@@ -152,7 +183,9 @@ def test_request_arm_file_retries(mocker, num_failures):
 
 
 def test_request_arm_file_failure_after_retries(mocker):
-    mocked_get = mocker.patch('solarforecastarbiter.io.fetch.arm.requests.get')
+    mocked_get = mocker.patch(
+        'solarforecastarbiter.io.fetch.arm.requests.Session.get'
+    )
     mocked_get.side_effect = ChunkedEncodingError
     with pytest.raises(ChunkedEncodingError):
         arm.request_arm_file('user', 'ley', 'filename')
@@ -167,4 +200,16 @@ def test_fetch_arm_request_file_failure(mocker):
     data = arm.fetch_arm('user', 'key', 'stream', ['ghi'], 'start', 'end')
     mocked_log.error.assert_called_with(
             f'Request failed for DOE ARM file afilename')
+    assert data.empty
+
+
+def test_fetch_arm_request_file_failure_permission(mocker):
+    mocker.patch('solarforecastarbiter.io.fetch.arm.list_arm_filenames',
+                 return_value=['afilename'])
+    mocker.patch('solarforecastarbiter.io.fetch.arm.retrieve_arm_dataset',
+                 side_effect=PermissionError)
+    mocked_log = mocker.patch('solarforecastarbiter.io.fetch.arm.logger')
+    data = arm.fetch_arm('user', 'key', 'stream', ['ghi'], 'start', 'end')
+    mocked_log.error.assert_called_with(
+            'PermissionError in reading afilename')
     assert data.empty
