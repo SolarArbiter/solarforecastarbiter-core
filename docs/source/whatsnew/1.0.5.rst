@@ -43,6 +43,8 @@ Fixed
 * Fixed handling of quality flag resampling thresholds to exclude intervals
   where thresholds are matched or exceeded. A threshold of 0 indicates that
   intervals containing any flags should be discarded. (:issue:`723`, :pull:`728`)
+* Add missing requirements for building documentation to ``doc`` and ``all``
+  installation options. (:pull:`730`)
 
 Contributors
 ~~~~~~~~~~~~
