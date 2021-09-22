@@ -3,8 +3,8 @@
 .. py:currentmodule:: solarforecastarbiter
 
 
-1.0.5 (August ??, 2021)
------------------------
+1.0.5 (September 22, 2021)
+--------------------------
 
 Enhancements
 ~~~~~~~~~~~~
@@ -49,3 +49,4 @@ Contributors
 
 * Will Holmgren (:ghuser:`wholmgren`)
 * Leland Boeman (:ghuser:`lboeman`)
+* Will Hobbs (:ghuser:`williamhobbs`)
