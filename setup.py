@@ -20,7 +20,8 @@ EXTRAS_REQUIRE = {
         'plotly>=4.5.0, <5',
         'selenium',
         'jinja2',
-    ]
+    ],
+    'doc': ['sphinx<2.0', 'sphinx_rtd_theme']
 }
 EXTRAS_REQUIRE['all'] = [
     vv for v in EXTRAS_REQUIRE.values() for vv in v]
