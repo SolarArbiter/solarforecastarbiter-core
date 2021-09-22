@@ -73,6 +73,11 @@ SIXTEEN_15MIN_DF = pd.DataFrame(
      'quality_flag': [OK]*4 + [NT_UF, NT_UF, OK, OK, UF, NT] + [OK]*5 + [CSE]},
     index=pd.date_range(start="20200301T00Z", periods=16, freq='15min'))
 
+SIXTEEN_15MIN_NONAN_DF = pd.DataFrame(
+    {'value': list(range(1, 17)),
+     'quality_flag': [OK]*4 + [UF, UF, UF, UF, UF, NT] + [OK]*5 + [CSE]},
+    index=pd.date_range(start="20200301T00Z", periods=16, freq='15min'))
+
 
 def create_preprocessing_result(counts):
     """Create preprocessing results in order that matches align function."""
@@ -446,7 +451,7 @@ def test_align_prob_constant_value(
         (
             [datamodel.QualityFlagFilter(
                 ('NIGHTTIME', 'USER FLAGGED'),
-                resample_threshold_percentage=50)],
+                resample_threshold_percentage=51)],
             60, 15, SIXTEEN_15MIN_DF, FOUR_HOUR_SERIES,
             # only first all-nan interval is discarded
             pd.Series([7.5, 11.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
@@ -506,8 +511,8 @@ def test_align_prob_constant_value(
             # only first all-nan interval is discarded
             pd.Series([7.0, 10.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
             (('ISNAN', 5), ('TOTAL DISCARD BEFORE RESAMPLE', 5),
-             ('NIGHTTIME OR USER FLAGGED OR ISNAN', 0, False),
-             ('TOTAL DISCARD AFTER RESAMPLE', 0, False))
+             ('NIGHTTIME OR USER FLAGGED OR ISNAN', 1, False),
+             ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         ),
         (
             [datamodel.QualityFlagFilter(
@@ -527,10 +532,69 @@ def test_align_prob_constant_value(
                 ),
             (('ISNAN', 5), ('CLEARSKY EXCEEDED', 1),
              ('TOTAL DISCARD BEFORE RESAMPLE', 6),
-             ('NIGHTTIME OR USER FLAGGED OR ISNAN', 0, False),
+             ('NIGHTTIME OR USER FLAGGED OR ISNAN', 1, False),
              ('CLEARSKY EXCEEDED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
         ),
+        # Regression Test cases for
+        # https://github.com/SolarArbiter/solarforecastarbiter-core/issues/723
+        (
+            [datamodel.QualityFlagFilter(
+                ('NIGHTTIME',),
+                discard_before_resample=False,
+                resample_threshold_percentage=0)],
+            60, 15, SIXTEEN_15MIN_NONAN_DF, FOUR_HOUR_SERIES,
+            # drop the single NT flag interval
+            pd.Series(
+                [2.5, 6.5, 14.5],
+                index=np.append(
+                    FOUR_HOUR_SERIES.index[:2],
+                    FOUR_HOUR_SERIES.index[3:]
+                )
+            ),
+            (('ISNAN', 0), ('TOTAL DISCARD BEFORE RESAMPLE', 0),
+             ('NIGHTTIME OR ISNAN', 1, False),
+             ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('USER FLAGGED',),
+                discard_before_resample=False,
+                resample_threshold_percentage=100)],
+            60, 15, SIXTEEN_15MIN_NONAN_DF, FOUR_HOUR_SERIES,
+            # DROP interval where all values are user flagged
+            pd.Series(
+                [2.5, 10.5, 14.5],
+                np.append(
+                    FOUR_HOUR_SERIES.index[:1],
+                    FOUR_HOUR_SERIES.index[2:]
+                )
+            ),
+            (('ISNAN', 0), ('TOTAL DISCARD BEFORE RESAMPLE', 0),
+             ('USER FLAGGED OR ISNAN', 1, False),
+             ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
+        ),
+        (
+            [datamodel.QualityFlagFilter(
+                ('USER FLAGGED',),
+                discard_before_resample=True,
+                resample_threshold_percentage=100)],
+            60, 15, SIXTEEN_15MIN_NONAN_DF, FOUR_HOUR_SERIES,
+            # DROP interval where all values are user flagged
+            pd.Series(
+                [2.5, 11.0, 14.5],
+                np.append(
+                    FOUR_HOUR_SERIES.index[:1],
+                    FOUR_HOUR_SERIES.index[2:]
+                )
+            ),
+            (('ISNAN', 0),
+             ('USER FLAGGED', 5, True),
+             ('TOTAL DISCARD BEFORE RESAMPLE', 5, True),
+             ('USER FLAGGED OR ISNAN', 1, False),
+             ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
+        )
+        #  end regression tests for gh #723
     ]
 )
 def test_filter_resample(single_site, single_observation,
