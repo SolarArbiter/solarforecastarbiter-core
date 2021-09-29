@@ -16,11 +16,6 @@ import matplotlib.pyplot as plt
 from solarforecastarbiter.cli import common_options, cli_access_token
 from solarforecastarbiter.io.api import APISession
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-logger = logging.getLogger(__name__)
-
-OUTPUT_PATH = Path('ta23_site_data')
-
 SITES = {
     'NOAA SURFRAD Table Mountain Boulder CO': {
         'consistency_limits': {
@@ -126,6 +121,13 @@ SITES = {
     },
 }
 
+# ideally would be set through an argument, but this is faster
+OUTPUT_PATH = Path('ta23_site_data')
+
+# config for command line interface
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+logger = logging.getLogger(__name__)
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def qa_cli():
@@ -155,9 +157,9 @@ def download(verbose, user, password, base_url):
     sites = session.list_sites()
     ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-    # observation names were not created consistently across the different networks
-    # so need to keep a nested directory structure to keep things clean.
-    # also mirrors the organization of data in the arbiter.
+    # observation names were not created consistently across the different
+    # networks so need to keep a nested directory structure to keep things
+    # clean. also mirrors the organization of data in the arbiter.
     for site in ta23_sites:
         p = OUTPUT_PATH / f'{site.name}'
         p.mkdir(exist_ok=True)
@@ -169,13 +171,15 @@ def download(verbose, user, password, base_url):
         obs
     ))
     for o in ta23_obs:
+        # WH: I'm terribly embarassed by the length of this for loop.
+        logger.info('Fetching data for %s', o.name)
         # o.site.name will match paths created above
         p = OUTPUT_PATH / f'{o.site.name}' / f'{o.name}.json'
         p.write_text(json.dumps(o.to_dict(), indent=4))
-        # pull data by quarters to work around API query length limitation
-        # 2018 for TA2 analysis. eventually extend to 2021 for TA3. TA2/3
-        # reports use Etc/GMT timezone, while some SFA Site timezones are
-        # DST aware.
+        # pull data by quarters to work around API query length
+        # limitation 2018 for TA2 analysis. eventually extend to 2021
+        # for TA3. TA2/3 reports use Etc/GMT timezone, while some SFA
+        # Site timezones are DST aware.
         tz = SITES[o.site.name]['timezone']
         quarters = pd.date_range('2018-01-01', freq='QS', periods=5, tz=tz)
         start_ends = pd.DataFrame(
@@ -183,7 +187,7 @@ def download(verbose, user, password, base_url):
         )
         values_segments = []
         for _, start_end in start_ends.iterrows():
-            start = start_end['start'],
+            start = start_end['start']
             end = start_end['end']
             values_segment = session.get_observation_values(
                 o.observation_id,
@@ -194,9 +198,11 @@ def download(verbose, user, password, base_url):
         values = pd.concat(values_segments)
         # construct filename that follows same pattern as API but use our
         # requested times so we know for certain what the file will be named
-        first_start = start_ends.iloc[0]['start']
-        last_end = start_ends.iloc[-1]['end']
-        filename = f'{o.name.replace(' ', '_')}_{first_start}-{last_end}.csv'
+        name = o.name.replace(' ', '_')
+        first_start = start_ends.iloc[0]['start'].isoformat()
+        last_end = start_ends.iloc[-1]['end'].isoformat()
+        filename = f'{name}_{first_start}-{last_end}.csv'
+        filename = filename.replace(':', '_')
         p_data = OUTPUT_PATH / f'{o.site.name}' / filename
         values.to_csv(p_data)
 
