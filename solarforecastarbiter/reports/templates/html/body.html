@@ -31,6 +31,16 @@
       width: fit-content;
       font-weight: 700
   }
+  /*Add bold lines between observation/forecast/reference forecast in summary table*/
+  .report-table-wrapper table.summary-stats-table-vert th[colspan="5"]:not(first-child) {
+      border-right: 2px solid black;
+  }
+  .report-table-wrapper table.summary-stats-table-vert tr:nth-child(2) th:nth-child(5n+6) {
+      border-right: 2px solid black;
+  }
+  .report-table-wrapper table.summary-stats-table-vert tr:nth-child(n+1) td:nth-child(5n+6) {
+      border-right: 2px solid black;
+  }
 </style>
 {% block report_title %}
 <h1 id="report-title">{{ report_name }}</h1>
