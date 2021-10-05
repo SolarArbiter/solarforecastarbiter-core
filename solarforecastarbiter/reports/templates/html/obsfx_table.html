@@ -23,13 +23,13 @@
     </tr>
     <tr>
       <th>Name</th>
-      <th>Interval Label<br>Interval Length</th>
+      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
       <th>Name</th>
-      <th>Interval Label<br>Interval Length</th>
+      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
       <th>Name</th>
-      <th>Interval Label<br>Interval Length</th>
+      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
       <th>Name</th>
-      <th>Interval Label<br>Interval Length</th>
+      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
     </tr>
   </thead>
   <tbody style="text-align: left; overflow-wrap: break-word;">
@@ -37,8 +37,9 @@
     <tr>
       <td>{{pfxobs.name}}</td>
       <td>
+        <div class="border-bottom" style="font-size:inherit">
         {{ pfxobs.interval_label }}
-        <br>
+        </div>
         {{ (pfxobs.interval_length.total_seconds() // 60) | int }} min
       </td>
       <td>
@@ -53,8 +54,9 @@
         {% endif %}
       </td>
       <td>
+        <div class="border-bottom" style="font-size:inherit">
         {{ pfxobs.original.data_object.interval_label }}
-        <br>
+        </div>
         {{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min
       </td>
       <td>
@@ -63,8 +65,9 @@
          </a>
       </td>
       <td>
+        <div class="border-bottom" style="font-size:inherit">
         {{ pfxobs.original.forecast.interval_label }}
-        <br>
+        </div>
         {{ (pfxobs.original.forecast.interval_length.total_seconds() // 60) | int }} min
       </td>
       <td>
@@ -77,10 +80,11 @@
         {% endif %}
       </td>
       <td>
-        {{ pfxobs.original.reference_forecast.interval_label if pfxobs.original.reference_forecast != none }}
-        <br>
         {% if pfxobs.original.reference_forecast != none %}
-          {{ (pfxobs.original.reference_forecast.interval_length.total_seconds() // 60) | int }} min
+        <div class="border-bottom" style="font-size:inherit">
+        {{ pfxobs.original.reference_forecast.interval_label }}
+        </div>
+        {{ (pfxobs.original.reference_forecast.interval_length.total_seconds() // 60) | int }} min
         {% endif %}
       </td>
     </tr>

@@ -26,10 +26,22 @@
       position: sticky;
       left: 0;
       top: auto;
-      background-color: #fff;
       border-right: #dee2e6;
       width: fit-content;
       font-weight: 700
+  }
+
+
+  .report-table-wrapper table.table tr th:first-child,
+  .report-table-wrapper table.table tr:nth-child(2n) td:first-child{
+      background-color: #fff;
+  }
+  .report-table-wrapper table.table tr:not(first-child) th:first-child,
+  .report-table-wrapper table.table tr td:first-child {
+      box-shadow: 2px 0px 0px #dee2e6;
+  }
+  .report-table-wrapper table.table tr:nth-child(2n+1) td:first-child {
+      background-color: #f2f2f2;
   }
   /*Add bold lines between observation/forecast/reference forecast in summary table*/
   .report-table-wrapper table.summary-stats-table-vert th[colspan="5"]:not(first-child) {
@@ -40,6 +52,9 @@
   }
   .report-table-wrapper table.summary-stats-table-vert tr:nth-child(n+1) td:nth-child(5n+6) {
       border-right: 2px solid black;
+  }
+  .obsfx-table td:first-child {
+      font-weight: 700;
   }
 </style>
 {% block report_title %}
