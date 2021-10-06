@@ -1,4 +1,4 @@
-.. _whatsnew_105:
+.. _whatsnew_106:
 
 .. py:currentmodule:: solarforecastarbiter
 
@@ -10,7 +10,7 @@ Enhancements
 ~~~~~~~~~~~~
 * Improved readability of some report labels by extending striping across
   full table and adding heavy line between observations, forecasts and
-  reference forecasts in summary statistics table. 
+  reference forecasts in summary statistics table. (:issue:`724`, :pull:`736`)
 
 Contributors
 ~~~~~~~~~~~~
