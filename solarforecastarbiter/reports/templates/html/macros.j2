@@ -9,97 +9,103 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endmacro %}
 
 {% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
-<div class="report-table-wrapper">
-<table class="table table-striped metric-table-fx-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align: left">
-    Table of {{ category }} metrics
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Forecast</th>
-      {% for metric in metric_ordering %}
-        <th style="text-align: left;">{{ human_metrics[metric] }}</th>
-      {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for fx_result in report_metrics %}
-      <tr>
-        <td>{{ fx_result.name }}</td>
+<details>
+  <summary>
+    <h4>Table of {{ category|lower }} metrics</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped metric-table-fx-vert" style="width:100%;">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Forecast</th>
         {% for metric in metric_ordering %}
-          {% set ns = namespace(found=false) %}
-          {% for mval in fx_result.values %}
-            {% if mval.category == category  and mval.metric == metric %}
-              {% set ns.found = true %}
-              {% if -0.01 < mval.value < 0.01 %}
-                <td>{{ '%.2e' | format(mval.value) }}</td>
-              {% else %}
-                <td>{{ '%0.3g' | format(mval.value) }}</td>
-              {% endif %}
-            {% endif %}
-          {% endfor %}
-          {% if not ns.found %}
-            <td></td>
-          {% endif %}
+          <th style="text-align: left;">{{ human_metrics[metric] }}</th>
         {% endfor %}
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+      {% for fx_result in report_metrics %}
+        <tr>
+          <td>{{ fx_result.name }}</td>
+          {% for metric in metric_ordering %}
+            {% set ns = namespace(found=false) %}
+            {% for mval in fx_result.values %}
+              {% if mval.category == category  and mval.metric == metric %}
+                {% set ns.found = true %}
+                {% if -0.01 < mval.value < 0.01 %}
+                  <td>{{ '%.2e' | format(mval.value) }}</td>
+                {% else %}
+                  <td>{{ '%0.3g' | format(mval.value) }}</td>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {% if not ns.found %}
+              <td></td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endmacro %}
 
 
 {% macro summary_stats_table_vert(summary_stats, category) %}
 {% set span = (human_statistics.values() | length) %}
-<div class="report-table-wrapper">
-<table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align: left">
-    Table of {{ human_categories[category] }} data summary statistics
-  </caption>
-  <thead>
-    <tr class="header">
-      <th scope="col" style="text-align: left;">Aligned Pair</th>
-      <th scope="col" colspan="{{ span }}" style="text-align: center;">Observation</th>
-      <th scope="col" colspan="{{ span }}" style="text-align: center;">Forecast</th>
-      <th scope="col" colspan="{{ span }}" style="text-align: center;">Reference Forecast</th>
-    </tr>
-    <tr>
-      <th></th>
-      {% for i in range(3) %}
-      {% for title in human_statistics.values() %}
-      <th style="text-align: center;">{{ title }}</th>
-      {% endfor %}
-      {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for stat_result in summary_stats %}
+<details>
+  <summary>
+    <h4>Table of {{ human_categories[category]|lower }} data summary statistics</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
+    <caption style="caption-side:top; text-align: left">
+    </caption>
+    <thead>
+      <tr class="header">
+        <th scope="col" style="text-align: left;">Aligned Pair</th>
+        <th scope="col" colspan="{{ span }}" style="text-align: center;">Observation</th>
+        <th scope="col" colspan="{{ span }}" style="text-align: center;">Forecast</th>
+        <th scope="col" colspan="{{ span }}" style="text-align: center;">Reference Forecast</th>
+      </tr>
       <tr>
-        <td>{{ stat_result.name }}</td>
-        {% for thing in ['observation', 'forecast', 'reference_forecast'] %}
-          {% for metric in human_statistics.keys() %}
-            {% set ns = namespace(found=false) %}
-            {% for mval in stat_result.values %}
-              {% if mval.category == category  and mval.metric == thing + '_' + metric %}
-                {% set ns.found = true %}
-                {% if -0.01 < mval.value < 0.01 %}
-        <td>{{ '%.2e' | format(mval.value) }}</td>
-                {% else %}
-        <td>{{ '%0.3g' | format(mval.value) }}</td>
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-            {% if not ns.found %}
-        <td></td>
-            {% endif %}
-          {% endfor %}
+        <th></th>
+        {% for i in range(3) %}
+        {% for title in human_statistics.values() %}
+        <th style="text-align: center;">{{ title }}</th>
+        {% endfor %}
         {% endfor %}
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+      {% for stat_result in summary_stats %}
+        <tr>
+          <td>{{ stat_result.name }}</td>
+          {% for thing in ['observation', 'forecast', 'reference_forecast'] %}
+            {% for metric in human_statistics.keys() %}
+              {% set ns = namespace(found=false) %}
+              {% for mval in stat_result.values %}
+                {% if mval.category == category  and mval.metric == thing + '_' + metric %}
+                  {% set ns.found = true %}
+                  {% if -0.01 < mval.value < 0.01 %}
+          <td>{{ '%.2e' | format(mval.value) }}</td>
+                  {% else %}
+          <td>{{ '%0.3g' | format(mval.value) }}</td>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              {% if not ns.found %}
+          <td></td>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endmacro %}
 
 
@@ -162,77 +168,81 @@ forecasts/single/{{ forecast.forecast_id }}
 
 
 {% macro validation_metadata_table(quality_filters) %}
-<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-filters-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data validation filters
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Quality flags</th>
-      <th style="text-align: left;">Discard before resample</th>
-      <th style="text-align: left;">Resample threshold (%)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for qfilter in quality_filters %}
-      <tr>
-        <td style="text-align: left">{{ qfilter.quality_flags | join(', ') }}</td>
-        <td style="text-align: left">{{ qfilter.discard_before_resample }}</td>
-        <td style="text-align: left">{{ qfilter.resample_threshold_percentage }}</td>
+<details>
+  <summary>
+    <h4>Table of data validation filters</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped validation-table" style="width:100%;" id="data-validation-filters-table">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Quality flags</th>
+        <th style="text-align: left;">Discard before resample</th>
+        <th style="text-align: left;">Resample threshold (%)</th>
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+      {% for qfilter in quality_filters %}
+        <tr>
+          <td style="text-align: left">{{ qfilter.quality_flags | join(', ') }}</td>
+          <td style="text-align: left">{{ qfilter.discard_before_resample }}</td>
+          <td style="text-align: left">{{ qfilter.resample_threshold_percentage }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endmacro %}
 
 
 {% macro validation_results_table(proc_fxobs_list, before_resample) %}
-<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{{'before' if before_resample else 'after'}}-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data validation results {{'before' if before_resample else 'after'}} resampling
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Aligned Pair</th>
-      {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center; vertical-align: middle">
-        {{ proc_fxobs.name }}
-      </th>
-      {% endfor %}
-    </tr>
-    <tr class="header">
-      <th style="text-align: left;">Observation</th>
-      {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center; vertical-align: middle">
-        {{ proc_fxobs.original.data_object.name }}
-      </th>
-      {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for flag in (proc_fxobs_list | unique_flags_filter(before_resample)) %}
-      <tr>
-        <td style="text-align: left">{{ flag }}</td>
+<details>
+  <summary>
+    <h4>Table of data validation results {{'before' if before_resample else 'after'}} resampling</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{{'before' if before_resample else 'after'}}-table">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Aligned Pair</th>
         {% for proc_fxobs in proc_fxobs_list %}
-          {% set ns = namespace(found=false) %}
-            {% for res in proc_fxobs.validation_results %}
-              {% if res.flag == flag %}
-                {% set ns.found = true %}
-        <td style="text-align: center">{{ res.count }}</td>
-              {% endif %}
-            {% endfor %}
-          {% if not ns.found %}
-        <td></td>
-          {% endif %}
+        <th style="text-align: center; vertical-align: middle">
+          {{ proc_fxobs.name }}
+        </th>
         {% endfor %}
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+      <tr class="header">
+        <th style="text-align: left;">Observation</th>
+        {% for proc_fxobs in proc_fxobs_list %}
+        <th style="text-align: center; vertical-align: middle">
+          {{ proc_fxobs.original.data_object.name }}
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for flag in (proc_fxobs_list | unique_flags_filter(before_resample)) %}
+        <tr>
+          <td style="text-align: left">{{ flag }}</td>
+          {% for proc_fxobs in proc_fxobs_list %}
+            {% set ns = namespace(found=false) %}
+              {% for res in proc_fxobs.validation_results %}
+                {% if res.flag == flag %}
+                  {% set ns.found = true %}
+          <td style="text-align: center">{{ res.count }}</td>
+                {% endif %}
+              {% endfor %}
+            {% if not ns.found %}
+          <td></td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endmacro %}
 
 
@@ -245,42 +255,44 @@ forecasts/single/{{ forecast.forecast_id }}
     {% endif %}
   {% endfor %}
 {% endfor %}
-<div class="report-table-wrapper">
-<table class="table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data preprocessing results
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Preprocessing Description</th>
-      {% for proc_fxobs in proc_fxobs_list %}
-      <th style="text-align: center;">
-        {{ proc_fxobs.name }} <br>Number of Points
-      </th>
-      {% endfor %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for pstep in preproc_steps %}
-      <tr>
-      <td style="test-align: left">{{ pstep }}</td>
-      {% for proc_fxobs in proc_fxobs_list %}
-        {% set ns = namespace(found=false) %}
-        {% for res in proc_fxobs.preprocessing_results %}
-          {% if res.name == pstep %}
-            {% set ns.found = true %}
-            <td style="text-align: center">{{ res.count }}</td>
+<details open="">
+  <summary>
+    <h4>Table of data preprocessing results</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="anchor table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Preprocessing Description</th>
+        {% for proc_fxobs in proc_fxobs_list %}
+        <th style="text-align: center;">
+          {{ proc_fxobs.name }} <br>Number of Points
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for pstep in preproc_steps %}
+        <tr>
+        <td style="test-align: left">{{ pstep }}</td>
+        {% for proc_fxobs in proc_fxobs_list %}
+          {% set ns = namespace(found=false) %}
+          {% for res in proc_fxobs.preprocessing_results %}
+            {% if res.name == pstep %}
+              {% set ns.found = true %}
+              <td style="text-align: center">{{ res.count }}</td>
+            {% endif %}
+          {% endfor %}
+          {% if not ns.found %}
+            <td></td>
           {% endif %}
         {% endfor %}
-        {% if not ns.found %}
-          <td></td>
-        {% endif %}
+        </tr>
       {% endfor %}
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-</div>
+    </tbody>
+  </table>
+  </div>
+</details>
 {% endmacro %}
 
 
