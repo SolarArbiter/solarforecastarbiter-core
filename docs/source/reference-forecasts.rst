@@ -91,8 +91,8 @@ found in :py:mod:`~solarforecastarbiter.reference_forecasts.forecast`.
 Persistence
 ===========
 
-The solarforecastarbiter supports several varieties of persistence
-forecasts.
+The solarforecastarbiter supports several varieties of deterministic and
+probabilistic persistence forecasts.
 
 .. autosummary::
    :toctree: generated/
@@ -101,6 +101,8 @@ forecasts.
    persistence.persistence_scalar
    persistence.persistence_interval
    persistence.persistence_scalar_index
+   persistence.persistence_probabilistic
+   persistence.persistence_probabilistic_timeofday
 
 
 Automated Generation

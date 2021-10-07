@@ -12,6 +12,11 @@ Enhancements
   full table and adding heavy line between observations, forecasts and
   reference forecasts in summary statistics table. (:issue:`724`, :pull:`736`)
 
+Fixed
+~~~~~
+* Reference forecast documentation did not include probabilistic persistence
+  functions. (:issue:`735`, :pull:`738`)
+
 Contributors
 ~~~~~~~~~~~~
 
