@@ -6,6 +6,12 @@
 1.0.6 (October ??, 2021)
 --------------------------
 
+API Changes
+~~~~~~~~~~~
+* Removed unused argument ``dni_extra`` from
+  :py:func:`~solarforecastarbiter.validation.validator.check_irradiance_consistency_QCRad`.
+  (:issue:`733`, :pull:`739`)
+
 Enhancements
 ~~~~~~~~~~~~
 * Improved readability of some report labels by extending striping across
