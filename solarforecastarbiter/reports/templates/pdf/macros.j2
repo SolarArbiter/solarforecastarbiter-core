@@ -37,7 +37,7 @@
   \begin{longtabu} to \linewidth {
       X[2] *{\VAR{span * 3}}{| l}
     }
-    \caption{Table of \VAR{human_category} data summary statistics.} \\
+    \caption{Table of \VAR{human_category|lower} data summary statistics.} \\
     \toprule
     Aligned Pair &
     \multicolumn{\VAR{span}}{c}{Observation} &
@@ -51,7 +51,7 @@
     \\
     \midrule
     \endfirsthead
-    \caption{Table of \VAR{human_category} data summary statistics. (cont.)} \\
+    \caption{Table of \VAR{human_category|lower} data summary statistics. (cont.)} \\
     \toprule
     Aligned Pair &
     \multicolumn{\VAR{span}}{c}{Observation} &
@@ -123,12 +123,12 @@
   \begin{longtabu} to \linewidth {
       X *{\VAR{metric_ordering | length}}{| l}
     }
-    \caption{Table of \VAR{human_category} metrics.} \\
+    \caption{Table of \VAR{human_category|lower} metrics.} \\
     \toprule
     Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m].replace('^', '\\textasciicircum')}\BLOCK{endfor} \\
     \midrule
     \endfirsthead
-    \caption{Table of \VAR{human_category} metrics (cont.)} \\
+    \caption{Table of \VAR{human_category|lower} metrics (cont.)} \\
     \toprule
     Forecast\BLOCK{for m in metric_ordering} & \VAR{human_metrics[m].replace('^', '\\textasciicircum')}\BLOCK{endfor} \\
     \midrule
