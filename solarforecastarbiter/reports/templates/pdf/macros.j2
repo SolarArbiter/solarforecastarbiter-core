@@ -1,29 +1,29 @@
-%- macro version_description()
-%- include 'version_description'
+%- macro pdf_version_description()
+%- include 'pdf_version_description'
 %- endmacro
 
-%- macro metrics_meta_table_text()
-%- include 'metrics_meta_table_text'
+%- macro pdf_metrics_meta_table_text()
+%- include 'pdf_metrics_meta_table_text'
 %- endmacro
 
-%- macro data_validation_pre_text()
-%- include 'data_validation_pre_text'
+%- macro pdf_data_validation_pre_text()
+%- include 'pdf_data_validation_pre_text'
 %- endmacro
 
-%- macro data_validation_post_text()
-%- include 'data_validation_post_text'
+%- macro pdf_data_validation_post_text()
+%- include 'pdf_data_validation_post_text'
 %- endmacro
 
-%- macro obsfx_table_text()
-%- include 'obsfx_table_text'
+%- macro pdf_obsfx_table_text()
+%- include 'pdf_obsfx_table_text'
 %- endmacro
 
-%- macro data_resampling_preamble()
-%- include 'data_resampling_preamble'
+%- macro pdf_data_resampling_preamble()
+%- include 'pdf_data_resampling_preamble'
 %- endmacro
 
-%- macro data_resampling_postamble()
-%- include 'data_resampling_postamble'
+%- macro pdf_data_resampling_postamble()
+%- include 'pdf_data_resampling_postamble'
 %- endmacro
 
 %- macro summary_statistics_table(summary_stats, category)
@@ -97,7 +97,7 @@
 %- endmacro
 
 %- macro metrics_meta_table()
-\VAR{metrics_meta_table_text() | link_filter | html_to_tex}
+\VAR{pdf_metrics_meta_table_text() | link_filter | html_to_tex}
 \begin{table}[h]
   \caption{Table of metrics metadata.}
   \small
@@ -232,8 +232,8 @@
 
 
 %- macro data_validation_section()
-\VAR{data_validation_pre_text() | html_to_tex}
-\VAR{data_validation_post_text() | html_to_tex}
+\VAR{pdf_data_validation_pre_text() | html_to_tex}
+\VAR{pdf_data_validation_post_text() | html_to_tex}
 %- if report.report_parameters.filters
 \VAR{validation_metadata_table(report.report_parameters.filters)}
 \VAR{validation_results_table(report.raw_report.processed_forecasts_observations, report.raw_report.processed_forecasts_observations | unique_flags_filter(true), 'before')}
@@ -317,8 +317,8 @@
 
 
 %- macro data_resampling_section()
-\VAR{data_resampling_preamble() | html_to_tex}
-\VAR{data_resampling_postamble() | html_to_tex}
+\VAR{pdf_data_resampling_preamble() | html_to_tex}
+\VAR{pdf_data_resampling_postamble() | html_to_tex}
 \VAR{data_preprocessing_table(report.raw_report.processed_forecasts_observations)}
 %- endmacro
 
