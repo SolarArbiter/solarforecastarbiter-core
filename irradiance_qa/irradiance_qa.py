@@ -5,7 +5,6 @@ Area 2 and 3 evaluations.
 
 import json
 import logging
-import os
 from pathlib import Path
 
 import click
@@ -15,6 +14,10 @@ import pvlib
 import matplotlib.pyplot as plt
 from solarforecastarbiter.cli import common_options, cli_access_token
 from solarforecastarbiter.io.api import APISession
+from solarforecastarbiter.validation.validator import (
+    QCRAD_CONSISTENCY,
+    check_irradiance_consistency_QCRad
+)
 
 SITES = {
     'NOAA SURFRAD Table Mountain Boulder CO': {
@@ -70,6 +73,7 @@ SITES = {
         'timezone': 'Etc/GMT+8',
     },
     'DOE ARM Southern Great Plains SGP, Lamont, Oklahoma': {
+        'consistency_limits': {},
         'overcast': '2018-02-10',
         'clear': '2018-01-23',
         'variable': '2018-05-04',
@@ -167,7 +171,7 @@ def download(verbose, user, password, base_url):
         p.write_text(json.dumps(site.to_dict(), indent=4))
     obs = session.list_observations()
     ta23_obs = tuple(filter(
-        lambda x: x.site in ta23_sites and x.variable in ['ghi', 'dni'],
+        lambda x: x.site in ta23_sites and x.variable in ['ghi', 'dni', 'dhi'],
         obs
     ))
     for o in ta23_obs:
@@ -208,6 +212,8 @@ def download(verbose, user, password, base_url):
 
 
 @qa_cli.command()
+@click.option('-v', '--verbose', count=True,
+              help='Increase logging verbosity')
 @click.option('--site', type=str, help='Site to process', default='all')
 def process(verbose, site):
     """Process time series data for all TA 2/3 sites.
@@ -224,75 +230,43 @@ def process(verbose, site):
 
 
 def process_single_site(name, parameters):
-    loc = read_metadata()
-    data = read_irradiance()
+    logger.info('Processing %s', name)
+    loc = read_metadata(name)
+    data = read_irradiance(name)
     # TA2/3 analysis uses fixed offsets, but reference site metadata
     # typically uses DST aware timezones
-    data = data.tz_localize(parameters['timezone'])
+    data = data.tz_convert(parameters['timezone'])
 
-@qa_cli.command()
-@common_options
-def post(verbose, user, password, base_url):
-    """Post QA results for all TA 2/3 sites.
-
-    Reads data from directory ta23_site_data.
-    Posting requires access to reference data account."""
-    set_log_level(verbose)
-    token = cli_access_token(user, password)
-    session = APISession(token, base_url=base_url)
-
-
-def read_metadata(dirn, filen):
-    with open (os.path.join(dirn, filen), 'r') as infile:
-        meta = json.load(infile)
-    loc = pvlib.location.Location(meta['latitude'], meta['longitude'],
-                                  meta['timezone'], meta['elevation'])
-    return loc
-
-
-def read_irradiance(dirn, data_files):
-    all_data = pd.DataFrame(columns=data_files.keys())
-    for k in data_files.keys():
-        with open(os.path.join(dirn, data_files[k]), 'r') as infile:
-            data = pd.read_csv(infile, skiprows=2, index_col=0,
-                               parse_dates=True)
-        all_data[k] = data['value']
-    return all_data
-
-
-def go():
-    dirn = 'D:\\SFA\\BoulderCO'
-    meta_filen = 'NOAA_SURFRAD_Table_Mountain_Boulder_CO.json'
-
-    data_files = {'ghi': 'Table_Mountain_Boulder_CO_ghi_2018-01-07T00_00_00+00_00-2019-01-01T06_59_00+00_00.csv',
-                'dni': 'Table_Mountain_Boulder_CO_dni_2018-01-01T07_00_00+00_00-2019-01-01T06_59_00+00_00.csv',
-                'dhi': 'Table_Mountain_Boulder_CO_dhi_2018-01-01T07_00_00+00_00-2019-01-01T06_59_00+00_00.csv'}
-
-    loc = read_metadata(dirn, meta_filen)
-    data = read_irradiance(dirn, data_files)
-    data = data.tz_convert(loc.tz)
-
-    # replace negative DHI with 0, so that negative DNI doesn't amplify the ratio
-    # of measured GHI to component sum GHI
+    # replace negative DHI with 0, so that negative DNI doesn't amplify the
+    # ratio of measured GHI to component sum GHI
     data['dni'] = np.maximum(data['dni'], 0.)
 
     sp = loc.get_solarposition(data.index)
     cs = loc.get_clearsky(data.index, solar_position=sp)
+    # same as solarforecastarbiter.validation.validator.check_day_night
     daytime = sp['zenith'] < 87
 
     # check for component consistency
 
-    limits = pva.quality.irradiance.QCRAD_CONSISTENCY.copy()
-    # reset lower bound on GHI
-    for k in limits:
+    limits = QCRAD_CONSISTENCY.copy()
+    # reset lower bound on GHI throughout nested dictionary
+    for irrad_ratio in limits:
         for m in ['low_zenith', 'high_zenith']:
-            limits[k][m]['ghi_bounds'] = [0, np.Inf]
-    # raise limit on diffuse ratio
-    for m in limits['dhi_ratio']:
-        limits['dhi_ratio'][m]['ratio_bounds'] = [0, 1.5]
+            limits[irrad_ratio][m]['ghi_bounds'] = [0, np.Inf]
+    # site-specific adjustments to ratio bounds
+    new_limits = SITES[name]['consistency_limits']
+    for irrad_ratio, new_bounds in new_limits.items():
+        for m in ['low_zenith', 'high_zenith']:
+            limits[irrad_ratio][m].update(new_bounds)
 
-    consistent_comp, diffuse_ratio_limit = pva.quality.irradiance.check_irradiance_consistency_qcrad(
-        data['ghi'], sp['zenith'], data['dhi'], data['dni'], param=limits)
+    consistent_comp, diffuse_ratio_limit = check_irradiance_consistency_QCRad(
+        data['ghi'],
+        sp['zenith'],
+        None,  # solarforecastarbiter-core/issues/733
+        data['dhi'],
+        data['dni'],
+        param=limits
+    )
 
     # accept GHI and DHI when nearly equal, but not at very high zenith so that
     # we don't accept horizon shading
@@ -303,6 +277,9 @@ def go():
     component_sum = data['dni'] * pvlib.tools.cosd(sp['zenith']) + data['dhi']
     ghi_ratio = data['ghi'] / component_sum
 
+    savefig_path = OUTPUT_PATH / name
+    savefig_kwargs = dict(dpi=300)
+
     bad_comp = ~consistent_comp & daytime
     bad_comp = data['ghi'] * bad_comp
     bad_comp[bad_comp == 0] = np.nan
@@ -312,7 +289,11 @@ def go():
     plt.plot(data['dhi'])
     plt.plot(bad_comp, 'r.')
     plt.legend(['GHI', 'DNI', 'DHI', "Bad"])
-    plt.title('Consistent components test')
+    plt.title(f'{name}\nConsistent components test')
+    plt.savefig(
+        savefig_path / f'{name} consistent components test.png',
+        **savefig_kwargs,
+    )
 
     bad_diff = ~diffuse_ratio_limit & daytime
     bad_diff = data['ghi'] * bad_diff
@@ -323,7 +304,11 @@ def go():
     plt.plot(data['dhi'])
     plt.plot(bad_diff, 'r.')
     plt.legend(['GHI', 'DNI', 'DHI', "Bad"])
-    plt.title('Diffuse fraction test')
+    plt.title(f'{name}\nDiffuse fraction test')
+    plt.savefig(
+        savefig_path / f'{name} diffuse fraction test.png',
+        **savefig_kwargs,
+    )
 
     # overall accept/reject plot
     fig_summary = plt.figure()
@@ -337,8 +322,8 @@ def go():
     plt.plot(good_mask * data['ghi'], 'g.')
     plt.plot(bad_mask * data['ghi'], 'r.')
     plt.legend(['GHI', 'DNI', 'DHI', 'Good', "Bad"])
-    plt.title('Overall')
-
+    plt.title(f'{name}\nOverall')
+    plt.savefig(savefig_path / f'{name} overall.png', **savefig_kwargs)
 
     # report on count of data dropped by zenith bin
     bins = np.arange(np.min(sp['zenith']), np.max(sp['zenith'][daytime]), 1)
@@ -359,9 +344,13 @@ def go():
     plt.plot(bins[:-1], count_diff)
     plt.xlabel('Zenith')
     plt.ylabel('Count')
-    plt.legend(['Total', 'Consistent OR Overcast', 'Diffuse', 'Passed all tests'])
-    plt.title('Boulder, CO')
-
+    plt.legend(
+        ['Total', 'Consistent OR Overcast', 'Diffuse', 'Passed all tests'])
+    plt.title(f'{name}\nData dropped by zenith bin')
+    plt.savefig(
+        savefig_path / f'{name} data dropped by zenith bin.png',
+        **savefig_kwargs,
+    )
 
     # bar chart of data count within each hour
     hrs = range(4, 21)
@@ -374,58 +363,110 @@ def go():
     ax_boxplot.set_xticklabels([str(h) for h in hrs])
     plt.xlabel('Hour of day')
     plt.ylabel('Count of data')
+    plt.title(f'{name}\nData count within each hour')
+    plt.savefig(
+        savefig_path / f'{name} data count within each hour.png',
+        **savefig_kwargs,
+    )
+
+    # plot one overcast, clear, and variable day for illustration
+    for kind in ('overcast', 'clear', 'variable'):
+        date = parameters[kind]
+        dr = pd.date_range(
+            start=f'{date} 06:00:00',
+            end=f'{date} 18:00:00',
+            freq='1T',
+            tz=data.index.tz
+        )
+        fig_day = plt.figure()
+        plt.plot(data.loc[dr, 'ghi'])
+        plt.plot(data.loc[dr, 'dni'])
+        plt.plot(data.loc[dr, 'dhi'])
+        good_mask = good_overall.copy()
+        bad_mask = ~good_mask
+        good_mask[good_mask == False] = np.nan
+        bad_mask[bad_mask == False] = np.nan
+        plt.plot(good_mask * data.loc[dr, 'ghi'], 'g.')
+        plt.plot(bad_mask * data.loc[dr, 'ghi'], 'r.')
+        #plt.plot(sp.loc[dr, 'zenith'])
+        plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
+        plt.title(f'{name}\nRepresentative {kind} day. {date}')
+        plt.savefig(
+            savefig_path / f'{name} representative {kind} day.png',
+            **savefig_kwargs,
+        )
+
+    # determine deadband
+    clear_times = pvlib.clearsky.detect_clearsky(
+        data['ghi'], cs['ghi'], data.index, 10
+    )
+    ghi_rel_diff = (component_sum - data['ghi']) / data['ghi']
+    u = daytime & clear_times & (ghi_ratio > 0) & (ghi_ratio < 2) & (data['ghi'] > 50)
+
+    fig_deadband = plt.figure()
+    plt.plot(ghi_rel_diff[u], 'r')
+    plt.text(
+        ghi_rel_diff.index[50000],
+        -0.1,
+        'Mean: ' + str(ghi_rel_diff[u].mean())
+    )
+    plt.text(
+        ghi_rel_diff.index[50000],
+        -0.15,
+        '85%: ' + str(ghi_rel_diff[u].quantile(q=0.85))
+    )
+    plt.text(
+        ghi_rel_diff.index[50000],
+        -0.2,
+        'Median: ' + str(ghi_rel_diff[u].quantile(q=0.5))
+    )
+    plt.text(
+        ghi_rel_diff.index[50000],
+        -0.25,
+        '15%: ' + str(ghi_rel_diff[u].quantile(q=0.15))
+    )
+    plt.ylabel('(Comp. sum - GHI) / GHI')
+    plt.savefig(
+        savefig_path / f'{name} ghi ratio.png',
+        **savefig_kwargs,
+    )
 
 
-    # plot one overcast day for illustration
-    dr = pd.date_range(start='2018-02-04 06:00:00', end='2018-02-04 18:00:00',
-                    freq='1T', tz=data.index.tz)
-    fig_overcast_day = plt.figure()
-    plt.plot(data.loc[dr, 'ghi'])
-    plt.plot(data.loc[dr, 'dni'])
-    plt.plot(data.loc[dr, 'dhi'])
-    good_mask = good_overall.copy()
-    bad_mask = ~good_mask
-    good_mask[good_mask == False] = np.nan
-    bad_mask[bad_mask == False] = np.nan
-    plt.plot(good_mask * data.loc[dr, 'ghi'], 'g.')
-    plt.plot(bad_mask * data.loc[dr, 'ghi'], 'r.')
-    #plt.plot(sp.loc[dr, 'zenith'])
-    plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
-    plt.title('Representative overcast day at Boulder, CO')
+@qa_cli.command()
+@common_options
+def post(verbose, user, password, base_url):
+    """Post QA results for all TA 2/3 sites.
 
-    # plot one clear day day for illustration
-    dr = pd.date_range(start='2018-03-06 06:00:00', end='2018-03-06 18:00:00',
-                    freq='1T', tz=data.index.tz)
-    fig_clear_day = plt.figure()
-    plt.plot(data.loc[dr, 'ghi'])
-    plt.plot(data.loc[dr, 'dni'])
-    plt.plot(data.loc[dr, 'dhi'])
-    good_mask = good_overall.copy()
-    bad_mask = ~good_mask
-    good_mask[good_mask == False] = np.nan
-    bad_mask[bad_mask == False] = np.nan
-    plt.plot(good_mask * data.loc[dr, 'ghi'], 'g.')
-    plt.plot(bad_mask * data.loc[dr, 'ghi'], 'r.')
-    #plt.plot(sp.loc[dr, 'zenith'])
-    plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
-    plt.title('Representative clear day at Boulder, CO')
+    Reads data from directory ta23_site_data.
+    Posting requires access to reference data account."""
+    set_log_level(verbose)
+    token = cli_access_token(user, password)
+    session = APISession(token, base_url=base_url)
 
-    # plot one clear day day for illustration
-    dr = pd.date_range(start='2018-03-22 06:00:00', end='2018-03-22 18:00:00',
-                    freq='1T', tz=data.index.tz)
-    fig_clear_day = plt.figure()
-    plt.plot(data.loc[dr, 'ghi'])
-    plt.plot(data.loc[dr, 'dni'])
-    plt.plot(data.loc[dr, 'dhi'])
-    good_mask = good_overall.copy()
-    bad_mask = ~good_mask
-    good_mask[good_mask == False] = np.nan
-    bad_mask[bad_mask == False] = np.nan
-    plt.plot(good_mask * data.loc[dr, 'ghi'], 'g.')
-    plt.plot(bad_mask * data.loc[dr, 'ghi'], 'r.')
-    #plt.plot(sp.loc[dr, 'zenith'])
-    plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
-    plt.title('Representative day with variable conditions at Boulder, CO')
+
+def read_metadata(name):
+    metadata_file = OUTPUT_PATH / name / f'{name}.json'
+    with open(metadata_file, 'r') as infile:
+        meta = json.load(infile)
+    loc = pvlib.location.Location(meta['latitude'], meta['longitude'],
+                                  meta['timezone'], meta['elevation'])
+    return loc
+
+
+def read_irradiance(name, column='value'):
+    directory = OUTPUT_PATH / name
+    variables = ['ghi', 'dni', 'dhi']
+    data_all = {}
+    for v in variables:
+        # read in all csv files with e.g. ghi in the name
+        data_variable = []
+        for f in directory.glob(f'*{v}*.csv'):
+            data_section = pd.read_csv(f, index_col=0, parse_dates=True)
+            data_variable.append(data_section)
+        data_variable = pd.concat(data_variable)
+        data_all[v] = data_variable[column]
+    data_all = pd.DataFrame(data_all)
+    return data_all
 
 
 if __name__ == "__main__":  # pragma: no cover
