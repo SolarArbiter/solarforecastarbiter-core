@@ -235,12 +235,24 @@ Plotly.newPlot("scatter-div", scat_plot);
 <h3 id="data-preprocessing">Data Preprocessing</h3>
 
 {% block dataresampleandalign %}
-{% include "data_resampling_preamble" %}
+<details id="preprocessing-procedure" open="">
+  <summary>
+    <h4>Preprocessing procedure</h4>
+  </summary>
+  {% include "data_resampling_preamble" %}
+</details>
 {% endblock %}
 
 {% block datavalidation %}
 <h4 id="data-validation-resampling">Validation and Resampling</h4>
 {% include "data_validation_pre_text" %}
+<details>
+  <summary>
+    <h4>Validation procedure details</h4>
+  </summary>
+  {% include "data_validation_procedure" %}
+</details>
+
 
 {% if report.report_parameters.filters %}
   {{ macros.validation_metadata_table(report.report_parameters.filters) }}
