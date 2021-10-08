@@ -1,0 +1,21 @@
+<p>The table below shows the normalization, deadband, and cost
+parameters used in calculating the metrics. The <em>normalization</em>
+factor is applied when calculating the metrics NMAE, NMBE, and
+NRMSE. The normalization is in the same units as the forecast and
+observation. By default, AC power forecasts are normalized by AC
+capacity and DC power forecasts are normalized by DC
+capacity. Normalization for all other forecasts is undefined, and the
+metric values are set to <code>nan</code>.  The <em>deadband</em>
+accounts for observation uncertainty by setting the error (forecast -
+observation) equal to 0 for any point that is within the deadband. The
+error is unchanged for any point that is outside the deadband. The
+deadband is specified as a percentage of the observation value at each
+time. A value of <code>None</code> indicates that no deadband was
+applied for that observation/forecast pair.  The deadband is accounted
+for in the following metrics: MAE, MBE, RMSE, MAPE, NMAE, NMBE, NRMSE,
+Skill, Cost.  It is ignored for all other metrics. The Cost metric is
+calculated using the set of cost models defined by <em>cost
+parameters</em>. See the
+<a href="https://solarforecastarbiter-core.readthedocs.io/en/latest/cost.html">
+solarforecastarbiter-core documentation</a> for a description of how
+these cost parameters are used to calculate Cost.</p>

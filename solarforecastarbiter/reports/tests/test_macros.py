@@ -26,33 +26,35 @@ def macro_test_template():
     return fn
 
 
-metric_table_fx_vert_format = """<div class="report-table-wrapper">
-<table class="table table-striped metric-table-fx-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align: left">
-    Table of {} metrics
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Forecast</th>
-        <th style="text-align: left;">MAE</th>
-        <th style="text-align: left;">RMSE</th>
-        <th style="text-align: left;">MBE</th>
-        <th style="text-align: left;">Skill</th>
-        <th style="text-align: left;">Cost</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td>{}</td>
-                <td>2</td>
-                <td>2</td>
-                <td>2</td>
-                <td>2</td>
-                <td>2</td>
+metric_table_fx_vert_format = """<details>
+  <summary>
+    <h4>Table of {} metrics</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped metric-table-fx-vert" style="width:100%;">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Forecast</th>
+          <th style="text-align: left;">MAE</th>
+          <th style="text-align: left;">RMSE</th>
+          <th style="text-align: left;">MBE</th>
+          <th style="text-align: left;">Skill</th>
+          <th style="text-align: left;">Cost</th>
       </tr>
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+        <tr>
+          <td>{}</td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>2</td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+</details>
 """
 
 
@@ -69,7 +71,7 @@ def test_metric_table_fx_vert(report_with_raw, macro_test_template):
             metric_ordering=report_with_raw.report_parameters.metrics,
             human_metrics=datamodel.ALLOWED_METRICS)
         assert rendered_metric_table == metric_table_fx_vert_format.format(
-            category, expected_metric[0].name)
+            category.lower(), expected_metric[0].name)
 
 
 metric_table_fx_horz_format = """<table class="table table-striped" style="width:100%;">
@@ -120,65 +122,67 @@ def test_metric_table_fx_horz(report_with_raw, macro_test_template):
             category, 5, expected_metric[0].name)
 
 
-validation_table_format = """<div class="report-table-wrapper">
-<table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{}-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data validation results {} resampling
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Aligned Pair</th>
-      <th style="text-align: center; vertical-align: middle">
-        {}
-      </th>
-      <th style="text-align: center; vertical-align: middle">
-        {}
-      </th>
-    </tr>
-    <tr class="header">
-      <th style="text-align: left;">Observation</th>
-      <th style="text-align: center; vertical-align: middle">
-        {}
-      </th>
-      <th style="text-align: center; vertical-align: middle">
-        {}
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
+validation_table_format = """<details>
+  <summary>
+    <h4>Table of data validation results {} resampling</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{}-table">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Aligned Pair</th>
+        <th style="text-align: center; vertical-align: middle">
+          {}
+        </th>
+        <th style="text-align: center; vertical-align: middle">
+          {}
+        </th>
       </tr>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
+      <tr class="header">
+        <th style="text-align: left;">Observation</th>
+        <th style="text-align: center; vertical-align: middle">
+          {}
+        </th>
+        <th style="text-align: center; vertical-align: middle">
+          {}
+        </th>
       </tr>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
-      </tr>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
-      </tr>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
-      </tr>
-      <tr>
-        <td style="text-align: left">{}</td>
-        <td style="text-align: center">0</td>
-        <td style="text-align: center">0</td>
-      </tr>
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+          <td style="text-align: left">{}</td>
+          <td style="text-align: center">0</td>
+          <td style="text-align: center">0</td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+</details>
 """  # noqa: E501
 
 
@@ -200,41 +204,43 @@ def test_validation_results_table(report_with_raw, macro_test_template):
     assert rendered_validation_table == expected
 
 
-preprocessing_table_format = """<div class="report-table-wrapper">
-<table class="table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
-  <caption style="caption-side:top; text-align: left">
-    Table of data preprocessing results
-  </caption>
-  <thead>
-    <tr class="header">
-      <th style="text-align: left;">Preprocessing Description</th>
-      <th style="text-align: center;">
-        {} <br>Number of Points
-      </th>
-      <th style="text-align: center;">
-        {} <br>Number of Points
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
+preprocessing_table_format = """<details open="">
+  <summary>
+    <h4>Table of data preprocessing results</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="anchor table table-striped preprocessing-table" style="width:100%;" id="data-preprocessing-results-table">
+    <thead>
+      <tr class="header">
+        <th style="text-align: left;">Preprocessing Description</th>
+        <th style="text-align: center;">
+          {} <br>Number of Points
+        </th>
+        <th style="text-align: center;">
+          {} <br>Number of Points
+        </th>
       </tr>
-      <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
-      </tr>
-      <tr>
-      <td style="test-align: left">{}</td>
-            <td style="text-align: center">0</td>
-            <td style="text-align: center">0</td>
-      </tr>
-  </tbody>
-</table>
-</div>
+    </thead>
+    <tbody>
+        <tr>
+        <td style="test-align: left">{}</td>
+              <td style="text-align: center">0</td>
+              <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+        <td style="test-align: left">{}</td>
+              <td style="text-align: center">0</td>
+              <td style="text-align: center">0</td>
+        </tr>
+        <tr>
+        <td style="test-align: left">{}</td>
+              <td style="text-align: center">0</td>
+              <td style="text-align: center">0</td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+</details>
 """  # noqa: E501
 
 
@@ -250,59 +256,61 @@ def test_preprocessing_table(report_with_raw, macro_test_template,
         *preprocessing_result_types)
 
 
-summary_stats_table_vert_format = """<div class="report-table-wrapper">
-<table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
-  <caption style="caption-side:top; text-align: left">
-    Table of {stat} data summary statistics
-  </caption>
-  <thead>
-    <tr class="header">
-      <th scope="col" style="text-align: left;">Aligned Pair</th>
-      <th scope="col" colspan="5" style="text-align: center;">Observation</th>
-      <th scope="col" colspan="5" style="text-align: center;">Forecast</th>
-      <th scope="col" colspan="5" style="text-align: center;">Reference Forecast</th>
-    </tr>
-    <tr>
-      <th></th>
-      <th style="text-align: center;">Mean</th>
-      <th style="text-align: center;">Min</th>
-      <th style="text-align: center;">Max</th>
-      <th style="text-align: center;">Median</th>
-      <th style="text-align: center;">Std.</th>
-      <th style="text-align: center;">Mean</th>
-      <th style="text-align: center;">Min</th>
-      <th style="text-align: center;">Max</th>
-      <th style="text-align: center;">Median</th>
-      <th style="text-align: center;">Std.</th>
-      <th style="text-align: center;">Mean</th>
-      <th style="text-align: center;">Min</th>
-      <th style="text-align: center;">Max</th>
-      <th style="text-align: center;">Median</th>
-      <th style="text-align: center;">Std.</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr>
-        <td>{name}</td>
-        <td>2</td>
-        <td>2</td>
-        <td>2</td>
-        <td>2</td>
-        <td>2</td>
-        <td>1</td>
-        <td>1</td>
-        <td>1</td>
-        <td>1</td>
-        <td>1</td>
-        <td>{ref}</td>
-        <td>{ref}</td>
-        <td>{ref}</td>
-        <td>{ref}</td>
-        <td>{ref}</td>
+summary_stats_table_vert_format = """<details>
+  <summary>
+    <h4>Table of {stat} data summary statistics</h4>
+  </summary>
+  <div class="report-table-wrapper">
+  <table class="table table-striped table-bordered summary-stats-table-vert" style="width:100%;">
+    <thead>
+      <tr class="header">
+        <th scope="col" style="text-align: left;">Aligned Pair</th>
+        <th scope="col" colspan="5" style="text-align: center;">Observation</th>
+        <th scope="col" colspan="5" style="text-align: center;">Forecast</th>
+        <th scope="col" colspan="5" style="text-align: center;">Reference Forecast</th>
       </tr>
-  </tbody>
-</table>
-</div>
+      <tr>
+        <th></th>
+        <th style="text-align: center;">Mean</th>
+        <th style="text-align: center;">Min</th>
+        <th style="text-align: center;">Max</th>
+        <th style="text-align: center;">Median</th>
+        <th style="text-align: center;">Std.</th>
+        <th style="text-align: center;">Mean</th>
+        <th style="text-align: center;">Min</th>
+        <th style="text-align: center;">Max</th>
+        <th style="text-align: center;">Median</th>
+        <th style="text-align: center;">Std.</th>
+        <th style="text-align: center;">Mean</th>
+        <th style="text-align: center;">Min</th>
+        <th style="text-align: center;">Max</th>
+        <th style="text-align: center;">Median</th>
+        <th style="text-align: center;">Std.</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>{name}</td>
+          <td>2</td>
+          <td>2</td>
+          <td>2</td>
+          <td>2</td>
+          <td>2</td>
+          <td>1</td>
+          <td>1</td>
+          <td>1</td>
+          <td>1</td>
+          <td>1</td>
+          <td>{ref}</td>
+          <td>{ref}</td>
+          <td>{ref}</td>
+          <td>{ref}</td>
+          <td>{ref}</td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+</details>
 """  # NOQA
 
 
@@ -321,6 +329,7 @@ def test_summary_stats_table_vert(report_with_raw, macro_test_template):
             human_statistics=datamodel.ALLOWED_DETERMINISTIC_SUMMARY_STATISTICS
             )
         exp = summary_stats_table_vert_format.format(
-            stat=human_categories[category], name=expected_metric[0].name,
+            stat=human_categories[category].lower(),
+            name=expected_metric[0].name,
             ref='1' if i == 1 else '')
         assert rendered_stats_table == exp

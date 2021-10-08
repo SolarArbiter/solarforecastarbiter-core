@@ -1,0 +1,25 @@
+<p>
+The <a href="#data-validation-filters-table">table of data validation filters</a>
+shows the filter configuration used in this report, where each row is a
+separate filter. Within each filter, multiple <em>quality flags</em> may be
+specified.
+</p>
+<p>
+For filters with <em>discard before resample</em> == True, data values from flagged points
+are ignored when calculating the value of the resampled interval.
+The number of these flagged points is reported in the
+<a href="#data-validation-results-before-table">table of data validation results before resampling</a>.
+</p>
+<p>
+For filters with <em>discard before resample</em> == False, data values from flagged points are
+included in the resampled interval. However, resampled intervals
+are discarded if the percentage of flagged points in the interval exceeds
+the <em>resample threshold</em>.
+The number of these flagged points is reported in the
+<a href="#data-validation-results-after-table">table of data validation results before resampling</a>.
+This step also discards intervals where the percentage of points discarded before resampling exceeds the <em>resample threshold</em>.
+</p>
+<p>
+Finally, the results of each filter are combined with an OR operation
+to determine the total resampled intervals to discard.
+</p>

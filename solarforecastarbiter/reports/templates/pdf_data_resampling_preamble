@@ -17,6 +17,6 @@ operations to the data:
     Discard intervals that do not exist in all time series.</li>
 </ol>
 <p>
-The <a href="#preprocessing-results">table of data preprocessing results</a>
+The <a href="#data-preprocessing-results-table">table of data preprocessing results</a>
 summarizes the number of points matched by each of these operations.
 </p>

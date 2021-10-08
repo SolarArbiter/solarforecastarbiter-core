@@ -1,93 +1,98 @@
-{% include "obsfx_table_text" %}
 {% import "macros.j2" as macros with context %}
-<table class="table table-striped table-borderless obsfx-table" style="width:100%; ">
-  <caption style="caption-side: top; text-align: left;">
-    Table of data alignment parameters
-  </caption>
-  <colgroup>
-    <col style="width: 16%">
-    <col style="width: 9%">
-    <col style="width: 16%">
-    <col style="width: 9%">
-    <col style="width: 16%">
-    <col style="width: 9%">
-    <col style="width: 16%">
-    <col style="width: 9%">
-  </colgroup>
-  <thead style="text-align: left;">
-    <tr class="header" style="text-align: center;">
-      <th colspan="2">Aligned Pairs</th>
-      <th colspan="2">Observations</th>
-      <th colspan="2">Forecasts</th>
-      <th colspan="2">Reference Forecasts</th>
-    </tr>
-    <tr>
-      <th>Name</th>
-      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
-      <th>Name</th>
-      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
-      <th>Name</th>
-      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
-      <th>Name</th>
-      <th><div class="border-bottom">Interval Label</div>Interval Length</th>
-    </tr>
-  </thead>
-  <tbody style="text-align: left; overflow-wrap: break-word;">
-    {% for pfxobs in report.raw_report.processed_forecasts_observations %}
-    <tr>
-      <td>{{pfxobs.name}}</td>
-      <td>
-        <div class="border-bottom" style="font-size:inherit">
-        {{ pfxobs.interval_label }}
-        </div>
-        {{ (pfxobs.interval_length.total_seconds() // 60) | int }} min
-      </td>
-      <td>
-        {% if pfxobs.original.observation is defined %}
-        <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}{{ macros.start_end_query(report.report_parameters)}}">
-          {{ pfxobs.original.observation.name }}
-        </a>
-        {% else %}
-        <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}{{ macros.start_end_query(report.report_parameters)}}">
-          {{ pfxobs.original.aggregate.name }}
-        </a>
-        {% endif %}
-      </td>
-      <td>
-        <div class="border-bottom" style="font-size:inherit">
-        {{ pfxobs.original.data_object.interval_label }}
-        </div>
-        {{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min
-      </td>
-      <td>
-        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
-          {{ pfxobs.original.forecast.name }}
-         </a>
-      </td>
-      <td>
-        <div class="border-bottom" style="font-size:inherit">
-        {{ pfxobs.original.forecast.interval_label }}
-        </div>
-        {{ (pfxobs.original.forecast.interval_length.total_seconds() // 60) | int }} min
-      </td>
-      <td>
-        {% if pfxobs.original.reference_forecast != none %}
-        <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.reference_forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
-          {{ pfxobs.original.reference_forecast.name if pfxobs.original.reference_forecast != none else 'None' }}
-        </a>
-        {% else %}
-          None
-        {% endif %}
-      </td>
-      <td>
-        {% if pfxobs.original.reference_forecast != none %}
-        <div class="border-bottom" style="font-size:inherit">
-        {{ pfxobs.original.reference_forecast.interval_label }}
-        </div>
-        {{ (pfxobs.original.reference_forecast.interval_length.total_seconds() // 60) | int }} min
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<details open="">
+  <summary>
+    <h4>Table of data alignment parameters</h4>
+  </summary>
+  {% include "obsfx_table_text" %}
+  <table class="table table-striped table-borderless obsfx-table" style="width:100%; ">
+    <caption style="caption-side: top; text-align: left;">
+    </caption>
+    <colgroup>
+      <col style="width: 16%">
+      <col style="width: 9%">
+      <col style="width: 16%">
+      <col style="width: 9%">
+      <col style="width: 16%">
+      <col style="width: 9%">
+      <col style="width: 16%">
+      <col style="width: 9%">
+    </colgroup>
+    <thead style="text-align: left;">
+      <tr class="header" style="text-align: center;">
+        <th colspan="2">Aligned Pairs</th>
+        <th colspan="2">Observations</th>
+        <th colspan="2">Forecasts</th>
+        <th colspan="2">Reference Forecasts</th>
+      </tr>
+      <tr>
+        <th>Name</th>
+        <th><div class="border-bottom">Interval Label</div>Interval Length</th>
+        <th>Name</th>
+        <th><div class="border-bottom">Interval Label</div>Interval Length</th>
+        <th>Name</th>
+        <th><div class="border-bottom">Interval Label</div>Interval Length</th>
+        <th>Name</th>
+        <th><div class="border-bottom">Interval Label</div>Interval Length</th>
+      </tr>
+    </thead>
+    <tbody style="text-align: left; overflow-wrap: break-word;">
+      {% for pfxobs in report.raw_report.processed_forecasts_observations %}
+      <tr>
+        <td>{{pfxobs.name}}</td>
+        <td>
+          <div class="border-bottom" style="font-size:inherit">
+          {{ pfxobs.interval_label }}
+          </div>
+          {{ (pfxobs.interval_length.total_seconds() // 60) | int }} min
+        </td>
+        <td>
+          {% if pfxobs.original.observation is defined %}
+          <a href="{{ dash_url }}/observations/{{ pfxobs.original.observation.observation_id }}{{ macros.start_end_query(report.report_parameters)}}">
+            {{ pfxobs.original.observation.name }}
+          </a>
+          {% else %}
+          <a href="{{ dash_url }}/aggregates/{{ pfxobs.original.aggregate.aggregate_id }}{{ macros.start_end_query(report.report_parameters)}}">
+            {{ pfxobs.original.aggregate.name }}
+          </a>
+          {% endif %}
+        </td>
+        <td>
+          <div class="border-bottom" style="font-size:inherit">
+          {{ pfxobs.original.data_object.interval_label }}
+          </div>
+          {{ (pfxobs.original.data_object.interval_length.total_seconds() // 60) | int }} min
+        </td>
+        <td>
+          <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
+            {{ pfxobs.original.forecast.name }}
+           </a>
+        </td>
+        <td>
+          <div class="border-bottom" style="font-size:inherit">
+          {{ pfxobs.original.forecast.interval_label }}
+          </div>
+          {{ (pfxobs.original.forecast.interval_length.total_seconds() // 60) | int }} min
+        </td>
+        <td>
+          {% if pfxobs.original.reference_forecast != none %}
+          <a href="{{ dash_url }}/{{ macros.forecast_route(pfxobs.original.reference_forecast) }}{{ macros.start_end_query(report.report_parameters) }}">
+            {{ pfxobs.original.reference_forecast.name if pfxobs.original.reference_forecast != none else 'None' }}
+          </a>
+          {% else %}
+            None
+          {% endif %}
+        </td>
+        <td>
+          {% if pfxobs.original.reference_forecast != none %}
+          <div class="border-bottom" style="font-size:inherit">
+          {{ pfxobs.original.reference_forecast.interval_label }}
+          </div>
+          {{ (pfxobs.original.reference_forecast.interval_length.total_seconds() // 60) | int }} min
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
