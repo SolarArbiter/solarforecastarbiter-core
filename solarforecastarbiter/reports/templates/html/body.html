@@ -96,9 +96,9 @@
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
     <li><a href="#data-preprocessing">Data Preprocessing</a></li>
     <ul>
-      <li><a href="#preprocessing-procedure">Preprocessing Procedure</a></li>
+      <li><a href="#preprocessing-procedure">Procedure</a></li>
       <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
-      <li><a href="#preprocessing-results">Preprocessing Results</a></li>
+      <li><a href="#preprocessing-results">Results</a></li>
     </ul>
     <li><a href="#summarystats">Summary Statistics</a></li>
   </ul>
@@ -237,7 +237,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% block dataresampleandalign %}
 <details id="preprocessing-procedure" open="">
   <summary>
-    <h4>Preprocessing procedure</h4>
+    <h4>Procedure</h4>
   </summary>
   {% include "data_resampling_preamble" %}
 </details>
@@ -267,7 +267,7 @@ Plotly.newPlot("scatter-div", scat_plot);
   <div class="alert alert-info">No filters applied</div>
 {% endif %}
 
-<h4 id="preprocessing-results" class="anchor">Preprocessing Results</h4>
+<h4 id="preprocessing-results" class="anchor">Results</h4>
 
 {{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
 
@@ -298,7 +298,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% include "metrics_meta_table.html" %}
 
 {% if "total" in report.report_parameters.categories %}
-  {{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
+  {{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics, true) }}
 {% else %}
   <div class="alert alert-warning">
     <h5>Total metrics not selected in report configuration. Total metrics table not available. See CSV/JSON files for other metrics.</h5>

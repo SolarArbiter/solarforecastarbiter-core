@@ -8,8 +8,8 @@ forecasts/single/{{ forecast.forecast_id }}
 {% endif %}
 {% endmacro %}
 
-{% macro metric_table_fx_vert(report_metrics, category, metric_ordering) %}
-<details>
+{% macro metric_table_fx_vert(report_metrics, category, metric_ordering, open_default=False) %}
+<details{% if open_default %} open=""{% endif %}>
   <summary>
     <h4>Table of {{ category|lower }} metrics</h4>
   </summary>
