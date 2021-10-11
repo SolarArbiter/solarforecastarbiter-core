@@ -262,7 +262,6 @@ def process_single_site(name, parameters):
     consistent_comp, diffuse_ratio_limit = check_irradiance_consistency_QCRad(
         data['ghi'],
         sp['zenith'],
-        None,  # solarforecastarbiter-core/issues/733
         data['dhi'],
         data['dni'],
         param=limits
