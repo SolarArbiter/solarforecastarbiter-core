@@ -94,7 +94,7 @@ def test_check_irradiance_limits_QCRad(irradiance_QCRad):
 def test_check_irradiance_consistency_QCRad(irradiance_QCRad):
     expected = irradiance_QCRad
     cons_comp, diffuse = validator.check_irradiance_consistency_QCRad(
-        expected['ghi'], expected['solar_zenith'], expected['dni_extra'],
+        expected['ghi'], expected['solar_zenith'],
         expected['dhi'], expected['dni'])
     assert_series_equal(cons_comp, expected['consistent_components'])
     assert_series_equal(diffuse, expected['diffuse_ratio_limit'])

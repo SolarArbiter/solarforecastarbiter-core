@@ -1,0 +1,32 @@
+.. _whatsnew_106:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.6 (October 8, 2021)
+-----------------------
+
+API Changes
+~~~~~~~~~~~
+* Removed unused argument ``dni_extra`` from
+  :py:func:`~solarforecastarbiter.validation.validator.check_irradiance_consistency_QCRad`.
+  (:issue:`733`, :pull:`739`)
+
+Enhancements
+~~~~~~~~~~~~
+* Improved readability of some report labels by extending striping across
+  full table and adding heavy line between observations, forecasts and
+  reference forecasts in summary statistics table. (:issue:`724`, :pull:`736`)
+* Moved report sections into expandable containers to reduce scrolling and
+  decrease time to find results. (:pull:`737`)
+
+Fixed
+~~~~~
+* Reference forecast documentation did not include probabilistic persistence
+  functions. (:issue:`735`, :pull:`738`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)

@@ -26,10 +26,50 @@
       position: sticky;
       left: 0;
       top: auto;
-      background-color: #fff;
       border-right: #dee2e6;
       width: fit-content;
       font-weight: 700
+  }
+
+  .report-table-wrapper table.table tr th:first-child,
+  .report-table-wrapper table.table tr:nth-child(2n) td:first-child{
+      background-color: #fff;
+  }
+  .report-table-wrapper table.table tr:not(first-child) th:first-child,
+  .report-table-wrapper table.table tr td:first-child {
+      box-shadow: 2px 0px 0px #dee2e6;
+  }
+  .report-table-wrapper table.table tr:nth-child(2n+1) td:first-child {
+      background-color: #f2f2f2;
+  }
+  /*Add bold lines between observation/forecast/reference forecast in summary table*/
+  .report-table-wrapper table.summary-stats-table-vert th[colspan="5"]:not(first-child) {
+      border-right: 2px solid black;
+  }
+  .report-table-wrapper table.summary-stats-table-vert tr:nth-child(2) th:nth-child(5n+6) {
+      border-right: 2px solid black;
+  }
+  .report-table-wrapper table.summary-stats-table-vert tr:nth-child(n+1) td:nth-child(5n+6) {
+      border-right: 2px solid black;
+  }
+  .obsfx-table td:first-child {
+      font-weight: 700;
+  }
+  details {
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.5em;
+    margin: 0.5em;
+  }
+  details summary > * {
+    display: inline;
+  }
+  details[open] {
+    border-bottom: unset;
+  }
+  details[open] > summary {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.5em;
   }
 </style>
 {% block report_title %}
@@ -56,17 +96,23 @@
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
     <li><a href="#data-preprocessing">Data Preprocessing</a></li>
     <ul>
-      <li><a href="#data-preprocessing-summary">Summary</a></li>
+      <li><a href="#preprocessing-procedure">Procedure</a></li>
       <li><a href="#data-validation-resampling">Validation and Resampling</a></li>
+      <li><a href="#preprocessing-results">Results</a></li>
     </ul>
     <li><a href="#summarystats">Summary Statistics</a></li>
   </ul>
+  
   <li><a href="#metrics">Metrics</a></li>
   {% if include_metrics_toc | default(True) %}
   <ul>
     {% for category in report.report_parameters.categories %}
       <li><a href="#{{ category }}-analysis">{{ human_categories[category].title() }} Analysis</a></li>
     {% endfor %}
+  </ul>
+  {% else %}
+  <ul>
+    <li><a href="#metrics-plots">Metrics Plots</a></li>
   </ul>
   {% endif %}
   <li><a href="#versions">Versions</a></li>
@@ -134,7 +180,7 @@
   observation data.
   This resampled and realigned timeseries data may also be downloaded below.
   <details id="timeseries-downloads">
-    <summary style="border-bottom: #dee2e6;">Download Timeseries</summary>
+    <summary>Download timeseries</summary>
   </details>
 </p>
 
@@ -187,21 +233,29 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endblock %}
 
 <h3 id="data-preprocessing">Data Preprocessing</h3>
+
 {% block dataresampleandalign %}
-<h4 id="data-preprocessing-summary">Summary</h4>
-{% include "data_resampling_preamble" %}
-{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
-<br>
-{% include "data_resampling_postamble" %}
+<details id="preprocessing-procedure" open="">
+  <summary>
+    <h4>Procedure</h4>
+  </summary>
+  {% include "data_resampling_preamble" %}
+</details>
 {% endblock %}
 
 {% block datavalidation %}
 <h4 id="data-validation-resampling">Validation and Resampling</h4>
 {% include "data_validation_pre_text" %}
+<details>
+  <summary>
+    <h4>Validation procedure details</h4>
+  </summary>
+  {% include "data_validation_procedure" %}
+</details>
+
 
 {% if report.report_parameters.filters %}
   {{ macros.validation_metadata_table(report.report_parameters.filters) }}
-  <br>
   {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, true) }}
   {% if report.raw_report.processed_forecasts_observations | unique_flags_filter(false) | length %}
   {{ macros.validation_results_table(report.raw_report.processed_forecasts_observations, false) }}
@@ -209,19 +263,22 @@ Plotly.newPlot("scatter-div", scat_plot);
   No filters with discard after resample were available because this report was created with Solar Forecast Arbiter version 1.0rc3 or earlier (find the <a href="#versions">version information</a> at the end of the report).
   Recompute the report to apply the revised data filtering and resampling procedures.<br>
   {% endif %}
-  <br>
 {% else %}
   <div class="alert alert-info">No filters applied</div>
 {% endif %}
 
-{% include "data_validation_post_text" %}
+<h4 id="preprocessing-results" class="anchor">Results</h4>
+
+{{ macros.preprocessing_table(report.raw_report.processed_forecasts_observations) }}
+
+{% include "data_resampling_postamble" %}
 {% endblock %}
 
 {% block summarystat %}
 <h3 id="summarystats">Summary Statistics</h2>
 <p>
   A table of summary statistics for the resampled observations and deterministic
-  forecasts over the entire study period is shown below. Statistics for other
+  forecasts over the entire study period is available below. Statistics for other
   categories may be downloaded in
   <a href="javascript:download_stats_as_csv('{{ report_name }}')">CSV format</a>
   or <a href="javascript:download_stats_as_json('{{ report_name }}')">JSON format</a>.
@@ -239,21 +296,16 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% block metrics %}
 <h2 id="metrics">Metrics</h2>
 {% include "metrics_meta_table.html" %}
-<p>
-  A table of metrics over the entire study period and figures for the selected
-  categories are shown below.
-  Metrics may be downloaded in
-  <a href="javascript:download_metrics_as_csv('{{ report_name }}')">CSV format</a>
-  or <a href="javascript:download_metrics_as_json('{{ report_name }}')">JSON format</a>.
-</p>
+
 {% if "total" in report.report_parameters.categories %}
-  {{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics) }}
+  {{ macros.metric_table_fx_vert(report.raw_report.metrics | rejectattr("is_summary"), "total", report.report_parameters.metrics, true) }}
 {% else %}
   <div class="alert alert-warning">
     <h5>Total metrics not selected in report configuration. Total metrics table not available. See CSV/JSON files for other metrics.</h5>
   </div>
 {% endif %}
 
+<h3 id="metrics-plots">Metrics Plots</h3>
 <script>var metric_plots = {};</script>
 <div id="metric-plot-wrapper">
 {% for category in report.report_parameters.categories %}

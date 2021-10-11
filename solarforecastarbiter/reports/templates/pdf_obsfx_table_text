@@ -1,0 +1,13 @@
+<p>The table below shows the observation, forecast, and reference forecast
+triplets analyzed in this report. The reference forecast is listed as
+<em>None</em> if it was not selected during the report configuration. The table
+includes the unprocessed observation, forecast, and reference forecast
+<em>interval label</em> (beginning, ending, instantaneous)
+and <em>interval length</em>. If these quantities do not match, the
+Solar Forecast Arbiter must align and/or resample the data before
+computing error statistics. The Solar Forecast Arbiter aligns the
+observation data to the forecast data. Reference forecasts must have the same
+interval label, length, and type as the associated forecasts. The aligned
+and resampled parameters are also shown below, including a unique name for the
+aligned and resampled observation/forecast pair that appears in
+the metrics plots, tables, and CSV download.</p>
