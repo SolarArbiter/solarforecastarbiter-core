@@ -494,7 +494,7 @@ def persistence_probabilistic(observation, data_start, data_end,
     elif axis == "y":   # constant_values=percentiles, fx=variable
         forecasts = []
         for constant_value in constant_values:
-            fx = np.percentile(obs, constant_value)
+            fx = np.nanpercentile(obs, constant_value)
             forecasts.append(pd.Series(fx, index=fx_index))
     else:
         raise ValueError(f"Invalid axis parameter: {axis}")
