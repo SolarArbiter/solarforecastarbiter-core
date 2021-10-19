@@ -589,12 +589,14 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed_fx)
 
+    # get observations from database
+    obs_db = load_data(observation, data_start, data_end)
+
     # observation data resampled to match forecast sampling
-    obs = load_data(observation, data_start, data_end)
     # unlike other functions in this module, we do need label=closed
     # here because we will match the resampled obs time of day to
     # the desired forecast time of day.
-    obs = obs.resample(
+    obs = obs_db.resample(
         interval_length, closed=closed_obs, label=closed_fx
     ).mean()
     if obs.empty:
@@ -632,7 +634,9 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
             fx = pd.Series(np.nan, index=fx_index)
             for tod in fx_timeofday:
                 data = obs[obs_timeofday == tod]
-                fx[fx_timeofday == tod] = np.percentile(data, constant_value)
+                fx[fx_timeofday == tod] = np.nanpercentile(
+                    data, constant_value
+                )
             forecasts.append(fx)
     else:
         raise ValueError(f"Invalid axis parameter: {axis}")
