@@ -1,0 +1,12 @@
+.. _whatsnew_107:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.7 (October 28, 2021)
+------------------------
+
+There are no changes to the core code in this release. This tag is only
+created to maintain consistency with Dashboard and API. See
+`solarforecastarbiter.org/changelog/
+<https://solarforecastarbiter.org/changelog/>`_ for details.
