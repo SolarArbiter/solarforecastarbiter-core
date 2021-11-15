@@ -530,6 +530,9 @@ def filter_resample(
         obs_resampled, validation_results = _resample_obs(
             obs, fx, obs_data, quality_flags, outages)
 
+    fx_data, fx_outage_points = remove_outage_periods(
+        outages, fx_data
+    )
     return fx_data, obs_resampled, validation_results
 
 
@@ -1009,8 +1012,8 @@ def remove_outage_periods(outage_periods, data):
     dropped_total = 0
     new_data = data.copy()
     for outage in outage_periods:
-        outage_index = (new_data.index >= outage['start']) &
-            (new_data.index <= outage['end'])
+        outage_index = (new_data.index >= outage['start']) & (
+            new_data.index <= outage['end'])
         new_data = new_data[~outage_index]
         dropped_total += outage_index.sum()
     return new_data, dropped_total
