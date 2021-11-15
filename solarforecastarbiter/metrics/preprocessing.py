@@ -197,7 +197,8 @@ def _resample_obs(
     obs: Union[datamodel.Observation, datamodel.Aggregate],
     fx: datamodel.Forecast,
     obs_data: pd.DataFrame,
-    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
+    outage_periods: List[dict]
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample observations.
 
@@ -244,6 +245,17 @@ def _resample_obs(
     # obs label convention when resampling
     closed_obs = datamodel.CLOSED_MAPPING[obs.interval_label]
 
+    # drop any outage data before preprocessing
+    obs_data, outage_point_count = remove_outage_periods(
+        outage_periods, obs_data
+    )
+
+    outage_result = datamodel.ValidationResult(
+        flag="Outage",
+        count=int(outage_point_count),
+        before_resample=True
+    )
+
     # bools w/ has columns like NIGHTTIME, CLEARSKY EXCEEDED
     obs_flags = quality_mapping.convert_mask_into_dataframe(
         obs_data['quality_flag'])
@@ -252,6 +264,7 @@ def _resample_obs(
     # determine the points that should be discarded before resampling.
     to_discard_before_resample, val_results = _calc_discard_before_resample(
         obs_flags, quality_flags)
+    val_results = [outage_result] + val_results
 
     # resample using all of the data except for what was flagged by the
     # discard before resample process.
@@ -440,7 +453,8 @@ def filter_resample(
     fx_obs: Union[datamodel.ForecastObservation, datamodel.ForecastAggregate],
     fx_data: Union[pd.Series, pd.DataFrame],
     obs_data: pd.DataFrame,
-    quality_flags: Tuple[datamodel.QualityFlagFilter, ...]
+    quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
+    outages: List[dict]
 ) -> Tuple[
     Union[pd.Series, pd.DataFrame],
     pd.Series,
@@ -514,7 +528,7 @@ def filter_resample(
             obs, fx, obs_data, quality_flags)
     else:
         obs_resampled, validation_results = _resample_obs(
-            obs, fx, obs_data, quality_flags)
+            obs, fx, obs_data, quality_flags, outages)
 
     return fx_data, obs_resampled, validation_results
 
@@ -649,7 +663,7 @@ def check_reference_forecast_consistency(fx_obs, ref_data):
 
 def process_forecast_observations(forecast_observations, filters,
                                   forecast_fill_method, start, end,
-                                  data, timezone, costs=tuple()):
+                                  data, timezone, costs=tuple(), outages=[]):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -720,6 +734,7 @@ def process_forecast_observations(forecast_observations, filters,
             'Other filters will be discarded.')
         filters = tuple(
             f for f in filters if isinstance(f, datamodel.QualityFlagFilter))
+
     # create string for tracking forecast fill results.
     # this approach supports known methods or filling with contant values.
     forecast_fill_str = FORECAST_FILL_STRING_MAP.get(
@@ -759,6 +774,13 @@ def process_forecast_observations(forecast_observations, filters,
             count=int(count)))
 
         ref_data = data.get(fxobs.reference_forecast, None)
+
+        forecast_outage_periods = get_outage_periods(
+            fxobs.forecast,
+            start,
+            end,
+            outages
+        )
         try:
             check_reference_forecast_consistency(fxobs, ref_data)
         except ValueError as e:
@@ -776,13 +798,24 @@ def process_forecast_observations(forecast_observations, filters,
         # filter and resample observation/aggregate data
         try:
             forecast_values, observation_values, val_results = filter_resample(
-                fxobs, fx_data, obs_data, filters)
+                fxobs, fx_data, obs_data, filters, forecast_outage_periods)
         except Exception as e:
             # should figure out the specific exception types to catch
             logger.error(
                 'Failed to filter and resample data for pair (%s, %s): %s',
                 fxobs.forecast.name, fxobs.data_object.name, e)
             continue
+
+        total_outage_points_dropped = _search_validation_results(
+            val_results, 'Outage')
+        if total_outage_points_dropped is None:
+            logger.warning(
+                'Observation values dropped due to outage not available for '
+                'pair (%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
+        else:
+            preproc_results.append(datamodel.PreprocessingResult(
+                name='Observation values dropped due to outage',
+                count=int(total_outage_points_dropped)))
 
         # the total count ultimately shows up in both the validation
         # results table and the preprocessing summary table.
@@ -895,3 +928,89 @@ def _name_pfxobs(current_names, forecast, i=1):
         return _name_pfxobs(current_names, new_name, i + 1)
     else:
         return forecast_name
+
+
+def get_outage_periods(forecast, start, end, outages):
+    """Converts report outage periods to forecast data periods to
+    drop from analysis.
+
+    Parameters
+    ----------
+    forecast: Forecast
+    start: pd.Timestamp
+    end: pd.Timestamp
+    outages list of ReportOutages
+
+    Returns
+    -------
+    list of dicts
+        List of dicts with start and end keys. Times between these values
+        should not be included in analysis.
+    """
+    # First, determine a list of forecast issue times that include data that
+    # falls within the report
+
+    # Get total forecast horizon to know how far back to look for issue times
+    total_forecast_horizon = forecast.lead_time_to_start + forecast.run_length
+
+    # Look back another day, so we can start from a day's first issue time
+    # without undershooting the forecast horizon
+    lookback_period = total_forecast_horizon + pd.Timedelta('1D')
+
+    # Convert start to UTC so we can replace with the UTC-defined issue time
+    # to get the first issue time inside the lookback period.
+    lookback_start = start.tz_convert('UTC') - lookback_period
+    issue_start = lookback_start.replace(
+        hour=forecast.issue_time_of_day.hour
+    )
+
+    # Get all possible issue times that contribute to the report
+    issue_times = pd.date_range(
+        issue_start,
+        end.tz_convert('UTC'),
+        freq=forecast.run_length
+    )
+
+    outage_periods = []
+    # For each outage, if a forecast submission/issue_time falls within
+    # the outage. Create start/end bounds for the forecast data to exclude.
+    for outage in outages:
+        outage_submissions = issue_times[
+            (issue_times >= outage.start) & (issue_times <= outage.end)
+        ]
+        for issue_time in outage_submissions:
+            fx_start = issue_time + forecast.lead_time_to_start
+            fx_end = fx_start + forecast.run_length
+            outage_periods.append({
+                "start": fx_start,
+                "end": fx_end
+            })
+    return outage_periods
+
+
+def remove_outage_periods(outage_periods, data):
+    """Returns a copy of a dataframe with all values within an outage
+    period dropped.
+
+    Parameters
+    ----------
+    outage_periods: list of dict
+        List of dictionaries with start and end keys. Values should be
+        timestamps denoting the start and end of periods to remove.
+    data: pandas.DataFrame
+        The dataframe to drop outage data from.
+
+    Returns
+    -------
+    pd.DataFrame, int
+    """
+    if len(outage_periods) == 0:
+        return data, 0
+    dropped_total = 0
+    new_data = data.copy()
+    for outage in outage_periods:
+        outage_index = (new_data.index >= outage['start']) &
+            (new_data.index <= outage['end'])
+        new_data = new_data[~outage_index]
+        dropped_total += outage_index.sum()
+    return new_data, dropped_total

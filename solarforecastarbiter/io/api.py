@@ -1106,6 +1106,7 @@ class APISession(requests.Session):
             pairs.append(pair)
         rep_params['object_pairs'] = tuple(pairs)
         req_dict['report_parameters'] = rep_params
+        req_dict['outages'] = rep_dict.get('outages', [])
         return datamodel.Report.from_dict(req_dict)
 
     def get_report(self, report_id):

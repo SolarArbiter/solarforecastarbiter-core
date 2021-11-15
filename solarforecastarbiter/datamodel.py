@@ -1968,6 +1968,12 @@ class ReportParameters(BaseModel):
 
 
 @dataclass(frozen=True)
+class ReportOutage(BaseModel):
+    start: pd.Timestamp
+    end: pd.Timestamp
+
+
+@dataclass(frozen=True)
 class Report(BaseModel):
     """Class for keeping track of report metadata and the raw report that
     can later be rendered to HTML or PDF. Functions in
@@ -1998,6 +2004,7 @@ class Report(BaseModel):
     status: str = 'pending'
     report_id: str = ''
     provider: str = ''
+    outages: Tuple[ReportOutage, ...] = ()
     __version__: int = 0  # should add version to api
 
 
