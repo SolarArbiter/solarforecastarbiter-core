@@ -264,7 +264,8 @@ def _resample_obs(
     # determine the points that should be discarded before resampling.
     to_discard_before_resample, val_results = _calc_discard_before_resample(
         obs_flags, quality_flags)
-    val_results = [outage_result] + val_results
+
+    val_results.append(outage_result)
 
     # resample using all of the data except for what was flagged by the
     # discard before resample process.
@@ -530,6 +531,8 @@ def filter_resample(
         obs_resampled, validation_results = _resample_obs(
             obs, fx, obs_data, quality_flags, outages)
 
+    # Remove any forecast data that should have been submitted
+    # during an outage
     fx_data, fx_outage_points = remove_outage_periods(
         outages, fx_data
     )
