@@ -198,7 +198,7 @@ def _resample_obs(
     fx: datamodel.Forecast,
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    outage_periods: List[datamodel.TimePeriod] = []
+    outages: List[datamodel.TimePeriod] = []
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample observations.
 
@@ -213,7 +213,7 @@ def _resample_obs(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
-    outage_periods : list of solarforecastarbiter.datamode.TimePeriod
+    outages : list of solarforecastarbiter.datamode.TimePeriod
         List of timeperiods to drop from obs_data before resampling.
 
     Returns
@@ -249,7 +249,7 @@ def _resample_obs(
 
     # drop any outage data before preprocessing
     obs_data, outage_point_count = remove_outage_periods(
-        outage_periods, obs_data
+        outages, obs_data
     )
 
     outage_result = datamodel.ValidationResult(
@@ -1040,13 +1040,13 @@ def get_outage_periods(forecast, start, end, outages):
     return outage_periods
 
 
-def remove_outage_periods(outage_periods, data):
+def remove_outage_periods(outages, data):
     """Returns a copy of a dataframe with all values within an outage
     period dropped.
 
     Parameters
     ----------
-    outage_periods: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
+    outages: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
         List of dictionaries with start and end keys. Values should be
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
@@ -1058,7 +1058,7 @@ def remove_outage_periods(outage_periods, data):
         The data DataFrame with outage data dropped, and total
         number of points removed.
     """  # NOQA
-    if len(outage_periods) == 0:
+    if len(outages) == 0:
         return data, 0
     dropped_total = 0
 
@@ -1066,7 +1066,7 @@ def remove_outage_periods(outage_periods, data):
     # of loop below
     full_outage_index = None
 
-    for outage in outage_periods:
+    for outage in outages:
         outage_index = (data.index >= outage.start) & (
             data.index <= outage.end)
         if full_outage_index is None:
