@@ -476,7 +476,7 @@ def filter_resample(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
-    outages: list of solarforecastarbiter.datamodel.TimePeriod
+    outages: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
         Time periods to drop from data prior to filtering or alignment.
 
     Returns
@@ -697,6 +697,9 @@ def process_forecast_observations(forecast_observations, filters,
     costs : tuple of :py:class:`solarforecastarbiter.datamodel.Cost`
         Costs that are referenced by any pairs. Pairs and costs are matched
         by the Cost name.
+    outages : list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
+        List of time periods during which forecast submissions will be
+        excluded from analysis.
 
     Returns
     -------
@@ -1008,6 +1011,7 @@ def get_outage_periods(forecast, start, end, outages):
     start: pandas.Timestamp
     end: pandas.Timestamp
     outages: list of solarforecastarbiter.datamodel.TimePeriod
+        List of time ranges to check for forecast issue times.
 
     Returns
     -------
@@ -1042,7 +1046,7 @@ def remove_outage_periods(outage_periods, data):
 
     Parameters
     ----------
-    outage_periods: list of solarforecastarbiter.datamodel.TimePeriod
+    outage_periods: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
         List of dictionaries with start and end keys. Values should be
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
@@ -1053,7 +1057,7 @@ def remove_outage_periods(outage_periods, data):
     pandas.DataFrame, int
         The data DataFrame with outage data dropped, and total
         number of points removed.
-    """
+    """  # NOQA
     if len(outage_periods) == 0:
         return data, 0
     dropped_total = 0
