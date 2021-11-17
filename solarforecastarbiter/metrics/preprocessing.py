@@ -198,7 +198,7 @@ def _resample_obs(
     fx: datamodel.Forecast,
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    outage_periods: List[dict]
+    outage_periods: List[datamodel.TimePeriod] = []
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample observations.
 
@@ -213,6 +213,8 @@ def _resample_obs(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
+    outage_periods : list of solarforecastarbiter.datamode.TimePeriod
+        List of timeperiods to drop from obs_data before resampling.
 
     Returns
     -------
@@ -455,7 +457,7 @@ def filter_resample(
     fx_data: Union[pd.Series, pd.DataFrame],
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    outages: List[dict]
+    outages: List[datamodel.TimePeriod] = []
 ) -> Tuple[
     Union[pd.Series, pd.DataFrame],
     pd.Series,
@@ -474,6 +476,8 @@ def filter_resample(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
+    outages: list of solarforecastarbiter.datamodel.TimePeriod
+        Time periods to drop from data prior to filtering or alignment.
 
     Returns
     -------
@@ -969,21 +973,21 @@ def get_forecast_report_issue_times(forecast, start, end):
     pandas.DatetimeIndex
         Pandas DatetimeIndex representing all of the issue times.
     """
-    import pdb
-    pdb.set_trace()
     # Get total forecast horizon to know how far back to look for issue times
     total_forecast_horizon = forecast.lead_time_to_start + forecast.run_length
 
-    # Look back another day, so we can start from a day's first issue time
-    # without undershooting the forecast horizon
-    lookback_period = total_forecast_horizon + pd.Timedelta('1D')
-
     # Convert start to UTC so we can replace with the UTC-defined issue time
     # to get the first issue time inside the lookback period.
-    lookback_start = start.tz_convert('UTC') - lookback_period
+    lookback_start = start.tz_convert('UTC') - total_forecast_horizon
     issue_start = lookback_start.replace(
         hour=forecast.issue_time_of_day.hour
     )
+
+    # If we undershot the lookback period when aligning with first issue
+    # time, look back another day so we can start from a day's first
+    # issue time without undershooting the forecast horizon.
+    if issue_start > lookback_start:
+        issue_start -= pd.Timedelta('1D')
 
     # Get all possible issue times that contribute to the report
     issue_times = pd.date_range(
@@ -1000,14 +1004,14 @@ def get_outage_periods(forecast, start, end, outages):
 
     Parameters
     ----------
-    forecast: Forecast
-    start: pd.Timestamp
-    end: pd.Timestamp
-    outages list of datamodel.TimePeriod
+    forecast: solarforecastarbiter.datamodel.Forecast
+    start: pandas.Timestamp
+    end: pandas.Timestamp
+    outages: list of solarforecastarbiter.datamodel.TimePeriod
 
     Returns
     -------
-    list of datamodel.TimePeriod
+    list of solarforecastarbiter.datamodel.TimePeriod
         List of dicts with start and end keys. Times between these values
         should not be included in analysis.
     """
@@ -1038,7 +1042,7 @@ def remove_outage_periods(outage_periods, data):
 
     Parameters
     ----------
-    outage_periods: list of datamodel.TimePeriod
+    outage_periods: list of solarforecastarbiter.datamodel.TimePeriod
         List of dictionaries with start and end keys. Values should be
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
@@ -1046,7 +1050,7 @@ def remove_outage_periods(outage_periods, data):
 
     Returns
     -------
-    pd.DataFrame, int
+    pandas.DataFrame, int
         The data DataFrame with outage data dropped, and total
         number of points removed.
     """
