@@ -969,6 +969,8 @@ def get_forecast_report_issue_times(forecast, start, end):
     pandas.DatetimeIndex
         Pandas DatetimeIndex representing all of the issue times.
     """
+    import pdb
+    pdb.set_trace()
     # Get total forecast horizon to know how far back to look for issue times
     total_forecast_horizon = forecast.lead_time_to_start + forecast.run_length
 
@@ -1001,11 +1003,11 @@ def get_outage_periods(forecast, start, end, outages):
     forecast: Forecast
     start: pd.Timestamp
     end: pd.Timestamp
-    outages list of ReportOutages
+    outages list of datamodel.TimePeriod
 
     Returns
     -------
-    list of dicts
+    list of datamodel.TimePeriod
         List of dicts with start and end keys. Times between these values
         should not be included in analysis.
     """
@@ -1023,10 +1025,10 @@ def get_outage_periods(forecast, start, end, outages):
         for issue_time in outage_submissions:
             fx_start = issue_time + forecast.lead_time_to_start
             fx_end = fx_start + forecast.run_length
-            outage_periods.append({
-                "start": fx_start,
-                "end": fx_end
-            })
+            outage_periods.append(datamodel.TimePeriod(
+                start=fx_start,
+                end=fx_end
+            ))
     return outage_periods
 
 
@@ -1036,7 +1038,7 @@ def remove_outage_periods(outage_periods, data):
 
     Parameters
     ----------
-    outage_periods: list of dict
+    outage_periods: list of datamodel.TimePeriod
         List of dictionaries with start and end keys. Values should be
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
@@ -1045,14 +1047,23 @@ def remove_outage_periods(outage_periods, data):
     Returns
     -------
     pd.DataFrame, int
+        The data DataFrame with outage data dropped, and total
+        number of points removed.
     """
     if len(outage_periods) == 0:
         return data, 0
     dropped_total = 0
-    new_data = data.copy()
+
+    # Set to the boolean series of outage data on first iteration
+    # of loop below
+    full_outage_index = None
+
     for outage in outage_periods:
-        outage_index = (new_data.index >= outage['start']) & (
-            new_data.index <= outage['end'])
-        new_data = new_data[~outage_index]
+        outage_index = (data.index >= outage.start) & (
+            data.index <= outage.end)
+        if full_outage_index is None:
+            full_outage_index = outage_index
+        else:
+            full_outage_index = full_outage_index | outage_index
         dropped_total += outage_index.sum()
-    return new_data, dropped_total
+    return data[~full_outage_index], dropped_total

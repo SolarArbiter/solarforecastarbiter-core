@@ -7,6 +7,7 @@ import pytest
 from pandas.testing import assert_index_equal, assert_series_equal
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.conftest import _site_metadata
 from solarforecastarbiter.metrics import preprocessing
 
 
@@ -1653,3 +1654,48 @@ def test_apply_fill_unstratified_dataframe(data, method, exp, exp_count,
                                              data.index[0], data.index[-1])
     pd.testing.assert_frame_equal(result, exp)
     assert count == exp_count
+
+
+OUTAGE_FORECAST = datamodel.Forecast(
+   site=_site_metadata(), name='dummy fx', variable='ghi',
+   interval_value_type='instantaneous',
+   interval_length=pd.Timedelta('1h'),
+   interval_label='beginning',
+   issue_time_of_day=dt.time(hour=5),
+   lead_time_to_start=pd.Timedelta('1h'),
+   run_length=pd.Timedelta('12h')
+)
+
+def test_get_outage_periods():
+    assert True
+
+
+@pytest.mark.parametrize("forecast,start,end,expected", [
+    (OUTAGE_FORECAST,
+     pd.Timestamp('2021-01-01T00:00Z'),
+     pd.Timestamp('2021-01-02T00:00Z'),
+     pd.date_range(
+        '2020-12-30T05:00Z',
+        '2021-01-01T17:00Z',
+        freq='12h'
+     )
+    ),
+    (OUTAGE_FORECAST.replace(run_length=pd.Timedelta('1H')),
+     pd.Timestamp('2021-01-01T00:00Z'),
+     pd.Timestamp('2021-01-02T00:00Z'),
+     pd.date_range(
+        '2020-12-31T05:00Z',
+        '2021-01-02T00:00Z',
+        freq='1h'
+     )
+    ),
+])
+def test_get_forecast_report_issue_times(forecast, start, end, expected):
+    issue_times = preprocessing.get_forecast_report_issue_times(
+        forecast, start, end
+    )
+    assert (issue_times == expected).all()
+
+
+def test_remove_outage_period():
+    assert True

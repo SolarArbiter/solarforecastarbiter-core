@@ -1968,7 +1968,7 @@ class ReportParameters(BaseModel):
 
 
 @dataclass(frozen=True)
-class ReportOutage(BaseModel):
+class TimePeriod(BaseModel):
     start: pd.Timestamp
     end: pd.Timestamp
 
@@ -2004,7 +2004,7 @@ class Report(BaseModel):
     status: str = 'pending'
     report_id: str = ''
     provider: str = ''
-    outages: Tuple[ReportOutage, ...] = ()
+    outages: Tuple[TimePeriod, ...] = ()
     __version__: int = 0  # should add version to api
 
 
