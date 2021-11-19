@@ -198,7 +198,7 @@ def _resample_obs(
     fx: datamodel.Forecast,
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    outages: List[datamodel.TimePeriod] = []
+    outages: Tuple[datamodel.TimePeriod, ...] = ()
 ) -> Tuple[pd.Series, List[datamodel.ValidationResult]]:
     """Resample observations.
 
@@ -213,8 +213,8 @@ def _resample_obs(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
-    outages : list of solarforecastarbiter.datamode.TimePeriod
-        List of timeperiods to drop from obs_data before resampling.
+    outages : tuple of solarforecastarbiter.datamode.TimePeriod
+        Tuple of timeperiods to drop from obs_data before resampling.
 
     Returns
     -------
@@ -253,7 +253,7 @@ def _resample_obs(
     )
 
     outage_result = datamodel.ValidationResult(
-        flag="Outage",
+        flag="OUTAGE",
         count=int(outage_point_count),
         before_resample=True
     )
@@ -457,7 +457,7 @@ def filter_resample(
     fx_data: Union[pd.Series, pd.DataFrame],
     obs_data: pd.DataFrame,
     quality_flags: Tuple[datamodel.QualityFlagFilter, ...],
-    outages: List[datamodel.TimePeriod] = []
+    outages: Tuple[datamodel.TimePeriod, ...] = ()
 ) -> Tuple[
     Union[pd.Series, pd.DataFrame],
     pd.Series,
@@ -476,7 +476,7 @@ def filter_resample(
         observation/aggregate data.
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
-    outages: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
+    outages: tuple of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
         Time periods to drop from data prior to filtering or alignment.
 
     Returns
@@ -668,7 +668,8 @@ def check_reference_forecast_consistency(fx_obs, ref_data):
 
 def process_forecast_observations(forecast_observations, filters,
                                   forecast_fill_method, start, end,
-                                  data, timezone, costs=tuple(), outages=[]):
+                                  data, timezone, costs=tuple(),
+                                  outages=tuple()):
     """
     Convert ForecastObservations into ProcessedForecastObservations
     applying any filters and resampling to align forecast and observation.
@@ -697,8 +698,8 @@ def process_forecast_observations(forecast_observations, filters,
     costs : tuple of :py:class:`solarforecastarbiter.datamodel.Cost`
         Costs that are referenced by any pairs. Pairs and costs are matched
         by the Cost name.
-    outages : list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
-        List of time periods during which forecast submissions will be
+    outages : tuple of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
+        Tuple of time periods during which forecast submissions will be
         excluded from analysis.
 
     Returns
@@ -834,7 +835,7 @@ def process_forecast_observations(forecast_observations, filters,
             continue
 
         total_outage_points_dropped = _search_validation_results(
-            val_results, 'Outage')
+            val_results, 'OUTAGE')
         if total_outage_points_dropped is None:
             logger.warning(
                 'Observation Values Discarded Due To Outage Not Available For '
@@ -957,7 +958,11 @@ def _name_pfxobs(current_names, forecast, i=1):
         return forecast_name
 
 
-def get_forecast_report_issue_times(forecast, start, end):
+def get_forecast_report_issue_times(
+    forecast: datamodel.Forecast,
+    start: pd.Timestamp,
+    end: pd.Timestamp
+) -> pd.DatetimeIndex:
     """Returns all of the forecast issue times that contribute data
     to a report. May include issue times that correspend with data
     before and after the report to ensure report coverage.
@@ -1001,7 +1006,12 @@ def get_forecast_report_issue_times(forecast, start, end):
     return issue_times
 
 
-def get_outage_periods(forecast, start, end, outages):
+def get_outage_periods(
+    forecast: datamodel.Forecast,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    outages: Tuple[datamodel.TimePeriod, ...]
+) -> Tuple[datamodel.TimePeriod, ...]:
     """Converts report outage periods to forecast data periods to
     drop from analysis.
 
@@ -1010,13 +1020,13 @@ def get_outage_periods(forecast, start, end, outages):
     forecast: solarforecastarbiter.datamodel.Forecast
     start: pandas.Timestamp
     end: pandas.Timestamp
-    outages: list of solarforecastarbiter.datamodel.TimePeriod
+    outages: tuple of solarforecastarbiter.datamodel.TimePeriod
         List of time ranges to check for forecast issue times.
 
     Returns
     -------
-    list of solarforecastarbiter.datamodel.TimePeriod
-        List of dicts with start and end keys. Times between these values
+    tuple of solarforecastarbiter.datamodel.TimePeriod
+        Tuple of dicts with start and end keys. Times between these values
         should not be included in analysis.
     """
     # First, determine a list of forecast issue times that include data that
@@ -1037,17 +1047,20 @@ def get_outage_periods(forecast, start, end, outages):
                 start=fx_start,
                 end=fx_end
             ))
-    return outage_periods
+    return tuple(outage_periods)
 
 
-def remove_outage_periods(outages, data):
+def remove_outage_periods(
+    outages: Tuple[datamodel.TimePeriod, ...],
+    data: pd.DataFrame
+) -> Tuple[pd.DataFrame, int]:
     """Returns a copy of a dataframe with all values within an outage
     period dropped.
 
     Parameters
     ----------
-    outages: list of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
-        List of dictionaries with start and end keys. Values should be
+    outages: tuple of :py:class:`solarforecastarbiter.datamodel.TimePeriod`
+        Tuple of dictionaries with start and end keys. Values should be
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
         The dataframe to drop outage data from.

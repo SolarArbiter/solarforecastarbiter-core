@@ -426,7 +426,7 @@ def test_align_prob_constant_value(
                 [1.], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 1), ('NIGHTTIME', 2), ('USER FLAGGED', 2),
              ('TOTAL DISCARD BEFORE RESAMPLE', 3),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
         ),
@@ -438,7 +438,7 @@ def test_align_prob_constant_value(
                 [1.], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 1), ('NIGHTTIME', 2), ('USER FLAGGED', 2),
              ('TOTAL DISCARD BEFORE RESAMPLE', 3),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR ISNAN', 2, False),
              ('USER FLAGGED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
@@ -452,7 +452,7 @@ def test_align_prob_constant_value(
                 [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5), ('NIGHTTIME', 3), ('USER FLAGGED', 3),
              ('TOTAL DISCARD BEFORE RESAMPLE', 8),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
         ),
@@ -465,7 +465,7 @@ def test_align_prob_constant_value(
             pd.Series([7.5, 11.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
             (('ISNAN', 5), ('NIGHTTIME', 3), ('USER FLAGGED', 3),
              ('TOTAL DISCARD BEFORE RESAMPLE', 8),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 1, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         ),
@@ -477,7 +477,7 @@ def test_align_prob_constant_value(
                 [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5), ('NIGHTTIME', 3), ('USER FLAGGED', 3),
              ('TOTAL DISCARD BEFORE RESAMPLE', 8),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR ISNAN', 3, False),
              ('USER FLAGGED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
@@ -492,7 +492,7 @@ def test_align_prob_constant_value(
                 [14.5], index=pd.DatetimeIndex(["20200301T03Z"], freq='1h')),
             (('ISNAN', 5),
              ('TOTAL DISCARD BEFORE RESAMPLE', 5),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
         ),
@@ -509,7 +509,7 @@ def test_align_prob_constant_value(
             pd.Series([10.5, 14.5], index=FOUR_HOUR_SERIES.index[2:]),
             (('ISNAN', 5),
              ('TOTAL DISCARD BEFORE RESAMPLE', 5),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR ISNAN', 2, False),
              ('USER FLAGGED OR ISNAN', 2, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 2, False))
@@ -523,7 +523,7 @@ def test_align_prob_constant_value(
             # only first all-nan interval is discarded
             pd.Series([7.0, 10.5, 14.5], index=FOUR_HOUR_SERIES.index[1:]),
             (('ISNAN', 5), ('TOTAL DISCARD BEFORE RESAMPLE', 5),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 1, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         ),
@@ -545,7 +545,7 @@ def test_align_prob_constant_value(
                 ),
             (('ISNAN', 5), ('CLEARSKY EXCEEDED', 1),
              ('TOTAL DISCARD BEFORE RESAMPLE', 6),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR USER FLAGGED OR ISNAN', 1, False),
              ('CLEARSKY EXCEEDED OR ISNAN', 3, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 3, False))
@@ -567,7 +567,7 @@ def test_align_prob_constant_value(
                 )
             ),
             (('ISNAN', 0), ('TOTAL DISCARD BEFORE RESAMPLE', 0),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('NIGHTTIME OR ISNAN', 1, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         ),
@@ -586,7 +586,7 @@ def test_align_prob_constant_value(
                 )
             ),
             (('ISNAN', 0), ('TOTAL DISCARD BEFORE RESAMPLE', 0),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('USER FLAGGED OR ISNAN', 1, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         ),
@@ -607,7 +607,7 @@ def test_align_prob_constant_value(
             (('ISNAN', 0),
              ('USER FLAGGED', 5, True),
              ('TOTAL DISCARD BEFORE RESAMPLE', 5, True),
-             ('Outage', 0),
+             ('OUTAGE', 0),
              ('USER FLAGGED OR ISNAN', 1, False),
              ('TOTAL DISCARD AFTER RESAMPLE', 1, False))
         )
@@ -1723,41 +1723,45 @@ def test_get_forecast_report_issue_times(forecast, start, end, expected):
     (OUTAGE_FORECAST,
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
-     [datamodel.TimePeriod(
-        start=pd.Timestamp('2021-01-01T04:00Z'),
-        end=pd.Timestamp('2021-01-01T05:00Z')
-      )],
-     [datamodel.TimePeriod(
-        start=pd.Timestamp('2021-01-01T06:00Z'),
-        end=pd.Timestamp('2021-01-01T18:00Z')
-      )]
+     (
+        datamodel.TimePeriod(
+            start=pd.Timestamp('2021-01-01T04:00Z'),
+            end=pd.Timestamp('2021-01-01T05:00Z')
+        ),
+      ),
+     (
+        datamodel.TimePeriod(
+            start=pd.Timestamp('2021-01-01T06:00Z'),
+            end=pd.Timestamp('2021-01-01T18:00Z')
+        ),
+      ),
      ),
     (OUTAGE_FORECAST,
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
-     [
+     (
         datamodel.TimePeriod(
            start=pd.Timestamp('2020-12-31T17:00Z'),
            end=pd.Timestamp('2020-12-31T19:00Z')
-         )
-     ],
-     [
+         ),
+     ),
+     (
         datamodel.TimePeriod(
            start=pd.Timestamp('2020-12-31T18:00Z'),
            end=pd.Timestamp('2021-01-01T06:00Z')
-        )
-      ]
+        ),
+      )
      ),
     (OUTAGE_FORECAST.replace(run_length=pd.Timedelta('1H')),
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
-     [
+     (
         datamodel.TimePeriod(
           start=pd.Timestamp('2021-01-01T04:00Z'),
           end=pd.Timestamp('2021-01-01T05:00Z')
-        )
-     ],
-     [
+        ),
+     ),
+     (
         datamodel.TimePeriod(
           start=pd.Timestamp('2021-01-01T05:00Z'),
           end=pd.Timestamp('2021-01-01T06:00Z')
@@ -1765,8 +1769,8 @@ def test_get_forecast_report_issue_times(forecast, start, end, expected):
         datamodel.TimePeriod(
           start=pd.Timestamp('2021-01-01T06:00Z'),
           end=pd.Timestamp('2021-01-01T07:00Z')
-        )
-      ]
+        ),
+      )
      )
 ])
 def test_get_outage_periods(forecast, start, end, outages, expected):
