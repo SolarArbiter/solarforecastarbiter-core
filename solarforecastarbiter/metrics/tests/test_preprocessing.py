@@ -1790,69 +1790,75 @@ OUTAGE_DATA = pd.DataFrame(
 )
 
 
-@pytest.mark.parametrize('outage_periods,data,expected_data,dropped', [
-    (
-     [
-        datamodel.TimePeriod(
-          start=pd.Timestamp('2021-01-01T12:00Z'),
-          end=pd.Timestamp('2021-01-01T14:00Z')
-        )
-      ],
-     OUTAGE_DATA,
-     pd.DataFrame(
-        index=pd.date_range(
-            '2021-01-01T05:00Z',
-            '2021-01-01T11:00Z',
-            freq='1H'
-        ).append(pd.date_range(
-            '2021-01-01T15:00Z',
-            '2021-01-02T05:00Z',
-            freq='1H'
-        )),
-        columns=['value']
+@pytest.mark.parametrize(
+    'outage_periods,interval_label,data,expected_data,dropped',
+    [
+     (
+      [
+         datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T12:00Z'),
+           end=pd.Timestamp('2021-01-01T14:00Z')
+         )
+       ],
+      "beginning",
+      OUTAGE_DATA,
+      pd.DataFrame(
+         index=pd.date_range(
+             '2021-01-01T05:00Z',
+             '2021-01-01T11:00Z',
+             freq='1H'
+         ).append(pd.date_range(
+             '2021-01-01T14:00Z',
+             '2021-01-02T05:00Z',
+             freq='1H'
+         )),
+         columns=['value']
+      ),
+      3
      ),
-     3
-    ),
-    (
-     [
-        datamodel.TimePeriod(
-          start=pd.Timestamp('2021-01-01T07:00Z'),
-          end=pd.Timestamp('2021-01-01T09:00Z')
-        ),
-        datamodel.TimePeriod(
-          start=pd.Timestamp('2021-01-01T13:00Z'),
-          end=pd.Timestamp('2021-01-01T17:00Z')
-        )
-      ],
-     OUTAGE_DATA,
-     pd.DataFrame(
-        index=pd.date_range(
-            '2021-01-01T05:00Z',
-            '2021-01-01T06:00Z',
-            freq='1H'
-        ).append(pd.date_range(
-            '2021-01-01T10:00Z',
-            '2021-01-01T12:00Z',
-            freq='1H'
-        )).append(pd.date_range(
-            '2021-01-01T18:00Z',
-            '2021-01-02T05:00Z',
-            freq='1H'
-        )),
-        columns=['value']
+     (
+      [
+         datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T07:00Z'),
+           end=pd.Timestamp('2021-01-01T09:00Z')
+         ),
+         datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T13:00Z'),
+           end=pd.Timestamp('2021-01-01T17:00Z')
+         )
+       ],
+      "beginning",
+      OUTAGE_DATA,
+      pd.DataFrame(
+         index=pd.date_range(
+             '2021-01-01T05:00Z',
+             '2021-01-01T06:00Z',
+             freq='1H'
+         ).append(pd.date_range(
+             '2021-01-01T09:00Z',
+             '2021-01-01T12:00Z',
+             freq='1H'
+         )).append(pd.date_range(
+             '2021-01-01T17:00Z',
+             '2021-01-02T05:00Z',
+             freq='1H'
+         )),
+         columns=['value']
+      ),
+      6
      ),
-     6
-    ),
-    (
-     [],
-     OUTAGE_DATA,
-     OUTAGE_DATA,
-     0
-    ),
-])
+     (
+      [],
+      "beginning",
+      OUTAGE_DATA,
+      OUTAGE_DATA,
+      0
+     ),
+    ]
+)
 def test_remove_outage_period(
-        outage_periods, data, expected_data, dropped):
+        outage_periods, interval_label, data, expected_data, dropped):
     data_outage_removed, actual_dropped = preprocessing.remove_outage_periods(
-        outage_periods, data
+        outage_periods, data, interval_label
     )
     assert_frame_equal(data_outage_removed, expected_data)

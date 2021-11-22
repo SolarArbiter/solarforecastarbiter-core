@@ -9,6 +9,7 @@ import pandas as pd
 
 
 from solarforecastarbiter import datamodel
+from solarforecastarbiter.io.utils import adjust_start_end_for_interval_label
 from solarforecastarbiter.validation import quality_mapping
 
 
@@ -249,7 +250,7 @@ def _resample_obs(
 
     # drop any outage data before preprocessing
     obs_data, outage_point_count = remove_outage_periods(
-        outages, obs_data
+        outages, obs_data, obs.interval_label
     )
 
     outage_result = datamodel.ValidationResult(
@@ -790,15 +791,17 @@ def process_forecast_observations(forecast_observations, filters,
         preproc_results.append(datamodel.PreprocessingResult(
             name=FILL_RESULT_TOTAL_STRING.format('', forecast_fill_str),
             count=int(count)))
-
-        # Remove any forecast data that would have been submitted
-        # during an outage
-        fx_data, fx_outage_points = remove_outage_periods(
-            forecast_outage_periods, fx_data
-        )
-        preproc_results.append(datamodel.PreprocessingResult(
-            name="Forecast Values Discarded Due To Outage",
-            count=int(fx_outage_points)))
+        
+        outages_exist = len(outages) > 0
+        if outages_exist:
+            # Remove any forecast data that would have been submitted
+            # during an outage
+            fx_data, fx_outage_points = remove_outage_periods(
+                forecast_outage_periods, fx_data, fxobs.forecast.interval_label
+            )
+            preproc_results.append(datamodel.PreprocessingResult(
+                name="Forecast Values Discarded Due To Outage",
+                count=int(fx_outage_points)))
 
         ref_data = data.get(fxobs.reference_forecast, None)
 
@@ -811,17 +814,19 @@ def process_forecast_observations(forecast_observations, filters,
         if fxobs.reference_forecast is not None:
             ref_data, count = apply_fill(ref_data, fxobs.reference_forecast,
                                          forecast_fill_method, start, end)
+            
             preproc_results.append(datamodel.PreprocessingResult(
                 name=FILL_RESULT_TOTAL_STRING.format(
                     "Reference ", forecast_fill_str),
                 count=int(count)))
-            ref_data, ref_outage_points = remove_outage_periods(
-                forecast_outage_periods, ref_data
-            )
-            preproc_results.append(datamodel.PreprocessingResult(
-                name="Reference Forecast Values Discarded Due To Outage",
-                count=int(ref_outage_points))
-            )
+            if outages_exist:
+                ref_data, ref_outage_points = remove_outage_periods(
+                    forecast_outage_periods, ref_data, fxobs.reference_forecast.interval_label
+                )
+                preproc_results.append(datamodel.PreprocessingResult(
+                    name="Reference Forecast Values Discarded Due To Outage",
+                    count=int(ref_outage_points))
+                )
 
         # filter and resample observation/aggregate data
         try:
@@ -834,16 +839,17 @@ def process_forecast_observations(forecast_observations, filters,
                 fxobs.forecast.name, fxobs.data_object.name, e)
             continue
 
-        total_outage_points_dropped = _search_validation_results(
-            val_results, 'OUTAGE')
-        if total_outage_points_dropped is None:
-            logger.warning(
-                'Observation Values Discarded Due To Outage Not Available For '
-                'Pair (%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
-        else:
-            preproc_results.append(datamodel.PreprocessingResult(
-                name='Observation Values Discarded Due To Outage',
-                count=int(total_outage_points_dropped)))
+        if outages_exist:
+            obs_outage_points_dropped = _search_validation_results(
+                val_results, 'OUTAGE')
+            if obs_outage_points_dropped is None:
+                logger.warning(
+                    'Observation Values Discarded Due To Outage Not Available For '
+                    'Pair (%s, %s)', fxobs.forecast.name, fxobs.data_object.name)
+            else:
+                preproc_results.append(datamodel.PreprocessingResult(
+                    name='Observation Values Discarded Due To Outage',
+                    count=int(obs_outage_points_dropped)))
 
         # the total count ultimately shows up in both the validation
         # results table and the preprocessing summary table.
@@ -1013,7 +1019,8 @@ def get_outage_periods(
     outages: Tuple[datamodel.TimePeriod, ...]
 ) -> Tuple[datamodel.TimePeriod, ...]:
     """Converts report outage periods to forecast data periods to
-    drop from analysis.
+    drop from analysis. The returned periods do not account for
+    interval label.
 
     Parameters
     ----------
@@ -1043,6 +1050,7 @@ def get_outage_periods(
         for issue_time in outage_submissions:
             fx_start = issue_time + forecast.lead_time_to_start
             fx_end = fx_start + forecast.run_length
+            
             outage_periods.append(datamodel.TimePeriod(
                 start=fx_start,
                 end=fx_end
@@ -1052,7 +1060,8 @@ def get_outage_periods(
 
 def remove_outage_periods(
     outages: Tuple[datamodel.TimePeriod, ...],
-    data: pd.DataFrame
+    data: pd.DataFrame,
+    interval_label: str
 ) -> Tuple[pd.DataFrame, int]:
     """Returns a copy of a dataframe with all values within an outage
     period dropped.
@@ -1064,6 +1073,8 @@ def remove_outage_periods(
         timestamps denoting the start and end of periods to remove.
     data: pandas.DataFrame
         The dataframe to drop outage data from.
+    interval_label: str
+        The interval label to drop.
 
     Returns
     -------
@@ -1080,8 +1091,12 @@ def remove_outage_periods(
     full_outage_index = None
 
     for outage in outages:
-        outage_index = (data.index >= outage.start) & (
-            data.index <= outage.end)
+        if interval_label == "ending":
+            outage_index = (data.index > outage.start) & (
+                data.index <= outage.end)
+        else:
+            outage_index = (data.index >= outage.start) & (
+                data.index < outage.end)
         if full_outage_index is None:
             full_outage_index = outage_index
         else:
