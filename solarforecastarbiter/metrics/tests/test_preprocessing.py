@@ -1789,6 +1789,19 @@ OUTAGE_FORECAST = datamodel.Forecast(
         freq='24h'
      )
      ),
+    (OUTAGE_FORECAST.replace(
+        lead_time_to_start=pd.Timedelta('26H'),
+        run_length=pd.Timedelta('24H'),
+        issue_time_of_day=dt.time(hour=23),
+     ),
+     pd.Timestamp('2021-01-01T00:00', tz='America/Phoenix'),
+     pd.Timestamp('2021-01-02T00:00', tz='America/Phoenix'),
+     pd.date_range(
+        '2020-12-30T23:00Z',
+        '2021-01-01T23:00Z',
+        freq='24h'
+     )
+     ),
 ])
 def test_get_forecast_report_issue_times(forecast, start, end, expected):
     issue_times = preprocessing.get_forecast_report_issue_times(
