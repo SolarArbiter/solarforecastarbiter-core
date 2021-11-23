@@ -1807,7 +1807,7 @@ def test_forecast_report_issue_times(forecast, start, end, expected):
     issue_times = preprocessing.forecast_report_issue_times(
         forecast, start, end
     )
-    assert (issue_times == expected).all()
+    assert_index_equal(issue_times, expected)
 
 
 @pytest.mark.parametrize("forecast,start,end,outages,expected", [

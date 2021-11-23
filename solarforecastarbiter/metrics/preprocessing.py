@@ -719,20 +719,23 @@ def process_forecast_observations(forecast_observations, filters,
 
       1. Fill missing forecast data points according to
          ``forecast_fill_method``.
-      2. Fill missing reference forecast data points according to
+      2. Remove any forecast points associated with an outage.
+      3. Fill missing reference forecast data points according to
          ``forecast_fill_method``.
-      3. Remove observation data points with ``quality_flag`` in
+      4. Remove any reference forecast or observation points associated
+         with an outage.
+      5. Remove observation data points with ``quality_flag`` in
          filters. Remaining observation series is discontinuous.
-      4. Resample observations to match forecast intervals. If at least
+      6. Resample observations to match forecast intervals. If at least
          10% of the observation intervals within a forecast interval are
          valid (not missing or matching ``filters``), the interval is
          value is computed from all subintervals. Otherwise the
          resampled observation is NaN.
-      5. Drop NaN observation values.
-      6. Align observations to match forecast times. Observation times
+      7. Drop NaN observation values.
+      8. Align observations to match forecast times. Observation times
          for which there is not a matching forecast time are dropped on
          a forecast by forecast basis.
-      7. Create
+      9. Create
          :py:class:`~solarforecastarbiter.datamodel.ProcessedForecastObservation`
          with resampled, aligned data and metadata.
     """  # NOQA: E501
