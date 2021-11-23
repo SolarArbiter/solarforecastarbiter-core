@@ -1744,7 +1744,7 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
      pd.date_range(
-        '2020-12-31T05:00Z',
+        '2020-12-31T17:00Z',
         '2021-01-01T17:00Z',
         freq='12h'
      )
@@ -1753,7 +1753,7 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
      pd.date_range(
-        '2020-12-31T05:00Z',
+        '2020-12-31T23:00Z',
         '2021-01-02T00:00Z',
         freq='1h'
      )
@@ -1762,8 +1762,30 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-01T00:00Z'),
      pd.Timestamp('2021-01-02T00:00Z'),
      pd.date_range(
-        '2020-12-30T05:00Z',
+        '2020-12-31T05:00Z',
         '2021-01-01T05:00Z',
+        freq='24h'
+     )
+     ),
+    (OUTAGE_FORECAST,
+     pd.Timestamp('2021-01-01T04:37Z'),
+     pd.Timestamp('2021-01-02T00:00Z'),
+     pd.date_range(
+        '2020-12-31T17:00Z',
+        '2021-01-01T17:00Z',
+        freq='12h'
+     )
+     ),
+    (OUTAGE_FORECAST.replace(
+        lead_time_to_start=pd.Timedelta('26H'),
+        run_length=pd.Timedelta('24H'),
+        issue_time_of_day=dt.time(hour=23),
+     ),
+     pd.Timestamp('2021-01-01T00:00Z'),
+     pd.Timestamp('2021-01-02T00:00Z'),
+     pd.date_range(
+        '2020-12-29T23:00Z',
+        '2021-01-01T23:00Z',
         freq='24h'
      )
      ),

@@ -988,25 +988,49 @@ def get_forecast_report_issue_times(
     pandas.DatetimeIndex
         Pandas DatetimeIndex representing all of the issue times.
     """
-    # Get total forecast horizon to know how far back to look for issue times
+    # Get total forecast horizon to get the time from issue to last value
     total_forecast_horizon = forecast.lead_time_to_start + forecast.run_length
 
-    # Convert start to UTC so we can replace with the UTC-defined issue time
-    # to get the first issue time inside the lookback period.
-    lookback_start = start.tz_convert('UTC') - total_forecast_horizon
-    issue_start = lookback_start.replace(
-        hour=forecast.issue_time_of_day.hour
+    # Convert start to utc so we can align with forecast issue time. This
+    # is necessary because the report start/end are not necessarily aligned
+    # with forecast issue times.
+    utc_start = start.tz_convert('UTC')
+
+    # Get the last potential issue time that does not contribute
+    # data to the report. An issue time here would contain data up
+    # until report_start. We want the first issue time after this
+    # time.
+    lookback_start = utc_start - total_forecast_horizon
+
+    # Realign to forecast a forecast issue time near the lookback
+    issue_search_start = lookback_start.replace(
+        hour=forecast.issue_time_of_day.hour,
+        minute=forecast.issue_time_of_day.minute
     )
 
-    # If we undershot the lookback period when aligning with first issue
-    # time, look back another day so we can start from a day's first
-    # issue time without undershooting the forecast horizon.
-    if issue_start > lookback_start:
-        issue_start -= pd.Timedelta('1D')
+    # Get the number of forecast runs between issue start and lookback
+    lookback_diff = issue_search_start - lookback_start
+
+    # Floor to round up if negative (issue_search_start before lookback)
+    # or round down if positive (issue_search_start after lookback)
+    runs_until_start = np.floor(lookback_diff / forecast.run_length)
+
+    # Get the duration of runs between issue_search_start and lookback_start.
+    run_durations = runs_until_start * forecast.run_length
+
+    # Find the issue time immediately after lookback_start by subtracting the
+    # run durations (which will be negative for issue_search start before
+    # lookback_start).
+    first_issue_time = issue_search_start - run_durations
+
+    if first_issue_time == lookback_start:
+        # if first issue time is lookback_start, adjust by one run to find
+        # the issue time that contributes the first values within the report
+        first_issue_time += forecast.run_length
 
     # Get all possible issue times that contribute to the report
     issue_times = pd.date_range(
-        issue_start,
+        first_issue_time,
         end.tz_convert('UTC'),
         freq=forecast.run_length
     )
