@@ -777,7 +777,7 @@ def process_forecast_observations(forecast_observations, filters,
 
         # Get periods where data should be excluded from analysis due
         # to outages.
-        forecast_outage_periods = get_outage_periods(
+        forecast_outage_periods = outage_periods(
             fxobs.forecast,
             start,
             end,
@@ -965,14 +965,15 @@ def _name_pfxobs(current_names, forecast, i=1):
         return forecast_name
 
 
-def get_forecast_report_issue_times(
+def forecast_report_issue_times(
     forecast: datamodel.Forecast,
     start: pd.Timestamp,
     end: pd.Timestamp
 ) -> pd.DatetimeIndex:
     """Returns all of the issue times that contribute data
-    to a report for this forecast. May include issue times that correspend with data
-    before and after the report to ensure report coverage.
+    to a report for this forecast. May include issue times that
+    correspond with data before and after the report to ensure
+    report coverage.
 
     Parameters
     ----------
@@ -1037,7 +1038,7 @@ def get_forecast_report_issue_times(
     return issue_times
 
 
-def get_outage_periods(
+def outage_periods(
     forecast: datamodel.Forecast,
     start: pd.Timestamp,
     end: pd.Timestamp,
@@ -1062,7 +1063,7 @@ def get_outage_periods(
     """
     # First, determine a list of forecast issue times that include data that
     # falls within the report
-    issue_times = get_forecast_report_issue_times(forecast, start, end)
+    issue_times = forecast_report_issue_times(forecast, start, end)
 
     outage_periods = []
     # For each outage, if a forecast submission/issue_time falls within
@@ -1107,11 +1108,10 @@ def remove_outage_periods(
     """  # NOQA
     if len(outages) == 0:
         return data, 0
-    dropped_total = 0
 
     # Set to the boolean series of outage data on first iteration
     # of loop below
-    full_outage_index = None
+    full_outage_index = pd.Series(False, index=data.index)
 
     for outage in outages:
         if interval_label == "ending":
@@ -1120,9 +1120,7 @@ def remove_outage_periods(
         else:
             outage_index = (data.index >= outage.start) & (
                 data.index < outage.end)
-        if full_outage_index is None:
-            full_outage_index = outage_index
-        else:
-            full_outage_index = full_outage_index | outage_index
-        dropped_total += outage_index.sum()
+
+        full_outage_index = full_outage_index | outage_index
+    dropped_total = full_outage_index.sum()
     return data[~full_outage_index], dropped_total

@@ -1803,8 +1803,8 @@ OUTAGE_FORECAST = datamodel.Forecast(
      )
      ),
 ])
-def test_get_forecast_report_issue_times(forecast, start, end, expected):
-    issue_times = preprocessing.get_forecast_report_issue_times(
+def test_forecast_report_issue_times(forecast, start, end, expected):
+    issue_times = preprocessing.forecast_report_issue_times(
         forecast, start, end
     )
     assert (issue_times == expected).all()
@@ -1864,8 +1864,8 @@ def test_get_forecast_report_issue_times(forecast, start, end, expected):
       )
      )
 ])
-def test_get_outage_periods(forecast, start, end, outages, expected):
-    outage_periods = preprocessing.get_outage_periods(
+def test_outage_periods(forecast, start, end, outages, expected):
+    outage_periods = preprocessing.outage_periods(
         forecast, start, end, outages
     )
     assert outage_periods == expected
