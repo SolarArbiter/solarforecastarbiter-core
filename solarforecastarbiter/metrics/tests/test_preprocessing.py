@@ -702,7 +702,7 @@ def test_process_forecast_observations_with_outages(
     report_objects_with_outages, quality_filter,
     timeofdayfilter, mocker
 ):
-    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects_with_outages  # NOQA
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects_with_outages  # NOQA: E501
     forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
     obs_ser = pd.Series(np.arange(8),
                         index=pd.date_range(start='2019-04-01T00:00:00',
