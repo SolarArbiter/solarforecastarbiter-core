@@ -698,6 +698,62 @@ def test_process_forecast_observations(report_objects, quality_filter,
                                       proc_fxobs.observation_values.index)
 
 
+def test_process_forecast_observations_with_outages(
+    report_objects_with_outages, quality_filter,
+    timeofdayfilter, mocker
+):
+    report, observation, forecast_0, forecast_1, aggregate, forecast_agg = report_objects_with_outages  # NOQA
+    forecast_ref = report.report_parameters.object_pairs[1].reference_forecast
+    obs_ser = pd.Series(np.arange(8),
+                        index=pd.date_range(start='2019-04-01T00:00:00',
+                                            periods=8,
+                                            freq='15min',
+                                            tz='MST',
+                                            name='timestamp'))
+    obs_df = obs_ser.to_frame('value')
+    obs_df['quality_flag'] = OK
+    agg_df = THREE_HOUR_SERIES.to_frame('value')
+    agg_df['quality_flag'] = OK
+    data = {
+        observation: obs_df,
+        forecast_0: THREE_HOUR_SERIES,
+        forecast_1: THREE_HOUR_SERIES,
+        forecast_ref: THREE_HOUR_SERIES,
+        forecast_agg: THREE_HOUR_SERIES,
+        aggregate: agg_df
+    }
+    filters = [quality_filter, timeofdayfilter]
+    logger = mocker.patch('solarforecastarbiter.metrics.preprocessing.logger')
+    processed_fxobs_list = preprocessing.process_forecast_observations(
+        report.report_parameters.object_pairs,
+        filters,
+        report.report_parameters.forecast_fill_method,
+        report.report_parameters.start,
+        report.report_parameters.end,
+        data, 'MST',
+        costs=report.report_parameters.costs,
+        outages=report.outages)
+    assert len(processed_fxobs_list) == len(
+        report.report_parameters.object_pairs)
+    assert logger.warning.called
+    assert not logger.error.called
+
+    for proc_fxobs in processed_fxobs_list:
+        assert isinstance(proc_fxobs, datamodel.ProcessedForecastObservation)
+        assert all(isinstance(vr, datamodel.ValidationResult)
+                   for vr in proc_fxobs.validation_results)
+        assert all(isinstance(pr, datamodel.PreprocessingResult)
+                   for pr in proc_fxobs.preprocessing_results)
+        assert isinstance(proc_fxobs.forecast_values, pd.Series)
+        assert isinstance(proc_fxobs.observation_values, pd.Series)
+        pd.testing.assert_index_equal(proc_fxobs.forecast_values.index,
+                                      proc_fxobs.observation_values.index)
+        if proc_fxobs.original.forecast.name == "0 Day GFS GHI":
+            assert proc_fxobs.forecast_values.empty
+        else:
+            assert not proc_fxobs.forecast_values.empty
+
+
 def test_process_probabilistic_forecast_observations(
         cdf_and_cv_report_objects, cdf_and_cv_report_data, quality_filter,
         timeofdayfilter, mocker):

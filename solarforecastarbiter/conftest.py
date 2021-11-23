@@ -1740,11 +1740,29 @@ def report_objects(aggregate, ref_forecast_id):
         forecast_fill_method='forward',
         costs=(cost,)
     )
+
     report = datamodel.Report(
         report_id="56c67770-9832-11e9-a535-f4939feddd82",
         report_parameters=report_params
     )
     return report, observation, forecast_0, forecast_1, aggregate, forecast_agg
+
+
+@pytest.fixture
+def report_objects_with_outages(report_objects):
+    report_outages = (datamodel.TimePeriod(
+        start=pd.Timestamp("20190401T0600Z"),
+        end=pd.Timestamp("20190401T0800Z")
+    ),)
+    new_report = report_objects[0].replace(outages=report_outages)
+    return (
+        new_report,
+        report_objects[1],
+        report_objects[2],
+        report_objects[3],
+        report_objects[4],
+        report_objects[5]
+    )
 
 
 @pytest.fixture

@@ -1994,6 +1994,8 @@ class Report(BaseModel):
         ID of the report in the API
     provider : str, optional
         Provider of the Report information.
+    outages: Tuple[TimePeriod, ...], optional
+        List of report outage periods.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
