@@ -214,7 +214,7 @@ def _resample_obs(
     quality_flags : tuple of solarforecastarbiter.datamodel.QualityFlagFilter
         Flags to process and apply as filters during resampling.
     outages : tuple of solarforecastarbiter.datamode.TimePeriod
-        Tuple of timeperiods to drop from obs_data before resampling.
+        Determines the time periods to drop from obs_data before resampling.
 
     Returns
     -------
@@ -970,8 +970,8 @@ def get_forecast_report_issue_times(
     start: pd.Timestamp,
     end: pd.Timestamp
 ) -> pd.DatetimeIndex:
-    """Returns all of the forecast issue times that contribute data
-    to a report. May include issue times that correspend with data
+    """Returns all of the issue times that contribute data
+    to a report for this forecast. May include issue times that correspend with data
     before and after the report to ensure report coverage.
 
     Parameters
@@ -1034,8 +1034,7 @@ def get_outage_periods(
     Returns
     -------
     tuple of solarforecastarbiter.datamodel.TimePeriod
-        Tuple of dicts with start and end keys. Times between these values
-        should not be included in analysis.
+        Times between these values should not be included in analysis.
     """
     # First, determine a list of forecast issue times that include data that
     # falls within the report
@@ -1043,7 +1042,7 @@ def get_outage_periods(
 
     outage_periods = []
     # For each outage, if a forecast submission/issue_time falls within
-    # the outage. Create start/end bounds for the forecast data to exclude.
+    # the outage, create start/end bounds for the forecast data to exclude.
     for outage in outages:
         outage_submissions = issue_times[
             (issue_times >= outage.start) & (issue_times <= outage.end)
