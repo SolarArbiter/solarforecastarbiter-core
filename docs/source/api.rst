@@ -554,6 +554,8 @@ Functions for preparing the timeseries data before calculating metrics:
    metrics.preprocessing.filter_resample
    metrics.preprocessing.align
    metrics.preprocessing.process_forecast_observations
+   metrics.preprocessing.get_outage_periods
+   metrics.preprocessing.remove_outage_periods
 
 Deterministic
 -------------
