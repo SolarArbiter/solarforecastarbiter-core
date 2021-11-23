@@ -1910,6 +1910,44 @@ OUTAGE_DATA = pd.DataFrame(
       OUTAGE_DATA,
       0
      ),
+     (
+      [],
+      "ending",
+      OUTAGE_DATA,
+      OUTAGE_DATA,
+      0
+     ),
+     (
+      [
+         datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T07:00Z'),
+           end=pd.Timestamp('2021-01-01T09:00Z')
+         ),
+         datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T13:00Z'),
+           end=pd.Timestamp('2021-01-01T17:00Z')
+         )
+       ],
+      "ending",
+      OUTAGE_DATA,
+      pd.DataFrame(
+         index=pd.date_range(
+             '2021-01-01T05:00Z',
+             '2021-01-01T07:00Z',
+             freq='1H'
+         ).append(pd.date_range(
+             '2021-01-01T10:00Z',
+             '2021-01-01T13:00Z',
+             freq='1H'
+         )).append(pd.date_range(
+             '2021-01-01T18:00Z',
+             '2021-01-02T05:00Z',
+             freq='1H'
+         )),
+         columns=['value']
+      ),
+      6
+     ),
     ]
 )
 def test_remove_outage_period(
