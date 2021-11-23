@@ -1969,6 +1969,16 @@ class ReportParameters(BaseModel):
 
 @dataclass(frozen=True)
 class TimePeriod(BaseModel):
+    """Class for storing a generic time period. For example, a report
+    outage.
+
+    Parameters
+    ----------
+    start : pandas.Timestamp
+        Start time of the time period.
+    end : pandas.Timestamp
+        End time of the time period.
+    """
     start: pd.Timestamp
     end: pd.Timestamp
 
