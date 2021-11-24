@@ -1033,11 +1033,14 @@ def forecast_report_issue_times(
         # the issue time that contributes the first values within the report
         first_issue_time += forecast.run_length
 
-    # Get all possible issue times that contribute to the report
+    # Get all possible issue times that contribute to the report from the
+    # first issue time, until the lead time of the forecast before the
+    # end of the report.
     issue_times = pd.date_range(
         first_issue_time,
-        end.tz_convert('UTC'),
-        freq=forecast.run_length
+        end.tz_convert('UTC') - forecast.lead_time_to_start,
+        freq=forecast.run_length,
+        closed="left"
     )
     return issue_times
 

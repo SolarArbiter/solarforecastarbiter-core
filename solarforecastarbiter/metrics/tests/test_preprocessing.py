@@ -1754,7 +1754,7 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-02T00:00Z'),
      pd.date_range(
         '2020-12-31T23:00Z',
-        '2021-01-02T00:00Z',
+        '2021-01-01T22:00Z',
         freq='1h'
      )
      ),
@@ -1785,7 +1785,7 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-02T00:00Z'),
      pd.date_range(
         '2020-12-29T23:00Z',
-        '2021-01-01T23:00Z',
+        '2020-12-30T23:00Z',
         freq='24h'
      )
      ),
@@ -1798,7 +1798,7 @@ OUTAGE_FORECAST = datamodel.Forecast(
      pd.Timestamp('2021-01-02T00:00', tz='America/Phoenix'),
      pd.date_range(
         '2020-12-30T23:00Z',
-        '2021-01-01T23:00Z',
+        '2020-12-31T23:00Z',
         freq='24h'
      )
      ),
