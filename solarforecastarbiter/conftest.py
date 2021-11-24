@@ -4052,8 +4052,11 @@ def outage_preprocessing_result_types(preprocessing_result_types):
 
 
 @pytest.fixture()
-def raw_report_with_outages(report_objects_with_outages, report_metrics, outage_preprocessing_result_types,
-               ref_forecast_id, fail_pdf, constant_cost):
+def raw_report_with_outages(
+    report_objects_with_outages, report_metrics,
+    outage_preprocessing_result_types,
+    ref_forecast_id, fail_pdf, constant_cost
+):
     report, obs, fx0, fx1, agg, fxagg = report_objects_with_outages
 
     def gen(with_series):
@@ -4171,7 +4174,9 @@ def raw_report_with_outages(report_objects_with_outages, report_metrics, outage_
 
 
 @pytest.fixture()
-def outage_report_with_raw(report_objects_with_outages, raw_report_with_outages):
+def outage_report_with_raw(
+    report_objects_with_outages, raw_report_with_outages
+):
     report = report_objects_with_outages[0]
     report = report.replace(
         raw_report=raw_report_with_outages(True),

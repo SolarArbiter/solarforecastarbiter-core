@@ -494,7 +494,8 @@ def test__get_render_kwargs_with_missing_obs_data(
 
 def test_render_outage_report_html_full_html(
     outage_report_with_raw, dash_url, with_series,
-                               mocked_timeseries_plots):
+    mocked_timeseries_plots
+):
     rendered = template.render_html(
         outage_report_with_raw, dash_url, with_series, False)
     assert '<h4 id="outages">Outages</h4>' in rendered
