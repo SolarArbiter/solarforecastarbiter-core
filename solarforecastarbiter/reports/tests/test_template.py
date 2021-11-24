@@ -518,5 +518,4 @@ def test_render_outage_pdf(outage_report_with_raw, dash_url):
     if shutil.which('pdflatex') is None:  # pragma: no cover
         pytest.skip('pdflatex must be on PATH to generate PDF reports')
     rendered = template.render_pdf(outage_report_with_raw, dash_url)
-    assert "Outage" in rendered
     assert rendered.startswith(b'%PDF')
