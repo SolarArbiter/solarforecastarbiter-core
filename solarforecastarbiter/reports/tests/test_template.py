@@ -512,3 +512,11 @@ def test_render_outage_report_html_full_html(
     assert '<td style="test-align: left">Forecast Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
     assert '<td style="test-align: left">Observation Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
     assert '<td style="test-align: left">Reference Forecast Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
+
+
+def test_render_outage_pdf(outage_report_with_raw, dash_url):
+    if shutil.which('pdflatex') is None:  # pragma: no cover
+        pytest.skip('pdflatex must be on PATH to generate PDF reports')
+    rendered = template.render_pdf(outage_report_with_raw, dash_url)
+    assert "Outage" in rendered
+    assert rendered.startswith(b'%PDF')
