@@ -4040,3 +4040,131 @@ def cost_dicts():
         'parameters': out['errorband']
     }
     return out
+
+
+@pytest.fixture
+def outage_preprocessing_result_types(preprocessing_result_types):
+    return preprocessing_result_types + (
+        preprocessing.OUTAGE_DISCARD_STRING.format('Forecast'),
+        preprocessing.OUTAGE_DISCARD_STRING.format('Reference Forecast'),
+        preprocessing.OUTAGE_DISCARD_STRING.format('Observation'),
+    )
+
+
+@pytest.fixture()
+def raw_report(report_objects_with_outages, report_metrics, outage_preprocessing_result_types,
+               ref_forecast_id, fail_pdf, constant_cost):
+    report, obs, fx0, fx1, agg, fxagg = report_objects
+
+    def gen(with_series):
+        def ser(interval_length):
+            ser_index = pd.date_range(
+                report.report_parameters.start,
+                report.report_parameters.end,
+                freq=to_offset(interval_length),
+                name='timestamp')
+            ser_value = pd.Series(
+                np.repeat(100, len(ser_index)), name='value',
+                index=ser_index)
+            return ser_value
+        il0 = fx0.interval_length
+        qflags = list(
+            f.quality_flags for f in report.report_parameters.filters if
+            isinstance(f, datamodel.QualityFlagFilter)
+        )
+        qflags = list(qflags[0])
+        cost = datamodel.Cost(
+            name='example cost',
+            type='constant',
+            parameters=constant_cost
+        )
+        fxobs0 = datamodel.ProcessedForecastObservation(
+            fx0.name,
+            datamodel.ForecastObservation(
+                fx0,
+                obs,
+                cost=cost.name,
+                uncertainty=obs.uncertainty),
+            fx0.interval_value_type,
+            il0,
+            fx0.interval_label,
+            valid_point_count=len(ser(il0)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in outage_preprocessing_result_types),
+            forecast_values=ser(il0) if with_series else fx0.forecast_id,
+            observation_values=ser(il0) if with_series else obs.observation_id,
+            uncertainty=1.,
+            cost=cost
+        )
+        il1 = fx1.interval_length
+        fxobs1 = datamodel.ProcessedForecastObservation(
+            fx1.name,
+            datamodel.ForecastObservation(
+                fx1,
+                obs,
+                normalization=1000.,
+                uncertainty=15.,
+                reference_forecast=fx0.replace(forecast_id=ref_forecast_id),
+                cost=cost.name),
+            fx1.interval_value_type,
+            il1,
+            fx1.interval_label,
+            valid_point_count=len(ser(il1)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in outage_preprocessing_result_types),
+            forecast_values=ser(il1) if with_series else fx1.forecast_id,
+            observation_values=ser(il1) if with_series else obs.observation_id,
+            reference_forecast_values=(
+                ser(il0) if with_series else ref_forecast_id),
+            normalization_factor=1000.,
+            uncertainty=15.,
+            cost=cost
+        )
+        ilagg = fxagg.interval_length
+        fxagg_ = datamodel.ProcessedForecastObservation(
+            fxagg.name,
+            datamodel.ForecastAggregate(
+                fxagg,
+                agg,
+                cost=cost.name,
+                uncertainty=5.),
+            fxagg.interval_value_type,
+            ilagg,
+            fxagg.interval_label,
+            valid_point_count=len(ser(ilagg)),
+            validation_results=tuple(datamodel.ValidationResult(
+                flag=f, count=0) for f in qflags),
+            preprocessing_results=tuple(datamodel.PreprocessingResult(
+                name=t, count=0) for t in outage_preprocessing_result_types),
+            forecast_values=ser(ilagg) if with_series else fxagg.forecast_id,
+            observation_values=ser(ilagg) if with_series else agg.aggregate_id,
+            uncertainty=5.,
+            cost=cost
+        )
+        figs = datamodel.RawReportPlots(
+            (
+                datamodel.PlotlyReportFigure.from_dict(
+                    {
+                        'name': 'mae tucson ghi',
+                        'spec': '{"data":[{"x":[1],"y":[1],"type":"bar"}]}',
+                        'pdf': fail_pdf,
+                        'figure_type': 'bar',
+                        'category': 'total',
+                        'metric': 'mae',
+                        'figure_class': 'plotly',
+                    }
+                ),), PLOTLY_VERSION,
+        )
+        raw = datamodel.RawReport(
+            generated_at=report.report_parameters.end,
+            versions=(),
+            timezone=obs.site.timezone,
+            plots=figs,
+            metrics=report_metrics(report),
+            processed_forecasts_observations=(fxobs0, fxobs1, fxagg_))
+        return raw
+    return gen

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 FILL_RESULT_TOTAL_STRING = "Missing {0}Forecast Values {1}"
 DISCARD_DATA_STRING = "{0} Values Discarded by Alignment"
 FORECAST_FILL_CONST_STRING = "Filled with {0}"
+OUTAGE_DISCARD_STRING = "{0} Values Discarded Due To Outage"
 FORECAST_FILL_STRING_MAP = {'drop': "Discarded",
                             'forward': "Forward Filled"}
 
@@ -802,7 +803,7 @@ def process_forecast_observations(forecast_observations, filters,
                 forecast_outage_periods, fx_data, fxobs.forecast.interval_label
             )
             preproc_results.append(datamodel.PreprocessingResult(
-                name="Forecast Values Discarded Due To Outage",
+                name=OUTAGE_DISCARD_STRING.format('Forecast'),
                 count=int(fx_outage_points)))
 
         ref_data = data.get(fxobs.reference_forecast, None)
@@ -827,7 +828,7 @@ def process_forecast_observations(forecast_observations, filters,
                     fxobs.reference_forecast.interval_label
                 )
                 preproc_results.append(datamodel.PreprocessingResult(
-                    name="Reference Forecast Values Discarded Due To Outage",
+                    name=OUTAGE_DISCARD_STRING.format('Reference Forecast')
                     count=int(ref_outage_points))
                 )
 
@@ -852,7 +853,7 @@ def process_forecast_observations(forecast_observations, filters,
                     fxobs.data_object.name)
             else:
                 preproc_results.append(datamodel.PreprocessingResult(
-                    name='Observation Values Discarded Due To Outage',
+                    name=OUTAGE_DISCARD_STRING.format('Observation'),
                     count=int(obs_outage_points_dropped)))
 
         # the total count ultimately shows up in both the validation
