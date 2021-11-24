@@ -998,7 +998,7 @@ def forecast_report_issue_times(
 
     # Convert start to utc so we can align with forecast issue time. This
     # is necessary because the report start/end are not necessarily aligned
-    # with forecast issue times.
+    # with forecast issue times or forecast start times.
     utc_start = start.tz_convert('UTC')
 
     # Get the last potential issue time that does not contribute
@@ -1007,7 +1007,7 @@ def forecast_report_issue_times(
     # time.
     lookback_start = utc_start - total_forecast_horizon
 
-    # Realign to forecast a forecast issue time near the lookback
+    # Realign to a forecast issue time near the lookback
     issue_search_start = lookback_start.replace(
         hour=forecast.issue_time_of_day.hour,
         minute=forecast.issue_time_of_day.minute
