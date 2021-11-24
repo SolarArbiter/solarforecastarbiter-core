@@ -828,7 +828,7 @@ def process_forecast_observations(forecast_observations, filters,
                     fxobs.reference_forecast.interval_label
                 )
                 preproc_results.append(datamodel.PreprocessingResult(
-                    name=OUTAGE_DISCARD_STRING.format('Reference Forecast')
+                    name=OUTAGE_DISCARD_STRING.format('Reference Forecast'),
                     count=int(ref_outage_points))
                 )
 
