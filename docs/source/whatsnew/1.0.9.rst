@@ -25,3 +25,8 @@ Enhancements
 ~~~~~~~~~~~~
 * Added handling of outage periods to report preprocessing.
 
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
