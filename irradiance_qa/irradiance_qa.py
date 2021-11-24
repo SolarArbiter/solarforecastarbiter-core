@@ -3,9 +3,11 @@ Manual QA processing for sites selected for Solar Forecasting 2 Topic
 Area 2 and 3 evaluations.
 """
 
+from collections import defaultdict
 import json
 import logging
 from pathlib import Path
+import warnings
 
 import click
 import pandas as pd
@@ -231,17 +233,25 @@ def process(verbose, site):
 
 def process_single_site(name, parameters):
     logger.info('Processing %s', name)
+    save_path = OUTPUT_PATH / name
+
+    save_path_validated = save_path / 'validated_data'
+    save_path_validated.mkdir(exist_ok=True)
+
     loc = read_metadata(name)
-    data = read_irradiance(name)
+    data_original = read_irradiance(name)
     # TA2/3 analysis uses fixed offsets, but reference site metadata
     # typically uses DST aware timezones
-    data = data.tz_convert(parameters['timezone'])
+    data_original = data_original.tz_convert(parameters['timezone'])
 
     # replace negative DHI with 0, so that negative DNI doesn't amplify the
     # ratio of measured GHI to component sum GHI
+    data = data_original.copy(deep=True)
     data['dni'] = np.maximum(data['dni'], 0.)
 
+    logger.debug('Getting solar position')
     sp = loc.get_solarposition(data.index)
+    logger.debug('Getting clearksy')
     cs = loc.get_clearsky(data.index, solar_position=sp)
     # same as solarforecastarbiter.validation.validator.check_day_night
     daytime = sp['zenith'] < 87
@@ -269,14 +279,54 @@ def process_single_site(name, parameters):
 
     # accept GHI and DHI when nearly equal, but not at very high zenith so that
     # we don't accept horizon shading
-    overcast_ok = (sp['zenith'] < 75) & (np.abs(data['ghi'] - data['dhi']) < 50)
+    overcast_ok = (
+        (sp['zenith'] < 75) & (np.abs(data['ghi'] - data['dhi']) < 50)
+    )
 
     good_overall = (consistent_comp | overcast_ok) & diffuse_ratio_limit
+
+    # Some SFA reference data feeds already contains USER FLAGGED. We want to
+    # combine our own user flag with the existing. First extract the
+    # USER FLAGGED field (bit 0) from the quality_flag bitmask (see
+    # solarforecastarbiter.validation.quality_mapping).
+    sfa_user_flagged = data_original.filter(like='quality_flag') & (1 << 0)
+    # But we only consider our flag for daytime
+    bad_overall_daytime = (~good_overall) & daytime
+    # Combine operation happens in loop below to avoid issue with | operation
+    # between DataFrame and Series
+
+    for component in ('ghi', 'dni', 'dhi'):
+        # Write out just the results of our filter.
+        # Use data_original so that we do not overwrite values in the Arbiter
+        # with the DNI filtered for negative values
+        validated_component = pd.DataFrame({
+            'value': data_original[component],
+            'quality_flag': bad_overall_daytime.astype(int),
+        })
+        validated_component.to_csv(
+            save_path_validated / f'{name}_validated_{component}.csv',
+            index=True,
+            index_label='timestamp',
+        )
+        # Create combined user flag. This is ready to be uploaded into SFA.
+        sfa_uf_or_bad_overall_daytime = \
+            sfa_user_flagged[f'{component}_quality_flag'] | bad_overall_daytime
+        validated_component_sfa = pd.DataFrame({
+            'value': data_original[component],
+            'quality_flag': sfa_uf_or_bad_overall_daytime.astype(int),
+        })
+        fname = f'{name}_validated_or_sfa_user_flagged_{component}.csv'
+        validated_component_sfa.to_csv(
+            save_path_validated / fname,
+            index=True,
+            index_label='timestamp',
+        )
+
+    # plot results
 
     component_sum = data['dni'] * pvlib.tools.cosd(sp['zenith']) + data['dhi']
     ghi_ratio = data['ghi'] / component_sum
 
-    savefig_path = OUTPUT_PATH / name
     savefig_kwargs = dict(dpi=300)
 
     bad_comp = ~consistent_comp & daytime
@@ -290,9 +340,10 @@ def process_single_site(name, parameters):
     plt.legend(['GHI', 'DNI', 'DHI', "Bad"])
     plt.title(f'{name}\nConsistent components test')
     plt.savefig(
-        savefig_path / f'{name} consistent components test.png',
+        save_path / f'{name} consistent components test.png',
         **savefig_kwargs,
     )
+    plt.close()
 
     bad_diff = ~diffuse_ratio_limit & daytime
     bad_diff = data['ghi'] * bad_diff
@@ -305,9 +356,10 @@ def process_single_site(name, parameters):
     plt.legend(['GHI', 'DNI', 'DHI', "Bad"])
     plt.title(f'{name}\nDiffuse fraction test')
     plt.savefig(
-        savefig_path / f'{name} diffuse fraction test.png',
+        save_path / f'{name} diffuse fraction test.png',
         **savefig_kwargs,
     )
+    plt.close()
 
     # overall accept/reject plot
     fig_summary = plt.figure()
@@ -322,7 +374,8 @@ def process_single_site(name, parameters):
     plt.plot(bad_mask * data['ghi'], 'r.')
     plt.legend(['GHI', 'DNI', 'DHI', 'Good', "Bad"])
     plt.title(f'{name}\nOverall')
-    plt.savefig(savefig_path / f'{name} overall.png', **savefig_kwargs)
+    plt.savefig(save_path / f'{name} overall.png', **savefig_kwargs)
+    plt.close()
 
     # report on count of data dropped by zenith bin
     bins = np.arange(np.min(sp['zenith']), np.max(sp['zenith'][daytime]), 1)
@@ -347,9 +400,10 @@ def process_single_site(name, parameters):
         ['Total', 'Consistent OR Overcast', 'Diffuse', 'Passed all tests'])
     plt.title(f'{name}\nData dropped by zenith bin')
     plt.savefig(
-        savefig_path / f'{name} data dropped by zenith bin.png',
+        save_path / f'{name} data dropped by zenith bin.png',
         **savefig_kwargs,
     )
+    plt.close()
 
     # bar chart of data count within each hour
     hrs = range(4, 21)
@@ -364,9 +418,10 @@ def process_single_site(name, parameters):
     plt.ylabel('Count of data')
     plt.title(f'{name}\nData count within each hour')
     plt.savefig(
-        savefig_path / f'{name} data count within each hour.png',
+        save_path / f'{name} data count within each hour.png',
         **savefig_kwargs,
     )
+    plt.close()
 
     # plot one overcast, clear, and variable day for illustration
     for kind in ('overcast', 'clear', 'variable'):
@@ -391,16 +446,28 @@ def process_single_site(name, parameters):
         plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
         plt.title(f'{name}\nRepresentative {kind} day. {date}')
         plt.savefig(
-            savefig_path / f'{name} representative {kind} day.png',
+            save_path / f'{name} representative {kind} day.png',
             **savefig_kwargs,
         )
+        plt.close()
 
     # determine deadband
-    clear_times = pvlib.clearsky.detect_clearsky(
-        data['ghi'], cs['ghi'], data.index, 10
-    )
+
+    # NaNs cause detect_clearsky to emit invalid value in comparisons, but
+    # no threat to results.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        clear_times = pvlib.clearsky.detect_clearsky(
+            data['ghi'], cs['ghi'], data.index, 10
+        )
     ghi_rel_diff = (component_sum - data['ghi']) / data['ghi']
-    u = daytime & clear_times & (ghi_ratio > 0) & (ghi_ratio < 2) & (data['ghi'] > 50)
+    u = (
+        daytime &
+        clear_times &
+        (ghi_ratio > 0) &
+        (ghi_ratio < 2) &
+        (data['ghi'] > 50)
+    )
 
     fig_deadband = plt.figure()
     plt.plot(ghi_rel_diff[u], 'r')
@@ -426,21 +493,81 @@ def process_single_site(name, parameters):
     )
     plt.ylabel('(Comp. sum - GHI) / GHI')
     plt.savefig(
-        savefig_path / f'{name} ghi ratio.png',
+        save_path / f'{name} ghi ratio.png',
         **savefig_kwargs,
     )
+    plt.close()
 
 
 @qa_cli.command()
 @common_options
-def post(verbose, user, password, base_url):
+@click.option(
+    '--official',
+    type=bool,
+    help=(
+        'If True, post to official observations (requires reference account).'
+        'If False, create new observations in organization of user.'
+    ),
+    default=False,
+)
+def post(verbose, user, password, base_url, official):
     """Post QA results for all TA 2/3 sites.
 
     Reads data from directory ta23_site_data.
-    Posting requires access to reference data account."""
+
+    Posting to official observations requires access to reference data
+    account."""
     set_log_level(verbose)
+
+    # SFA reference data account. Use your own account for fetching data
+    # or posting results to your own observations.
+    reference_account = "reference@solarforecastarbiter.org"
+    if user == reference_account and not official:
+        raise ValueError("Must pass --official when using reference account.")
+    elif user != reference_account and official:
+        raise ValueError(
+            f"Cannot post to official observations with user {user}"
+        )
+
+    # read the data created by process function
+    # do this first so that we don't attempt to modify data in Arbiter unless
+    # we know this is good. The cost of safety is the time and memory used to
+    # read approximately 3*10*20MB = 600MB of csv data.
+    logger.info('reading site data')
+    data_to_post = defaultdict(dict)
+    for site in SITES:
+        p = OUTPUT_PATH / f'{site}' / 'validated_data'
+        for v in ('ghi', 'dni', 'dhi'):
+            f = p / f'{site}_validated_or_sfa_user_flagged_{v}.csv'
+            logger.debug('reading %s', f)
+            data = pd.read_csv(f, index_col=0, parse_dates=True)
+            if not (data.columns == pd.Index(['value', 'quality_flag'])).all():
+                raise ValueError(f'wrong columns in {f}')
+            if not isinstance(data.index, pd.DatetimeIndex):
+                raise ValueError(f'wrong index in {f}')
+            data_to_post[site][v] = data
+
     token = cli_access_token(user, password)
     session = APISession(token, base_url=base_url)
+    sites = session.list_sites()
+    ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
+    obs = session.list_observations()
+    ta23_obs = tuple(filter(
+        lambda x: x.site in ta23_sites and x.variable in ['ghi', 'dni', 'dhi'],
+        obs
+    ))
+    if official:
+        # use the real obs
+        obs_for_post = ta23_obs
+    else:
+        # Create new obs patterned on real obs.
+        # Same as ta23_obs_clean but have new uuids and provider.
+        obs_for_post = [
+            session.create_observation(o) for o in ta23_obs_clean
+        ]
+    for o in obs_for_post:
+        _data_to_post = data_to_post[o.site.name][o.variable.lower()]
+        session.post_observation_values(_data_to_post)
 
 
 def read_metadata(name):
@@ -452,7 +579,8 @@ def read_metadata(name):
     return loc
 
 
-def read_irradiance(name, column='value'):
+def read_irradiance(name):
+    logger.debug('Reading irradiance %s', name)
     directory = OUTPUT_PATH / name
     variables = ['ghi', 'dni', 'dhi']
     data_all = {}
@@ -460,10 +588,12 @@ def read_irradiance(name, column='value'):
         # read in all csv files with e.g. ghi in the name
         data_variable = []
         for f in directory.glob(f'*{v}*.csv'):
+            logger.debug('Reading %s', f)
             data_section = pd.read_csv(f, index_col=0, parse_dates=True)
             data_variable.append(data_section)
         data_variable = pd.concat(data_variable)
-        data_all[v] = data_variable[column]
+        data_all[v] = data_variable['value']
+        data_all[f'{v}_quality_flag'] = data_variable['quality_flag']
     data_all = pd.DataFrame(data_all)
     return data_all
 
