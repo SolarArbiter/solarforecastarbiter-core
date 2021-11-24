@@ -238,6 +238,12 @@ def test_render_html_full_html(various_report_with_raw, dash_url, with_series,
     rendered = template.render_html(
         various_report_with_raw[0], dash_url, with_series, False)
     assert rendered[:46] == '<!doctype html>\n<html lang="en" class="h-100">'
+    # Ensure outage information is hidden for reports without outages
+    # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/752
+    assert '<h4 id="outages">Outages</h4>' not in rendered
+    assert '<td style="test-align: left">Forecast Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Observation Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Reference Forecast Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
 
 
 def test_build_metrics_json(various_report_with_raw):
