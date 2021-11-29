@@ -506,7 +506,7 @@ def process_single_site(name, parameters):
     type=bool,
     help=(
         'If True, post to official observations (requires reference account).'
-        'If False, create new observations in organization of user.'
+        ' If False, create new observations in organization of user.'
     ),
     default=False,
 )
@@ -552,22 +552,26 @@ def post(verbose, user, password, base_url, official):
     sites = session.list_sites()
     ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
     obs = session.list_observations()
-    ta23_obs = tuple(filter(
-        lambda x: x.site in ta23_sites and x.variable in ['ghi', 'dni', 'dhi'],
-        obs
-    ))
+    def _is_reference_obs(o):
+        return (
+            o.site in ta23_sites and
+            o.variable in ['ghi', 'dni', 'dhi'] and
+            o.site.provider == 'Reference'
+        )
+    ta23_obs = tuple(filter(_is_reference_obs, obs))
     if official:
         # use the real obs
         obs_for_post = ta23_obs
     else:
         # Create new obs patterned on real obs.
-        # Same as ta23_obs_clean but have new uuids and provider.
+        # Same as ta23_obs but have new uuids and provider.
+        # (uuid and provider is set by SFA API)
         obs_for_post = [
-            session.create_observation(o) for o in ta23_obs_clean
+            session.create_observation(o) for o in ta23_obs
         ]
     for o in obs_for_post:
         _data_to_post = data_to_post[o.site.name][o.variable.lower()]
-        session.post_observation_values(_data_to_post)
+        session.post_observation_values(o.observation_id, _data_to_post)
 
 
 def read_metadata(name):
