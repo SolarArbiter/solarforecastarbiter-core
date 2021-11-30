@@ -535,17 +535,17 @@ def post(verbose, user, password, base_url, official):
     # read approximately 3*10*20MB = 600MB of csv data.
     logger.info('reading site data')
     data_to_post = defaultdict(dict)
-    for site in SITES:
-        p = OUTPUT_PATH / f'{site}' / 'validated_data'
-        for v in ('ghi', 'dni', 'dhi'):
-            f = p / f'{site}_validated_or_sfa_user_flagged_{v}.csv'
+    for site_name in SITES:
+        p = OUTPUT_PATH / f'{site_name}' / 'validated_data'
+        for variable in ('ghi', 'dni', 'dhi'):
+            f = p / f'{site_name}_validated_or_sfa_user_flagged_{variable}.csv'
             logger.debug('reading %s', f)
             data = pd.read_csv(f, index_col=0, parse_dates=True)
             if not (data.columns == pd.Index(['value', 'quality_flag'])).all():
                 raise ValueError(f'wrong columns in {f}')
             if not isinstance(data.index, pd.DatetimeIndex):
                 raise ValueError(f'wrong index in {f}')
-            data_to_post[site][v] = data
+            data_to_post[site_name][variable] = data
 
     token = cli_access_token(user, password)
     session = APISession(token, base_url=base_url)
@@ -570,8 +570,16 @@ def post(verbose, user, password, base_url, official):
             session.create_observation(o) for o in ta23_obs
         ]
     for o in obs_for_post:
-        _data_to_post = data_to_post[o.site.name][o.variable.lower()]
-        session.post_observation_values(o.observation_id, _data_to_post)
+        site_name = o.site.name
+        variable = o.variable.lower()
+        _data_to_post = data_to_post[site_name][variable]
+        # Split into chunks to stay under API upload limit.
+        grouped_data = _data_to_post.groupby(lambda x: (x.year, x.month))
+        for yr_mo, values in grouped_data:
+            logger.debug(
+                'posting data for %s %s %s', yr_mo, site_name, variable
+            )
+            session.post_observation_values(o.observation_id, values)
 
 
 def read_metadata(name):
