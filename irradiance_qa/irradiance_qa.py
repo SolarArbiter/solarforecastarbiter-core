@@ -7,6 +7,7 @@ from collections import defaultdict
 import json
 import logging
 from pathlib import Path
+import time
 import warnings
 
 import click
@@ -16,6 +17,9 @@ import pvlib
 import matplotlib.pyplot as plt
 from solarforecastarbiter.cli import common_options, cli_access_token
 from solarforecastarbiter.io.api import APISession
+from solarforecastarbiter.validation.quality_mapping import (
+    convert_mask_into_dataframe
+)
 from solarforecastarbiter.validation.validator import (
     QCRAD_CONSISTENCY,
     check_irradiance_consistency_QCRad
@@ -580,6 +584,58 @@ def post(verbose, user, password, base_url, official):
                 'posting data for %s %s %s', yr_mo, site_name, variable
             )
             session.post_observation_values(o.observation_id, values)
+            # sometimes API fails to validate upload, so wait and retry if
+            # needed
+            validated = wait_for_validation(session, o, values)
+            if not validated:
+                logger.info('validation appears hung. reposting data')
+                session.post_observation_values(o.observation_id, values)
+                validated = wait_for_validation(session, o, values)
+            if not validated:
+                logger.info('validation appears hung. reposting data')
+                session.post_observation_values(o.observation_id, values)
+                validated = wait_for_validation(session, o, values)
+            if not validated:
+                logger.warning(
+                    'validation failed for %s %s %s', yr_mo, site_name,
+                    variable
+                )
+
+
+def wait_for_validation(
+    session, observation, values, sleep_initial=5, sleep_loop=30, limit=5
+):
+    logger.debug(
+        f'sleeping for {sleep_initial} seconds to check validation status'
+    )
+    time.sleep(sleep_initial)
+    validated = check_validated(session, observation, values)
+    i = 0
+    while not validated and i < limit:
+        logger.info(
+            f'sleeping for {sleep_loop} seconds to check validation status'
+        )
+        time.sleep(sleep_loop)
+        validated = check_validated(session, observation, values)
+        i += 1
+    return validated
+
+
+def check_validated(session, observation, values):
+    """Pull values from API and see if they have been validated.
+
+    Returns
+    -------
+    True if data has been validated by API.
+    """
+    first = session.get_values(observation, values.index[0], values.index[2])
+    last = session.get_values(observation, values.index[-2], values.index[0])
+    first_flags = convert_mask_into_dataframe(first['quality_flag'])
+    last_flags = convert_mask_into_dataframe(last['quality_flag'])
+    return not (
+        first_flags['NOT VALIDATED'].any() or
+        last_flags['NOT VALIDATED'].any()
+    )
 
 
 def read_metadata(name):
