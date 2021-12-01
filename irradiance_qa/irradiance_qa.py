@@ -5,6 +5,7 @@ Area 2 and 3 evaluations.
 
 from collections import defaultdict
 import json
+from functools import partial
 import logging
 from pathlib import Path
 import time
@@ -553,35 +554,62 @@ def post(verbose, user, password, base_url, official):
 
     token = cli_access_token(user, password)
     session = APISession(token, base_url=base_url)
+    current_organization = get_current_organization(session)
     sites = session.list_sites()
     ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
     obs = session.list_observations()
-    def _is_reference_obs(o):
+
+    def _is_provider_obs(o, provider):
         return (
             o.site in ta23_sites and
             o.variable in ['ghi', 'dni', 'dhi'] and
-            o.site.provider == 'Reference'
+            o.provider == provider
         )
-    ta23_obs = tuple(filter(_is_reference_obs, obs))
+
+    ta23_obs = tuple(filter(
+        partial(_is_provider_obs, provider='Reference'),
+        obs
+    ))
     if official:
         # use the real obs
         obs_for_post = ta23_obs
     else:
-        # Create new obs patterned on real obs.
-        # Same as ta23_obs but have new uuids and provider.
-        # (uuid and provider is set by SFA API)
-        obs_for_post = [
-            session.create_observation(o) for o in ta23_obs
-        ]
-    for o in obs_for_post:
+        ta23_obs_org = tuple(filter(
+            partial(_is_provider_obs, provider=current_organization),
+            obs
+        ))
+        if len(ta23_obs_org) == len(ta23_obs):
+            # we already have existing obs, likely from previous run,
+            # so no need to recreate. Must have exact length match!
+            logger.info(
+                f'using existing observations in {current_organization}'
+            )
+            obs_for_post = ta23_obs_org
+        else:
+            # Create new obs patterned on real obs.
+            # Same as ta23_obs but have new uuids and provider.
+            # (uuid and provider is set by SFA API)
+            logger.info(f'creating new observations in {current_organization}')
+            obs_for_post = [
+                session.create_observation(o) for o in ta23_obs
+            ]
+    for o in obs_for_post:  # ~ 5 minutes per observation x 30 obs = 150 min
         site_name = o.site.name
         variable = o.variable.lower()
         _data_to_post = data_to_post[site_name][variable]
+
         # Split into chunks to stay under API upload limit.
-        grouped_data = _data_to_post.groupby(lambda x: (x.year, x.month))
-        for yr_mo, values in grouped_data:
+        # DeprecationWarning if pandas >= 1.1.0, but we support earlier pandas
+        # and supporting both would be too complicated. If using this with
+        # new pandas you can use week = obs_df.index.isocalendar().week
+        # and similar for year.
+        week = _data_to_post.index.week
+        month = _data_to_post.index.month
+        year = _data_to_post.index.year
+        grouped_data = _data_to_post.groupby([year, month, week])
+        for group, values in grouped_data:
             logger.debug(
-                'posting data for %s %s %s', yr_mo, site_name, variable
+                'posting data for %s %s %s', group, site_name, variable
             )
             session.post_observation_values(o.observation_id, values)
             # sometimes API fails to validate upload, so wait and retry if
@@ -597,9 +625,20 @@ def post(verbose, user, password, base_url, official):
                 validated = wait_for_validation(session, o, values)
             if not validated:
                 logger.warning(
-                    'validation failed for %s %s %s', yr_mo, site_name,
+                    'validation failed for %s %s %s', group, site_name,
                     variable
                 )
+
+
+def get_current_organization(session):
+    r = session.get('/users/current')
+    r_json = r.json()
+    organization = r_json['organization']
+    if organization == 'Unaffiliated':
+        raise ValueError(
+            'User must be affiliated with an SFA organization to post data.'
+        )
+    return organization
 
 
 def wait_for_validation(
@@ -629,7 +668,7 @@ def check_validated(session, observation, values):
     True if data has been validated by API.
     """
     first = session.get_values(observation, values.index[0], values.index[2])
-    last = session.get_values(observation, values.index[-2], values.index[0])
+    last = session.get_values(observation, values.index[-3], values.index[-1])
     first_flags = convert_mask_into_dataframe(first['quality_flag'])
     last_flags = convert_mask_into_dataframe(last['quality_flag'])
     return not (
