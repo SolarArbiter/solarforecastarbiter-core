@@ -186,7 +186,8 @@ def create_raw_report_from_data(report, data):
             report_params.forecast_fill_method,
             report_params.start, report_params.end,
             data, timezone,
-            costs=report_params.costs)
+            costs=report_params.costs,
+            outages=report.outages)
 
         # Calculate metrics
         metrics_list = calculator.calculate_metrics(

@@ -1968,6 +1968,22 @@ class ReportParameters(BaseModel):
 
 
 @dataclass(frozen=True)
+class TimePeriod(BaseModel):
+    """Class for storing a generic time period. For example, a report
+    outage.
+
+    Parameters
+    ----------
+    start : pandas.Timestamp
+        Start time of the time period.
+    end : pandas.Timestamp
+        End time of the time period.
+    """
+    start: pd.Timestamp
+    end: pd.Timestamp
+
+
+@dataclass(frozen=True)
 class Report(BaseModel):
     """Class for keeping track of report metadata and the raw report that
     can later be rendered to HTML or PDF. Functions in
@@ -1988,6 +2004,8 @@ class Report(BaseModel):
         ID of the report in the API
     provider : str, optional
         Provider of the Report information.
+    outages: Tuple[TimePeriod, ...], optional
+        List of report outage periods.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
@@ -1998,6 +2016,7 @@ class Report(BaseModel):
     status: str = 'pending'
     report_id: str = ''
     provider: str = ''
+    outages: Tuple[TimePeriod, ...] = ()
     __version__: int = 0  # should add version to api
 
 

@@ -18,7 +18,7 @@ EXTRAS_REQUIRE = {
         'bokeh>=1.4.0, <2',
         'matplotlib',
         'plotly>=4.5.0, <5',
-        'selenium',
+        'selenium<4',
         'jinja2',
     ],
     'doc': ['sphinx<2.0', 'sphinx_rtd_theme']
