@@ -1144,7 +1144,9 @@ def test_outage_report_roundtrip(report_objects_with_outages):
     assert serialized['outages'] == (
        {
             "start": "2019-04-01T06:00:00+00:00",
-            "end": "2019-04-01T08:00:00+00:00"
+            "end": "2019-04-01T08:00:00+00:00",
+            "created_at": "2019-04-01T00:00:00-07:00",
+            "modified_at": "2019-04-01T00:00:00-07:00",
         },
     )
     instantiated = datamodel.Report.from_dict(serialized)

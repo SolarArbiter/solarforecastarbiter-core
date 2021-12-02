@@ -2,7 +2,7 @@
 {% import "macros.j2" as macros with context %}
 {% set report_name = report.report_parameters.name %}
 {# only display outages that existed before last compute #}
-{% set report_outages = report.outages | selectattr("created_at", "le", report.raw_report.generated_at) |list  %}
+{% set report_outages = report.outages | rejectattr("created_at", "none") |selectattr("created_at", "le", report.raw_report.generated_at) |list  %}
 {% block body %}
 <style type="text/css" scoped>
   .report-table-wrapper{
