@@ -1,7 +1,6 @@
 {% extends base_template %}
 {% import "macros.j2" as macros with context %}
 {% set report_name = report.report_parameters.name %}
-{# only display outages that existed before last compute #}
 {% block body %}
 <style type="text/css" scoped>
   .report-table-wrapper{
