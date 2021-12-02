@@ -526,7 +526,7 @@ def test_render_outage_report_html_new_outage_warning(
     )
     rendered = template.render_html(
         the_report, dash_url, with_series, False)
-    assert ("Outages have been added since the report was "
+    assert ("Outages have been modified since the report was "
             "last computed.") in rendered
 
 

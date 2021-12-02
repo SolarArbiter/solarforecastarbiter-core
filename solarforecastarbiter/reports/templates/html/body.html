@@ -128,8 +128,8 @@
 
 {% if report.outages != report.raw_report.outages %}
   {{ messages.append(
-    "Outages have been added since the report was last computed. "
-    "Recompute to use the new outages.")
+    "Outages have been modified since the report was last computed. "
+    "Recompute to use the updated outages.")
    }}
 {% endif %}
 
