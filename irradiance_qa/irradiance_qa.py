@@ -593,16 +593,19 @@ def post(verbose, user, password, base_url, official):
             obs_for_post = [
                 session.create_observation(o) for o in ta23_obs
             ]
-    for o in obs_for_post:  # ~ 5 minutes per observation x 30 obs = 150 min
+    # ~ 5 minutes per observation x 30 obs = 150 minutes
+    # token expires after 180 minutes!
+    for o in obs_for_post:
         site_name = o.site.name
         variable = o.variable.lower()
         _data_to_post = data_to_post[site_name][variable]
 
-        # Split into chunks to stay under API upload limit.
-        # DeprecationWarning if pandas >= 1.1.0, but we support earlier pandas
-        # and supporting both would be too complicated. If using this with
-        # new pandas you can use week = obs_df.index.isocalendar().week
-        # and similar for year.
+        # Split into chunks to stay under API upload limit. DeprecationWarning
+        # if pandas >= 1.1.0, but we support earlier pandas and supporting both
+        # would be too complicated. If using this with new pandas you can use
+        # week = obs_df.index.isocalendar().week and similar for year.
+        # Weekly chunks match SFA internal validation chunks, thus minimizing
+        # risk of hung validation jobs on the server.
         week = _data_to_post.index.week
         month = _data_to_post.index.month
         year = _data_to_post.index.year
@@ -612,8 +615,8 @@ def post(verbose, user, password, base_url, official):
                 'posting data for %s %s %s', group, site_name, variable
             )
             session.post_observation_values(o.observation_id, values)
-            # sometimes API fails to validate upload, so wait and retry if
-            # needed
+            # sometimes API fails to validate upload, so wait, check, and
+            # retry if needed
             validated = wait_for_validation(session, o, values)
             if not validated:
                 logger.info('validation appears hung. reposting data')
@@ -642,7 +645,7 @@ def get_current_organization(session):
 
 
 def wait_for_validation(
-    session, observation, values, sleep_initial=5, sleep_loop=30, limit=5
+    session, observation, values, sleep_initial=4, sleep_loop=15, limit=5
 ):
     logger.debug(
         f'sleeping for {sleep_initial} seconds to check validation status'
