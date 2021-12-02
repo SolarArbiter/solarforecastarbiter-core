@@ -518,17 +518,14 @@ def test_render_outage_report_html_new_outage_warning(
     outage_report_with_raw, dash_url, with_series,
     mocked_timeseries_plots
 ):
-    generated_at = outage_report_with_raw.raw_report.generated_at
     the_report = outage_report_with_raw.replace(
         outages=(datamodel.TimePeriod(
            start=pd.Timestamp('2021-01-01T00:00Z'),
            end=pd.Timestamp('2021-01-02T00:00Z'),
-           created_at=generated_at+pd.Timedelta('1H')
         ),)
     )
     rendered = template.render_html(
         the_report, dash_url, with_series, False)
-    assert '<h4 id="outages">Outages</h4>' not in rendered
     assert ("Outages have been added since the report was "
             "last computed.") in rendered
 

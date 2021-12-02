@@ -1750,13 +1750,9 @@ def report_objects(aggregate, ref_forecast_id):
 
 @pytest.fixture
 def report_objects_with_outages(report_objects):
-    created_at = report_objects[0].report_parameters.start
-    modified_at = created_at
     report_outages = (datamodel.TimePeriod(
         start=pd.Timestamp("20190401T0600Z"),
-        end=pd.Timestamp("20190401T0800Z"),
-        created_at=created_at,
-        modified_at=modified_at
+        end=pd.Timestamp("20190401T0800Z")
     ),)
     new_report = report_objects[0].replace(outages=report_outages)
     return (
@@ -4182,8 +4178,10 @@ def outage_report_with_raw(
     report_objects_with_outages, raw_report_with_outages
 ):
     report = report_objects_with_outages[0]
+    raw = raw_report_with_outages(True)
+    raw = raw.replace(outages=report.outages)
     report = report.replace(
-        raw_report=raw_report_with_outages(True),
+        raw_report=raw,
         status='complete'
     )
     return report
