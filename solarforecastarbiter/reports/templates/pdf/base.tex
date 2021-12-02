@@ -67,7 +67,7 @@ This report of forecast accuracy was automatically generated using the
 %- endfor
 %- endif
 
-%- set outages = report.outages
+%- set outages = report.raw_report.outages
 %- if outages | length > 0
 \subsection{Outages}
 Forecast submissions that fall within the periods listed below are excluded from analysis.

@@ -4178,8 +4178,10 @@ def outage_report_with_raw(
     report_objects_with_outages, raw_report_with_outages
 ):
     report = report_objects_with_outages[0]
+    raw = raw_report_with_outages(True)
+    raw = raw.replace(outages=report.outages)
     report = report.replace(
-        raw_report=raw_report_with_outages(True),
+        raw_report=raw,
         status='complete'
     )
     return report

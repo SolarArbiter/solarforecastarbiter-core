@@ -203,7 +203,7 @@ def create_raw_report_from_data(report, data):
         generated_at=generated_at, timezone=timezone, versions=versions,
         plots=report_plots, metrics=tuple(metrics_list + summary_stats),
         processed_forecasts_observations=tuple(processed_fxobs),
-        messages=messages)
+        messages=messages, outages=report.outages)
     return raw_report
 
 

@@ -514,6 +514,22 @@ def test_render_outage_report_html_full_html(
     assert '<td style="test-align: left">Reference Forecast Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
 
 
+def test_render_outage_report_html_new_outage_warning(
+    outage_report_with_raw, dash_url, with_series,
+    mocked_timeseries_plots
+):
+    the_report = outage_report_with_raw.replace(
+        outages=(datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T00:00Z'),
+           end=pd.Timestamp('2021-01-02T00:00Z'),
+        ),)
+    )
+    rendered = template.render_html(
+        the_report, dash_url, with_series, False)
+    assert ("Outages have been modified since the report was "
+            "last computed.") in rendered
+
+
 def test_render_outage_pdf(outage_report_with_raw, dash_url):
     if shutil.which('pdflatex') is None:  # pragma: no cover
         pytest.skip('pdflatex must be on PATH to generate PDF reports')
