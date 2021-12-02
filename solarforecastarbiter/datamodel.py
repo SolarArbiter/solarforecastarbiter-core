@@ -1978,9 +1978,15 @@ class TimePeriod(BaseModel):
         Start time of the time period.
     end : pandas.Timestamp
         End time of the time period.
+    created_at: pandas.Timestamp, optional
+        When the timeperiod was created.
+    modified_at: pandas.Timestamp, optional
+        When the timeperiod was last modified.
     """
     start: pd.Timestamp
     end: pd.Timestamp
+    created_at: Union[None, pd.Timestamp] = None
+    modified_at: Union[None, pd.Timestamp] = None
 
 
 @dataclass(frozen=True)
