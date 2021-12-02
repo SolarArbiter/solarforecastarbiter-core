@@ -127,6 +127,14 @@
 
 {% block errors %}
 {% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
+
+{% if report_outages | length < report.outages | length %}
+  {{ messages.append(
+    "Outages have been added since the report was last computed. "
+    "Recompute to use the new outages.")
+   }}
+{% endif %}
+
 {% if messages | length > 0 %}
 <div class="alert alert-warning">
   {% for mesg in messages %}
