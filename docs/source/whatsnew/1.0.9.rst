@@ -15,6 +15,9 @@ API Changes
   :py:class:`~solarforecastarbiter.datamodel.TimePeriod` objects. For backward
   compatibility, instantiating a report from existing reports without this field
   results in an empty tuple.
+* Added `outages` field to :py:class:`~solarforecastarbiter.datamodel.RawReport` which
+  reflects report outages at the time the report was computed. Defaults to an empty
+  tuple.
 * Added optional `outages` argument to the preprocessing functions
   :py:func:`~solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
   and
