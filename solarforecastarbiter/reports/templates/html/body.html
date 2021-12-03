@@ -127,10 +127,10 @@
 {% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
 
 {% if report.outages != report.raw_report.outages %}
-  {{ messages.append(
+  {% do messages.append(
     "Outages have been modified since the report was last computed. "
     "Recompute to use the updated outages.")
-   }}
+   %}
 {% endif %}
 
 {% if messages | length > 0 %}
