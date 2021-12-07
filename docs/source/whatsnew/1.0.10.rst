@@ -1,0 +1,20 @@
+.. _whatsnew_1010:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.10 (December ??, 2021)
+--------------------------
+
+Fixes
+~~~~~
+* When computing percentiles,
+  :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
+  set forecast to ``NaN`` if any data was missing for any resampled period. The
+  missing data is now ignored. (:pull:`744`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
