@@ -697,7 +697,8 @@ PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
     ([0, 4] * 22, 'y', [50], [2.]),
 
     # works with nan
-    ([None, 4] * 22, 'y', [50], [4.])
+    ([None, 4] * 22, 'y', [50], [4.]),
+    ([0.] + [None] * 42 + [4.], 'y', [50], [2.])
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
