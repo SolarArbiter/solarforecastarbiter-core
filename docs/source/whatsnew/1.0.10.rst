@@ -8,10 +8,8 @@
 
 Fixes
 ~~~~~
-* When computing percentiles,
-  :py:func:`~reference_forecasts.persistence.persistence_probabilistic_timeofday`
-  set forecast to ``NaN`` if any data was missing for any resampled period. The
-  missing data is now ignored. (:pull:`744`)
+* Probabilistic persistence forecasts were inaccurate (forecasts of values) or
+  ``NaN`` (forecasts of percentiles) when data was missing. (:pull:`744`)
 
 Contributors
 ~~~~~~~~~~~~
