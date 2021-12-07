@@ -1867,6 +1867,22 @@ class ReportMessage(BaseModel):
 
 
 @dataclass(frozen=True)
+class TimePeriod(BaseModel):
+    """Class for storing a generic time period. For example, a report
+    outage.
+
+    Parameters
+    ----------
+    start : pandas.Timestamp
+        Start time of the time period.
+    end : pandas.Timestamp
+        End time of the time period.
+    """
+    start: pd.Timestamp
+    end: pd.Timestamp
+
+
+@dataclass(frozen=True)
 class RawReport(BaseModel):
     """Class for holding the result of processing a report request
     including some metadata, the calculated metrics, plots, the
@@ -1890,7 +1906,8 @@ class RawReport(BaseModel):
     messages: tuple of :py:class:`solarforecastarbiter.datamodel.ReportMessage`
     data_checksum: str or None
         SHA-256 checksum of the raw data used in the report.
-
+    outages: Tuple[TimePeriod, ...], optional
+        List of report outage periods used when this raw report was generated.
     """  # NOQA
     generated_at: pd.Timestamp
     timezone: str
@@ -1900,6 +1917,7 @@ class RawReport(BaseModel):
     processed_forecasts_observations: Tuple[ProcessedForecastObservation, ...]
     messages: Tuple[ReportMessage, ...] = ()
     data_checksum: Union[str, None] = None
+    outages: Tuple[TimePeriod, ...] = ()
 
 
 def __check_cost_consistency__(object_pairs, available_costs):
@@ -1988,6 +2006,8 @@ class Report(BaseModel):
         ID of the report in the API
     provider : str, optional
         Provider of the Report information.
+    outages: Tuple[TimePeriod, ...], optional
+        List of report outage periods.
     __version__ : str
         Should be used to version reports to ensure even older
         reports can be properly rendered
@@ -1998,6 +2018,7 @@ class Report(BaseModel):
     status: str = 'pending'
     report_id: str = ''
     provider: str = ''
+    outages: Tuple[TimePeriod, ...] = ()
     __version__: int = 0  # should add version to api
 
 

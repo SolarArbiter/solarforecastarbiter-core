@@ -238,6 +238,12 @@ def test_render_html_full_html(various_report_with_raw, dash_url, with_series,
     rendered = template.render_html(
         various_report_with_raw[0], dash_url, with_series, False)
     assert rendered[:46] == '<!doctype html>\n<html lang="en" class="h-100">'
+    # Ensure outage information is hidden for reports without outages
+    # https://github.com/SolarArbiter/solarforecastarbiter-core/pull/752
+    assert '<h4 id="outages">Outages</h4>' not in rendered
+    assert '<td style="test-align: left">Forecast Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Observation Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Reference Forecast Values Discarded Due To Outage</td>' not in rendered  # NOQA: E501
 
 
 def test_build_metrics_json(various_report_with_raw):
@@ -490,3 +496,42 @@ def test__get_render_kwargs_with_missing_obs_data(
     assert 'scatter_spec' not in kwargs
     assert 'timeseries_prob_spec' not in kwargs
     assert not kwargs['includes_distribution']
+
+
+def test_render_outage_report_html_full_html(
+    outage_report_with_raw, dash_url, with_series,
+    mocked_timeseries_plots
+):
+    rendered = template.render_html(
+        outage_report_with_raw, dash_url, with_series, False)
+    assert '<h4 id="outages">Outages</h4>' in rendered
+    for outage in outage_report_with_raw.outages:
+        fmt = "%Y-%m-%d %H:%M:%S+00:00"
+        assert f'<td>{ outage.start.strftime(fmt) }</td>' in rendered
+        assert f'<td>{ outage.end.strftime(fmt) }</td>' in rendered
+    assert '<td style="test-align: left">Forecast Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Observation Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
+    assert '<td style="test-align: left">Reference Forecast Values Discarded Due To Outage</td>' in rendered  # NOQA: E501
+
+
+def test_render_outage_report_html_new_outage_warning(
+    outage_report_with_raw, dash_url, with_series,
+    mocked_timeseries_plots
+):
+    the_report = outage_report_with_raw.replace(
+        outages=(datamodel.TimePeriod(
+           start=pd.Timestamp('2021-01-01T00:00Z'),
+           end=pd.Timestamp('2021-01-02T00:00Z'),
+        ),)
+    )
+    rendered = template.render_html(
+        the_report, dash_url, with_series, False)
+    assert ("Outages have been modified since the report was "
+            "last computed.") in rendered
+
+
+def test_render_outage_pdf(outage_report_with_raw, dash_url):
+    if shutil.which('pdflatex') is None:  # pragma: no cover
+        pytest.skip('pdflatex must be on PATH to generate PDF reports')
+    rendered = template.render_pdf(outage_report_with_raw, dash_url)
+    assert rendered.startswith(b'%PDF')
