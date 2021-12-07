@@ -178,7 +178,7 @@ def download(verbose, user, password, base_url):
         p.write_text(json.dumps(site.to_dict(), indent=4))
     obs = session.list_observations()
     ta23_obs = tuple(filter(
-        lambda x: x.site in ta23_sites and x.variable in ['ghi', 'dni', 'dhi'],
+        partial(is_provider_obs, provider='Reference', sites=ta23_sites),
         obs
     ))
     for o in ta23_obs:
@@ -559,15 +559,8 @@ def post(verbose, user, password, base_url, official):
     ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
     obs = session.list_observations()
 
-    def _is_provider_obs(o, provider):
-        return (
-            o.site in ta23_sites and
-            o.variable in ['ghi', 'dni', 'dhi'] and
-            o.provider == provider
-        )
-
     ta23_obs = tuple(filter(
-        partial(_is_provider_obs, provider='Reference'),
+        partial(is_provider_obs, provider='Reference', sites=ta23_sites),
         obs
     ))
     if official:
@@ -575,7 +568,11 @@ def post(verbose, user, password, base_url, official):
         obs_for_post = ta23_obs
     else:
         ta23_obs_org = tuple(filter(
-            partial(_is_provider_obs, provider=current_organization),
+            partial(
+                is_provider_obs,
+                provider=current_organization,
+                sites=ta23_sites
+            ),
             obs
         ))
         if len(ta23_obs_org) == len(ta23_obs):
@@ -631,6 +628,14 @@ def post(verbose, user, password, base_url, official):
                     'validation failed for %s %s %s', group, site_name,
                     variable
                 )
+
+
+def is_provider_obs(obs, provider, sites):
+    return (
+        obs.site in sites and
+        obs.variable in ['ghi', 'dni', 'dhi'] and
+        obs.provider == provider
+    )
 
 
 def get_current_organization(session):
