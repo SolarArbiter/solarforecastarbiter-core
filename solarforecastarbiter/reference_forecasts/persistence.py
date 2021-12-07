@@ -599,7 +599,13 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     obs = obs_db.resample(
         interval_length, closed=closed_obs, label=closed_fx
     ).mean()
-    if obs.empty:
+
+    # confirm sufficient data for matching by time of day
+    last_valid_index = obs.last_valid_index()
+    if (
+            last_valid_index is None or  # empty or all nan
+            last_valid_index - obs.first_valid_index() < pd.Timedelta("20D")
+    ):
         raise ValueError("Insufficient data to match by time of day")
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
@@ -614,10 +620,6 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
 
     obs_timeofday = (obs.index.hour * 60 + obs.index.minute).astype(int)
     fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
-
-    # confirm sufficient data for matching by time of day
-    if obs.last_valid_index() - obs.first_valid_index() < pd.Timedelta("20D"):
-        raise ValueError("Insufficient data to match by time of day")
 
     if axis == "x":
         forecasts = []

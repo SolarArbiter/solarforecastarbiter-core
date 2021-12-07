@@ -462,7 +462,9 @@ def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
     pytest.param([5.3, 7.3, 1.4] * 4, 'x', [50], None,
                  marks=pytest.mark.xfail(raises=ValueError, strict=True)),
     pytest.param([], 'x', [50], None,
-                 marks=pytest.mark.xfail(raises=ValueError, strict=True))
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+    pytest.param([None]*10, 'x', [50], None,
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
 ])
 def test_persistence_probabilistic_timeofday(site_metadata, obs_values, axis,
                                              constant_values, expected_values):
@@ -693,6 +695,9 @@ PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
     # constant_values = percentiles [%]
     # forecasts = variable values
     ([0, 4] * 22, 'y', [50], [2.]),
+
+    # works with nan
+    ([None, 4] * 22, 'y', [50], [4.])
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
