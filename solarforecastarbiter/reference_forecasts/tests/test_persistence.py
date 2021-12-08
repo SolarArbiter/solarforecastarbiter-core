@@ -462,7 +462,9 @@ def test_persistence_probabilistic(site_metadata, interval_label, obs_values,
     pytest.param([5.3, 7.3, 1.4] * 4, 'x', [50], None,
                  marks=pytest.mark.xfail(raises=ValueError, strict=True)),
     pytest.param([], 'x', [50], None,
-                 marks=pytest.mark.xfail(raises=ValueError, strict=True))
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
+    pytest.param([None]*10, 'x', [50], None,
+                 marks=pytest.mark.xfail(raises=ValueError, strict=True)),
 ])
 def test_persistence_probabilistic_timeofday(site_metadata, obs_values, axis,
                                              constant_values, expected_values):
@@ -598,7 +600,9 @@ def test_persistence_probabilistic_timeofday_timezone(site_metadata, data_end,
     # forecasts = variable values
     ([0] * 15 + [4] * 15, 'y', [50], [2]),
 
-    ([None] * 30, 'y', [50], [None])
+    ([None] * 30, 'y', [50], [None]),
+    ([0] * 10 + [None] * 10 + [20] * 10, 'x', [10, 20], [50, 100]),
+    ([0] * 10 + [None] * 10 + [4] * 10, 'y', [50], [2]),
 ])
 def test_persistence_probabilistic_resampling(
     site_metadata,
@@ -693,6 +697,12 @@ PROB_PERS_TOD_OBS_INDEX = pd.DatetimeIndex([
     # constant_values = percentiles [%]
     # forecasts = variable values
     ([0, 4] * 22, 'y', [50], [2.]),
+
+    # works with nan
+    ([None, 4] * 22, 'y', [50], [4.]),
+    ([0.] + [None] * 42 + [4.], 'y', [50], [2.]),
+    # first interval averages to 0, last to 20, else nan
+    ([0.] + [None] * 42 + [20.], 'x', [10, 20], [50., 100.]),
 ])
 def test_persistence_probabilistic_timeofday_resample(
     site_metadata,
@@ -721,6 +731,81 @@ def test_persistence_probabilistic_timeofday_resample(
     # forecast 9am - 10am, but label will depend on inputs
     forecast_start = pd.Timestamp('20190514T0900', tz=tz)
     forecast_end = pd.Timestamp('20190514T1000', tz=tz)
+    interval_length = pd.Timedelta('1h')
+
+    load_data = partial(load_data_base, data)
+
+    expected_index = fx_index
+
+    forecasts = persistence.persistence_probabilistic_timeofday(
+        observation, data_start, data_end, forecast_start, forecast_end,
+        interval_length, fx_interval_label, load_data, axis, constant_values
+    )
+    assert isinstance(forecasts, list)
+    for expected, fx in zip(expected_values, forecasts):
+        pd.testing.assert_series_equal(
+            fx,
+            pd.Series(expected, index=expected_index)
+        )
+
+
+PROB_PERS_TOD_OBS_INDEX_2H = PROB_PERS_TOD_OBS_INDEX.union(
+    PROB_PERS_TOD_OBS_INDEX + pd.Timedelta('1h')
+)
+
+
+@pytest.mark.parametrize('obs_interval_label_index', [
+    ('beginning', PROB_PERS_TOD_OBS_INDEX_2H - pd.Timedelta('30min')),
+    ('ending', PROB_PERS_TOD_OBS_INDEX_2H)
+])
+@pytest.mark.parametrize('fx_interval_label_index', [
+    (
+        'beginning',
+        pd.DatetimeIndex(['20190514T0900Z', '20190514T1000Z'], freq='1h')
+    ),
+    (
+        'ending',
+        pd.DatetimeIndex(['20190514T1000Z', '20190514T1100Z'], freq='1h')
+    )
+])
+@pytest.mark.parametrize("obs_values,axis,constant_values,expected_values", [
+    # first interval averages to 0, last to 20, else nan
+    ([0.] + [None] * 86 + [20.], 'x', [10, 20], [[100., 0.], [100., 100.]]),
+    # no valid observations in first forecast hour
+    (
+        [None, None, 20., 20.] * 22,
+        'x',
+        [10, 20],
+        [[None, 0.], [None, 100.]]
+    ),
+])
+def test_persistence_probabilistic_timeofday_resample_2h(
+    site_metadata,
+    obs_values,
+    axis,
+    constant_values,
+    expected_values,
+    obs_interval_label_index,
+    fx_interval_label_index
+):
+    obs_interval_label, obs_index = obs_interval_label_index
+    fx_interval_label, fx_index = fx_interval_label_index
+
+    tz = 'UTC'
+    observation = default_observation(
+        site_metadata,
+        interval_length='30min',
+        interval_label=obs_interval_label
+    )
+
+    data_start = pd.Timestamp('20190421T0900', tz=tz)
+    data_end = pd.Timestamp('20190512T1100', tz=tz)
+
+    data = pd.Series(obs_values, index=obs_index, dtype=float)
+
+    # forecast 9am - 11am, but label will depend on inputs
+    forecast_start = pd.Timestamp('20190514T0900', tz=tz)
+    forecast_end = pd.Timestamp('20190514T1100', tz=tz)
     interval_length = pd.Timedelta('1h')
 
     load_data = partial(load_data_base, data)

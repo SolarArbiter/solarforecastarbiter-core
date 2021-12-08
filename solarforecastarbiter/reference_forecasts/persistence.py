@@ -480,6 +480,7 @@ def persistence_probabilistic(observation, data_start, data_end,
     obs = load_data(observation, data_start, data_end)
     # don't need label=closed because of how we assign fx values below.
     obs = obs.resample(interval_length, closed=closed).mean()
+    obs = obs.dropna()  # nans will throw off ECDF and percentile
 
     if obs.empty:
         return [pd.Series(None, dtype=float, index=fx_index)
@@ -589,15 +590,23 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     fx_index = pd.date_range(start=forecast_start, end=forecast_end,
                              freq=interval_length, closed=closed_fx)
 
+    # get observations from database
+    obs_db = load_data(observation, data_start, data_end)
+
     # observation data resampled to match forecast sampling
-    obs = load_data(observation, data_start, data_end)
     # unlike other functions in this module, we do need label=closed
     # here because we will match the resampled obs time of day to
     # the desired forecast time of day.
-    obs = obs.resample(
+    obs = obs_db.resample(
         interval_length, closed=closed_obs, label=closed_fx
     ).mean()
-    if obs.empty:
+
+    # confirm sufficient data for matching by time of day
+    last_valid_index = obs.last_valid_index()
+    if (
+            last_valid_index is None or  # empty or all nan
+            last_valid_index - obs.first_valid_index() < pd.Timedelta("20D")
+    ):
         raise ValueError("Insufficient data to match by time of day")
 
     # time of day: minutes past midnight (e.g. 0=12:00am, 75=1:15am)
@@ -613,18 +622,23 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
     obs_timeofday = (obs.index.hour * 60 + obs.index.minute).astype(int)
     fx_timeofday = (fx_index.hour * 60 + fx_index.minute).astype(int)
 
-    # confirm sufficient data for matching by time of day
-    if obs.last_valid_index() - obs.first_valid_index() < pd.Timedelta("20D"):
-        raise ValueError("Insufficient data to match by time of day")
-
+    # These loops might be much faster if tod was the outer loop and the
+    # slice/ECDF operations only happened once for each time. Unknown if the
+    # speed of sorting or more cleverly inserting values into lists would
+    # negate the benefit.
     if axis == "x":
         forecasts = []
         for constant_value in constant_values:
             fx = pd.Series(np.nan, index=fx_index)
             for tod in fx_timeofday:
-                data = obs[obs_timeofday == tod]
-                cdf = ECDF(data)
-                fx[fx_timeofday == tod] = cdf(constant_value) * 100.0
+                data = obs[obs_timeofday == tod].dropna()
+                # ECDF cannot be initialized with an empty series
+                if data.empty:
+                    fx_value_tod = np.nan
+                else:
+                    cdf = ECDF(data)
+                    fx_value_tod = cdf(constant_value) * 100.0
+                fx[fx_timeofday == tod] = fx_value_tod
             forecasts.append(fx)
     elif axis == "y":
         forecasts = []
@@ -632,7 +646,9 @@ def persistence_probabilistic_timeofday(observation, data_start, data_end,
             fx = pd.Series(np.nan, index=fx_index)
             for tod in fx_timeofday:
                 data = obs[obs_timeofday == tod]
-                fx[fx_timeofday == tod] = np.percentile(data, constant_value)
+                fx[fx_timeofday == tod] = np.nanpercentile(
+                    data, constant_value
+                )
             forecasts.append(fx)
     else:
         raise ValueError(f"Invalid axis parameter: {axis}")

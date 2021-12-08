@@ -1,0 +1,18 @@
+.. _whatsnew_1010:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.10 (December ??, 2021)
+--------------------------
+
+Fixes
+~~~~~
+* Probabilistic persistence forecasts were inaccurate (forecasts of values) or
+  ``NaN`` (forecasts of percentiles) when data was missing. (:pull:`744`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
