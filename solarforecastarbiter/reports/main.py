@@ -48,6 +48,7 @@ Considerations:
   the API will need to call for the aligned data separately
   to be able to create time series, scatter, etc. plots.
 """
+import logging
 from functools import wraps
 import pkg_resources
 import platform
@@ -62,6 +63,13 @@ from solarforecastarbiter.metrics import preprocessing, calculator
 from solarforecastarbiter.reports.figures import plotly_figures
 from solarforecastarbiter.utils import hijack_loggers
 from solarforecastarbiter.validation.tasks import apply_validation
+
+logging.basicConfig(
+    format='%(asctime)s %(levelname)s %(message)s',
+    level=logging.INFO
+)
+
+logger = logging.getLogger(__name__)
 
 
 def get_data_for_report(session, report):
@@ -180,6 +188,7 @@ def create_raw_report_from_data(report, data):
         'solarforecastarbiter.reports.figures.plotly_figures'],
                         ) as handler:
         # Validate, fill forecast, and resample
+        logging.info("Preprocessing forecasts and observations.")
         processed_fxobs = preprocessing.process_forecast_observations(
             report_params.object_pairs,
             report_params.filters,
@@ -190,13 +199,16 @@ def create_raw_report_from_data(report, data):
             outages=report.outages)
 
         # Calculate metrics
+        logging.info("Calculating metrics.")
         metrics_list = calculator.calculate_metrics(
             processed_fxobs,
             list(report_params.categories),
             list(report_params.metrics))
+        logging.info("Calculating summary statistics.")
         summary_stats = calculator.calculate_all_summary_statistics(
             processed_fxobs, list(report_params.categories))
 
+        logging.info("Generating plots.")
         report_plots = plotly_figures.raw_report_plots(report, metrics_list)
         messages = handler.export_records()
     raw_report = datamodel.RawReport(
@@ -269,19 +281,24 @@ def compute_report(access_token, report_id, base_url=None):
     -------
     raw_report : :py:class:`solarforecastarbiter.datamodel.RawReport`
     """
+    logging.info("Starting report computation for %s", report_id)
     session = APISession(access_token, base_url=base_url)
     fail_wrapper = capture_report_failure(report_id, session)
+    logging.info("Fetching report.")
     report = fail_wrapper(session.get_report, err_msg=(
         'Failed to retrieve report. Perhaps the report does not exist, '
         'the user does not have permission, or the connection failed.')
     )(report_id)
+    logging.info("Fetching report data.")
     data = fail_wrapper(get_data_for_report, err_msg=(
         'Failed to retrieve data for report which may indicate a lack '
         'of permissions or that an object does not exist.')
     )(session, report)
+    logging.info("Computing report.")
     raw_report = fail_wrapper(create_raw_report_from_data, err_msg=(
         'Unhandled exception when computing report.')
     )(report, data)
+    logging.info("Posting raw report.")
     fail_wrapper(session.post_raw_report, err_msg=(
         'Computation of report completed, but failed to upload result to '
         'the API.')
