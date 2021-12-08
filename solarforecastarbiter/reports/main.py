@@ -64,10 +64,6 @@ from solarforecastarbiter.reports.figures import plotly_figures
 from solarforecastarbiter.utils import hijack_loggers
 from solarforecastarbiter.validation.tasks import apply_validation
 
-logging.basicConfig(
-    format='%(asctime)s %(levelname)s %(message)s',
-    level=logging.INFO
-)
 
 logger = logging.getLogger(__name__)
 

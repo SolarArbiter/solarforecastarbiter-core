@@ -1192,7 +1192,6 @@ def raw_report_plots(report, metrics):
     metrics_df = construct_metrics_dataframe(metrics, rename=abbreviate)
     # Create initial bar figures
     figure_dict = {}
-    logging.info("Creating Plotly plots.")
     # Components for other metrics
     for category in report.report_parameters.categories:
         for metric in report.report_parameters.metrics:
@@ -1205,7 +1204,6 @@ def raw_report_plots(report, metrics):
                     figure_dict[f'{category}::{metric}::{name}'] = fig
     mplots = []
 
-    logging.info("Creating plot pdfs and creating PlotlyReportFigures.")
     for k, v in figure_dict.items():
         cat, met, name = k.split('::', 2)
         figure_spec = v.to_json()
