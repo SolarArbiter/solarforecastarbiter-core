@@ -1136,3 +1136,16 @@ def test_report_parameters_timezone(report_params_dict, report_params):
     rpd = datamodel.ReportParameters.from_dict(report_params_dict)
     rp = report_params.replace(timezone='Etc/GMT+7')
     assert rpd == rp
+
+
+def test_outage_report_roundtrip(report_objects_with_outages):
+    report = report_objects_with_outages[0]
+    serialized = report.to_dict()
+    assert serialized['outages'] == (
+       {
+            "start": "2019-04-01T06:00:00+00:00",
+            "end": "2019-04-01T08:00:00+00:00",
+        },
+    )
+    instantiated = datamodel.Report.from_dict(serialized)
+    assert report == instantiated

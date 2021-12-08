@@ -303,7 +303,8 @@ def get_template_and_kwargs(report, dash_url, with_timeseries, body_only):
         ]),
         autoescape=select_autoescape(['html', 'xml']),
         lstrip_blocks=True,
-        trim_blocks=True
+        trim_blocks=True,
+        extensions=['jinja2.ext.do']
     )
     env.filters['pretty_json'] = _pretty_json
     env.filters['figure_name_filter'] = _figure_name_filter

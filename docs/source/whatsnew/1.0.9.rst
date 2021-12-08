@@ -1,0 +1,35 @@
+.. _whatsnew_109:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.9 (December 3, 2021)
+------------------------
+
+API Changes
+~~~~~~~~~~~
+* Added :py:class:`~solarforecastarbiter.datamodel.TimePeriod` for defining simple time
+  time ranges with a start and end.
+* Added `outages` field to :py:class:`~solaforecastarbiter.datamodel.Report` which
+  represents outages to exclude from a report with a tuple of
+  :py:class:`~solarforecastarbiter.datamodel.TimePeriod` objects. For backward
+  compatibility, instantiating a report from existing reports without this field
+  results in an empty tuple.
+* Added `outages` field to :py:class:`~solarforecastarbiter.datamodel.RawReport` which
+  reflects report outages at the time the report was computed. Defaults to an empty
+  tuple.
+* Added optional `outages` argument to the preprocessing functions
+  :py:func:`~solarforecastarbiter.metrics.preprocessing.process_forecast_observations`
+  and
+  :py:func:`~solarforecastarbiter.metrics.preprocessing.filter_resample`. Current
+  code will not require an update.
+
+Enhancements
+~~~~~~~~~~~~
+* Added handling of outage periods to report preprocessing.
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)

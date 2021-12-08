@@ -1,7 +1,6 @@
 {% extends base_template %}
 {% import "macros.j2" as macros with context %}
 {% set report_name = report.report_parameters.name %}
-
 {% block body %}
 <style type="text/css" scoped>
   .report-table-wrapper{
@@ -91,6 +90,11 @@
     <li><a href="#costparams">Cost Parameters</a></li>
   </ul>
   {% endif %}
+  {% if report.raw_report.outages | length > 0 %}
+  <ul>
+    <li><a href="#outages">Outages</li>
+  </ul>
+  {% endif %}
   <li><a href="#data">Data</a></li>
   <ul>
     <li><a href="#observations-and-forecasts">Observations and Forecasts</a></li>
@@ -121,6 +125,14 @@
 
 {% block errors %}
 {% set messages = (report.raw_report.messages | map(attribute="message") | list) + (templating_messages | default([]))%}
+
+{% if report.outages != report.raw_report.outages %}
+  {% do messages.append(
+    "Outages have been modified since the report was last computed. "
+    "Recompute to use the updated outages.")
+   %}
+{% endif %}
+
 {% if messages | length > 0 %}
 <div class="alert alert-warning">
   {% for mesg in messages %}
@@ -156,6 +168,28 @@
   </div>
 </div>
 {% endfor %}
+{% endif %}
+{% if report.raw_report.outages | length > 0 %}
+<h4 id="outages">Outages</h4>
+<p>
+Forecast submissions that fall within the periods listed below are excluded from analysis.
+</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Outage Start</th>
+      <th>Outage End</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for outage in report.raw_report.outages %}
+    <tr>
+      <td>{{ outage['start'] }}</td>
+      <td>{{ outage['end'] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endif %}
 {% endblock %}
 
