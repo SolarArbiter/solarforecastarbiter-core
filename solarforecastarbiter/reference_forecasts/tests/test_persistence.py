@@ -823,6 +823,7 @@ def test_persistence_probabilistic_timeofday_resample_2h(
             pd.Series(expected, index=expected_index)
         )
 
+
 @pytest.mark.parametrize("interval_label", [
     'beginning', 'ending'
 ])
