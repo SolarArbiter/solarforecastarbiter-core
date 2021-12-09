@@ -31,9 +31,12 @@ SITES = {
         'consistency_limits': {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]}
         },
-        'overcast': '2018-02-03',
-        'clear': '2018-04-20',
-        'variable': '2018-03-03',
+        'overcast_ta2': '2018-02-03',
+        'clear_ta2': '2018-04-20',
+        'variable_ta2': '2018-03-03',
+        'overcast_ta3': '2021-10-12',
+        'clear_ta3': '2021-10-03',
+        'variable_ta3': '2021-10-11',
         'site_id': '9dfa7910-7e49-11e9-b4e8-0a580a8003e9',
         'timezone': 'Etc/GMT+7',
     },
@@ -41,9 +44,12 @@ SITES = {
         'consistency_limits': {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]}
         },
-        'overcast': '2018-01-01',
-        'clear': '2018-03-03',
-        'variable': '2018-04-22',
+        'overcast_ta2': '2018-01-01',
+        'clear_ta2': '2018-03-03',
+        'variable_ta2': '2018-04-22',
+        'overcast_ta3': '2021-10-01',
+        'clear_ta3': '2021-10-03',
+        'variable_ta3': '2021-10-22',
         'site_id': 'a9d0d140-99fc-11e9-81fa-0a580a8200c9',
         'timezone': 'Etc/GMT+5',
     },
@@ -52,9 +58,12 @@ SITES = {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]},
             'ghi_ratio': {'ratio_bounds': [0.84, 1.16]},
         },
-        'overcast': '2018-01-10',
-        'clear': '2018-03-03',
-        'variable': '2018-01-14',
+        'overcast_ta2': '2018-01-10',
+        'clear_ta2': '2018-03-03',
+        'variable_ta2': '2018-01-14',
+        'overcast_ta3': '2021-10-02',
+        'clear_ta3': '2021-09-27',
+        'variable_ta3': '2021-09-29',
         'site_id': '9e4e98ac-7e49-11e9-a7c4-0a580a8003e9',
         'timezone': 'Etc/GMT+6',
     },
@@ -63,9 +72,12 @@ SITES = {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]},
             'ghi_ratio': {'ratio_bounds': [0.84, 1.16]},
         },
-        'overcast': '2018-01-17',
-        'clear': '2018-02-08',
-        'variable': '2018-03-03',
+        'overcast_ta2': '2018-01-17',
+        'clear_ta2': '2018-02-08',
+        'variable_ta2': '2018-03-03',
+        'overcast_ta3': '2021-11-15',
+        'clear_ta3': '2021-10-10',
+        'variable_ta3': '2021-10-29',
         'site_id': 'c291964c-7e49-11e9-af46-0a580a8003e9',
         'timezone': 'Etc/GMT+8',
     },
@@ -73,17 +85,23 @@ SITES = {
         'consistency_limits': {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]}
         },
-        'overcast': '2018-01-14',
-        'clear': '2018-07-01',
-        'variable': '2018-03-03',
+        'overcast_ta2': '2018-01-14',
+        'clear_ta2': '2018-07-01',
+        'variable_ta2': '2018-03-03',
+        'overcast_ta3': '2021-10-17',
+        'clear_ta3': '2021-10-09',
+        'variable_ta3': '2021-10-10',
         'site_id': '9feac63a-7e49-11e9-9bde-0a580a8003e9',
         'timezone': 'Etc/GMT+8',
     },
     'DOE ARM Southern Great Plains SGP, Lamont, Oklahoma': {
         'consistency_limits': {},
-        'overcast': '2018-02-10',
-        'clear': '2018-01-23',
-        'variable': '2018-05-04',
+        'overcast_ta2': '2018-02-10',
+        'clear_ta2': '2018-01-23',
+        'variable_ta2': '2018-05-04',
+        'overcast_ta3': '2021-11-02',
+        'clear_ta3': '2021-10-17',
+        'variable_ta3': '2021-11-05',
         'site_id': 'd52d47e6-88c4-11ea-b5f8-0a580a820092',
         'timezone': 'Etc/GMT+6',
     },
@@ -91,9 +109,12 @@ SITES = {
         'consistency_limits': {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]}
         },
-        'overcast': '2018-02-13',
-        'clear': '2018-04-20',
-        'variable': '2018-03-03',
+        'overcast_ta2': '2018-02-13',
+        'clear_ta2': '2018-04-20',
+        'variable_ta2': '2018-03-03',
+        'overcast_ta3': '2021-10-13',
+        'clear_ta3': '2021-10-20',
+        'variable_ta3': '2021-10-03',
         'site_id': '371a5e3a-1888-11eb-959e-0a580a820169',
         'timezone': 'Etc/GMT+5',
     },
@@ -102,9 +123,12 @@ SITES = {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]},
             'ghi_ratio': {'ratio_bounds': [0.85, 1.15]},
         },
-        'overcast': '2018-01-12',
-        'clear': '2018-01-14',
-        'variable': '2018-01-01',
+        'overcast_ta2': '2018-01-12',
+        'clear_ta2': '2018-01-14',
+        'variable_ta2': '2018-01-01',
+        'overcast_ta3': '2021-10-07',
+        'clear_ta3': '2021-09-02',
+        'variable_ta3': '2021-09-24',
         'site_id': '9e69b108-7e49-11e9-a3df-0a580a8003e9',
         'timezone': 'Etc/GMT+5',
     },
@@ -113,9 +137,12 @@ SITES = {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]},
             'ghi_ratio': {'ratio_bounds': [0.85, 1.15]},
         },
-        'overcast': '2018-01-27',
-        'clear': '2018-02-11',
-        'variable': '2018-02-09',
+        'overcast_ta2': '2018-01-27',
+        'clear_ta2': '2018-02-11',
+        'variable_ta2': '2018-02-09',
+        'overcast_ta3': '2021-10-27',
+        'clear_ta3': '2021-10-11',
+        'variable_ta3': '2021-10-09',
         'site_id': '4a4e1f82-a2d1-11eb-90bf-0a580a820087',
         'timezone': 'Etc/GMT+8',
     },
@@ -124,9 +151,12 @@ SITES = {
             'dhi_ratio': {'ratio_bounds': [0, 1.5]},
             'ghi_ratio': {'ratio_bounds': [0.85, 1.15]},
         },
-        'overcast': '2018-01-14',
-        'clear': '2018-01-01',
-        'variable': '2018-03-03',
+        'overcast_ta2': '2018-01-14',
+        'clear_ta2': '2018-01-01',
+        'variable_ta2': '2018-03-03',
+        'overcast_ta3': '2021-10-02',
+        'clear_ta3': '2021-10-05',
+        'variable_ta3': '2021-10-15',
         'site_id': '9e888c48-7e49-11e9-9a66-0a580a8003e9',
         'timezone': 'Etc/GMT+6',
     },
@@ -156,9 +186,17 @@ def set_log_level(verbose):
     logging.getLogger().setLevel(loglevel)
 
 
+ta_option = click.option(
+    '--topic-area',
+    type=click.Choice(['2', '3']),
+    help='Topic Area (defines date range)'
+)
+
+
 @qa_cli.command()
 @common_options
-def download(verbose, user, password, base_url):
+@ta_option
+def download(verbose, user, password, base_url, topic_area):
     """Download metadata and time series data for all TA 2/3 sites.
 
     Data saved in new directory named ta23_site_data."""
@@ -168,61 +206,89 @@ def download(verbose, user, password, base_url):
     sites = session.list_sites()
     ta23_sites = tuple(filter(lambda x: x.name in SITES, sites))
     OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+
     # observation names were not created consistently across the different
     # networks so need to keep a nested directory structure to keep things
     # clean. also mirrors the organization of data in the arbiter.
     for site in ta23_sites:
-        p = OUTPUT_PATH / f'{site.name}'
-        p.mkdir(exist_ok=True)
-        p /= f'{site.name}.json'
-        p.write_text(json.dumps(site.to_dict(), indent=4))
+        p_site = OUTPUT_PATH / f'{site.name}'
+        p_site.mkdir(exist_ok=True)
+        p_site_meta = p_site / f'{site.name}.json'
+        # write out site metadata
+        p_site_meta.write_text(json.dumps(site.to_dict(), indent=4))
+        p_ta = p_site / f'TA{topic_area}'
+        p_ta.mkdir(exist_ok=True)
     obs = session.list_observations()
     ta23_obs = tuple(filter(
         partial(is_provider_obs, provider='Reference', sites=ta23_sites),
         obs
     ))
     for o in ta23_obs:
-        # WH: I'm terribly embarassed by the length of this for loop.
         logger.info('Fetching data for %s', o.name)
         # o.site.name will match paths created above
-        p = OUTPUT_PATH / f'{o.site.name}' / f'{o.name}.json'
-        p.write_text(json.dumps(o.to_dict(), indent=4))
+        p_site = OUTPUT_PATH / f'{o.site.name}'
+        p_obs_meta = p_site / f'{o.name}.json'
+        # write out observation metadata
+        p_obs_meta.write_text(json.dumps(o.to_dict(), indent=4))
         # pull data by quarters to work around API query length
-        # limitation 2018 for TA2 analysis. eventually extend to 2021
-        # for TA3. TA2/3 reports use Etc/GMT timezone, while some SFA
-        # Site timezones are DST aware.
+        # limitation 2018 for TA2 analysis. TA2/3 reports use Etc/GMT
+        # timezone, while some SFA Site timezones are DST aware.
         tz = SITES[o.site.name]['timezone']
+        start_ends = _ta_23_start_end(topic_area, tz)
+        values = _loop_over_start_ends(session, start_ends, o)
+        # construct filename that follows same pattern as API but use our
+        # requested times so we know for certain what the file will be named
+        p_data = _format_data_path(o, start_ends, p_site, topic_area)
+        values.to_csv(p_data)
+
+
+def _format_data_path(observation, start_ends, p_site, topic_area):
+    name = observation.name.replace(' ', '_')
+    first_start = start_ends.iloc[0]['start'].isoformat()
+    last_end = start_ends.iloc[-1]['end'].isoformat()
+    filename = f'{name}_{first_start}-{last_end}.csv'
+    filename = filename.replace(':', '_')
+    p_data = p_site / f'TA{topic_area}' / filename
+    return p_data
+
+
+def _ta_23_start_end(topic_area, tz):
+    if topic_area == '2':
         quarters = pd.date_range('2018-01-01', freq='QS', periods=5, tz=tz)
         start_ends = pd.DataFrame(
             {'start': quarters[:4], 'end': quarters[1:]-pd.Timedelta('1s')}
         )
-        values_segments = []
-        for _, start_end in start_ends.iterrows():
-            start = start_end['start']
-            end = start_end['end']
-            values_segment = session.get_observation_values(
-                o.observation_id,
-                start=start,
-                end=end,
-            )
-            values_segments.append(values_segment)
-        values = pd.concat(values_segments)
-        # construct filename that follows same pattern as API but use our
-        # requested times so we know for certain what the file will be named
-        name = o.name.replace(' ', '_')
-        first_start = start_ends.iloc[0]['start'].isoformat()
-        last_end = start_ends.iloc[-1]['end'].isoformat()
-        filename = f'{name}_{first_start}-{last_end}.csv'
-        filename = filename.replace(':', '_')
-        p_data = OUTPUT_PATH / f'{o.site.name}' / filename
-        values.to_csv(p_data)
+    elif topic_area == '3':
+        start_ends = pd.DataFrame({
+            'start': pd.Timestamp('2021-09-02', tz=tz),
+            'end': pd.Timestamp('2021-12-01', tz=tz)
+        }, index=[0])
+    else:
+        raise ValueError('topic_area must be 2 or 3')
+    return start_ends
+
+
+def _loop_over_start_ends(session, start_ends, observation):
+    values_segments = []
+    for _, start_end in start_ends.iterrows():
+        start = start_end['start']
+        end = start_end['end']
+        values_segment = session.get_observation_values(
+            observation.observation_id,
+            start=start,
+            end=end,
+        )
+        values_segments.append(values_segment)
+    values = pd.concat(values_segments)
+    return values
 
 
 @qa_cli.command()
 @click.option('-v', '--verbose', count=True,
               help='Increase logging verbosity')
 @click.option('--site', type=str, help='Site to process', default='all')
-def process(verbose, site):
+@ta_option
+def process(verbose, site, topic_area):
     """Process time series data for all TA 2/3 sites.
 
     Reads data from directory ta23_site_data and writes QA results to
@@ -233,18 +299,21 @@ def process(verbose, site):
     else:
         sites_to_process = {site: SITES[site]}
     for name, parameters in sites_to_process.items():
-        process_single_site(name, parameters)
+        process_single_site(name, parameters, topic_area)
 
 
-def process_single_site(name, parameters):
+def process_single_site(name, parameters, topic_area):
+    if any(frag in name for frag in ('Cocoa', 'PNNL', 'NASA')):
+        logger.warning('Skipping %s', name)
+        return
     logger.info('Processing %s', name)
-    save_path = OUTPUT_PATH / name
+    save_path = OUTPUT_PATH / name / f'TA{topic_area}'
 
     save_path_validated = save_path / 'validated_data'
     save_path_validated.mkdir(exist_ok=True)
 
     loc = read_metadata(name)
-    data_original = read_irradiance(name)
+    data_original = read_irradiance(name, topic_area)
     # TA2/3 analysis uses fixed offsets, but reference site metadata
     # typically uses DST aware timezones
     data_original = data_original.tz_convert(parameters['timezone'])
@@ -337,7 +406,7 @@ def process_single_site(name, parameters):
     bad_comp = ~consistent_comp & daytime
     bad_comp = data['ghi'] * bad_comp
     bad_comp[bad_comp == 0] = np.nan
-    fig_cons = plt.figure()
+    _ = plt.figure()
     plt.plot(data['ghi'])
     plt.plot(data['dni'])
     plt.plot(data['dhi'])
@@ -353,7 +422,7 @@ def process_single_site(name, parameters):
     bad_diff = ~diffuse_ratio_limit & daytime
     bad_diff = data['ghi'] * bad_diff
     bad_diff[bad_diff == 0] = np.nan
-    fig_cons = plt.figure()
+    _ = plt.figure()
     plt.plot(data['ghi'])
     plt.plot(data['dni'])
     plt.plot(data['dhi'])
@@ -367,7 +436,7 @@ def process_single_site(name, parameters):
     plt.close()
 
     # overall accept/reject plot
-    fig_summary = plt.figure()
+    _ = plt.figure()
     plt.plot(data['ghi'])
     plt.plot(data['dni'])
     plt.plot(data['dhi'])
@@ -394,7 +463,7 @@ def process_single_site(name, parameters):
         count_cc[i] = (consistent_comp[u] | overcast_ok[u]).sum()
         count_diff[i] = diffuse_ratio_limit[u].sum()
         count_good[i] = good_overall[u].sum()
-    fig_accept = plt.figure()
+    _ = plt.figure()
     plt.plot(bins[:-1], count_tot)
     plt.plot(bins[:-1], count_good)
     plt.plot(bins[:-1], count_cc)
@@ -414,9 +483,9 @@ def process_single_site(name, parameters):
     hrs = range(4, 21)
     boxplot_data = []
     hr_count = good_overall.resample('H').sum()
-    for idx, h in enumerate(hrs):
+    for h in hrs:
         boxplot_data.append(hr_count[hr_count.index.hour == h].values)
-    fig_boxplot, ax_boxplot = plt.subplots()
+    _, ax_boxplot = plt.subplots()
     plt.boxplot(boxplot_data)
     ax_boxplot.set_xticklabels([str(h) for h in hrs])
     plt.xlabel('Hour of day')
@@ -430,14 +499,14 @@ def process_single_site(name, parameters):
 
     # plot one overcast, clear, and variable day for illustration
     for kind in ('overcast', 'clear', 'variable'):
-        date = parameters[kind]
+        date = parameters[kind + f'_ta{topic_area}']
         dr = pd.date_range(
             start=f'{date} 06:00:00',
             end=f'{date} 18:00:00',
             freq='1T',
             tz=data.index.tz
         )
-        fig_day = plt.figure()
+        _ = plt.figure()
         plt.plot(data.loc[dr, 'ghi'])
         plt.plot(data.loc[dr, 'dni'])
         plt.plot(data.loc[dr, 'dhi'])
@@ -447,7 +516,7 @@ def process_single_site(name, parameters):
         bad_mask[bad_mask == False] = np.nan
         plt.plot(good_mask * data.loc[dr, 'ghi'], 'g.')
         plt.plot(bad_mask * data.loc[dr, 'ghi'], 'r.')
-        #plt.plot(sp.loc[dr, 'zenith'])
+        # plt.plot(sp.loc[dr, 'zenith'])
         plt.legend(['GHI', 'DNI', 'DHI', 'Good', 'Bad'])
         plt.title(f'{name}\nRepresentative {kind} day. {date}')
         plt.savefig(
@@ -474,7 +543,7 @@ def process_single_site(name, parameters):
         (data['ghi'] > 50)
     )
 
-    fig_deadband = plt.figure()
+    _ = plt.figure()
     plt.plot(ghi_rel_diff[u], 'r')
     plt.text(
         ghi_rel_diff.index[50000],
@@ -515,7 +584,8 @@ def process_single_site(name, parameters):
     ),
     default=False,
 )
-def post(verbose, user, password, base_url, official):
+@ta_option
+def post(verbose, user, password, base_url, official, topic_area):
     """Post QA results for all TA 2/3 sites.
 
     Reads data from directory ta23_site_data.
@@ -537,11 +607,12 @@ def post(verbose, user, password, base_url, official):
     # read the data created by process function
     # do this first so that we don't attempt to modify data in Arbiter unless
     # we know this is good. The cost of safety is the time and memory used to
-    # read approximately 3*10*20MB = 600MB of csv data.
+    # read approximately 3*10*20MB = 600MB of csv data for TA2
+    # (1/4 as much for TA3).
     logger.info('reading site data')
     data_to_post = defaultdict(dict)
     for site_name in SITES:
-        p = OUTPUT_PATH / f'{site_name}' / 'validated_data'
+        p = OUTPUT_PATH / f'{site_name}/TA{topic_area}/validated_data'
         for variable in ('ghi', 'dni', 'dhi'):
             f = p / f'{site_name}_validated_or_sfa_user_flagged_{variable}.csv'
             logger.debug('reading %s', f)
@@ -694,9 +765,9 @@ def read_metadata(name):
     return loc
 
 
-def read_irradiance(name):
+def read_irradiance(name, topic_area):
     logger.debug('Reading irradiance %s', name)
-    directory = OUTPUT_PATH / name
+    directory = OUTPUT_PATH / name / f'TA{topic_area}'
     variables = ['ghi', 'dni', 'dhi']
     data_all = {}
     for v in variables:
