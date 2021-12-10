@@ -3843,13 +3843,6 @@ def raw_report_dict_with_prob(fail_pdf):
     }
 
 
-@pytest.fixture(scope='function')
-def remove_orca():
-    # otherwise generating all pdfs for tests can take ages
-    import plotly.io as pio
-    pio.orca.config.executable = '/dev/null'
-
-
 @pytest.fixture()
 def constant_cost():
     return datamodel.ConstantCost(

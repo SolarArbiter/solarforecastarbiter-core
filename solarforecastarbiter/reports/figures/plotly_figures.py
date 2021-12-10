@@ -1120,12 +1120,6 @@ def output_svg(fig):
     Returns
     -------
     svg : str
-
-    Notes
-    -----
-    Requires `Orca <https://plot.ly/python/orca-management/>`_ for generating
-    svgs. If orca is not installed, an svg with an error message will be
-    returned.
     """
     try:
         svg = fig.to_image(format='svg').decode('utf-8')
@@ -1157,12 +1151,6 @@ def output_pdf(fig):
     -------
     pdf : str
        An ASCII-85 encoded PDF
-
-    Notes
-    -----
-    Requires `Orca <https://plot.ly/python/orca-management/>`_ for generating
-    pdfs. If orca is not installed, an pdf with an error message will be
-    returned.
     """
     # If height is explicitly set on the plot, remove it before generating
     # a pdf. Needs to be reset at the end of the function.
