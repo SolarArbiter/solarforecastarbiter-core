@@ -1,0 +1,22 @@
+.. _whatsnew_1011:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.11 (December 13, 2021)
+--------------------------
+
+Enhancements
+~~~~~~~~~~~~
+* Updated Plotly version to 4.9 which uses Kaleido for pdf plot
+  rendering. Use of Kaleido removes the need for starting an Orca
+  server when generating reports and is available as a pip installable
+  package with no other dependencies. This update also improves
+  performance and reliability of the report computation process.
+  (:pull:`765`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
