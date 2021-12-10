@@ -1164,14 +1164,16 @@ def output_pdf(fig):
     pdfs. If orca is not installed, an pdf with an error message will be
     returned.
     """
-    # If height is explicitly set on the plot, remove it before generating a pdf.
-    # To be reset at the end of the function
+    # If height is explicitly set on the plot, remove it before generating
+    #a pdf. Needs to be reset at the end of the function.
     height = None
     if fig.layout.height is not None:
         fig.layout.pop('height')
 
     try:
-        pdf = base64.a85encode(fig.to_image(format='pdf')).decode('utf-8')
+        pdf = base64.a85encode(
+            fig.to_image(format='pdf')
+        ).decode('utf-8')
     except Exception:
         try:
             name = fig.layout.title['text'][3:-4]
@@ -1183,7 +1185,7 @@ def output_pdf(fig):
 
     # replace height if removed
     if height is not None:
-       fig.layout.height = height
+        fig.layout.height = height
     return pdf
 
 
