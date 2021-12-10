@@ -1165,10 +1165,10 @@ def output_pdf(fig):
     returned.
     """
     # If height is explicitly set on the plot, remove it before generating
-    #a pdf. Needs to be reset at the end of the function.
+    # a pdf. Needs to be reset at the end of the function.
     height = None
     if fig.layout.height is not None:
-        fig.layout.pop('height')
+        height = fig.layout.pop('height')
 
     try:
         pdf = base64.a85encode(
