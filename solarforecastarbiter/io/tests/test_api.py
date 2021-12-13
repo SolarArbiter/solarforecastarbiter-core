@@ -1514,6 +1514,7 @@ def test_real_apisession_post_observation_values(real_session):
     pdt.assert_series_equal(obs['value'], test_df['value'])
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_post_forecast_values(real_session):
     # using a random hour reduces collisions between parallel CI
     # processes
@@ -1532,6 +1533,7 @@ def test_real_apisession_post_forecast_values(real_session):
     pdt.assert_series_equal(fx, test_ser)
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_post_prob_forecast_constant_val_values(real_session):
     # using a random hour reduces collisions between parallel CI
     # processes
