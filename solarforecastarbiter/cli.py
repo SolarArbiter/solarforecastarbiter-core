@@ -490,6 +490,21 @@ def report(verbose, user, password, base_url, report_file, output_file,
         pdf_report = template.render_pdf(full_report, dash_url)
         with open(output_file, 'wb') as f:
             f.write(pdf_report)
+    elif (
+            (format == 'detect' and output_file.endswith('.json'))
+            or format == 'json'
+    ):
+        posted_fxobs = []
+        for fxobs in raw_report.processed_forecasts_observations:
+            new_fxobs = fxobs.replace(
+                forecast_values=None,
+                observation_values=None,
+                reference_forecast_values=None)
+            posted_fxobs.append(new_fxobs)
+        raw_dict = raw_report.replace(
+            processed_forecasts_observations=posted_fxobs).to_dict()
+        with open(output_file, 'w') as f:
+            json.dump(raw_dict, f)
     else:
         raise ValueError("Unable to detect format")
 
