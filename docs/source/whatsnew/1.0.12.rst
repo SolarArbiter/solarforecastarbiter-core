@@ -1,0 +1,17 @@
+.. _whatsnew_1012:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.12 (January ??, 2022)
+--------------------------
+
+Fixed
+~~~~~~~~~~~~
+* Fixed USCRN data fetch to handle NaN values of -99999. (:pull:`775`, :issue:`773`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)

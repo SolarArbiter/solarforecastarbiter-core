@@ -2,6 +2,7 @@ import logging
 from urllib.error import URLError
 
 
+import numpy as np
 import pandas as pd
 from pvlib import iotools
 
@@ -72,6 +73,11 @@ def fetch(api, site, start, end):
         return pd.DataFrame()
     all_period_data = all_period_data.rename(
         columns={'temp_air': 'air_temperature'})
+
+    # Remove possible nans with value -99999. This can be removed
+    # if pvlib is updated to account for these values.
+    # See pvlib issue: https://github.com/pvlib/pvlib-python/issues/1372
+    all_period_data = all_period_data.replace(-99999, np.nan)
     return all_period_data
 
 
