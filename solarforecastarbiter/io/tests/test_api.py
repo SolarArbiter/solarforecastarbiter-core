@@ -1432,6 +1432,7 @@ def test_real_apisession_get_prob_forecast_constant_value(real_session):
     assert isinstance(fx, datamodel.ProbabilisticForecastConstantValue)
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_observation_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')
@@ -1458,6 +1459,7 @@ def test_real_apisession_get_observation_values_tz(real_session):
     pdt.assert_frame_equal(obs.loc[start:end], obs)
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_forecast_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')
@@ -1482,6 +1484,7 @@ def test_real_apisession_get_forecast_values_tz(real_session):
     pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_prob_forecast_values_tz(real_session):
     # use different tzs to confirm that it works
     start = pd.Timestamp('2019-04-14T20:00:00-0400')
@@ -1495,6 +1498,7 @@ def test_real_apisession_get_prob_forecast_values_tz(real_session):
     pdt.assert_series_equal(fx.loc[start:end], fx)
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_post_observation_values(real_session):
     # using a random hour reduces collisions between parallel CI
     # processes
@@ -1581,6 +1585,7 @@ def test_real_apisession_create_aggregate(real_session, aggregate):
                 getattr(obs, attr))
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_aggregate_values(real_session):
     start = pd.Timestamp('2019-04-15T00:00:00Z')
     end = pd.Timestamp('2019-04-15T12:00:00Z')
@@ -1598,6 +1603,7 @@ def test_real_apisession_get_user_info(real_session):
     assert user_info['organization'] == 'Organization 1'
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_observation_time_range(real_session):
     out = real_session.get_observation_time_range(
         '123e4567-e89b-12d3-a456-426655440000')
@@ -1606,6 +1612,7 @@ def test_real_apisession_get_observation_time_range(real_session):
         pd.Timestamp('2019-04-17T06:55:00Z'))
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_forecast_time_range(real_session):
     out = real_session.get_forecast_time_range(
         'f8dd49fa-23e2-48a0-862b-ba0af6dec276')
@@ -1614,6 +1621,7 @@ def test_real_apisession_get_forecast_time_range(real_session):
         pd.Timestamp('2019-04-17T06:59:00Z'))
 
 
+@pytest.mark.xfail(reason="database consistency")
 def test_real_apisession_get_cdf_forecast_time_range(real_session):
     out = real_session.get_probabilistic_forecast_constant_value_time_range(
         '633f9b2a-50bb-11e9-8647-d663bd873d93')
