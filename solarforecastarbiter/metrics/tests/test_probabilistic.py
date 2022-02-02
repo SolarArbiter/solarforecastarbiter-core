@@ -284,6 +284,10 @@ def test_sharpness(fx_lower, fx_upper, value):
         (1.0 ** 2) * 10 + (0.5 ** 2) * 10,
     ),
 
+    # obs outside the forecast support
+    # - obs > forecast max
+    # - obs < forecast min
+
     # fail: only 1 CDF interval
     pytest.param(
         np.array([[10], [20]]),
