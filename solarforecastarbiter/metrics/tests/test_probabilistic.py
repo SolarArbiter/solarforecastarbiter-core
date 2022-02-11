@@ -1,5 +1,7 @@
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose
+from scipy.stats import norm
 from solarforecastarbiter.metrics import probabilistic as prob
 
 
@@ -217,79 +219,12 @@ def test_sharpness(fx_lower, fx_upper, value):
     assert pytest.approx(sh) == value
 
 
-@pytest.mark.parametrize("fx,fx_prob,obs,value", [
-    # 1 sample, 2 CDF intervals
-    (
-        np.array([[10, 20]]),
-        np.array([[100, 100]]),
-        np.array([8]),
-        0.0,
-    ),
-
-    # 2 samples, 2 CDF intervals
-    (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[100, 100], [100, 100]]),
-        np.array([8, 8]),
-        0.0,
-    ),
-    (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[0, 100], [0, 100]]),
-        np.array([8, 8]),
-        (1.0 ** 2) * 10,
-    ),
-    (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[50, 100], [50, 100]]),
-        np.array([8, 8]),
-        (0.5 ** 2) * 10,
-    ),
-    (
-        np.array([[10, 20], [5, 10]]),
-        np.array([[50, 100], [50, 100]]),
-        np.array([8, 8]),
-        ((0.5 ** 2) * 10 + (0.5 ** 2) * 5) / 2,
-    ),
-    (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[50, 100], [30, 100]]),
-        np.array([8, 8]),
-        ((0.5 ** 2) * 10 + (0.7 ** 2) * 10) / 2,
-    ),
-
-    # 2 samples, 3 CDF intervals
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),
-        np.array([[100, 100, 100], [100, 100, 100]]),
-        np.array([8, 8]),
-        0.0,
-    ),
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),
-        np.array([[0, 100, 100], [0, 100, 100]]),
-        np.array([8, 8]),
-        (1.0 ** 2) * 10,
-    ),
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),
-        np.array([[0, 0, 100], [0, 0, 100]]),
-        np.array([8, 8]),
-        ((1.0 ** 2) * 10 + (1.0 ** 2) * 10),
-    ),
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),
-        np.array([[0, 50, 100], [0, 50, 100]]),
-        np.array([8, 8]),
-        (1.0 ** 2) * 10 + (0.5 ** 2) * 10,
-    ),
-
+@pytest.mark.parametrize("fx,fx_prob,obs", [
     # fail: only 1 CDF interval
     pytest.param(
         np.array([[10], [20]]),
         np.array([[100], [100]]),
         np.array([8, 8]),
-        0.0,
         marks=pytest.mark.xfail(strict=True, type=ValueError),
     ),
 
@@ -298,80 +233,204 @@ def test_sharpness(fx_lower, fx_upper, value):
         np.array([10, 20]),
         np.array([100, 100]),
         np.array([8, 8]),
-        0.0,
         marks=pytest.mark.xfail(strict=True, type=ValueError),
     ),
 ])
-def test_crps(fx, fx_prob, obs, value):
+def test_crps_shape(fx, fx_prob, obs):
+    prob.continuous_ranked_probability_score(obs, fx, fx_prob)
+
+
+@pytest.mark.parametrize("fx,fx_prob", [
+    # forecast approximates Gaussian distribution (mean = 20, std = 2)
+    (
+        np.array([np.linspace(10, 30, 1001)]),
+        np.array([norm.cdf(np.linspace(10, 30, 1001), loc=20, scale=2) * 100]),
+    )
+])
+@pytest.mark.parametrize("obs,value", [
+    # true CRPS from analytical function (via the `properscoring` package)
+    (np.array([1]), 17.871621),  # obs < min fx
+    (np.array([5]), 13.871621),
+    (np.array([15]), 3.879637),
+    (np.array([35]), 13.871621),
+    (np.array([39]), 17.871621),  # obs > max fx
+])
+def test_crps_gaussian(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
-    assert crps == value
+    assert_allclose(crps, value, rtol=1e-2)
+
+
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    # perfect forecast: obs = 5
+    (
+        np.array([np.linspace(0, 10, 101)]),
+        np.array([np.concatenate([np.zeros(50), np.ones(51) * 100])]),
+        np.array([5]),
+        0,
+    ),
+
+    # perfect forecast: obs = 0
+    (
+        np.array([np.linspace(0, 10, 101)]),
+        np.array([np.ones(101) * 100]),
+        np.array([0]),
+        0,
+    ),
+])
+def test_crps_perfect_fx(fx, fx_prob, obs, value):
+    crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
+    assert_allclose(crps, value, rtol=1e-2)
+
+
+@pytest.mark.parametrize("fx,fx_prob", [
+    (
+        np.array([np.linspace(10, 30, 1001)]),
+        np.array([np.linspace(0, 100, 1001)]),
+    )
+])
+@pytest.mark.parametrize("obs,value", [
+    # linear CDF from (10, 0%) to (30, 100%)
+    (np.array([10]), (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
+    (np.array([30]), (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
+])
+def test_crps_linear_cdf(fx, fx_prob, obs, value):
+    crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
+    assert_allclose(crps, value, rtol=1e-2)
+
+
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    # obs outside forecast support: obs < min fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([9]),
+        7.6,  # 1.0 + 5.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([8]),
+        8.6,  # 2.0 + 5.8 + 0.8,
+    ),
+
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        np.array([9]),
+        9.6,  # 1.0 + 6.8 + 1.8,
+    ),
+
+    # obs within forecast support
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([10]),
+        6.6,  # 5.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([11]),
+        0.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([20]),
+        1.6,  # 0.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([21]),
+        3.6,  # 1.8 + 1.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([30]),
+        3.6,  # 1.8 + 1.8,
+    ),
+
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        np.array([20]),
+        3.6,  # 1.8 + 1.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        np.array([30]),
+        1.6,  # 0.8 + 0.8,
+    ),
+
+    # obs outside forecast support: obs > max fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([31]),
+        9.6,  # 1.8 + 6.8 + 1,
+    ),
+
+    # obs outside forecast support: obs > max fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        np.array([32]),
+        10.6,  # 1.8 + 6.8 + 2,
+    ),
+
+    # multiple samples
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 60, 100], [0, 60, 100]]),
+        np.array([9, 20]),
+        (7.6 + 1.6) / 2,
+    ),
+])
+def test_crps_simple(fx, fx_prob, obs, value):
+    crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
+    assert_allclose(crps, value, rtol=1e-2)
 
 
 @pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
-    # 2 samples, 3 CDF intervals
+    # obs inside forecast support
     (
-        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
-        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
-        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
-        np.array([[0, 0, 100], [0, 0, 100]]),      # ref_prob
-        np.array([8, 8]),                          # obs
-        1 - 10 / 20,
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        np.array([20]),            # obs
+        1.0 - 1.6 / 3.6,
     ),
     (
-        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
-        np.array([[0, 0, 100], [0, 0, 100]]),      # fx_prob
-        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
-        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
-        np.array([8, 8]),                          # obs
-        1 - 20 / 10,
-    ),
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
-        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
-        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
-        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
-        np.array([8, 8]),                          # obs
-        0.0
-    ),
-    (
-        np.array([[10, 20, 30], [10, 20, 30]]),    # fx
-        np.array([[0, 100, 100], [0, 100, 100]]),  # fx_prob
-        np.array([[10, 20, 30], [10, 20, 30]]),    # ref
-        np.array([[0, 100, 100], [0, 100, 100]]),  # ref_prob
-        np.array([8, 8]),                          # obs
-        0.0
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 60, 100]]),  # ref_prob
+        np.array([20]),            # obs
+        0.0,
     ),
 
-    # 2 samples, 2 CDF intervals
+    # obs outside forecast support
     (
-        np.array([[10, 20], [10, 20]]),      # fx
-        np.array([[0, 100], [0, 100]]),      # fx_prob
-        np.array([[10, 20], [10, 20]]),      # ref
-        np.array([[100, 100], [100, 100]]),  # ref_prob
-        np.array([8, 8]),                    # obs
-        np.NINF,
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        np.array([9]),             # obs
+        1.0 - 7.6 / 9.6,
     ),
-
-    # 2 CDF intervals but not the same intervals between fx and ref
     (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[0, 100], [0, 100]]),
-        np.array([[10, 20], [10, 20]]),
-        np.array([[50, 100], [30, 100]]),
-        np.array([8, 8]),
-        1 - 10 / (((0.5 ** 2) * 10 + (0.7 ** 2) * 10) / 2),
-    ),
-
-    # ref and fx have different number of CDF intervals
-    (
-        np.array([[10, 20], [10, 20]]),
-        np.array([[0, 100], [0, 100]]),
-        np.array([[10, 20, 30], [10, 20, 30]]),
-        np.array([[0, 0, 100], [0, 0, 100]]),
-        np.array([8, 8]),
-        1 - 10 / 20,
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 40, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        np.array([9]),             # obs
+        0.0,
     ),
 ])
-def test_crps_skill_score(obs, fx, fx_prob, ref, ref_prob, value):
+def test_crps_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
     crpss = prob.crps_skill_score(obs, fx, fx_prob, ref, ref_prob)
-    assert crpss == value
+    assert_allclose(crpss, value)

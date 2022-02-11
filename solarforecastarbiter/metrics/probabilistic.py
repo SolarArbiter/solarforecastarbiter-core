@@ -468,15 +468,19 @@ def sharpness(fx_lower, fx_upper):
 def continuous_ranked_probability_score(obs, fx, fx_prob):
     """Continuous Ranked Probability Score (CRPS).
 
-        CRPS = 1/n sum_{i=1}^n int (F_i - O_i)^2 dx
+    .. math::
 
-    where F_i is the CDF of the forecast at time i and O_i is the CDF
-    associated with the observed value obs_i:
+        \\text{CRPS} = \\frac{1}{n} \\sum_{i=1}^n \\int_{-\\infty}^{\\infty}
+        (F_i(x) - \\mathbf{1} \\{x \\geq y_i \\})^2 dx
 
-        O_{i, j} = 1 if obs_i <= fx_{i, j}, else O_{i, j} = 0
-
-    where obs_i is the observation at time i, and fx_{i, j} is the forecast at
-    time i for CDF interval j.
+    where :math:`F_i(x)` is the CDF of the forecast at time :math:`i`,
+    :math:`y_i` is the observation at time :math:`i`, and :math:`\\mathbf{1}`
+    is the indicator function that transforms the observation into a step
+    function (1 if :math:`x \\geq y`, 0 if :math:`x < y`). In other words, the
+    CRPS measures the difference between the forecast CDF and the empirical CDF
+    of the observation. The CRPS has the same units as the observation. Lower
+    CRPS values indicate more accurate forecasts, where a CRPS of 0 indicates a
+    perfect forecast. [1]_ [2]_ [3]_
 
     Parameters
     ----------
@@ -492,7 +496,8 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     Returns
     -------
     crps : float
-        The Continuous Ranked Probability Score [unitless].
+        The Continuous Ranked Probability Score, with the same units as the
+        observation.
 
     Raises
     ------
@@ -502,22 +507,27 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
         array with d values or b) the forecasts are given as 2D arrays (n,d)
         but do not contain at least 2 CDF intervals (i.e. d < 2).
 
-    Examples
-    --------
+    Notes
+    -----
+    The CRPS can be calculated analytically when the forecast CDF is of a
+    continuous parametric distribution, e.g., Gaussian distribution. However,
+    since the Solar Forecast Arbiter makes no assumptions regarding how a
+    probabilistic forecast was generated, the CRPS is instead calculated using
+    numerical integration of the discretized forecast CDF. Therefore, the
+    accuracy of the CRPS calculation is limited by the precision of the
+    forecast CDF. In practice, this means the forecast CDF should 1) consist of
+    at least 10 intervals and 2) cover probabilities from 0% to 100%.
 
-    Forecast probabilities of <= 10 MW and <= 20 MW:
-    >>> fx = np.array([[10, 20], [10, 20]])
-    >>> fx_prob = np.array([[30, 50], [65, 100]])
-    >>> obs = np.array([8, 12])
-    >>> continuous_ranked_probability_score(obs, fx, fx_prob)
-    4.5625
-
-    Forecast thresholds for constant probabilities (25%, 75%):
-    >>> fx = np.array([[5, 15], [8, 14]])
-    >>> fx_prob = np.array([[25, 75], [25, 75]])
-    >>> obs = np.array([8, 10])
-    >>> continuous_ranked_probability_score(obs, fx, fx_prob)
-    0.5
+    References
+    ----------
+    .. [1] Matheson and Winkler (1976) "Scoring rules for continuous
+           probability distributions." Management Science, vol. 22, pp.
+           1087-1096. doi: 10.1287/mnsc.22.10.1087
+    .. [2] Hersbach (2000) "Decomposition of the continuous ranked probability
+           score for ensemble prediction systems." Weather Forecast, vol. 15,
+           pp. 559-570. doi: 10.1175/1520-0434(2000)015<0559:DOTCRP>2.0.CO;2
+    .. [3] Wilks (2019) "Statistical Methods in the Atmospheric Sciences", 4th
+           ed. Oxford; Waltham, MA; Academic Press.
 
     """
 
@@ -528,19 +538,37 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     elif np.shape(fx)[1] < 2:
         raise ValueError("forecasts must have d >= 2 CDF intervals "
                          f"(expected >= 2, got {np.shape(fx)[1]})")
-    else:
-        obs = np.tile(obs, (fx.shape[1], 1)).T
 
-    # event: 0=did not happen, 1=did happen
-    o = np.where(obs <= fx, 1.0, 0.0)
+    n = len(fx)
+
+    # extend CDF min to ensure obs within forecast support
+    # fx.shape = (n, d) ==> (n, d + 1)
+    fx_min = np.minimum(obs, fx[:, 0])
+    fx = np.hstack([fx_min[:, np.newaxis], fx])
+    fx_prob = np.hstack([np.zeros([n, 1]), fx_prob])
+
+    # extend CDF max to ensure obs within forecast support
+    # fx.shape = (n, d + 1) ==> (n, d + 2)
+    idx = (fx[:, -1] < obs)
+    fx_max = np.maximum(obs, fx[:, -1])
+    fx = np.hstack([fx, fx_max[:, np.newaxis]])
+    fx_prob = np.hstack([fx_prob, np.full([n, 1], 100)])
+
+    # indicator function:
+    # - left of the obs is 0.0
+    # - obs and right of the obs is 1.0
+    o = np.where(fx >= obs[:, np.newaxis], 1.0, 0.0)
+
+    # correct behavior when obs > max fx:
+    # - should be 0 over range: max fx < x < obs
+    o[idx, -1] = 0.0
 
     # forecast probabilities [unitless]
     f = fx_prob / 100.0
 
     # integrate along each sample, then average all samples
-    integrand = (f - o) ** 2
-    dx = np.diff(fx, axis=1)
-    crps = np.mean(np.sum(integrand[:, :-1] * dx, axis=1))
+    crps = np.mean(np.trapz((f - o) ** 2, x=fx, axis=1))
+
     return crps
 
 

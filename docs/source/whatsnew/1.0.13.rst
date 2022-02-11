@@ -1,0 +1,18 @@
+.. _whatsnew_1013:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.13 (February 10, 2022)
+--------------------------
+
+Fixed
+~~~~~~~~~~~~
+* Revised CRPS metric to handle observations outside the forecast support. (:pull:`781`, :issue:`779`)
+
+Contributors
+~~~~~~~~~~~~
+
+* Will Holmgren (:ghuser:`wholmgren`)
+* Leland Boeman (:ghuser:`lboeman`)
+* David Larson (:ghuser:`dplarson`)
