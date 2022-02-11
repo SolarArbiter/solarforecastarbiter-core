@@ -538,37 +538,38 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     elif np.shape(fx)[1] < 2:
         raise ValueError("forecasts must have d >= 2 CDF intervals "
                          f"(expected >= 2, got {np.shape(fx)[1]})")
-    else:
 
-        n = len(fx)
+    n = len(fx)
 
-        # extend CDF min to ensure obs within forecast support
-        # (n, d) ==> (n, d + 1)
-        fx = np.hstack([np.minimum(obs, fx[:, [0]]), fx])
-        fx_prob = np.hstack([np.zeros([n, 1]), fx_prob])
+    # extend CDF min to ensure obs within forecast support
+    # (n, d) ==> (n, d + 1)
+    fx_min = np.minimum(obs, fx[:, 0])
+    fx = np.hstack([fx_min[:, np.newaxis], fx])
+    fx_prob = np.hstack([np.zeros([n, 1]), fx_prob])
 
-        # extend CDF max to ensure obs within forecast support
-        # (n, d + 1) ==> (n, d + 2)
-        idx = (fx[:, -1] < obs)
-        fx = np.hstack([fx, np.maximum(obs, fx[:, [-1]])])
-        fx_prob = np.hstack([fx_prob, np.full([n, 1], 100)])
+    # extend CDF max to ensure obs within forecast support
+    # (n, d + 1) ==> (n, d + 2)
+    idx = (fx[:, -1] < obs)
+    fx_max = np.maximum(obs, fx[:, -1])
+    fx = np.hstack([fx, fx_max[:, np.newaxis]])
+    fx_prob = np.hstack([fx_prob, np.full([n, 1], 100)])
 
-        # indicator function:
-        # - left of the obs is 0.0
-        # - obs and right of the obs is 1.0
-        o = np.where(fx >= obs, 1.0, 0.0)
+    # indicator function:
+    # - left of the obs is 0.0
+    # - obs and right of the obs is 1.0
+    o = np.where(fx >= obs[:, np.newaxis], 1.0, 0.0)
 
-        # correct behavior when obs > max fx:
-        # - should be 0 over range: max fx < x < obs
-        o[idx, -1] = 0.0
+    # correct behavior when obs > max fx:
+    # - should be 0 over range: max fx < x < obs
+    o[idx, -1] = 0.0
 
-        # forecast probabilities [unitless]
-        f = fx_prob / 100.0
+    # forecast probabilities [unitless]
+    f = fx_prob / 100.0
 
-        # integrate along each sample, then average all samples
-        crps = np.mean(np.trapz((f - o) ** 2, x=fx, axis=1))
+    # integrate along each sample, then average all samples
+    crps = np.mean(np.trapz((f - o) ** 2, x=fx, axis=1))
 
-        return crps
+    return crps
 
 
 def crps_skill_score(obs, fx, fx_prob, ref, ref_prob):
