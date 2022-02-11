@@ -478,9 +478,9 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     is the indicator function that transforms the observation into a step
     function (1 if :math:`x \\geq y`, 0 if :math:`x < y`). In other words, the
     CRPS measures the difference between the forecast CDF and the empirical CDF
-    of the observation. The CRPS has the same units as the observation and
-    lower CRPS values indicate more accurate forecasts, where a CRPS of 0
-    indicates a perfect forecast. [1]_ [2]_ [3]_
+    of the observation. The CRPS has the same units as the observation. Lower
+    CRPS values indicate more accurate forecasts, where a CRPS of 0 indicates a
+    perfect forecast. [1]_ [2]_ [3]_
 
     Parameters
     ----------
@@ -521,7 +521,7 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     References
     ----------
     .. [1] Matheson and Winkler (1976) "Scoring rules for continuous
-           probability distributions." Management Sciience, vol. 22, pp.
+           probability distributions." Management Science, vol. 22, pp.
            1087-1096. doi: 10.1287/mnsc.22.10.1087
     .. [2] Hersbach (2000) "Decomposition of the continuous ranked probability
            score for ensemble prediction systems." Weather Forecast, vol. 15,
@@ -542,13 +542,13 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     n = len(fx)
 
     # extend CDF min to ensure obs within forecast support
-    # (n, d) ==> (n, d + 1)
+    # fx.shape = (n, d) ==> (n, d + 1)
     fx_min = np.minimum(obs, fx[:, 0])
     fx = np.hstack([fx_min[:, np.newaxis], fx])
     fx_prob = np.hstack([np.zeros([n, 1]), fx_prob])
 
     # extend CDF max to ensure obs within forecast support
-    # (n, d + 1) ==> (n, d + 2)
+    # fx.shape = (n, d + 1) ==> (n, d + 2)
     idx = (fx[:, -1] < obs)
     fx_max = np.maximum(obs, fx[:, -1])
     fx = np.hstack([fx, fx_max[:, np.newaxis]])

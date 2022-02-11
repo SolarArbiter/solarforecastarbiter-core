@@ -254,7 +254,6 @@ def test_crps_shape(fx, fx_prob, obs):
     (np.array([15]), 3.879637),
     (np.array([35]), 13.871621),
     (np.array([39]), 17.871621),  # obs > max fx
-
 ])
 def test_crps_gaussian(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
