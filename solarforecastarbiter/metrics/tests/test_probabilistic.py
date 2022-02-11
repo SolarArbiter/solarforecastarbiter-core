@@ -249,11 +249,11 @@ def test_crps_shape(fx, fx_prob, obs):
 ])
 @pytest.mark.parametrize("obs,value", [
     # true CRPS from analytical function (via the `properscoring` package)
-    (1, 17.871621),  # obs < min fx
-    (5, 13.871621),
-    (15, 3.879637),
-    (35, 13.871621),
-    (39, 17.871621),  # obs > max fx
+    (np.array([1]), 17.871621),  # obs < min fx
+    (np.array([5]), 13.871621),
+    (np.array([15]), 3.879637),
+    (np.array([35]), 13.871621),
+    (np.array([39]), 17.871621),  # obs > max fx
 
 ])
 def test_crps_gaussian(fx, fx_prob, obs, value):
@@ -266,7 +266,7 @@ def test_crps_gaussian(fx, fx_prob, obs, value):
     (
         np.array([np.linspace(0, 10, 101)]),
         np.array([np.concatenate([np.zeros(50), np.ones(51) * 100])]),
-        5,
+        np.array([5]),
         0,
     ),
 
@@ -274,7 +274,7 @@ def test_crps_gaussian(fx, fx_prob, obs, value):
     (
         np.array([np.linspace(0, 10, 101)]),
         np.array([np.ones(101) * 100]),
-        0,
+        np.array([0]),
         0,
     ),
 ])
@@ -291,8 +291,8 @@ def test_crps_perfect_fx(fx, fx_prob, obs, value):
 ])
 @pytest.mark.parametrize("obs,value", [
     # linear CDF from (10, 0%) to (30, 100%)
-    (10, (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
-    (30, (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
+    (np.array([10]), (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
+    (np.array([30]), (np.linspace(0, 1, 1001) ** 2).sum() * 20 / 1000),
 ])
 def test_crps_linear_cdf(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
@@ -304,20 +304,20 @@ def test_crps_linear_cdf(fx, fx_prob, obs, value):
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        9,
+        np.array([9]),
         7.6,  # 1.0 + 5.8 + 0.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        8,
+        np.array([8]),
         8.6,  # 2.0 + 5.8 + 0.8,
     ),
 
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 40, 100]]),
-        9,
+        np.array([9]),
         9.6,  # 1.0 + 6.8 + 1.8,
     ),
 
@@ -325,44 +325,44 @@ def test_crps_linear_cdf(fx, fx_prob, obs, value):
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        10,
+        np.array([10]),
         6.6,  # 5.8 + 0.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        11,
+        np.array([11]),
         0.8 + 0.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        20,
+        np.array([20]),
         1.6,  # 0.8 + 0.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        21,
+        np.array([21]),
         3.6,  # 1.8 + 1.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        30,
+        np.array([30]),
         3.6,  # 1.8 + 1.8,
     ),
 
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 40, 100]]),
-        20,
+        np.array([20]),
         3.6,  # 1.8 + 1.8,
     ),
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 40, 100]]),
-        30,
+        np.array([30]),
         1.6,  # 0.8 + 0.8,
     ),
 
@@ -370,7 +370,7 @@ def test_crps_linear_cdf(fx, fx_prob, obs, value):
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        31,
+        np.array([31]),
         9.6,  # 1.8 + 6.8 + 1,
     ),
 
@@ -378,8 +378,16 @@ def test_crps_linear_cdf(fx, fx_prob, obs, value):
     (
         np.array([[10, 20, 30]]),
         np.array([[0, 60, 100]]),
-        32,
+        np.array([32]),
         10.6,  # 1.8 + 6.8 + 2,
+    ),
+
+    # multiple samples
+    (
+        np.array([[10, 20, 30], [10, 20, 30]]),
+        np.array([[0, 60, 100], [0, 60, 100]]),
+        np.array([9, 20]),
+        (7.6 + 1.6) / 2,
     ),
 ])
 def test_crps_simple(fx, fx_prob, obs, value):
@@ -394,7 +402,7 @@ def test_crps_simple(fx, fx_prob, obs, value):
         np.array([[0, 60, 100]]),  # fx_prob
         np.array([[10, 20, 30]]),  # ref
         np.array([[0, 40, 100]]),  # ref_prob
-        20,                        # obs
+        np.array([20]),            # obs
         1.0 - 1.6 / 3.6,
     ),
     (
@@ -402,7 +410,7 @@ def test_crps_simple(fx, fx_prob, obs, value):
         np.array([[0, 60, 100]]),  # fx_prob
         np.array([[10, 20, 30]]),  # ref
         np.array([[0, 60, 100]]),  # ref_prob
-        20,                        # obs
+        np.array([20]),            # obs
         0.0,
     ),
 
@@ -412,7 +420,7 @@ def test_crps_simple(fx, fx_prob, obs, value):
         np.array([[0, 60, 100]]),  # fx_prob
         np.array([[10, 20, 30]]),  # ref
         np.array([[0, 40, 100]]),  # ref_prob
-        9,                         # obs
+        np.array([9]),             # obs
         1.0 - 7.6 / 9.6,
     ),
     (
@@ -420,7 +428,7 @@ def test_crps_simple(fx, fx_prob, obs, value):
         np.array([[0, 40, 100]]),  # fx_prob
         np.array([[10, 20, 30]]),  # ref
         np.array([[0, 40, 100]]),  # ref_prob
-        9,                         # obs
+        np.array([9]),             # obs
         0.0,
     ),
 ])
