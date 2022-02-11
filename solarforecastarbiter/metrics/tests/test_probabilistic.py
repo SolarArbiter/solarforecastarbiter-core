@@ -297,3 +297,133 @@ def test_crps_perfect_fx(fx, fx_prob, obs, value):
 def test_crps_linear_cdf(fx, fx_prob, obs, value):
     crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
     assert_allclose(crps, value, rtol=1e-2)
+
+
+@pytest.mark.parametrize("fx,fx_prob,obs,value", [
+    # obs outside forecast support: obs < min fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        9,
+        7.6,  # 1.0 + 5.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        8,
+        8.6,  # 2.0 + 5.8 + 0.8,
+    ),
+
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        9,
+        9.6,  # 1.0 + 6.8 + 1.8,
+    ),
+
+    # obs within forecast support
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        10,
+        6.6,  # 5.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        11,
+        0.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        20,
+        1.6,  # 0.8 + 0.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        21,
+        3.6,  # 1.8 + 1.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        30,
+        3.6,  # 1.8 + 1.8,
+    ),
+
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        20,
+        3.6,  # 1.8 + 1.8,
+    ),
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 40, 100]]),
+        30,
+        1.6,  # 0.8 + 0.8,
+    ),
+
+    # obs outside forecast support: obs > max fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        31,
+        9.6,  # 1.8 + 6.8 + 1,
+    ),
+
+    # obs outside forecast support: obs > max fx
+    (
+        np.array([[10, 20, 30]]),
+        np.array([[0, 60, 100]]),
+        32,
+        10.6,  # 1.8 + 6.8 + 2,
+    ),
+])
+def test_crps_simple(fx, fx_prob, obs, value):
+    crps = prob.continuous_ranked_probability_score(obs, fx, fx_prob)
+    assert_allclose(crps, value, rtol=1e-2)
+
+
+@pytest.mark.parametrize("fx,fx_prob,ref,ref_prob,obs,value", [
+    # obs inside forecast support
+    (
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        20,                        # obs
+        1.0 - 1.6 / 3.6,
+    ),
+    (
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 60, 100]]),  # ref_prob
+        20,                        # obs
+        0.0,
+    ),
+
+    # obs outside forecast support
+    (
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 60, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        9,                         # obs
+        1.0 - 7.6 / 9.6,
+    ),
+    (
+        np.array([[10, 20, 30]]),  # fx
+        np.array([[0, 40, 100]]),  # fx_prob
+        np.array([[10, 20, 30]]),  # ref
+        np.array([[0, 40, 100]]),  # ref_prob
+        9,                         # obs
+        0.0,
+    ),
+])
+def test_crps_skill_score(fx, fx_prob, ref, ref_prob, obs, value):
+    crpss = prob.crps_skill_score(obs, fx, fx_prob, ref, ref_prob)
+    assert_allclose(crpss, value)
