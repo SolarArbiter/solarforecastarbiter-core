@@ -1,4 +1,4 @@
-.. _whatsnew_1012:
+.. _whatsnew_1013:
 
 .. py:currentmodule:: solarforecastarbiter
 
