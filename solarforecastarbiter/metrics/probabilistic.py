@@ -513,10 +513,10 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
     continuous parametric distribution, e.g., Gaussian distribution. However,
     since the Solar Forecast Arbiter makes no assumptions regarding how a
     probabilistic forecast was generated, the CRPS is instead calculated using
-    numerical integration of the discretized forecast PDF. Therefore, the
+    numerical integration of the discretized forecast CDF. Therefore, the
     accuracy of the CRPS calculation is limited by the precision of the
     forecast CDF. In practice, this means the forecast CDF should 1) consist of
-    at least 10 intervals and 2) cover probabilities from 0 to 100%.
+    at least 10 intervals and 2) cover probabilities from 0% to 100%.
 
     References
     ----------
@@ -566,12 +566,7 @@ def continuous_ranked_probability_score(obs, fx, fx_prob):
         f = fx_prob / 100.0
 
         # integrate along each sample, then average all samples
-        integrand = (f - o) ** 2
-        dx = fx[:, 1:] - fx[:, :-1]
-        crps = np.mean(np.sum(
-            (integrand[:, 1:] + integrand[:, :-1]) / 2 * dx,  # quadrature rule
-            axis=1
-        ))
+        crps = np.mean(np.trapz((f - o) ** 2, x=fx, axis=1))
 
         return crps
 
