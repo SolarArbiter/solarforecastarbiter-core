@@ -361,12 +361,12 @@ def test_calculate_metrics_with_probablistic(single_observation,
                          probabilistic._REQ_DIST)
 
     expected = {
-        0: ('total', 'crps', '0', 17.247),
-        2: ('year', 'crps', '2019', 17.247),
-        4: ('season', 'crps', 'JJA', 17.247),
-        6: ('month', 'crps', 'Aug', 17.247),
-        8: ('hour', 'crps', '0', 19.801000000000002),
-        9: ('hour', 'crps', '1', 19.405)
+        0: ('total', 'crps', '0', 21.41819),
+        2: ('year', 'crps', '2019', 21.41819),
+        4: ('season', 'crps', 'JJA', 21.41819),
+        6: ('month', 'crps', 'Aug', 21.41819),
+        8: ('hour', 'crps', '0', 28.103),
+        9: ('hour', 'crps', '1', 26.634375),
     }
     attr_order = ('category', 'metric', 'index', 'value')
     for k, expected_attrs in expected.items():
@@ -1006,7 +1006,7 @@ def test_apply_deterministic_bad_metric_func():
     ('bs', [], [], [], None, None, np.NaN),
     ('bs', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
 
-    # Briar Skill Score with no reference
+    # Brier Skill Score with no reference
     ('bss', [1, 1, 1], [100, 100, 100], [0, 0, 0],
         None, None, 1.),
     ('bss', [1, 1, 1], [100, 100, 100], [1, 1, 1],
@@ -1017,11 +1017,11 @@ def test_apply_deterministic_bad_metric_func():
     ('unc', [1, 1, 1], [100, 100, 100], [1, 1, 1], None, None, 0.),
 
     # CRPS single forecast
-    ('crps', [[1, 1]], [[100, 100]], [[0, 0]], None, None, 0.),
+    ('crps', [[1, 1]], [[100, 100]], [0], None, None, 0.5),
     # CRPS mulitple forecasts
     ('crps', [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
              [[100, 100, 100], [100, 100, 100], [100, 100, 100]],
-             [0, 0, 0], None, None, 0.)
+             [0, 0, 0], None, None, 1.)
 ])
 def test_apply_probabilistic_metric_func(metric, fx, fx_prob, obs,
                                          ref_fx, ref_fx_prob, expect,
