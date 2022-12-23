@@ -37,7 +37,7 @@
     </ul>
   </p>
   <div class="report-table-wrapper">
-  <table class="table table-striped table-borderless metrics-meta-table" style="width:100%; ">
+  <table class="table table-striped table-borderless metrics-meta-table" style="width:100%; " id='metrics_meta_table'>
       <caption style="caption-side: top; text-align: left;">
       </caption>
       <colgroup>
@@ -48,10 +48,18 @@
       </colgroup>
       <thead style="text-align: left;">
       <tr class="header" style="text-align: left;">
-          <th colspan="1">Name</th>
-          <th colspan="1">Normalization</th>
-          <th colspan="1">Deadband (%)</th>
-          <th colspan="1">Cost Parameters</th>
+          <th class="sortable" colspan="1" onclick="sortTable('metrics_meta_table', 0, 0, false)">
+            Name
+          </th>
+          <th class="sortable" colspan="1" onclick="sortTable('metrics_meta_table', 1, 0, true)">
+            Normalization
+          </th>
+          <th class="sortable" colspan="1" onclick="sortTable('metrics_meta_table', 2, 0, true)">
+            Deadband (%)
+          </th>
+          <th class="sortable" colspan="1" onclick="sortTable('metrics_meta_table', 3, 0, true)">
+            Cost Parameters
+          </th>
       </tr>
       </thead>
       <tbody style="text-align: left; overflow-wrap: break-word;">

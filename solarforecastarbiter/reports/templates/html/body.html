@@ -54,6 +54,15 @@
   .obsfx-table td:first-child {
       font-weight: 700;
   }
+
+  .report-table-wrapper th.sortable {
+    cursor: pointer;
+  }
+  .report-table-wrapper th.sortable:hover {
+    background-color: #7cb6f0;
+  }
+
+
   details {
     border-bottom: 1px solid #dee2e6;
     padding: 0.5em;
@@ -70,6 +79,7 @@
     margin-bottom: 0.5em;
     padding-bottom: 0.5em;
   }
+
 </style>
 {% block report_title %}
 <h1 id="report-title">{{ report_name }}</h1>
@@ -365,6 +375,82 @@ Plotly.newPlot("scatter-div", scat_plot);
 {{ macros.download_metrics_script () | safe }}
 {% endblock %}
 
+
+
+{% block javascript %}
+<script>
+/**
+ * Sorts the table rows by the specified column
+ * @param  {[String]} element_id       The table's id
+ * @param  {[Number]} n_column         Column number to sort by
+ * @param  {[Number]} row_ofsset       Number of rows to offset (for use with multiple headers lines)
+ * @param  {[Bool]}   is_number        If true, convert to numeric, else keep as text
+ * Notes:
+ *   Based on the w3 Schools switching example
+ *   from: https://www.w3schools.com/howto/howto_js_sort_table.asp
+ *   accessed Dec, 2022
+ */
+function sortTable(element_id, n_column = 1, row_offset = 0, is_number=true) {
+    var table, do_switch, find_switch, i, r1, r2, val1, val2, dir, counter = 0;
+    table = document.getElementById(element_id)
+    do_switch = true;
+    dir = 'desc';
+
+    console.log("n_columns = ", n_column);
+    /* Loop that continues until switching rows is complete */
+    while (do_switch) {
+        do_switch = false;
+
+        // Check if should be switched
+        for (i = 1 + row_offset; i < (table.rows.length - 1); i++) {
+            find_switch = false;
+
+            /* Loop through all table rows (except the first) */
+            r1 = table.rows[i].getElementsByTagName("td")[n_column];
+            r2 = table.rows[i+1].getElementsByTagName("td")[n_column];
+            val1 = r1.innerHTML.toLowerCase();
+            val2 = r2.innerHTML.toLowerCase();
+            if (is_number) {
+              val1 = Number(val1);
+              val2 = Number(val2);
+            }
+            // console.log("compare in column ", n_column, " ", r1.innerHTML, " vs ", r2.innerHTML);
+
+            /* check if switch */
+            if (dir == "desc") {
+                if (val1 < val2) {
+                    find_switch = true;
+                    // console.log("Switching for desc");
+                    break;
+                }
+            }
+            else if (dir == "asc") {
+                if (val1 > val2) {
+                    find_switch = true;
+                    // console.log("Switching for asc");
+                    break;
+                }
+            }
+        }
+
+        // Perform Switching
+        if (find_switch) {
+            console.log("swtiching ");
+            table.rows[i].parentNode.insertBefore(table.rows[i + 1], table.rows[i]);
+            do_switch = true;
+            counter++;
+        }
+        // If not swtiching, change direction
+        else {
+            if (counter == 0 && dir == "desc") {
+                dir = "asc";
+                do_switch = true;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
 
 {% block versions %}
 <h2 id="versions">Versions</h2>
