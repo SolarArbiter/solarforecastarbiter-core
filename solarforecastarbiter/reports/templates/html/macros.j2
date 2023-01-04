@@ -69,7 +69,10 @@ forecasts/single/{{ forecast.forecast_id }}
       id="summary_stats_table_vert">
     <thead>
       <tr class="header">
-        <th scope="col" style="text-align: left;">Aligned Pair</th>
+        <th scope="col" class="sortable" style="text-align: left;"
+          onclick="sortTable('summary_stats_table_vert', 0, 1, false)">
+          Aligned Pair
+        </th>
         <th scope="col" colspan="{{ span }}" style="text-align: center;">Observation</th>
         <th scope="col" colspan="{{ span }}" style="text-align: center;">Forecast</th>
         <th scope="col" colspan="{{ span }}" style="text-align: center;">Reference Forecast</th>
@@ -78,8 +81,8 @@ forecasts/single/{{ forecast.forecast_id }}
         <th></th>
         {% for i in range(3) %}
         {% for title in human_statistics.values() %}
-        <th class="sortable" style="text-align: center;"  
-            onclick="sortTable('summary_stats_table_vert', 
+        <th class="sortable" style="text-align: center;"
+            onclick="sortTable('summary_stats_table_vert',
               {{(i*(human_statistics.values() | length)) + loop.index}}, 1, true)">
           {{ title }}
         </th>
@@ -220,17 +223,25 @@ forecasts/single/{{ forecast.forecast_id }}
   <table class="table table-striped validation-table" style="width:100%;" id="data-validation-results-{{'before' if before_resample else 'after'}}-table">
     <thead>
       <tr class="header">
-        <th style="text-align: left;">Aligned Pair</th>
+        <th class="sortable" style="text-align: left;"
+            onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', 0, 1, false)">
+          Aligned Pair
+        </th>
         {% for proc_fxobs in proc_fxobs_list %}
-        <th style="text-align: center; vertical-align: middle">
+        <th class="sortable" style="text-align: center; vertical-align: middle"
+            onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', {{loop.index}}, 1)">
           {{ proc_fxobs.name }}
         </th>
         {% endfor %}
       </tr>
       <tr class="header">
-        <th style="text-align: left;">Observation</th>
+        <th class="sortable" style="text-align: left;"
+            onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', 0, 1, false)">
+          Observation
+        </th>
         {% for proc_fxobs in proc_fxobs_list %}
-        <th style="text-align: center; vertical-align: middle">
+        <th class="sortable" style="text-align: center; vertical-align: middle"
+            onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', {{loop.index}}, 1)">
           {{ proc_fxobs.original.data_object.name }}
         </th>
         {% endfor %}
