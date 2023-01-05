@@ -37,26 +37,38 @@ metric_table_fx_vert_format = """<details>
         <th class="sortable" style="text-align: left;" 
             onclick="sortTable('metric_table_fx_vert', 0, 0, false)">
           Forecast
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', 1)">
             MAE
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', 2)">
             RMSE
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', 3)">
             MBE
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', 4)">
             Skill
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', 5)">
             Cost
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
       </tr>
     </thead>
@@ -151,14 +163,20 @@ validation_table_format = """<details>
         <th class="sortable" style="text-align: left;"
             onclick="sortTable('data-validation-results-before-table', 0, 1, false)">
           Aligned Pair
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center; vertical-align: middle"
             onclick="sortTable('data-validation-results-{}-table', 1, 1)">
           {}
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center; vertical-align: middle"
             onclick="sortTable('data-validation-results-{}-table', 2, 1)">
           {}
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
       </tr>
       <tr class="header">
@@ -242,12 +260,18 @@ preprocessing_table_format = """<details open="">
       <tr class="header">
         <th class="sortable" style="text-align: left;" onclick="sortTable('data-preprocessing-results-table', 0, 0, false)">
           Preprocessing Description
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;" onclick="sortTable('data-preprocessing-results-table', 1, 0, true)">
           {} <br>Number of Points
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;" onclick="sortTable('data-preprocessing-results-table', 2, 0, true)">
           {} <br>Number of Points
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
       </tr>
     </thead>
@@ -298,6 +322,8 @@ summary_stats_table_vert_format = """<details>
         <th scope="col" class="sortable" style="text-align: left;"
           onclick="sortTable('summary_stats_table_vert', 0, 1, false)">
           Aligned Pair
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th scope="col" colspan="5" style="text-align: center;">Observation</th>
         <th scope="col" colspan="5" style="text-align: center;">Forecast</th>
@@ -309,76 +335,106 @@ summary_stats_table_vert_format = """<details>
             onclick="sortTable('summary_stats_table_vert',
               1, 1, true)">
           Mean
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               2, 1, true)">
           Min
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               3, 1, true)">
           Max
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               4, 1, true)">
           Median
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               5, 1, true)">
           Std.
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               6, 1, true)">
           Mean
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               7, 1, true)">
           Min
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               8, 1, true)">
           Max
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               9, 1, true)">
           Median
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               10, 1, true)">
           Std.
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               11, 1, true)">
           Mean
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               12, 1, true)">
           Min
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               13, 1, true)">
           Max
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               14, 1, true)">
           Median
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: center;"
             onclick="sortTable('summary_stats_table_vert',
               15, 1, true)">
           Std.
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
       </tr>
     </thead>

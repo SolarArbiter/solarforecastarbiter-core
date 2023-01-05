@@ -55,13 +55,16 @@
       font-weight: 700;
   }
 
-  .report-table-wrapper th.sortable {
+  .report-table-wrapper table.table tr th.sortable {
     cursor: pointer;
   }
-  .report-table-wrapper th.sortable:hover {
+  .report-table-wrapper table.table tr th.sortable:hover {
     background-color: #d1ecf1;
+    font-weight: 900;
   }
-
+  .report-table-wrapper table.table tr th.sortable span {
+    color: #dddddd;
+  }
 
   details {
     border-bottom: 1px solid #dee2e6;
@@ -392,6 +395,7 @@ Plotly.newPlot("scatter-div", scat_plot);
  */
 function sortTable(element_id, n_column = 1, row_offset = 0, is_number=true) {
     var table, do_switch, find_switch, i, r1, r2, val1, val2, dir, counter = 0;
+    var spansUp, spansDown;
     table = document.getElementById(element_id)
     do_switch = true;
     dir = 'desc';
@@ -446,6 +450,22 @@ function sortTable(element_id, n_column = 1, row_offset = 0, is_number=true) {
                 dir = "asc";
                 do_switch = true;
             }
+        }
+
+        // Select only the up/down arrow in the sorted column
+        spansDown = table.getElementsByClassName('down');
+        spansUp = table.getElementsByClassName('up');
+        for (i = 0; i < spansDown.length; i++) {
+          spansDown[i].style.color = '#dddddd';
+        }
+        for (i = 0; i < spansUp.length; i++) {
+          spansUp[i].style.color = '#dddddd';
+        }
+        if (dir == "asc") {
+          spansDown[n_column].style.color = '#333333';
+        }
+        else {
+          spansUp[n_column].style.color = '#333333';
         }
     }
 }

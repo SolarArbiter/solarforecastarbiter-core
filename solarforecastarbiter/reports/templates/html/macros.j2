@@ -20,11 +20,15 @@ forecasts/single/{{ forecast.forecast_id }}
         <th class="sortable" style="text-align: left;" 
             onclick="sortTable('metric_table_fx_vert', 0, 0, false)">
           Forecast
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% for metric in metric_ordering %}
           <th class="sortable" style="text-align: left;" 
               onclick="sortTable('metric_table_fx_vert', {{loop.index}})">
             {{ human_metrics[metric] }}
+            <span class="down"> &#9660; </span>
+            <span class="up"> &#9650; </span>
           </th>
         {% endfor %}
       </tr>
@@ -72,6 +76,8 @@ forecasts/single/{{ forecast.forecast_id }}
         <th scope="col" class="sortable" style="text-align: left;"
           onclick="sortTable('summary_stats_table_vert', 0, 1, false)">
           Aligned Pair
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th scope="col" colspan="{{ span }}" style="text-align: center;">Observation</th>
         <th scope="col" colspan="{{ span }}" style="text-align: center;">Forecast</th>
@@ -85,6 +91,8 @@ forecasts/single/{{ forecast.forecast_id }}
             onclick="sortTable('summary_stats_table_vert',
               {{(i*(human_statistics.values() | length)) + loop.index}}, 1, true)">
           {{ title }}
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% endfor %}
         {% endfor %}
@@ -190,12 +198,18 @@ forecasts/single/{{ forecast.forecast_id }}
       <tr class="header">
         <th class="sortable" style="text-align: left;" onclick="sortTable('data-validation-filters-table', 0, 0, true)">
           Quality flags
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: left;" onclick="sortTable('data-validation-filters-table', 1, 0, true)">
           Discard before resample
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         <th class="sortable" style="text-align: left;" onclick="sortTable('data-validation-filters-table', 2, 0, true)">
           Resample threshold (%)
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
       </tr>
     </thead>
@@ -226,11 +240,15 @@ forecasts/single/{{ forecast.forecast_id }}
         <th class="sortable" style="text-align: left;"
             onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', 0, 1, false)">
           Aligned Pair
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% for proc_fxobs in proc_fxobs_list %}
         <th class="sortable" style="text-align: center; vertical-align: middle"
             onclick="sortTable('data-validation-results-{{'before' if before_resample else 'after'}}-table', {{loop.index}}, 1)">
           {{ proc_fxobs.name }}
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% endfor %}
       </tr>
@@ -291,10 +309,14 @@ forecasts/single/{{ forecast.forecast_id }}
       <tr class="header">
         <th class="sortable" style="text-align: left;" onclick="sortTable('data-preprocessing-results-table', 0, 0, false)">
           Preprocessing Description
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% for proc_fxobs in proc_fxobs_list %}
         <th class="sortable" style="text-align: center;" onclick="sortTable('data-preprocessing-results-table', {{loop.index}}, 0, true)">
           {{ proc_fxobs.name }} <br>Number of Points
+          <span class="down"> &#9660; </span>
+          <span class="up"> &#9650; </span>
         </th>
         {% endfor %}
       </tr>
