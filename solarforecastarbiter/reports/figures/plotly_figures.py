@@ -62,6 +62,44 @@ PLOT_LAYOUT_DEFAULTS = {
     'font': {'size': 14}
 }
 
+SORT_UPDATEMENU_DROPDOWN = [{
+        "buttons": [
+            dict(
+                method="restyle",
+                label="Original Order",
+                args = [{'visible': [True, False, False, False, False]}],
+            ),
+            dict(
+                method="restyle",
+                label="ᐁ Value",
+                args = [{'visible': [False, True, False, False, False]}],
+            ),
+            dict(
+                method="restyle",
+                label="ᐃ Value",
+                args = [{'visible': [False, False, True, False, False]}],
+            ),
+            dict(
+                method="restyle",
+                label="ᐁ Name",
+                args = [{'visible': [False, False, False, True, False]}],
+            ),
+            dict(
+                method="restyle",
+                label="ᐃ Name",
+                args = [{'visible': [False, False, False, False, True]}],
+            )
+        ],
+        "direction": "down",
+        "showactive": True,
+        "xanchor": 'center',
+        "x": 0.025,
+        "yanchor": 'bottom',
+        "pad": {'b': 5},
+        "active": 0,
+    }
+]
+
 # Used to adjust plot height when many x axis labels or long labels  are
 # present. The length of the longest label of the plot will be multiplies by
 # this value and added o the height of PLOT_LAYOUT_DEFAULTS to determine the
@@ -900,6 +938,7 @@ def bar(df, metric):
     x_values = pd.Series(x_values, name='abbrev')
     palette = cycle(PALETTE)
     palette = [next(palette) for _ in x_values]
+    data = data.assign(palette=palette)
     metric_name = datamodel.ALLOWED_METRICS[metric]
 
     # remove height limit when long abbreviations are used or there are more
@@ -921,14 +960,45 @@ def bar(df, metric):
         elif longest_x_label > 30:
             x_axis_kwargs.update({'tickangle': 45})
 
+    # Create dataframes for each sort (name, value)
+    data_val_asc = data.sort_values(by=['value', 'name'], ascending=True)
+    data_val_desc = data.sort_values(by=['value', 'name'], ascending=False)
+    data_name_asc = data.sort_values(by=['name'], ascending=True)
+    data_name_desc = data.sort_values(by=['name'], ascending=False)
+
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_values, y=data['value'],
                          text=data['name'],
+                         visible=True,
                          marker=go.bar.Marker(color=palette),
                          hovertemplate='(%{text}, %{y})<extra></extra>'))
+    fig.add_trace(go.Bar(x=data_val_asc['name'], y=data_val_asc['value'],
+                        text=data_val_asc['abbrev'],
+                        visible=False,
+                        marker=go.bar.Marker(color=data_val_asc['palette']),
+                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+    fig.add_trace(go.Bar(x=data_val_desc['name'], y=data_val_desc['value'],
+                        text=data_val_desc['abbrev'],
+                        visible=False,
+                        marker=go.bar.Marker(color=data_val_desc['palette']),
+                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+    fig.add_trace(go.Bar(x=data_name_asc['name'], y=data_name_asc['value'],
+                        text=data_name_asc['abbrev'],
+                        visible=False,
+                        marker=go.bar.Marker(color=data_name_asc['palette']),
+                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+    fig.add_trace(go.Bar(x=data_name_desc['name'], y=data_name_desc['value'],
+                        text=data_name_desc['abbrev'],
+                        visible=False,
+                        marker=go.bar.Marker(color=data_name_desc['palette']),
+                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+    updatemenus = SORT_UPDATEMENU_DROPDOWN
+    if len(x_values) <= 1:
+        updatemenus = None
     fig.update_layout(
         title=f'<b>{metric_name}</b>',
         xaxis_title=metric_name,
+        updatemenus=updatemenus,
         **plot_layout_args)
     configure_axes(fig, x_axis_kwargs, y_range)
     return fig
