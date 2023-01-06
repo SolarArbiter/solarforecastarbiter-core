@@ -18,7 +18,6 @@ import numpy as np
 from matplotlib import cm
 from matplotlib.colors import Normalize
 
-
 from solarforecastarbiter import datamodel
 from solarforecastarbiter.metrics.event import _event2count
 import solarforecastarbiter.plotting.utils as plot_utils
@@ -67,27 +66,27 @@ SORT_UPDATEMENU_DROPDOWN = [{
             dict(
                 method="restyle",
                 label="Original Order",
-                args = [{'visible': [True, False, False, False, False]}],
+                args=[{'visible': [True, False, False, False, False]}],
             ),
             dict(
                 method="restyle",
                 label="ᐁ Value",
-                args = [{'visible': [False, True, False, False, False]}],
+                args=[{'visible': [False, True, False, False, False]}],
             ),
             dict(
                 method="restyle",
                 label="ᐃ Value",
-                args = [{'visible': [False, False, True, False, False]}],
+                args=[{'visible': [False, False, True, False, False]}],
             ),
             dict(
                 method="restyle",
                 label="ᐁ Name",
-                args = [{'visible': [False, False, False, True, False]}],
+                args=[{'visible': [False, False, False, True, False]}],
             ),
             dict(
                 method="restyle",
                 label="ᐃ Name",
-                args = [{'visible': [False, False, False, False, True]}],
+                args=[{'visible': [False, False, False, False, True]}],
             )
         ],
         "direction": "down",
@@ -973,25 +972,25 @@ def bar(df, metric):
                          marker=go.bar.Marker(color=palette),
                          hovertemplate='(%{text}, %{y})<extra></extra>'))
     fig.add_trace(go.Bar(x=data_val_asc['name'], y=data_val_asc['value'],
-                        text=data_val_asc['abbrev'],
-                        visible=False,
-                        marker=go.bar.Marker(color=data_val_asc['palette']),
-                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+                         text=data_val_asc['abbrev'],
+                         visible=False,
+                         marker=go.bar.Marker(color=data_val_asc['palette']),
+                         hovertemplate='(%{text}, %{y})<extra></extra>'))
     fig.add_trace(go.Bar(x=data_val_desc['name'], y=data_val_desc['value'],
-                        text=data_val_desc['abbrev'],
-                        visible=False,
-                        marker=go.bar.Marker(color=data_val_desc['palette']),
-                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+                         text=data_val_desc['abbrev'],
+                         visible=False,
+                         marker=go.bar.Marker(color=data_val_desc['palette']),
+                         hovertemplate='(%{text}, %{y})<extra></extra>'))
     fig.add_trace(go.Bar(x=data_name_asc['name'], y=data_name_asc['value'],
-                        text=data_name_asc['abbrev'],
-                        visible=False,
-                        marker=go.bar.Marker(color=data_name_asc['palette']),
-                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+                         text=data_name_asc['abbrev'],
+                         visible=False,
+                         marker=go.bar.Marker(color=data_name_asc['palette']),
+                         hovertemplate='(%{text}, %{y})<extra></extra>'))
     fig.add_trace(go.Bar(x=data_name_desc['name'], y=data_name_desc['value'],
-                        text=data_name_desc['abbrev'],
-                        visible=False,
-                        marker=go.bar.Marker(color=data_name_desc['palette']),
-                        hovertemplate='(%{text}, %{y})<extra></extra>'))
+                         text=data_name_desc['abbrev'],
+                         visible=False,
+                         marker=go.bar.Marker(color=data_name_desc['palette']),
+                         hovertemplate='(%{text}, %{y})<extra></extra>'))
     updatemenus = SORT_UPDATEMENU_DROPDOWN
     if len(x_values) <= 1:
         updatemenus = None

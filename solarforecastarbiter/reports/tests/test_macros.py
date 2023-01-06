@@ -31,40 +31,41 @@ metric_table_fx_vert_format = """<details>
     <h4>Table of {} metrics</h4>
   </summary>
   <div class="report-table-wrapper">
-  <table class="table table-striped metric-table-fx-vert" style="width:100%;" id="metric_table_fx_vert">
+  <table class="table table-striped metric-table-fx-vert" style="width:100%;"
+         id="metric_table_fx_vert">
     <thead>
       <tr class="header">
-        <th class="sortable" style="text-align: left;" 
+        <th class="sortable" style="text-align: left;"
             onclick="sortTable('metric_table_fx_vert', 0, 0, false)">
           Forecast
           <span class="down"> &#9660; </span>
           <span class="up"> &#9650; </span>
         </th>
-          <th class="sortable" style="text-align: left;" 
+          <th class="sortable" style="text-align: left;"
               onclick="sortTable('metric_table_fx_vert', 1)">
             MAE
             <span class="down"> &#9660; </span>
             <span class="up"> &#9650; </span>
           </th>
-          <th class="sortable" style="text-align: left;" 
+          <th class="sortable" style="text-align: left;"
               onclick="sortTable('metric_table_fx_vert', 2)">
             RMSE
             <span class="down"> &#9660; </span>
             <span class="up"> &#9650; </span>
           </th>
-          <th class="sortable" style="text-align: left;" 
+          <th class="sortable" style="text-align: left;"
               onclick="sortTable('metric_table_fx_vert', 3)">
             MBE
             <span class="down"> &#9660; </span>
             <span class="up"> &#9650; </span>
           </th>
-          <th class="sortable" style="text-align: left;" 
+          <th class="sortable" style="text-align: left;"
               onclick="sortTable('metric_table_fx_vert', 4)">
             Skill
             <span class="down"> &#9660; </span>
             <span class="up"> &#9650; </span>
           </th>
-          <th class="sortable" style="text-align: left;" 
+          <th class="sortable" style="text-align: left;"
               onclick="sortTable('metric_table_fx_vert', 5)">
             Cost
             <span class="down"> &#9660; </span>
