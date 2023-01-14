@@ -19,7 +19,7 @@ EXTRAS_REQUIRE = {
         'matplotlib',
         'plotly>=4.9.0, <5',
         'selenium<4',
-        'jinja2',
+        'jinja2<3.1',
         'kaleido'
     ],
     'doc': ['sphinx<2.0', 'sphinx_rtd_theme']
