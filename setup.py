@@ -59,7 +59,7 @@ setup(
         'xarray',
         'tables',
         'pvlib==0.8.0',
-        'scipy',
+        'scipy<1.9',
         'statsmodels',
         'jsonschema',
         'pytz',
