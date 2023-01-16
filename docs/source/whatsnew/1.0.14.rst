@@ -1,0 +1,19 @@
+.. _whatsnew_1014:
+
+.. py:currentmodule:: solarforecastarbiter
+
+
+1.0.14 (TBD)
+--------------------------
+
+Fixed
+~~~~~~~~~~~~
+* Added table sorting in html reports.
+* Added total metrics sorting in html reports.
+* Updating some dependency requirements for tests.
+
+Contributors
+~~~~~~~~~~~~
+
+* Adam Wigington (:ghuser:`awig`)
+* David Larson (:ghuser:`dplarson`)
