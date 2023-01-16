@@ -58,7 +58,7 @@ setup(
         'requests<=2.25.1',  # https://github.com/psf/requests/pull/5810
         'xarray',
         'tables',
-        'importlib-metadata<5'
+        'importlib-metadata<5',
         'pvlib==0.8.0',
         'scipy<1.9',
         'statsmodels',
