@@ -23,5 +23,7 @@ coverage:
         target: 95%
         paths:
           - "solarforecastarbiter/**/tests/.*"
+        ignore:
+          - "solarforecastarbiter/reports/templates/*"
 
 comment: off
