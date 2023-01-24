@@ -4,7 +4,7 @@ Click==7.0
 jsonschema==3.2.0
 loky==2.9.0
 netCDF4==1.5.3
-numpy==1.18.2
+numpy==1.22.0
 pandas==1.0.3
 plotly==4.9
 psutil==5.7.0
