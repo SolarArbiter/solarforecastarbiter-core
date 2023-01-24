@@ -6,6 +6,10 @@
 1.0.14 (TBD)
 --------------------------
 
+Enhancements
+~~~~~~~~~~~~
+* Datamodel now supports ``'load'`` as an allowed variable. (:issue:`787`) (:pull:`806`)
+
 Fixed
 ~~~~~~~~~~~~
 * Added table sorting in html reports.
