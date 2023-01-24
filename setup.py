@@ -19,7 +19,7 @@ EXTRAS_REQUIRE = {
         'matplotlib',
         'plotly>=4.9.0, <5',
         'selenium<4',
-        'jinja2',
+        'jinja2<3.1',
         'kaleido'
     ],
     'doc': ['sphinx<2.0', 'sphinx_rtd_theme']
@@ -54,12 +54,13 @@ setup(
         'click',
         'netCDF4',
         'numpy>=1.18.2',
-        'pandas>=1.0.3',
+        'pandas>=1.0.3, <1.4',
         'requests<=2.25.1',  # https://github.com/psf/requests/pull/5810
         'xarray',
         'tables',
+        'importlib-metadata<5',
         'pvlib==0.8.0',
-        'scipy',
+        'scipy<1.9',
         'statsmodels',
         'jsonschema',
         'pytz',

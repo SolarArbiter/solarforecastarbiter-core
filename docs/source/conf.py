@@ -25,7 +25,7 @@ import solarforecastarbiter
 # -- Project information -----------------------------------------------------
 
 project = 'Solar Forecast Arbiter Core'
-copyright = '2019, Solar Forecast Arbiter Team'
+copyright = '2023, Solar Forecast Arbiter Team'
 author = 'Solar Forecast Arbiter Team'
 
 # The short X.Y version
