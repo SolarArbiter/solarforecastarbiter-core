@@ -1169,8 +1169,19 @@ def probabilistic_timeseries():
     raise NotImplementedError
 
 
-def reliability_diagram():
-    raise NotImplementedError
+def reliability_diagram(report):
+    """Create the reliability diagram for use with reports with probabilisitc
+    forecasts.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    plotly.Figure
+    """  # NOQA
+    pass
 
 
 def rank_histogram():
@@ -1396,3 +1407,4 @@ def timeseries_plots(report):
         for pfxob in pfxobs)
     return (ts_fig_json, scat_fig_json, ts_prob_fig_json,
             includes_distribution)
+

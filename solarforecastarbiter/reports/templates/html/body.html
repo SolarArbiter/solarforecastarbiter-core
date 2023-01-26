@@ -322,7 +322,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endblock %}
 
 {% block summarystat %}
-<h3 id="summarystats">Summary Statistics</h2>
+<h3 id="summarystats">Summary Statistics</h3>
 <p>
   A table of summary statistics for the resampled observations and deterministic
   forecasts over the entire study period is available below. Statistics for other
@@ -376,9 +376,18 @@ Plotly.newPlot("scatter-div", scat_plot);
 </div>
 {% include "load_metrics.html" %}
 {{ macros.download_metrics_script () | safe }}
+
+{% if timeseries_prob_spec is defined %}
+<p> TODO: replace with spec for rel_diagram </p>
+<h3 id="reldiagram">Reliability Diagram</h3>
+<div>
+  <p>
+    TODO: Reliability Diagram explanation for probabilistic forecasts.
+  </p>
+</div>
+{% endif %}
+
 {% endblock %}
-
-
 
 {% block javascript %}
 <script>

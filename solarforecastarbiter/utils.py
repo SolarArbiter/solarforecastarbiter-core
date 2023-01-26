@@ -438,3 +438,22 @@ def merge_ranges(ranges):
             yield type_(last)
             last = rset
     yield type_(last)
+
+
+def any_probabilistic_forecast(report):
+    """Returns True if report contains a probabilistic forecast, False if not.
+
+    Parameters
+    ----------
+    report: :py:class:`solarforecastarbiter.datamodel.Report`
+
+    Returns
+    -------
+    bool
+    """
+    for fxob in report.raw_report.processed_forecasts_observations:
+        if isinstance(fxob.original.forecast, (
+                        datamodel.ProbabilisticForecast,
+                        datamodel.ProbabilisticForecastConstantValue)):
+            return True
+    return False

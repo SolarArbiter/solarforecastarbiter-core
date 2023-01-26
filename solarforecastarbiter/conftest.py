@@ -2930,10 +2930,9 @@ def raw_report_event(
 
 
 @pytest.fixture
-def report_with_raw_xy(raw_report_dict_with_prob, raw_report_xy):
-    raw_report_dict_with_prob['raw_report'] = raw_report_xy(True)
-    raw_report_dict_with_prob['status'] = 'complete'
-    report = datamodel.Report.from_dict(raw_report_dict_with_prob)
+def report_with_raw_xy(report_dict, raw_report_xy):
+    report_dict['raw_report'] = raw_report_xy(True)
+    report = datamodel.Report.from_dict(report_dict)
     return report
 
 

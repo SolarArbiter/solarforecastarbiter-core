@@ -8,6 +8,7 @@ import pytest
 
 
 from solarforecastarbiter import utils
+from solarforecastarbiter import datamodel
 
 
 def _make_aggobs(obsid, ef=pd.Timestamp('20191001T1100Z'),
@@ -680,3 +681,11 @@ def test_merge_ranges_fail():
 def test_merge_ranges_comparison_fail(inp):
     with pytest.raises(TypeError):
         list(utils.merge_ranges(inp))
+
+
+def test_any_probabilistic_forecast(report_with_raw, 
+                                    report_with_raw_event,
+                                    report_with_raw_xy):
+    assert utils.any_probabilistic_forecast(report_with_raw) == False
+    assert utils.any_probabilistic_forecast(report_with_raw_event) == False
+    assert utils.any_probabilistic_forecast(report_with_raw_xy) == True
