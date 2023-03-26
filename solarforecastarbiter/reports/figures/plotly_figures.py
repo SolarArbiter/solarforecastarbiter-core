@@ -1200,13 +1200,13 @@ def reliability_diagram(report):
     units = units.replace('^2', '<sup>2</sup>')
 
     # Get all probabilisitic forecasts with % constant values
-    _cv_split = 'Prob(f <= x) =' # HACK: need PFCV to have reference to PF
+    _cv_split = 'Prob(f <= x) ='  # HACK: need PFCV to have reference to PF
     pfxobs = []
     pfx_groups = []
     for fxob in fxobs:
         # only process probabilistic forecasts
         if (isinstance(fxob.original.forecast, (
-                            datamodel.ProbabilisticForecastConstantValue)) and 
+                            datamodel.ProbabilisticForecastConstantValue)) and
                 fxob.original.forecast.axis == 'y'):
             pfxobs.append(fxob)
             parent_name = fxob.name.split(_cv_split)[0].strip()
@@ -1224,13 +1224,13 @@ def reliability_diagram(report):
     for pfx in pfxobs:
         group = pfx.original.forecast.name
         if group != prev_group:
-            prev_pos_count =0
+            prev_pos_count = 0
         cv = pfx.original.forecast.constant_value
         fxcv = f'{group} Prob(f <= x) = {cv}%'
-        pindex = meta_df[meta_df['forecast_name'] == 
-                        fxcv]['pair_index'].values[0]
+        pindex = meta_df[meta_df['forecast_name'] ==
+                         fxcv]['pair_index'].values[0]
         pi_df = value_df[value_df['pair_index'] == pindex]
-        positive_count = (pi_df['observation_values'] < 
+        positive_count = (pi_df['observation_values'] <
                           pi_df['forecast_values']).sum()
         ratio = positive_count / len(pi_df)
         lcount = positive_count - prev_pos_count
@@ -1247,7 +1247,7 @@ def reliability_diagram(report):
 
     fig_rd = go.Figure()  # Reliability Diagram
     n_rows = int(np.ceil(len(pfx_groups)/2))
-    fig_hg = make_subplots(rows=n_rows, cols=2, 
+    fig_hg = make_subplots(rows=n_rows, cols=2,
                            row_heights=[0.5]*n_rows,
                            horizontal_spacing=0.1,
                            vertical_spacing=0.2)  # Bar Charts
@@ -1259,14 +1259,14 @@ def reliability_diagram(report):
         mark = next(markers)
         group_df = rd_df[rd_df['group'] == group]
         # Reliability diagram
-        fig_rd.add_trace(go.Scatter(x=group_df.constant_value/100.0, 
+        fig_rd.add_trace(go.Scatter(x=group_df.constant_value/100.0,
                                     y=group_df.ratio, mode='lines+markers',
-                                    name=group, 
-                                    marker=dict(symbol=mark, 
+                                    name=group,
+                                    marker=dict(symbol=mark,
                                                 line=dict(color='black',
                                                           width=1)),
                                     line=dict(color=color, width=3)))
-        
+
         # Bar chart
         widths = group_df.constant_value.diff().values
         widths[0] = group_df.constant_value.values[0] - 0.
@@ -1274,41 +1274,44 @@ def reliability_diagram(report):
                                 y=group_df.lcount,
                                 width=widths/100.0,
                                 text=group_df.constant_value.values,
-                                hovertemplate="P <= %{text:.1f}%<br>Count=%{y}",
+                                hovertemplate="P <= %{text:.1f}%" +
+                                              "<br>Count=%{y}",
                                 marker=dict(color=color),
                                 name=group,
                                 offset=0),
                          irow, icol)
-        
+
         if icol == 2:
-            irow+=1
+            irow += 1
             icol = 1
         else:
-            icol+=1
+            icol += 1
 
     # Reliability Diagram
-    fig_rd.add_trace(go.Scatter(x=[0.0, 1.0], y=[0.0, 1.0], 
+    fig_rd.add_trace(go.Scatter(x=[0.0, 1.0], y=[0.0, 1.0],
                                 name='Perfect Calibration',
                                 line=dict(color='grey',
-                                          width=2, 
+                                          width=2,
                                           dash='dash')))
 
-    fig_rd.update_xaxes(title_text="Predicted Probability (f <= x)", showgrid=True,
+    fig_rd.update_xaxes(title_text="Predicted Probability (f <= x)",
+                        showgrid=True,
                         gridwidth=1, gridcolor='#CCC', showline=True,
                         linewidth=1, linecolor='black', ticks='outside',
                         tickformat=".1%")
-    fig_rd.update_yaxes(title_text="Ratio of Positive Predictions", showgrid=True,
+    fig_rd.update_yaxes(title_text="Ratio of Positive Predictions",
+                        showgrid=True,
                         gridwidth=1, gridcolor='#CCC', showline=True,
                         linewidth=1, linecolor='black', ticks='outside',
                         tickformat=".1f")
-    fig_rd.update_layout(title="Reliability Diagram", 
+    fig_rd.update_layout(title="Reliability Diagram",
                          legend=dict(font=dict(size=12),
-                                    x=0.1, y=0.9),
+                                     x=0.1, y=0.9),
                          plot_bgcolor=PLOT_BGCOLOR,
                          font=dict(size=14),
                          width=700,
                          height=700)
-    
+
     # Bar Charts
     fig_hg.update_xaxes(title_text="Predicted Probability Bin", showgrid=True,
                         gridwidth=1, gridcolor='#CCC', showline=True,
@@ -1550,4 +1553,3 @@ def timeseries_plots(report):
         for pfxob in pfxobs)
     return (ts_fig_json, scat_fig_json, ts_prob_fig_json,
             includes_distribution)
-

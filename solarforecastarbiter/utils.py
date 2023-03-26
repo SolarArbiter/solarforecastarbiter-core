@@ -451,6 +451,8 @@ def any_probabilistic_forecast(report):
     -------
     bool
     """
+    if not report.raw_report:
+        return False
     for fxob in report.raw_report.processed_forecasts_observations:
         if isinstance(fxob.original.forecast, (
                         datamodel.ProbabilisticForecast,

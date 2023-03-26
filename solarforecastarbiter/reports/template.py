@@ -235,7 +235,7 @@ def _get_render_kwargs(report, dash_url, with_timeseries):
         rd_specs = plotly_figures.reliability_diagram(report)
         kwargs['reliability_diag_spec'] = rd_specs[0]
         kwargs['reliability_cnt_spec'] = rd_specs[1]
-    
+
     return kwargs
 
 
