@@ -673,3 +673,17 @@ def test_bar_x_label_ordering():
     # assert hover text (original name) matches x label order
     assert (figure.data[0]['text'] == np.array([
         'CA GHI', "DA GHi01", "DA GHi02", "DA GHi03", "EA GHI"])).all()
+
+
+def test_reliability_diagram_no_cdf_cv(report_with_raw):
+    rd_spec, hg_spec = figures.reliability_diagram(
+        report_with_raw)
+    assert rd_spec is None
+    assert hg_spec is None
+
+
+def test_reliability_diagram(report_with_raw_xy):
+    rd_spec, hg_spec = figures.reliability_diagram(
+        report_with_raw_xy)
+    assert isinstance(rd_spec, str)
+    assert isinstance(hg_spec, str)
