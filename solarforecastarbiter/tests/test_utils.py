@@ -680,3 +680,11 @@ def test_merge_ranges_fail():
 def test_merge_ranges_comparison_fail(inp):
     with pytest.raises(TypeError):
         list(utils.merge_ranges(inp))
+
+
+def test_any_probabilistic_forecast(report_with_raw,
+                                    report_with_raw_event,
+                                    report_with_raw_xy):
+    assert utils.any_probabilistic_forecast(report_with_raw) is False
+    assert utils.any_probabilistic_forecast(report_with_raw_event) is False
+    assert utils.any_probabilistic_forecast(report_with_raw_xy) is True

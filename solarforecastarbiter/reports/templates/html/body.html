@@ -322,7 +322,7 @@ Plotly.newPlot("scatter-div", scat_plot);
 {% endblock %}
 
 {% block summarystat %}
-<h3 id="summarystats">Summary Statistics</h2>
+<h3 id="summarystats">Summary Statistics</h3>
 <p>
   A table of summary statistics for the resampled observations and deterministic
   forecasts over the entire study period is available below. Statistics for other
@@ -376,9 +376,32 @@ Plotly.newPlot("scatter-div", scat_plot);
 </div>
 {% include "load_metrics.html" %}
 {{ macros.download_metrics_script () | safe }}
+
+{% if reliability_diag_spec is defined %}
+<h3 id="reldiagram">Reliability Diagram</h3>
+<div>
+  <p>
+    The Reliability Diagram displays the ratio (relative frequency) of positive predictions for for each constant value that is provided for same group of a probabilistic forecast.
+    The dashed line shows a perfectly callibrated forecast where each constant value is correct at a ratio equal to that prediction interval.
+    <br><br>
+    The count of the samples in the bar charts below are the number of correct predictions for that constant value prediction interval minus the nearest left-hand bin.
+    This provides an indication of the number of correct predictions that are closest to that interval.
+  </p>
+</div>
+<div id="reldiagram-div"></div>
+<div id="relcount-div"></div>
+
+<script>
+  rel_plot = JSON.parse('{{ reliability_diag_spec | safe }}');
+  Object.assign(rel_plot, { config: { responsive: true } });
+  Plotly.newPlot("reldiagram-div", rel_plot)
+  cnt_plot = JSON.parse('{{ reliability_cnt_spec | safe }}');
+  Object.assign(cnt_plot, { config: { responsive: true } });
+  Plotly.newPlot("relcount-div", cnt_plot)
+</script>
+{% endif %}
+
 {% endblock %}
-
-
 
 {% block javascript %}
 <script>
