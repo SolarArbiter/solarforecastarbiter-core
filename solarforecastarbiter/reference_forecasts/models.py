@@ -269,7 +269,58 @@ def hrrr_subhourly_to_hourly_mean(latitude, longitude, elevation,
     return (ghi, dni, dhi, air_temperature, wind_speed,
             resampler, solar_pos_calculator)
 
-
+def hrrr_hourly_to_hourly_mean(latitude, longitude, elevation,
+                                  init_time, start, end, interval_label,
+                                  load_forecast=load_forecast,
+                                  *, __model='hrrr_hourly'):
+    """
+    Hourly mean forecast from HRRR Hourly.
+    GHI, DNI, DHI directly from model, resampled.
+    Max forecast horizon 18 or 48 hours (0Z, 6Z, 12Z, 18Z).
+    Parameters
+    ----------
+    latitude : float
+    longitude : float
+    elevation : float
+    init_time : pd.Timestamp
+        Full datetime of a model initialization
+    start : pd.Timestamp
+        Forecast start. Forecast is inclusive of this instant if
+        interval_label is *beginning* and exclusive of this instant if
+        interval_label is *ending*.
+    end : pd.Timestamp
+        Forecast end. Forecast is exclusive of this instant if
+        interval_label is *beginning* and inclusive of this instant if
+        interval_label is *ending*.
+    interval_label : str
+        Must be *beginning* or *ending*
+    """
+    ghi, dni, dhi, air_temperature, wind_speed = load_forecast(
+        latitude, longitude, init_time, start, end, __model)
+    # Interpolate irrad, temp, wind data to 5 min to
+    # minimize weather to power errors. Either start or end is outside of
+    # forecast, but is needed for subhourly interpolation. After
+    # interpolation, we slice the extra point out of the interpolated
+    # output.
+    start_adj, end_adj = adjust_start_end_for_interval_label(interval_label,
+                                                             start, end)
+    resample_interpolate_slicer = partial(forecast.reindex_fill_slice,
+                                          freq='5min', start_slice=start_adj,
+                                          end_slice=end_adj)
+    ghi, dni, dhi, air_temperature, wind_speed = [
+        resample_interpolate_slicer(v) for v in
+        (ghi, dni, dhi, air_temperature, wind_speed)
+    ]
+    # weather (and optionally power) will eventually be resampled
+    # to hourly average using resampler defined below
+    label = datamodel.CLOSED_MAPPING[interval_label]
+    resampler = partial(forecast.resample, freq='1h', label=label)
+    solar_pos_calculator = partial(
+        pvmodel.calculate_solar_position, latitude, longitude, elevation,
+        ghi.index)
+    return (ghi, dni, dhi, air_temperature, wind_speed,
+            resampler, solar_pos_calculator)
+   
 def rap_ghi_to_instantaneous(latitude, longitude, elevation,
                              init_time, start, end, interval_label,
                              load_forecast=load_forecast,
