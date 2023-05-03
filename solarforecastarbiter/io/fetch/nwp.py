@@ -140,7 +140,7 @@ HRRR_HOURLY = {
     'var_VGRD': 'on',
     'update_freq': '1h',
     'valid_hr_gen': (
-        lambda x: range(37) if x in (0, 6, 12, 18) else range(19)),
+        lambda x: range(49) if x in (0, 6, 12, 18) else range(19)),
     'time_between_fcst_hrs': 120,
     'delay_to_first_forecast': '45min',
     'avg_max_run_length': '70min',
