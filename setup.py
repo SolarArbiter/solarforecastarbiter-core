@@ -55,7 +55,7 @@ setup(
         'netCDF4',
         'numpy>=1.18.2',
         'pandas>=1.0.3, <1.4',
-        'requests<=2.25.1',  # https://github.com/psf/requests/pull/5810
+        'requests<=2.31.0',  # https://github.com/psf/requests/pull/5810
         'xarray',
         'tables',
         'importlib-metadata<5',
